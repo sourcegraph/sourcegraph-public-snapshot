@@ -42,6 +42,10 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 	// Differences to "Export CSV" in webapp. We have removed columns since it
 	// is easier to add columns than to remove them.
 	//
+	// Spaces :: We remove spaces from all column names. This is to avoid
+	// needing to quote them. This makes processing of the output more
+	// pleasant in tools like shell pipelines, sqlite's csv mode, etc.
+	//
 	// Match type :: Excluded since we only have one type for now. When we add
 	// other types we may want to include them in different ways.
 	//
@@ -70,11 +74,11 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 		return err
 	} else if ok {
 		if err := w.w.WriteHeader(
-			"Repository",
-			"Revision",
-			"File path",
-			"Match count",
-			"First match url",
+			"repository",
+			"revision",
+			"file_path",
+			"match_count",
+			"first_match_url",
 		); err != nil {
 			return err
 		}
@@ -88,19 +92,19 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 	}
 
 	return w.w.WriteRow(
-		// Repository
+		// repository
 		string(fm.Repo.Name),
 
-		// Revision
+		// revision
 		string(fm.CommitID),
 
-		// File path
+		// file_path
 		fm.Path,
 
-		// Match count
+		// match_count
 		strconv.Itoa(fm.ChunkMatches.MatchCount()),
 
-		// First match url
+		// first_match_url
 		firstMatchURL.String(),
 	)
 }

@@ -27,4 +27,3 @@ jobs:
                   team/source=@sourcegraph/source
                   cody-gateway=@unknwon @eseliger @bobheadxi @efritz @ggilmore
                   team/search-platform=@sourcegraph/search-platform
-                  team/apis=@sourcegraph/apis

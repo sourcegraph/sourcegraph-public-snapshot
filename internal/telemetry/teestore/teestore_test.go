@@ -1,15 +1,20 @@
 package teestore
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -17,6 +22,9 @@ import (
 // see TestRecorderEndToEnd for tests that include teestore.Store and the database
 
 func TestToEventLogs(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
 	testCases := []struct {
 		name            string
 		events          []*telemetrygatewayv1.Event
@@ -36,7 +44,7 @@ func TestToEventLogs(t *testing.T) {
     "Name": ".",
     "URL": "",
     "UserID": 0,
-    "AnonymousUserID": "",
+    "AnonymousUserID": "unknown",
     "Argument": null,
     "PublicArgument": {
       "telemetry.event.exportable": true
@@ -66,7 +74,7 @@ func TestToEventLogs(t *testing.T) {
     "Name": ".",
     "URL": "",
     "UserID": 0,
-    "AnonymousUserID": "",
+    "AnonymousUserID": "unknown",
     "Argument": null,
     "PublicArgument": {
       "telemetry.event.exportable": true
@@ -74,6 +82,121 @@ func TestToEventLogs(t *testing.T) {
     "Source": "BACKEND",
     "Version": "",
     "Timestamp": "2022-11-03T02:00:00Z",
+    "EvaluatedFlagSet": {},
+    "CohortID": null,
+    "FirstSourceURL": null,
+    "LastSourceURL": null,
+    "Referrer": null,
+    "DeviceID": null,
+    "InsertID": null,
+    "Client": null,
+    "BillingProductCategory": null,
+    "BillingEventID": null
+  }
+]`),
+		},
+		{
+			name: "only user ID",
+			events: []*telemetrygatewayv1.Event{{
+				Id:        "1",
+				Timestamp: timestamppb.New(time.Date(2022, 11, 2, 1, 0, 0, 0, time.UTC)),
+				Feature:   "CodeSearch",
+				Action:    "Search",
+				User: &telemetrygatewayv1.EventUser{
+					UserId: pointers.Ptr(int64(1234)),
+				},
+			}},
+			expectEventLogs: autogold.Expect(`[
+  {
+    "ID": 0,
+    "Name": "CodeSearch.Search",
+    "URL": "",
+    "UserID": 1234,
+    "AnonymousUserID": "",
+    "Argument": null,
+    "PublicArgument": {
+      "telemetry.event.exportable": true
+    },
+    "Source": "BACKEND",
+    "Version": "",
+    "Timestamp": "2022-11-02T01:00:00Z",
+    "EvaluatedFlagSet": {},
+    "CohortID": null,
+    "FirstSourceURL": null,
+    "LastSourceURL": null,
+    "Referrer": null,
+    "DeviceID": null,
+    "InsertID": null,
+    "Client": null,
+    "BillingProductCategory": null,
+    "BillingEventID": null
+  }
+]`),
+		},
+		{
+			name: "only anonymous user ID",
+			events: []*telemetrygatewayv1.Event{{
+				Id:        "1",
+				Timestamp: timestamppb.New(time.Date(2022, 11, 2, 1, 0, 0, 0, time.UTC)),
+				Feature:   "CodeSearch",
+				Action:    "Search",
+				User: &telemetrygatewayv1.EventUser{
+					AnonymousUserId: pointers.Ptr("anonymous"),
+				},
+			}},
+			expectEventLogs: autogold.Expect(`[
+  {
+    "ID": 0,
+    "Name": "CodeSearch.Search",
+    "URL": "",
+    "UserID": 0,
+    "AnonymousUserID": "anonymous",
+    "Argument": null,
+    "PublicArgument": {
+      "telemetry.event.exportable": true
+    },
+    "Source": "BACKEND",
+    "Version": "",
+    "Timestamp": "2022-11-02T01:00:00Z",
+    "EvaluatedFlagSet": {},
+    "CohortID": null,
+    "FirstSourceURL": null,
+    "LastSourceURL": null,
+    "Referrer": null,
+    "DeviceID": null,
+    "InsertID": null,
+    "Client": null,
+    "BillingProductCategory": null,
+    "BillingEventID": null
+  }
+]`),
+		},
+		{
+			name: "both user ID and anonymous ID",
+			events: []*telemetrygatewayv1.Event{{
+				Id:        "1",
+				Timestamp: timestamppb.New(time.Date(2022, 11, 2, 1, 0, 0, 0, time.UTC)),
+				Feature:   "CodeSearch",
+				Action:    "Search",
+				User: &telemetrygatewayv1.EventUser{
+					UserId:          pointers.Ptr(int64(1234)),
+					AnonymousUserId: pointers.Ptr("anonymous"),
+				},
+			}},
+			expectEventLogs: autogold.Expect(`[
+  {
+    "ID": 0,
+    "Name": "CodeSearch.Search",
+    "URL": "",
+    "UserID": 1234,
+    "AnonymousUserID": "anonymous",
+    "Argument": null,
+    "PublicArgument": {
+      "telemetry.event.exportable": true
+    },
+    "Source": "BACKEND",
+    "Version": "",
+    "Timestamp": "2022-11-02T01:00:00Z",
     "EvaluatedFlagSet": {},
     "CohortID": null,
     "FirstSourceURL": null,
@@ -160,10 +283,16 @@ func TestToEventLogs(t *testing.T) {
 				func() time.Time { return time.Date(2022, 11, 3, 2, 0, 0, 0, time.UTC) },
 				tc.events)
 			require.Len(t, eventLogs, len(tc.events))
+
 			// Compare JSON for ease of reading
 			data, err := json.MarshalIndent(eventLogs, "", "  ")
 			require.NoError(t, err)
 			tc.expectEventLogs.Equal(t, string(data))
+
+			// Make sure the rendered events can be inserted into the legacy
+			// table, which has some restrictions that might prevent us from
+			// successfully inserting a translated event.
+			assert.NoError(t, db.EventLogs().BulkInsert(context.Background(), eventLogs))
 		})
 	}
 }

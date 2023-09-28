@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -622,6 +623,13 @@ func TestExternalServices(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	externalServices := dbmocks.NewMockExternalServiceStore()
+	ess := []*types.ExternalService{
+		{ID: 1, Config: extsvc.NewEmptyConfig()},
+		{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
+		{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
+		{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
+		{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
+	}
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.AfterID > 0 || opt.RepoID == 42 {
 			return []*types.ExternalService{
@@ -630,18 +638,20 @@ func TestExternalServices(t *testing.T) {
 			}, nil
 		}
 
-		ess := []*types.ExternalService{
-			{ID: 1, Config: extsvc.NewEmptyConfig()},
-			{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
-			{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
-			{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
-			{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
-		}
 		if opt.LimitOffset != nil {
 			return ess[:opt.LimitOffset.Limit], nil
 		}
 		return ess, nil
 	})
+
+	// Set up rate limits
+	ctx := context.Background()
+	ratelimit.SetupForTest(t)
+	for _, es := range ess {
+		rl := ratelimit.NewGlobalRateLimiter(logtest.NoOp(t), es.URN())
+		rl.SetTokenBucketConfig(ctx, 10, time.Hour)
+	}
+
 	externalServices.CountFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
 		if opt.AfterID > 0 {
 			return 1, nil
@@ -693,6 +703,90 @@ func TestExternalServices(t *testing.T) {
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+                    ]
+                }
+			}
+		`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "Read with rate limiter state",
+			Query: `
+			{
+				externalServices {
+					nodes {
+						id
+						rateLimiterState {
+							burst
+							currentCapacity
+							infinite
+							interval
+							lastReplenishment
+							limit
+						}
+					}
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes": [
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 3600,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 3600,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjM=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 3600,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 3600,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 3600,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						}
                     ]
                 }
 			}
