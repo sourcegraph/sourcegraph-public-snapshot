@@ -4,6 +4,7 @@ import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.Inlay
@@ -51,6 +52,7 @@ import java.util.function.Consumer
 import java.util.stream.Collectors
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
+@Service
 class CodyAutocompleteManager {
   private val logger = Logger.getInstance(CodyAutocompleteManager::class.java)
   private val currentJob = AtomicReference(CancellationToken())

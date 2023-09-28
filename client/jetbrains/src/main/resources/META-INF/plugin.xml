@@ -72,7 +72,6 @@
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
 
         <!-- autocomplete -->
-        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutocompleteManager"/>
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
