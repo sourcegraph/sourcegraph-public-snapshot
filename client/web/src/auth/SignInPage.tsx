@@ -92,17 +92,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const dotcomCTAs = (
         <>
             <Link
-                to="https://about.sourcegraph.com/app"
-                onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })}
-            >
-                download Cody app
-            </Link>{' '}
-            or{' '}
-            <Link
                 to="https://sourcegraph.com/get-started?t=enterprise"
                 onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
             >
-                get Sourcegraph Enterprise
+                consider Sourcegraph Enterprise
             </Link>
             .
         </>
@@ -187,7 +180,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             ) : (
                 <Text className="text-muted">
                     {context.sourcegraphDotComMode ? (
-                        <>Account creation is disabled - to try Sourcegraph, {dotcomCTAs}</>
+                        <>
+                            Currently, we are unable to create accounts using email. Please use the providers listed
+                            above to continue. For private code, {dotcomCTAs}
+                        </>
                     ) : (
                         <>Need an account? Contact your site admin.</>
                     )}
