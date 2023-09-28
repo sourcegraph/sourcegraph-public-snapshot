@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.config.notification
 
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowContent
@@ -8,7 +7,7 @@ import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
-import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils
+import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtil
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CollectionUtil.Companion.diff
@@ -63,10 +62,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
                 (context.oldIsCustomAutocompleteColorEnabled !=
                     context.isCustomAutocompleteColorEnabled)) {
               ConfigUtil.getAllEditors()
-                  .forEach(
-                      Consumer { editor: Editor? ->
-                        AutocompleteRenderUtils.rerenderAllAutocompleteInlays(editor)
-                      })
+                  .forEach(Consumer { AutocompleteRenderUtil.rerenderAllAutocompleteInlays(it) })
             }
 
             // clear autocomplete inlays for blacklisted language editors

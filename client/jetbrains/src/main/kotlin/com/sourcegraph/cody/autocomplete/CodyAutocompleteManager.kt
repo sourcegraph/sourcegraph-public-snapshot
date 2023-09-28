@@ -17,11 +17,11 @@ import com.sourcegraph.cody.agent.CodyAgent.Companion.getServer
 import com.sourcegraph.cody.agent.CodyAgentManager.tryRestartingAgentIfNotRunning
 import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams
 import com.sourcegraph.cody.agent.protocol.Position
-import com.sourcegraph.cody.autocomplete.InlayModelUtil.getAllInlaysForEditor
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer
+import com.sourcegraph.cody.autocomplete.render.InlayModelUtil.getAllInlaysForEditor
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.notifyApplication
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.resetApplication

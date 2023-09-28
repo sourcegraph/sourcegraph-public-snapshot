@@ -6,8 +6,8 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgent
-import com.sourcegraph.cody.autocomplete.InlayModelUtil
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
+import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 import com.sourcegraph.cody.vscode.InlineAutocompleteItem
 import com.sourcegraph.utils.CodyEditorUtil
 

@@ -5,6 +5,7 @@ import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer
+import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 
 class AutocompleteText(
     private val sameLineBeforeSuffixText: String,
@@ -40,19 +41,19 @@ class AutocompleteText(
           singleLineRenderers
               // note that we only care about the first inline
               .firstOrNull { it.type == AutocompleteRendererType.INLINE }
-              ?.getText()
+              ?.text
               ?: ""
       val afterEndOfLineText =
           singleLineRenderers
               // note that we only care about the first afterEndOfLine
               .firstOrNull { it.type == AutocompleteRendererType.AFTER_LINE_END }
-              ?.getText()
+              ?.text
               ?: ""
       val blockText =
           multiLineRenderers
               // note that we only care about the first block
               .firstOrNull()
-              ?.getText()
+              ?.text
               ?: ""
       // Only return a non-empty autocomplete if there's at least one non-empty string to apply.
       return if (inlineText.isNotEmpty() ||
