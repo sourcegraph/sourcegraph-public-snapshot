@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -25,7 +26,13 @@ type Exporter interface {
 	Close() error
 }
 
-func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQuerier, exportAddress string) (Exporter, error) {
+func NewExporter(
+	ctx context.Context,
+	logger log.Logger,
+	c conftypes.SiteConfigQuerier,
+	g database.GlobalStateStore,
+	exportAddress string,
+) (Exporter, error) {
 	u, err := url.Parse(exportAddress)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid export address")
@@ -51,22 +58,26 @@ func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQ
 
 	return &exporter{
 		client: telemetrygatewayv1.NewTelemeteryGatewayServiceClient(conn),
-		conf:   c,
 		conn:   conn,
+
+		globalState: g,
+		conf:        c,
 	}, nil
 }
 
 type exporter struct {
 	client telemetrygatewayv1.TelemeteryGatewayServiceClient
-	conf   conftypes.SiteConfigQuerier
 	conn   *grpc.ClientConn
+
+	conf        conftypes.SiteConfigQuerier
+	globalState database.GlobalStateStore
 }
 
 func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv1.Event) ([]string, error) {
 	tr, ctx := trace.New(ctx, "ExportEvents", attribute.Int("events", len(events)))
 	defer tr.End()
 
-	identifier, err := newIdentifier(e.conf)
+	identifier, err := newIdentifier(ctx, e.conf, e.globalState)
 	if err != nil {
 		tr.SetError(err)
 		return nil, err

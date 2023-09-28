@@ -95,3 +95,65 @@ export interface TemporarySettingsSchema {
  * should be used to force the consumer to check for undefined values.
  */
 export type TemporarySettings = Optional<TemporarySettingsSchema>
+
+// TypeScript doesn't have a concept of "exhaustive" list or sets, so we use
+// a record instead.
+const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
+    'search.collapsedSidebarSections': null,
+    'search.hiddenNoResultsSections': null,
+    'search.sidebar.revisions.tab': null,
+    'search.sidebar.collapsed': null,
+    'search.notepad.enabled': null,
+    'search.notepad.ctaSeen': null,
+    'search.notebooks.gettingStartedTabSeen': null,
+    'insights.freeGaAccepted': null,
+    'insights.freeGaExpiredAccepted': null,
+    'insights.wasMainPageOpen': null,
+    'insights.lastVisitedDashboardId': null,
+    'npsSurvey.hasTemporarilyDismissed': null,
+    'npsSurvey.hasPermanentlyDismissed': null,
+    'user.lastDayActive': null,
+    'user.daysActiveCount': null,
+    'user.themePreference': null,
+    'signup.finishedWelcomeFlow': null,
+    'homepage.userInvites.tab': null,
+    'batches.defaultListFilters': null,
+    'batches.downloadSpecModalDismissed': null,
+    'codeintel.badge.used': null,
+    'codeintel.referencePanel.redesign.ctaDismissed': null,
+    'onboarding.quickStartTour': null,
+    'onboarding.userconfig': null,
+    'characterKeyShortcuts.enabled': null,
+    'search.homepage.queryExamplesContent': null,
+    'search.results.collapseSmartSearch': null,
+    'search.results.collapseUnownedResultsAlert': null,
+    'search.input.recentSearches': null,
+    /**
+     * Keeps track of which of the query examples shown as suggestions
+     * the user has used so that we don't suggest them anymore.
+     */
+    'search.input.usedExamples': null,
+    'search.input.usedInlineHistory': null,
+    // This is a temporary (no pun intended) setting to allow users to easily
+    // switch been the current and the new search input. It's only used when
+    // the feature flag `"searchQueryInput": null,
+    'search.input.experimental': null,
+    'batches.minSavedPerChangeset': null,
+    'search.notebooks.minSavedPerView': null,
+    'repo.commitPage.diffMode': null,
+    'setup.activeStepId': null,
+    'app-setup.activeStepId': null,
+    'own.panelExplanationHidden': null,
+    'cody.showSidebar': null,
+    'cody.blobPageCta.dismissed': null,
+    'cody.searchPageCta.dismissed': null,
+    'cody.chatPageCta.dismissed': null,
+    'cody.survey.submitted': null,
+    'app.codyStandalonePage.selectedRepo': null,
+    'cody.contextCallout.dismissed': null,
+    'admin.hasDismissedCodeHostPrivacyWarning': null,
+    'admin.hasCompletedLicenseCheck': null,
+    'simple.search.toggle': null,
+}
+
+export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

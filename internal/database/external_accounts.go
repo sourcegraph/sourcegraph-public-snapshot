@@ -56,7 +56,7 @@ type UserExternalAccountsStore interface {
 	// create already exists, it returns an error.
 	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error)
 
-	// Delete will soft delete all accounts matching the options combined using AND.
+	// Delete will soft (or hard) delete all accounts matching the options combined using AND.
 	// If options are all zero values then it does nothing.
 	Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error
 
@@ -364,16 +364,18 @@ WHERE id = $1
 }
 
 // ExternalAccountsDeleteOptions defines criteria that will be used to select
-// which accounts to soft delete.
+// which accounts to soft (or hard) delete
 type ExternalAccountsDeleteOptions struct {
 	// A slice of ExternalAccountIDs
 	IDs         []int32
 	UserID      int32
 	AccountID   string
 	ServiceType string
+	// HardDelete completely deletes any matching external accounts.
+	HardDelete bool
 }
 
-// Delete will soft delete all accounts matching the options combined using AND.
+// Delete will soft (or hard) delete all accounts matching the options combined using AND.
 // If options are all zero values then it does nothing.
 func (s *userExternalAccountsStore) Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
@@ -400,10 +402,17 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, opt ExternalAcco
 		return nil
 	}
 
-	q := sqlf.Sprintf(`
-UPDATE user_external_accounts
-SET deleted_at=now()
-WHERE %s`, sqlf.Join(conds, "AND"))
+	var q *sqlf.Query
+	if opt.HardDelete {
+		q = sqlf.Sprintf(`
+		DELETE FROM user_external_accounts
+		WHERE %s`, sqlf.Join(conds, "AND"))
+	} else {
+		q = sqlf.Sprintf(`
+		UPDATE user_external_accounts
+		SET deleted_at=now()
+		WHERE %s`, sqlf.Join(conds, "AND"))
+	}
 
 	err := s.Exec(ctx, q)
 

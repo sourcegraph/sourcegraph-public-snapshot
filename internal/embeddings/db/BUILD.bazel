@@ -16,6 +16,7 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/conf",
+        "//internal/conf/conftypes",
         "//internal/grpc/defaults",
         "//lib/errors",
         "//lib/pointers",
@@ -36,6 +37,8 @@ go_test(
     deps = [
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//lib/pointers",
+        "//schema",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],

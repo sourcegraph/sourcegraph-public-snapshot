@@ -311,6 +311,7 @@ ts_project(
         "src/settings/temporary/TemporarySettingsStorage.ts",
         "src/settings/temporary/diffMode.ts",
         "src/settings/temporary/index.ts",
+        "src/settings/temporary/localOverride.ts",
         "src/settings/temporary/migrateLocalStorageToTemporarySettings.ts",
         "src/settings/temporary/recentSearches.ts",
         "src/settings/temporary/searchSidebar.ts",

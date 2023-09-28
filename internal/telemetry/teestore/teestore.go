@@ -49,6 +49,8 @@ func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 	return wg.Wait()
 }
 
+// toEventLogs is the mechanism translating the new exportable telemetry events
+// into the legacy event_logs table for convenience.
 func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Event) []*database.Event {
 	sensitiveMetadataAllowlist := sensitivemetadataallowlist.AllowedEventTypes()
 
@@ -56,6 +58,7 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 	for i, e := range telemetryEvents {
 		// Note that all generated proto getters are nil-safe, so use those to
 		// get fields rather than accessing fields directly.
+		userID := e.GetUser().GetUserId()
 		eventLogs[i] = &database.Event{
 			ID:       0,   // not required on insert
 			InsertID: nil, // not required on insert
@@ -70,8 +73,15 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 			}(),
 
 			// User
-			UserID:          uint32(e.GetUser().GetUserId()),
-			AnonymousUserID: e.GetUser().GetAnonymousUserId(),
+			UserID: uint32(userID),
+			AnonymousUserID: func() string {
+				// One of userID, anonymousUserID must be set in event_logs
+				anonymous := e.GetUser().GetAnonymousUserId()
+				if userID == 0 && anonymous == "" {
+					return "unknown"
+				}
+				return anonymous
+			}(),
 
 			// GetParameters.Metadata
 			PublicArgument: func() json.RawMessage {

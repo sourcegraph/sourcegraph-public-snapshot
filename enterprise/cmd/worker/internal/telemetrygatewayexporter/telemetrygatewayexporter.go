@@ -78,6 +78,7 @@ func (t *telemetryGatewayExporter) Routines(initCtx context.Context, observation
 		initCtx,
 		observationCtx.Logger.Scoped("exporter", "exporter client"),
 		conf.DefaultClient(),
+		db.GlobalState(),
 		ConfigInst.ExportAddress,
 	)
 	if err != nil {

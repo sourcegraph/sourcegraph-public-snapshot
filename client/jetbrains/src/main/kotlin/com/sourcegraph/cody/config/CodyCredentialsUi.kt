@@ -10,7 +10,7 @@ import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-internal abstract class CodyCredentialsUi {
+abstract class CodyCredentialsUi {
   abstract fun getPreferredFocusableComponent(): JComponent?
 
   abstract fun getValidator(): Validator

@@ -272,6 +272,7 @@ commands:
         -e QDRANT__LOG_LEVEL=INFO \
         -e QDRANT__STORAGE__STORAGE_PATH=/data \
         -e QDRANT__STORAGE__SNAPSHOTS_PATH=/data \
+        -e QDRANT_INIT_FILE_PATH=/data/.qdrant-initialized \
         --entrypoint /usr/local/bin/qdrant \
         sourcegraph/qdrant:insiders
   worker:
