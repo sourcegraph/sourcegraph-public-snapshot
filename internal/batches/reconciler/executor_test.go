@@ -850,7 +850,6 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 				afterDone(bstore)
 				webhook, err := wstore.GetLast(ctx)
-
 				if err != nil {
 					t.Fatalf("could not get latest webhook job: %s", err)
 				}

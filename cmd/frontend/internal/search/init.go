@@ -29,10 +29,17 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	store := store.New(db, observationCtx)
-	svc := service.New(observationCtx, store)
+
+	uploadStore, err := uploadstore.New(ctx, observationCtx, uploadstore.ConfigInst)
+	if err != nil {
+		return err
+	}
+
+	svc := service.New(observationCtx, store, uploadStore)
 
 	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db, svc)
 	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(svc)
+	enterpriseServices.SearchJobsLogsHandler = httpapi.ServeSearchJobLogs(svc)
 
 	return nil
 }

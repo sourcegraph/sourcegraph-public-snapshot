@@ -4677,6 +4677,13 @@ CREATE SEQUENCE teams_id_seq
 
 ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
 
+CREATE TABLE telemetry_events_export_queue (
+    id text NOT NULL,
+    "timestamp" timestamp with time zone NOT NULL,
+    payload_pb bytea NOT NULL,
+    exported_at timestamp with time zone
+);
+
 CREATE TABLE temporary_settings (
     id integer NOT NULL,
     user_id integer NOT NULL,
@@ -5760,6 +5767,9 @@ ALTER TABLE ONLY team_members
 
 ALTER TABLE ONLY teams
     ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY telemetry_events_export_queue
+    ADD CONSTRAINT telemetry_events_export_queue_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_pkey PRIMARY KEY (id);

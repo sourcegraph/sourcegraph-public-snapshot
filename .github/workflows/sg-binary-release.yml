@@ -97,7 +97,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.20.8
 
       - name: Build and upload macOS
         if: startsWith(matrix.os, 'macos-') == true

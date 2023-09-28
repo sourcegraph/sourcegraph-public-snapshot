@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { DownloadFileButton } from '../../../../../components/DownloadFileButton'
+import { DownloadFileButton } from '../../../../../../../components/DownloadFileButton'
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
 import { type Insight, isLangStatsInsight } from '../../../../../core'
 import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'

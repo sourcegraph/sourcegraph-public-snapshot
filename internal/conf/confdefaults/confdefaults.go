@@ -77,7 +77,7 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 // between the bundled executor and the publicly-facing executor API.
 var AppInMemoryExecutorPassword = uuid.NewV4().String()
 
-// App is the default configuration for the Sourcegraph app (which is also a single Go static binary.)
+// App is the default configuration for the Cody app (which is also a single Go static binary.)
 var App = conftypes.RawUnified{
 	Site: `{
 	"auth.providers": [

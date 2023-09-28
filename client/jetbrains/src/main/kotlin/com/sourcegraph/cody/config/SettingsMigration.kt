@@ -9,14 +9,13 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupActivity
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.cody.auth.Account
+import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.AccessTokenStorage
 import com.sourcegraph.config.CodyApplicationService
 import com.sourcegraph.config.CodyProjectService
@@ -25,7 +24,7 @@ import com.sourcegraph.config.UserLevelConfig
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
-class SettingsMigration : StartupActivity, DumbAware {
+class SettingsMigration : Activity {
 
   private val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
 
@@ -122,7 +121,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       id: String = UUID.randomUUID().toString(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(CodyAccount.create(it.name, server, id), accessToken)
+      addAccount(CodyAccount.create(it.name, it.displayName, server, id), accessToken)
     }
   }
 
@@ -135,7 +134,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       id: String = Account.generateId(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      val codyAccount = CodyAccount.create(it.name, server, id)
+      val codyAccount = CodyAccount.create(it.name, it.displayName, server, id)
       addAccount(codyAccount, accessToken)
       if (CodyAuthenticationManager.getInstance().getActiveAccount(project) == null) {
         CodyAuthenticationManager.getInstance().setActiveAccount(project, codyAccount)
@@ -157,8 +156,8 @@ class SettingsMigration : StartupActivity, DumbAware {
                   requestExecutorFactory.create(accessToken), progressIndicator, server)
             }
           }
-          .successOnEdt(progressIndicator.modalityState) {
-            it.fold(onSuccess) {
+          .successOnEdt(progressIndicator.modalityState) { accountDetailsResult ->
+            accountDetailsResult.fold(onSuccess) {
               LOG.warn("Unable to load user details for '${server.url}' account", it)
             }
           }

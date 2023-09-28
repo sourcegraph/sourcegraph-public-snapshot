@@ -113,7 +113,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
 
     return (
         <Page>
-            <PageTitle title="Cody AI" />
+            <PageTitle title="Cody" />
             <PageHeader
                 description={
                     <>
@@ -126,7 +126,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
                         <div className={classNames('d-inline-flex align-items-center', styles.pageHeaderBreadcrumb)}>
-                            Cody AI
+                            Cody
                         </div>
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>

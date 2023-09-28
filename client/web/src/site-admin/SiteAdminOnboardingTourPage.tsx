@@ -1,5 +1,7 @@
-import { type FC, type PropsWithChildren, useState } from 'react'
+import { type FC, type PropsWithChildren, useState, useMemo } from 'react'
 
+import AJV from 'ajv'
+import addFormats from 'ajv-formats'
 import type {
     OnboardingTourConfigMutationResult,
     OnboardingTourConfigMutationVariables,
@@ -7,44 +9,38 @@ import type {
     OnboardingTourConfigVariables,
 } from 'src/graphql-operations'
 
-import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, H3 } from '@sourcegraph/wildcard'
+import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, Button, Alert } from '@sourcegraph/wildcard'
 
 import onboardingSchemaJSON from '../../../../schema/onboardingtour.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { MonacoSettingsEditor } from '../settings/MonacoSettingsEditor'
+import {
+    ONBOARDING_TOUR_MUTATION,
+    ONBOARDING_TOUR_QUERY,
+    authenticatedTasks,
+    defaultSnippets,
+    parseTourConfig,
+} from '../tour/data'
 
-interface Props extends TelemetryProps {}
-
-const ONBOARDING_TOUR_QUERY = gql`
-    query OnboardingTourConfig {
-        onboardingTourContent {
-            current {
-                id
-                value
-            }
-        }
-    }
-`
-
-const ONBOARDING_TOUR_MUTATION = gql`
-    mutation OnboardingTourConfigMutation($json: String!) {
-        updateOnboardingTourContent(input: $json) {
-            alwaysNil
-        }
-    }
-`
+import { TourPreview } from './SiteAdminOnboardingTourPage/Preview'
 
 const DEFAULT_VALUE = JSON.stringify(
     {
-        tasks: [],
+        tasks: authenticatedTasks,
+        defaultSnippets,
     },
     null,
-    4
+    2
 )
+
+const ajv = new AJV({ strict: false })
+addFormats(ajv)
+
+interface Props extends TelemetryProps {}
 
 export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
     const isLightTheme = useIsLightTheme()
@@ -55,12 +51,12 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
     )
     const existingConfiguration = data?.onboardingTourContent.current?.value
     const initialLoad = loading && !previousData
-    const dirty = !loading && value !== null && existingConfiguration !== value
-    const config = loading ? value ?? '' : value !== null ? value : existingConfiguration || DEFAULT_VALUE
+    const config = loading ? value ?? '' : value ?? existingConfiguration ?? DEFAULT_VALUE
+    const dirty = !loading && config !== existingConfiguration
 
     const discard = (): void => {
         if (dirty && window.confirm('Discard onboarding tour changes?')) {
-            setValue(null)
+            setValue(existingConfiguration ?? DEFAULT_VALUE)
         }
     }
 
@@ -76,6 +72,29 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
             void updateOnboardinTourConfig({ variables: { json: value } })
         }
     }
+
+    function reset(): void {
+        if (window.confirm('Reset to default tour configuration?')) {
+            setValue(DEFAULT_VALUE)
+        }
+    }
+
+    const [parsedConfig, validationError] = useMemo(() => {
+        if (!config) {
+            return [null, null]
+        }
+
+        try {
+            const parsedConfig = parseTourConfig(config)
+            const isValid = ajv.validate(onboardingSchemaJSON, parsedConfig)
+            if (!isValid) {
+                throw new Error(ajv.errorsText(ajv.errors, { dataVar: 'config' }))
+            }
+            return [parsedConfig, null]
+        } catch (error) {
+            return [null, error]
+        }
+    }, [config])
 
     return (
         <>
@@ -100,23 +119,28 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
                             height={450}
                         />
                         <SaveToolbar
-                            dirty={dirty}
+                            dirty={!validationError && dirty}
                             error={error || mutationError}
                             saving={saving}
                             onSave={save}
                             onDiscard={discard}
-                        />
+                        >
+                            <Button
+                                disabled={config === DEFAULT_VALUE}
+                                onClick={reset}
+                                className="ml-auto"
+                                variant="secondary"
+                            >
+                                Reset
+                            </Button>
+                        </SaveToolbar>
                     </>
                 )}
             </Container>
-            <H3 as="h4" className="mt-3">
-                Most common parameters reference
-            </H3>
-            <img
-                src="https://storage.googleapis.com/sourcegraph-assets/onboarding/onboarding-config-reference.svg"
-                alt="onboarding tour reference"
-                className="percy-hide w-100"
-            />
+            <div className="mt-3">
+                {validationError ? <Alert variant="danger">{validationError.message}</Alert> : null}
+                {parsedConfig && <TourPreview config={parsedConfig} />}
+            </div>
         </>
     )
 }

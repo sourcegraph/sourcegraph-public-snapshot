@@ -1216,18 +1216,19 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(frontend|sou
 
 ## frontend: email_delivery_failures
 
-<p class="subtitle">email delivery failures every 30 minutes</p>
+<p class="subtitle">email delivery failure rate over 30 minutes</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 1+ email delivery failures every 30 minutes
-- <span class="badge badge-critical">critical</span> frontend: 2+ email delivery failures every 30 minutes
+- <span class="badge badge-warning">warning</span> frontend: 0%+ email delivery failure rate over 30 minutes
+- <span class="badge badge-critical">critical</span> frontend: 10%+ email delivery failure rate over 30 minutes
 
 **Next steps**
 
 - Check your SMTP configuration in site configuration.
-- Check frontend logs for more detailed error messages.
+- Check `sourcegraph-frontend` logs for more detailed error messages.
 - Check your SMTP provider for more detailed error messages.
+- Use `sum(increase(src_email_send{success="false"}[30m]))` to check the raw count of delivery failures.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-email-delivery-failures).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1243,9 +1244,9 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(frontend|sou
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 1)`
+Generated query for warning alert: `max((sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100) > 0)`
 
-Generated query for critical alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 2)`
+Generated query for critical alert: `max((sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100) >= 10)`
 
 </details>
 

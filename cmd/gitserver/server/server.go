@@ -2105,7 +2105,7 @@ func (s *Server) doClone(
 
 	go readCloneProgress(s.DB, logger, redactor, lock, pr, repo)
 
-	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
+	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd).WithRedactorFunc(redactor.Redact), true, pw)
 	redactedOutput := redactor.Redact(string(output))
 	// best-effort update the output of the clone
 	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
@@ -2578,7 +2578,8 @@ func setHEAD(ctx context.Context, logger log.Logger, rcf *wrexec.RecordingComman
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runRemoteGitCommand(ctx, rcf.WrapWithRepoName(ctx, logger, repoName, cmd), true, nil)
+	r := urlredactor.New(remoteURL)
+	output, err := runRemoteGitCommand(ctx, rcf.WrapWithRepoName(ctx, logger, repoName, cmd).WithRedactorFunc(r.Redact), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

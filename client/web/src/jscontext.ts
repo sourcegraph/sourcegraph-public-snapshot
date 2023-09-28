@@ -115,7 +115,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
-    sourcegraphAppMode: boolean
+    codyAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -203,7 +203,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /**
      * Local git URL, it's used only to create a local external service
-     * in Sourcegraph App.
+     * in Cody App.
      */
     srcServeGitUrl: string
 

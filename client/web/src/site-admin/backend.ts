@@ -14,7 +14,6 @@ import {
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import type {
     AllConfigResult,
-    CheckMirrorRepositoryConnectionResult,
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
@@ -311,28 +310,12 @@ export const UPDATE_MIRROR_REPOSITORY = gql`
 `
 
 export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
-    mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
-        checkMirrorRepositoryConnection(repository: $repository, name: $name) {
+    mutation CheckMirrorRepositoryConnection($repository: ID!) {
+        checkMirrorRepositoryConnection(repository: $repository) {
             error
         }
     }
 `
-
-export function checkMirrorRepositoryConnection(
-    args:
-        | {
-              repository: Scalars['ID']
-          }
-        | {
-              name: string
-          }
-): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
-    return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(data => data.checkMirrorRepositoryConnection)
-    )
-}
 
 export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['ID'] }): Observable<void> {
     return requestGraphQL<ScheduleRepositoryPermissionsSyncResult, ScheduleRepositoryPermissionsSyncVariables>(

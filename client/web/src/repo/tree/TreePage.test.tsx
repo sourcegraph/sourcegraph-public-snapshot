@@ -116,7 +116,7 @@ describe('TreePage', () => {
                 </MockedProvider>
             )
 
-            expect(screen.getByText('Try Cody AI assist on this repo')).toBeVisible()
+            expect(screen.getByText('Try Cody on this repository')).toBeVisible()
             expect(screen.getByText('Click the Ask Cody button above and to the right of this banner')).toBeVisible()
             expect(
                 screen.getByText('Ask Cody a question like “Explain the structure of this repository”')

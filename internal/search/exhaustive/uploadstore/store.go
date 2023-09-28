@@ -59,7 +59,7 @@ func (c *Config) Load() {
 
 var ConfigInst = &Config{}
 
-// Store type alias avoids ugly important statements at call sites.
+// Store type alias avoids ugly import statements at call sites.
 type Store uploadstore.Store
 
 func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (Store, error) {

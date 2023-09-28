@@ -15,7 +15,7 @@ import styles from './CodeMonitoringGettingStarted.module.scss'
 
 interface CodeMonitoringGettingStartedProps {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 interface ExampleCodeMonitor {
@@ -67,7 +67,7 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ authenticatedUser, isSourcegraphApp }) => {
+> = ({ authenticatedUser, isCodyApp }) => {
     const isLightTheme = useIsLightTheme()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
@@ -77,7 +77,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
     }, [])
 
     let ctaBannerUrl = 'https://about.sourcegraph.com/get-started?t=enterprise'
-    if (isSourcegraphApp) {
+    if (isCodyApp) {
         ctaBannerUrl = addSourcegraphAppOutboundUrlParameters(ctaBannerUrl, 'monitoring')
     }
 
@@ -101,7 +101,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
                     </ul>
-                    {authenticatedUser && !isSourcegraphApp && (
+                    {authenticatedUser && !isCodyApp && (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
                             <Icon aria-hidden={true} className="mr-2" svgPath={mdiPlus} />
                             Create a code monitor
@@ -111,7 +111,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
             </Card>
 
             {isSourcegraphDotCom ||
-                (isSourcegraphApp && (
+                (isCodyApp && (
                     <CallToActionBanner variant="filled">
                         To monitor changes across your team's private repositories,{' '}
                         <Link
@@ -136,7 +136,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                                 <CardBody className="d-flex flex-column">
                                     <H3>{monitor.title}</H3>
                                     <Text className="text-muted flex-grow-1">{monitor.description}</Text>
-                                    {!isSourcegraphApp && (
+                                    {!isCodyApp && (
                                         <Link to={createCodeMonitorUrl(monitor)} onClick={logExampleMonitorClicked}>
                                             Create copy of monitor
                                         </Link>

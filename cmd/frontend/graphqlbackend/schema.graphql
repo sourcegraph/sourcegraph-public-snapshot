@@ -149,12 +149,7 @@ type Mutation {
         """
         The ID of the existing repository whose mirror to check.
         """
-        repository: ID
-        """
-        The name of a repository whose mirror to check. If the name is provided, the repository need not be added
-        to the site (but the site configuration must define a code host that knows how to handle the name).
-        """
-        name: String
+        repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
     """
     Schedule the mirror repository to be updated from its original source repository. Updating
@@ -3965,6 +3960,11 @@ type Repository implements Node & GenericSearchResultInterface {
     embeddingExists: Boolean!
 
     """
+    Returns true if command executed on the repo are recorded.
+    """
+    isRecordingEnabled: Boolean!
+
+    """
     Returns a list of all recorded commands for given repository.
     """
     recordedCommands(
@@ -4027,6 +4027,16 @@ type RecordedCommand {
     Path to command executable (git executable in most cases).
     """
     path: String!
+
+    """
+    Output of the command.
+    """
+    output: String!
+
+    """
+    Indicates whether the command execution was successful.
+    """
+    isSuccess: Boolean!
 }
 
 """
@@ -7227,7 +7237,7 @@ type Site implements SettingsSubject {
     allowEditExternalServicesWithFile: Boolean!
     """
     The number of external services distinguished by local repositories and remote repositories.
-    Local repository code host connections are only supported in Sourcegraph App.
+    Local repository code host connections are only supported in Cody App.
     """
     externalServicesCounts: ExternalServicesCounts!
     """
@@ -7454,7 +7464,7 @@ type CodyGatewayRateLimitStatus {
 
 """
 External services count information includes a count of services for remote code host connections and a count of services
-for local code host connections (local is only supported for Sourcegraph App).
+for local code host connections (local is only supported for Cody App).
 """
 type ExternalServicesCounts {
     """
@@ -7558,6 +7568,28 @@ type SiteConfiguration {
         """
         before: String
     ): SiteConfigurationChangeConnection
+    """
+    License information from license key. Available only to site-admins.
+    """
+    licenseInfo: LicenseInfo!
+}
+
+"""
+License information extracted from license key.
+"""
+type LicenseInfo {
+    """
+    Tags of the license.
+    """
+    tags: [String!]!
+    """
+    The number of users that can use the license.
+    """
+    userCount: Int!
+    """
+    The expiration date of the license.
+    """
+    expiresAt: DateTime!
 }
 
 """
@@ -8630,6 +8662,16 @@ type GitUpdatesDisabled {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when the disk threshold for gitserver is reached.
+"""
+type GitserverDiskThresholdReached {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message produced when there are no repositories and no sync jobs in process
 """
 type NoRepositoriesDetected {
@@ -8701,6 +8743,7 @@ union StatusMessage =
     | ExternalServiceSyncError
     | SyncError
     | IndexingProgress
+    | GitserverDiskThresholdReached
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -8786,7 +8829,7 @@ type EventLog {
     """
     The source of the event.
     """
-    source: EventSource!
+    source: String!
     """
     The additional argument information.
     """

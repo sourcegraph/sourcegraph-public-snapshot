@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -276,6 +275,17 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ 
 	return json.Marshal(codeInsightsUsage)
 }
 
+func getAndMarshalSearchJobsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSearchJobsUsageJSON")
+
+	searchJobsUsage, err := usagestats.GetSearchJobsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(searchJobsUsage)
+}
+
 func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
@@ -443,7 +453,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-// Create a ping body with limited fields, used in Sourcegraph App.
+// Create a ping body with limited fields, used in Cody App.
 func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
 	logFunc := logger.Debug
 
@@ -523,6 +533,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		SearchOnboarding:              []byte("{}"),
 		ExtensionsUsage:               []byte("{}"),
 		CodeInsightsUsage:             []byte("{}"),
+		SearchJobsUsage:               []byte("{}"),
 		CodeInsightsCriticalTelemetry: []byte("{}"),
 		CodeMonitoringUsage:           []byte("{}"),
 		NotebooksUsage:                []byte("{}"),
@@ -633,6 +644,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 	if err != nil {
 		logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+	}
+
+	r.SearchJobsUsage, err = getAndMarshalSearchJobsUsageJSON(ctx, db)
+	if err != nil {
+		logFuncWarn("getAndMarshalSearchJobsUsageJSON failed", log.Error(err))
 	}
 
 	r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
@@ -751,14 +767,13 @@ func authProviderTypes() []string {
 	return types
 }
 
-const defaultUpdateCheckBaseURL = "https://sourcegraph.com"
-const updateCheckPath = "/.api/updates"
-
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
 	kinds, err = db.ExternalServices().DistinctKinds(ctx)
 	return kinds, err
 }
+
+const defaultUpdateCheckURL = "https://pings.sourcegraph.com/updates"
 
 // updateCheckURL returns an URL to the update checks route on Sourcegraph.com or
 // if provided through "UPDATE_CHECK_BASE_URL", that specific endpoint instead, to
@@ -766,15 +781,18 @@ func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, 
 func updateCheckURL(logger log.Logger) string {
 	base := os.Getenv("UPDATE_CHECK_BASE_URL")
 	if base == "" {
-		base = defaultUpdateCheckBaseURL
+		return defaultUpdateCheckURL
 	}
+
 	u, err := url.Parse(base)
-	if err != nil || u.Scheme != "https" {
+	if err == nil && u.Scheme != "https" {
+		logger.Warn(`UPDATE_CHECK_BASE_URL scheme should be "https"`, log.String("UPDATE_CHECK_BASE_URL", base))
+		return defaultUpdateCheckURL
+	} else if err != nil {
 		logger.Error("Invalid UPDATE_CHECK_BASE_URL", log.String("UPDATE_CHECK_BASE_URL", base))
-		// Revert to the default value
-		return fmt.Sprintf("%s%s", defaultUpdateCheckBaseURL, updateCheckPath)
+		return defaultUpdateCheckURL
 	}
-	u.Path = updateCheckPath
+	u.Path = "/.api/updates" // Use the old path for backwards compatibility
 	return u.String()
 }
 
@@ -791,7 +809,7 @@ func check(logger log.Logger, db database.DB) {
 	defer cancel()
 
 	updateBodyFunc := updateBody
-	// In Sourcegraph App mode, use limited pings.
+	// In Cody App mode, use limited pings.
 	if deploy.IsApp() {
 		updateBodyFunc = limitedUpdateBody
 	}
@@ -841,7 +859,7 @@ func check(logger log.Logger, db database.DB) {
 			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
 		}
 
-		// Sourcegraph App: we always get ping responses back, as they may contain notification messages for us.
+		// Cody App: we always get ping responses back, as they may contain notification messages for us.
 		if deploy.IsApp() {
 			var response pingResponse
 			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {

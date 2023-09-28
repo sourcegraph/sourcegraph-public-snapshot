@@ -12,6 +12,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"go.opentelemetry.io/otel/attribute"
 
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -110,6 +112,7 @@ type EventLogStore interface {
 	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
 	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
 
+	// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
 	Insert(ctx context.Context, e *Event) error
 
 	// LatestPing returns the most recently recorded ping event.
@@ -216,6 +219,11 @@ func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 const EventLogsSourcegraphOperatorKey = "sourcegraph_operator"
 
 func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "eventLogs.BulkInsert",
+		attribute.Int("events", len(events)))
+	defer tr.End()
+
 	coalesce := func(v json.RawMessage) json.RawMessage {
 		if v != nil {
 			return v
