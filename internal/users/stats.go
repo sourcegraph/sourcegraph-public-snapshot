@@ -159,7 +159,7 @@ var (
 					user_roles.user_id = users.id
 				AND
 					roles.name = 'SITE_ADMINISTRATOR'
-			) AS site_admin,,
+			) AS site_admin,
             (SELECT COUNT(user_id) FROM user_external_accounts WHERE user_id=users.id AND service_type = 'scim') >= 1 AS scim_controlled,
 			COALESCE(stats.user_events_count, 0) AS events_count
 		FROM users
