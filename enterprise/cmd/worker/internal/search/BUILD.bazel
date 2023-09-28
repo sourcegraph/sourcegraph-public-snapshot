@@ -43,6 +43,7 @@ go_test(
     ],
     deps = [
         "//internal/actor",
+        "//internal/auth",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
