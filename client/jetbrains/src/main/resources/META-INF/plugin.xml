@@ -21,12 +21,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectSettings"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.config.notification.AccountSettingChangeListener"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.config.notification.CodySettingChangeListener"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
         <httpRequestHandler implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
 
         <projectConfigurable
@@ -52,9 +48,6 @@
         />
 
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
-        <applicationService serviceImplementation="com.sourcegraph.cody.api.SourcegraphApiRequestExecutor$Factory"/>
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingCodyUserAvatarLoader"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectActiveAccountHolder"/>
         <notificationGroup id="cody.auth" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
@@ -69,10 +62,8 @@
             anchor="right"
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
 
         <!-- autocomplete -->
-        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutocompleteManager"/>
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
@@ -80,7 +71,6 @@
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
                                 implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>
-        <applicationService serviceImplementation="com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService"/>
     </extensions>
 
     <applicationListeners>
@@ -151,18 +141,18 @@
 
         <!-- autocomplete -->
         <action id="cody.acceptAutocompleteAction"
-                class="com.sourcegraph.cody.autocomplete.AcceptCodyAutocompleteAction">
+                class="com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction">
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
             <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>
 
-        <action id="cody.disposeInlays" class="com.sourcegraph.cody.autocomplete.DisposeInlaysAction">
+        <action id="cody.disposeInlays" class="com.sourcegraph.cody.autocomplete.action.DisposeInlaysAction">
             <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
             <override-text place="MainMenu" text="Hide Completions"/>
         </action>
 
         <action id="cody.triggerAutocomplete"
-                class="com.sourcegraph.cody.autocomplete.TriggerAutocompleteAction">
+                class="com.sourcegraph.cody.autocomplete.action.TriggerAutocompleteAction">
             <keyboard-shortcut first-keystroke="alt BACK_SLASH" keymap="$default"/>
             <override-text place="MainMenu" text="Autocomplete"/>
         </action>

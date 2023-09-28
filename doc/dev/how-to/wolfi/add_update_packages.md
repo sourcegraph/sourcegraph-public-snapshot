@@ -44,7 +44,9 @@ It's common to need to update a package to the most recent release in order to p
 
 5. After validating the new package and base images, merge to `main`. This will add the updated packages to the [Sourcegraph package repository](#sourcegraph-package-repository) and push the updated base images to Dockerhub.
 
-6. Check out main, create a new branch, and run `sg wolfi update-hashes <image-name>` locally to update the base images digests in `dev/oci_deps.bzl`. Create another PR and merge to main. This ensures that the updated base images are used when building final images.
+6. Wait until the Buildkite pipeline for `main` has run - the next step depends on the images that this pipeline pushes to Dockerhub.
+
+7. Check out main, create a new branch, and run `sg wolfi update-hashes <image-name>` locally to update the base images digests in `dev/oci_deps.bzl`. Create another PR and merge to main. This ensures that the updated base images are used when building final images.
 
 ### Create a new package
 
@@ -60,6 +62,17 @@ When creating a new package, the rough workflow is:
 - Iterate by [building](#building-packages) the package locally using `sg wolfi package <package-name>`.
 - [Test your new package](#testing-packages)
 - Once confident the package works as expected, create a PR and merge to `main` to add it to the Sourcegraph package repository.
+
+### Downgrade a package
+
+Downgrading a package version is less common but occasionally needed, for example to address a regression or security issue in the latest version. The workflow is similar to updating a package:
+
+- Update `wolfi-images/<image>.yaml` to pin an older package version. For example: `helm=3.11.3-r1` or `p4-fusion=1.12-r6@sourcegraph`
+  - Be sure to specifiy the epoch (e.g. `-r6`) otherwise apko will default to `r0` which may be a very old version.
+- Optionally, build the image locally with `sg wolfi image <image>` and check the logs to ensure the expected version is installed.
+- Continue from step 4 of [Update an existing packaged dependency](#update-an-existing-packaged-dependency) to merge your changes.
+
+It is not necessary to change the package version in `wolfi-packages/<package>.yaml` when downgrading, as all previously-built versions of the package are available in the main Sourcegraph package repository.
 
 ## Packaging Tips
 

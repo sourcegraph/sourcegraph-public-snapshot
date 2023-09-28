@@ -58,11 +58,12 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	//   5. cris, who has a non-SOAP external account and is not a site admin (will not be changed)
 	//   6. cami, who is an expired SOAP user and is a service account (will not be changed)
 	//   7. dani, who has no external accounts and is not a site admin (will not be changed)
+	//   8. alex, who has a very old soft-deleted SOAP account and is also currently a SOAP user (will not be changed)
 	// In all of the above, SOAP users are also made site admins.
 	// The lists below indicate who will and will not be deleted or otherwise
 	// modified.
-	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami", "dani"}
-	wantAdmins := []string{"logan", "jordan", "cami"}
+	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami", "dani", "alex"}
+	wantAdmins := []string{"logan", "jordan", "cami", "alex"}
 	wantNonSOAPUsers := []string{"logan", "morgan", "cris", "dani"}
 
 	_, err := db.Users().Create(
@@ -183,6 +184,40 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		EmailIsVerified: true,
 	})
 	require.NoError(t, err)
+
+	alex, err := db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		database.NewUser{
+			Username: "alex",
+		},
+		extsvc.AccountSpec{
+			ServiceType: auth.SourcegraphOperatorProviderType,
+			ServiceID:   "https://sourcegraph.com",
+			ClientID:    "soap",
+			AccountID:   "alex",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
+	// pretend it was made long ago
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-999*time.Minute), alex.ID)
+	require.NoError(t, err)
+	// soft delete alex's external account
+	require.NoError(t, db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+		UserID: alex.ID,
+	}))
+	// make another SOAP account, this one isn't expired
+	require.NoError(t, db.UserExternalAccounts().AssociateUserAndSave(ctx, alex.ID,
+		extsvc.AccountSpec{
+			ServiceType: auth.SourcegraphOperatorProviderType,
+			ServiceID:   "https://sourcegraph.com",
+			ClientID:    "soap",
+			AccountID:   "alex2",
+		},
+		extsvc.AccountData{}))
+	// make alex and admin, alex shouldn't be changed
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, alex.ID, true))
 
 	t.Run("handle with cleanup", func(t *testing.T) {
 		err = handler.Handle(ctx)
