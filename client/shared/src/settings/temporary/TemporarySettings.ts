@@ -122,6 +122,7 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'codeintel.badge.used': null,
     'codeintel.referencePanel.redesign.ctaDismissed': null,
     'onboarding.quickStartTour': null,
+    'onboarding.userconfig': null,
     'characterKeyShortcuts.enabled': null,
     'search.homepage.queryExamplesContent': null,
     'search.results.collapseSmartSearch': null,
