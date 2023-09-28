@@ -33,7 +33,7 @@ go_library(
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1",
     visibility = [
-        "//cmd/gitserver/server:__pkg__",
+        "//cmd/gitserver/internal:__pkg__",
         "//cmd/gitserver/shared:__pkg__",
         "//internal/api:__pkg__",
         "//internal/extsvc/gitolite:__pkg__",
