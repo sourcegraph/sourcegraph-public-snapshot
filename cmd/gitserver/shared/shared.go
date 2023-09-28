@@ -18,7 +18,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 
-	gitserverinternal "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -74,7 +74,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return errors.Wrap(err, "creating SRC_REPOS_DIR")
 		}
 		// Ensure the Perforce Dir exists.
-		p4Home := filepath.Join(config.ReposDir, gitserverinternal.P4HomeName)
+		p4Home := filepath.Join(config.ReposDir, server.P4HomeName)
 		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
 			return errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
 		}
@@ -116,16 +116,16 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
-	cloneQueue := gitserverinternal.NewCloneQueue(observationCtx, list.New())
-	locker := gitserverinternal.NewRepositoryLocker()
-	gitserver := gitserverinternal.Server{
+	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
+	locker := server.NewRepositoryLocker()
+	gitserver := server.Server{
 		Logger:         logger,
 		ObservationCtx: observationCtx,
 		ReposDir:       config.ReposDir,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
-		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (gitserverinternal.VCSSyncer, error) {
+		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, &newVCSSyncerOpts{
 				externalServiceStore:    db.ExternalServices(),
 				repoStore:               db.Repos(),
@@ -180,7 +180,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			Handler: handler,
 		}),
 		gitserver.NewClonePipeline(logger, cloneQueue),
-		gitserverinternal.NewRepoStateSyncer(
+		server.NewRepoStateSyncer(
 			ctx,
 			logger,
 			db,
@@ -199,9 +199,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	} else {
 		routines = append(
 			routines,
-			gitserverinternal.NewJanitor(
+			server.NewJanitor(
 				ctx,
-				gitserverinternal.JanitorConfig{
+				server.JanitorConfig{
 					ShardID:            gitserver.Hostname,
 					JanitorInterval:    config.JanitorInterval,
 					ReposDir:           config.ReposDir,
@@ -246,7 +246,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 // makeGRPCServer creates a new *grpc.Server for the gitserver endpoints and registers
 // it with methods on the given server.
-func makeGRPCServer(logger log.Logger, s *gitserverinternal.Server) *grpc.Server {
+func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	configurationWatcher := conf.DefaultClient()
 
 	var additionalServerOptions []grpc.ServerOption
@@ -267,16 +267,16 @@ func makeGRPCServer(logger log.Logger, s *gitserverinternal.Server) *grpc.Server
 	}
 
 	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
-	proto.RegisterGitserverServiceServer(grpcServer, &gitserverinternal.GRPCServer{
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
 		Server: s,
 	})
 
 	return grpcServer
 }
 
-func configureFusionClient(conn schema.PerforceConnection) gitserverinternal.FusionConfig {
+func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	// Set up default settings first
-	fc := gitserverinternal.FusionConfig{
+	fc := server.FusionConfig{
 		Enabled:             false,
 		Client:              conn.P4Client,
 		LookAhead:           2000,
@@ -383,7 +383,7 @@ type newVCSSyncerOpts struct {
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
-func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinternal.VCSSyncer, error) {
+func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -421,13 +421,13 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinterna
 			return nil, err
 		}
 
-		p4Home := filepath.Join(opts.reposDir, gitserverinternal.P4HomeName)
+		p4Home := filepath.Join(opts.reposDir, server.P4HomeName)
 		// Ensure the directory exists
 		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
 			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
 		}
 
-		return &gitserverinternal.PerforceDepotSyncer{
+		return &server.PerforceDepotSyncer{
 			MaxChanges:   int(c.MaxChanges),
 			Client:       c.P4Client,
 			FusionConfig: configureFusionClient(c),
@@ -438,7 +438,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinterna
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return gitserverinternal.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
+		return server.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -449,7 +449,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinterna
 		if err != nil {
 			return nil, err
 		}
-		return gitserverinternal.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
+		return server.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -457,7 +457,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinterna
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return gitserverinternal.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
+		return server.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
 		urn, err := extractOptions(&c)
@@ -468,7 +468,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinterna
 		if err != nil {
 			return nil, err
 		}
-		return gitserverinternal.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
+		return server.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)
@@ -479,7 +479,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinterna
 		if err != nil {
 			return nil, err
 		}
-		return gitserverinternal.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
+		return server.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
 		urn, err := extractOptions(&c)
@@ -490,9 +490,9 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (gitserverinterna
 		if err != nil {
 			return nil, err
 		}
-		return gitserverinternal.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
+		return server.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
 	}
-	return gitserverinternal.NewGitRepoSyncer(opts.recordingCommandFactory), nil
+	return server.NewGitRepoSyncer(opts.recordingCommandFactory), nil
 }
 
 // methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
@@ -593,8 +593,8 @@ func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
 	// Additionally, we create directories with the prefix .tmp-old which are
 	// asynchronously removed. We do not remove in place since it may be a
 	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
-	dir := filepath.Join(reposDir, gitserverinternal.TempDirName) // .tmp
-	oldPrefix := gitserverinternal.TempDirName + "-old"
+	dir := filepath.Join(reposDir, server.TempDirName) // .tmp
+	oldPrefix := server.TempDirName + "-old"
 	if _, err := os.Stat(dir); err == nil {
 		// Rename the current tmp file, so we can asynchronously remove it. Use
 		// a consistent pattern so if we get interrupted, we can clean it
@@ -605,7 +605,7 @@ func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
 		}
 		// oldTmp dir exists, so we need to use a child of oldTmp as the
 		// rename target.
-		if err := os.Rename(dir, filepath.Join(oldTmp, gitserverinternal.TempDirName)); err != nil {
+		if err := os.Rename(dir, filepath.Join(oldTmp, server.TempDirName)); err != nil {
 			return "", err
 		}
 	}

@@ -1,4 +1,4 @@
-package server
+package internal
 
 import (
 	"bytes"

@@ -1,5 +1,5 @@
-// Package server implements the gitserver service.
-package server
+// Package internal implements the gitserver service.
+package internal
 
 import (
 	"bufio"
