@@ -87,7 +87,6 @@ extend type Query {
         """
         state: String
     ): RepoEmbeddingJobsConnection!
-
 }
 
 extend type Mutation {
