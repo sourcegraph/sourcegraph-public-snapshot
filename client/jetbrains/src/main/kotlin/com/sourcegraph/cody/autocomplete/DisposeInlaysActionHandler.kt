@@ -6,5 +6,5 @@ import com.intellij.openapi.editor.Editor
 
 class DisposeInlaysActionHandler : AutocompleteActionHandler() {
   override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) =
-      CodyAutocompleteManager.getInstance().disposeInlays(editor)
+      CodyAutocompleteManager.instance.disposeInlays(editor)
 }

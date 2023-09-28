@@ -39,7 +39,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
 
             // clear autocomplete suggestions if freshly disabled
             if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
-              CodyAutocompleteManager.getInstance().clearAutocompleteSuggestionsForAllProjects()
+              CodyAutocompleteManager.instance.clearAutocompleteSuggestionsForAllProjects()
             }
 
             // Disable/enable the Cody tool window depending on the setting
@@ -74,8 +74,8 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
                 context.newBlacklistedAutocompleteLanguageIds.diff(
                     context.oldBlacklistedAutocompleteLanguageIds)
             if (languageIdsToClear.isNotEmpty())
-                CodyAutocompleteManager.getInstance()
-                    .clearAutocompleteSuggestionsForLanguageIds(languageIdsToClear)
+                CodyAutocompleteManager.instance.clearAutocompleteSuggestionsForLanguageIds(
+                    languageIdsToClear)
 
             if (context.oldShouldAcceptNonTrustedCertificatesAutomatically !=
                 context.newShouldAcceptNonTrustedCertificatesAutomatically)

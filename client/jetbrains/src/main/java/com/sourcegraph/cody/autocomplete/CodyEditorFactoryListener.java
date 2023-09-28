@@ -73,7 +73,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
         return;
       }
       informAgentAboutEditorChange(e.getEditor());
-      CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
+      CodyAutocompleteManager suggestions = CodyAutocompleteManager.Companion.getInstance();
       Editor editor = e.getEditor();
       if (CodyEditorUtil.isEditorValidForAutocomplete(editor)
           && CodyEditorFactoryListener.isSelectedEditor(editor)) {
@@ -98,7 +98,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       if (CodyEditorUtil.isEditorValidForAutocomplete(editor)
           && ConfigUtil.isCodyEnabled()
           && CodyEditorFactoryListener.isSelectedEditor(editor))
-        CodyAutocompleteManager.getInstance().clearAutocompleteSuggestions(editor);
+        CodyAutocompleteManager.Companion.getInstance().clearAutocompleteSuggestions(editor);
     }
   }
 
@@ -113,7 +113,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       if (!CodyEditorFactoryListener.isSelectedEditor(this.editor)) {
         return;
       }
-      CodyAutocompleteManager completions = CodyAutocompleteManager.getInstance();
+      CodyAutocompleteManager completions = CodyAutocompleteManager.Companion.getInstance();
       completions.clearAutocompleteSuggestions(this.editor);
       if (CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(this.editor)
           && CodyEditorUtil.isEditorValidForAutocomplete(this.editor)

@@ -9,7 +9,7 @@ import com.sourcegraph.config.ConfigUtil
 class CodyDisableAutocompleteAction : DumbAwareAction() {
   override fun actionPerformed(e: AnActionEvent) {
     CodyApplicationSettings.getInstance().isCodyAutocompleteEnabled = false
-    CodyAutocompleteManager.getInstance().clearAutocompleteSuggestionsForAllProjects()
+    CodyAutocompleteManager.instance.clearAutocompleteSuggestionsForAllProjects()
   }
 
   override fun update(e: AnActionEvent) {

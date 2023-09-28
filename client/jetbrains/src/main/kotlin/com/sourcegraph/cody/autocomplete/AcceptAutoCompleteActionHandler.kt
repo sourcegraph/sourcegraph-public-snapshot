@@ -55,7 +55,7 @@ class AcceptAutoCompleteActionHandler : AutocompleteActionHandler() {
     val server = CodyAgent.getServer(project)
     val isAgentCompletion = server != null
     if (isAgentCompletion) {
-      val telemetry = CodyAutocompleteManager.getInstance().currentAutocompleteTelemetry
+      val telemetry = CodyAutocompleteManager.instance.currentAutocompleteTelemetry
       GraphQlLogger.logAutocompleteAcceptedEvent(project, telemetry?.params())
       server!!.autocompleteClearLastCandidate()
       acceptAgentAutocomplete(editor, maybeCaret)
