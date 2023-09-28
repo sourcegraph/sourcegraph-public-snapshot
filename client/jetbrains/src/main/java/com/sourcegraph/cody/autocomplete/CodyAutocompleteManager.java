@@ -114,7 +114,7 @@ public class CodyAutocompleteManager {
     if (editor.isDisposed()) {
       return;
     }
-    InlayModelUtils.getAllInlaysForEditor(editor).stream()
+    InlayModelUtil.getAllInlaysForEditor(editor).stream()
         .filter(inlay -> inlay.getRenderer() instanceof CodyAutocompleteElementRenderer)
         .forEach(Disposer::dispose);
   }

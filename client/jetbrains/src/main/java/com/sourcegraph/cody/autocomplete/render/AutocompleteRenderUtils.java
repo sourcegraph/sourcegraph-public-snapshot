@@ -5,7 +5,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.ui.JBColor;
-import com.sourcegraph.cody.autocomplete.InlayModelUtils;
+import com.sourcegraph.cody.autocomplete.InlayModelUtil;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +43,7 @@ public class AutocompleteRenderUtils {
   }
 
   public static void rerenderAllAutocompleteInlays(Editor editor) {
-    InlayModelUtils.getAllInlaysForEditor(editor).stream()
+    InlayModelUtil.getAllInlaysForEditor(editor).stream()
         .filter(inlay -> inlay.getRenderer() instanceof CodyAutocompleteElementRenderer)
         .forEach(
             inlayAutocomplete -> {

@@ -3,7 +3,6 @@ package com.sourcegraph.cody.autocomplete
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgent
@@ -33,10 +32,9 @@ open class AutocompleteActionHandler : EditorActionHandler() {
    * autocomplete ` *
    */
   protected fun getAgentAutocompleteItem(caret: Caret): InlineAutocompleteItem? {
-    return InlayModelUtils.getAllInlaysForEditor(caret.editor)
-        .filter { r: Inlay<*> -> r.renderer is CodyAutocompleteElementRenderer }
-        .firstNotNullOfOrNull { r: Inlay<*> ->
-          (r.renderer as CodyAutocompleteElementRenderer).completionItem
-        }
+    return InlayModelUtil.getAllInlaysForEditor(caret.editor)
+        .map { it.renderer }
+        .filterIsInstance<CodyAutocompleteElementRenderer>()
+        .firstNotNullOfOrNull { it.completionItem }
   }
 }
