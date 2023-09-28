@@ -338,7 +338,8 @@ class CodyAutocompleteManager {
     val instance: CodyAutocompleteManager
       get() = ApplicationManager.getApplication().getService(CodyAutocompleteManager::class.java)
 
-    private fun diff(a: String, b: String): Patch<String> =
+    @JvmStatic
+    fun diff(a: String, b: String): Patch<String> =
         DiffUtils.diff(characterList(a), characterList(b))
 
     private fun characterList(value: String): List<String> =
