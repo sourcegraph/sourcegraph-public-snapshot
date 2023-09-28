@@ -340,6 +340,10 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 // getRemoteURLFunc returns a remote URL for the given repo, if any external service
 // connections reference it. The first external service mentioned in repo.Sources
 // will be used to construct the URL and get credentials.
+// Since r.Sources is a map, a random referencing service will be used, so this
+// function is not idempotent.
+// This allows us to try different tokens, to maximize the chances of a repo eventually
+// cloning successfully.
 func getRemoteURLFunc(
 	ctx context.Context,
 	logger log.Logger,
@@ -357,15 +361,6 @@ func getRemoteURLFunc(
 		svc, err := db.ExternalServices().GetByID(ctx, info.ExternalServiceID())
 		if err != nil {
 			return "", err
-		}
-
-		if svc.CloudDefault && r.Private {
-			// We won't be able to use this remote URL, so we should skip it. This can happen
-			// if a repo moves from being public to private while belonging to both a cloud
-			// default external service and another external service with a token that has
-			// access to the private repo.
-			// TODO: This should not be possible anymore, can we remove this check?
-			continue
 		}
 
 		return repos.EncryptableCloneURL(ctx, logger.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
