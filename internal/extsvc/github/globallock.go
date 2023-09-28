@@ -87,7 +87,11 @@ func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *ht
 	if didGetLock {
 		if _, err := lock.UnlockContext(context.Background()); err != nil {
 			metricFailedUnlockRequestsGauge.Inc()
-			logger.Warn("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+			if errors.HasType(err, &redsync.ErrTaken{}) {
+				logger.Warn("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+			} else {
+				logger.Error("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+			}
 		}
 	}
 
