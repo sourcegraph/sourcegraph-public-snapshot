@@ -18,6 +18,7 @@ import com.sourcegraph.config.ConfigUtil
 import java.io.File
 import java.io.IOException
 import java.io.PrintWriter
+import java.net.URI
 import java.nio.file.*
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -68,7 +69,7 @@ class CodyAgent(private val project: Project) : Disposable {
                       ClientInfo(
                           name = "JetBrains",
                           version = ConfigUtil.getPluginVersion(),
-                          workspaceRootPath = ConfigUtil.getWorkspaceRoot(project),
+                          workspaceRootUri = URI("file://${ConfigUtil.getWorkspaceRoot(project)}"),
                           extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
                   .get()
           logger.info("connected to Cody agent " + info.name)
