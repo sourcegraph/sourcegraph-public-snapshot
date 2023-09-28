@@ -8,6 +8,15 @@ Search Jobs allows you to run search queries across your organization's codebase
 
 With Search Jobs, you can start a search, let it run in the background, and then download the CSV file results from the Search Jobs UI when it's done. Site administrators can **enable** or **disable** the Search Jobs feature, making it accessible to all users on the Sourcegaph instance.
 
+## Enable Search Jobs
+
+To enable Search Jobs:
+
+- Login to your Sourcegraph instance and go to the site admin
+- Next, click the site configuration
+- From here, you'll see `experimentalFeatures`
+- Set `searchJobs` to `true` and then refresh the page
+
 ## Using Search Jobs
 
 To use Search Jobs, you need to:
@@ -24,11 +33,12 @@ To use Search Jobs, you need to:
 
 ## Limitations
 
-The Search Job feature is not supported on queries that have:
+Search Jobs supports queries of `type:file` and it automatically appends this to the search query. Other result types (like `diff`, `commit`, `path`, and `repo`) will be ignored. However, there are some limitations on the supported query syntax. These include:
 
-- `OR` operator
+- `OR`, `AND` operators
 - `has.content` or `has.file` predicates
-- `*.` regexp search
+- `.*` regexp search
 - Multiple `rev` filters
+- Queries with `index: filter`
 
 >NOTE: Sourcegraph already offers an [Exhaustive Search](./../how-to/exhaustive.md) with the `count:all` operator. However, there are certain limitations when generating results within your codebase.
