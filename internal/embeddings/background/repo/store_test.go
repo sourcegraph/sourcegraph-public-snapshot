@@ -157,12 +157,22 @@ func TestRescheduleAll(t *testing.T) {
 	err = repoStore.Create(ctx, repo2)
 	require.NoError(t, err)
 
+	repo3 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph3", URI: "github.com/sourcegraph/sourcegraph3", ExternalRepo: api.ExternalRepoSpec{}}
+	err = repoStore.Create(ctx, repo3)
+	require.NoError(t, err)
+
 	// Insert three completed jobs from two repos
 	_, err = db.Handle().ExecContext(ctx, fmt.Sprintf(
-		"insert into repo_embedding_jobs (repo_id, revision, state) values (%d, 'rev1', 'completed'), (%d, 'rev2', 'completed'), (%d, 'rev3', 'completed')",
+		`insert into repo_embedding_jobs (repo_id, revision, state) values
+			(%d, 'rev1', 'completed'),
+			(%d, 'rev2', 'completed'),
+			(%d, 'rev3', 'completed'),
+			(%d, 'rev4', 'failed')
+		`,
 		repo1.ID,
 		repo1.ID,
 		repo2.ID,
+		repo3.ID,
 	))
 	require.NoError(t, err)
 
@@ -172,7 +182,7 @@ func TestRescheduleAll(t *testing.T) {
 
 	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{}})
 	require.NoError(t, err)
-	require.Len(t, jobs, 5)
+	require.Len(t, jobs, 6) // 4 jobs to start, added 2
 }
 
 func TestCancelRepoEmbeddingJob(t *testing.T) {
