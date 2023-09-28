@@ -291,7 +291,6 @@ type azure struct {
 
 type openaiChoiceDelta struct {
 	Content string `json:"content"`
-	Text    string `json:"text"`
 }
 
 type openaiChoice struct {
