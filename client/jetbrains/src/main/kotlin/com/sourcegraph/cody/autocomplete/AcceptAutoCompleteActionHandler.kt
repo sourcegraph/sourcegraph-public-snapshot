@@ -54,11 +54,10 @@ class AcceptAutoCompleteActionHandler : AutocompleteActionHandler() {
   override fun doExecute(editor: Editor, maybeCaret: Caret?, dataContext: DataContext?) {
     val project = editor.project ?: return
     val server = CodyAgent.getServer(project)
-    val isAgentCompletion = server != null
-    if (isAgentCompletion) {
+    if (server != null) {
       val telemetry = CodyAutocompleteManager.instance.currentAutocompleteTelemetry
       GraphQlLogger.logAutocompleteAcceptedEvent(project, telemetry?.params())
-      server!!.autocompleteClearLastCandidate()
+      server.autocompleteClearLastCandidate()
       acceptAgentAutocomplete(editor, maybeCaret)
     } else {
       val caret = maybeCaret ?: getSingleCaret(editor) ?: return

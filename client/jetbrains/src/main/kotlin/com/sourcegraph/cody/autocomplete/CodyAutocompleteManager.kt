@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.autocomplete
 
 import com.intellij.codeInsight.lookup.LookupManager
-import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.components.Service
@@ -44,7 +43,6 @@ import com.sourcegraph.utils.CodyEditorUtil.isImplicitAutocompleteEnabledForEdit
 import difflib.Delta
 import difflib.DiffUtils
 import difflib.Patch
-import java.util.*
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
@@ -68,17 +66,17 @@ class CodyAutocompleteManager {
   @RequiresEdt
   fun clearAutocompleteSuggestions(editor: Editor) {
     // Log "suggested" event and clear current autocompletion
-    Optional.ofNullable(editor.project).ifPresent { p: Project? ->
-      if (currentAutocompleteTelemetry != null &&
-          currentAutocompleteTelemetry!!.getStatus() !=
-              AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
-        currentAutocompleteTelemetry!!.markCompletionHidden()
-        GraphQlLogger.logAutocompleteSuggestedEvent(
-            p!!,
-            currentAutocompleteTelemetry!!.latencyMs,
-            currentAutocompleteTelemetry!!.displayDurationMs,
-            currentAutocompleteTelemetry!!.params())
-        currentAutocompleteTelemetry = null
+    editor.project?.let { p ->
+      currentAutocompleteTelemetry?.let { autocompleteTelemetry ->
+        if (autocompleteTelemetry.status != AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
+          autocompleteTelemetry.markCompletionHidden()
+          GraphQlLogger.logAutocompleteSuggestedEvent(
+              p,
+              autocompleteTelemetry.latencyMs,
+              autocompleteTelemetry.displayDurationMs,
+              autocompleteTelemetry.params())
+          currentAutocompleteTelemetry = null
+        }
       }
     }
 
@@ -99,21 +97,14 @@ class CodyAutocompleteManager {
   }
 
   @RequiresEdt
-  fun clearAutocompleteSuggestionsForLanguageIds(languageIds: List<String?>) {
-    getAllOpenEditors()
-        .stream()
-        .filter { e: Editor? ->
-          Optional.ofNullable(getLanguage(e!!))
-              .map { l: Language -> languageIds.contains(l.id) }
-              .orElse(false)
-        }
-        .forEach { editor: Editor -> clearAutocompleteSuggestions(editor) }
-  }
+  fun clearAutocompleteSuggestionsForLanguageIds(languageIds: List<String?>) =
+      getAllOpenEditors()
+          .filter { e -> getLanguage(e)?.let { l -> languageIds.contains(l.id) } ?: false }
+          .forEach { clearAutocompleteSuggestions(it) }
 
   @RequiresEdt
-  fun clearAutocompleteSuggestionsForLanguageId(languageId: String) {
-    clearAutocompleteSuggestionsForLanguageIds(listOf(languageId))
-  }
+  fun clearAutocompleteSuggestionsForLanguageId(languageId: String) =
+      clearAutocompleteSuggestionsForLanguageIds(listOf(languageId))
 
   @RequiresEdt
   fun disposeInlays(editor: Editor) {
@@ -121,7 +112,6 @@ class CodyAutocompleteManager {
       return
     }
     getAllInlaysForEditor(editor)
-        .stream()
         .filter { inlay: Inlay<*> -> inlay.renderer is CodyAutocompleteElementRenderer }
         .forEach { disposable: Inlay<*>? -> Disposer.dispose(disposable!!) }
   }
@@ -236,17 +226,16 @@ class CodyAutocompleteManager {
       return
     }
     val inlayModel = editor.inlayModel
-    val maybeItem = result.items.stream().findFirst()
-    if (maybeItem.isEmpty) {
-      if (triggerKind == InlineCompletionTriggerKind.INVOKE) {
-        logger.warn("explicit autocomplete returned empty suggestions")
-        // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
-        // We don't do anything now because it's unclear what would be the most idiomatic
-        // IntelliJ API to use.
-      }
-      return
-    }
-    val item = maybeItem.get()
+    val item =
+        result.items.firstOrNull()
+            ?: run {
+              // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
+              // We don't do anything now because it's unclear what would be the most idiomatic
+              // IntelliJ API to use.
+              if (triggerKind == InlineCompletionTriggerKind.INVOKE)
+                  logger.warn("autocomplete returned empty suggestions")
+              return
+            }
     ApplicationManager.getApplication().invokeLater {
       if (cancellationToken.isCancelled) {
         return@invokeLater
