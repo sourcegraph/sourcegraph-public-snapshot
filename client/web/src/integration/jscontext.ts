@@ -56,7 +56,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     siteID,
     siteGQLID,
     sourcegraphDotComMode: false,
-    sourcegraphAppMode: false,
+    codyAppMode: false,
     userAgentIsBot: false,
     version: '0.0.0',
     xhrHeaders: {},

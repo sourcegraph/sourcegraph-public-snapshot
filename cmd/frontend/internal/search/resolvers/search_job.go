@@ -25,10 +25,10 @@ func UnmarshalSearchJobID(id graphql.ID) (int64, error) {
 	return v, err
 }
 
-var _ graphqlbackend.SearchJobResolver = searchJobResolver{}
+var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
 
-func newSearchJobResolver(db database.DB, svc *service.Service, job *types.ExhaustiveSearchJob) searchJobResolver {
-	return searchJobResolver{Job: job, db: db, svc: svc}
+func newSearchJobResolver(db database.DB, svc *service.Service, job *types.ExhaustiveSearchJob) *searchJobResolver {
+	return &searchJobResolver{Job: job, db: db, svc: svc}
 }
 
 // You should call newSearchJobResolver to construct an instance.
@@ -38,19 +38,23 @@ type searchJobResolver struct {
 	svc *service.Service
 }
 
-func (r searchJobResolver) ID() graphql.ID {
+func (r *searchJobResolver) ID() graphql.ID {
 	return relay.MarshalID(searchJobIDKind, r.Job.ID)
 }
 
-func (r searchJobResolver) Query() string {
+func (r *searchJobResolver) Query() string {
 	return r.Job.Query
 }
 
-func (r searchJobResolver) State() string {
+func (r *searchJobResolver) State(ctx context.Context) string {
+	// We don't set the AggState during job creation
+	if r.Job.AggState != "" {
+		return r.Job.AggState.ToGraphQL()
+	}
 	return r.Job.State.ToGraphQL()
 }
 
-func (r searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+func (r *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := r.db.Users().GetByID(ctx, r.Job.InitiatorID)
 	if err != nil {
 		return nil, err
@@ -58,31 +62,21 @@ func (r searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserRes
 	return graphqlbackend.NewUserResolver(ctx, r.db, user), nil
 }
 
-func (r searchJobResolver) CreatedAt() gqlutil.DateTime {
+func (r *searchJobResolver) CreatedAt() gqlutil.DateTime {
 	return *gqlutil.FromTime(r.Job.CreatedAt)
 }
 
-func (r searchJobResolver) StartedAt(ctx context.Context) *gqlutil.DateTime {
+func (r *searchJobResolver) StartedAt(ctx context.Context) *gqlutil.DateTime {
 	return gqlutil.FromTime(r.Job.StartedAt)
 }
 
-func (r searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
+func (r *searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
 	return gqlutil.FromTime(r.Job.FinishedAt)
 }
 
-func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
+func (r *searchJobResolver) URL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d", r.Job.ID))
-		if err != nil {
-			return nil, err
-		}
-		return pointers.Ptr(exportPath), nil
-	}
-	return nil, nil
-}
-func (r searchJobResolver) LogURL(ctx context.Context) (*string, error) {
-	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d/logs", r.Job.ID))
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.csv", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
@@ -91,11 +85,21 @@ func (r searchJobResolver) LogURL(ctx context.Context) (*string, error) {
 	return nil, nil
 }
 
-func (r searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
+func (r *searchJobResolver) LogURL(ctx context.Context) (*string, error) {
+	if r.Job.State == types.JobStateCompleted {
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.log", r.Job.ID))
+		if err != nil {
+			return nil, err
+		}
+		return pointers.Ptr(exportPath), nil
+	}
+	return nil, nil
+}
+
+func (r *searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
 	repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
 	if err != nil {
 		return nil, err
 	}
-
 	return &searchJobStatsResolver{repoRevStats}, nil
 }

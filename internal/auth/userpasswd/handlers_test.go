@@ -17,6 +17,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -144,7 +146,7 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	if testing.Verbose() {
 		logger = logtest.Scoped(t)
 	}
-	h := HandleSignIn(logger, db, lockout)
+	h := HandleSignIn(logger, db, lockout, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 	// Normal authentication fail before lockout
 	{
@@ -353,7 +355,8 @@ func TestHandleSignUp(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db)
+		events := telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore())
+		h := HandleSignUp(logger, db, events)
 
 		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
@@ -386,7 +389,7 @@ func TestHandleSignUp(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db)
+		h := HandleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
@@ -444,12 +447,16 @@ func TestHandleSignUp(t *testing.T) {
 		db.AuthzFunc.SetDefaultReturn(authz)
 		db.EventLogsFunc.SetDefaultReturn(eventLogs)
 
+		gss := dbmocks.NewMockGlobalStateStore()
+		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+		db.GlobalStateFunc.SetDefaultReturn(gss)
+
 		logger := logtest.NoOp(t)
 		if testing.Verbose() {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db)
+		h := HandleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		body := strings.NewReader(`{
 			"email": "test@test.com",
@@ -479,7 +486,7 @@ func TestHandleSiteInit(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSiteInit(logger, db)
+		h := HandleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
@@ -525,7 +532,7 @@ func TestHandleSiteInit(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSiteInit(logger, db)
+		h := HandleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		body := strings.NewReader(`{
 			"email": "test@test.com",

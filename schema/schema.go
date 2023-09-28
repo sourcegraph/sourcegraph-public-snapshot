@@ -64,9 +64,9 @@ type AppNotifications struct {
 	Key string `json:"key"`
 	// Message description: The Markdown message to display
 	Message string `json:"message"`
-	// VersionMax description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMax description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMax string `json:"version.max,omitempty"`
-	// VersionMin description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMin description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMin string `json:"version.min,omitempty"`
 }
 
@@ -682,6 +682,8 @@ type Embeddings struct {
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
+	// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+	Qdrant *Qdrant `json:"qdrant,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -1388,6 +1390,20 @@ type Header struct {
 	Value     string `json:"value"`
 }
 
+// Hnsw description: Overrides for the HNSW index config.
+type Hnsw struct {
+	// EfConstruct description: Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.
+	EfConstruct *int `json:"efConstruct,omitempty"`
+	// FullScanThreshold description: Minimal size (in KiloBytes) of vectors for additional payload-based indexing.
+	FullScanThreshold *int `json:"fullScanThreshold,omitempty"`
+	// M description: Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.
+	M *int `json:"m,omitempty"`
+	// OnDisk description: Store HNSW index on disk.
+	OnDisk *bool `json:"onDisk,omitempty"`
+	// PayloadM description: Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.
+	PayloadM *int `json:"payloadM,omitempty"`
+}
+
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
@@ -1440,9 +1456,9 @@ type JVMPackagesConnection struct {
 
 // LinkStep description: Link step
 type LinkStep struct {
-	Type    any `json:"type"`
-	Value   any `json:"value"`
-	Variant any `json:"variant,omitempty"`
+	Type    any    `json:"type"`
+	Value   string `json:"value"`
+	Variant any    `json:"variant,omitempty"`
 }
 
 // LocalGitExternalService description: Configuration for integration local Git repositories.
@@ -1698,8 +1714,9 @@ type OnboardingStep struct {
 
 // OnboardingTask description: An onboarding task
 type OnboardingTask struct {
-	// DataAttributes description: Additional attributes to add to the task HTML element as data-* attributes
-	DataAttributes map[string]any `json:"dataAttributes,omitempty"`
+	Icon any `json:"icon,omitempty"`
+	// RequiredSteps description: Set this property if only a subset of steps are required for this task to complete.
+	RequiredSteps float64 `json:"requiredSteps,omitempty"`
 	// Steps description: Steps that need to be completed by the user
 	Steps []*OnboardingStep `json:"steps"`
 	// Title description: Title of this task
@@ -1708,7 +1725,8 @@ type OnboardingTask struct {
 
 // OnboardingTourConfiguration description: Configuration for a onboarding tour.
 type OnboardingTourConfiguration struct {
-	Tasks []*OnboardingTask `json:"tasks"`
+	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
+	Tasks           []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1743,6 +1761,12 @@ type OpenTelemetry struct {
 	// Endpoint description: OpenTelemetry tracing collector endpoint. By default, Sourcegraph's "/-/debug/otlp" endpoint forwards data to the configured collector backend.
 	Endpoint string `json:"endpoint,omitempty"`
 }
+type Optimizers struct {
+	// IndexingThreshold description: Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing
+	IndexingThreshold *int `json:"indexingThreshold,omitempty"`
+	// MemmapThreshold description: Maximum size (in kilobytes) of vectors to store in-memory per segment.
+	MemmapThreshold *int `json:"memmapThreshold,omitempty"`
+}
 
 // OrganizationInvitations description: Configuration for organization invitations.
 type OrganizationInvitations struct {
@@ -1772,7 +1796,7 @@ type OtherExternalServiceConnection struct {
 	//
 	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as ["src-serve-local"].
+	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Cody App and define the repos configuration property such as ["src-serve-local"].
 	Root string `json:"root,omitempty"`
 	Url  string `json:"url,omitempty"`
 }
@@ -1914,6 +1938,24 @@ type PythonRateLimit struct {
 	Enabled bool `json:"enabled"`
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+
+// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+type Qdrant struct {
+	Enabled bool `json:"enabled,omitempty"`
+	// Hnsw description: Overrides for the HNSW index config.
+	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
+	Optimizers *Optimizers `json:"optimizers,omitempty"`
+	// Quantization description: Overrides for quantization config.
+	Quantization *Quantization `json:"quantization,omitempty"`
+}
+
+// Quantization description: Overrides for quantization config.
+type Quantization struct {
+	// Enabled description: Whether to enable int8 scalar quantization
+	Enabled *bool `json:"enabled,omitempty"`
+	// Quantile description: Any values that lie outside the quantile range will be truncated
+	Quantile *float64 `json:"quantile,omitempty"`
 }
 type QuickLink struct {
 	// Description description: A description for this quick link
@@ -2084,7 +2126,7 @@ type SearchLimits struct {
 	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
 	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxRepos int `json:"maxRepos,omitempty"`
-	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
+	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Note: Experimental search jobs do not respect this limit. Defaults to 1 minute.
 	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
 
@@ -2112,6 +2154,15 @@ type SearchScope struct {
 	Name string `json:"name"`
 	// Value description: The query string of this search scope
 	Value string `json:"value"`
+}
+
+// SearchStep description: Search query step
+type SearchStep struct {
+	// Query description: The query template to use.
+	Query string `json:"query"`
+	// Snippets description: Possible code snippets for this query. Can also be a language -> code snippets map.
+	Snippets any `json:"snippets,omitempty"`
+	Type     any `json:"type"`
 }
 
 // SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
@@ -2593,6 +2644,8 @@ type SiteConfiguration struct {
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
+	// GitserverDiskUsageWarningThreshold description: Disk usage threshold at which to display warning notification. Value is a percentage.
+	GitserverDiskUsageWarningThreshold *int `json:"gitserver.diskUsageWarningThreshold,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
@@ -2811,6 +2864,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitMaxConcurrentClones")
 	delete(m, "gitRecorder")
 	delete(m, "gitUpdateInterval")
+	delete(m, "gitserver.diskUsageWarningThreshold")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
 	delete(m, "htmlHeadBottom")
@@ -2978,8 +3032,8 @@ type UsernameIdentity struct {
 
 // VideoStep description: Video step
 type VideoStep struct {
-	Type  any `json:"type"`
-	Value any `json:"value"`
+	Type  any    `json:"type"`
+	Value string `json:"value"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.

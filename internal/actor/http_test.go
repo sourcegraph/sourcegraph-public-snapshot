@@ -148,6 +148,18 @@ func TestAnonymousUIDMiddleware(t *testing.T) {
 		handler.ServeHTTP(httptest.NewRecorder(), req)
 	})
 
+	t.Run("header value is respected", func(t *testing.T) {
+		handler := AnonymousUIDMiddleware(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			got := FromContext(r.Context())
+			require.Equal(t, "anon", got.AnonymousUID)
+		}))
+
+		req, err := http.NewRequest(http.MethodGet, "/test", nil)
+		require.NoError(t, err)
+		req.Header.Set(headerKeyActorAnonymousUID, "anon")
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+	})
+
 	t.Run("cookie doesn't overwrite existing middleware", func(t *testing.T) {
 		handler := http.Handler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			got := FromContext(r.Context())

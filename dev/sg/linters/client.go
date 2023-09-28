@@ -21,7 +21,7 @@ func checkUnversionedDocsLinks() *linter {
 		}
 
 		return diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
-			// Ignore Sourcegraph app directory since docs links don't work
+			// Ignore Cody app directory since docs links don't work
 			// with /help route there
 			if strings.HasPrefix(file, "client/web/src/enterprise/app") {
 				return nil

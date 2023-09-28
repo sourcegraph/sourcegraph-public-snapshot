@@ -3,7 +3,7 @@ import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '
 import { byLengthAsc, extendedMatch, Fzf, type FzfOptions, type FzfResultItem } from 'fzf'
 
 // This module implements suggestions for the experimental search input
-// eslint-disable-next-line no-restricted-imports
+
 import {
     type Group,
     type Option,
@@ -45,6 +45,7 @@ import type {
     SuggestionsSymbolVariables,
     SymbolKind,
 } from '../../graphql-operations'
+import { CachedAsyncCompletionSource } from '../autocompletion/source'
 
 // The number of entries we want to show in various situations
 //
@@ -818,11 +819,11 @@ function symbolSuggestions(cache: Caches['symbol']): InternalSource {
  * A contextual cache not only uses the provided value to find suggestions but
  * also the current (parsed) query input.
  */
-type ContextualCache<T, U> = Cache<T, U, [Node | null, number]>
+type ContextualCache<T, U> = CachedAsyncCompletionSource<T, U, [Node | null, number]>
 
 interface Caches {
     repo: ContextualCache<Repo, FzfResultItem<Repo>>
-    context: Cache<Context, FzfResultItem<Context>>
+    context: CachedAsyncCompletionSource<Context, FzfResultItem<Context>>
     file: ContextualCache<File, FzfResultItem<File>>
     symbol: ContextualCache<CodeSymbol, FzfResultItem<CodeSymbol>>
 }
@@ -880,7 +881,7 @@ function createCaches({
 
     // TODO: Initialize outside to persist cache across page navigation
     return (sharedCaches = {
-        repo: new Cache({
+        repo: new CachedAsyncCompletionSource({
             // Repo queries are scoped to context: filters
             dataCacheKey: (parsedQuery, position) =>
                 parsedQuery
@@ -911,7 +912,7 @@ function createCaches({
             },
         }),
 
-        context: new Cache({
+        context: new CachedAsyncCompletionSource({
             queryKey: value => `context:${value}`,
             async query(_key, value) {
                 if (!authenticatedUser) {
@@ -948,7 +949,7 @@ function createCaches({
             },
         }),
         // File queries are scoped to context: and repo: filters
-        file: new Cache({
+        file: new CachedAsyncCompletionSource({
             dataCacheKey: (parsedQuery, position) =>
                 parsedQuery
                     ? buildSuggestionQuery(
@@ -988,7 +989,7 @@ function createCaches({
                 return fzf.find(cleanRegex(query))
             },
         }),
-        symbol: new Cache({
+        symbol: new CachedAsyncCompletionSource({
             dataCacheKey: (parsedQuery, position) =>
                 parsedQuery
                     ? buildSuggestionQuery(
@@ -1062,82 +1063,6 @@ export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source
 
             return combineResults([dummyResult, ...results])
         },
-    }
-}
-
-interface CacheConfig<T, U, E extends any[] = []> {
-    /**
-     * Returns a string that uniquely identifies this query (which is often just
-     * the query itself). If the same request is made again the existing result
-     * is reused.
-     */
-    queryKey(value: string, dataCacheKey?: string): string
-    /**
-     * Fetch data. queryKey is the value return by the queryKey function and
-     * value is the term that's currently completed. Returns a list of [key,
-     * value] tuples. The key of these tuples is used to uniquly identify a
-     * value the data cache.
-     */
-    query(queryKey: string, value: string): Promise<[string, T][]>
-    /**
-     * This function filters and ranks all cache values (entries) by value.
-     */
-    filter(entries: T[], value: string): U[]
-    /**
-     * If provided data values are bucketed into different "cache groups", keyed
-     * by the return value of this function.
-     */
-    dataCacheKey?(...extraArgs: E): string
-}
-
-/**
- * This class handles creating suggestion results that include cached values (if
- * available) and updates the cache with new results from new queries.
- */
-class Cache<T, U, E extends any[] = []> {
-    private queryCache = new Map<string, Promise<void>>()
-    private dataCache = new Map<string, T>()
-    private dataCacheByQuery = new Map<string, Map<string, T>>()
-
-    constructor(private config: CacheConfig<T, U, E>) {}
-
-    public query(value: string, mapper: (values: U[]) => Group[], ...extraArgs: E): ReturnType<InternalSource> {
-        // The dataCacheKey could possibly just be an argument to query. However
-        // that would require callsites to remember to pass the value. Doing it
-        // this way we get a bit more type safety.
-        const dataCacheKey = this.config.dataCacheKey?.(...extraArgs)
-        const queryKey = this.config.queryKey(value, dataCacheKey)
-        let dataCache = this.dataCache
-        if (dataCacheKey) {
-            dataCache = this.dataCacheByQuery.get(dataCacheKey) ?? new Map<string, T>()
-            if (!this.dataCacheByQuery.has(dataCacheKey)) {
-                this.dataCacheByQuery.set(dataCacheKey, dataCache)
-            }
-        }
-        return {
-            result: mapper(this.cachedData(value, dataCache)),
-            next: () => {
-                let result = this.queryCache.get(queryKey)
-
-                if (!result) {
-                    result = this.config.query(queryKey, value).then(entries => {
-                        for (const [key, entry] of entries) {
-                            if (!dataCache.has(key)) {
-                                dataCache.set(key, entry)
-                            }
-                        }
-                    })
-
-                    this.queryCache.set(queryKey, result)
-                }
-
-                return result.then(() => ({ result: mapper(this.cachedData(value, dataCache)) }))
-            },
-        }
-    }
-
-    private cachedData(value: string, cache = this.dataCache): U[] {
-        return this.config.filter(Array.from(cache.values()), value)
     }
 }
 

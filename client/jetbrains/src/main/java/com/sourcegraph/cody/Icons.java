@@ -23,5 +23,14 @@ public interface Icons {
     Icon CodyAvailable = IconLoader.getIcon("/icons/codyLogoMonochromatic.svg", Icons.class);
     Icon CodyAutocompleteDisabled =
         IconLoader.getIcon("/icons/codyLogoMonochromaticMuted.svg", Icons.class);
+
+    Icon CodyAutocompleteUnavailable =
+        IconLoader.getIcon("/icons/codyLogoMonochromaticUnavailable.svg", Icons.class);
+  }
+
+  interface Onboarding {
+    Icon Autocomplete = IconLoader.getIcon("/icons/onboarding/autocomplete.svg", Icons.class);
+    Icon Chat = IconLoader.getIcon("/icons/onboarding/chat.svg", Icons.class);
+    Icon Commands = IconLoader.getIcon("/icons/onboarding/commands.svg", Icons.class);
   }
 }

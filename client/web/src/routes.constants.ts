@@ -44,6 +44,5 @@ export enum EnterprisePageRoutes {
     Cody = '/cody',
     Own = '/own',
     AppAuthCallback = '/app/auth/callback',
-    Sentinel = '/sentinel/*',
     AppSetup = '/app-setup',
 }

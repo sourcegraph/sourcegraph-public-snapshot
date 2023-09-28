@@ -32,7 +32,7 @@ tauri-utils = "1.4.0"
 
 [dependencies.tauri]
 version = "1.4.1"
-features = ["devtools", "dialog-confirm", "dialog-open", "fs-remove-dir", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "updater", "window-set-resizable", "window-set-size", "window-start-dragging"]
+features = [ "fs-all","devtools", "dialog-confirm", "dialog-open", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "updater", "window-set-resizable", "window-set-size", "window-start-dragging"]
 
 [dependencies.fix-path-env]
 git = "https://github.com/tauri-apps/fix-path-env-rs"

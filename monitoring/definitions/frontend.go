@@ -16,6 +16,7 @@ func Frontend() *monitoring.Dashboard {
 		containerName = "(frontend|sourcegraph-frontend)"
 
 		grpcZoektConfigurationServiceName = "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"
+		grpcInternalAPIServiceName        = "api.internalapi.v1.ConfigService"
 	)
 
 	var sentinelSamplingIntervals []string
@@ -32,7 +33,8 @@ func Frontend() *monitoring.Dashboard {
 	}
 
 	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcZoektConfigurationServiceName)
+	grpcMethodVariableFrontendZoektConfiguration := shared.GRPCMethodVariable("zoekt_configuration", grpcZoektConfigurationServiceName)
+	grpcMethodVariableFrontendInternalAPI := shared.GRPCMethodVariable("internal_api", grpcInternalAPIServiceName)
 
 	orgMetricSpec := []struct{ name, route, description string }{
 		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
@@ -67,7 +69,8 @@ func Frontend() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVariableFrontendZoektConfiguration,
+			grpcMethodVariableFrontendInternalAPI,
 		},
 
 		Groups: []monitoring.Group{
@@ -408,20 +411,38 @@ func Frontend() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "frontend",
+					HumanServiceName:   "zoekt_configuration",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
 					InstanceFilterRegex:  `${internalInstance:regex}`,
 					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "frontend",
+					HumanServiceName:   "zoekt_configuration",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 					Namespace:          "", // intentionally empty
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					HumanServiceName:   "internal_api",
+					RawGRPCServiceName: grpcInternalAPIServiceName,
+
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
+					InstanceFilterRegex:  `${internalInstance:regex}`,
+					MessageSizeNamespace: "src",
+				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "internal_api",
+					RawGRPCServiceName: grpcInternalAPIServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
 			{
@@ -765,17 +786,24 @@ func Frontend() *monitoring.Dashboard {
 				Rows: []monitoring.Row{{
 					{
 						Name:        "email_delivery_failures",
-						Description: "email delivery failures every 30 minutes",
-						Query:       `sum(increase(src_email_send{success="false"}[30m]))`,
-						Panel:       monitoring.Panel().LegendFormat("failures"),
-						Warning:     monitoring.Alert().GreaterOrEqual(1),
-						Critical:    monitoring.Alert().GreaterOrEqual(2),
+						Description: "email delivery failure rate over 30 minutes",
+						Query:       `sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100`,
+						Panel: monitoring.Panel().
+							LegendFormat("failures").
+							Unit(monitoring.Percentage).
+							Max(100).Min(0),
+
+						// Any failure is worth warning on, as failed email
+						// deliveries directly impact user experience.
+						Warning:  monitoring.Alert().Greater(0),
+						Critical: monitoring.Alert().GreaterOrEqual(10),
 
 						Owner: monitoring.ObservableOwnerDevOps,
 						NextSteps: `
 							- Check your SMTP configuration in site configuration.
-							- Check frontend logs for more detailed error messages.
+							- Check 'sourcegraph-frontend' logs for more detailed error messages.
 							- Check your SMTP provider for more detailed error messages.
+							- Use 'sum(increase(src_email_send{success="false"}[30m]))' to check the raw count of delivery failures.
 						`,
 					},
 				}, {

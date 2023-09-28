@@ -27,7 +27,6 @@ func TestBatchChange_URL(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockExternalURL(t, "https://sourcegraph.test")
-
 		url, err := bc.URL(
 			ctx,
 			"foo",

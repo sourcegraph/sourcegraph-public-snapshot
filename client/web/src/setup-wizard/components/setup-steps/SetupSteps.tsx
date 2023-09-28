@@ -27,7 +27,8 @@ import styles from './SetupSteps.module.scss'
 export interface StepComponentProps extends TelemetryProps {
     baseURL: string
     className?: string
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
+    setStepId?: (stepId: string) => void
 }
 
 export interface StepConfiguration {
@@ -165,11 +166,12 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 
 interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     contentContainerClass?: string
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
+    setStepId?: (stepId: string) => void
 }
 
 export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
-    const { contentContainerClass, className, telemetryService, isSourcegraphApp, ...attributes } = props
+    const { contentContainerClass, className, telemetryService, isCodyApp, setStepId, ...attributes } = props
     const { steps, activeStepIndex } = useContext(SetupStepsContext)
 
     return (
@@ -182,9 +184,10 @@ export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
                         element={
                             <Component
                                 baseURL={path}
+                                setStepId={setStepId}
                                 className={classNames(contentContainerClass, styles.content)}
                                 telemetryService={telemetryService}
-                                isSourcegraphApp={isSourcegraphApp}
+                                isCodyApp={isCodyApp}
                             />
                         }
                     />

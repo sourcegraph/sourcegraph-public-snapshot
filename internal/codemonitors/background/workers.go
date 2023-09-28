@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -248,7 +250,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *database.ActionJob) e
 		return errors.Wrap(err, "ListRecipients")
 	}
 
-	externalURL, err := getExternalURL()
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		return err
 	}
@@ -301,7 +303,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *database.ActionJob)
 		return errors.Wrap(err, "GetWebhookAction")
 	}
 
-	externalURL, err := getExternalURL()
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		return err
 	}
@@ -337,7 +339,7 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *database.Actio
 		return errors.Wrap(err, "GetSlackWebhookAction")
 	}
 
-	externalURL, err := getExternalURL()
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		return err
 	}

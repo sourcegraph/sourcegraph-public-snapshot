@@ -8,7 +8,7 @@ import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
 import { type WebpackManifest, HTML_INDEX_PATH } from '../utils'
 
-// Note: This is only valid for Sourcegraph App.
+// Note: This is only valid for Cody App.
 export const assetPathPrefix = '/'
 
 export const getManifest = (jsEntrypoint: string, cssEntrypoint?: string): WebpackManifest => ({
@@ -34,7 +34,7 @@ const ENTRYPOINT_NAME = 'scripts/shell'
  * An esbuild plugin to write a index.html file for Sourcegraph, for compatibility with the current
  * Go backend template system.
  *
- * This is only used in Sourcegraph App, currently.
+ * This is only used in Cody App, currently.
  */
 export const htmlIndexPlugin: esbuild.Plugin = {
     name: 'htmlIndex',

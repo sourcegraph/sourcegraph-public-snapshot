@@ -8,7 +8,7 @@ import com.sourcegraph.config.ConfigUtil
 @Service
 class CodyAccountManager :
     AccountManagerBase<CodyAccount, String>(ConfigUtil.SERVICE_DISPLAY_NAME) {
-  override fun accountsRepository() = service<CodyPersisentAccounts>()
+  override fun accountsRepository() = service<CodyPersistentAccounts>()
 
   override fun deserializeCredentials(credentials: String): String = credentials
 

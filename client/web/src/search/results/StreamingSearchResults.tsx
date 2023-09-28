@@ -36,6 +36,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../../tour/hooks'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
 import { DidYouMean } from '../suggestion/DidYouMean'
@@ -86,6 +87,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
     const [rankingEnabled] = useFeatureFlag('search-ranking')
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
+
+    const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -399,12 +402,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 onSearchSubmit={handleSidebarSearchSubmit}
                 setSidebarCollapsed={setSidebarCollapsed}
             >
-                <GettingStartedTour
-                    className="mb-1"
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    telemetryService={props.telemetryService}
-                    isAuthenticated={!!props.authenticatedUser}
-                />
+                {showOnboardingTour && (
+                    <GettingStartedTour
+                        className="mb-1"
+                        telemetryService={props.telemetryService}
+                        authenticatedUser={authenticatedUser}
+                    />
+                )}
             </SearchFiltersSidebar>
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
@@ -445,6 +449,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 onSearchAgain={onSearchAgain}
                                 showTrace={!!trace}
                                 isSearchJobsEnabled={isSearchJobsEnabled()}
+                                telemetryService={props.telemetryService}
                             />
                         }
                     />

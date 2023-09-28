@@ -23,17 +23,17 @@ const configurationGroup: SiteAdminSideBarGroup = {
             label: 'License',
             to: '/site-admin/license',
 
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isCodyApp }) => !isCodyApp,
         },
         {
             label: 'Incoming webhooks',
             to: '/site-admin/webhooks/incoming',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isCodyApp }) => !isCodyApp,
         },
         {
             label: 'Outgoing webhooks',
             to: '/site-admin/webhooks/outgoing',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isCodyApp }) => !isCodyApp,
         },
     ],
 }
@@ -45,7 +45,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
-            condition: ({ isSourcegraphApp, codeInsightsEnabled }) => !isSourcegraphApp && codeInsightsEnabled,
+            condition: ({ isCodyApp, codeInsightsEnabled }) => !isCodyApp && codeInsightsEnabled,
         },
     ],
 }
@@ -85,7 +85,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             condition: props => props.batchChangesExecutionEnabled,
         },
     ],
-    condition: ({ batchChangesEnabled, isSourcegraphApp }) => batchChangesEnabled && !isSourcegraphApp,
+    condition: ({ batchChangesEnabled, isCodyApp }) => batchChangesEnabled && !isCodyApp,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
@@ -112,7 +112,7 @@ const businessGroup: SiteAdminSideBarGroup = {
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
-    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             to: '/site-admin/code-graph/dashboard',
@@ -138,7 +138,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             label: 'Ownership signals',
             to: '/site-admin/own-signal-page',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isCodyApp }) => !isCodyApp,
         },
     ],
 }

@@ -21,7 +21,6 @@ export type FeatureFlagName =
     | 'enable-ownership-panels'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
-    | 'sentinel'
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
@@ -30,6 +29,7 @@ export type FeatureFlagName =
     | 'own-analytics'
     | 'enable-simple-search'
     | 'end-user-onboarding'
+    | 'admin-onboarding'
 
 interface OrgFlagOverride {
     orgID: string

@@ -169,10 +169,10 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	defer cw.Flush()
 
 	header := []string{
-		"repo",
-		"rev",
-		"start",
-		"end",
+		"repository",
+		"revision",
+		"started_at",
+		"finished_at",
 		"status",
 		"failure_message",
 	}
@@ -184,7 +184,7 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	for iter.Next() {
 		job := iter.Current()
 		err = cw.Write([]string{
-			fmt.Sprintf("%d", job.RepoID),
+			string(job.RepoName),
 			job.Revision,
 			formatOrNULL(job.StartedAt),
 			formatOrNULL(job.FinishedAt),
@@ -326,6 +326,8 @@ func (s *Service) GetAggregateRepoRevState(ctx context.Context, id int64) (_ *ty
 			stats.Failed += int32(count)
 		case types.JobStateProcessing, types.JobStateErrored, types.JobStateQueued:
 			stats.InProgress += int32(count)
+		case types.JobStateCanceled:
+			stats.InProgress = 0
 		default:
 			return nil, errors.Newf("unknown job state %q", state)
 		}
