@@ -35,9 +35,9 @@ import type { AuthenticatedUser } from '../auth'
 import { LoaderButton } from '../components/LoaderButton'
 import type { UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVariables } from '../graphql-operations'
 import { useLanguageCompletionSource, useRepositoryCompletionSource } from '../search/autocompletion/hooks'
+import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './GettingStartedTourSetup.module.scss'
-import { eventLogger } from '../tracking/eventLogger'
 
 const DIALOG_TITLE_ID = 'onboarding-setup-title'
 
@@ -132,7 +132,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
     }
     const skip = (): void => {
         eventLogger.log('TourSetupSkipped')
-        setConfig({skipped: true})
+        setConfig({ skipped: true })
     }
     return (
         <Form onSubmit={onSubmit}>
