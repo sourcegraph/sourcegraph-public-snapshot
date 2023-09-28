@@ -3,6 +3,7 @@ package com.sourcegraph.cody.agent
 import com.google.gson.GsonBuilder
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
@@ -34,6 +35,7 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
  * The class {{[com.sourcegraph.cody.CodyAgentProjectListener]}} is responsible for initializing and
  * shutting down the agent.
  */
+@Service(Service.Level.PROJECT)
 class CodyAgent(private val project: Project) : Disposable {
   var disposable = Disposer.newDisposable("CodyAgent")
   private val client = CodyAgentClient()
