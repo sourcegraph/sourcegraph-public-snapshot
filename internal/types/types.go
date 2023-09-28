@@ -192,13 +192,13 @@ func (r *Repo) IsBlocked() error {
 	return nil
 }
 
-// RepoModified is a bitfield that tracks which fields were modified while
+// RepoModifiedFields is a bitfield that tracks which fields were modified while
 // syncing a repository.
-type RepoModified uint64
+type RepoModifiedFields uint64
 
 const (
-	RepoUnmodified   RepoModified = 0
-	RepoModifiedName              = 1 << iota
+	RepoUnmodified   RepoModifiedFields = 0
+	RepoModifiedName                    = 1 << iota
 	RepoModifiedURI
 	RepoModifiedDescription
 	RepoModifiedExternalRepo
@@ -210,7 +210,7 @@ const (
 	RepoModifiedSources
 )
 
-func (m RepoModified) String() string {
+func (m RepoModifiedFields) String() string {
 	if m == RepoUnmodified {
 		return "repo unmodified"
 	}
@@ -246,9 +246,6 @@ func (m RepoModified) String() string {
 	if m&RepoModifiedSources == RepoModifiedSources {
 		modifications = append(modifications, "sources")
 	}
-	if m&RepoUnmodified == RepoUnmodified {
-		modifications = append(modifications, "unmodified")
-	}
 
 	return "repo modifications: " + strings.Join(modifications, ", ")
 }
@@ -256,7 +253,7 @@ func (m RepoModified) String() string {
 // Update updates Repo r with the fields from the given newer Repo n, returning
 // RepoUnmodified (0) if no fields were modified, and a non-zero value if one
 // or more fields were modified.
-func (r *Repo) Update(n *Repo) (modified RepoModified) {
+func (r *Repo) Update(n *Repo) (modified RepoModifiedFields) {
 	if !r.Name.Equal(n.Name) {
 		r.Name = n.Name
 		modified |= RepoModifiedName
@@ -2097,4 +2094,80 @@ type CodeHost struct {
 	GitRateLimitIntervalSeconds *int32
 	CreatedAt                   time.Time
 	UpdatedAt                   time.Time
+}
+
+// RepoSyncDiff is the difference found by a sync between what is in the store and
+// what is returned from sources.
+type RepoSyncDiff struct {
+	Added      Repos
+	Deleted    Repos
+	Modified   ReposModified
+	Unmodified Repos
+}
+
+// Sort sorts all Diff elements by Repo.IDs.
+func (d *RepoSyncDiff) Sort() {
+	for _, ds := range []Repos{
+		d.Added,
+		d.Deleted,
+		d.Modified.Repos(),
+		d.Unmodified,
+	} {
+		sort.Sort(ds)
+	}
+}
+
+// Repos returns all repos in the Diff.
+func (d *RepoSyncDiff) Repos() Repos {
+	all := make(Repos, 0, len(d.Added)+
+		len(d.Deleted)+
+		len(d.Modified)+
+		len(d.Unmodified))
+
+	for _, rs := range []Repos{
+		d.Added,
+		d.Deleted,
+		d.Modified.Repos(),
+		d.Unmodified,
+	} {
+		all = append(all, rs...)
+	}
+
+	return all
+}
+
+func (d *RepoSyncDiff) Len() int {
+	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
+}
+
+// RepoModified tracks the modifications applied to a single repository after a
+// sync.
+type RepoModified struct {
+	Repo     *Repo
+	Modified RepoModifiedFields
+}
+
+type ReposModified []RepoModified
+
+// Repos returns all modified repositories.
+func (rm ReposModified) Repos() Repos {
+	repos := make(Repos, len(rm))
+	for i := range rm {
+		repos[i] = rm[i].Repo
+	}
+
+	return repos
+}
+
+// ReposModified returns only the repositories that had a specific field
+// modified in the sync.
+func (rm ReposModified) ReposModified(modified RepoModifiedFields) Repos {
+	repos := Repos{}
+	for _, pair := range rm {
+		if pair.Modified&modified == modified {
+			repos = append(repos, pair.Repo)
+		}
+	}
+
+	return repos
 }
