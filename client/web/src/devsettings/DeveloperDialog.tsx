@@ -41,6 +41,7 @@ import {
     Tabs,
     Text,
     Tooltip,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { FEATURE_FLAGS, type FeatureFlagName } from '../featureFlags/featureFlags'
@@ -87,8 +88,18 @@ export const DeveloperDialog: FC<{}> = () => {
                 onChange={index => useDeveloperSettings.setState({ selectedTab: index })}
             >
                 <TabList>
-                    <Tab>Feature flags ({counter.featureFlags})</Tab>
-                    <Tab>Temporary settings ({counter.temporarySettings})</Tab>
+                    <Tab>
+                        Feature flags{' '}
+                        <Badge pill={true}>
+                            {counter.featureFlags}/{FEATURE_FLAGS.length}
+                        </Badge>
+                    </Tab>
+                    <Tab>
+                        Temporary settings{' '}
+                        <Badge pill={true}>
+                            {counter.temporarySettings}/{TEMPORARY_SETTINGS_KEYS.length}
+                        </Badge>
+                    </Tab>
                     <Tab>Misc</Tab>
                 </TabList>
                 <TabPanels className="overflow-hidden flex-1 min-w-0 d-flex">
