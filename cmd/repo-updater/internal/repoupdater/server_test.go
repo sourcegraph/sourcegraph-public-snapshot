@@ -32,10 +32,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repos/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
@@ -663,7 +665,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				ObsvCtx: observation.TestContextTB(t),
 			}
 
-			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB())
+			scheduler := scheduler.NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
 
 			s := &Server{
 				Logger:    logger,
