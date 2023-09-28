@@ -8,6 +8,7 @@ go_library(
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal",
+        "//cmd/gitserver/internal/vcssyncer",
         "//internal/api",
         "//internal/database/dbmocks",
         "//internal/extsvc",
@@ -44,6 +45,7 @@ go_test(
     deps = [
         "//cmd/gitserver/internal",
         "//cmd/gitserver/internal/perforce",
+        "//cmd/gitserver/internal/vcssyncer",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

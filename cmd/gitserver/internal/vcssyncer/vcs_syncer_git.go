@@ -1,15 +1,17 @@
-package internal
+package vcssyncer
 
 import (
 	"context"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -29,26 +31,26 @@ func (s *gitRepoSyncer) Type() string {
 	return "git"
 }
 
-// testGitRepoExists is a test fixture that overrides the return value for
+// TestGitRepoExists is a test fixture that overrides the return value for
 // GitRepoSyncer.IsCloneable when it is set.
-var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
+var TestGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error {
 	if isAlwaysCloningTestRemoteURL(remoteURL) {
 		return nil
 	}
-	if testGitRepoExists != nil {
-		return testGitRepoExists(ctx, remoteURL)
+	if TestGitRepoExists != nil {
+		return TestGitRepoExists(ctx, remoteURL)
 	}
 
 	args := []string{"ls-remote", remoteURL.String(), "HEAD"}
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
+	ctx, cancel := context.WithTimeout(ctx, executil.ShortGitCommandTimeout(args))
 	defer cancel()
 
 	r := urlredactor.New(remoteURL)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), true, nil)
+	out, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -83,7 +85,7 @@ func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName 
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	r := urlredactor.New(remoteURL)
-	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), configRemoteOpts, nil)
+	output, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), configRemoteOpts, nil)
 	if err != nil {
 		return nil, &common.GitCommandError{Err: err, Output: urlredactor.New(remoteURL).Redact(string(output))}
 	}
@@ -119,4 +121,9 @@ func (s *gitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (c
 			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
 	return cmd, configRemoteOpts
+}
+
+func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
+	return strings.EqualFold(remoteURL.Host, "github.com") &&
+		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest")
 }

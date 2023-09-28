@@ -1,4 +1,4 @@
-package internal
+package vcssyncer
 
 import (
 	"archive/zip"

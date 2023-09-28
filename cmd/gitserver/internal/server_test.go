@@ -32,7 +32,10 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -186,8 +189,8 @@ func TestExecRequest(t *testing.T) {
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
@@ -198,18 +201,19 @@ func TestExecRequest(t *testing.T) {
 
 	origRepoCloned := repoCloned
 	repoCloned = func(dir common.GitDir) bool {
-		return dir == repoDirFromName(reposDir, "github.com/gorilla/mux") || dir == repoDirFromName(reposDir, "my-mux")
+		return dir == gitserverfs.RepoDirFromName(reposDir, "github.com/gorilla/mux") || dir == gitserverfs.RepoDirFromName(reposDir, "my-mux")
 	}
 	t.Cleanup(func() { repoCloned = origRepoCloned })
 
-	testGitRepoExists = func(ctx context.Context, remoteURL *vcs.URL) error {
+	vcssyncer.TestGitRepoExists = func(ctx context.Context, remoteURL *vcs.URL) error {
 		if remoteURL.String() == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
 		return errors.New("not cloneable")
 	}
-	t.Cleanup(func() { testGitRepoExists = nil })
+	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
 
+	var runCommandMock func(ctx context.Context, cmd *exec.Cmd) (int, error)
 	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "testcommand":
@@ -231,14 +235,14 @@ func TestExecRequest(t *testing.T) {
 			cmd.Dir = "" // the test doesn't setup the dir
 
 			// We run the real codepath cause we can in this case.
-			m := runCommandMock
-			runCommandMock = nil
-			defer func() { runCommandMock = m }()
-			return runCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
+			executil.UpdateRunCommandMock(nil)
+			defer func() { executil.UpdateRunCommandMock(runCommandMock) }()
+			return executil.RunCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
+	executil.UpdateRunCommandMock(runCommandMock)
+	t.Cleanup(func() { executil.UpdateRunCommandMock(nil) })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -279,7 +283,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		updateRunCommandMock(nil)
+		executil.UpdateRunCommandMock(nil)
 	})
 
 	startServer := func(t *testing.T) (handler http.Handler, client proto.GitserverServiceClient, cleanup func()) {
@@ -339,7 +343,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		}
 
 		t.Run("users", func(t *testing.T) {
-			updateRunCommandMock(defaultMockRunCommand)
+			executil.UpdateRunCommandMock(defaultMockRunCommand)
 
 			_, client, closeFunc := startServer(t)
 			t.Cleanup(closeFunc)
@@ -369,7 +373,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		})
 
 		t.Run("empty request", func(t *testing.T) {
-			updateRunCommandMock(defaultMockRunCommand)
+			executil.UpdateRunCommandMock(defaultMockRunCommand)
 
 			_, client, closeFunc := startServer(t)
 			t.Cleanup(closeFunc)
@@ -387,7 +391,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 
 		t.Run("disallowed command", func(t *testing.T) {
 
-			updateRunCommandMock(defaultMockRunCommand)
+			executil.UpdateRunCommandMock(defaultMockRunCommand)
 
 			_, client, closeFunc := startServer(t)
 			t.Cleanup(closeFunc)
@@ -408,7 +412,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		t.Run("context cancelled", func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 
-			updateRunCommandMock(func(ctx context.Context, _ *exec.Cmd) (int, error) {
+			executil.UpdateRunCommandMock(func(ctx context.Context, _ *exec.Cmd) (int, error) {
 				// fake a context cancellation that occurs while the process is running
 
 				cancel()
@@ -469,7 +473,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
-				updateRunCommandMock(defaultMockRunCommand)
+				executil.UpdateRunCommandMock(defaultMockRunCommand)
 
 				handler, _, closeFunc := startServer(t)
 				t.Cleanup(closeFunc)
@@ -692,8 +696,8 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ObservationCtx:   obctx,
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
@@ -751,7 +755,7 @@ func TestCloneRepo(t *testing.T) {
 	// Verify the gitserver repo entry exists.
 	assertRepoState(types.CloneStatusNotCloned, 0, nil)
 
-	repoDir := repoDirFromName(reposDir, repoName)
+	repoDir := gitserverfs.RepoDirFromName(reposDir, repoName)
 	remoteDir := filepath.Join(reposDir, "remote")
 	if err := os.Mkdir(remoteDir, os.ModePerm); err != nil {
 		t.Fatal(err)
@@ -864,13 +868,13 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 
 	for _, tc := range []struct {
 		name         string
-		getVCSSyncer func(ctx context.Context, name api.RepoName) (VCSSyncer, error)
+		getVCSSyncer func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error)
 		wantErr      error
 	}{
 		{
 			name: "Not cloneable",
-			getVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				m := NewMockVCSSyncer()
+			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+				m := vcssyncer.NewMockVCSSyncer()
 				m.IsCloneableFunc.SetDefaultHook(func(context.Context, api.RepoName, *vcs.URL) error {
 					return errors.New("not_cloneable")
 				})
@@ -880,8 +884,8 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		},
 		{
 			name: "Failing clone",
-			getVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				m := NewMockVCSSyncer()
+			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+				m := vcssyncer.NewMockVCSSyncer()
 				m.CloneCommandFunc.SetDefaultHook(func(ctx context.Context, url *vcs.URL, s string) (*exec.Cmd, error) {
 					return exec.Command("git", "clone", "/dev/null"), nil
 				})
@@ -969,7 +973,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
-	size := dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
+	size := dirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -1011,7 +1015,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	req = newRequest("GET", "/delete", bytes.NewReader(body))
 	s.handleRepoDelete(rr, req)
 
-	size = dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
+	size = dirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	if size != 0 {
 		t.Fatalf("Size should be 0, got %d", size)
 	}
@@ -1086,7 +1090,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
-	size := dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
+	size := dirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -1116,7 +1120,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
-	size = dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
+	size = dirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -1172,7 +1176,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
 		CloneStatus:   types.CloneStatusCloned,
-		RepoSizeBytes: dirSize(repoDirFromName(s.ReposDir, repoName).Path(".")), // we compute the new size
+		RepoSizeBytes: dirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path(".")), // we compute the new size
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
@@ -1300,7 +1304,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		dst := repoDirFromName(s.ReposDir, repoName)
+		dst := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
 		for i := 0; i < 1000; i++ {
 			_, cloning := s.Locker.Status(dst)
 			if !cloning {
@@ -1339,7 +1343,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		}
 
 		// wait for repo to be cloned
-		dst := repoDirFromName(s.ReposDir, "example.com/foo/bar")
+		dst := gitserverfs.RepoDirFromName(s.ReposDir, "example.com/foo/bar")
 		for i := 0; i < 1000; i++ {
 			_, cloning := s.Locker.Status(dst)
 			if !cloning {
@@ -1521,7 +1525,7 @@ func TestHandleBatchLog(t *testing.T) {
 	}
 	t.Cleanup(func() { repoCloned = originalRepoCloned })
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	executil.UpdateRunCommandMock(func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		for _, v := range cmd.Args {
 			if strings.HasPrefix(v, "dumbmilk") {
 				return 128, errors.New("test error")
@@ -1530,8 +1534,8 @@ func TestHandleBatchLog(t *testing.T) {
 
 		cmd.Stdout.Write([]byte(fmt.Sprintf("stdout<%s:%s>", cmd.Dir, strings.Join(cmd.Args, " "))))
 		return 0, nil
-	}
-	t.Cleanup(func() { runCommandMock = nil })
+	})
+	t.Cleanup(func() { executil.UpdateRunCommandMock(nil) })
 
 	tests := []BatchLogTest{
 		{
@@ -1780,7 +1784,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
-		s.logIfCorrupt(ctx, repoName, repoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
@@ -1806,7 +1810,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "Brought to you by Horsegraph"
 
-		s.logIfCorrupt(ctx, repoName, repoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
@@ -1817,25 +1821,6 @@ func TestLogIfCorrupt(t *testing.T) {
 func mustEncodeJSONResponse(value any) string {
 	encoded, _ := json.Marshal(value)
 	return strings.TrimSpace(string(encoded))
-}
-
-func TestIgnorePath(t *testing.T) {
-	reposDir := "/data/repos"
-
-	for _, tc := range []struct {
-		path         string
-		shouldIgnore bool
-	}{
-		{path: filepath.Join(reposDir, TempDirName), shouldIgnore: true},
-		{path: filepath.Join(reposDir, P4HomeName), shouldIgnore: true},
-		// Double check handling of trailing space
-		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
-		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
-	} {
-		t.Run("", func(t *testing.T) {
-			assert.Equal(t, tc.shouldIgnore, ignorePath(reposDir, tc.path))
-		})
-	}
 }
 
 func TestMain(m *testing.M) {
