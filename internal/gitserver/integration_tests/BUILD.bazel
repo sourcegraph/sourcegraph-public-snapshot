@@ -10,7 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/gitserver/server",
+        "//cmd/gitserver/internal",
         "//internal/api",
         "//internal/database/dbmocks",
         "//internal/extsvc",

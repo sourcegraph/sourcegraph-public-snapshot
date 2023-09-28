@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "perforce",
+    srcs = ["perforce.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce",
+    visibility = ["//cmd/gitserver:__subpackages__"],
+    deps = [
+        "//cmd/gitserver/internal/common",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/perforce",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "perforce_test",
+    srcs = ["perforce_test.go"],
+    embed = [":perforce"],
+    deps = [
+        "//cmd/gitserver/internal/common",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/database/dbmocks",
+        "//internal/database/dbutil",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/observation",
+        "//internal/types",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)
