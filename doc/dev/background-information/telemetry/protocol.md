@@ -3,7 +3,7 @@
 
 ## Table of Contents
 
-- [internal/telemetrygateway/v1/telemetrygateway.proto](#internal_telemetrygateway_v1_telemetrygateway-proto)
+- [telemetrygateway/v1/telemetrygateway.proto](#telemetrygateway_v1_telemetrygateway-proto)
     - [Event](#telemetrygateway-v1-Event)
     - [EventBillingMetadata](#telemetrygateway-v1-EventBillingMetadata)
     - [EventFeatureFlags](#telemetrygateway-v1-EventFeatureFlags)
@@ -29,10 +29,10 @@
 
 
 
-<a name="internal_telemetrygateway_v1_telemetrygateway-proto"></a>
+<a name="telemetrygateway_v1_telemetrygateway-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## internal/telemetrygateway/v1/telemetrygateway.proto
+## telemetrygateway/v1/telemetrygateway.proto
 
 
 

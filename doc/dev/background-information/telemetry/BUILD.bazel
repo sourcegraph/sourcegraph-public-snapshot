@@ -1,5 +1,4 @@
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
-
 filegroup(
     name = "doc_files",
     srcs = glob(
@@ -13,10 +12,10 @@ filegroup(
 
 write_generated_to_source_files(
     name = "write_telemetrygateway_doc",
-    src = "//internal/telemetrygateway/v1:generate_docs",
+    src = "//internal/telemetrygateway/v1:protocol.md",
     files = [
-        "internal/telemetrygateway/v1/outputs/protocol.md",
+        "internal/telemetrygateway/v1/protocol.md/protocol.md",
     ],
-    strip_prefix = "internal/telemetrygateway/v1/",
+    strip_prefix = "internal/telemetrygateway/v1/protocol.md/",
     tags = ["go_generate"],
 )
