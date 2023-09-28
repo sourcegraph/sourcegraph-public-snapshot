@@ -142,74 +142,47 @@ func sPrintSexpMax(j job.Describer) string {
 // The queries are validated before the reach exhaustive search, hence we only
 // have to worry about valid queries we don't want to process for now.
 func TestNewExhaustive_negative(t *testing.T) {
-	defaultInputs := &search.Inputs{
-		UserSettings: &schema.Settings{},
-		PatternType:  query.SearchTypeLiteral,
-		Protocol:     search.Exhaustive,
-		Features:     &search.Features{},
-	}
 
 	tc := []struct {
-		query  string
-		inputs *search.Inputs
+		query              string
+		isPatterntypeRegex bool
 	}{
 		// >1 type filter.
-		{
-			query:  `type:file index:no type:diff content`,
-			inputs: defaultInputs,
-		},
-		{
-			query:  `type:file index:no type:path content`,
-			inputs: defaultInputs,
-		},
+		{query: `type:file index:no type:diff content`},
+		{query: `type:file index:no type:path content`},
 		// AND, OR
-		{
-			query:  `type:file index:no repo:repo1 rev:branch1 content1 OR content2`,
-			inputs: defaultInputs,
-		},
-		{
-			query:  `type:file index:no repo:repo1 rev:branch1 content1 AND content2`,
-			inputs: defaultInputs,
-		},
-		{
-			query:  `type:file index:no (repo:repo1 or repo:repo2) content`,
-			inputs: defaultInputs,
-		},
+		{query: `type:file index:no repo:repo1 rev:branch1 content1 OR content2`},
+		{query: `type:file index:no repo:repo1 rev:branch1 content1 AND content2`},
+		{query: `type:file index:no (repo:repo1 or repo:repo2) content`},
 		// catch-all regex
-		{
-			query: `type:file index:no r:.* .*`,
-			inputs: &search.Inputs{
-				UserSettings: &schema.Settings{},
-				PatternType:  query.SearchTypeRegex,
-				Protocol:     search.Exhaustive,
-				Features:     &search.Features{},
-			},
-		},
+		{query: `type:file index:no r:.* .*`, isPatterntypeRegex: true},
+		{query: `type:file index:no r:repo .*`, isPatterntypeRegex: true},
 		// predicates
-		{
-			query:  `type:file index:no repohasfile:foo.bar content`,
-			inputs: defaultInputs,
-		},
-		{
-			query:  `type:file index:no file:has.content("content")`,
-			inputs: defaultInputs,
-		},
-		{
-			query:  `type:file index:no repo:has.path("src") content`,
-			inputs: defaultInputs,
-		},
+		{query: `type:file index:no repohasfile:foo.bar content`},
+		{query: `type:file index:no file:has.content("content")`},
+		{query: `type:file index:no repo:has.path("src") content`},
 	}
 
 	for _, c := range tc {
 		t.Run(c.query, func(t *testing.T) {
-			plan, err := query.Pipeline(query.Init(c.query, c.inputs.PatternType))
+			patternType := query.SearchTypeLiteral
+			if c.isPatterntypeRegex {
+				patternType = query.SearchTypeRegex
+			}
+
+			plan, err := query.Pipeline(query.Init(c.query, patternType))
 			require.NoError(t, err)
 
-			c.inputs.Plan = plan
-			c.inputs.Query = plan.ToQ()
-			c.inputs.OriginalQuery = c.query
+			inputs := &search.Inputs{
+				Plan:         plan,
+				Query:        plan.ToQ(),
+				UserSettings: &schema.Settings{},
+				PatternType:  patternType,
+				Protocol:     search.Exhaustive,
+				Features:     &search.Features{},
+			}
 
-			_, err = NewExhaustive(c.inputs)
+			_, err = NewExhaustive(inputs)
 			require.Error(t, err)
 		})
 	}
