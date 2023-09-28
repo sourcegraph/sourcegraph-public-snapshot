@@ -45,7 +45,7 @@ interface GettingStartedTourSetupProps {
     user: AuthenticatedUser
 }
 
-export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user, telemetryService }) => {
+export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user }) => {
     const [open, setOpen] = useState(true)
     const [repoInput, setRepoInput] = useState('')
     const [emailInput, setEmailInput] = useState('')
