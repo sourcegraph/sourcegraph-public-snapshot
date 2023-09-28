@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config.notification
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowContent
@@ -13,6 +14,7 @@ import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CollectionUtil.Companion.diff
 import java.util.function.Consumer
 
+@Service(Service.Level.PROJECT)
 class CodySettingChangeListener(project: Project) : ChangeListener(project) {
   init {
     connection.subscribe(

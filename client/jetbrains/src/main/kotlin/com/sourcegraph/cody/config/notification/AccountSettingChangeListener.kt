@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config.notification
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgent
@@ -9,6 +10,7 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.GraphQlLogger
 
+@Service(Service.Level.PROJECT)
 class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
   init {
     connection.subscribe(

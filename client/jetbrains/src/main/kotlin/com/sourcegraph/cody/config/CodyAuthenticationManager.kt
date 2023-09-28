@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.AuthData
@@ -17,6 +18,7 @@ internal class CodyAuthData(val account: CodyAccount, login: String, token: Stri
 }
 
 /** Entry point for interactions with Sourcegraph authentication subsystem */
+@Service
 class CodyAuthenticationManager internal constructor() {
   private val accountManager: CodyAccountManager
     get() = service()

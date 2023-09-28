@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.StoragePathMacros
@@ -11,6 +12,7 @@ import com.sourcegraph.cody.auth.PersistentActiveAccountHolder
     name = "CodyActiveAccount",
     storages = [Storage(StoragePathMacros.WORKSPACE_FILE)],
     reportStatistic = false)
+@Service(Service.Level.PROJECT)
 class CodyProjectActiveAccountHolder(project: Project) :
     PersistentActiveAccountHolder<CodyAccount>(project) {
 
