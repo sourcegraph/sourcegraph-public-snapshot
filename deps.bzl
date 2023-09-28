@@ -5817,8 +5817,8 @@ def go_dependencies():
         name = "com_github_qdrant_go_client",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/qdrant/go-client",
-        sum = "h1:LckV8C0TtMPDqWPd5g5sIa9zELQMelRlcZk9ANSZ2H8=",
-        version = "v1.3.0",
+        sum = "h1:kh5B4yWjrd5BcynJoA4014mZlI/j6++inCMMQoKUOtI=",
+        version = "v1.4.1",
     )
 
     go_repository(

@@ -119,7 +119,7 @@ You can connect either an enterprise instance or Sourcegraph.com via the followi
 
 ### For Sourcegraph enterprise users
 
-Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). From here, generate a new access token.
+Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`). From here, generate a new access token.
 
 Then, you will paste your access token and instance address in to the Cody extension.
 

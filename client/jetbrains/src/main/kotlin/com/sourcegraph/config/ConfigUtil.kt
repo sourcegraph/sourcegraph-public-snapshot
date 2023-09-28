@@ -114,13 +114,11 @@ object ConfigUtil {
       CodyApplicationSettings.getInstance().customAutocompleteColor
 
   @JvmStatic
-  fun getWorkspaceRoot(project: Project): String? {
-    return if (project.basePath != null) {
-      project.basePath
-    } else System.getProperty("user.home")
+  fun getWorkspaceRoot(project: Project): String {
     // The base path should only be null for the default project. The agent server assumes that the
     // workspace root is not null, so we have to provide some default value. Feel free to change to
     // something else than the home directory if this is causing problems.
+    return project.basePath ?: System.getProperty("user.home")
   }
 
   @JvmStatic

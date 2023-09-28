@@ -9,6 +9,7 @@ enum ValidationErrorType {
     HAS_CONTENT_PREDICATE = 'has_content_predicate',
     HAS_FILE_PREDICATE = 'has_file_predicate',
     OR_OPERATOR = 'or_operator',
+    AND_OPERATOR = 'and_operator',
 }
 
 interface ValidationError {
@@ -79,7 +80,16 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
         if (hasOr) {
             validationErrors.push({
                 type: ValidationErrorType.OR_OPERATOR,
-                reason: 'Or operator is not compatible for exhaustive search',
+                reason: 'OR operator is not compatible',
+            })
+        }
+
+        const hasAnd = keywords.some(filter => filter.kind === 'and')
+
+        if (hasAnd) {
+            validationErrors.push({
+                type: ValidationErrorType.AND_OPERATOR,
+                reason: 'AND operator is not compatible',
             })
         }
     }
