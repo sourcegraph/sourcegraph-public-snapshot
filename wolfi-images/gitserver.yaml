@@ -16,7 +16,7 @@ contents:
 
     - coursier@sourcegraph
     - p4cli@sourcegraph
-    - p4-fusion@sourcegraph
+    - p4-fusion=1.12@sourcegraph
 
 paths:
   - path: /data/repos
