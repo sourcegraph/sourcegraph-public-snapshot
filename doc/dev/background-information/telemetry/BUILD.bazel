@@ -1,4 +1,5 @@
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
 filegroup(
     name = "doc_files",
     srcs = glob(

@@ -96,7 +96,6 @@ go_test(
     ],
 )
 
-
 load("@rules_proto_grpc//doc:defs.bzl", "doc_template_compile")
 
 doc_template_compile(
