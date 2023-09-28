@@ -9,6 +9,7 @@ sh_test(
         "//doc/admin/observability:doc_files",
         "//doc/cli/references:doc_files",
         "//doc/dev/background-information/sg:doc_files",
+        "//doc/dev/background-information/telemetry:doc_files",
     ] + glob(
         ["**/*"],
         ["test.sh"],

@@ -94,6 +94,8 @@ There are two core attributes in events that are considered potentially sensitiv
   - Certain events may be allowlisted to have this field exported - this is defined in [`internal/telemetry/sensitiviemetadataallowlist`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/telemetry/sensitivemetadataallowlist/sensitiviemetadataallowlist.go). Adding events to this list requires review and approval from Legal.
 - `marketingTracking`: this field tracks a lot of properties around URLs visited and marketing tracking that may contain sensitive data. This is only exported from the [Sourcegraph.com](https://sourcegraph.com/search) instance.
 
+A detailed schema is available in [the Telemetry Gateway protocol documentation](./protocol.md), which also has more details about what kind of data gets exported and what components are generally pruned.
+
 ### Exported event schema
 
 The full event schema is intentionally a significant superset from the shape of the [event-recording APIs](#recording-events).
@@ -113,6 +115,8 @@ The full event schema that ends up getting exported is defined in [`telemetrygat
   }
 }
 ```
+
+A detailed schema is available in [the Telemetry Gateway protocol documentation](./protocol.md), which also has more details about what kind of data gets exported and what components are generally pruned - also see [sensitive attributes](#sensitive-attributes) above.
 
 > NOTE: In the Sourcegraph application, the new events being exported using `internal/telemetry` are sometimes loosely referred to as "V2", as it supersedes the existing mechanisms of writing directly to the `event_logs` database table.
 > The *Telemetry Gateway* schema, however, is `telemetrygateway/v1`, as it is the first iteration of the service's API.
