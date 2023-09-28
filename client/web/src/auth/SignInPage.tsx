@@ -186,8 +186,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 </Text>
             ) : (
                 <Text className="text-muted">
-                    {context.sourcegraphDotComMode}?<>Account creation is disabled - to try Sourcegraph, {dotcomCTAs}</>
-                    : <>Need an account? Contact your site admin.</>
+                    {context.sourcegraphDotComMode ? (
+                        <>Account creation is disabled - to try Sourcegraph, {dotcomCTAs}</>
+                    ) : (
+                        <>Need an account? Contact your site admin.</>
+                    )}
                 </Text>
             )}
         </div>
