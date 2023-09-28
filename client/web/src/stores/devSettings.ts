@@ -1,3 +1,5 @@
+import { startTransition } from 'react'
+
 import create from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -57,9 +59,13 @@ export function setDeveloperSettingsTemporarySettings(
 }
 
 export function toggleDevSettingsDialog(show?: boolean): void {
-    useDeveloperSettings.setState(state => ({
-        showDialog: show ?? !state.showDialog,
-    }))
+    // startTransition is needed because the dialog is/should be
+    // lazy loaded. Without it an error is thrown.
+    startTransition(() => {
+        useDeveloperSettings.setState(state => ({
+            showDialog: show ?? !state.showDialog,
+        }))
+    })
 }
 
 export const useOverrideCounter = create<{ featureFlags: number; temporarySettings: number }>(() => countOverrides())

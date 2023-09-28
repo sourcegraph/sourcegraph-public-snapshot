@@ -61,9 +61,7 @@ import {
 
 import styles from './DeveloperDialog.module.scss'
 
-interface DeveloperDialogProps {}
-
-export const DeveloperDialog: FC<DeveloperDialogProps> = () => {
+export const DeveloperDialog: FC<{}> = () => {
     const counter = useOverrideCounter()
     const index = useDeveloperSettings(settings => settings.selectedTab)
 

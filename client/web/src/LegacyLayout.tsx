@@ -19,7 +19,6 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/Keyboa
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
-import { DeveloperDialog } from './devsettings/DeveloperDialog'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
@@ -36,6 +35,7 @@ import { isAccessTokenCallbackPage } from './user/settings/accessTokens/UserSett
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard/SetupWizard'), 'SetupWizard')
+const LazyDeveloperDialog = lazyComponent(() => import('./devsettings/DeveloperDialog'), 'DeveloperDialog')
 
 export interface LegacyLayoutProps
     extends Omit<LegacyLayoutRouteContext, 'breadcrumbs' | 'useBreadcrumb' | 'setBreadcrumb' | 'isMacPlatform'> {
@@ -288,7 +288,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     userHistory={userHistory}
                 />
             )}
-            {showDeveloperDialog && <DeveloperDialog />}
+            {showDeveloperDialog && <LazyDeveloperDialog />}
             <SearchQueryStateObserver
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}
@@ -328,13 +328,13 @@ const ApplicationRoutes: FC<ApplicationRoutes> = props => {
                 </Routes>
             </AppRouterContainer>
             {/**
-             * The portal root is inside the suspense boundary so that it is hidden
-             * when we navigate to the lazily loaded routes or other actions which trigger
-             * the Suspense boundary to show the fallback UI. Existing children are not unmounted
-             * until the promise is resolved.
-             *
-             * See: https://github.com/facebook/react/pull/15861
-             */}
+              * The portal root is inside the suspense boundary so that it is hidden
+              * when we navigate to the lazily loaded routes or other actions which trigger
+              * the Suspense boundary to show the fallback UI. Existing children are not unmounted
+              * until the promise is resolved.
+              *
+              * See: https://github.com/facebook/react/pull/15861
+              */}
             <div id="references-panel-react-portal" />
         </Suspense>
     )
