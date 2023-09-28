@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,16 +32,14 @@ func ServeSearchJobDownload(svc *service.Service) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/csv")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.csv\"", filename(jobID)))
 
-		err = svc.WriteSearchJobCSV(r.Context(), w, int64(jobID))
+		n, err := svc.WriteSearchJobCSV(r.Context(), w, int64(jobID))
 		if err != nil {
-			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
-			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpError(w, err)
 			return
 		}
-
+		if n == 0 {
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}
 }
 
@@ -57,12 +57,19 @@ func ServeSearchJobLogs(svc *service.Service) http.HandlerFunc {
 
 		err = svc.WriteSearchJobLogs(r.Context(), w, int64(jobID))
 		if err != nil {
-			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
-			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			httpError(w, err)
 		}
+
+	}
+}
+
+func httpError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser):
+		http.Error(w, err.Error(), http.StatusForbidden)
+	case errors.Is(err, store.ErrNoResults), errors.Is(err, sql.ErrNoRows):
+		http.Error(w, err.Error(), http.StatusNotFound)
+	default:
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
