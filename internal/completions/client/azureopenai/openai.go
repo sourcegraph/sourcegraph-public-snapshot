@@ -108,7 +108,11 @@ func (c *azureCompletionClient) Stream(
 		}
 
 		if len(event.Choices) > 0 {
-			content += event.Choices[0].Delta.Content
+			if feature == types.CompletionsFeatureCode {
+				content += event.Choices[0].Text
+			} else {
+				content += event.Choices[0].Delta.Content
+			}
 			ev := types.CompletionResponse{
 				Completion: content,
 				StopReason: event.Choices[0].FinishReason,
@@ -287,6 +291,7 @@ type azure struct {
 
 type openaiChoiceDelta struct {
 	Content string `json:"content"`
+	Text    string `json:"text"`
 }
 
 type openaiChoice struct {
