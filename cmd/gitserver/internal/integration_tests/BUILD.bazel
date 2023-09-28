@@ -28,6 +28,7 @@ go_library(
 
 go_test(
     name = "integration_tests_test",
+    timeout = "short",
     srcs = [
         "archivereader_test.go",
         "commits_test.go",
@@ -37,6 +38,9 @@ go_test(
         "tree_test.go",
     ],
     embed = [":integration_tests"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/internal",
         "//cmd/gitserver/internal/perforce",
