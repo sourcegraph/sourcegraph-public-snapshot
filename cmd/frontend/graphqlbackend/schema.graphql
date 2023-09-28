@@ -3261,6 +3261,41 @@ enum ExternalServiceKind {
 }
 
 """
+The current state of a rate limiter.
+"""
+type RateLimiterState {
+    """
+    The number of tokens in the bucket.
+    """
+    burst: Int!
+
+    """
+    The current capacity of the rate limiter.
+    """
+    currentCapacity: Int!
+
+    """
+    If infinite is true, the rate limiter is functionally disabled.
+    """
+    infinite: Boolean!
+
+    """
+    The amount of time in seconds it takes for the rate limiter to refill the number of tokens specified by limit.
+    """
+    interval: Int!
+
+    """
+    The last time at which the rate limiter refilled tokens.
+    """
+    lastReplenishment: DateTime!
+
+    """
+    The number of tokens the rate limiter refills in the specified amount of time.
+    """
+    limit: Int!
+}
+
+"""
 A configured external service.
 """
 type ExternalService implements Node {
@@ -3278,6 +3313,11 @@ type ExternalService implements Node {
     The display name of the external service.
     """
     displayName: String!
+
+    """
+    The current rate limiter state for the external service.
+    """
+    rateLimiterState: RateLimiterState
 
     """
     The JSON configuration of the external service.

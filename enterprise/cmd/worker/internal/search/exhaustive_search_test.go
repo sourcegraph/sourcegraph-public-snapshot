@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -40,6 +41,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	svc := service.New(observationCtx, s, mockUploadStore)
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
+	userBadID := insertRow(t, s.Store, "users", "username", "mallory")
 	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
 	insertRow(t, s.Store, "repo", "id", 2, "name", "repob")
 
@@ -159,6 +161,16 @@ func TestExhaustiveSearch(t *testing.T) {
 		// We should use the CSV reader to parse this but since we know none of the
 		// columns have a "," in the context of this test, this is fine.
 		require.Equal(6, len(strings.Split(lines[1], ",")))
+	}
+
+	// Assert that we fail without writing anything if the user is not allowed
+	// to view the logs
+	{
+		userBadCtx := actor.WithActor(context.Background(), actor.FromUser(userBadID))
+		var buf bytes.Buffer
+		err := svc.WriteSearchJobLogs(userBadCtx, &buf, job.ID)
+		require.ErrorIs(err, auth.ErrMustBeSiteAdminOrSameUser)
+		require.Equal(0, buf.Len(), "expected no bytes to be written")
 	}
 
 	// Assert that cancellation affects the number of rows we expect. This is a bit
