@@ -35,8 +35,8 @@
   path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
   interfaces:
     - ReleaseCache
-- filename: cmd/gitserver/server/vcs_syncer_mock_test.go
-  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/server
+- filename: cmd/gitserver/internal/vcs_syncer_mock_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
   interfaces:
     - VCSSyncer
 - filename: cmd/symbols/fetcher/mocks_test.go

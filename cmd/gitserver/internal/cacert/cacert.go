@@ -30,3 +30,7 @@ func NewCertPool() *CertPool {
 func (c *CertPool) AppendCertsFromPEM(data []byte) {
 	c.certs = append(c.certs, data)
 }
+
+func (c *CertPool) len() int {
+	return len(c.certs)
+}
