@@ -368,19 +368,19 @@ Sourcegraph.com instance.
 
 | .proto Type | Notes |
 | ----------- | ----- |
-| <a name="double" /> double | 
-| <a name="float" /> float | 
-| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.
-| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.
-| <a name="uint32" /> uint32 | Uses variable-length encoding.
-| <a name="uint64" /> uint64 | Uses variable-length encoding.
-| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.
-| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.
-| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28.
-| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56.
-| <a name="sfixed32" /> sfixed32 | Always four bytes.
-| <a name="sfixed64" /> sfixed64 | Always eight bytes.
-| <a name="bool" /> bool | 
-| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text.
-| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes.
+| <a name="double" /> double |  |
+| <a name="float" /> float |  |
+| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. |
+| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. |
+| <a name="uint32" /> uint32 | Uses variable-length encoding. |
+| <a name="uint64" /> uint64 | Uses variable-length encoding. |
+| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. |
+| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. |
+| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. |
+| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. |
+| <a name="sfixed32" /> sfixed32 | Always four bytes. |
+| <a name="sfixed64" /> sfixed64 | Always eight bytes. |
+| <a name="bool" /> bool |  |
+| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. |
+| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. |
 
