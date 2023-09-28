@@ -52,8 +52,18 @@ type operations struct {
 	deleteSearchJob          *observation.Operation
 	listSearchJobs           *observation.Operation
 	cancelSearchJob          *observation.Operation
-	writeSearchJobCSV        *observation.Operation
 	getAggregateRepoRevState *observation.Operation
+
+	getSearchJobCSVWriterTo  operationWithWriterTo
+	getSearchJobLogsWriterTo operationWithWriterTo
+}
+
+// operationWithWriterTo encodes our pattern around our CSV WriterTo were we
+// have two steps that run adjacent to each other. First validating we can get
+// the job, then we return a WriterTo which actually writes.
+type operationWithWriterTo struct {
+	get      *observation.Operation
+	writerTo *observation.Operation
 }
 
 var (
@@ -88,8 +98,16 @@ func newOperations(observationCtx *observation.Context) *operations {
 			deleteSearchJob:          op("DeleteSearchJob"),
 			listSearchJobs:           op("ListSearchJobs"),
 			cancelSearchJob:          op("CancelSearchJob"),
-			writeSearchJobCSV:        op("WriteSearchJobCSV"),
 			getAggregateRepoRevState: op("GetAggregateRepoRevState"),
+
+			getSearchJobCSVWriterTo: operationWithWriterTo{
+				get:      op("GetSearchJobCSVWriterTo"),
+				writerTo: op("GetSearchJobCSVWriterTo.WriteTo"),
+			},
+			getSearchJobLogsWriterTo: operationWithWriterTo{
+				get:      op("GetSearchJobLogsWriterTo"),
+				writerTo: op("GetSearchJobLogsWriterTo.WriteTo"),
+			},
 		}
 	})
 	return singletonOperations
@@ -162,51 +180,33 @@ func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs
 	return s.store.ListExhaustiveSearchJobs(ctx, args)
 }
 
-func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
+// GetSearchJobLogsWriterTo returns a WriterTo which can be called once to
+// write the logs for job id. Note: ctx is used by WriterTo.
+//
+// io.WriterTo is a specialization of an io.Reader. We expect callers of this
+// function to want to write an http response, so we avoid an io.Pipe and
+// instead pass a more direct use.
+func (s *Service) GetSearchJobLogsWriterTo(parentCtx context.Context, id int64) (_ io.WriterTo, err error) {
+	ctx, _, endObservation := s.operations.getSearchJobLogsWriterTo.get.With(parentCtx, &err, opAttrs(
+		attribute.Int64("id", id)))
+	defer endObservation(1, observation.Args{})
+
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
 	if _, err := s.GetSearchJob(ctx, id); err != nil {
-		return err
+		return nil, err
 	}
 
 	iter := s.getJobLogsIter(ctx, id)
 
-	cw := csv.NewWriter(w)
+	return writerToFunc(func(w io.Writer) (n int64, err error) {
+		_, _, endObservation := s.operations.getSearchJobLogsWriterTo.writerTo.With(parentCtx, &err, opAttrs(
+			attribute.Int64("id", id)))
+		defer func() {
+			endObservation(1, opAttrs(attribute.Int64("bytesWritten", n)))
+		}()
 
-	header := []string{
-		"repository",
-		"revision",
-		"started_at",
-		"finished_at",
-		"status",
-		"failure_message",
-	}
-	err = cw.Write(header)
-	if err != nil {
-		return err
-	}
-
-	for iter.Next() {
-		job := iter.Current()
-		err = cw.Write([]string{
-			string(job.RepoName),
-			job.Revision,
-			formatOrNULL(job.StartedAt),
-			formatOrNULL(job.FinishedAt),
-			string(job.State),
-			job.FailureMessage,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := iter.Err(); err != nil {
-		return err
-	}
-
-	// Flush data before checking for any final write errors.
-	cw.Flush()
-	return cw.Error()
+		return writeSearchJobLogs(iter, w)
+	}), nil
 }
 
 // JobLogsIterLimit is the number of lines the iterator will read from the
@@ -292,28 +292,39 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 
 // WriteSearchJobCSV copies all CSVs associated with a search job to the given
 // writer. It returns the number of bytes written and any error encountered.
-func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) (n int64, err error) {
-	ctx, _, endObservation := s.operations.writeSearchJobCSV.With(ctx, &err, opAttrs(
+
+// GetSearchJobCSVWriterTo returns a WriterTo which can be called once to
+// write all CSVs associated with a search job to the given writer for job id.
+// Note: ctx is used by WriterTo.
+//
+// io.WriterTo is a specialization of an io.Reader. We expect callers of this
+// function to want to write an http response, so we avoid an io.Pipe and
+// instead pass a more direct use.
+func (s *Service) GetSearchJobCSVWriterTo(parentCtx context.Context, id int64) (_ io.WriterTo, err error) {
+	ctx, _, endObservation := s.operations.getSearchJobCSVWriterTo.get.With(parentCtx, &err, opAttrs(
 		attribute.Int64("id", id)))
 	defer endObservation(1, observation.Args{})
 
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
 	_, err = s.GetSearchJob(ctx, id)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	iter, err := s.uploadStore.List(ctx, getPrefix(id))
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	n, err = writeSearchJobCSV(ctx, iter, s.uploadStore, w)
-	if err != nil {
-		return n, errors.Wrapf(err, "writing csv for job %d", id)
-	}
+	return writerToFunc(func(w io.Writer) (n int64, err error) {
+		ctx, _, endObservation := s.operations.getSearchJobCSVWriterTo.writerTo.With(parentCtx, &err, opAttrs(
+			attribute.Int64("id", id)))
+		defer func() {
+			endObservation(1, opAttrs(attribute.Int64("bytesWritten", n)))
+		}()
 
-	return n, nil
+		return writeSearchJobCSV(ctx, iter, s.uploadStore, w)
+	}), nil
 }
 
 // GetAggregateRepoRevState returns the map of state -> count for all repo
@@ -406,4 +417,68 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 	}
 
 	return n, iter.Err()
+}
+
+func writeSearchJobLogs(iter *iterator.Iterator[types.SearchJobLog], w io.Writer) (int64, error) {
+	// For csv.NewWriter we have no way to track bytes written, so we wrap
+	// w to find out. The implementation of csv writer uses a
+	// bufio.NewWriter and avoids any uses of optimized interfaces like
+	// WriterTo so this has no perf impact.
+	writeCounter := &writeCounter{w: w}
+	cw := csv.NewWriter(writeCounter)
+
+	header := []string{
+		"repository",
+		"revision",
+		"started_at",
+		"finished_at",
+		"status",
+		"failure_message",
+	}
+	err := cw.Write(header)
+	if err != nil {
+		return writeCounter.n, err
+	}
+
+	for iter.Next() {
+		job := iter.Current()
+		err = cw.Write([]string{
+			string(job.RepoName),
+			job.Revision,
+			formatOrNULL(job.StartedAt),
+			formatOrNULL(job.FinishedAt),
+			string(job.State),
+			job.FailureMessage,
+		})
+		if err != nil {
+			return writeCounter.n, err
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return writeCounter.n, err
+	}
+
+	// Flush data before checking for any final write errors.
+	cw.Flush()
+	return writeCounter.n, cw.Error()
+}
+
+type writerToFunc func(w io.Writer) (int64, error)
+
+func (f writerToFunc) WriteTo(w io.Writer) (int64, error) {
+	return f(w)
+}
+
+// writeCounter wraps an io.Writer and keeps track of bytes written.
+type writeCounter struct {
+	w io.Writer
+	// n is the number of bytes written to w
+	n int64
+}
+
+func (c *writeCounter) Write(p []byte) (n int, err error) {
+	n, err = c.w.Write(p)
+	c.n += int64(n)
+	return
 }

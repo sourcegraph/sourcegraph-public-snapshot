@@ -28,6 +28,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
+	logger := observationCtx.Logger
 	store := store.New(db, observationCtx)
 
 	uploadStore, err := uploadstore.New(ctx, observationCtx, uploadstore.ConfigInst)
@@ -37,9 +38,9 @@ func Init(
 
 	svc := service.New(observationCtx, store, uploadStore)
 
-	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db, svc)
-	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(svc)
-	enterpriseServices.SearchJobsLogsHandler = httpapi.ServeSearchJobLogs(svc)
+	enterpriseServices.SearchJobsResolver = resolvers.New(logger, db, svc)
+	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(logger, svc)
+	enterpriseServices.SearchJobsLogsHandler = httpapi.ServeSearchJobLogs(logger, svc)
 
 	return nil
 }
