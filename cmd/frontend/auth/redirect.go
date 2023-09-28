@@ -38,7 +38,7 @@ func AddPostAuthRedirectParametersToURL(u *url.URL, newUserCreated bool) {
 func AddPostAuthRedirectParametersToString(urlStr string, newUserCreated bool) string {
 	u, err := url.Parse(urlStr)
 	if err != nil {
-		return "/"
+		return urlStr
 	}
 	AddPostAuthRedirectParametersToURL(u, newUserCreated)
 	return u.String()
