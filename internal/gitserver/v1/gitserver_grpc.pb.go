@@ -35,6 +35,7 @@ const (
 	GitserverService_RepoUpdate_FullMethodName                  = "/gitserver.v1.GitserverService/RepoUpdate"
 	GitserverService_ReposStats_FullMethodName                  = "/gitserver.v1.GitserverService/ReposStats"
 	GitserverService_IsPerforcePathCloneable_FullMethodName     = "/gitserver.v1.GitserverService/IsPerforcePathCloneable"
+	GitserverService_CheckPerforceCredentials_FullMethodName    = "/gitserver.v1.GitserverService/CheckPerforceCredentials"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -58,6 +59,7 @@ type GitserverServiceClient interface {
 	// TODO: Remove this endpoint after 5.2, it is deprecated.
 	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 	IsPerforcePathCloneable(ctx context.Context, in *IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*IsPerforcePathCloneableResponse, error)
+	CheckPerforceCredentials(ctx context.Context, in *CheckPerforceCredentialsRequest, opts ...grpc.CallOption) (*CheckPerforceCredentialsResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -329,6 +331,15 @@ func (c *gitserverServiceClient) IsPerforcePathCloneable(ctx context.Context, in
 	return out, nil
 }
 
+func (c *gitserverServiceClient) CheckPerforceCredentials(ctx context.Context, in *CheckPerforceCredentialsRequest, opts ...grpc.CallOption) (*CheckPerforceCredentialsResponse, error) {
+	out := new(CheckPerforceCredentialsResponse)
+	err := c.cc.Invoke(ctx, GitserverService_CheckPerforceCredentials_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -350,6 +361,7 @@ type GitserverServiceServer interface {
 	// TODO: Remove this endpoint after 5.2, it is deprecated.
 	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error)
+	CheckPerforceCredentials(context.Context, *CheckPerforceCredentialsRequest) (*CheckPerforceCredentialsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -404,6 +416,9 @@ func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *ReposSta
 }
 func (UnimplementedGitserverServiceServer) IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPerforcePathCloneable not implemented")
+}
+func (UnimplementedGitserverServiceServer) CheckPerforceCredentials(context.Context, *CheckPerforceCredentialsRequest) (*CheckPerforceCredentialsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckPerforceCredentials not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -726,6 +741,24 @@ func _GitserverService_IsPerforcePathCloneable_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_CheckPerforceCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckPerforceCredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).CheckPerforceCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_CheckPerforceCredentials_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).CheckPerforceCredentials(ctx, req.(*CheckPerforceCredentialsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -776,6 +809,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsPerforcePathCloneable",
 			Handler:    _GitserverService_IsPerforcePathCloneable_Handler,
+		},
+		{
+			MethodName: "CheckPerforceCredentials",
+			Handler:    _GitserverService_CheckPerforceCredentials_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

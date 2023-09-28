@@ -484,6 +484,15 @@ func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 	return &proto.IsPerforcePathCloneableResponse{}, nil
 }
 
+func (gs *GRPCServer) CheckPerforceCredentials(ctx context.Context, req *proto.CheckPerforceCredentialsRequest) (*proto.CheckPerforceCredentialsResponse, error) {
+	err := p4testWithTrust(ctx, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return &proto.CheckPerforceCredentialsResponse{}, nil
+}
+
 func byteSlicesToStrings(in [][]byte) []string {
 	res := make([]string, len(in))
 	for i, b := range in {

@@ -50,15 +50,12 @@ func newPerforceSource(gitserverClient gitserver.Client, svc *types.ExternalServ
 // For Perforce, it uses the host (p4.port), username (p4.user) and password (p4.passwd)
 // from the code host configuration.
 func (s PerforceSource) CheckConnection(ctx context.Context) error {
-	// since CheckConnection is called from the frontend, we can't rely on the `p4` executable
-	// being available, so we need to make an RPC call to `gitserver`, where it is available.
-	// Use what is for us a "no-op" `p4` command that should always succeed.
 	gclient := gitserver.NewClient()
-	rc, _, err := gclient.P4Exec(ctx, s.config.P4Port, s.config.P4User, s.config.P4Passwd, "users")
+	err := gclient.CheckPerforceCredentials(ctx, s.config.P4Port, s.config.P4User, s.config.P4Passwd)
 	if err != nil {
 		return errors.Wrap(err, "Unable to connect to the Perforce server")
 	}
-	rc.Close()
+
 	return nil
 }
 
