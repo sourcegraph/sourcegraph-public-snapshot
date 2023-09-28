@@ -1837,12 +1837,14 @@ type CodeMonitoringUsageStatistics struct {
 	WebhookActionsEnabledUniqueUsers              *int32
 	MonitorsEnabled                               *int32
 	MonitorsEnabledUniqueUsers                    *int32
-	MonitorsEnabledLastRunErrored                 *int32
-	ReposMonitored                                *int32
-	TriggerRuns                                   *int32
-	TriggerRunsErrored                            *int32
-	P50TriggerRunTimeSeconds                      *float32
-	P90TriggerRunTimeSeconds                      *float32
+	// (TODO @jasonhawkharris ) Currently, MonitorsEnabledLastRunErrored is unpopulated
+	// It will require adjusting the query to select a row inside of a group
+	MonitorsEnabledLastRunErrored *int32
+	ReposMonitored                *int32
+	TriggerRuns                   *int32
+	TriggerRunsErrored            *int32
+	P50TriggerRunTimeSeconds      *float32
+	P90TriggerRunTimeSeconds      *float32
 }
 
 type NotebooksUsageStatistics struct {
