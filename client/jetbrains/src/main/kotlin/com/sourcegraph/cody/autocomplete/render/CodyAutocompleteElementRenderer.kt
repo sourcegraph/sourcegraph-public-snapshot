@@ -14,13 +14,11 @@ import java.util.function.Supplier
 
 abstract class CodyAutocompleteElementRenderer(
     val text: String,
-    val completionItem: InlineAutocompleteItem?,
-    editor: Editor,
-    type: AutocompleteRendererType?
+    val completionItem: InlineAutocompleteItem,
+    protected val editor: Editor,
+    val type: AutocompleteRendererType
 ) : EditorCustomElementRenderer {
   protected val themeAttributes: TextAttributes
-  protected val editor: Editor
-  val type: AutocompleteRendererType?
 
   init {
     val textAttributesFallback = Supplier {
@@ -33,8 +31,6 @@ abstract class CodyAutocompleteElementRenderer(
             }
                 ?: textAttributesFallback.get()
         else textAttributesFallback.get()
-    this.editor = editor
-    this.type = type
   }
 
   override fun calcWidthInPixels(inlay: Inlay<*>): Int {

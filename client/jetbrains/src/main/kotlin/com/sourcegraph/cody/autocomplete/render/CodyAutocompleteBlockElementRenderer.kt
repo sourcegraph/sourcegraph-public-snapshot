@@ -12,7 +12,7 @@ import java.awt.Rectangle
 /** Implements the logic to render an autocomplete item inline in the editor. */
 class CodyAutocompleteBlockElementRenderer(
     text: String,
-    completionItem: InlineAutocompleteItem?,
+    completionItem: InlineAutocompleteItem,
     editor: Editor
 ) : CodyAutocompleteElementRenderer(text, completionItem, editor, AutocompleteRendererType.BLOCK) {
   override fun calcWidthInPixels(inlay: Inlay<*>): Int {

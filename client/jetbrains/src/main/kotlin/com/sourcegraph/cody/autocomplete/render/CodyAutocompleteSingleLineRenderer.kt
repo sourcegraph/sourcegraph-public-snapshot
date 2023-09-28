@@ -8,11 +8,11 @@ import java.awt.Graphics
 import java.awt.Rectangle
 
 class CodyAutocompleteSingleLineRenderer(
-    text: String?,
-    completionItem: InlineAutocompleteItem?,
-    editor: Editor?,
-    type: AutocompleteRendererType?
-) : CodyAutocompleteElementRenderer(text!!, completionItem, editor!!, type) {
+    text: String,
+    completionItem: InlineAutocompleteItem,
+    editor: Editor,
+    type: AutocompleteRendererType
+) : CodyAutocompleteElementRenderer(text, completionItem, editor, type) {
   override fun paint(
       inlay: Inlay<*>,
       g: Graphics,
