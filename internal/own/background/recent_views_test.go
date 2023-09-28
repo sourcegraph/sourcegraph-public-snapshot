@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -74,8 +74,8 @@ func TestRecentViewsIndexer(t *testing.T) {
 		require.NoError(t, err)
 		defer rs.Close()
 		// `insertEvents` inserts two relevant events for paths:
-		// - cmd/gitserver/server/main.go
-		// - cmd/gitserver/server/patch.go
+		// - cmd/gitserver/internal/main.go
+		// - cmd/gitserver/internal/patch.go
 		// Since these are in the same directory:
 		// - every summary record that indicates a file, will have a count
 		//   corresponding to the number of handlerRuns
