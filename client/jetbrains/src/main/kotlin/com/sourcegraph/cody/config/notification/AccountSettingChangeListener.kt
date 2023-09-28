@@ -5,7 +5,7 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentManager
-import com.sourcegraph.cody.config.CodyApplicationSettings.Companion.getInstance
+import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.GraphQlLogger
@@ -17,7 +17,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
         AccountSettingChangeActionNotifier.TOPIC,
         object : AccountSettingChangeActionNotifier {
           override fun beforeAction(serverUrlChanged: Boolean) {
-            val codyApplicationSettings = getInstance()
+            val codyApplicationSettings = CodyApplicationSettings.getInstance()
             if (serverUrlChanged) {
               GraphQlLogger.logUninstallEvent(project)
               codyApplicationSettings.isInstallEventLogged = false
@@ -25,7 +25,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
           }
 
           override fun afterAction(context: AccountSettingChangeContext) {
-            val codyApplicationSettings = getInstance()
+            val codyApplicationSettings = CodyApplicationSettings.getInstance()
             // Notify JCEF about the config changes
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 

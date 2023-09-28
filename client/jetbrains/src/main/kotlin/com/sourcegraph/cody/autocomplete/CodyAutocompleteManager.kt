@@ -5,6 +5,7 @@ import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.Inlay
@@ -231,9 +232,7 @@ class CodyAutocompleteManager {
       currentAutocompleteTelemetry!!.markCompletionEvent(result.completionEvent)
     }
     if (Thread.interrupted() || cancellationToken.isCancelled) {
-      if (triggerKind == InlineCompletionTriggerKind.INVOKE) {
-        logger.warn("autocomplete canceled")
-      }
+      if (triggerKind == InlineCompletionTriggerKind.INVOKE) logger.warn("autocomplete canceled")
       return
     }
     val inlayModel = editor.inlayModel
@@ -335,8 +334,9 @@ class CodyAutocompleteManager {
   }
 
   companion object {
+    @JvmStatic
     val instance: CodyAutocompleteManager
-      get() = ApplicationManager.getApplication().getService(CodyAutocompleteManager::class.java)
+      get() = service<CodyAutocompleteManager>()
 
     @JvmStatic
     fun diff(a: String, b: String): Patch<String> =
