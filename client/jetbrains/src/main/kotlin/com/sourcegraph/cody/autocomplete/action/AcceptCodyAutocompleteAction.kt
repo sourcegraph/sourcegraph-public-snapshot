@@ -1,6 +1,7 @@
-package com.sourcegraph.cody.autocomplete
+package com.sourcegraph.cody.autocomplete.action
 
 import com.intellij.openapi.editor.actionSystem.EditorAction
+import com.sourcegraph.cody.autocomplete.AcceptAutoCompleteActionHandler
 
 /**
  * The action that gets triggered when the user accepts a Cody completion.

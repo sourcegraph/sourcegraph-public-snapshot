@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.util.TextRange
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.autocomplete.action.AutocompleteActionHandler
 import com.sourcegraph.cody.vscode.InlineAutocompleteItem
 import com.sourcegraph.telemetry.GraphQlLogger
 import com.sourcegraph.utils.CodyEditorUtil
