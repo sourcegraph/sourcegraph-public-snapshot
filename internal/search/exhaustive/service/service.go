@@ -291,8 +291,8 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 }
 
 // WriteSearchJobCSV copies all CSVs associated with a search job to the given
-// writer.
-func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) (err error) {
+// writer. It returns the number of bytes written and any error encountered.
+func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) (n int64, err error) {
 	ctx, _, endObservation := s.operations.writeSearchJobCSV.With(ctx, &err, opAttrs(
 		attribute.Int64("id", id)))
 	defer endObservation(1, observation.Args{})
@@ -300,19 +300,20 @@ func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) 
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
 	_, err = s.GetSearchJob(ctx, id)
 	if err != nil {
-		return err
+		return
 	}
 
 	iter, err := s.uploadStore.List(ctx, getPrefix(id))
 	if err != nil {
-		return err
+		return
 	}
 
-	err = writeSearchJobCSV(ctx, iter, s.uploadStore, w)
+	n, err = writeSearchJobCSV(ctx, iter, s.uploadStore, w)
 	if err != nil {
-		return errors.Wrapf(err, "writing csv for job %d", id)
+		return n, errors.Wrapf(err, "writing csv for job %d", id)
 	}
-	return nil
+
+	return n, nil
 }
 
 // GetAggregateRepoRevState returns the map of state -> count for all repo
@@ -363,14 +364,14 @@ func discardUntil(br *bufio.Reader, delim byte) error {
 	}
 }
 
-func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) error {
+func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) (int64, error) {
 	// keep a single bufio.Reader so we can reuse its buffer.
 	var br bufio.Reader
-	writeKey := func(key string, skipHeader bool) error {
+	writeKey := func(key string, skipHeader bool) (int64, error) {
 		rc, err := uploadStore.Get(ctx, key)
 		if err != nil {
 			_ = rc.Close()
-			return err
+			return 0, err
 		}
 		defer rc.Close()
 
@@ -382,25 +383,27 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 			if err == io.EOF {
 				// reached end of file before finding the newline. Write
 				// nothing
-				return nil
+				return 0, nil
 			} else if err != nil {
-				return err
+				return 0, err
 			}
 		}
 
-		_, err = br.WriteTo(w)
-		return err
+		return br.WriteTo(w)
 	}
 
 	// For the first blob we want the header, for the rest we don't
 	skipHeader := false
+	var n int64
 	for iter.Next() {
 		key := iter.Current()
-		if err := writeKey(key, skipHeader); err != nil {
-			return errors.Wrapf(err, "writing csv for key %q", key)
+		m, err := writeKey(key, skipHeader)
+		n += m
+		if err != nil {
+			return n, errors.Wrapf(err, "writing csv for key %q", key)
 		}
 		skipHeader = true
 	}
 
-	return iter.Err()
+	return n, iter.Err()
 }
