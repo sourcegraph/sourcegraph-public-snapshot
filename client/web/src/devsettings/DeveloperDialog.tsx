@@ -59,6 +59,8 @@ import {
     useOverrideCounter,
 } from '../stores'
 
+import { EventLoggingDebugToggle } from './settings/eventLoggingDebug'
+
 import styles from './DeveloperDialog.module.scss'
 
 export const DeveloperDialog: FC<{}> = () => {
@@ -73,8 +75,8 @@ export const DeveloperDialog: FC<{}> = () => {
         >
             <H3>Developer Settings</H3>
             <Text>
-                Here you can enforce or reset various settings during development. All overrides are stored locally in
-                your browser.
+                You can temporarily override settings here for development purposes. Any changes will be stored locally
+                in your browser only.
             </Text>
             <Tabs
                 lazy={true}
@@ -87,6 +89,7 @@ export const DeveloperDialog: FC<{}> = () => {
                 <TabList>
                     <Tab>Feature flags ({counter.featureFlags})</Tab>
                     <Tab>Temporary settings ({counter.temporarySettings})</Tab>
+                    <Tab>Misc</Tab>
                 </TabList>
                 <TabPanels className="overflow-hidden flex-1 min-w-0 d-flex">
                     <TabPanel className={styles.content}>
@@ -94,6 +97,13 @@ export const DeveloperDialog: FC<{}> = () => {
                     </TabPanel>
                     <TabPanel className={styles.content}>
                         <TemporarySettingsPanel />
+                    </TabPanel>
+                    <TabPanel className={styles.content}>
+                        <ul className={styles.settingsList}>
+                            <li>
+                                <EventLoggingDebugToggle />
+                            </li>
+                        </ul>
                     </TabPanel>
                 </TabPanels>
             </Tabs>

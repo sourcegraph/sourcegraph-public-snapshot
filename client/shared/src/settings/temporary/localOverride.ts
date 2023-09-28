@@ -31,7 +31,7 @@ export function removeTemporarySettingOverride<K extends TemporarySettingsKey>(f
 }
 
 /**
- * This is a necessary workaround for notifing the temporary storage system when
+ * This is a necessary workaround for notifying the temporary storage system when
  * changes have been made.
  */
 export const temporarySettingsOverrideUpdate = new Subject<void>()
