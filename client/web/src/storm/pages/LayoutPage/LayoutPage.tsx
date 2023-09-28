@@ -18,6 +18,7 @@ import { LazyFuzzyFinder } from '../../../components/fuzzyFinder/LazyFuzzyFinder
 import { KeyboardShortcutsHelp } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from '../../../components/useScrollToLocationHash'
 import { useUserHistory } from '../../../components/useUserHistory'
+import { DeveloperDialog } from '../../../devsettings/DeveloperDialog'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { GlobalAlerts } from '../../../global/GlobalAlerts'
 import { useHandleSubmitFeedback } from '../../../hooks'
@@ -28,10 +29,9 @@ import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
 import { NotepadContainer } from '../../../search/Notepad'
 import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
+import { useDeveloperSettings } from '../../../stores'
 
 import styles from './LayoutPage.module.scss'
-import { useDevSettings } from '../../../stores'
-import { DeveloperDialog } from '../../../devsettings/DeveloperDialog'
 
 const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard/SetupWizard'), 'SetupWizard')
 
@@ -87,7 +87,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
-    const {showDialog: showDeveloperDialog} = useDevSettings()
+    const showDeveloperDialog = useDeveloperSettings(state => state.showDialog)
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(props.authenticatedUser?.id, isRepositoryRelatedPage)
 
@@ -265,7 +265,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     userHistory={userHistory}
                 />
             )}
-            {showDeveloperDialog && <DeveloperDialog authenticatedUser={props.authenticatedUser} />}
+            {showDeveloperDialog && <DeveloperDialog />}
             <SearchQueryStateObserver
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}

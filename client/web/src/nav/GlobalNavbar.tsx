@@ -26,6 +26,7 @@ import { CodyLogo } from '../cody/components/CodyLogo'
 import { UpdateGlobalNav } from '../cody/update/UpdateGlobalNav'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
+import { DeveloperSettingsGlobalNavItem } from '../devsettings/DeveloperSettingsGlobalNavItem'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import type { CodeInsightsProps } from '../insights/types'
@@ -46,7 +47,6 @@ import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
 import styles from './GlobalNavbar.module.scss'
-import { DeveloperSettingsGlobalNavItem } from '../devsettings/DeveloperSettingsGlobalNavItem'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,

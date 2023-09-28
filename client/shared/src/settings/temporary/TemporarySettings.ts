@@ -155,4 +155,4 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'simple.search.toggle': null,
 }
 
-export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as (keyof TemporarySettings)[]
+export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

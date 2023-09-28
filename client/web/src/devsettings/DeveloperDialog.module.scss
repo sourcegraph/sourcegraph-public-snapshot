@@ -6,7 +6,6 @@
     width: auto;
     display: flex;
     flex-direction: column;
-
 }
 
 .content {
@@ -42,16 +41,13 @@
             color: var(--text-muted);
         }
 
-        tr.enabled > td {
-            color: var(--body-color);
-            font-weight: 600;
-        }
-
         tr.override > td {
-            color: var(--orange);
+            font-weight: 600;
+            color: var(--body-color);
         }
 
-        td,th {
+        td,
+        th {
             white-space: nowrap;
         }
 
@@ -61,16 +57,10 @@
             font-style: inherit;
             font-weight: inherit;
         }
-
-        .actions {
-            visibility: hidden;
-            display: flex;
-
-        }
-
-        tr:hover .actions {
-            visibility: visible;
-        }
     }
+}
 
+.clear-button {
+    position: absolute;
+    right: 0.5rem;
 }

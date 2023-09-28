@@ -1,5 +1,6 @@
-import { Subject } from "rxjs"
-import { TemporarySettings } from "./TemporarySettings"
+import { Subject } from 'rxjs'
+
+import type { TemporarySettings } from './TemporarySettings'
 
 type TemporarySettingsKey = keyof TemporarySettings
 
@@ -16,7 +17,10 @@ export function getTemporarySettingOverride<K extends TemporarySettingsKey>(name
     return typeof value === 'string' ? JSON.parse(value) : null
 }
 
-export function setTemporarySettingOverride<K extends TemporarySettingsKey>(name: K, value: FeatureFlagOverride<K>): void {
+export function setTemporarySettingOverride<K extends TemporarySettingsKey>(
+    name: K,
+    value: FeatureFlagOverride<K>
+): void {
     localStorage.setItem(buildOverrideKey(name), JSON.stringify(value))
     temporarySettingsOverrideUpdate.next()
 }
@@ -30,4 +34,4 @@ export function removeTemporarySettingOverride<K extends TemporarySettingsKey>(f
  * This is a necessary workaround for notifing the temporary storage system when
  * changes have been made.
  */
-export const temporarySettingsOverrideUpdate = new Subject<void>
+export const temporarySettingsOverrideUpdate = new Subject<void>()

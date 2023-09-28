@@ -1,59 +1,68 @@
-import { countOverrides } from "../devsettings/utils"
-import create from "zustand"
+import create from 'zustand'
 import { persist } from 'zustand/middleware'
+
+import { countOverrides } from '../devsettings/utils'
 
 interface DeveloperSettingsState {
     showDialog: boolean
     selectedTab: number
-    selectedView: {
-        featureFlags: string
-        temporarySettings: string
+    featureFlags: {
+        view: string
+        filter: string
+    }
+    temporarySettings: {
+        view: string
+        filter: string
     }
 }
 
-export const useDeveloperSettings = create<DeveloperSettingsState>(persist<DeveloperSettingsState>(
-    () => {
-        return {
+export const useDeveloperSettings = create<DeveloperSettingsState>(
+    persist<DeveloperSettingsState>(
+        () => ({
             showDialog: false,
             selectedTab: 0,
-            selectedView: {
-                featureFlags: 'All',
-                temporarySettings: 'All',
-            }
+            featureFlags: {
+                view: 'All',
+                filter: '',
+            },
+            temporarySettings: {
+                view: 'All',
+                filter: '',
+            },
+        }),
+        {
+            name: 'developerSettingsDialog',
         }
-    },
-    {
-        name: 'developerSettingsDialog',
-    }
-))
+    )
+)
 
-export function setDeveloperSettingsFeatureFlagsView(view: string): void {
+export function setDeveloperSettingsFeatureFlags(settings: Partial<DeveloperSettingsState['featureFlags']>): void {
     useDeveloperSettings.setState(state => ({
-        selectedView: {
-            ...state.selectedView,
-            featureFlags: view
-        }
+        featureFlags: {
+            ...state.featureFlags,
+            ...settings,
+        },
     }))
 }
 
-export function setDeveloperSettingsTemporarySettingsView(view: string): void {
+export function setDeveloperSettingsTemporarySettings(
+    settings: Partial<DeveloperSettingsState['temporarySettings']>
+): void {
     useDeveloperSettings.setState(state => ({
-        selectedView: {
-            ...state.selectedView,
-            temporarySettings: view
-        }
+        temporarySettings: {
+            ...state.temporarySettings,
+            ...settings,
+        },
     }))
 }
 
 export function toggleDevSettingsDialog(show?: boolean): void {
     useDeveloperSettings.setState(state => ({
-        showDialog: show ?? !state.showDialog
+        showDialog: show ?? !state.showDialog,
     }))
 }
 
-export const useOverrideCounter = create<{featureFlags: number, temporarySettings: number}>(() => {
-    return countOverrides()
-})
+export const useOverrideCounter = create<{ featureFlags: number; temporarySettings: number }>(() => countOverrides())
 
 export function updateOverrideCounter(): void {
     useOverrideCounter.setState(countOverrides())

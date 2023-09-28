@@ -19,6 +19,7 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/Keyboa
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
+import { DeveloperDialog } from './devsettings/DeveloperDialog'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
@@ -29,11 +30,10 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
+import { useDeveloperSettings } from './stores'
 import { isAccessTokenCallbackPage } from './user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
-import { useDeveloperSettings } from './stores'
-import { DeveloperDialog } from './devsettings/DeveloperDialog'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard/SetupWizard'), 'SetupWizard')
 

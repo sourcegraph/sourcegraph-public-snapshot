@@ -8,8 +8,12 @@ import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import type { GetTemporarySettingsResult } from '../../graphql-operations'
 
+import {
+    getTemporarySettingOverride,
+    setTemporarySettingOverride,
+    temporarySettingsOverrideUpdate,
+} from './localOverride'
 import type { TemporarySettings } from './TemporarySettings'
-import { getTemporarySettingOverride, setTemporarySettingOverride, temporarySettingsOverrideUpdate } from './localOverride'
 
 export class TemporarySettingsStorage {
     private settingsBackend: SettingsBackend = new LocalStorageSettingsBackend()
@@ -252,9 +256,15 @@ class LocalOverrideBackend implements SettingsBackend {
 
     public load(): Observable<TemporarySettings> {
         return this.backend.load().pipe(
-            switchMap(settings => of(temporarySettingsOverrideUpdate, fromEvent(window, 'storage')).pipe(mergeAll(), startWith(settings), mapTo(settings))),
+            switchMap(settings =>
+                of(temporarySettingsOverrideUpdate, fromEvent(window, 'storage')).pipe(
+                    mergeAll(),
+                    startWith(settings),
+                    mapTo(settings)
+                )
+            ),
             map(settings => {
-                const overriddenSettings: any = {...settings}
+                const overriddenSettings: any = { ...settings }
 
                 for (const key of Object.keys(settings)) {
                     const overrideValue = getTemporarySettingOverride(key as keyof TemporarySettings)
@@ -269,11 +279,11 @@ class LocalOverrideBackend implements SettingsBackend {
 
     public edit(newSettings: TemporarySettings): Observable<void> {
         try {
-            const newSettingsCopy: any = {...newSettings}
+            const newSettingsCopy: any = { ...newSettings }
             for (const [key, value] of Object.entries(newSettingsCopy)) {
                 const overrideValue = getTemporarySettingOverride(key as keyof TemporarySettings)
                 if (overrideValue) {
-                    setTemporarySettingOverride(key as keyof TemporarySettings, {value: value as any})
+                    setTemporarySettingOverride(key as keyof TemporarySettings, { value: value as any })
                     delete newSettingsCopy[key]
                 }
             }
