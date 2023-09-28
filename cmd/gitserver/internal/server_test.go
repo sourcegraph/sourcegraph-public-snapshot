@@ -213,8 +213,7 @@ func TestExecRequest(t *testing.T) {
 	}
 	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
 
-	var runCommandMock func(ctx context.Context, cmd *exec.Cmd) (int, error)
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	executil.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "testcommand":
 			_, _ = cmd.Stdout.Write([]byte("teststdout"))
@@ -235,13 +234,13 @@ func TestExecRequest(t *testing.T) {
 			cmd.Dir = "" // the test doesn't setup the dir
 
 			// We run the real codepath cause we can in this case.
-			executil.UpdateRunCommandMock(nil)
-			defer func() { executil.UpdateRunCommandMock(runCommandMock) }()
+			m := executil.RunCommandMock
+			executil.RunCommandMock = nil
+			defer func() { executil.RunCommandMock = m }()
 			return executil.RunCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
 		}
 		return 0, nil
 	}
-	executil.UpdateRunCommandMock(runCommandMock)
 	t.Cleanup(func() { executil.UpdateRunCommandMock(nil) })
 
 	for _, test := range tests {

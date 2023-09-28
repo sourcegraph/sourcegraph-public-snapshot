@@ -54,24 +54,24 @@ func UpdateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
 	runCommandMockMu.Lock()
 	defer runCommandMockMu.Unlock()
 
-	runCommandMock = mock
+	RunCommandMock = mock
 }
 
 // runCommmandMockMu protects runCommandMock against simultaneous access across
 // multiple goroutines
 var runCommandMockMu sync.RWMutex
 
-// runCommandMock is set by tests. When non-nil it is run instead of
+// RunCommandMock is set by tests. When non-nil it is run instead of
 // runCommand
-var runCommandMock func(context.Context, *exec.Cmd) (int, error)
+var RunCommandMock func(context.Context, *exec.Cmd) (int, error)
 
 // RunCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
 func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
 	runCommandMockMu.RLock()
 
-	if runCommandMock != nil {
-		code, err := runCommandMock(ctx, cmd.Unwrap())
+	if RunCommandMock != nil {
+		code, err := RunCommandMock(ctx, cmd.Unwrap())
 		runCommandMockMu.RUnlock()
 		return code, err
 	}
