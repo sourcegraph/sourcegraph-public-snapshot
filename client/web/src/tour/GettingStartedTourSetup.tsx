@@ -37,6 +37,7 @@ import type { UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVa
 import { useLanguageCompletionSource, useRepositoryCompletionSource } from '../search/autocompletion/hooks'
 
 import styles from './GettingStartedTourSetup.module.scss'
+import { eventLogger } from '../tracking/eventLogger'
 
 const DIALOG_TITLE_ID = 'onboarding-setup-title'
 
@@ -44,7 +45,7 @@ interface GettingStartedTourSetupProps {
     user: AuthenticatedUser
 }
 
-export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user }) => {
+export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user, telemetryService }) => {
     const [open, setOpen] = useState(true)
     const [repoInput, setRepoInput] = useState('')
     const [emailInput, setEmailInput] = useState('')
@@ -54,8 +55,15 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
 
     const nextStep = (): void => setStep(step => step + 1)
     const done = (): void => {
+        eventLogger.log('TourSetupCompleted')
         setOpen(false)
     }
+
+    useEffect(() => {
+        if (open) {
+            eventLogger.log('TourSetupShown')
+        }
+    }, [open])
 
     useEffect(() => {
         if (!open && repoInput && emailInput && languageInput) {
@@ -122,6 +130,10 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
         event.preventDefault()
         onHandleNext?.()
     }
+    const skip = (): void => {
+        eventLogger.log('TourSetupSkipped')
+        setConfig({skipped: true})
+    }
     return (
         <Form onSubmit={onSubmit}>
             <div className={styles.fade}>
@@ -134,7 +146,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
                 </div>
                 <div className={styles.container}>
                     <div className="text-muted">{`${step} of ${totalSteps}`}</div>
-                    <Button variant="link" onClick={() => setConfig({ skipped: true })}>
+                    <Button variant="link" onClick={skip}>
                         Skip
                     </Button>
                     <LoaderButton
