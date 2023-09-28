@@ -175,7 +175,9 @@ sealed class SourcegraphApiRequestExecutor {
     }
 
     companion object {
-      @JvmStatic fun getInstance(): Factory = service()
+      @JvmStatic
+      val instance: Factory
+        get() = service()
     }
   }
 

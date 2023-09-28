@@ -44,8 +44,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
                 CodyAutocompleteStatus.CodyDisabled
               } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
                 CodyAutocompleteStatus.AutocompleteDisabled
-              } else if (CodyAuthenticationManager.getInstance().getActiveAccount(project) ==
-                  null) {
+              } else if (CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
                 CodySignedOutNotification.show(project)
                 CodyAutocompleteStatus.CodyNotSignedIn
               } else {

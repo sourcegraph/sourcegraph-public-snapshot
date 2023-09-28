@@ -57,6 +57,8 @@ class CodyAuthenticationManager internal constructor() {
   }
 
   companion object {
-    @JvmStatic fun getInstance(): CodyAuthenticationManager = service()
+    @JvmStatic
+    val instance: CodyAuthenticationManager
+      get() = service()
   }
 }

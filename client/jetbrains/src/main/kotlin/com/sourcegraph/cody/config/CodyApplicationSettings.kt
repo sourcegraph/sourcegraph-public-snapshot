@@ -42,8 +42,7 @@ data class CodyApplicationSettings(
 
   companion object {
     @JvmStatic
-    fun getInstance(): CodyApplicationSettings {
-      return service<CodyApplicationSettings>()
-    }
+    val instance: CodyApplicationSettings
+      get() = service<CodyApplicationSettings>()
   }
 }

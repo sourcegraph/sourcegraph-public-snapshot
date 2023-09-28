@@ -10,7 +10,7 @@ import com.sourcegraph.utils.CodyLanguageUtil
 
 class CodyDisableLanguageForAutocompleteAction : DumbAwareAction() {
   override fun actionPerformed(e: AnActionEvent) {
-    val applicationSettings = CodyApplicationSettings.getInstance()
+    val applicationSettings = CodyApplicationSettings.instance
     CodyEditorUtil.getLanguageForFocusedEditor(e)?.id?.let { languageId ->
       applicationSettings.blacklistedLanguageIds =
           applicationSettings.blacklistedLanguageIds.plus(languageId)
