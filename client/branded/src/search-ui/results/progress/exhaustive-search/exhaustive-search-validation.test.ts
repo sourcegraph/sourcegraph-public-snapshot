@@ -32,6 +32,10 @@ describe('exhaustive search validation', () => {
             expect(validateQueryForExhaustiveSearch('insights or batch-changes').length).toStrictEqual(1)
         })
 
+        test('[and operator]', () => {
+            expect(validateQueryForExhaustiveSearch('insights and batch-changes').length).toStrictEqual(1)
+        })
+
         test('[all cases combined]', () => {
             expect(
                 validateQueryForExhaustiveSearch(
