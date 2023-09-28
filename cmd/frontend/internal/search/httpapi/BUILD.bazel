@@ -19,6 +19,7 @@ go_test(
     name = "httpapi_test",
     srcs = ["export_test.go"],
     embed = [":httpapi"],
+    tags = ["requires-network"],
     deps = [
         "//internal/actor",
         "//internal/database",
