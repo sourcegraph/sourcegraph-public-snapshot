@@ -110,10 +110,6 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 onClick={logEventAndSetFlags}
                 ctaClassName={styles.externalsAuthButton}
             />
-
-            <div className="mb-4">
-                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
-            </div>
         </>
     )
 
