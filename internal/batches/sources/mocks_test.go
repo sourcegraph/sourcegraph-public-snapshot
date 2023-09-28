@@ -10808,6 +10808,9 @@ type MockGitserverClient struct {
 	// HeadFunc is an instance of a mock function object controlling the
 	// behavior of the method Head.
 	HeadFunc *GitserverClientHeadFunc
+	// IsPerforcePathCloneableFunc is an instance of a mock function object
+	// controlling the behavior of the method IsPerforcePathCloneable.
+	IsPerforcePathCloneableFunc *GitserverClientIsPerforcePathCloneableFunc
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *GitserverClientIsRepoCloneableFunc
@@ -11019,6 +11022,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		HeadFunc: &GitserverClientHeadFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) (r0 string, r1 bool, r2 error) {
+				return
+			},
+		},
+		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
+			defaultHook: func(context.Context, string, string, string, string) (r0 error) {
 				return
 			},
 		},
@@ -11289,6 +11297,11 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.Head")
 			},
 		},
+		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
+			defaultHook: func(context.Context, string, string, string, string) error {
+				panic("unexpected invocation of MockGitserverClient.IsPerforcePathCloneable")
+			},
+		},
 		IsRepoCloneableFunc: &GitserverClientIsRepoCloneableFunc{
 			defaultHook: func(context.Context, api.RepoName) error {
 				panic("unexpected invocation of MockGitserverClient.IsRepoCloneable")
@@ -11504,6 +11517,9 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		HeadFunc: &GitserverClientHeadFunc{
 			defaultHook: i.Head,
+		},
+		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
+			defaultHook: i.IsPerforcePathCloneable,
 		},
 		IsRepoCloneableFunc: &GitserverClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
@@ -14544,6 +14560,124 @@ func (c GitserverClientHeadFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientHeadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// GitserverClientIsPerforcePathCloneableFunc describes the behavior when
+// the IsPerforcePathCloneable method of the parent MockGitserverClient
+// instance is invoked.
+type GitserverClientIsPerforcePathCloneableFunc struct {
+	defaultHook func(context.Context, string, string, string, string) error
+	hooks       []func(context.Context, string, string, string, string) error
+	history     []GitserverClientIsPerforcePathCloneableFuncCall
+	mutex       sync.Mutex
+}
+
+// IsPerforcePathCloneable delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) IsPerforcePathCloneable(v0 context.Context, v1 string, v2 string, v3 string, v4 string) error {
+	r0 := m.IsPerforcePathCloneableFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.IsPerforcePathCloneableFunc.appendCall(GitserverClientIsPerforcePathCloneableFuncCall{v0, v1, v2, v3, v4, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// IsPerforcePathCloneable method of the parent MockGitserverClient instance
+// is invoked and the hook queue is empty.
+func (f *GitserverClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(context.Context, string, string, string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsPerforcePathCloneable method of the parent MockGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverClientIsPerforcePathCloneableFunc) PushHook(hook func(context.Context, string, string, string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientIsPerforcePathCloneableFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, string, string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientIsPerforcePathCloneableFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, string, string, string) error {
+		return r0
+	})
+}
+
+func (f *GitserverClientIsPerforcePathCloneableFunc) nextHook() func(context.Context, string, string, string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientIsPerforcePathCloneableFunc) appendCall(r0 GitserverClientIsPerforcePathCloneableFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverClientIsPerforcePathCloneableFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverClientIsPerforcePathCloneableFunc) History() []GitserverClientIsPerforcePathCloneableFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientIsPerforcePathCloneableFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientIsPerforcePathCloneableFuncCall is an object that
+// describes an invocation of method IsPerforcePathCloneable on an instance
+// of MockGitserverClient.
+type GitserverClientIsPerforcePathCloneableFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientIsPerforcePathCloneableFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientIsPerforcePathCloneableFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // GitserverClientIsRepoCloneableFunc describes the behavior when the

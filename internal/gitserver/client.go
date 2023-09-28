@@ -459,6 +459,10 @@ type Client interface {
 
 	// SystemInfo returns information about the gitserver instance at the given address.
 	SystemInfo(ctx context.Context, addr string) (SystemInfo, error)
+
+	// IsPerforcePathCloneable checks if the given Perforce depot path is cloneable by
+	// checking if it is a valid depot and the given user has permission to access it.
+	IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error
 }
 
 type SystemInfo struct {
@@ -1611,6 +1615,62 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 		}
 	}
 	return nil
+}
+
+func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error {
+	if conf.IsGRPCEnabled(ctx) {
+		// depotPath is not actually a repo name, but it will spread the load if isPerforcePathCloneable
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(depotPath))
+		if err != nil {
+			return err
+		}
+		_, err = client.IsPerforcePathCloneable(ctx, &proto.IsPerforcePathCloneableRequest{
+			P4Port:    p4port,
+			P4User:    p4user,
+			P4Passwd:  p4passwd,
+			DepotPath: depotPath,
+		})
+		if err != nil {
+			// Unwrap proto errors for nicer error messages.
+			if s, ok := status.FromError(err); ok {
+				return errors.New(s.Message())
+			}
+			return err
+		}
+
+		return nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(depotPath))
+	b, err := json.Marshal(&protocol.IsPerforcePathCloneableRequest{
+		P4Port:    p4port,
+		P4User:    p4user,
+		P4Passwd:  p4passwd,
+		DepotPath: depotPath,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + addr + "/is-perforce-path-cloneable"
+	resp, err := c.do(ctx, "is-perforce-path-cloneable", uri, b)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "IsPerforcePathCloneable",
+			Err: errors.Errorf("IsPerforcePathCloneable: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	return nil
+
 }
 
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
