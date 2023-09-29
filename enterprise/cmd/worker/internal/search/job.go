@@ -111,6 +111,11 @@ func (j *searchJob) newSearchJobRoutines(
 			newExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
 			newExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
 			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, newSearcher, uploadStore, j.config),
+
+			// resetters
+			newExhaustiveSearchWorkerResetter(observationCtx, searchWorkerStore),
+			newExhaustiveSearchRepoWorkerResetter(observationCtx, repoWorkerStore),
+			newExhaustiveSearchRepoRevisionWorkerResetter(observationCtx, revWorkerStore),
 		}
 	})
 
