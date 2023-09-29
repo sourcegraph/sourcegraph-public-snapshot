@@ -44,10 +44,9 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
             })
         }
 
-        const hasTypeFiltersOtherThanFile: boolean =
-            filters
-                .filter(filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value)
-                .some(filter => filter.value?.value !== 'file')
+        const hasTypeFiltersOtherThanFile: boolean = filters
+            .filter(filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value)
+            .some(filter => filter.value?.value !== 'file')
 
         if (hasTypeFiltersOtherThanFile) {
             validationErrors.push({
