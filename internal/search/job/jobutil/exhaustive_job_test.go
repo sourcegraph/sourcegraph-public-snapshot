@@ -61,7 +61,7 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "",
+			Name:  "only pattern",
 			Query: "type:file index:no content",
 			WantPager: autogold.Expect(`
 (REPOPAGER
@@ -85,7 +85,7 @@ func TestNewExhaustive(t *testing.T) {
 `),
 		},
 		{
-			Name:  "",
+			Name:  "regexp",
 			Query: "type:file index:no foo.*bar patterntype:regexp",
 			WantPager: autogold.Expect(`
 (REPOPAGER
@@ -139,7 +139,7 @@ func sPrintSexpMax(j job.Describer) string {
 	return "\n" + printer.SexpVerbose(j, job.VerbosityMax, true) + "\n"
 }
 
-// The queries are validated before the reach exhaustive search, hence we only
+// The queries are validated before they reach exhaustive search, hence we only
 // have to worry about valid queries we don't want to process for now.
 func TestNewExhaustive_negative(t *testing.T) {
 
@@ -164,8 +164,8 @@ func TestNewExhaustive_negative(t *testing.T) {
 	}
 
 	for _, c := range tc {
-		t.Run(c.query, func(t *testing.T) {
-			patternType := query.SearchTypeLiteral
+		t.Run("", func(t *testing.T) {
+			patternType := query.SearchTypeStandard
 			if c.isPatterntypeRegex {
 				patternType = query.SearchTypeRegex
 			}
@@ -183,7 +183,7 @@ func TestNewExhaustive_negative(t *testing.T) {
 			}
 
 			_, err = NewExhaustive(inputs)
-			require.Error(t, err)
+			require.Error(t, err, "failed query: %q", c.query)
 		})
 	}
 }
