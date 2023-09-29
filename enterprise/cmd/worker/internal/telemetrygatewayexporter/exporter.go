@@ -43,13 +43,14 @@ func newExporterJob(
 
 		batchSizeHistogram: promauto.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "src",
-			Subsystem: "telemetrygatewayexport",
+			Subsystem: "telemetrygatewayexporter",
 			Name:      "batch_size",
 			Help:      "Size of event batches exported from the queue.",
+			Buckets:   prometheus.ExponentialBucketsRange(1, float64(cfg.MaxExportBatchSize), 10),
 		}),
 		exportedEventsCounter: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: "src",
-			Subsystem: "telemetrygatewayexport",
+			Subsystem: "telemetrygatewayexporter",
 			Name:      "exported_events",
 			Help:      "Number of events exported from the queue.",
 		}),
@@ -61,7 +62,7 @@ func newExporterJob(
 		goroutine.WithDescription("telemetrygatewayexporter events export job"),
 		goroutine.WithInterval(cfg.ExportInterval),
 		goroutine.WithOperation(obctx.Operation(observation.Op{
-			Name:    "TelemetryGateway.Export",
+			Name:    "TelemetryGatewayExporter.Export",
 			Metrics: metrics.NewREDMetrics(prometheus.DefaultRegisterer, "telemetrygatewayexporter_exporter"),
 		})),
 	)

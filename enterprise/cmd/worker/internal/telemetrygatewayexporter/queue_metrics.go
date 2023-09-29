@@ -9,35 +9,41 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type backlogMetricsJob struct {
+type queueMetricsJob struct {
 	store database.TelemetryEventsExportQueueStore
 
 	sizeGauge prometheus.Gauge
 }
 
-func newBacklogMetricsJob(store database.TelemetryEventsExportQueueStore) goroutine.BackgroundRoutine {
-	job := &backlogMetricsJob{
+func newQueueMetricsJob(obctx *observation.Context, store database.TelemetryEventsExportQueueStore) goroutine.BackgroundRoutine {
+	job := &queueMetricsJob{
 		store: store,
 		sizeGauge: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: "src",
-			Subsystem: "telemetrygatewayexport",
-			Name:      "backlog_size",
+			Subsystem: "telemetrygatewayexporter",
+			Name:      "queue_size",
 			Help:      "Current number of events waiting to be exported.",
 		}),
 	}
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
 		job,
-		goroutine.WithName("telemetrygatewayexporter.backlog_metrics"),
-		goroutine.WithDescription("telemetrygatewayexporter backlog metrics"),
+		goroutine.WithName("telemetrygatewayexporter.queue_metrics_reporter"),
+		goroutine.WithDescription("telemetrygatewayexporter backlog metrics reporting"),
 		goroutine.WithInterval(time.Minute*5),
+		goroutine.WithOperation(obctx.Operation(observation.Op{
+			Name:    "TelemetryGatewayExporter.ReportQueueMetrics",
+			Metrics: metrics.NewREDMetrics(prometheus.DefaultRegisterer, "telemetrygatewayexporter_queue_metrics_reporter"),
+		})),
 	)
 }
 
-func (j *backlogMetricsJob) Handle(ctx context.Context) error {
+func (j *queueMetricsJob) Handle(ctx context.Context) error {
 	count, err := j.store.CountUnexported(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.CountUnexported")
