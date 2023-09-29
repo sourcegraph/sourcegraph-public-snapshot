@@ -182,7 +182,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     {context.sourcegraphDotComMode ? (
                         <>
                             Currently, we are unable to create accounts using email. Please use the providers listed
-                            above to continue. For private code, {dotcomCTAs}
+                            above to continue. <br /> For private code, {dotcomCTAs}
                         </>
                     ) : (
                         <>Need an account? Contact your site admin.</>

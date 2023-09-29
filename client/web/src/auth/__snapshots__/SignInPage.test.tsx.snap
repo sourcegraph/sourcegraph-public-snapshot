@@ -96,14 +96,14 @@ exports[`SignInPage renders "Other login methods" if primary provider count is l
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -230,14 +230,14 @@ exports[`SignInPage renders different prefix on provider buttons 1`] = `
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -341,14 +341,14 @@ exports[`SignInPage renders non-primary auth provider if primary provider count 
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -483,14 +483,14 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-           To use Sourcegraph on private repositories,
+           To use Sourcegraph on private repositories, 
           <a
             class="anchorLink"
             href="https://sourcegraph.com/get-started?t=enterprise"
@@ -624,14 +624,14 @@ exports[`SignInPage renders sign in page (server) 1`] = `
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -787,14 +787,14 @@ exports[`SignInPage renders sign in page (server) with email form expanded 1`] =
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -927,14 +927,14 @@ exports[`SignInPage renders sign in page (server) with only builtin authProvider
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -1061,7 +1061,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
         <p
           class="text-muted"
         >
-          Need an account?
+          Need an account? 
           <a
             class="anchorLink"
             href="/request-access"
@@ -1195,14 +1195,14 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -1329,14 +1329,14 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
@@ -1473,14 +1473,14 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
         <p
           class=""
         >
-          New to Sourcegraph?
+          New to Sourcegraph? 
           <a
             class="anchorLink"
             href="/sign-up"
           >
             Sign up.
           </a>
-
+           
         </p>
       </div>
     </div>
