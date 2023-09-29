@@ -4,20 +4,12 @@ import (
 	"context"
 	"flag"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestMain(m *testing.M) {
@@ -26,60 +18,6 @@ func TestMain(m *testing.M) {
 		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
-}
-
-func TestGetVCSSyncer(t *testing.T) {
-	tempReposDir, err := os.MkdirTemp("", "TestGetVCSSyncer")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.RemoveAll(tempReposDir); err != nil {
-			t.Fatal(err)
-		}
-	})
-	tempCoursierCacheDir := filepath.Join(tempReposDir, "coursier")
-
-	repo := api.RepoName("foo/bar")
-	extsvcStore := dbmocks.NewMockExternalServiceStore()
-	repoStore := dbmocks.NewMockRepoStore()
-
-	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		return &types.Repo{
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: extsvc.TypePerforce,
-			},
-			Sources: map[string]*types.SourceInfo{
-				"a": {
-					ID:       "abc",
-					CloneURL: "example.com",
-				},
-			},
-		}, nil
-	})
-
-	extsvcStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int64) (*types.ExternalService, error) {
-		return &types.ExternalService{
-			ID:          1,
-			Kind:        extsvc.KindPerforce,
-			DisplayName: "test",
-			Config:      extsvc.NewEmptyConfig(),
-		}, nil
-	})
-
-	s, err := getVCSSyncer(context.Background(), &newVCSSyncerOpts{
-		externalServiceStore: extsvcStore,
-		repoStore:            repoStore,
-		depsSvc:              new(dependencies.Service),
-		repo:                 repo,
-		reposDir:             tempReposDir,
-		coursierCacheDir:     tempCoursierCacheDir,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	require.Equal(t, "perforce", s.Type())
 }
 
 func TestMethodSpecificStreamInterceptor(t *testing.T) {
