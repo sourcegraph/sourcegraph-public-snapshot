@@ -23,7 +23,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
-                telemetryService.log(tourId + eventName, { ...eventProperties }, { ...publicArgument })
+                telemetryService.log('Tour' + eventName, { tourId, ...eventProperties }, { ...publicArgument })
             },
             [telemetryService, tourId]
         )
