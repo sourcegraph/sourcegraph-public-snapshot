@@ -89,6 +89,18 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const providers = showMoreProviders ? moreProviders : primaryProviders
 
+    const dotcomCTAs = (
+        <>
+            <Link
+                to="https://sourcegraph.com/get-started?t=enterprise"
+                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
+            >
+                consider Sourcegraph Enterprise
+            </Link>
+            .
+        </>
+    )
+
     const body = !hasProviders ? (
         <Alert className="mt-3" variant="info">
             No authentication providers are available. Contact a site administrator for help.
@@ -159,32 +171,23 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             {context.allowSignup ? (
                 <Text>
                     New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
-                    {context.sourcegraphDotComMode && (
-                        <>
-                            To use Sourcegraph on private repositories,{' '}
-                            <Link
-                                to="https://about.sourcegraph.com/app"
-                                onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })}
-                            >
-                                download Cody app
-                            </Link>{' '}
-                            or{' '}
-                            <Link
-                                to="https://sourcegraph.com/get-started?t=enterprise"
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
-                            >
-                                get Sourcegraph Enterprise
-                            </Link>
-                            .
-                        </>
-                    )}
+                    {context.sourcegraphDotComMode && <>To use Sourcegraph on private repositories, {dotcomCTAs}</>}
                 </Text>
             ) : isRequestAccessAllowed ? (
                 <Text className="text-muted">
                     Need an account? <Link to="/request-access">Request access</Link> or contact your site admin.
                 </Text>
             ) : (
-                <Text className="text-muted">Need an account? Contact your site admin.</Text>
+                <Text className="text-muted">
+                    {context.sourcegraphDotComMode ? (
+                        <>
+                            Currently, we are unable to create accounts using email. Please use the providers listed
+                            above to continue. <br /> For private code, {dotcomCTAs}
+                        </>
+                    ) : (
+                        <>Need an account? Contact your site admin.</>
+                    )}
+                </Text>
             )}
         </div>
     )
