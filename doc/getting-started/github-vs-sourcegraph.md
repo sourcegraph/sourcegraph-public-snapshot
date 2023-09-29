@@ -120,7 +120,7 @@ GitHub allows you to search indexed code, but not all code is indexed. GitHub’
 
 With GitHub, only the default **branch** is searchable (though GitHub is planning to support branch search in the future). 
 
-**Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed. You may need to include the fork filter to retrieve results for the fork repos, but an admin can adjust global settings to automatically include forks in search query results. 
+**Forks** are included in the index but are subject to the same limitations as other repositories, so not all forks are indexed. You may need to include the fork filter to retrieve results for the fork repos, but an admin can adjust global settings to include forks in search query results automatically. 
 
 GitHub code search supports searching across issues, pull requests, and discussions. In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable.
 
