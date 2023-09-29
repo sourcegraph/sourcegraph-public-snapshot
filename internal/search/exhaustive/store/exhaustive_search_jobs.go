@@ -19,6 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const maxNumResets = 5
+const maxNumRetries = 3
+
 var exhaustiveSearchJobWorkerOpts = dbworkerstore.Options[*types.ExhaustiveSearchJob]{
 	Name:              "exhaustive_search_worker_store",
 	TableName:         "exhaustive_search_jobs",
@@ -29,10 +32,10 @@ var exhaustiveSearchJobWorkerOpts = dbworkerstore.Options[*types.ExhaustiveSearc
 	OrderByExpression: sqlf.Sprintf("exhaustive_search_jobs.state = 'errored', exhaustive_search_jobs.updated_at DESC"),
 
 	StalledMaxAge: 60 * time.Second,
-	MaxNumResets:  0,
+	MaxNumResets:  maxNumResets,
 
 	RetryAfter:    5 * time.Second,
-	MaxNumRetries: 0,
+	MaxNumRetries: maxNumRetries,
 }
 
 // NewExhaustiveSearchJobWorkerStore returns a dbworkerstore.Store that wraps the "exhaustive_search_jobs" table.
