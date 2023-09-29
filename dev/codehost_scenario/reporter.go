@@ -1,4 +1,4 @@
-package tst
+package codehost_scenario
 
 import "fmt"
 

@@ -19,3 +19,22 @@ go_library(
         "@com_github_google_uuid//:uuid",
     ],
 )
+
+go_library(
+    name = "codehost_scenario",
+    srcs = [
+        "github_client.go",
+        "reporter.go",
+        "scenario.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codehost_scenario",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/codehost_scenario/config",
+        "//lib/errors",
+        "@com_github_google_go_github_v53//github",
+        "@com_github_google_uuid//:uuid",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
