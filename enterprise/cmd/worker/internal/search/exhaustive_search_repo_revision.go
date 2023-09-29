@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -79,4 +80,18 @@ func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.
 	}
 
 	return err
+}
+
+func newExhaustiveSearchRepoRevisionWorkerResetter(
+	observationCtx *observation.Context,
+	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
+) *dbworker.Resetter[*types.ExhaustiveSearchRepoRevisionJob] {
+	options := dbworker.ResetterOptions{
+		Name:     "exhaustive_search_repo_revision_worker_resetter",
+		Interval: 1 * time.Minute,
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "exhaustive_search_repo_revision_worker"),
+	}
+
+	resetter := dbworker.NewResetter(observationCtx.Logger, workerStore, options)
+	return resetter
 }

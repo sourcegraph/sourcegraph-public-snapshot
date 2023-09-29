@@ -23,7 +23,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
-                telemetryService.log(tourId + eventName, { ...eventProperties }, { ...publicArgument })
+                telemetryService.log('Tour' + eventName, { tourId, ...eventProperties }, { ...publicArgument })
             },
             [telemetryService, tourId]
         )
@@ -46,7 +46,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
         const onStepClick = useCallback(
             (step: TourTaskStepType) => {
-                onLogEvent(step.id + 'Clicked')
+                onLogEvent('StepClicked', { stepId: step.id })
                 if (step.completeAfterEvents) {
                     return
                 }
@@ -57,7 +57,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
         const onRestart = useCallback(
             (step: TourTaskStepType) => {
-                onLogEvent(step.id + 'Clicked')
+                onLogEvent('RestartClicked')
                 restart()
             },
             [onLogEvent, restart]

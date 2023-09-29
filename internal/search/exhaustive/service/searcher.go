@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
@@ -196,6 +197,15 @@ func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevisio
 
 	if writeRowErr != nil {
 		return writeRowErr
+	}
+
+	// TODO how should we handle cloning (gitdomain.RepoNotExistError)?
+
+	// An empty repository we treat as success. When searching HEAD we haven't
+	// yet validated the commit actually exists so we need to ignore at this
+	// point. We should consider
+	if repoRev.Revision == "HEAD" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		return nil
 	}
 
 	return err

@@ -30,7 +30,7 @@ type SessionData struct {
 }
 
 type SessionIssuerHelper interface {
-	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
+	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
 	AuthSucceededEventName() database.SecurityEventName
@@ -98,7 +98,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return c.Value
 		}
 		anonymousId, _ := cookie.AnonymousUID(r)
-		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+		newUserCreated, actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 		if err != nil {
 			span.SetError(err)
 			logger.Error("OAuth failed: error looking up or creating user from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
@@ -145,6 +145,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			logger.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
 		}
 
-		http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
+		redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated)
+		http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)
 	})
 }
