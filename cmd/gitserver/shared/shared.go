@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
@@ -35,21 +34,13 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
@@ -57,7 +48,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
@@ -103,14 +93,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return getVCSSyncer(ctx, &newVCSSyncerOpts{
-				externalServiceStore:    db.ExternalServices(),
-				repoStore:               db.Repos(),
-				depsSvc:                 dependencies.NewService(observationCtx, db),
-				repo:                    repo,
-				reposDir:                config.ReposDir,
-				coursierCacheDir:        config.CoursierCacheDir,
-				recordingCommandFactory: recordingCommandFactory,
+			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
+				ExternalServiceStore:    db.ExternalServices(),
+				RepoStore:               db.Repos(),
+				DepsSvc:                 dependencies.NewService(observationCtx, db),
+				Repo:                    repo,
+				ReposDir:                config.ReposDir,
+				CoursierCacheDir:        config.CoursierCacheDir,
+				RecordingCommandFactory: recordingCommandFactory,
 			})
 		},
 		Hostname:                config.ExternalAddress,
@@ -251,55 +241,6 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	return grpcServer
 }
 
-func configureFusionClient(conn schema.PerforceConnection) vcssyncer.FusionConfig {
-	// Set up default settings first
-	fc := vcssyncer.FusionConfig{
-		Enabled:             false,
-		Client:              conn.P4Client,
-		LookAhead:           2000,
-		NetworkThreads:      12,
-		NetworkThreadsFetch: 12,
-		PrintBatch:          10,
-		Refresh:             100,
-		Retries:             10,
-		MaxChanges:          -1,
-		IncludeBinaries:     false,
-		FsyncEnable:         false,
-	}
-
-	if conn.FusionClient == nil {
-		return fc
-	}
-
-	// Required
-	fc.Enabled = conn.FusionClient.Enabled
-	fc.LookAhead = conn.FusionClient.LookAhead
-
-	// Optional
-	if conn.FusionClient.NetworkThreads > 0 {
-		fc.NetworkThreads = conn.FusionClient.NetworkThreads
-	}
-	if conn.FusionClient.NetworkThreadsFetch > 0 {
-		fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
-	}
-	if conn.FusionClient.PrintBatch > 0 {
-		fc.PrintBatch = conn.FusionClient.PrintBatch
-	}
-	if conn.FusionClient.Refresh > 0 {
-		fc.Refresh = conn.FusionClient.Refresh
-	}
-	if conn.FusionClient.Retries > 0 {
-		fc.Retries = conn.FusionClient.Retries
-	}
-	if conn.FusionClient.MaxChanges > 0 {
-		fc.MaxChanges = conn.FusionClient.MaxChanges
-	}
-	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
-	fc.FsyncEnable = conn.FusionClient.FsyncEnable
-
-	return fc
-}
-
 // getDB initializes a connection to the database and returns a dbutil.DB
 func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
@@ -343,127 +284,6 @@ func getRemoteURLFunc(
 		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
-}
-
-type newVCSSyncerOpts struct {
-	externalServiceStore    database.ExternalServiceStore
-	repoStore               database.RepoStore
-	depsSvc                 *dependencies.Service
-	repo                    api.RepoName
-	reposDir                string
-	coursierCacheDir        string
-	recordingCommandFactory *wrexec.RecordingCommandFactory
-}
-
-func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (vcssyncer.VCSSyncer, error) {
-	// We need an internal actor in case we are trying to access a private repo. We
-	// only need access in order to find out the type of code host we're using, so
-	// it's safe.
-	r, err := opts.repoStore.GetByName(actor.WithInternalActor(ctx), opts.repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "get repository")
-	}
-
-	extractOptions := func(connection any) (string, error) {
-		for _, info := range r.Sources {
-			extSvc, err := opts.externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-			if err != nil {
-				return "", errors.Wrap(err, "get external service")
-			}
-			rawConfig, err := extSvc.Config.Decrypt(ctx)
-			if err != nil {
-				return "", err
-			}
-			normalized, err := jsonc.Parse(rawConfig)
-			if err != nil {
-				return "", errors.Wrap(err, "normalize JSON")
-			}
-			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
-				return "", errors.Wrap(err, "unmarshal JSON")
-			}
-			return extSvc.URN(), nil
-		}
-		return "", errors.Errorf("unexpected empty Sources map in %v", r)
-	}
-
-	switch r.ExternalRepo.ServiceType {
-	case extsvc.TypePerforce:
-		var c schema.PerforceConnection
-		if _, err := extractOptions(&c); err != nil {
-			return nil, err
-		}
-
-		p4Home, err := gitserverfs.MakeP4HomeDir(opts.reposDir)
-		if err != nil {
-			return nil, err
-		}
-
-		return &vcssyncer.PerforceDepotSyncer{
-			MaxChanges:   int(c.MaxChanges),
-			Client:       c.P4Client,
-			FusionConfig: configureFusionClient(c),
-			P4Home:       p4Home,
-		}, nil
-	case extsvc.TypeJVMPackages:
-		var c schema.JVMPackagesConnection
-		if _, err := extractOptions(&c); err != nil {
-			return nil, err
-		}
-		return vcssyncer.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
-	case extsvc.TypeNpmPackages:
-		var c schema.NpmPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return vcssyncer.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
-	case extsvc.TypeGoModules:
-		var c schema.GoModulesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return vcssyncer.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
-	case extsvc.TypePythonPackages:
-		var c schema.PythonPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return vcssyncer.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
-	case extsvc.TypeRustPackages:
-		var c schema.RustPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return vcssyncer.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
-	case extsvc.TypeRubyPackages:
-		var c schema.RubyPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return vcssyncer.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
-	}
-	return vcssyncer.NewGitRepoSyncer(opts.recordingCommandFactory), nil
 }
 
 // methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.

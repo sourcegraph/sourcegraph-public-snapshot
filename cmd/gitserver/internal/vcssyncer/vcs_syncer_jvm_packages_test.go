@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -174,7 +175,7 @@ func createMaliciousJar(t *testing.T, name string) {
 		assert.Nil(t, err)
 	}
 
-	os.Symlink("/etc/passwd", "symlink")
+	require.NoError(t, os.Symlink("/etc/passwd", "symlink"))
 	defer os.Remove("symlink")
 
 	fi, _ := os.Lstat("symlink")
