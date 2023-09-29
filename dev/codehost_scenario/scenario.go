@@ -1,4 +1,4 @@
-package tst
+package codehost_scenario
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/dev/tst/config"
+	"github.com/sourcegraph/sourcegraph/dev/codehost_scenario/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,7 +38,7 @@ type GithubScenario struct {
 
 var _ Scenario = (*GithubScenario)(nil)
 
-func NewGithubScenarioV2(ctx context.Context, t *testing.T, cfg config.Config) (*GithubScenario, error) {
+func NewGithubScenario(ctx context.Context, t *testing.T, cfg config.Config) (*GithubScenario, error) {
 	client, err := NewGitHubClient(ctx, cfg.GitHub)
 	if err != nil {
 		return nil, err
