@@ -9,6 +9,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,14 +22,20 @@ type queueCleanupJob struct {
 	prunedHistogram prometheus.Histogram
 }
 
-func newQueueCleanupJob(store database.TelemetryEventsExportQueueStore, cfg config) goroutine.BackgroundRoutine {
+func newQueueCleanupJob(obctx *observation.Context, store database.TelemetryEventsExportQueueStore, cfg config) goroutine.BackgroundRoutine {
 	job := &queueCleanupJob{
 		store: store,
 		prunedHistogram: promauto.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "src",
-			Subsystem: "telemetrygatewayexport",
-			Name:      "pruned",
+			Subsystem: "telemetrygatewayexporter",
+			Name:      "events_pruned",
 			Help:      "Size of exported events pruned from the queue table.",
+			Buckets: prometheus.ExponentialBucketsRange(
+				1,
+				// Max bucket at range if each export in a cleanup interval
+				// exports the maximum number of events.
+				(cfg.ExportInterval.Seconds()/cfg.QueueCleanupInterval.Seconds())*float64(cfg.MaxExportBatchSize),
+				10),
 		}),
 	}
 	return goroutine.NewPeriodicGoroutine(
@@ -36,6 +44,10 @@ func newQueueCleanupJob(store database.TelemetryEventsExportQueueStore, cfg conf
 		goroutine.WithName("telemetrygatewayexporter.queue_cleanup"),
 		goroutine.WithDescription("telemetrygatewayexporter queue cleanup"),
 		goroutine.WithInterval(cfg.QueueCleanupInterval),
+		goroutine.WithOperation(obctx.Operation(observation.Op{
+			Name:    "TelemetryGatewayExporter.QueueCleanup",
+			Metrics: metrics.NewREDMetrics(prometheus.DefaultRegisterer, "telemetrygatewayexporter_queue_cleanup"),
+		})),
 	)
 }
 

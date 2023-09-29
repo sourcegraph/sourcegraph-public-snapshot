@@ -95,7 +95,7 @@ func (t *telemetryGatewayExporter) Routines(initCtx context.Context, observation
 			exporter,
 			*ConfigInst,
 		),
-		newQueueCleanupJob(db.TelemetryEventsExportQueue(), *ConfigInst),
-		newBacklogMetricsJob(db.TelemetryEventsExportQueue()),
+		newQueueCleanupJob(observationCtx, db.TelemetryEventsExportQueue(), *ConfigInst),
+		newQueueMetricsJob(observationCtx, db.TelemetryEventsExportQueue()),
 	}, nil
 }

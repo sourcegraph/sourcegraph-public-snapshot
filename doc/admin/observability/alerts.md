@@ -7480,6 +7480,100 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 
 <br />
 
+## telemetry: telemetrygatewayexporter_exporter_error_rate
+
+<p class="subtitle">telemetry events exporter operation error rate over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> telemetry: 0%+ telemetry events exporter operation error rate over 5m for 30m0s
+
+**Next steps**
+
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-exporter-error-rate).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_telemetry_telemetrygatewayexporter_exporter_error_rate"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[5m]))) * 100) > 0)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_queue_cleanup_error_rate
+
+<p class="subtitle">telemetry export queue cleanup operation error rate over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0%+ telemetry export queue cleanup operation error rate over 5m for 30m0s
+
+**Next steps**
+
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-cleanup-error-rate).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_queue_cleanup_error_rate"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[5m]))) * 100) > 0)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_queue_metrics_reporter_error_rate
+
+<p class="subtitle">telemetry export backlog metrics reporting operation error rate over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0%+ telemetry export backlog metrics reporting operation error rate over 5m for 30m0s
+
+**Next steps**
+
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-error-rate).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_queue_metrics_reporter_error_rate"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[5m]))) * 100) > 0)`
+
+</details>
+
+<br />
+
 ## otel-collector: otel_span_refused
 
 <p class="subtitle">spans refused per receiver</p>
