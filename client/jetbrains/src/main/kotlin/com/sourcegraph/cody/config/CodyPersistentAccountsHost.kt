@@ -19,7 +19,9 @@ class CodyPersistentAccountsHost(private val project: Project?) : CodyAccountsHo
       // Notify Cody Agent about config changes.
       CodyAgent.getServer(project)
           ?.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
-      CodyToolWindowContent.getInstance(project).refreshPanelsVisibility()
+      val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
+      codyToolWindowContent.refreshPanelsVisibility()
+      codyToolWindowContent.embeddingStatusView.updateEmbeddingStatus()
     }
   }
 
