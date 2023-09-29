@@ -37,4 +37,3 @@ func FromFile(filename string) (*Config, error) {
 
 	return &c, nil
 }
-
