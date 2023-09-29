@@ -151,8 +151,10 @@ func TestExhaustiveSearch(t *testing.T) {
 	// lines and columns matches our expectation.
 	{
 		service.JobLogsIterLimit = 2
-		buf := bytes.Buffer{}
-		err = svc.WriteSearchJobLogs(userCtx, &buf, job.ID)
+		writerTo, err := svc.GetSearchJobLogsWriterTo(userCtx, job.ID)
+		require.NoError(err)
+		var buf bytes.Buffer
+		_, err = writerTo.WriteTo(&buf)
 		require.NoError(err)
 		lines := strings.Split(buf.String(), "\n")
 		// 1 header + 3 rows + 1 newline
@@ -167,10 +169,8 @@ func TestExhaustiveSearch(t *testing.T) {
 	// to view the logs
 	{
 		userBadCtx := actor.WithActor(context.Background(), actor.FromUser(userBadID))
-		var buf bytes.Buffer
-		err := svc.WriteSearchJobLogs(userBadCtx, &buf, job.ID)
+		_, err = svc.GetSearchJobLogsWriterTo(userBadCtx, job.ID)
 		require.ErrorIs(err, auth.ErrMustBeSiteAdminOrSameUser)
-		require.Equal(0, buf.Len(), "expected no bytes to be written")
 	}
 
 	// Assert that cancellation affects the number of rows we expect. This is a bit
