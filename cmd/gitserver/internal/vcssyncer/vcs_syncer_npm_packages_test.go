@@ -308,9 +308,9 @@ func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
 	gzipWriter := gzip.NewWriter(buffer)
 	tarWriter := tar.NewWriter(gzipWriter)
 	for _, entry := range entries {
-		tarWriter.WriteHeader(&entry)
+		require.NoError(t, tarWriter.WriteHeader(&entry))
 		if entry.Typeflag == tar.TypeReg {
-			tarWriter.Write([]byte("filler"))
+			_, _ = tarWriter.Write([]byte("filler"))
 		}
 	}
 	tarWriter.Close()
