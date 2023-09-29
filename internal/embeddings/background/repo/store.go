@@ -259,17 +259,20 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 func (s *repoEmbeddingJobsStore) RescheduleAllRepos(ctx context.Context) error {
 	const rescheduleAllQuery = `
 	INSERT INTO repo_embedding_jobs (repo_id, revision)
-	SELECT
-		DISTINCT repo_id,
-		(
-			SELECT r2.revision
-			FROM repo_embedding_jobs r2
-			WHERE r2.repo_id = r1.repo_id
-				AND state = 'completed'
-			ORDER BY finished_at
-			LIMIT 1
-		)
-	FROM repo_embedding_jobs r1
+	SELECT * FROM (
+		SELECT
+			DISTINCT repo_id,
+			(
+				SELECT r2.revision
+				FROM repo_embedding_jobs r2
+				WHERE r2.repo_id = r1.repo_id
+					AND state = 'completed'
+				ORDER BY finished_at DESC
+				LIMIT 1
+			) latest_successful_revision
+		FROM repo_embedding_jobs r1
+	) subquery
+	WHERE latest_successful_revision IS NOT NULL
 	`
 	return s.Store.Exec(ctx, sqlf.Sprintf(rescheduleAllQuery))
 }
