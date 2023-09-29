@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	uploadstore "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
@@ -36,7 +37,10 @@ func Init(
 		return err
 	}
 
-	svc := service.New(observationCtx, store, uploadStore)
+	searchClient := client.New(logger, db)
+	newSearcher := service.FromSearchClient(searchClient)
+
+	svc := service.New(observationCtx, store, uploadStore, newSearcher)
 
 	enterpriseServices.SearchJobsResolver = resolvers.New(logger, db, svc)
 	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(logger, svc)

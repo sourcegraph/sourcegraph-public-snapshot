@@ -23,12 +23,19 @@ import (
 )
 
 // New returns a Service.
-func New(observationCtx *observation.Context, store *store.Store, uploadStore uploadstore.Store) *Service {
+func New(
+	observationCtx *observation.Context,
+	store *store.Store,
+	uploadStore uploadstore.Store,
+	newSearcher NewSearcher,
+) *Service {
 	logger := log.Scoped("searchjobs.Service", "search job service")
+
 	svc := &Service{
 		logger:      logger,
 		store:       store,
 		uploadStore: uploadStore,
+		newSearcher: newSearcher,
 		operations:  newOperations(observationCtx),
 	}
 
@@ -39,6 +46,7 @@ type Service struct {
 	logger      log.Logger
 	store       *store.Store
 	uploadStore uploadstore.Store
+	newSearcher NewSearcher
 	operations  *operations
 }
 
@@ -122,6 +130,12 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("search jobs can only be created by an authenticated user")
+	}
+
+	// Validate query
+	_, err = s.newSearcher.NewSearch(ctx, actor.UID, query)
+	if err != nil {
+		return nil, err
 	}
 
 	tx, err := s.store.Transact(ctx)
