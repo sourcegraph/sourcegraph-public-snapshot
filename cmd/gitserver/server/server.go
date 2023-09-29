@@ -44,6 +44,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -842,6 +843,12 @@ func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	// the endpoint is only available internally so it's low risk.
 	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
 	if err != nil {
+		// For non-not found errors, we should error out instead, and not attempt
+		// to try an authless git clone.
+		if !errcode.IsNotFound(err) {
+			return protocol.IsRepoCloneableResponse{}, err
+		}
+
 		// We use this endpoint to verify if a repo exists without consuming
 		// API rate limit, since many users visit private or bogus repos,
 		// so we deduce the unauthenticated clone URL from the repo name.
@@ -859,11 +866,11 @@ func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	resp := protocol.IsRepoCloneableResponse{
 		Cloned: repoCloned(repoDirFromName(s.ReposDir, repo)),
 	}
-	if err := syncer.IsCloneable(ctx, repo, remoteURL); err == nil {
-		resp.Cloneable = true
-	} else {
+	err = syncer.IsCloneable(ctx, repo, remoteURL)
+	if err != nil {
 		resp.Reason = err.Error()
 	}
+	resp.Cloneable = err == nil
 
 	return resp, nil
 }
