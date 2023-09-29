@@ -38,7 +38,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	mockUploadStore, bucket := newMockUploadStore(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, s, mockUploadStore)
+	svc := service.New(observationCtx, s, mockUploadStore, service.NewSearcherFake())
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
 	userBadID := insertRow(t, s.Store, "users", "username", "mallory")
