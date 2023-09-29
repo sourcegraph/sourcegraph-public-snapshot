@@ -1576,9 +1576,7 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	query := userIDsWithNoPermsQuery
-
-	q := sqlf.Sprintf(query, filterSiteAdmins)
+	q := sqlf.Sprintf(userIDsWithNoPermsQuery, filterSiteAdmins)
 	return basestore.ScanInt32s(s.Query(ctx, q))
 }
 
@@ -2048,11 +2046,9 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 		} else {
 			if !authzParams.AuthzEnforceForSiteAdmins {
 				// include all site admins
-				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`EXISTS(
-					SELECT FROM user_roles
-						JOIN roles ON user_roles.role_id = roles.id
-						WHERE user_roles.user_id = users.id AND roles.name = 'SITE_ADMINISTRATOR'
-				)`))
+				// We use have a LEFT JOIN with the CTE for admin users to include site admins. THe value of au.id
+				// is NOT NULL when a user is a site admin.
+				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf("au.id IS NOT NULL"))
 			}
 
 			permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`urp.repo_id = %d`, repoID))
@@ -2140,6 +2136,13 @@ func (s *permsStore) scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User,
 }
 
 const usersPermissionsInfoQueryFmt = `
+WITH admin_users AS (
+    SELECT DISTINCT users.id
+    FROM users
+    JOIN user_roles ON user_roles.user_id = users.id
+    JOIN roles ON user_roles.role_id = roles.id
+    WHERE roles.name = 'SITE_ADMINISTRATOR'
+)
 SELECT
 	users.id,
 	users.username,
@@ -2147,13 +2150,7 @@ SELECT
 	users.avatar_url,
 	users.created_at,
 	users.updated_at,
-	EXISTS(
-		SELECT 1
-		FROM user_roles
-		JOIN roles ON user_roles.role_id = roles.id
-		WHERE user_roles.user_id = users.id
-		AND roles.name = 'SITE_ADMINISTRATOR'
-	) AS site_admin,
+	(au.id IS NOT NULL) AS site_admin,
 	users.passwd IS NOT NULL,
 	users.invalidated_sessions_at,
 	users.tos_accepted,
@@ -2162,6 +2159,7 @@ SELECT
 FROM
 	users
 	LEFT JOIN user_repo_permissions urp ON urp.user_id = users.id AND urp.repo_id = %d
+	LEFT JOIN admin_users au ON u.id = au.id
 WHERE
 	users.deleted_at IS NULL
 	AND %s
