@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.vscode;
 
 import com.sourcegraph.cody.autocomplete.AutocompleteText;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -82,5 +83,21 @@ public class InlineAutocompleteItem {
             ? this.insertText.lines().skip(1).collect(Collectors.joining(System.lineSeparator()))
             : "";
     return new AutocompleteText(sameLineBeforeSuffixText, afterEndOfLineSuffix, blockText);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof InlineAutocompleteItem)) return false;
+    InlineAutocompleteItem that = (InlineAutocompleteItem) o;
+    return Objects.equals(insertText, that.insertText)
+        && Objects.equals(filterText, that.filterText)
+        && Objects.equals(range, that.range)
+        && Objects.equals(command, that.command);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(insertText, filterText, range, command);
   }
 }

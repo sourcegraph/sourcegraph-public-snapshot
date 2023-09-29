@@ -49,7 +49,7 @@ open class AutocompleteActionHandler : EditorActionHandler() {
       getAutocompleteRenderers(caret).firstNotNullOfOrNull { it.completionItems.firstOrNull() }
 
   protected fun getAllAutocompleteItems(caret: Caret): List<InlineAutocompleteItem> =
-      getAutocompleteRenderers(caret).flatMap { it.completionItems }
+      getAutocompleteRenderers(caret).flatMap { it.completionItems }.distinct()
 
   protected fun getSingleCaret(editor: Editor): Caret? {
     val allCarets = editor.caretModel.allCarets

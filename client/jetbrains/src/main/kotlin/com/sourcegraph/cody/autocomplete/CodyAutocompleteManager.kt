@@ -263,7 +263,7 @@ class CodyAutocompleteManager {
    * The reason we have a custom code path to render hints for agent autocompletions is because we
    * can use `insertText` directly and the `range` encloses the entire line.
    */
-  private fun displayAgentAutocomplete(
+  fun displayAgentAutocomplete(
       editor: Editor,
       offset: Int,
       items: List<InlineAutocompleteItem>,
