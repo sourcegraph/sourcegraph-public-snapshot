@@ -1470,7 +1470,12 @@ WHERE
 
 func (s *permsStore) CountUsersWithNoPerms(ctx context.Context) (int, error) {
 	// By default, site admins can access any repo
-	filterSiteAdmins := sqlf.Sprintf("users.site_admin = FALSE")
+	filterSiteAdmins := sqlf.Sprintf(`NOT EXISTS(
+		SELECT FROM user_roles
+			JOIN roles ON user_roles.role_id = roles.id
+			WHERE user_roles.user_id = users.id AND roles.name = 'SITE_ADMINISTRATOR'
+	)`)
+
 	// Unless we enforce it in config
 	if conf.Get().AuthzEnforceForSiteAdmins {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
@@ -1560,7 +1565,12 @@ AND rp.user_id IS NULL
 
 func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	// By default, site admins can access any repo
-	filterSiteAdmins := sqlf.Sprintf("users.site_admin = FALSE")
+	filterSiteAdmins := sqlf.Sprintf(`NOT EXISTS(
+		SELECT FROM user_roles
+			JOIN roles ON user_roles.role_id = roles.id
+			WHERE user_roles.user_id = users.id AND roles.name = 'SITE_ADMINISTRATOR'
+	)`)
+
 	// Unless we enforce it in config
 	if conf.Get().AuthzEnforceForSiteAdmins {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
@@ -2038,7 +2048,11 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 		} else {
 			if !authzParams.AuthzEnforceForSiteAdmins {
 				// include all site admins
-				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf("users.site_admin"))
+				permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`EXISTS(
+					SELECT FROM user_roles
+						JOIN roles ON user_roles.role_id = roles.id
+						WHERE user_roles.user_id = users.id AND roles.name = 'SITE_ADMINISTRATOR'
+				)`))
 			}
 
 			permsQueryConditions = append(permsQueryConditions, sqlf.Sprintf(`urp.repo_id = %d`, repoID))
@@ -2137,10 +2151,8 @@ SELECT
 		SELECT 1
 		FROM user_roles
 		JOIN roles ON user_roles.role_id = roles.id
-		WHERE
-			user_roles.user_id = users.id
-		AND
-			roles.name = 'SITE_ADMINISTRATOR'
+		WHERE user_roles.user_id = users.id
+		AND roles.name = 'SITE_ADMINISTRATOR'
 	) AS site_admin,
 	users.passwd IS NOT NULL,
 	users.invalidated_sessions_at,

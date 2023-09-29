@@ -165,7 +165,7 @@ func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[ap
 		EXISTS(
 			SELECT 1 FROM user_roles ur
 			JOIN roles r ON r.id = ur.role_id
-			WHERE ur.user_id = user_id AND r.name = 'SITE_ADMINISTRATOR'
+			WHERE ur.user_id = u.id AND r.name = 'SITE_ADMINISTRATOR'
 		)
 		AND NOT
 			%t
