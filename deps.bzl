@@ -6303,8 +6303,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_go_ctags",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/go-ctags",
-        sum = "h1:tsWE3F3StWvnwLnC4JWb0zX0UHY9GULQtu/aoQvLJvI=",
-        version = "v0.0.0-20230111110657-c27675da7f71",
+        sum = "h1:Okjvl9eO68GDev76KPfJqJOqRGfxOCyXCB2THAT6Bus=",
+        version = "v0.0.0-20230929045819-c736fcb519eb",
     )
 
     go_repository(
@@ -6415,8 +6415,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:Z4+E/KNThw0bNW4ZkktpgbQGGRGuFT4XkoV+56NSClY=",
-        version = "v0.0.0-20230918190713-dfc14cb6a974",
+        sum = "h1:5zlXkgLiskj4oBm+WlyGXbDK7JrHKfBDti2gaHPPVzo=",
+        version = "v0.0.0-20230929125214-1065c6646489",
     )
 
     go_repository(
