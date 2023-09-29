@@ -35,7 +35,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	bs := basestore.NewWithHandle(db.Handle())
 	s := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, s, mockUploadStore)
+	svc := service.New(observationCtx, s, mockUploadStore, service.NewSearcherFake())
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{id}.csv", ServeSearchJobDownload(logger, svc))
@@ -59,7 +59,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 		userCtx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: userID,
 		})
-		_, err = svc.CreateSearchJob(userCtx, "foo")
+		_, err = svc.CreateSearchJob(userCtx, "1@rev1")
 		require.NoError(t, err)
 
 		req, err := http.NewRequest(http.MethodGet, "/1.csv", nil)
