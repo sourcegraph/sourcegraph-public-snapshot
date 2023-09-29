@@ -251,17 +251,32 @@ func embedFiles(
 		}
 
 		batchEmbeddings, err := embeddingsClient.GetDocumentEmbeddings(ctx, batchChunks)
-		if err != nil {
+		if err != nil && !excludeChunksOnError {
 			return nil, errors.Wrap(err, "error while getting embeddings")
+		} else if err != nil {
+			// To avoid failing large jobs on a flaky API, just mark all files
+			// as failed and continue. This means we may have some missing
+			// files, but they will be logged as such below and some embeddings
+			// are better than no embeddings.
+			logger.Warn("error while getting embeddings", log.Error(err))
+			failed := make([]int, len(batchChunks))
+			for i := 0; i < len(batchChunks); i++ {
+				failed[i] = i
+			}
+			batchEmbeddings = &client.EmbeddingsResults{
+				Embeddings: make([]float32, len(batchChunks)*dimensions),
+				Failed:     failed,
+				Dimensions: dimensions,
+			}
+		}
+
+		if len(batchEmbeddings.Failed) > 0 && !excludeChunksOnError {
+			// if at least one chunk failed then return an error instead of completing the embedding indexing
+			return nil, errors.Newf("batch failed on file %q", batch[batchEmbeddings.Failed[0]].FileName)
 		}
 
 		if expected := len(batchChunks) * dimensions; len(batchEmbeddings.Embeddings) != expected {
 			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
-		}
-
-		if !excludeChunksOnError && len(batchEmbeddings.Failed) > 0 {
-			// if at least one chunk failed then return an error instead of completing the embedding indexing
-			return nil, errors.Newf("batch failed on file %q", batch[batchEmbeddings.Failed[0]].FileName)
 		}
 
 		// When excluding failed chunks we
@@ -387,6 +402,11 @@ func embedFiles(
 	} else if results != nil {
 		stats.AddChunks(results.count, results.size)
 		stats.ExcludeChunks(currentBatch - results.count)
+	}
+
+	percentExcluded := float64(stats.ChunksExcluded) / (float64(stats.ChunksExcluded) + float64(stats.ChunksEmbedded))
+	if percentExcluded > 0.1 {
+		return bgrepo.EmbedFilesStats{}, errors.New("greater than 10% of chunks failed to embed. See logs for details.")
 	}
 
 	return stats, nil
