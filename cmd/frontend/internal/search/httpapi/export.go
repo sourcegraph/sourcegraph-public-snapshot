@@ -61,7 +61,7 @@ func ServeSearchJobLogs(logger log.Logger, svc *service.Service) http.HandlerFun
 			return
 		}
 
-		filename := filenamePrefix(jobID) + ".log"
+		filename := filenamePrefix(jobID) + ".log.csv"
 		writeCSV(logger.With(log.Int("jobID", jobID)), w, filename, csvWriterTo)
 	}
 }
