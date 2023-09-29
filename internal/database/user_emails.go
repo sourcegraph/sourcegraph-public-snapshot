@@ -83,15 +83,20 @@ func (s *userEmailsStore) Transact(ctx context.Context) (UserEmailsStore, error)
 	return &userEmailsStore{Store: txBase}, err
 }
 
-const getInitialSiteAdminInfoQuery = `SELECT
-email, tos_accepted
-FROM user_emails
-JOIN users ON user_emails.user_id=users.id
-JOIN user_roles ON user_roles.user_id = users.id
-JOIN roles ON roles.id = user_roles.role_id
-WHERE roles.name = 'SITE_ADMINISTRATOR' AND users.deleted_at IS NULL
-ORDER BY users.id ASC
-LIMIT 1`
+const getInitialSiteAdminInfoQuery = `
+WITH filtered_users AS (
+    SELECT u.id
+    FROM users u
+    JOIN user_roles ur ON ur.user_id = u.id
+    JOIN roles r ON r.id = ur.role_id
+    WHERE r.name = 'SITE_ADMINISTRATOR' AND u.deleted_at IS NULL
+    ORDER BY u.id ASC
+    LIMIT 1
+)
+SELECT ue.email, u.tos_accepted
+FROM filtered_users
+JOIN users u ON u.id = filtered_users.id
+JOIN user_emails ue ON ue.user_id = u.id`
 
 // GetInitialSiteAdminInfo returns a best guess of the email and terms of service acceptance of the initial
 // Sourcegraph installer/site admin. Because the initial site admin's email isn't marked, this returns the

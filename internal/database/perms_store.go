@@ -1481,8 +1481,7 @@ func (s *permsStore) CountUsersWithNoPerms(ctx context.Context) (int, error) {
 		filterSiteAdmins = sqlf.Sprintf("TRUE")
 	}
 
-	query := countUsersWithNoPermsQuery
-	q := sqlf.Sprintf(query, filterSiteAdmins)
+	q := sqlf.Sprintf(countUsersWithNoPermsQuery, filterSiteAdmins)
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
@@ -2136,6 +2135,8 @@ func (s *permsStore) scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User,
 }
 
 const usersPermissionsInfoQueryFmt = `
+-- We make use of a CTE here because we need to include site admins in the results
+-- and might need to check for site admin status in the WHERE clause.
 WITH admin_users AS (
     SELECT DISTINCT users.id
     FROM users

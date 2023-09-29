@@ -156,19 +156,20 @@ func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[ap
 	FROM sub_repo_permissions
 	JOIN repo r on r.id = repo_id
 	JOIN users u on u.id = user_id
+	LEFT JOIN (
+		SELECT ur.user_id
+		FROM user_roles ur
+		JOIN roles ro ON ro.id = ur.role_id
+		WHERE ro.name = 'SITE_ADMINISTRATOR'
+	) AS admin_users ON admin_users.user_id = u.id
 	WHERE user_id = %s
 	AND version = %s
 	-- When user is a site admin and AuthzEnforceForSiteAdmins is FALSE
 	-- we want to return zero results. This causes us to fall back to
 	-- repo level checks and allows access to all paths in all repos.
 	AND NOT (
-		EXISTS(
-			SELECT 1 FROM user_roles ur
-			JOIN roles r ON r.id = ur.role_id
-			WHERE ur.user_id = u.id AND r.name = 'SITE_ADMINISTRATOR'
-		)
-		AND NOT
-			%t
+		-- admin_users.user_id != NULL indicates that the user is a site admin
+		admin_users.user_id IS NOT NULL AND NOT %t
 	)
 	`, userID, SubRepoPermsVersion, enforceForSiteAdmins)
 
