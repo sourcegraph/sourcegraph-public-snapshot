@@ -179,7 +179,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_opentelemetry_collector_base",
-        digest = "sha256:60717f967c2f44115589f54a36a5d0bf2dbd2f42bcde69778912c72a674bff06",
+        digest = "sha256:143005f9beef8bc8edc5c515535866fcdb8d0f67daabfcea8682999d1baa6e0d",
         image = "index.docker.io/sourcegraph/wolfi-opentelemetry-collector-base",
     )
 
@@ -197,6 +197,6 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_qdrant_base",
-        digest = "sha256:bad099febc367d12ce16955469be3f2c207cf6c86cc73c1cf853e4518e2c4591",
+        digest = "sha256:38c4c41d811aeedb65eeb9327daec749515da0495298bafd00f4f4256a7343db",
         image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
     )
