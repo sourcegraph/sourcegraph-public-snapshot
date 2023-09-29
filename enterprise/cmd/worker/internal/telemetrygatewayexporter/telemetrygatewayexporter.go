@@ -45,7 +45,7 @@ func (c *config) Load() {
 	c.MaxExportBatchSize = env.MustGetInt("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE", 5000,
 		"Maximum number of events to export in each batch")
 	if c.MaxExportBatchSize < 100 {
-		c.AddError(errors.New("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE must be greater than 100"))
+		c.AddError(errors.New("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE must be no less than 100"))
 	}
 
 	c.ExportedEventsRetentionWindow = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION",
