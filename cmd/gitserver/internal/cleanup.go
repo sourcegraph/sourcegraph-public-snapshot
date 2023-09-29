@@ -14,7 +14,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,6 +22,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,12 +32,10 @@ import (
 	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -83,6 +82,21 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 		goroutine.WithInterval(cfg.JanitorInterval),
 	)
 }
+
+var (
+	wrongShardReposTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_repo_wrong_shard",
+		Help: "The number of repos that are on disk on the wrong shard",
+	})
+	wrongShardReposSizeTotalBytes = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_repo_wrong_shard_bytes",
+		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
+	})
+	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repo_wrong_shard_deleted",
+		Help: "The number of repos on the wrong shard that we deleted",
+	})
+)
 
 //go:embed sg_maintenance.sh
 var sgMaintenanceScript string
@@ -270,7 +284,7 @@ func cleanupRepos(
 	}()
 
 	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
-		size := dirSize(dir.Path("."))
+		size := gitserverfs.DirSize(dir.Path("."))
 		name := gitserverfs.RepoNameFromDir(reposDir, dir)
 		repoToSize[name] = size
 
@@ -290,7 +304,7 @@ func cleanupRepos(
 					log.String("current-shard", shardID),
 					log.Int64("size-bytes", size),
 				)
-				if err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
+				if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
 					return false, err
 				}
 				wrongShardReposDeleted++
@@ -312,7 +326,7 @@ func cleanupRepos(
 		}
 
 		logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
-		if err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, true); err != nil {
+		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, true); err != nil {
 			return true, err
 		}
 		reposRemoved.WithLabelValues(reason).Inc()
@@ -337,7 +351,7 @@ func cleanupRepos(
 		}
 
 		// The repo does not exist in the DB (or is soft-deleted), continue deleting it.
-		err = removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false)
+		err = gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false)
 		if err == nil {
 			nonExistingReposRemoved.Inc()
 		}
@@ -345,7 +359,7 @@ func cleanupRepos(
 	}
 
 	ensureGitAttributes := func(dir common.GitDir) (done bool, err error) {
-		return false, setGitAttributes(dir)
+		return false, git.SetGitAttributes(dir)
 	}
 
 	ensureAutoGC := func(dir common.GitDir) (done bool, err error) {
@@ -353,7 +367,7 @@ func cleanupRepos(
 	}
 
 	maybeReclone := func(dir common.GitDir) (done bool, err error) {
-		repoType, err := getRepositoryType(rcf, reposDir, dir)
+		repoType, err := git.GetRepositoryType(rcf, reposDir, dir)
 		if err != nil {
 			return false, err
 		}
@@ -366,7 +380,7 @@ func cleanupRepos(
 		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
-		if maybeCorrupt, _ := gitConfigGet(rcf, reposDir, dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
+		if maybeCorrupt, _ := git.ConfigGet(rcf, reposDir, dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			// Set the reason so that the repo cleaned up
 			reason = maybeCorrupt
 			// We don't log the corruption here, since the corruption *should* have already been
@@ -375,7 +389,7 @@ func cleanupRepos(
 			// the repo is not considered corrupted anymore.
 			//
 			// unset flag to stop constantly re-cloning if it fails.
-			_ = gitConfigUnset(rcf, reposDir, dir, gitConfigMaybeCorrupt)
+			_ = git.ConfigUnset(rcf, reposDir, dir, gitConfigMaybeCorrupt)
 		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
@@ -443,7 +457,7 @@ func cleanupRepos(
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.DirEntry) error {
+		if err := gitserverfs.BestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.DirEntry) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -689,8 +703,8 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 		if spaceFreed >= howManyBytesToFree {
 			return nil
 		}
-		delta := dirSize(d.Path("."))
-		if err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, d, true); err != nil {
+		delta := gitserverfs.DirSize(d.Path("."))
+		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, d, true); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
@@ -731,7 +745,7 @@ func gitDirModTime(d common.GitDir) (time.Time, error) {
 // iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the
 // git directories found on disk.
 func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
-	return bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
+	return gitserverfs.BestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
 		if gitserverfs.IgnorePath(reposDir, dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -761,161 +775,11 @@ func findGitDirs(reposDir string) ([]common.GitDir, error) {
 	})
 }
 
-// dirSize returns the total size in bytes of all the files under d.
-func dirSize(d string) int64 {
-	var size int64
-	// We don't return an error, so we know that err is always nil and can be
-	// ignored.
-	_ = bestEffortWalk(d, func(path string, d fs.DirEntry) error {
-		if d.IsDir() {
-			return nil
-		}
-		fi, err := d.Info()
-		if err != nil {
-			// We ignore errors for individual files.
-			return nil
-		}
-		size += fi.Size()
-		return nil
-	})
-	return size
-}
-
-// removeRepoDirectory atomically removes a directory from reposDir.
-//
-// It first moves the directory to a temporary location to avoid leaving
-// partial state in the event of server restart or concurrent modifications to
-// the directory.
-//
-// Additionally, it removes parent empty directories up until reposDir.
-func removeRepoDirectory(ctx context.Context, logger log.Logger, db database.DB, shardID string, reposDir string, gitDir common.GitDir, updateCloneStatus bool) error {
-	dir := string(gitDir)
-
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		// If directory doesn't exist we can avoid all the work below and treat it as if
-		// it was removed.
-		return nil
-	}
-
-	// Rename out of the location, so we can atomically stop using the repo.
-	tmp, err := gitserverfs.TempDir(reposDir, "delete-repo")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		// Delete the atomically renamed dir.
-		if err := os.RemoveAll(filepath.Join(tmp)); err != nil {
-			logger.Warn("failed to cleanup after removing dir", log.String("dir", dir), log.Error(err))
-		}
-	}()
-	if err := fileutil.RenameAndSync(dir, filepath.Join(tmp, "repo")); err != nil {
-		return err
-	}
-
-	// Everything after this point is just cleanup, so any error that occurs
-	// should not be returned, just logged.
-
-	if updateCloneStatus {
-		// Set as not_cloned in the database.
-		if err := db.GitserverRepos().SetCloneStatus(ctx, gitserverfs.RepoNameFromDir(reposDir, gitDir), types.CloneStatusNotCloned, shardID); err != nil {
-			logger.Warn("failed to update clone status", log.Error(err))
-		}
-	}
-
-	// Cleanup empty parent directories. We just attempt to remove and if we
-	// have a failure we assume it's due to the directory having other
-	// children. If we checked first we could race with someone else adding a
-	// new clone.
-	rootInfo, err := os.Stat(reposDir)
-	if err != nil {
-		logger.Warn("Failed to stat ReposDir", log.Error(err))
-		return nil
-	}
-	current := dir
-	for {
-		parent := filepath.Dir(current)
-		if parent == current {
-			// This shouldn't happen, but protecting against escaping
-			// ReposDir.
-			break
-		}
-		current = parent
-		info, err := os.Stat(current)
-		if os.IsNotExist(err) {
-			// Someone else beat us to it.
-			break
-		}
-		if err != nil {
-			logger.Warn("failed to stat parent directory", log.String("dir", current), log.Error(err))
-			return nil
-		}
-		if os.SameFile(rootInfo, info) {
-			// Stop, we are at the parent.
-			break
-		}
-
-		if err := os.Remove(current); err != nil {
-			// Stop, we assume remove failed due to current not being empty.
-			break
-		}
-	}
-
-	return nil
-}
-
-// cleanTmpFiles tries to remove tmp_pack_* files from .git/objects/pack.
-// These files can be created by an interrupted fetch operation,
-// and would be purged by `git gc --prune=now`, but `git gc` is
-// very slow. Removing these files while they're in use will cause
-// an operation to fail, but not damage the repository.
-func cleanTmpFiles(logger log.Logger, dir common.GitDir) {
-	logger = logger.Scoped("cleanup.cleanTmpFiles", "tries to remove tmp_pack_* files from .git/objects/pack")
-
-	now := time.Now()
-	packdir := dir.Path("objects", "pack")
-	err := bestEffortWalk(packdir, func(path string, d fs.DirEntry) error {
-		if path != packdir && d.IsDir() {
-			return filepath.SkipDir
-		}
-		file := filepath.Base(path)
-		if strings.HasPrefix(file, "tmp_pack_") {
-			info, err := d.Info()
-			if err != nil {
-				return err
-			}
-			if now.Sub(info.ModTime()) > conf.GitLongCommandTimeout() {
-				err := os.Remove(path)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		logger.Error("error removing tmp_pack_* files", log.Error(err))
-	}
-}
-
-// setRepositoryType sets the type of the repository.
-func setRepositoryType(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, typ string) error {
-	return gitConfigSet(rcf, reposDir, dir, "sourcegraph.type", typ)
-}
-
-// getRepositoryType returns the type of the repository.
-func getRepositoryType(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) (string, error) {
-	val, err := gitConfigGet(rcf, reposDir, dir, "sourcegraph.type")
-	if err != nil {
-		return "", err
-	}
-	return val, nil
-}
-
 // setRecloneTime sets the time a repository is cloned.
 func setRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, now time.Time) error {
-	err := gitConfigSet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+	err := git.ConfigSet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
-		if err2 := ensureHEAD(dir); err2 != nil {
+		if err2 := git.EnsureHEAD(dir); err2 != nil {
 			err = errors.Append(err, err2)
 		}
 		return errors.Wrap(err, "failed to update recloneTimestamp")
@@ -935,7 +799,7 @@ func getRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir co
 		return now, setRecloneTime(rcf, reposDir, dir, now)
 	}
 
-	value, err := gitConfigGet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp")
+	value, err := git.ConfigGet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp")
 	if err != nil {
 		return time.Unix(0, 0), errors.Wrap(err, "failed to determine clone timestamp")
 	}
@@ -955,47 +819,6 @@ func getRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir co
 
 	return time.Unix(sec, 0), nil
 }
-
-func checkMaybeCorruptRepo(logger log.Logger, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, reposDir string, dir common.GitDir, stderr string) bool {
-	if !stdErrIndicatesCorruption(stderr) {
-		return false
-	}
-
-	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
-	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
-		log.String("stderr", stderr))
-
-	// We set a flag in the config for the cleanup janitor job to fix. The janitor
-	// runs every minute.
-	err := gitConfigSet(rcf, reposDir, dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
-	if err != nil {
-		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
-	}
-
-	return true
-}
-
-// stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
-// that there might be repository corruption.
-func stdErrIndicatesCorruption(stderr string) bool {
-	return objectOrPackFileCorruptionRegex.MatchString(stderr) || commitGraphCorruptionRegex.MatchString(stderr)
-}
-
-var (
-	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate
-	// that a repository's packfiles or commit objects might be corrupted.
-	//
-	// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
-	// context.
-	objectOrPackFileCorruptionRegex = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
-
-	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
-	// git's supplemental commit-graph might be corrupted.
-	//
-	// See https://github.com/sourcegraph/sourcegraph/issues/37872 for more
-	// context.
-	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
-)
 
 // gitIsNonBareBestEffort returns true if the repository is not a bare
 // repo. If we fail to check or the repository is bare we return false.
@@ -1021,7 +844,7 @@ func gitGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitD
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	err := wrappedCmd.Run()
 	if err != nil {
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
+		return errors.Wrapf(executil.WrapCmdError(cmd, err), "failed to git-gc")
 	}
 	return nil
 }
@@ -1122,7 +945,7 @@ func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 			logger.Debug("sg maintenance failed to write log file", log.String("file", dir.Path(sgmLog)), log.Error(err))
 		}
 		logger.Debug("sg maintenance", log.String("dir", string(dir)), log.String("out", string(b)))
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
+		return errors.Wrapf(executil.WrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
 	// Remove the log file after a successful run.
 	_ = os.Remove(dir.Path(sgmLog))
@@ -1188,7 +1011,7 @@ func pruneIfNeeded(rcf *wrexec.RecordingCommandFactory, reposDir string, dir com
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	err = wrappedCmd.Run()
 	if err != nil {
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-prune")
+		return errors.Wrapf(executil.WrapCmdError(cmd, err), "failed to git-prune")
 	}
 	return nil
 }
@@ -1315,58 +1138,15 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 func gitSetAutoGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) error {
 	switch gitGCMode {
 	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return gitConfigUnset(rcf, reposDir, dir, "gc.auto")
+		return git.ConfigUnset(rcf, reposDir, dir, "gc.auto")
 
 	case gitGCModeMaintenance:
-		return gitConfigSet(rcf, reposDir, dir, "gc.auto", "0")
+		return git.ConfigSet(rcf, reposDir, dir, "gc.auto", "0")
 
 	default:
 		// should not happen
 		panic(fmt.Sprintf("non exhaustive switch for gitGCMode: %d", gitGCMode))
 	}
-}
-
-func gitConfigGet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) (string, error) {
-	cmd := exec.Command("git", "config", "--get", key)
-	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
-	out, err := wrappedCmd.Output()
-	if err != nil {
-		// Exit code 1 means the key is not set.
-		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
-			return "", nil
-		}
-		return "", errors.Wrapf(wrapCmdError(cmd, err), "failed to get git config %s", key)
-	}
-	return strings.TrimSpace(string(out)), nil
-}
-
-func gitConfigSet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key, value string) error {
-	cmd := exec.Command("git", "config", key, value)
-	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
-	err := wrappedCmd.Run()
-	if err != nil {
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
-	}
-	return nil
-}
-
-func gitConfigUnset(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) error {
-	cmd := exec.Command("git", "config", "--unset-all", key)
-	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
-	out, err := wrappedCmd.CombinedOutput()
-	if err != nil {
-		// Exit code 5 means the key is not set.
-		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
-			return nil
-		}
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s: %s", key, string(out))
-	}
-	return nil
 }
 
 // jitterDuration returns a duration between [0, d) based on key. This is like
@@ -1382,20 +1162,6 @@ func jitterDuration(key string, d time.Duration) time.Duration {
 		r = -(r + 1)
 	}
 	return r % d
-}
-
-// wrapCmdError will wrap errors for cmd to include the arguments. If the error
-// is an exec.ExitError and cmd was invoked with Output(), it will also include
-// the captured stderr.
-func wrapCmdError(cmd *exec.Cmd, err error) error {
-	if err == nil {
-		return nil
-	}
-	var e *exec.ExitError
-	if errors.As(err, &e) {
-		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
-	}
-	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
 }
 
 // removeFileOlderThan removes path if its mtime is older than maxAge. If the
