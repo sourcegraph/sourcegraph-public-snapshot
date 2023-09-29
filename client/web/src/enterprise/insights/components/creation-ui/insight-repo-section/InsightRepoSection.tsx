@@ -203,7 +203,7 @@ function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): Re
     )
 }
 
-const EMPTY_QUERY_STATA: QueryState = { query: '' }
+const EMPTY_QUERY_STATE: QueryState = { query: '' }
 
 interface SmartSearchQueryRepoFieldProps {
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
@@ -235,7 +235,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
         }
     }
 
-    const queryState = disabled ? EMPTY_QUERY_STATA : value
+    const queryState = disabled ? EMPTY_QUERY_STATE : value
     const previewQuery = value.query ? getRepoQueryPreview(value.query) : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
