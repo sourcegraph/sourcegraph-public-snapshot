@@ -44,6 +44,17 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
             })
         }
 
+        const hasTypeFiltersOtherThanFile: boolean = filters
+            .filter(filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value)
+            .some(filter => filter.value?.value !== 'file')
+
+        if (hasTypeFiltersOtherThanFile) {
+            validationErrors.push({
+                type: ValidationErrorType.INVALID_QUERY,
+                reason: 'only type:file is supported',
+            })
+        }
+
         const hasRegexpPattern = filters.some(
             filter =>
                 resolveFilter(filter.field.value)?.type === FilterType.patterntype && filter.value?.value === 'regexp'
