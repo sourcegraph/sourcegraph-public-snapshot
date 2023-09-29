@@ -38,14 +38,21 @@ func (c *config) Load() {
 
 	c.ExportInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL", 10*time.Minute,
 		"Interval at which to export telemetry")
+	if c.ExportInterval > 1*time.Hour {
+		c.AddError(errors.New("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL cannot be more than 1 hour"))
+	}
+
 	c.MaxExportBatchSize = env.MustGetInt("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE", 5000,
 		"Maximum number of events to export in each batch")
+	if c.MaxExportBatchSize < 100 {
+		c.AddError(errors.New("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE must be no less than 100"))
+	}
 
 	c.ExportedEventsRetentionWindow = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION",
 		2*24*time.Hour, "Duration to retain already-exported telemetry events before deleting")
 
 	c.QueueCleanupInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_QUEUE_CLEANUP_INTERVAL",
-		1*time.Hour, "Interval at which to clean up telemetry export queue")
+		30*time.Minute, "Interval at which to clean up telemetry export queue")
 }
 
 type telemetryGatewayExporter struct{}
@@ -95,7 +102,7 @@ func (t *telemetryGatewayExporter) Routines(initCtx context.Context, observation
 			exporter,
 			*ConfigInst,
 		),
-		newQueueCleanupJob(db.TelemetryEventsExportQueue(), *ConfigInst),
-		newBacklogMetricsJob(db.TelemetryEventsExportQueue()),
+		newQueueCleanupJob(observationCtx, db.TelemetryEventsExportQueue(), *ConfigInst),
+		newQueueMetricsJob(observationCtx, db.TelemetryEventsExportQueue()),
 	}, nil
 }
