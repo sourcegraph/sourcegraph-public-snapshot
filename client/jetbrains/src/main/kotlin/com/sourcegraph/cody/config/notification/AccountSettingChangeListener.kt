@@ -46,6 +46,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             if (ConfigUtil.isCodyEnabled()) {
               val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
               codyToolWindowContent.refreshPanelsVisibility()
+              codyToolWindowContent.embeddingStatusView.updateEmbeddingStatus()
             }
 
             CodyAutocompleteStatusService.resetApplication(project)
