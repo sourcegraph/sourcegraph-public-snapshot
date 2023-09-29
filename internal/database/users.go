@@ -323,11 +323,10 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		}
 	}
 
-	var siteAdmin bool
 	err = u.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin, searchable",
-			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin, &searchable)
+		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin, searchable",
+			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted)).Scan(&id, &searchable)
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) {
@@ -340,6 +339,9 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		}
 		return nil, err
 	}
+
+	// if the sourcegraph isn't initialized, create the first user as a site admin
+	siteAdmin := !alreadyInitialized
 	if info.FailIfNotInitialUser && !siteAdmin {
 		// Refuse to make the user the initial site admin if there are other existing users.
 		return nil, ErrCannotCreateUser{"initial_site_admin_must_be_first_user"}
