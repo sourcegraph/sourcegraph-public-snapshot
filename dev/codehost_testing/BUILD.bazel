@@ -8,6 +8,7 @@ go_library(
         "org.go",
         "reporter.go",
         "scenario.go",
+        "user.go",
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codehost_testing",

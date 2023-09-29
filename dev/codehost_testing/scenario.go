@@ -252,3 +252,40 @@ func (s *GitHubScenario) CreateOrg(name string) *Org {
 	s.Append(createOrg)
 	return baseOrg
 }
+
+func (s *GithubScenario) CreateUser(name string) *User {
+	baseUser := &User{
+		s:    s,
+		name: name,
+	}
+
+	createUser := &action{
+		name: "user:create:" + name,
+		apply: func(ctx context.Context) error {
+			name := fmt.Sprintf("user-%s-%s", name, s.id)
+			email := "test-user-e2e@sourcegraph.com"
+			user, err := s.client.CreateUser(ctx, name, email)
+			if err != nil {
+				return err
+			}
+
+			baseUser.name = user.GetLogin()
+			return nil
+		},
+		teardown: func(ctx context.Context) error {
+			return s.client.DeleteUser(ctx, baseUser.name)
+		},
+	}
+
+	s.append(createUser)
+	return baseUser
+}
+
+func (s *GithubScenario) GetAdmin() *User {
+	baseUser := &User{
+		s:    s,
+		name: s.client.cfg.AdminUser,
+	}
+
+	return baseUser
+}
