@@ -8,9 +8,7 @@ import javax.swing.Icon
 
 class RepositoryNotFoundOnSourcegraphInstance(private val repoName: String) :
     RepoAvailableEmbeddingStatus(repoName) {
-  override fun getIcon(): Icon {
-    return Icons.Repository.NotFoundOnInstance
-  }
+  override fun getIcon(): Icon = Icons.Repository.NotFoundOnInstance
 
   override fun getTooltip(project: Project): String {
     val activeAccountType = CodyAuthenticationManager.getInstance().getActiveAccountType(project)
