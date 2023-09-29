@@ -39,7 +39,7 @@ type GithubScenario struct {
 var _ Scenario = (*GithubScenario)(nil)
 
 func NewGithubScenario(ctx context.Context, t *testing.T, cfg config.Config) (*GithubScenario, error) {
-	client, err := NewGitHubClient(ctx, cfg.GitHub)
+	client, err := NewGitHubClient(ctx, t, cfg.GitHub)
 	if err != nil {
 		return nil, err
 	}
