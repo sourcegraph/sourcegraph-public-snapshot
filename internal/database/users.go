@@ -1296,10 +1296,8 @@ SELECT u.id,
 			SELECT 1
 			FROM user_roles
 			JOIN roles ON user_roles.role_id = roles.id
-			WHERE
-				user_roles.user_id = users.id
-			AND
-				roles.name = 'SITE_ADMINISTRATOR'
+			WHERE user_roles.user_id = users.id
+			AND roles.name = 'SITE_ADMINISTRATOR'
 		) AS site_admin,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
@@ -1354,7 +1352,7 @@ SELECT u.id,
 			FROM user_roles
 			JOIN roles ON user_roles.role_id = roles.id
 			WHERE
-				user_roles.user_id = users.id
+				user_roles.user_id = u.id
 			AND
 				roles.name = 'SITE_ADMINISTRATOR'
 		) AS site_admin,
