@@ -6,23 +6,22 @@ import (
 )
 
 type GitHub struct {
-	Org      string `json:"Org"`
-	URL      string `json:"URL"`
-	User     string `json:"User"`
-	Password string `json:"Password"`
-	Token    string `json:"Token"`
+	URL       string `json:"url"`
+	AdminUser string `json:"adminUser"`
+	Password  string `json:"password"`
+	Token     string `json:"token"`
 }
 
 type SourcegraphCfg struct {
-	URL      string `json:"URL"`
-	User     string `json:"User"`
-	Password string `json:"Password"`
-	Token    string `json:"Token"`
+	URL      string `json:"url"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	Token    string `json:"token"`
 }
 
 type Config struct {
-	GitHub      GitHub         `json:"GitHub"`
-	Sourcegraph SourcegraphCfg `json:"Sourcegraph"`
+	GitHub      GitHub         `json:"github"`
+	Sourcegraph SourcegraphCfg `json:"sourcegraph"`
 }
 
 func FromFile(filename string) (*Config, error) {
@@ -38,3 +37,4 @@ func FromFile(filename string) (*Config, error) {
 
 	return &c, nil
 }
+
