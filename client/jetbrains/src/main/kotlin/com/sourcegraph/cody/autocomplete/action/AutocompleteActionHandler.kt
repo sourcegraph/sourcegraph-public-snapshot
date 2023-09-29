@@ -20,7 +20,7 @@ open class AutocompleteActionHandler : EditorActionHandler() {
         hasAnyAutocompleteItems(project, caret)
   }
 
-  private fun hasAnyAutocompleteItems(project: Project, caret: Caret): Boolean =
+  protected fun hasAnyAutocompleteItems(project: Project, caret: Caret): Boolean =
       CodyAgent.isConnected(project) && getAgentAutocompleteItem(caret) != null
 
   /**
@@ -32,10 +32,9 @@ open class AutocompleteActionHandler : EditorActionHandler() {
    * ` System.out.println("a: CARET"); // original System.out.println("a: " + a);CARET //
    * autocomplete ` *
    */
-  protected fun getAgentAutocompleteItem(caret: Caret): InlineAutocompleteItem? {
-    return InlayModelUtil.getAllInlaysForEditor(caret.editor)
-        .map { it.renderer }
-        .filterIsInstance<CodyAutocompleteElementRenderer>()
-        .firstNotNullOfOrNull { it.completionItem }
-  }
+  protected fun getAgentAutocompleteItem(caret: Caret): InlineAutocompleteItem? =
+      InlayModelUtil.getAllInlaysForEditor(caret.editor)
+          .map { it.renderer }
+          .filterIsInstance<CodyAutocompleteElementRenderer>()
+          .firstNotNullOfOrNull { it.completionItem }
 }
