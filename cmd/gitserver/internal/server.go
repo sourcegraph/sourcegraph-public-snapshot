@@ -6,18 +6,14 @@ import (
 	"bytes"
 	"container/list"
 	"context"
-	"crypto/sha256"
 	"encoding/gob"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
@@ -54,7 +51,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -62,7 +58,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -362,58 +357,6 @@ func (s *Server) Handler() http.Handler {
 	return headerXRequestedWithMiddleware(mux)
 }
 
-// NewRepoStateSyncer returns a periodic goroutine that syncs state on disk to the
-// database for all repos. We perform a full sync if the known gitserver addresses
-// has changed since the last run. Otherwise, we only sync repos that have not yet
-// been assigned a shard.
-func NewRepoStateSyncer(
-	ctx context.Context,
-	logger log.Logger,
-	db database.DB,
-	locker RepositoryLocker,
-	shardID string,
-	reposDir string,
-	interval time.Duration,
-	batchSize int,
-	perSecond int,
-) goroutine.BackgroundRoutine {
-	var previousAddrs string
-	var previousPinned string
-
-	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(ctx),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitServerAddrs := gitserver.NewGitserverAddresses(conf.Get())
-			addrs := gitServerAddrs.Addresses
-			// We turn addrs into a string here for easy comparison and storage of previous
-			// addresses since we'd need to take a copy of the slice anyway.
-			currentAddrs := strings.Join(addrs, ",")
-			fullSync := currentAddrs != previousAddrs
-			previousAddrs = currentAddrs
-
-			// We turn PinnedServers into a string here for easy comparison and storage
-			// of previous pins.
-			pinnedServerPairs := make([]string, 0, len(gitServerAddrs.PinnedServers))
-			for k, v := range gitServerAddrs.PinnedServers {
-				pinnedServerPairs = append(pinnedServerPairs, fmt.Sprintf("%s=%s", k, v))
-			}
-			sort.Strings(pinnedServerPairs)
-			currentPinned := strings.Join(pinnedServerPairs, ",")
-			fullSync = fullSync || currentPinned != previousPinned
-			previousPinned = currentPinned
-
-			if err := syncRepoState(ctx, logger, db, locker, shardID, reposDir, gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
-				return errors.Wrap(err, "syncing repo state")
-			}
-
-			return nil
-		}),
-		goroutine.WithName("gitserver.repo-state-syncer"),
-		goroutine.WithDescription("syncs repo state on disk with the gitserver_repos table"),
-		goroutine.WithInterval(interval),
-	)
-}
-
 func addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
 	return gitServerAddrs.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName)
 }
@@ -520,177 +463,6 @@ func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-cha
 			_ = task.done()
 		}(task)
 	}
-}
-
-var (
-	repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repo_sync_state_counter",
-		Help: "Incremented each time we check the state of repo",
-	}, []string{"type"})
-	repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repo_sync_state_upsert_counter",
-		Help: "Incremented each time we upsert repo state in the database",
-	}, []string{"success"})
-	wrongShardReposTotal = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_repo_wrong_shard",
-		Help: "The number of repos that are on disk on the wrong shard",
-	})
-	wrongShardReposSizeTotalBytes = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_repo_wrong_shard_bytes",
-		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
-	})
-	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_repo_wrong_shard_deleted",
-		Help: "The number of repos on the wrong shard that we deleted",
-	})
-)
-
-func syncRepoState(
-	ctx context.Context,
-	logger log.Logger,
-	db database.DB,
-	locker RepositoryLocker,
-	shardID string,
-	reposDir string,
-	gitServerAddrs gitserver.GitserverAddresses,
-	batchSize int,
-	perSecond int,
-	fullSync bool,
-) error {
-	logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
-	addrs := gitServerAddrs.Addresses
-
-	// When fullSync is true we'll scan all repos in the database and ensure we set
-	// their clone state and assign any that belong to this shard with the correct
-	// shard_id.
-	//
-	// When fullSync is false, we assume that we only need to check repos that have
-	// not yet had their shard_id allocated.
-
-	// Sanity check our host exists in addrs before starting any work
-	var found bool
-	for _, a := range addrs {
-		if hostnameMatch(shardID, a) {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return errors.Errorf("gitserver hostname, %q, not found in list", shardID)
-	}
-
-	// The rate limit should be enforced across all instances
-	perSecond = perSecond / len(addrs)
-	if perSecond < 0 {
-		perSecond = 1
-	}
-	limiter := ratelimit.NewInstrumentedLimiter("SyncRepoState", rate.NewLimiter(rate.Limit(perSecond), perSecond))
-
-	// The rate limiter doesn't allow writes that are larger than the burst size
-	// which we've set to perSecond.
-	if batchSize > perSecond {
-		batchSize = perSecond
-	}
-
-	batch := make([]*types.GitserverRepo, 0)
-
-	writeBatch := func() {
-		if len(batch) == 0 {
-			return
-		}
-		// We always clear the batch
-		defer func() {
-			batch = batch[0:0]
-		}()
-		err := limiter.WaitN(ctx, len(batch))
-		if err != nil {
-			logger.Error("Waiting for rate limiter", log.Error(err))
-			return
-		}
-
-		if err := db.GitserverRepos().Update(ctx, batch...); err != nil {
-			repoStateUpsertCounter.WithLabelValues("false").Add(float64(len(batch)))
-			logger.Error("Updating GitserverRepos", log.Error(err))
-			return
-		}
-		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
-	}
-
-	// Make sure we fetch at least a good chunk of records, assuming that most
-	// would not need an update anyways. Don't fetch too many though to keep the
-	// DB load at a reasonable level and constrain memory usage.
-	iteratePageSize := batchSize * 2
-	if iteratePageSize < 500 {
-		iteratePageSize = 500
-	}
-
-	options := database.IterateRepoGitserverStatusOptions{
-		// We also want to include deleted repos as they may still be cloned on disk
-		IncludeDeleted:   true,
-		BatchSize:        iteratePageSize,
-		OnlyWithoutShard: !fullSync,
-	}
-	for {
-		repos, nextRepo, err := db.GitserverRepos().IterateRepoGitserverStatus(ctx, options)
-		if err != nil {
-			return err
-		}
-		for _, repo := range repos {
-			repoSyncStateCounter.WithLabelValues("check").Inc()
-
-			// We may have a deleted repo, we need to extract the original name both to
-			// ensure that the shard check is correct and also so that we can find the
-			// directory.
-			repo.Name = api.UndeletedRepoName(repo.Name)
-
-			// Ensure we're only dealing with repos we are responsible for.
-			addr := addrForRepo(ctx, repo.Name, gitServerAddrs)
-			if !hostnameMatch(shardID, addr) {
-				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
-				continue
-			}
-			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
-
-			dir := gitserverfs.RepoDirFromName(reposDir, repo.Name)
-			cloned := repoCloned(dir)
-			_, cloning := locker.Status(dir)
-
-			var shouldUpdate bool
-			if repo.ShardID != shardID {
-				repo.ShardID = shardID
-				shouldUpdate = true
-			}
-			cloneStatus := cloneStatus(cloned, cloning)
-			if repo.CloneStatus != cloneStatus {
-				repo.CloneStatus = cloneStatus
-				// Since the repo has been recloned or is being cloned
-				// we can reset the corruption
-				repo.CorruptedAt = time.Time{}
-				shouldUpdate = true
-			}
-
-			if !shouldUpdate {
-				continue
-			}
-
-			batch = append(batch, repo.GitserverRepo)
-
-			if len(batch) >= batchSize {
-				writeBatch()
-			}
-		}
-
-		if nextRepo == 0 {
-			break
-		}
-
-		options.NextCursor = nextRepo
-	}
-
-	// Attempt final write
-	writeBatch()
-
-	return nil
 }
 
 // repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
@@ -1063,147 +835,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	matchesBuf.Flush()
 }
 
-func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
-	searchStart := time.Now()
-
-	searchRunning.Inc()
-	defer searchRunning.Dec()
-
-	tr.SetAttributes(
-		args.Repo.Attr(),
-		attribute.Bool("include_diff", args.IncludeDiff),
-		attribute.String("query", args.Query.String()),
-		attribute.Int("limit", args.Limit),
-		attribute.Bool("include_modified_files", args.IncludeModifiedFiles),
-	)
-	defer func() {
-		tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
-		tr.SetError(err)
-		searchDuration.
-			WithLabelValues(strconv.FormatBool(err != nil)).
-			Observe(time.Since(searchStart).Seconds())
-
-		if honey.Enabled() || traceLogs {
-			act := actor.FromContext(ctx)
-			ev := honey.NewEvent("gitserver-search")
-			ev.SetSampleRate(honeySampleRate("", act))
-			ev.AddField("repo", args.Repo)
-			ev.AddField("revisions", args.Revisions)
-			ev.AddField("include_diff", args.IncludeDiff)
-			ev.AddField("include_modified_files", args.IncludeModifiedFiles)
-			ev.AddField("actor", act.UIDString())
-			ev.AddField("query", args.Query.String())
-			ev.AddField("limit", args.Limit)
-			ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
-			if err != nil {
-				ev.AddField("error", err.Error())
-			}
-			if traceID := trace.ID(ctx); traceID != "" {
-				ev.AddField("traceID", traceID)
-				ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
-			}
-			if honey.Enabled() {
-				_ = ev.Send()
-			}
-			if traceLogs {
-				s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-			}
-		}
-	}()
-
-	observeLatency := syncx.OnceFunc(func() {
-		searchLatency.Observe(time.Since(searchStart).Seconds())
-	})
-
-	onMatchWithLatency := func(cm *protocol.CommitMatch) error {
-		observeLatency()
-		return onMatch(cm)
-	}
-
-	return s.search(ctx, args, onMatchWithLatency)
-}
-
-// search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
-// concern itself with event types, and all instrumentation is handled in the calling function.
-func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
-	args.Repo = protocol.NormalizeRepo(args.Repo)
-	if args.Limit == 0 {
-		args.Limit = math.MaxInt32
-	}
-
-	// We used to have an `ensureRevision`/`CloneRepo` calls here that were
-	// obsolete, because a search for an unknown revision of the repo (of an
-	// uncloned repo) won't make it to gitserver and fail with an ErrNoResolvedRepos
-	// and a related search alert before calling the gitserver.
-	//
-	// However, to protect for a weird case of getting an uncloned repo here (e.g.
-	// via a direct API call), we leave a `repoCloned` check and return an error if
-	// the repo is not cloned.
-	dir := gitserverfs.RepoDirFromName(s.ReposDir, args.Repo)
-	if !repoCloned(dir) {
-		s.Logger.Debug("attempted to search for a not cloned repo")
-		return false, &gitdomain.RepoNotExistError{
-			Repo: args.Repo,
-		}
-	}
-
-	mt, err := search.ToMatchTree(args.Query)
-	if err != nil {
-		return false, err
-	}
-
-	// Ensure that we populate ModifiedFiles when we have a DiffModifiesFile filter.
-	// --name-status is not zero cost, so we don't do it on every search.
-	hasDiffModifiesFile := false
-	search.Visit(mt, func(mt search.MatchTree) {
-		switch mt.(type) {
-		case *search.DiffModifiesFile:
-			hasDiffModifiesFile = true
-		}
-	})
-
-	// Create a callback that detects whether we've hit a limit
-	// and stops sending when we have.
-	var sentCount atomic.Int64
-	var hitLimit atomic.Bool
-	limitedOnMatch := func(match *protocol.CommitMatch) {
-		// Avoid sending if we've already hit the limit
-		if int(sentCount.Load()) >= args.Limit {
-			hitLimit.Store(true)
-			return
-		}
-
-		sentCount.Add(int64(matchCount(match)))
-		onMatch(match)
-	}
-
-	searcher := &search.CommitSearcher{
-		Logger:               s.Logger,
-		RepoName:             args.Repo,
-		RepoDir:              dir.Path(),
-		Revisions:            args.Revisions,
-		Query:                mt,
-		IncludeDiff:          args.IncludeDiff,
-		IncludeModifiedFiles: args.IncludeModifiedFiles || hasDiffModifiesFile,
-	}
-
-	return hitLimit.Load(), searcher.Search(ctx, limitedOnMatch)
-}
-
-// matchCount returns either:
-// 1) the number of diff matches if there are any
-// 2) the number of messsage matches if there are any
-// 3) one, to represent matching the commit, but nothing inside it
-func matchCount(cm *protocol.CommitMatch) int {
-	if len(cm.Diff.MatchedRanges) > 0 {
-		return len(cm.Diff.MatchedRanges)
-	}
-	if len(cm.Message.MatchedRanges) > 0 {
-		return len(cm.Message.MatchedRanges)
-	}
-	return 1
-}
-
 func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
 	ctx, _, endObservation := s.operations.batchLogSingle.With(ctx, &err, observation.Args{
 		Attrs: append(
@@ -1540,7 +1171,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
+		if resolved, err := git.QuickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
 			return execStatus{}, nil
 		}
@@ -1550,7 +1181,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
-		if resolved, err := quickSymbolicRefHead(dir); err == nil {
+		if resolved, err := git.QuickSymbolicRefHead(dir); err == nil {
 			_, _ = w.Write([]byte(resolved))
 			return execStatus{}, nil
 		}
@@ -1844,26 +1475,45 @@ func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common
 	}
 }
 
-// setGitAttributes writes our global gitattributes to
-// gitDir/info/attributes. This will override .gitattributes inside of
-// repositories. It is used to unset attributes such as export-ignore.
-func setGitAttributes(dir common.GitDir) error {
-	infoDir := dir.Path("info")
-	if err := os.Mkdir(infoDir, os.ModePerm); err != nil && !os.IsExist(err) {
-		return errors.Wrap(err, "failed to set git attributes")
+var (
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate
+	// that a repository's packfiles or commit objects might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
+	// context.
+	objectOrPackFileCorruptionRegex = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
+
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
+	// git's supplemental commit-graph might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/37872 for more
+	// context.
+	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
+)
+
+func checkMaybeCorruptRepo(logger log.Logger, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, reposDir string, dir common.GitDir, stderr string) bool {
+	if !stdErrIndicatesCorruption(stderr) {
+		return false
 	}
 
-	_, err := fileutil.UpdateFileIfDifferent(
-		filepath.Join(infoDir, "attributes"),
-		[]byte(`# Managed by Sourcegraph gitserver.
+	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
+	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
+		log.String("stderr", stderr))
 
-# We want every file to be present in git archive.
-* -export-ignore
-`))
+	// We set a flag in the config for the cleanup janitor job to fix. The janitor
+	// runs every minute.
+	err := git.ConfigSet(rcf, reposDir, dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
-		return errors.Wrap(err, "failed to set git attributes")
+		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
-	return nil
+
+	return true
+}
+
+// stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
+// that there might be repository corruption.
+func stdErrIndicatesCorruption(stderr string) bool {
+	return objectOrPackFileCorruptionRegex.MatchString(stderr) || commitGraphCorruptionRegex.MatchString(stderr)
 }
 
 // testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
@@ -2112,7 +1762,7 @@ func postRepoFetchActions(
 	remoteURL *vcs.URL,
 	syncer vcssyncer.VCSSyncer,
 ) error {
-	if err := removeBadRefs(ctx, dir); err != nil {
+	if err := git.RemoveBadRefs(ctx, dir); err != nil {
 		logger.Warn("failed to remove bad refs", log.String("repo", string(repo)), log.Error(err))
 	}
 
@@ -2120,11 +1770,11 @@ func postRepoFetchActions(
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
-	if err := setRepositoryType(rcf, reposDir, dir, syncer.Type()); err != nil {
+	if err := git.SetRepositoryType(rcf, reposDir, dir, syncer.Type()); err != nil {
 		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
 	}
 
-	if err := setGitAttributes(dir); err != nil {
+	if err := git.SetGitAttributes(dir); err != nil {
 		return errors.Wrap(err, "setting git attributes")
 	}
 
@@ -2144,7 +1794,7 @@ func postRepoFetchActions(
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
-	repoSizeBytes := dirSize(dir.Path("."))
+	repoSizeBytes := gitserverfs.DirSize(dir.Path("."))
 	if err := db.GitserverRepos().SetRepoSize(ctx, repo, repoSizeBytes, shardID); err != nil {
 		logger.Warn("failed to set repo size", log.Error(err))
 	}
@@ -2280,46 +1930,6 @@ var (
 	})
 )
 
-// Send 1 in 16 events to honeycomb. This is hardcoded since we only use this
-// for Sourcegraph.com.
-//
-// 2020-05-29 1 in 4. We are currently at the top tier for honeycomb (before
-// enterprise) and using double our quota. This gives us room to grow. If you
-// find we keep bumping this / missing data we care about we can look into
-// more dynamic ways to sample in our application code.
-//
-// 2020-07-20 1 in 16. Again hitting very high usage. Likely due to recent
-// scaling up of the indexed search cluster. Will require more investigation,
-// but we should probably segment user request path traffic vs internal batch
-// traffic.
-//
-// 2020-11-02 Dynamically sample. Again hitting very high usage. Same root
-// cause as before, scaling out indexed search cluster. We update our sampling
-// to instead be dynamic, since "rev-parse" is 12 times more likely than the
-// next most common command.
-//
-// 2021-08-20 over two hours we did 128 * 128 * 1e6 rev-parse requests
-// internally. So we update our sampling to heavily downsample internal
-// rev-parse, while upping our sampling for non-internal.
-// https://ui.honeycomb.io/sourcegraph/datasets/gitserver-exec/result/67e4bLvUddg
-func honeySampleRate(cmd string, actor *actor.Actor) uint {
-	// HACK(keegan) 2022-11-02 IsInternal on sourcegraph.com is always
-	// returning false. For now I am also marking it internal if UID is not
-	// set to work around us hammering honeycomb.
-	internal := actor.IsInternal() || actor.UID == 0
-	switch {
-	case cmd == "rev-parse" && internal:
-		return 1 << 14 // 16384
-
-	case internal:
-		// we care more about user requests, so downsample internal more.
-		return 16
-
-	default:
-		return 8
-	}
-}
-
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
@@ -2426,7 +2036,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// return until this fetch has completed or definitely-failed,
 	// either way they can't still be in use. we don't care exactly
 	// when the cleanup happens, just that it does.
-	defer cleanTmpFiles(s.Logger, dir)
+	defer git.CleanTmpPackFiles(s.Logger, dir)
 
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
 	redactedOutput := urlredactor.New(remoteURL).Redact(string(output))
@@ -2446,79 +2056,12 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	return postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, dir, remoteURL, syncer)
 }
 
-// older versions of git do not remove tags case insensitively, so we generate
-// every possible case of HEAD (2^4 = 16)
-var badRefs = syncx.OnceValue(func() []string {
-	refs := make([]string, 0, 1<<4)
-	for bits := uint8(0); bits < (1 << 4); bits++ {
-		s := []byte("HEAD")
-		for i, c := range s {
-			// lowercase if the i'th bit of bits is 1
-			if bits&(1<<i) != 0 {
-				s[i] = c - 'A' + 'a'
-			}
-		}
-		refs = append(refs, string(s))
-	}
-	return refs
-})
-
-// removeBadRefs removes bad refs and tags from the git repo at dir. This
-// should be run after a clone or fetch. If your repository contains a ref or
-// tag called HEAD (case insensitive), most commands will output a warning
-// from git:
-//
-//	warning: refname 'HEAD' is ambiguous.
-//
-// Instead we just remove this ref.
-func removeBadRefs(ctx context.Context, dir common.GitDir) (errs error) {
-	args := append([]string{"branch", "-D"}, badRefs()...)
-	cmd := exec.CommandContext(ctx, "git", args...)
-	dir.Set(cmd)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		// We expect to get a 1 exit code here, because ideally none of the bad refs
-		// exist, this is fine. All other exit codes or errors are not.
-		if ex, ok := err.(*exec.ExitError); !ok || ex.ExitCode() != 1 {
-			errs = errors.Append(errs, errors.Wrap(err, string(out)))
-		}
-	}
-
-	args = append([]string{"tag", "-d"}, badRefs()...)
-	cmd = exec.CommandContext(ctx, "git", args...)
-	dir.Set(cmd)
-	out, err = cmd.CombinedOutput()
-	if err != nil {
-		// We expect to get a 1 exit code here, because ideally none of the bad refs
-		// exist, this is fine. All other exit codes or errors are not.
-		if ex, ok := err.(*exec.ExitError); !ok || ex.ExitCode() != 1 {
-			errs = errors.Append(errs, errors.Wrap(err, string(out)))
-		}
-	}
-
-	return errs
-}
-
-// ensureHEAD verifies that there is a HEAD file within the repo, and that it
-// is of non-zero length. If either condition is met, we configure a
-// best-effort default.
-func ensureHEAD(dir common.GitDir) error {
-	head, err := os.Stat(dir.Path("HEAD"))
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	if os.IsNotExist(err) || head.Size() == 0 {
-		return os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0o600)
-	}
-	return nil
-}
-
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
 func setHEAD(ctx context.Context, logger log.Logger, rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir, syncer vcssyncer.VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
-	if err := ensureHEAD(dir); err != nil {
+	if err := git.EnsureHEAD(dir); err != nil {
 		logger.Error("failed to ensure HEAD exists", log.Error(err), log.String("repo", string(repoName)))
 	}
 
@@ -2602,7 +2145,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rcf *wrexec.RecordingComman
 func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	hashFile := dir.Path("sg_refhash")
 
-	hash, err := computeRefHash(dir)
+	hash, err := git.ComputeRefHash(dir)
 	if err != nil {
 		return errors.Wrapf(err, "computeRefHash failed for %s", dir)
 	}
@@ -2611,7 +2154,7 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
 		// This is the first time we are calculating the hash. Give a more
 		// approriate timestamp for sg_refhash than the current time.
-		stamp = computeLatestCommitTimestamp(logger, dir)
+		stamp = git.LatestCommitTimestamp(logger, dir)
 	}
 
 	_, err = fileutil.UpdateFileIfDifferent(hashFile, hash)
@@ -2630,75 +2173,6 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	return nil
 }
 
-// computeLatestCommitTimestamp returns the timestamp of the most recent
-// commit if any. If there are no commits or the latest commit is in the
-// future, or there is any error, time.Now is returned.
-func computeLatestCommitTimestamp(logger log.Logger, dir common.GitDir) time.Time {
-	logger = logger.Scoped("computeLatestCommitTimestamp", "compute the timestamp of the most recent commit").
-		With(log.String("repo", string(dir)))
-
-	now := time.Now() // return current time if we don't find a more accurate time
-	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
-	dir.Set(cmd)
-	output, err := cmd.Output()
-	// If we don't have a more specific stamp, we'll return the current time,
-	// and possibly an error.
-	if err != nil {
-		logger.Warn("failed to execute, defaulting to time.Now", log.Error(err))
-		return now
-	}
-
-	words := bytes.Split(output, []byte(" "))
-	// An empty rev-list output, without an error, is okay.
-	if len(words) < 2 {
-		return now
-	}
-
-	// We should have a timestamp and a commit hash; format is
-	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
-	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
-	if err != nil {
-		logger.Warn("ignoring corrupted timestamp, defaulting to time.Now", log.String("timestamp", string(words[0])))
-		return now
-	}
-	stamp := time.Unix(epoch, 0)
-	if stamp.After(now) {
-		return now
-	}
-	return stamp
-}
-
-// computeRefHash returns a hash of the refs for dir. The hash should only
-// change if the set of refs and the commits they point to change.
-func computeRefHash(dir common.GitDir) ([]byte, error) {
-	// Do not use CommandContext since this is a fast operation we do not want
-	// to interrupt.
-	cmd := exec.Command("git", "show-ref")
-	dir.Set(cmd)
-	output, err := cmd.Output()
-	if err != nil {
-		// Ignore the failure for an empty repository: show-ref fails with
-		// empty output and an exit code of 1
-		var e *exec.ExitError
-		if !errors.As(err, &e) || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(syscall.WaitStatus).ExitStatus() != 1 {
-			return nil, err
-		}
-	}
-
-	lines := bytes.Split(output, []byte("\n"))
-	sort.Slice(lines, func(i, j int) bool {
-		return bytes.Compare(lines[i], lines[j]) < 0
-	})
-	hasher := sha256.New()
-	for _, b := range lines {
-		_, _ = hasher.Write(b)
-		_, _ = hasher.Write([]byte("\n"))
-	}
-	hash := make([]byte, hex.EncodedLen(hasher.Size()))
-	hex.Encode(hash, hasher.Sum(nil))
-	return hash, nil
-}
-
 func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir common.GitDir) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		return false
@@ -2711,7 +2185,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 
 	// rev-parse on an OID does not check if the commit actually exists, so it always
 	// works. So we append ^0 to force the check
-	if isAbsoluteRevision(rev) {
+	if git.IsAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
@@ -2729,82 +2203,6 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	return true
 }
 
-const headFileRefPrefix = "ref: "
-
-// quickSymbolicRefHead best-effort mimics the execution of `git symbolic-ref HEAD`, but doesn't exec a child process.
-// It just reads the .git/HEAD file from the bare git repository directory.
-func quickSymbolicRefHead(dir common.GitDir) (string, error) {
-	// See if HEAD contains a commit hash and fail if so.
-	head, err := os.ReadFile(dir.Path("HEAD"))
-	if err != nil {
-		return "", err
-	}
-	head = bytes.TrimSpace(head)
-	if isAbsoluteRevision(string(head)) {
-		return "", errors.New("ref HEAD is not a symbolic ref")
-	}
-
-	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
-	if !bytes.HasPrefix(head, []byte(headFileRefPrefix)) {
-		return "", errors.New("unrecognized HEAD file format")
-	}
-	headRef := bytes.TrimPrefix(head, []byte(headFileRefPrefix))
-	return string(headRef), nil
-}
-
-// quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
-// It just reads the relevant files from the bare git repository directory.
-func quickRevParseHead(dir common.GitDir) (string, error) {
-	// See if HEAD contains a commit hash and return it if so.
-	head, err := os.ReadFile(dir.Path("HEAD"))
-	if err != nil {
-		return "", err
-	}
-	head = bytes.TrimSpace(head)
-	if h := string(head); isAbsoluteRevision(h) {
-		return h, nil
-	}
-
-	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
-	if !bytes.HasPrefix(head, []byte(headFileRefPrefix)) {
-		return "", errors.New("unrecognized HEAD file format")
-	}
-	// Look for the file in refs/heads. If it exists, it contains the commit hash.
-	headRef := bytes.TrimPrefix(head, []byte(headFileRefPrefix))
-	if bytes.HasPrefix(headRef, []byte("../")) || bytes.Contains(headRef, []byte("/../")) || bytes.HasSuffix(headRef, []byte("/..")) {
-		// 🚨 SECURITY: prevent leakage of file contents outside repo dir
-		return "", errors.Errorf("invalid ref format: %s", headRef)
-	}
-	headRefFile := dir.Path(filepath.FromSlash(string(headRef)))
-	if refs, err := os.ReadFile(headRefFile); err == nil {
-		return string(bytes.TrimSpace(refs)), nil
-	}
-
-	// File didn't exist in refs/heads. Look for it in packed-refs.
-	f, err := os.Open(dir.Path("packed-refs"))
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		fields := bytes.Fields(scanner.Bytes())
-		if len(fields) != 2 {
-			continue
-		}
-		commit, ref := fields[0], fields[1]
-		if bytes.Equal(ref, headRef) {
-			return string(commit), nil
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	// Didn't find the refs/heads/$HEAD_BRANCH in packed_refs
-	return "", errors.New("could not compute `git rev-parse HEAD` in-process, try running `git` process")
-}
-
 // errorString returns the error string. If err is nil it returns the empty
 // string.
 func errorString(err error) string {
@@ -2812,26 +2210,6 @@ func errorString(err error) string {
 		return ""
 	}
 	return err.Error()
-}
-
-// IsAbsoluteRevision checks if the revision is a git OID SHA string.
-//
-// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
-// isn't a ref. Git allows 40-char hexadecimal strings to be references.
-//
-// copied from internal/vcs/git to avoid cyclic import
-func isAbsoluteRevision(s string) bool {
-	if len(s) != 40 {
-		return false
-	}
-	for _, r := range s {
-		if !(('0' <= r && r <= '9') ||
-			('a' <= r && r <= 'f') ||
-			('A' <= r && r <= 'F')) {
-			return false
-		}
-	}
-	return true
 }
 
 func (s *Server) handleIsPerforcePathCloneable(w http.ResponseWriter, r *http.Request) {
