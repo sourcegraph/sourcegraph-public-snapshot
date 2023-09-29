@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
@@ -33,6 +34,15 @@ type PerforceDepotSyncer struct {
 	// P4Home is a directory we will pass to `git p4` commands as the
 	// $HOME directory as it requires this to write cache data.
 	P4Home string
+}
+
+func NewPerforceDepotSyncer(connection *schema.PerforceConnection, p4Home string) VCSSyncer {
+	return &PerforceDepotSyncer{
+		MaxChanges:   int(connection.MaxChanges),
+		Client:       connection.P4Client,
+		FusionConfig: configureFusionClient(connection),
+		P4Home:       p4Home,
+	}
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -213,4 +223,53 @@ type FusionConfig struct {
 	// written to permanent storage immediately instead of being cached. This is to
 	// mitigate data loss in events of hardware failure.
 	FsyncEnable bool
+}
+
+func configureFusionClient(conn *schema.PerforceConnection) FusionConfig {
+	// Set up default settings first
+	fc := FusionConfig{
+		Enabled:             false,
+		Client:              conn.P4Client,
+		LookAhead:           2000,
+		NetworkThreads:      12,
+		NetworkThreadsFetch: 12,
+		PrintBatch:          10,
+		Refresh:             100,
+		Retries:             10,
+		MaxChanges:          -1,
+		IncludeBinaries:     false,
+		FsyncEnable:         false,
+	}
+
+	if conn.FusionClient == nil {
+		return fc
+	}
+
+	// Required
+	fc.Enabled = conn.FusionClient.Enabled
+	fc.LookAhead = conn.FusionClient.LookAhead
+
+	// Optional
+	if conn.FusionClient.NetworkThreads > 0 {
+		fc.NetworkThreads = conn.FusionClient.NetworkThreads
+	}
+	if conn.FusionClient.NetworkThreadsFetch > 0 {
+		fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
+	}
+	if conn.FusionClient.PrintBatch > 0 {
+		fc.PrintBatch = conn.FusionClient.PrintBatch
+	}
+	if conn.FusionClient.Refresh > 0 {
+		fc.Refresh = conn.FusionClient.Refresh
+	}
+	if conn.FusionClient.Retries > 0 {
+		fc.Retries = conn.FusionClient.Retries
+	}
+	if conn.FusionClient.MaxChanges > 0 {
+		fc.MaxChanges = conn.FusionClient.MaxChanges
+	}
+	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
+	fc.FsyncEnable = conn.FusionClient.FsyncEnable
+
+	return fc
 }
