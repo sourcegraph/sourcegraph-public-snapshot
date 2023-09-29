@@ -3,9 +3,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "telemetrygatewayexporter",
     srcs = [
-        "backlog_metrics.go",
         "exporter.go",
         "queue_cleanup.go",
+        "queue_metrics.go",
         "telemetrygatewayexporter.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetrygatewayexporter",
