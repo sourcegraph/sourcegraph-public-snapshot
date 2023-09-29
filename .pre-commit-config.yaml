@@ -12,11 +12,11 @@ repos:
       - id: buildifier-lint
   - repo: local
     hooks:
-      - id: check-tokens
-        name: check-tokens
-        description: 'Check for common tokens being committed'
-        entry: ./dev/check-tokens.sh
-        language: script
-        'types': [text]
-        args: []
-        require_serial: false
+    - id: check-tokens
+      name: check-tokens
+      description: 'Check for common tokens being committed'
+      entry: ./dev/check-tokens.sh
+      language: script
+      'types': [text]
+      args: []
+      require_serial: false
