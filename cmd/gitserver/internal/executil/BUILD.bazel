@@ -11,6 +11,7 @@ go_library(
         "//internal/conf",
         "//internal/trace",
         "//internal/wrexec",
+        "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],
