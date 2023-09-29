@@ -21,6 +21,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -64,7 +66,7 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	// This may be different in practice, but the way we setup the tests
 	// we only have .git dirs to measure so this is correct.
-	wantGitDirBytes := dirSize(root)
+	wantGitDirBytes := gitserverfs.DirSize(root)
 
 	logger, capturedLogs := logtest.Captured(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -426,13 +428,13 @@ func TestCleanupExpired(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := gitConfigSet(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
+	if err := git.ConfigSet(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoPerforce), "perforce"); err != nil {
+	if err := git.SetRepositoryType(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoPerforce), "perforce"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoPerforceGCOld), "perforce"); err != nil {
+	if err := git.SetRepositoryType(wrexec.NewNoOpRecordingCommandFactory(), root, common.GitDir(repoPerforceGCOld), "perforce"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -746,170 +748,6 @@ func TestCleanupOldLocks(t *testing.T) {
 	}
 }
 
-func TestRemoveRepoDirectory(t *testing.T) {
-	logger := logtest.Scoped(t)
-	root := t.TempDir()
-
-	mkFiles(t, root,
-		"github.com/foo/baz/.git/HEAD",
-		"github.com/foo/survivor/.git/HEAD",
-		"github.com/bam/bam/.git/HEAD",
-		"example.com/repo/.git/HEAD",
-	)
-
-	// Set them up in the DB
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-	idMapping := make(map[api.RepoName]api.RepoID)
-
-	// Set them all as cloned in the DB
-	for _, r := range []string{
-		"github.com/foo/baz",
-		"github.com/foo/survivor",
-		"github.com/bam/bam",
-		"example.com/repo",
-	} {
-		repo := &types.Repo{
-			Name: api.RepoName(r),
-		}
-		if err := db.Repos().Create(ctx, repo); err != nil {
-			t.Fatal(err)
-		}
-		if err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
-			RepoID:      repo.ID,
-			ShardID:     "test",
-			CloneStatus: types.CloneStatusCloned,
-		}); err != nil {
-			t.Fatal(err)
-		}
-		idMapping[repo.Name] = repo.ID
-	}
-
-	// Remove everything but github.com/foo/survivor
-	for _, d := range []string{
-		"github.com/foo/baz/.git",
-		"github.com/bam/bam/.git",
-		"example.com/repo/.git",
-	} {
-		if err := removeRepoDirectory(ctx, logger, db, "test-gitserver", root, common.GitDir(filepath.Join(root, d)), true); err != nil {
-			t.Fatalf("failed to remove %s: %s", d, err)
-		}
-	}
-
-	// Removing them a second time is safe
-	for _, d := range []string{
-		"github.com/foo/baz/.git",
-		"github.com/bam/bam/.git",
-		"example.com/repo/.git",
-	} {
-		if err := removeRepoDirectory(ctx, logger, db, "test-gitserver", root, common.GitDir(filepath.Join(root, d)), true); err != nil {
-			t.Fatalf("failed to remove %s: %s", d, err)
-		}
-	}
-
-	assertPaths(t, root,
-		"github.com/foo/survivor/.git/HEAD",
-		".tmp",
-	)
-
-	for _, tc := range []struct {
-		name   api.RepoName
-		status types.CloneStatus
-	}{
-		{"github.com/foo/baz", types.CloneStatusNotCloned},
-		{"github.com/bam/bam", types.CloneStatusNotCloned},
-		{"example.com/repo", types.CloneStatusNotCloned},
-		{"github.com/foo/survivor", types.CloneStatusCloned},
-	} {
-		id, ok := idMapping[tc.name]
-		if !ok {
-			t.Fatal("id mapping not found")
-		}
-		r, err := db.GitserverRepos().GetByID(ctx, id)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if r.CloneStatus != tc.status {
-			t.Errorf("Want %q, got %q for %q", tc.status, r.CloneStatus, tc.name)
-		}
-	}
-}
-
-func TestRemoveRepoDirectory_Empty(t *testing.T) {
-	root := t.TempDir()
-
-	mkFiles(t, root,
-		"github.com/foo/baz/.git/HEAD",
-	)
-	db := dbmocks.NewMockDB()
-	gr := dbmocks.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
-	logger := logtest.Scoped(t)
-
-	if err := removeRepoDirectory(context.Background(), logger, db, "test-gitserver", root, common.GitDir(filepath.Join(root, "github.com/foo/baz/.git")), true); err != nil {
-		t.Fatal(err)
-	}
-
-	assertPaths(t, root,
-		".tmp",
-	)
-
-	if len(gr.SetCloneStatusFunc.History()) == 0 {
-		t.Fatal("expected gitserverRepos.SetLastError to be called, but wasn't")
-	}
-	require.Equal(t, gr.SetCloneStatusFunc.History()[0].Arg2, types.CloneStatusNotCloned)
-}
-
-func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
-	logger := logtest.Scoped(t)
-
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	repo := &types.Repo{
-		Name: api.RepoName("github.com/foo/baz/"),
-	}
-	if err := db.Repos().Create(ctx, repo); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
-		RepoID:      repo.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusCloned,
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	root := t.TempDir()
-	mkFiles(t, root, "github.com/foo/baz/.git/HEAD")
-
-	if err := removeRepoDirectory(ctx, logger, db, "test-gitserver", root, common.GitDir(filepath.Join(root, "github.com/foo/baz/.git")), false); err != nil {
-		t.Fatal(err)
-	}
-
-	assertPaths(t, root, ".tmp")
-
-	r, err := db.Repos().GetByName(ctx, repo.Name)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gsRepo, err := db.GitserverRepos().GetByID(ctx, r.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if gsRepo.CloneStatus != types.CloneStatusCloned {
-		t.Fatalf("Expected clone_status to be %s, but got %s", types.CloneStatusCloned, gsRepo.CloneStatus)
-	}
-}
-
 func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	logger := logtest.Scoped(t)
@@ -972,24 +810,6 @@ func (f *fakeDiskSizer) BytesFreeOnDisk(_ string) (uint64, error) {
 
 func (f *fakeDiskSizer) DiskSizeBytes(_ string) (uint64, error) {
 	return f.diskSize, nil
-}
-
-func mkFiles(t *testing.T, root string, paths ...string) {
-	t.Helper()
-	for _, p := range paths {
-		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(p)), os.ModePerm); err != nil {
-			t.Fatal(err)
-		}
-		writeFile(t, filepath.Join(root, p), nil)
-	}
-}
-
-func writeFile(t *testing.T, path string, content []byte) {
-	t.Helper()
-	err := os.WriteFile(path, content, 0o666)
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 // assertPaths checks that all paths under want exist. It excludes non-empty directories
@@ -1101,7 +921,7 @@ func TestFreeUpSpace(t *testing.T) {
 			".tmp",
 			"repo2/.git/HEAD",
 			"repo2/.git/space_eater")
-		rds := dirSize(rd)
+		rds := gitserverfs.DirSize(rd)
 		wantSize := int64(1000)
 		if rds > wantSize {
 			t.Errorf("repo dir size is %d, want no more than %d", rds, wantSize)
@@ -1126,36 +946,6 @@ func makeFakeRepo(d string, sizeBytes int) error {
 		return errors.Wrapf(err, "writing to space_eater file")
 	}
 	return nil
-}
-
-func TestStdErrIndicatesCorruption(t *testing.T) {
-	bad := []string{
-		"error: packfile .git/objects/pack/pack-a.pack does not match index",
-		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
-		`error: short SHA1 1325 is ambiguous
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		`unrelated
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
-		"fatal: commit-graph requires overflow generation data but has none\n",
-		"\rResolving deltas: 100% (21750/21750), completed with 565 local objects.\nfatal: commit-graph requires overflow generation data but has none\nerror: https://github.com/sgtest/megarepo did not send all necessary objects\n\n\": exit status 1",
-	}
-	good := []string{
-		"",
-		"error: short SHA1 1325 is ambiguous",
-		"error: object 156639577dd2ea91cdd53b25352648387d985743 is a blob, not a commit",
-		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
-	}
-	for _, stderr := range bad {
-		if !stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should contain corrupt line:\n%s", stderr)
-		}
-	}
-	for _, stderr := range good {
-		if stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should not contain corrupt line:\n%s", stderr)
-		}
-	}
 }
 
 func TestJitterDuration(t *testing.T) {

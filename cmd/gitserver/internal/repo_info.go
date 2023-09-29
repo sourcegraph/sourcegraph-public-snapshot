@@ -74,7 +74,7 @@ func deleteRepo(
 ) error {
 	// The repo may be deleted in the database, in this case we need to get the
 	// original name in order to find it on disk
-	err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, gitserverfs.RepoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)
+	err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, gitserverfs.RepoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ShortGitCommandTimeout returns the timeout for git commands that should not
@@ -367,4 +369,18 @@ func removeUnsupportedP4Args(args []string) []string {
 	}
 	args = args[:idx]
 	return args
+}
+
+// WrapCmdError will wrap errors for cmd to include the arguments. If the error
+// is an exec.ExitError and cmd was invoked with Output(), it will also include
+// the captured stderr.
+func WrapCmdError(cmd *exec.Cmd, err error) error {
+	if err == nil {
+		return nil
+	}
+	var e *exec.ExitError
+	if errors.As(err, &e) {
+		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
+	}
+	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
 }

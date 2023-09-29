@@ -12,7 +12,10 @@ go_library(
     deps = [
         "//cmd/gitserver/internal/common",
         "//internal/api",
+        "//internal/database",
+        "//internal/fileutil",
         "//internal/gitserver/protocol",
+        "//internal/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
@@ -25,8 +28,16 @@ go_test(
         "initfs_test.go",
     ],
     embed = [":gitserverfs"],
+    tags = ["requires-network"],
     deps = [
+        "//cmd/gitserver/internal/common",
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/database/dbtest",
+        "//internal/types",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
         "@tools_gotest//assert",
     ],
 )

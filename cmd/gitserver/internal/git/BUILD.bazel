@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "git",
+    srcs = [
+        "cleanup.go",
+        "config.go",
+        "git.go",
+        "type.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git",
+    visibility = ["//cmd/gitserver:__subpackages__"],
+    deps = [
+        "//cmd/gitserver/internal/common",
+        "//cmd/gitserver/internal/executil",
+        "//cmd/gitserver/internal/gitserverfs",
+        "//internal/conf",
+        "//internal/fileutil",
+        "//internal/syncx",
+        "//internal/wrexec",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "git_test",
+    srcs = ["git_test.go"],
+    embed = [":git"],
+    deps = ["//cmd/gitserver/internal/common"],
+)
