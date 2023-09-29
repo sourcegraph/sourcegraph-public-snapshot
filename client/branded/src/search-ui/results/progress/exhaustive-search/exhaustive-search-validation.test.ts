@@ -36,6 +36,14 @@ describe('exhaustive search validation', () => {
             expect(validateQueryForExhaustiveSearch('insights and batch-changes').length).toStrictEqual(1)
         })
 
+        test('[other than type:file]', () => {
+            expect(validateQueryForExhaustiveSearch('foo type:file type:diff').length).toStrictEqual(1)
+            expect(validateQueryForExhaustiveSearch('foo type:diff').length).toStrictEqual(1)
+            expect(validateQueryForExhaustiveSearch('foo type:file type:file')).toStrictEqual([])
+            expect(validateQueryForExhaustiveSearch('foo type:file')).toStrictEqual([])
+            expect(validateQueryForExhaustiveSearch('foo')).toStrictEqual([])
+        })
+
         test('[all cases combined]', () => {
             expect(
                 validateQueryForExhaustiveSearch(
