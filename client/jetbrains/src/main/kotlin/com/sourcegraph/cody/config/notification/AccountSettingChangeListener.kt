@@ -17,15 +17,14 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
         AccountSettingChangeActionNotifier.TOPIC,
         object : AccountSettingChangeActionNotifier {
           override fun beforeAction(serverUrlChanged: Boolean) {
-            val codyApplicationSettings = CodyApplicationSettings.getInstance()
             if (serverUrlChanged) {
               GraphQlLogger.logUninstallEvent(project)
-              codyApplicationSettings.isInstallEventLogged = false
+              CodyApplicationSettings.instance.isInstallEventLogged = false
             }
           }
 
           override fun afterAction(context: AccountSettingChangeContext) {
-            val codyApplicationSettings = CodyApplicationSettings.getInstance()
+            val codyApplicationSettings = CodyApplicationSettings.instance
             // Notify JCEF about the config changes
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 

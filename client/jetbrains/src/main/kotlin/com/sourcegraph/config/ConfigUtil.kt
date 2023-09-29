@@ -61,13 +61,13 @@ object ConfigUtil {
       addProperty("accessToken", accessToken)
       addProperty("customRequestHeadersAsString", customRequestHeaders)
       addProperty("pluginVersion", getPluginVersion())
-      addProperty("anonymousUserId", CodyApplicationSettings.getInstance().anonymousUserId)
+      addProperty("anonymousUserId", CodyApplicationSettings.instance.anonymousUserId)
     }
   }
 
   @JvmStatic
   fun getServerPath(project: Project): SourcegraphServerPath {
-    val activeAccount = CodyAuthenticationManager.getInstance().getActiveAccount(project)
+    val activeAccount = CodyAuthenticationManager.instance.getActiveAccount(project)
     return activeAccount?.server ?: from(DOTCOM_URL, "")
   }
 
@@ -92,26 +92,24 @@ object ConfigUtil {
     return if (plugin != null) plugin.version else "unknown"
   }
 
-  @JvmStatic fun isCodyEnabled(): Boolean = CodyApplicationSettings.getInstance().isCodyEnabled
+  @JvmStatic fun isCodyEnabled(): Boolean = CodyApplicationSettings.instance.isCodyEnabled
 
-  @JvmStatic
-  fun isCodyDebugEnabled(): Boolean = CodyApplicationSettings.getInstance().isCodyDebugEnabled
+  @JvmStatic fun isCodyDebugEnabled(): Boolean = CodyApplicationSettings.instance.isCodyDebugEnabled
 
   @JvmStatic
   fun isCodyVerboseDebugEnabled(): Boolean =
-      CodyApplicationSettings.getInstance().isCodyVerboseDebugEnabled
+      CodyApplicationSettings.instance.isCodyVerboseDebugEnabled
 
   @JvmStatic
   fun isCodyAutocompleteEnabled(): Boolean =
-      CodyApplicationSettings.getInstance().isCodyAutocompleteEnabled
+      CodyApplicationSettings.instance.isCodyAutocompleteEnabled
 
   @JvmStatic
   fun isCustomAutocompleteColorEnabled(): Boolean =
-      CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled
+      CodyApplicationSettings.instance.isCustomAutocompleteColorEnabled
 
   @JvmStatic
-  fun getCustomAutocompleteColor(): Int? =
-      CodyApplicationSettings.getInstance().customAutocompleteColor
+  fun getCustomAutocompleteColor(): Int? = CodyApplicationSettings.instance.customAutocompleteColor
 
   @JvmStatic
   fun getWorkspaceRoot(project: Project): String {
@@ -135,11 +133,11 @@ object ConfigUtil {
 
   @JvmStatic
   fun getBlacklistedAutocompleteLanguageIds(): List<String> {
-    return CodyApplicationSettings.getInstance().blacklistedLanguageIds
+    return CodyApplicationSettings.instance.blacklistedLanguageIds
   }
 
   @JvmStatic
   fun getShouldAcceptNonTrustedCertificatesAutomatically(): Boolean {
-    return CodyApplicationSettings.getInstance().shouldAcceptNonTrustedCertificatesAutomatically
+    return CodyApplicationSettings.instance.shouldAcceptNonTrustedCertificatesAutomatically
   }
 }
