@@ -30,11 +30,7 @@ func (s *RepoUpdaterServiceServer) RepoUpdateSchedulerInfo(_ context.Context, re
 }
 
 func (s *RepoUpdaterServiceServer) RepoLookup(ctx context.Context, req *proto.RepoLookupRequest) (*proto.RepoLookupResponse, error) {
-	args := protocol.RepoLookupArgs{
-		Repo:   api.RepoName(req.Repo),
-		Update: req.Update,
-	}
-	res, err := s.Server.repoLookup(ctx, args)
+	res, err := s.Server.repoLookup(ctx, api.RepoName(req.Repo))
 	if err != nil {
 		return nil, err
 	}

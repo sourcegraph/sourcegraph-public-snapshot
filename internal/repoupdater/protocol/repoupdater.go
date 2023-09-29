@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type RepoUpdateSchedulerInfoArgs struct {
@@ -93,21 +94,16 @@ type RepoQueueState struct {
 type RepoLookupArgs struct {
 	// Repo is the repository name to look up.
 	Repo api.RepoName `json:",omitempty"`
-
-	// Update will enqueue a high priority git update for this repo if it exists and this
-	// field is true.
-	Update bool
 }
 
 func (r *RepoLookupArgs) ToProto() *proto.RepoLookupRequest {
 	return &proto.RepoLookupRequest{
-		Repo:   string(r.Repo),
-		Update: r.Update,
+		Repo: string(r.Repo),
 	}
 }
 
 func (r *RepoLookupArgs) String() string {
-	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", r.Repo, r.Update)
+	return fmt.Sprintf("RepoLookupArgs{Repo: %s}", r.Repo)
 }
 
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).

@@ -78,18 +78,13 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := s.repoLookup(r.Context(), args)
+	result, err := s.repoLookup(r.Context(), args.Repo)
 	if err != nil {
 		if r.Context().Err() != nil {
 			http.Error(w, "request canceled", http.StatusGatewayTimeout)
 			return
 		}
-		s.Logger.Error("repoLookup failed",
-			log.Object("repo",
-				log.String("name", string(args.Repo)),
-				log.Bool("update", args.Update),
-			),
-			log.Error(err))
+		s.Logger.Error("repoLookup failed", log.String("name", string(args.Repo)), log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -278,53 +273,45 @@ func externalServiceValidate(ctx context.Context, es *types.ExternalService, src
 	}
 }
 
-var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
+var mockRepoLookup func(api.RepoName) (*protocol.RepoLookupResult, error)
 
-func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+func (s *Server) repoLookup(ctx context.Context, repoName api.RepoName) (result *protocol.RepoLookupResult, err error) {
 	// Sourcegraph.com: this is on the user path, do not block forever if codehost is
 	// being bad. Ideally block before cloudflare 504s the request (1min). Other: we
 	// only speak to our database, so response should be in a few ms.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	tr, ctx := trace.New(ctx, "repoLookup", attribute.Stringer("args", &args))
+	tr, ctx := trace.New(ctx, "repoLookup", attribute.String("repo", string(repoName)))
 	defer func() {
 		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
 		tr.SetError(err)
 		tr.End()
 	}()
 
-	if args.Repo == "" {
+	if repoName == "" {
 		return nil, errors.New("Repo must be set (is blank)")
 	}
 
 	if mockRepoLookup != nil {
-		return mockRepoLookup(args)
+		return mockRepoLookup(repoName)
 	}
 
-	repo, err := s.Syncer.SyncRepo(ctx, args.Repo, true)
-
-	switch {
-	case err == nil:
-		break
-	case errcode.IsNotFound(err):
-		return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
-	case errcode.IsUnauthorized(err) || errcode.IsForbidden(err):
-		return &protocol.RepoLookupResult{ErrorUnauthorized: true}, nil
-	case errcode.IsTemporary(err):
-		return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
-	default:
+	repo, err := s.Syncer.SyncRepo(ctx, repoName, true)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
+		}
+		if errcode.IsUnauthorized(err) || errcode.IsForbidden(err) {
+			return &protocol.RepoLookupResult{ErrorUnauthorized: true}, nil
+		}
+		if errcode.IsTemporary(err) {
+			return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
+		}
 		return nil, err
 	}
 
-	if s.Scheduler != nil && args.Update {
-		// Enqueue a high priority update for this repo.
-		s.Scheduler.UpdateOnce(repo.ID, repo.Name)
-	}
-
-	repoInfo := protocol.NewRepoInfo(repo)
-
-	return &protocol.RepoLookupResult{Repo: repoInfo}, nil
+	return &protocol.RepoLookupResult{Repo: protocol.NewRepoInfo(repo)}, nil
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
