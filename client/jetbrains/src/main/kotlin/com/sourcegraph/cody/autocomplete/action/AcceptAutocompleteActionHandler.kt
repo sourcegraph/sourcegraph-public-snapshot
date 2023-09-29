@@ -73,16 +73,11 @@ class AcceptAutocompleteActionHandler : AutocompleteActionHandler() {
 
   private fun acceptAgentAutocomplete(editor: Editor, maybeCaret: Caret?) {
     val caret = maybeCaret ?: getSingleCaret(editor) ?: return
-    val completionItem = getAgentAutocompleteItem(caret) ?: return
+    val completionItem = getCurrentAutocompleteItem(caret) ?: return
     WriteAction.run<RuntimeException> { applyInsertText(editor, caret, completionItem) }
   }
 
   companion object {
-    private fun getSingleCaret(editor: Editor): Caret? {
-      val allCarets = editor.caretModel.allCarets
-      // Only accept completions if there's a single caret.
-      return if (allCarets.size < 2) allCarets.firstOrNull() else null
-    }
 
     private fun applyInsertText(
         editor: Editor,

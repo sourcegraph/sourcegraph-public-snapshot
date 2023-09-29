@@ -151,7 +151,7 @@
             <override-text place="MainMenu" text="Cycle Autocomplete Suggestion"/>
         </action>
         <action id="cody.cycleBackAutocompleteAction"
-                class="com.sourcegraph.cody.autocomplete.action.CycleBackAutocompleteAction">
+                class="com.sourcegraph.cody.autocomplete.action.CycleBackwardAutocompleteAction">
             <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET" keymap="$default"/>
             <override-text place="MainMenu" text="Cycle Autocomplete Suggestion"/>
         </action>
