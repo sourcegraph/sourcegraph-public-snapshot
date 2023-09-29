@@ -62,20 +62,39 @@ func (o *Org) AllowPrivateForks() {
 
 // CreateTeam adds an action to the scenario to create a team with the given name for the org.
 // The Scenario ID will be added as a suffix to the given name.
-func (o *Org) CreateTeam(name string) any {
-	createTeam := &Action{
-		Name: "org:team:create:" + name,
-		Apply: func(ctx context.Context) error {
-			return nil
-		},
-		Teardown: func(ctx context.Context) error {
-			return nil
-		},
+func (o *Org) CreateTeam(name string) *Team {
+	baseTeam := &Team{
+		s:    o.s,
+		org:  o,
+		name: name,
 	}
 
-	o.s.Append(createTeam)
+	action := &action{
+		name: "org:team:create:" + name,
+		apply: func(ctx context.Context) error {
+			name := fmt.Sprintf("team-%s-%s", name, o.s.id)
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+			team, err := o.s.client.CreateTeam(ctx, org, name)
+			if err != nil {
+				return err
+			}
+			baseTeam.name = team.GetName()
+			return nil
+		},
+		teardown: func(ctx context.Context) error {
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+			return o.s.client.DeleteTeam(ctx, org, baseTeam.name)
+		},
+	}
+	o.s.append(action)
 
-	return nil
+	return baseTeam
 }
 
 // CreateRepo adds an action to the scenario to create a repo with the given name and visibility for the org.

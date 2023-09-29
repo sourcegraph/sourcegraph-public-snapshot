@@ -8,6 +8,7 @@ go_library(
         "org.go",
         "reporter.go",
         "scenario.go",
+        "team.go",
         "user.go",
         "util.go",
     ],
