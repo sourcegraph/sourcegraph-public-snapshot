@@ -223,3 +223,32 @@ func (s *GitHubScenario) Teardown(ctx context.Context) error {
 	s.reporter.Writef("Teardown complete in %s\n", time.Now().UTC().Sub(start))
 	return errs
 }
+
+func (s *GithubScenario) CreateOrg(name string) *Org {
+	baseOrg := &Org{
+		s:    s,
+		name: name,
+	}
+
+	createOrg := &action{
+		name: "org:create:" + name,
+		apply: func(ctx context.Context) error {
+			orgName := fmt.Sprintf("org-%s-%s", name, s.id)
+			org, err := s.client.CreateOrg(ctx, orgName)
+			if err != nil {
+				return err
+			}
+			baseOrg.name = org.GetLogin()
+			return nil
+		},
+		teardown: func(context.Context) error {
+			host := baseOrg.s.client.cfg.URL
+			deleteURL := fmt.Sprintf("%s/organizations/%s/settings/profile", host, baseOrg.name)
+			fmt.Printf("Visit %q to delete the org\n", deleteURL)
+			return nil
+		},
+	}
+
+	s.append(createOrg)
+	return baseOrg
+}
