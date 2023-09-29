@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // personalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
@@ -17,33 +17,21 @@ const PersonalAccessTokenPrefix = "sgph_"
 const LocalInstanceIdentifier = "local"
 const InstanceIdentifierLength = 10
 
+var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{8,16}_)?([a-fA-F0-9]{40})$")
+
 // ParseAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
 // Personal access tokens can take several forms:
 //   - <token>
 //   - sgp_<token>
 //   - sgph_<instance-identifier>_<token>
 func ParsePersonalAccessToken(token string) (string, error) {
-	// Iterate through all prefixes used by previous versions of Sourcegraph and remove them
-	oldPersonalAccessTokenPrefixes := []string{"sgp_"}
-	for _, prefix := range append(oldPersonalAccessTokenPrefixes, PersonalAccessTokenPrefix) {
-		token = strings.TrimPrefix(token, prefix)
-	}
-
-	// TODO: Side-effect of this is that it will strip any prefix, e.g. asdf_<token>
-	// Remove <instance-identifier> from token, if present
-	tokenParts := strings.Split(token, "_")
-	switch len(tokenParts) {
-	case 1:
-		// No instance identifier present, return full token
-		token = tokenParts[0]
-	case 2:
-		// Instance identifier present, return second part of token
-		token = tokenParts[1]
-	default:
+	tokenMatches := personalAccessTokenRegex.FindStringSubmatch(token)
+	if len(tokenMatches) <= 1 {
 		return "", errors.New("invalid token format")
 	}
+	tokenValue := tokenMatches[1]
 
-	return token, nil
+	return tokenValue, nil
 }
 
 // GeneratePersonalAccessToken generates a new personal access token.

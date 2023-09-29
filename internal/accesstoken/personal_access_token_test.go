@@ -12,29 +12,61 @@ func TestParsePersonalAccessToken(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
+		// Valid test cases
 		{
-			name:    "token with no prefix",
+			name:    "no prefix",
+			args:    args{token: "abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "abcdef1234abcdef1234abcdef1234abcdef1234",
+			wantErr: false,
+		},
+		{
+			name:    "sgp_ prefix",
+			args:    args{token: "sgp_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "abcdef1234abcdef1234abcdef1234abcdef1234",
+			wantErr: false,
+		},
+		{
+			name:    "sgph_ prefix",
+			args:    args{token: "sgph_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "abcdef1234abcdef1234abcdef1234abcdef1234",
+			wantErr: false,
+		},
+		{
+			name:    "sgph_ prefix and instance-identifier",
+			args:    args{token: "sgph_012345678_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "abcdef1234abcdef1234abcdef1234abcdef1234",
+			wantErr: false,
+		},
+		// Error cases
+		{
+			name:    "no prefix, invalid length",
 			args:    args{token: "abc123"},
-			want:    "abc123",
-			wantErr: false,
+			want:    "",
+			wantErr: true,
 		},
 		{
-			name:    "token with sgp_ prefix",
-			args:    args{token: "sgp_abc123"},
-			want:    "abc123",
-			wantErr: false,
+			name:    "invalid prefix, invalid length",
+			args:    args{token: "sgptest_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "",
+			wantErr: true,
 		},
 		{
-			name:    "token with sgph_ prefix",
-			args:    args{token: "sgph_abc123"},
-			want:    "abc123",
-			wantErr: false,
+			name:    "prefix, invalid length",
+			args:    args{token: "sgp_abcdef1234abcdef1234abcdef1234abcdef12345"},
+			want:    "",
+			wantErr: true,
 		},
 		{
-			name:    "token with sgph_ prefix and instance-identifier",
-			args:    args{token: "sgph_instanceidentifier_abc123"},
-			want:    "abc123",
-			wantErr: false,
+			name:    "too-short instance identifer",
+			args:    args{token: "sgph_01234_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "too-long instance identifer",
+			args:    args{token: "sgph_0123456789abcdef0_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "",
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
