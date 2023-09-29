@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Code, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -34,21 +34,28 @@ export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<User
     node,
 }: UserEventNodeProps) => (
     <li className={classNames('list-group-item', styles.eventLog)}>
-        <div className="d-flex align-items-center justify-content-between">
-            <Code>{node.name}</Code>
-            <div>
+        <div className="d-flex justify-content-between">
+            <details>
+                <summary>
+                    <Code>{node.name}</Code>
+                </summary>
+                <Text className="my-1">
+                    From: {node.source}{' '}
+                    {node.url && (
+                        <span>
+                            (<Link to={node.url}>{node.url}</Link>)
+                        </span>
+                    )}
+                </Text>
+                {node.argument && node.argument !== 'true' && node.argument !== '{}' && (
+                    <Text className="my-1">
+                        <Code className={styles.argument}>{node.argument}</Code>
+                    </Text>
+                )}
+            </details>
+            <div className="flex-shrink-0">
                 <Timestamp date={node.timestamp} />
             </div>
-        </div>
-        <div className="text-break">
-            <small>
-                From: {node.source}{' '}
-                {node.url && (
-                    <span>
-                        (<Link to={node.url}>{node.url}</Link>)
-                    </span>
-                )}
-            </small>
         </div>
     </li>
 )
@@ -113,6 +120,7 @@ export const UserEventLogsPageContent: React.FunctionComponent<
                     fragment UserEventLogFields on EventLog {
                         name
                         source
+                        argument
                         url
                         timestamp
                     }
