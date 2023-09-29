@@ -4190,7 +4190,6 @@ CREATE TABLE users (
     passwd text,
     passwd_reset_code text,
     passwd_reset_time timestamp with time zone,
-    site_admin boolean DEFAULT false NOT NULL,
     page_views integer DEFAULT 0 NOT NULL,
     search_queries integer DEFAULT 0 NOT NULL,
     tags text[] DEFAULT '{}'::text[],
