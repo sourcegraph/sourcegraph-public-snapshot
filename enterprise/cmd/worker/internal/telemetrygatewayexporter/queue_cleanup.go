@@ -19,23 +19,17 @@ type queueCleanupJob struct {
 
 	retentionWindow time.Duration
 
-	prunedHistogram prometheus.Histogram
+	prunedCounter prometheus.Counter
 }
 
 func newQueueCleanupJob(obctx *observation.Context, store database.TelemetryEventsExportQueueStore, cfg config) goroutine.BackgroundRoutine {
 	job := &queueCleanupJob{
 		store: store,
-		prunedHistogram: promauto.NewHistogram(prometheus.HistogramOpts{
+		prunedCounter: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: "src",
 			Subsystem: "telemetrygatewayexporter",
 			Name:      "events_pruned",
-			Help:      "Size of exported events pruned from the queue table.",
-			Buckets: prometheus.ExponentialBucketsRange(
-				1,
-				// Max bucket at range if each export in a cleanup interval
-				// exports the maximum number of events.
-				(cfg.ExportInterval.Seconds()/cfg.QueueCleanupInterval.Seconds())*float64(cfg.MaxExportBatchSize),
-				10),
+			Help:      "Events pruned from the queue table.",
 		}),
 	}
 	return goroutine.NewPeriodicGoroutine(
@@ -56,7 +50,7 @@ func (j *queueCleanupJob) Handle(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "store.DeletedExported")
 	}
-	j.prunedHistogram.Observe(float64(count))
+	j.prunedCounter.Add(float64(count))
 
 	return nil
 }

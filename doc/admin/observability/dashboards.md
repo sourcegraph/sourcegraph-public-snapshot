@@ -30823,13 +30823,13 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10030
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(src_telemetrygatewayexport_queue_size)`
+Query: `sum(src_telemetrygatewayexporter_queue_size)`
 
 </details>
 
 <br />
 
-#### telemetry: telemetry_gateway_exporter_exported_events
+#### telemetry: src_telemetrygatewayexporter_exported_events
 
 <p class="subtitle">Events exported from queue per hour</p>
 
@@ -30844,15 +30844,15 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10030
 <details>
 <summary>Technical details</summary>
 
-Query: `max(increase(src_telemetrygatewayexport_exported_events[1h]))`
+Query: `max(increase(src_telemetrygatewayexporter_exported_events[1h]))`
 
 </details>
 
 <br />
 
-#### telemetry: telemetry_gateway_exporter_export_batch_sizes
+#### telemetry: telemetry_gateway_exporter_batch_size
 
-<p class="subtitle">95th percentile number of events exported per batch</p>
+<p class="subtitle">Number of events exported per batch over 30m</p>
 
 The number of events exported in each batch.
 
@@ -30865,7 +30865,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10030
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.95, sum(rate(src_telemetrygatewayexport_batch_size_bucket[5m])) by (le))`
+Query: `sum by (le) (rate(src_telemetrygatewayexporter_batch_size_bucket[30m]))`
 
 </details>
 
@@ -30875,7 +30875,7 @@ Query: `histogram_quantile(0.95, sum(rate(src_telemetrygatewayexport_batch_size_
 
 #### telemetry: telemetrygatewayexporter_exporter_total
 
-<p class="subtitle">Telemetry events exporter operations every 5m</p>
+<p class="subtitle">Events exporter operations every 30m</p>
 
 This panel has no related alerts.
 
@@ -30886,7 +30886,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10040
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -30894,7 +30894,7 @@ Query: `sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*
 
 #### telemetry: telemetrygatewayexporter_exporter_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful telemetry events exporter operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful events exporter operation duration distribution over 30m</p>
 
 This panel has no related alerts.
 
@@ -30905,7 +30905,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10040
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_telemetrygatewayexporter_exporter_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_telemetrygatewayexporter_exporter_duration_seconds_bucket{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -30913,9 +30913,9 @@ Query: `sum  by (le)(rate(src_telemetrygatewayexporter_exporter_duration_seconds
 
 #### telemetry: telemetrygatewayexporter_exporter_errors_total
 
-<p class="subtitle">Telemetry events exporter operation errors every 5m</p>
+<p class="subtitle">Events exporter operation errors every 30m</p>
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-exporter-errors-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100402` on your Sourcegraph instance.
 
@@ -30924,7 +30924,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10040
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -30932,9 +30932,9 @@ Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^w
 
 #### telemetry: telemetrygatewayexporter_exporter_error_rate
 
-<p class="subtitle">Telemetry events exporter operation error rate over 5m</p>
+<p class="subtitle">Events exporter operation error rate over 30m</p>
 
-Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-exporter-error-rate) for 1 alert related to this panel.
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100403` on your Sourcegraph instance.
 
@@ -30943,7 +30943,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10040
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m])) / (sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*"}[30m])) + sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m]))) * 100`
 
 </details>
 
@@ -30953,7 +30953,7 @@ Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^w
 
 #### telemetry: telemetrygatewayexporter_queue_cleanup_total
 
-<p class="subtitle">Telemetry export queue cleanup operations every 5m</p>
+<p class="subtitle">Export queue cleanup operations every 30m</p>
 
 This panel has no related alerts.
 
@@ -30964,7 +30964,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10050
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -30972,7 +30972,7 @@ Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^wor
 
 #### telemetry: telemetrygatewayexporter_queue_cleanup_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful telemetry export queue cleanup operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful export queue cleanup operation duration distribution over 30m</p>
 
 This panel has no related alerts.
 
@@ -30983,7 +30983,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10050
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_cleanup_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_cleanup_duration_seconds_bucket{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -30991,9 +30991,9 @@ Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_cleanup_duration_se
 
 #### telemetry: telemetrygatewayexporter_queue_cleanup_errors_total
 
-<p class="subtitle">Telemetry export queue cleanup operation errors every 5m</p>
+<p class="subtitle">Export queue cleanup operation errors every 30m</p>
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-queue-cleanup-errors-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100502` on your Sourcegraph instance.
 
@@ -31002,7 +31002,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10050
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -31010,9 +31010,9 @@ Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job
 
 #### telemetry: telemetrygatewayexporter_queue_cleanup_error_rate
 
-<p class="subtitle">Telemetry export queue cleanup operation error rate over 5m</p>
+<p class="subtitle">Export queue cleanup operation error rate over 30m</p>
 
-Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-queue-cleanup-error-rate) for 1 alert related to this panel.
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100503` on your Sourcegraph instance.
 
@@ -31021,7 +31021,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10050
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m])) / (sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^worker.*"}[30m])) + sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m]))) * 100`
 
 </details>
 
@@ -31031,7 +31031,7 @@ Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job
 
 #### telemetry: telemetrygatewayexporter_queue_metrics_reporter_total
 
-<p class="subtitle">Telemetry export backlog metrics reporting operations every 5m</p>
+<p class="subtitle">Export backlog metrics reporting operations every 30m</p>
 
 This panel has no related alerts.
 
@@ -31042,7 +31042,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -31050,7 +31050,7 @@ Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{j
 
 #### telemetry: telemetrygatewayexporter_queue_metrics_reporter_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful telemetry export backlog metrics reporting operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful export backlog metrics reporting operation duration distribution over 30m</p>
 
 This panel has no related alerts.
 
@@ -31061,7 +31061,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_metrics_reporter_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_metrics_reporter_duration_seconds_bucket{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -31069,9 +31069,9 @@ Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_metrics_reporter_du
 
 #### telemetry: telemetrygatewayexporter_queue_metrics_reporter_errors_total
 
-<p class="subtitle">Telemetry export backlog metrics reporting operation errors every 5m</p>
+<p class="subtitle">Export backlog metrics reporting operation errors every 30m</p>
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-errors-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100602` on your Sourcegraph instance.
 
@@ -31080,7 +31080,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m]))`
 
 </details>
 
@@ -31088,9 +31088,9 @@ Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_
 
 #### telemetry: telemetrygatewayexporter_queue_metrics_reporter_error_rate
 
-<p class="subtitle">Telemetry export backlog metrics reporting operation error rate over 5m</p>
+<p class="subtitle">Export backlog metrics reporting operation error rate over 30m</p>
 
-Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-error-rate) for 1 alert related to this panel.
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100603` on your Sourcegraph instance.
 
@@ -31099,7 +31099,7 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{job=~"^worker.*"}[5m])) + sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m])) / (sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{job=~"^worker.*"}[30m])) + sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m]))) * 100`
 
 </details>
 

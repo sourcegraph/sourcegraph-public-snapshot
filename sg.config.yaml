@@ -720,10 +720,8 @@ commands:
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
         grafana:candidate >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
-      echo foobar
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-      export CACHE=true
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       bazel build //docker-images/grafana:image_tarball
       docker load --input $(bazel cquery //docker-images/grafana:image_tarball --output=files)

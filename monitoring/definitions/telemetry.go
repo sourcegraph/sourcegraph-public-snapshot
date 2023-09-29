@@ -3,6 +3,10 @@ package definitions
 import (
 	"time"
 
+	"github.com/grafana-tools/sdk"
+	"github.com/prometheus/common/model"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -29,26 +33,33 @@ func Telemetry() *monitoring.Dashboard {
 							Name:           "telemetry_gateway_exporter_queue_size",
 							Description:    "telemetry event payloads pending export",
 							Owner:          monitoring.ObservableOwnerDataAnalytics,
-							Query:          `sum(src_telemetrygatewayexport_queue_size)`,
+							Query:          `sum(src_telemetrygatewayexporter_queue_size)`,
 							Panel:          monitoring.Panel().Min(0).LegendFormat("events"),
 							NoAlert:        true,
 							Interpretation: "The number of events queued to be exported.",
 						},
 						{
-							Name:           "telemetry_gateway_exporter_exported_events",
+							Name:           "src_telemetrygatewayexporter_exported_events",
 							Description:    "events exported from queue per hour",
 							Owner:          monitoring.ObservableOwnerDataAnalytics,
-							Query:          `max(increase(src_telemetrygatewayexport_exported_events[1h]))`,
+							Query:          `max(increase(src_telemetrygatewayexporter_exported_events[1h]))`,
 							Panel:          monitoring.Panel().Min(0).LegendFormat("events"),
 							NoAlert:        true,
 							Interpretation: "The number of events being exported.",
 						},
 						{
-							Name:           "telemetry_gateway_exporter_export_batch_sizes",
-							Description:    "95th percentile number of events exported per batch",
-							Owner:          monitoring.ObservableOwnerDataAnalytics,
-							Query:          "histogram_quantile(0.95, sum(rate(src_telemetrygatewayexport_batch_size_bucket[5m])) by (le))",
-							Panel:          monitoring.Panel().Min(0).LegendFormat("events"),
+							Name:        "telemetry_gateway_exporter_batch_size",
+							Description: "number of events exported per batch over 30m",
+							Owner:       monitoring.ObservableOwnerDataAnalytics,
+							Query:       "sum by (le) (rate(src_telemetrygatewayexporter_batch_size_bucket[30m]))",
+							Panel: monitoring.PanelHeatmap().
+								With(func(o monitoring.Observable, p *sdk.Panel) {
+									p.HeatmapPanel.YAxis.Format = "short"
+									p.HeatmapPanel.YAxis.Decimals = pointers.Ptr(0)
+									p.HeatmapPanel.DataFormat = "tsbuckets"
+									p.HeatmapPanel.Targets[0].Format = "heatmap"
+									p.HeatmapPanel.Targets[0].LegendFormat = "{{le}}"
+								}),
 							NoAlert:        true,
 							Interpretation: "The number of events exported in each batch.",
 						},
@@ -59,17 +70,18 @@ func Telemetry() *monitoring.Dashboard {
 				GroupConstructorOptions: shared.GroupConstructorOptions{
 					ObservableConstructorOptions: shared.ObservableConstructorOptions{
 						MetricNameRoot:        "telemetrygatewayexporter_exporter",
-						MetricDescriptionRoot: "telemetry events exporter",
+						MetricDescriptionRoot: "events exporter",
+						RangeWindow:           model.Duration(30 * time.Minute),
 					},
 					Namespace:       "Telemetry Gateway Exporter",
 					DescriptionRoot: "Export job operations",
 					Hidden:          true, // TODO(@bobheadxi): not yet enabled by default, un-hide in 5.2.1
 				},
 				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
-					Total:    shared.NoAlertsOption("none"),
-					Duration: shared.NoAlertsOption("none"),
-					Errors:   shared.NoAlertsOption("none"),
-					ErrorRate: shared.CriticalOption(monitoring.Alert().Greater(0).For(time.Minute*30), `
+					Total:     shared.NoAlertsOption("none"),
+					Duration:  shared.NoAlertsOption("none"),
+					ErrorRate: shared.NoAlertsOption("none"),
+					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
 						See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
 						If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph's Telemetry Gateway service.
 					`),
@@ -79,17 +91,18 @@ func Telemetry() *monitoring.Dashboard {
 				GroupConstructorOptions: shared.GroupConstructorOptions{
 					ObservableConstructorOptions: shared.ObservableConstructorOptions{
 						MetricNameRoot:        "telemetrygatewayexporter_queue_cleanup",
-						MetricDescriptionRoot: "telemetry export queue cleanup",
+						MetricDescriptionRoot: "export queue cleanup",
+						RangeWindow:           model.Duration(30 * time.Minute),
 					},
 					Namespace:       "Telemetry Gateway Exporter",
 					DescriptionRoot: "Export queue cleanup job operations",
 					Hidden:          true, // TODO(@bobheadxi): not yet enabled by default, un-hide in 5.2.1
 				},
 				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
-					Total:    shared.NoAlertsOption("none"),
-					Duration: shared.NoAlertsOption("none"),
-					Errors:   shared.NoAlertsOption("none"),
-					ErrorRate: shared.WarningOption(monitoring.Alert().Greater(0).For(time.Minute*30),
+					Total:     shared.NoAlertsOption("none"),
+					Duration:  shared.NoAlertsOption("none"),
+					ErrorRate: shared.NoAlertsOption("none"),
+					Errors: shared.WarningOption(monitoring.Alert().Greater(0),
 						"See worker logs in the `worker.telemetrygateway-exporter` log scope for more details."),
 				},
 			}),
@@ -97,17 +110,18 @@ func Telemetry() *monitoring.Dashboard {
 				GroupConstructorOptions: shared.GroupConstructorOptions{
 					ObservableConstructorOptions: shared.ObservableConstructorOptions{
 						MetricNameRoot:        "telemetrygatewayexporter_queue_metrics_reporter",
-						MetricDescriptionRoot: "telemetry export backlog metrics reporting",
+						MetricDescriptionRoot: "export backlog metrics reporting",
+						RangeWindow:           model.Duration(30 * time.Minute),
 					},
 					Namespace:       "Telemetry Gateway Exporter",
 					DescriptionRoot: "Export queue metrics reporting job operations",
 					Hidden:          true,
 				},
 				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
-					Total:    shared.NoAlertsOption("none"),
-					Duration: shared.NoAlertsOption("none"),
-					Errors:   shared.NoAlertsOption("none"),
-					ErrorRate: shared.WarningOption(monitoring.Alert().Greater(0).For(time.Minute*30),
+					Total:     shared.NoAlertsOption("none"),
+					Duration:  shared.NoAlertsOption("none"),
+					ErrorRate: shared.NoAlertsOption("none"),
+					Errors: shared.WarningOption(monitoring.Alert().Greater(0),
 						"See worker logs in the `worker.telemetrygateway-exporter` log scope for more details."),
 				},
 			}),

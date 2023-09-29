@@ -25,7 +25,7 @@ func newQueueMetricsJob(obctx *observation.Context, store database.TelemetryEven
 		store: store,
 		sizeGauge: promauto.NewGauge(prometheus.GaugeOpts{
 			Namespace: "src",
-			Subsystem: "telemetrygatewayexport",
+			Subsystem: "telemetrygatewayexporter",
 			Name:      "queue_size",
 			Help:      "Current number of events waiting to be exported.",
 		}),
