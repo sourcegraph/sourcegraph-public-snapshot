@@ -13,25 +13,35 @@ To learn more about the Sourcegraph's new Telemetry framework, refer to [the tel
 
 ## Running Telemetry Gateway locally
 
-Exports of [telemetry events](../background-information/telemetry/index.md) to a local Telemetry Gateway instance is enabled in as part of `sg start` and `sg start dotcom`.
-By default, the local Telemetry Gateway instance will simply log any events it receives.
+Exports of [telemetry events](../background-information/telemetry/index.md) to a locally running Telemetry Gateway instance that is started as part of `sg start` and `sg start dotcom` are enabled by default in development using the `TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR` environment variable configured in `sg.config.yaml`.
+By default, the local Telemetry Gateway instance will simply log any events it receives at `debug` level without forwarding the events anywhere.
 
-You can increase the frequency of exports by setting the following in `sg.config.yaml`:
+To see the message payloads it *would* emit in a production environment, configure the log level in `sg.config.overwrite.yaml`:
+
+```yaml
+commands:
+  telemetry-gateway:
+    env:
+      SRC_LOG_LEVEL: debug
+```
+
+You can increase the frequency of exports to monitor behaviour closer to real-time by setting the following in `sg.config.yaml`:
 
 ```yaml
 env:
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL: "10s"
-  TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION: "5m"
 ```
 
 In development, a gRPC interface is enabled for Telemetry Gateway as well at `http://127.0.0.1:10085/debug/grpcui/`.
 
 ## Testing against a remote Telemetry Gateway
 
-A test deployment is available at `telemetry-gateway.sgdev.org`, which publishes events to a test dataset.
+A test deployment is available at `telemetry-gateway.sgdev.org`, which publishes events to a test topic and development pipeline - currently [`sourcegraph-telligent-testing/event-telemetry-test`](https://console.cloud.google.com/cloudpubsub/topic/edit/event-telemetry-test?project=sourcegraph-telligent-testing).
 In local development, you can configure Sourcegraph to export to this test deployment by setting the following in `sg.config.yaml`:
 
 ```yaml
 env:
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "https://telemetry-gateway.sgdev.org:443"
 ```
+
+For details about live Telemetry Gateway deployments, refer to [the handbook Telemetry Gateway page](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/telemetry-gateway/).
