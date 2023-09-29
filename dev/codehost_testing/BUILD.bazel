@@ -5,6 +5,7 @@ go_library(
     name = "codehost_testing",
     srcs = [
         "github_client.go",
+        "org.go",
         "reporter.go",
         "scenario.go",
         "util.go",
