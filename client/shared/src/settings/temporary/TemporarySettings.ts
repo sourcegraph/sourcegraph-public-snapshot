@@ -57,7 +57,6 @@ export interface TemporarySettingsSchema {
         lastCachedTimestamp: string
         repositoryName: string
         filePath: string
-        author: string
     }
     'search.results.collapseSmartSearch': boolean
     'search.results.collapseUnownedResultsAlert': boolean
