@@ -37,7 +37,7 @@ var MockLoadWebpackManifest func() (*WebpackManifest, error)
 // details. In dev mode, we load this file from disk on demand, so it doesn't
 // have to exist at compile time, to avoid a build dependency between frontend
 // and client.
-func loadWebpackManifest() (m *WebpackManifest, err error) {
+func loadWebpackManifest() (m *WebpackManifest, error) {
 	if MockLoadWebpackManifest != nil {
 		return MockLoadWebpackManifest()
 	}
