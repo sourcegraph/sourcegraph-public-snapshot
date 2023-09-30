@@ -613,8 +613,9 @@ const executorSecretsAuthzQueryCondsFmtstr = `
 		-- actor is site admin
 		EXISTS (
 			SELECT 1
-			FROM users
-			WHERE site_admin = TRUE AND id = %s  -- actor user ID
+			FROM user_roles ur
+			JOIN roles r ON ur.role_id = r.id
+			WHERE r.name = 'SITE_ADMINISTRATOR' AND ur.user_id = %s  -- actor user ID
 		)
 	)
 )

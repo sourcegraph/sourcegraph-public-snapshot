@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -32,7 +33,6 @@ func TestServeSearchJobDownload(t *testing.T) {
 		})
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bs := basestore.NewWithHandle(db.Handle())
 	s := store.New(db, observation.TestContextTB(t))
 	svc := service.New(observationCtx, s, mockUploadStore)
 
@@ -53,7 +53,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 	// no blobs
 	{
 		// create job
-		userID, err := createUser(bs, "bob")
+		userID, err := createUser(db, "bob")
 		require.NoError(t, err)
 		userCtx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: userID,
@@ -73,7 +73,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 
 	// wrong user
 	{
-		userID, err := createUser(bs, "alice")
+		userID, err := createUser(db, "alice")
 		require.NoError(t, err)
 
 		req, err := http.NewRequest(http.MethodGet, "/1.csv", nil)
@@ -87,8 +87,24 @@ func TestServeSearchJobDownload(t *testing.T) {
 	}
 }
 
-func createUser(store *basestore.Store, username string) (int32, error) {
+func createUser(db database.DB, username string) (userID int32, err error) {
 	admin := username == "admin"
-	q := sqlf.Sprintf(`INSERT INTO users(username, site_admin) VALUES(%s, %s) RETURNING id`, username, admin)
-	return basestore.ScanAny[int32](store.QueryRow(context.Background(), q))
+	ctx := context.Background()
+
+	q := sqlf.Sprintf("INSERT INTO users (username) VALUES (%s) RETURNING id", username)
+	userID, err = basestore.ScanAny[int32](db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+	if err != nil {
+		return
+	}
+
+	roles := []types.SystemRole{types.UserSystemRole}
+	if admin {
+		roles = append(roles, types.SiteAdministratorSystemRole)
+	}
+
+	err = db.UserRoles().BulkAssignSystemRolesToUser(ctx, database.BulkAssignSystemRolesToUserOpts{
+		UserID: userID,
+		Roles:  roles,
+	})
+	return
 }

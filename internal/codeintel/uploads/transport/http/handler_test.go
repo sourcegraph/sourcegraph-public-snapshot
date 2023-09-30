@@ -157,10 +157,25 @@ func setupRepoMocks(t testing.TB) {
 func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
-	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	ctx := context.Background()
+
+	q := sqlf.Sprintf("INSERT INTO users (username) VALUES (%s, %t) RETURNING id", name)
+	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	roles := []types.SystemRole{types.UserSystemRole}
+	if isAdmin {
+		roles = append(roles, types.SiteAdministratorSystemRole)
+	}
+
+	err = db.UserRoles().BulkAssignSystemRolesToUser(ctx, database.BulkAssignSystemRolesToUserOpts{
+		UserID: userID,
+		Roles:  roles,
+	})
+	if err != nil {
+		t.Fatalf("failed to assign roles: %s", err)
 	}
 	return userID
 }

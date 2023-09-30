@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -231,16 +232,22 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("SiteAdmin:%t-Enforce:%t", tc.siteAdmin, tc.enforceForSiteAdmin), func(t *testing.T) {
 			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: tc.enforceForSiteAdmin}})
-			result, err := db.ExecContext(ctx, "UPDATE users SET site_admin = $1 WHERE id = $2", tc.siteAdmin, userID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			affected, err := result.RowsAffected()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if affected != 1 {
-				t.Fatalf("Wanted 1 row affected, got %d", affected)
+			if tc.siteAdmin {
+				err := db.UserRoles().AssignSystemRole(ctx, AssignSystemRoleOpts{
+					UserID: userID,
+					Role:   types.SiteAdministratorSystemRole,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				err := db.UserRoles().RevokeSystemRole(ctx, RevokeSystemRoleOpts{
+					UserID: userID,
+					Role:   types.SiteAdministratorSystemRole,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			have, err = s.GetByUser(ctx, userID)

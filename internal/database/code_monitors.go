@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -239,7 +238,7 @@ func NewTestStore(t *testing.T, db DB) (context.Context, *TestStore) {
 	return ctx, &TestStore{CodeMonitorsWithClock(db, func() time.Time { return now })}
 }
 
-func NewTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+func NewTestUser(ctx context.Context, t *testing.T, db DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
 	t.Helper()
 
 	name = "cm-user1"
@@ -266,7 +265,7 @@ func newTestStore(t *testing.T) (context.Context, DB, *codeMonitorStore) {
 }
 
 //nolint:unused // used in tests
-func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, userContext context.Context) {
+func newTestUser(ctx context.Context, t *testing.T, db DB) (name string, id int32, userContext context.Context) {
 	t.Helper()
 
 	name = "cm-user1"
@@ -277,11 +276,22 @@ func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, 
 }
 
 //nolint:unused // used in tests
-func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(ctx context.Context, t *testing.T, db DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
+	q := sqlf.Sprintf("INSERT INTO users (username) VALUES (%s, %t) RETURNING id", name)
 	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	require.NoError(t, err)
+
+	roles := []types.SystemRole{types.UserSystemRole}
+	if isAdmin {
+		roles = append(roles, types.SiteAdministratorSystemRole)
+	}
+
+	err = db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+		UserID: userID,
+		Roles:  roles,
+	})
 	require.NoError(t, err)
 	return userID
 }

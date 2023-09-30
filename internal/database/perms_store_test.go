@@ -3933,8 +3933,15 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 	defer authz.SetProviders(true, nil)
 	// Set up some repositories and permissions
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
+		// create user with ID 555 and assign only user role
+		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(555, 'user555')`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(555, (SELECT id FROM roles WHERE name = 'USER'))`),
+
+		// create user with ID 777 and assign only user and site_admin role
+		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(777, 'user777')`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(777, (SELECT id FROM roles WHERE name = 'USER'))`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(777, (SELECT id FROM roles WHERE name = 'SITE_ADMINISTRATOR'))`),
+
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3_deleted', TRUE, NOW())`),
@@ -4093,10 +4100,20 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 
 	// Set up some repositories and permissions
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(666, 'user666', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin, deleted_at) VALUES(888, 'user888', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(555, 'user555')`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(555, (SELECT id FROM roles WHERE name = 'USER'))`),
+
+		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(666, 'user666')`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(666, (SELECT id FROM roles WHERE name = 'USER'))`),
+
+		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(777, 'user777')`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(777, (SELECT id FROM roles WHERE name = 'USER'))`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(777, (SELECT id FROM roles WHERE name = 'SITE_ADMINISTRATOR'))`),
+
+		sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(888, 'user888', NOW())`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(888, (SELECT id FROM roles WHERE name = 'USER'))`),
+		sqlf.Sprintf(`INSERT INTO user_roles(user_id, role_id) VALUES(888, (SELECT id FROM roles WHERE name = 'SITE_ADMINISTRATOR'))`),
+
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'public_repo_2', FALSE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(3, 'unrestricted_repo_3', TRUE)`),

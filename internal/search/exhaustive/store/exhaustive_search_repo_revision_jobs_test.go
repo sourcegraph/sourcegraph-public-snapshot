@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
@@ -26,9 +25,7 @@ func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bs := basestore.NewWithHandle(db.Handle())
-
-	userID, err := createUser(bs, "alice")
+	userID, err := createUser(db, "alice")
 	require.NoError(t, err)
 	repoID, err := createRepo(db, "repo-test")
 	require.NoError(t, err)

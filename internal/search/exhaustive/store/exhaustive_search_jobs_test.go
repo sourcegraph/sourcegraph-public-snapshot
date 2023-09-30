@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
@@ -30,13 +29,11 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bs := basestore.NewWithHandle(db.Handle())
-
-	userID, err := createUser(bs, "alice")
+	userID, err := createUser(db, "alice")
 	require.NoError(t, err)
-	malloryID, err := createUser(bs, "mallory")
+	malloryID, err := createUser(db, "mallory")
 	require.NoError(t, err)
-	adminID, err := createUser(bs, "admin")
+	adminID, err := createUser(db, "admin")
 	require.NoError(t, err)
 
 	s := store.New(db, &observation.TestContext)
@@ -138,12 +135,11 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bs := basestore.NewWithHandle(db.Handle())
 
-	userID, err := createUser(bs, "alice")
+	userID, err := createUser(db, "alice")
 	require.NoError(t, err)
 
-	adminID, err := createUser(bs, "admin")
+	adminID, err := createUser(db, "admin")
 	require.NoError(t, err)
 
 	ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
@@ -289,7 +285,6 @@ func TestStore_AggregateStatus(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bs := basestore.NewWithHandle(db.Handle())
 
 	_, err := createRepo(db, "repo1")
 	require.NoError(t, err)
@@ -381,7 +376,7 @@ func TestStore_AggregateStatus(t *testing.T) {
 
 	for i, tt := range tc {
 		t.Run("", func(t *testing.T) {
-			userID, err := createUser(bs, fmt.Sprintf("user_%d", i))
+			userID, err := createUser(db, fmt.Sprintf("user_%d", i))
 			require.NoError(t, err)
 
 			ctx := actor.WithActor(context.Background(), actor.FromUser(userID))

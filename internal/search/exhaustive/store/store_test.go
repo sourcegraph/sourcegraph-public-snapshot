@@ -11,10 +11,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func createUser(store *basestore.Store, username string) (int32, error) {
+func createUser(db database.DB, username string) (userID int32, err error) {
 	admin := username == "admin"
-	q := sqlf.Sprintf(`INSERT INTO users(username, site_admin) VALUES(%s, %s) RETURNING id`, username, admin)
-	return basestore.ScanAny[int32](store.QueryRow(context.Background(), q))
+
+	ctx := context.Background()
+	q := sqlf.Sprintf(`INSERT INTO users(username) VALUES(%s, %s) RETURNING id`, username)
+	userID, err = basestore.ScanAny[int32](db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+	if err != nil {
+		return
+	}
+
+	roles := []types.SystemRole{types.UserSystemRole}
+	if admin {
+		roles = append(roles, types.SiteAdministratorSystemRole)
+	}
+
+	err = db.UserRoles().BulkAssignSystemRolesToUser(ctx, database.BulkAssignSystemRolesToUserOpts{
+		UserID: userID,
+		Roles:  roles,
+	})
+	if err != nil {
+		return
+	}
+
+	return
 }
 
 func createRepo(db database.DB, name string) (api.RepoID, error) {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -49,14 +50,25 @@ func TestRetentionUsageStatistics(t *testing.T) {
 		}
 	}
 
-	// Insert user
-	_, err := db.ExecContext(
-		context.Background(),
-		`INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin)
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
-		"test", "test", nil, userCreationDate, userCreationDate, "foobar", userCreationDate, true)
+	// insert user
+	var userID int32
+	q := sqlf.Sprintf(`INSERT INTO users
+		(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at)
+		VALUES
+		($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id`, "test", "test", nil, userCreationDate, userCreationDate, "foobar", userCreationDate)
+	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	roles := []types.SystemRole{types.UserSystemRole, types.SiteAdministratorSystemRole}
+	err = db.UserRoles().BulkAssignSystemRolesToUser(ctx, database.BulkAssignSystemRolesToUserOpts{
+		UserID: userID,
+		Roles:  roles,
+	})
+	if err != nil {
+		t.Fatalf("failed to assign roles: %s", err)
 	}
 
 	have, err := GetRetentionStatistics(ctx, db)
