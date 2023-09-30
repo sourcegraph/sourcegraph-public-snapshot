@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -167,7 +168,10 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
 		defer batchedStream.Done()
 
-		return h.searchClient.Execute(ctx, batchedStream, inputs)
+		eventRecorder := telemetryrecorder.New(h.db)
+		stream := streaming.NewEventLoggingStream(ctx, h.logger, eventRecorder, batchedStream)
+
+		return h.searchClient.Execute(ctx, stream, inputs)
 	}()
 	if alert != nil {
 		eventWriter.Alert(alert)

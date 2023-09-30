@@ -1,12 +1,15 @@
 package streaming
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"go.uber.org/atomic"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 )
 
 type SearchEvent struct {
@@ -44,6 +47,35 @@ func (c *aggregatingStream) Send(event SearchEvent) {
 
 func NewNullStream() Sender {
 	return StreamFunc(func(SearchEvent) {})
+}
+
+func NewEventLoggingStream(ctx context.Context, logger log.Logger, eventRecorder *telemetry.EventRecorder, s Sender) StreamFunc {
+	return func(se SearchEvent) {
+		type MatchLogEntry struct {
+			Repo     string
+			FilePath string
+		}
+		if len(se.Results) > 0 {
+			entries := []any{}
+			for _, match := range se.Results {
+				entries = append(entries, map[string]any{
+					"repo":     string(match.RepoName().Name),
+					"filePath": match.Key().Path,
+				})
+			}
+			privateMetadata := map[string]any{"matches": entries}
+
+			if err := eventRecorder.Record(ctx, "search", "getResults", &telemetry.EventParameters{
+				Version:         1,
+				PrivateMetadata: privateMetadata,
+			}); err != nil {
+				logger.Error("Error recording search.getResults event", log.Error(err))
+				return // do not send SearchEvent
+			}
+		}
+
+		s.Send(se)
+	}
 }
 
 func NewStatsObservingStream(s Sender) *statsObservingStream {

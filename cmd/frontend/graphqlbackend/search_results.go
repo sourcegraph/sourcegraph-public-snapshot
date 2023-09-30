@@ -31,6 +31,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,6 +40,7 @@ import (
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
+	logger      log.Logger
 	db          database.DB
 	Matches     result.Matches
 	Stats       streaming.Stats
@@ -124,8 +127,29 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
-func (sr *SearchResultsResolver) Results() []SearchResultResolver {
+func (sr *SearchResultsResolver) Results(ctx context.Context) []SearchResultResolver {
+	logSeenSearchResultSnippet(ctx, sr.logger, sr.db, sr.Matches)
 	return matchesToResolvers(sr.db, sr.Matches)
+}
+
+func logSeenSearchResultSnippet(ctx context.Context, logger log.Logger, db database.DB, matches []result.Match) {
+	events := telemetryrecorder.NewBestEffort(logger, db)
+	logger.Error("XXXXXXXXX")
+
+	type matchLogEntry struct {
+		Repo     string
+		FilePath string
+	}
+	entries := []matchLogEntry{}
+	privateMetadata := map[string]any{"matches": &entries}
+	for _, match := range matches {
+		entries = append(entries, matchLogEntry{string(match.RepoName().Name), match.Key().Path})
+	}
+
+	events.Record(ctx, "search", "getResults", &telemetry.EventParameters{
+		Version:         1,
+		PrivateMetadata: privateMetadata,
+	})
 }
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
@@ -407,6 +431,7 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 		Matches:     matches,
 		SearchAlert: alert,
 		Stats:       stats,
+		logger:      r.logger,
 		db:          r.db,
 	}
 }
