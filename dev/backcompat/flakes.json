@@ -26,6 +26,236 @@
             "path": "internal/database",
             "prefix": "TestUserCredentials_CreateUpdate",
             "reason": "Update to crypto internals affects ability to compare authenticators"
+        },
+        {
+          "path": "internal/database",
+          "prefix": "TestUsers_Create_SiteAdmin",
+          "reason": "Update to crypto internals affects ability to compare authenticators"
+        },
+        {
+          "prefix": "TestSearchContexts_List",
+          "path": "",
+          "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAccessRequests_Create",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAssignedOwnersStore_Delete",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRecentViewSignalStore_List",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRecentViewSignalStore_InsertPaths_OverBatchSize",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRecentViewSignalStore_InsertPaths",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRecentViewSignalStore_Insert",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEventLogs_SiteUsage_ExcludeSourcegraphAdmin",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEventLogs_SiteUsageMultiplePeriods",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEventLogs_CountUsersWithSetting",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepo",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRecentViewSignalStore_BuildAggregateFromEvents",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestOrgs_GetByID",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestOutboundWebhooks",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestOutboundWebhookLogs",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestOrgMembers_CreateMembershipInOrgsForAllUsers",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestOrgMembers_AutocompleteMembersSearch",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestDeleteNamespacePermission",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestNamespaces",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestOrgInvitations",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCreateNamespacePermission",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestExternalServiceStore_ListRepos",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestExternalAccounts_List",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestExternalAccounts_expiredAt",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestExternalAccounts_DeleteList",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestExternalAccounts_Encryption",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSearchContexts_Update",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestExternalAccounts_ListForUsers",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSearchContexts_Get",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestExternalAccounts_TouchExpiredList",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestListSavedSearchesByUserID",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSavedSearchesGetByID",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSavedSearchesGetByUserID",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSavedSearchesDelete",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSavedSearchesUpdate",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSavedSearchesCreate",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSavedSearchesIsEmpty",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAssignedOwnersStore_Insert",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAssignedOwnersStore_ListAssignedOwnersForRep",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAccessRequests_List",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_GrantPendingPermissions",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_AuthorizedRepos",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_RevokeUserPermissions",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID",
+            "path": "",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestGetActionJobMetadata",
+            "path": "",
+            "reason": "removal of site_admin column on users"
         }
     ]
 }
