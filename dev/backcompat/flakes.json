@@ -28,14 +28,14 @@
             "reason": "Update to crypto internals affects ability to compare authenticators"
         },
         {
-          "path": "internal/database",
-          "prefix": "TestUsers_Create_SiteAdmin",
-          "reason": "Update to crypto internals affects ability to compare authenticators"
+            "path": "internal/database",
+            "prefix": "TestUsers_Create_SiteAdmin",
+            "reason": "removal of site_admin column on users"
         },
         {
-          "prefix": "TestSearchContexts_List",
-          "path": "internal/database",
-          "reason": "removal of site_admin column on users"
+            "prefix": "TestSearchContexts_List",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAccessRequests_Create",
@@ -254,6 +254,361 @@
         },
         {
             "prefix": "TestGetActionJobMetadata",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRepoStore_List_checkPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRepoStore_List_permissionsUserMapping",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRoleList",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestRoleCount",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestGetLatestSchemaSettings",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestTeams_CreateUpdateDelete",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestTeams_GetListCount",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserCredentials_Delete",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserCredentials_GetByID",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserCredentials_GetByScope",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserCredentials_List",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserRoleGetByRoleID",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserRoleGetByUserID",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserRoleGetByRoleIDAndUserID",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUsers_BuiltinAuthPasswordResetRateLimit",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSearchContexts_CreateAndSetRepositoryRevisions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUsers_List_Query",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUserEmails_SetVerified",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAccessRequests_Update",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_GrantPendingPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_AuthorizedRepos",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_RevokeUserPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEnqueueActionEmailsForQuerIDInt64QueryByRecordID",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestGetActionJobMetadata",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestScanActionJob",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUpdateEmail",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestQueryTriggerForJob",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSetQueryTriggerNextRun",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUpdateTrigger",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestResetTriggerQueryTimestamps",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestListRecipients",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorStoreSlackWebhooks",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestDelete0ldJobLogs",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUpdateTriggerJob",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestListTriggerJobs",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEnqueueTriggerJobs",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorStoreWebhooks",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_UserIDsWithNoPerms",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_CountUsersWithNoPerms",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_MapUsers",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_ListUserPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestermsStore_ListRepoPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSubRepoPermsGetByUser",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorStoreLastSearched",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorHasAnyLastSearched",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_GrantPendingPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_AuthorizedRepos",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestAuthzStore_RevokeUserPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestGetActionJobMetadata",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestScanActionJob",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUpdateEmail",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestQueryTriggerForJob",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSetQueryTriggerNextRun",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUpdateTrigger",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestResetTriggerQueryTimestamps",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestListRecipients",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorStoreSlackWebhooks",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestDelete0ldJobLogs",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestUpdateTriggerJob",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestListTriggerJobs",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestEnqueueTriggerJobs",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorStoreWebhooks",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_UserIDsWithNoPerms",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_CountUsersWithNoPerms",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_MapUsers",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_ListUserPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestPermsStore_ListRepoPermissions",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestSubRepoPermsGetByUser",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorStoreLastSearched",
+            "path": "internal/database",
+            "reason": "removal of site_admin column on users"
+        },
+        {
+            "prefix": "TestCodeMonitorHasAnyLastSearched",
             "path": "internal/database",
             "reason": "removal of site_admin column on users"
         }
