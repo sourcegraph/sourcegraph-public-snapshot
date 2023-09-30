@@ -274,7 +274,7 @@ func embedFiles(
 			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
 		}
 
-		if len(batchEmbeddings.Failed) > 0 && !excludeChunksOnError {
+		if !excludeChunksOnError && len(batchEmbeddings.Failed) > 0 {
 			// if at least one chunk failed then return an error instead of completing the embedding indexing
 			return nil, errors.Newf("batch failed on file %q", batch[batchEmbeddings.Failed[0]].FileName)
 		}
