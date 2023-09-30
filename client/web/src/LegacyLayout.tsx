@@ -10,6 +10,7 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { getReturnTo } from './auth/SignInSignUpCommon'
 import { StartupUpdateChecker } from './cody/update/StartupUpdateChecker'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -207,7 +208,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !props.authenticatedUser.completedPostSignup &&
         !isPostSignUpPage
     ) {
-        return <Navigate to={PageRoutes.PostSignUp} replace={true} />
+        const returnTo = getReturnTo(location)
+        const params = new URLSearchParams()
+        params.set('returnTo', returnTo)
+        const navigateTo = PageRoutes.PostSignUp + '?' + params
+        return <Navigate to={navigateTo.toString()} replace={true} />
     }
 
     return (
@@ -230,9 +235,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     authenticatedUser={
                         props.authenticatedUser
                             ? {
-                                  username: props.authenticatedUser.username || '',
-                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                              }
+                                username: props.authenticatedUser.username || '',
+                                email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                            }
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
