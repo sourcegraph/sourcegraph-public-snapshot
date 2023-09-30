@@ -174,6 +174,13 @@ func EmbedRepo(
 
 	stats.TextIndexStats = textIndexStats
 
+	excluded := stats.CodeIndexStats.ChunksExcluded + stats.TextIndexStats.ChunksExcluded
+	embedded := stats.CodeIndexStats.ChunksEmbedded + stats.TextIndexStats.ChunksEmbedded
+	failureRatio := float64(excluded) / float64(excluded+embedded)
+	if failureRatio > opts.TolerableFailureRatio {
+		return nil, nil, nil, errors.Newf("embeddings failed at a rate (%0.2f) higher than acceptable (%0.2f)", failureRatio, opts.TolerableFailureRatio)
+	}
+
 	embeddingsModel := client.GetModelIdentifier()
 	index := &embeddings.RepoEmbeddingIndex{
 		RepoName:        opts.RepoName,
@@ -187,14 +194,15 @@ func EmbedRepo(
 }
 
 type EmbedRepoOpts struct {
-	RepoName          api.RepoName
-	Revision          api.CommitID
-	FileFilters       FileFilters
-	SplitOptions      codeintelContext.SplitOptions
-	MaxCodeEmbeddings int
-	MaxTextEmbeddings int
-	BatchSize         int
-	ExcludeChunks     bool
+	RepoName              api.RepoName
+	Revision              api.CommitID
+	FileFilters           FileFilters
+	SplitOptions          codeintelContext.SplitOptions
+	MaxCodeEmbeddings     int
+	MaxTextEmbeddings     int
+	BatchSize             int
+	ExcludeChunks         bool
+	TolerableFailureRatio float64
 
 	// If set, we already have an index for a previous commit.
 	IndexedRevision api.CommitID
@@ -402,11 +410,6 @@ func embedFiles(
 	} else if results != nil {
 		stats.AddChunks(results.count, results.size)
 		stats.ExcludeChunks(currentBatch - results.count)
-	}
-
-	percentExcluded := float64(stats.ChunksExcluded) / (float64(stats.ChunksExcluded) + float64(stats.ChunksEmbedded))
-	if percentExcluded > 0.1 {
-		return bgrepo.EmbedFilesStats{}, errors.New("greater than 10% of chunks failed to embed. See logs for details.")
 	}
 
 	return stats, nil
