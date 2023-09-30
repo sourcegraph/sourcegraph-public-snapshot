@@ -34,227 +34,227 @@
         },
         {
           "prefix": "TestSearchContexts_List",
-          "path": "",
+          "path": "internal/database",
           "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAccessRequests_Create",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAssignedOwnersStore_Delete",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestRecentViewSignalStore_List",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestRecentViewSignalStore_InsertPaths_OverBatchSize",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestRecentViewSignalStore_InsertPaths",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestRecentViewSignalStore_Insert",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestEventLogs_SiteUsage_ExcludeSourcegraphAdmin",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestEventLogs_SiteUsageMultiplePeriods",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestEventLogs_CountUsersWithSetting",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepo",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestRecentViewSignalStore_BuildAggregateFromEvents",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestOrgs_GetByID",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestOutboundWebhooks",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestOutboundWebhookLogs",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestOrgMembers_CreateMembershipInOrgsForAllUsers",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestOrgMembers_AutocompleteMembersSearch",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestDeleteNamespacePermission",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestNamespaces",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestOrgInvitations",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestCreateNamespacePermission",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestExternalServiceStore_ListRepos",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestExternalAccounts_List",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestExternalAccounts_expiredAt",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestExternalAccounts_DeleteList",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestExternalAccounts_Encryption",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSearchContexts_Update",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestExternalAccounts_ListForUsers",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSearchContexts_Get",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestExternalAccounts_TouchExpiredList",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestListSavedSearchesByUserID",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSavedSearchesGetByID",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSavedSearchesGetByUserID",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSavedSearchesDelete",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSavedSearchesUpdate",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSavedSearchesCreate",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestSavedSearchesIsEmpty",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAssignedOwnersStore_Insert",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAssignedOwnersStore_ListAssignedOwnersForRep",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAccessRequests_List",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAuthzStore_GrantPendingPermissions",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAuthzStore_AuthorizedRepos",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestAuthzStore_RevokeUserPermissions",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         },
         {
             "prefix": "TestGetActionJobMetadata",
-            "path": "",
+            "path": "internal/database",
             "reason": "removal of site_admin column on users"
         }
     ]
