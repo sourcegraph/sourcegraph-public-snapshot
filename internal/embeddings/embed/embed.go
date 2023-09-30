@@ -270,13 +270,13 @@ func embedFiles(
 			}
 		}
 
+		if expected := len(batchChunks) * dimensions; len(batchEmbeddings.Embeddings) != expected {
+			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
+		}
+
 		if len(batchEmbeddings.Failed) > 0 && !excludeChunksOnError {
 			// if at least one chunk failed then return an error instead of completing the embedding indexing
 			return nil, errors.Newf("batch failed on file %q", batch[batchEmbeddings.Failed[0]].FileName)
-		}
-
-		if expected := len(batchChunks) * dimensions; len(batchEmbeddings.Embeddings) != expected {
-			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
 		}
 
 		// When excluding failed chunks we
