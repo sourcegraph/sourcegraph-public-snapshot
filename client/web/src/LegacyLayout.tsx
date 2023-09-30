@@ -208,11 +208,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !props.authenticatedUser.completedPostSignup &&
         !isPostSignUpPage
     ) {
-        const returnTo = getReturnTo(location)
-        const params = new URLSearchParams()
-        params.set('returnTo', returnTo)
-        const navigateTo = PageRoutes.PostSignUp + '?' + params
-        return <Navigate to={navigateTo.toString()} replace={true} />
+        if (location.pathname !== '/search') {
+            const returnTo = window.location.href
+            const params = new URLSearchParams()
+            params.set('returnTo', returnTo)
+            const navigateTo = PageRoutes.PostSignUp + '?' + params.toString()
+            return <Navigate to={navigateTo.toString()} replace={true} />
+        } else {
+            return <Navigate to={PageRoutes.PostSignUp} replace={true} />
+        }
     }
 
     return (
@@ -235,9 +239,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     authenticatedUser={
                         props.authenticatedUser
                             ? {
-                                username: props.authenticatedUser.username || '',
-                                email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                            }
+                                  username: props.authenticatedUser.username || '',
+                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                              }
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
