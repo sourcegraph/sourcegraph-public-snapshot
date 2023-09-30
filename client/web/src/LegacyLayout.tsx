@@ -10,7 +10,6 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { getReturnTo } from './auth/SignInSignUpCommon'
 import { StartupUpdateChecker } from './cody/update/StartupUpdateChecker'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -214,9 +213,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             params.set('returnTo', returnTo)
             const navigateTo = PageRoutes.PostSignUp + '?' + params.toString()
             return <Navigate to={navigateTo.toString()} replace={true} />
-        } else {
-            return <Navigate to={PageRoutes.PostSignUp} replace={true} />
         }
+
+        return <Navigate to={PageRoutes.PostSignUp} replace={true} />
     }
 
     return (
