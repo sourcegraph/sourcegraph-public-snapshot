@@ -31,7 +31,6 @@ export interface QueryExamplesProps extends TelemetryProps {
     queryState?: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
-    enableOwnershipSearch?: boolean
 }
 
 type Tip = 'rev' | 'lang' | 'before'
