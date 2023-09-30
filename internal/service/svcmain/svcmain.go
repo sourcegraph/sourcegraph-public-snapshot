@@ -39,10 +39,10 @@ type Config struct {
 //
 // args is the commandline arguments (usually os.Args).
 func Main(services []sgservice.Service, config Config, args []string) {
-	// Unlike other sourcegraph binaries we expect Cody App to be run
+	// Unlike other sourcegraph binaries we expect to be run
 	// by a user instead of deployed to a cloud. So adjust the default output
 	// format before initializing log.
-	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok && deploy.IsApp() {
+	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok && deploy.IsSingleBinary() {
 		os.Setenv(log.EnvLogFormat, string(output.FormatConsole))
 	}
 
@@ -251,7 +251,7 @@ func run(
 			defer ready()
 
 			// Don't run executors for Cody App
-			if deploy.IsApp() && !deploy.IsAppFullSourcegraph() && service.Name() == "executor" {
+			if deploy.IsApp() && service.Name() == "executor" {
 				logger.Info("Skipping", log.String("service", service.Name()))
 				return
 			}

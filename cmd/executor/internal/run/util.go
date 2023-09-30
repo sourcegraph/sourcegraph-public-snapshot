@@ -40,7 +40,7 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	if !config.IsKubernetes() && (!deploy.IsApp() || deploy.IsAppFullSourcegraph()) {
+	if !config.IsKubernetes() && !deploy.IsApp() {
 		t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
 		if err != nil {
 			logger.Error("Failed to get src-cli version", log.Error(err))
