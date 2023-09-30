@@ -4,22 +4,46 @@ import type * as esbuild from 'esbuild'
 import shelljs from 'shelljs'
 import signale from 'signale'
 
-import { stylePlugin } from '@sourcegraph/build-config'
+import { ROOT_PATH, stylePlugin } from '@sourcegraph/build-config'
 
-import { buildNpm } from '../scripts/build-npm'
-import * as tasks from '../scripts/tasks'
+import { buildNpm } from './build-npm'
+import * as tasks from './tasks'
+import { generateBundleUID } from './utils'
 
-import { browserWorkspacePath, config } from './webpack/base.config'
+const browserWorkspacePath = path.resolve(ROOT_PATH, 'client/browser')
+const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
 
 /**
  * Returns the esbuild build options for the browser extension build.
  */
 export function esbuildBuildOptions(mode: 'dev' | 'prod'): esbuild.BuildOptions {
     return {
-        entryPoints: { ...config.entry, extensionHostWorker: '../shared/src/api/extension/main.worker.ts' },
+        entryPoints: {
+            // Browser extension
+            background: path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
+            inject: path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
+            options: path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
+            'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
+
+            // Common native integration entry point (Gitlab, Bitbucket)
+            integration: path.resolve(browserSourcePath, 'native-integration/integration.main.ts'),
+            // Phabricator-only native integration entry point
+            phabricator: path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.ts'),
+
+            // Styles
+            style: path.join(browserSourcePath, 'app.scss'),
+            'branded-style': path.join(browserSourcePath, 'branded.scss'),
+
+            // Worker
+            extensionHostWorker: path.resolve(browserSourcePath, 'shared/main.worker.ts'),
+        },
         format: 'cjs',
         platform: 'browser',
         plugins: [stylePlugin, copyAssetsPlugin, browserBuildStepsPlugin(mode)],
+        define: {
+            'process.env.NODE_ENV': mode === 'dev' ? 'development' : 'production',
+            'process.env.BUNDLE_UID': JSON.stringify(generateBundleUID()),
+        },
         bundle: true,
         minify: false,
         logLevel: 'error',

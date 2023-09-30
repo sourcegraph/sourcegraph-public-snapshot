@@ -3,9 +3,6 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "ts_project")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
-# TODO(bazel): currently handled with #keep
-# gazelle:js_resolve **/esbuild/* //client/build-config/src/esbuild
-
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root()
@@ -23,6 +20,11 @@ ts_project(
     name = "build-config_lib",
     srcs = [
         "src/index.ts",
+        "src/esbuild/monacoPlugin.ts",
+        "src/esbuild/plugins.ts",
+        "src/esbuild/stylePlugin.ts",
+        "src/esbuild/workerPlugin.ts",
+        "src/esbuild/packageResolutionPlugin.ts",
         "src/paths.ts",
         "src/utils/environment-config.ts",
         "src/webpack/babel-loader.ts",
@@ -35,6 +37,14 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@statoscope/webpack-plugin",
+        ":node_modules/esbuild",
+        ":node_modules/signale",
+        ":node_modules/enhanced-resolve",
+        ":node_modules/postcss",
+        ":node_modules/postcss-modules",
+        ":node_modules/sass",
+        "//:node_modules/@types/signale",
+        ":node_modules/@types/sass",
         ":node_modules/buffer",  #keep
         ":node_modules/css-loader",  #keep
         ":node_modules/monaco-editor-webpack-plugin",
@@ -48,7 +58,6 @@ ts_project(
         "//:node_modules/@types/node",
         "//:node_modules/monaco-editor",  #keep
         "//:node_modules/monaco-yaml",  #keep
-        "//client/build-config/src/esbuild",
     ],
 )
 

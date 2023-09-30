@@ -1,7 +1,7 @@
 import execa from 'execa'
 import signale from 'signale'
 
-import { buildNpm, packagePath } from './build-npm'
+import { buildNpm, packagePath } from '../config/build-npm'
 
 /**
  * Publish the native integration to npm

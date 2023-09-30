@@ -11,7 +11,7 @@
     "rootDir": ".",
     "outDir": "out",
   },
-  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts", "./code-intel-extensions.json"],
+  "include": ["**/*", ".*", "config/*.json", "src/**/*.json", "src/types/**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": [
     "out",
     "node_modules",

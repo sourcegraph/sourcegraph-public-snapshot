@@ -7,10 +7,20 @@ import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
 import sass from 'sass'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import postcssConfig from '../../../../postcss.config'
 import { NODE_MODULES_PATH, ROOT_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../paths'
+
+const postcssConfig = {
+    plugins: [
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('autoprefixer'),
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('postcss-focus-visible'),
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('postcss-custom-media'),
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('postcss-inset'),
+    ],
+}
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).

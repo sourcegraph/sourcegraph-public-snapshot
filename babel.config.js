@@ -35,7 +35,10 @@ module.exports = api => {
               '@babel/preset-env',
               {
                 // Node (used for testing) doesn't support modules, so compile to CommonJS for testing.
-                modules: process.env.BABEL_MODULE ?? (isTest ? 'commonjs' : false),
+                modules:
+                  process.env.BABEL_MODULE === 'false'
+                    ? false
+                    : process.env.BABEL_MODULE ?? (isTest ? 'commonjs' : false),
                 bugfixes: true,
                 useBuiltIns: 'entry',
                 include: [
