@@ -1,7 +1,4 @@
-import type * as Monaco from 'monaco-editor'
-
 import {
-    decorate,
     type DecoratedToken,
     type MetaRegexp,
     MetaRegexpKind,
@@ -14,9 +11,6 @@ import {
     MetaSelectorKind,
     type MetaPredicate,
 } from './decoratedToken'
-import { resolveFilter } from './filters'
-import { toMonacoRange } from './monaco'
-import type { Token } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {
@@ -211,63 +205,4 @@ export const toHover = (token: DecoratedToken): string => {
         }
     }
     return ''
-}
-
-const inside =
-    (offset: number) =>
-    ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
-        range.start <= offset && range.end > offset
-
-/**
- * Returns the hover result for a hovered search token in the Monaco query input.
- */
-export const getHoverResult = (
-    tokens: Token[],
-    position: Monaco.Position,
-    textModel: Monaco.editor.ITextModel
-): Monaco.languages.Hover | null => {
-    const tokensAtCursor = tokens.flatMap(decorate).filter(inside(textModel.getOffsetAt(position)))
-    if (tokensAtCursor.length === 0) {
-        return null
-    }
-    const values: string[] = []
-    let range: Monaco.IRange | undefined
-    tokensAtCursor.map(token => {
-        switch (token.type) {
-            case 'field': {
-                const resolvedFilter = resolveFilter(token.value)
-                if (resolvedFilter) {
-                    values.push(
-                        'negated' in resolvedFilter
-                            ? resolvedFilter.definition.description(resolvedFilter.negated)
-                            : resolvedFilter.definition.description
-                    )
-                    // Add 1 to end of range to include the ':'.
-                    range = toMonacoRange({ start: token.range.start, end: token.range.end + 1 }, textModel)
-                }
-                break
-            }
-            case 'pattern':
-            case 'metaRevision':
-            case 'metaRepoRevisionSeparator':
-            case 'metaSelector':
-                values.push(toHover(token))
-                range = toMonacoRange(token.range, textModel)
-                break
-            case 'metaRegexp':
-            case 'metaStructural':
-            case 'metaPredicate':
-                values.push(toHover(token))
-                range = toMonacoRange(token.groupRange ? token.groupRange : token.range, textModel)
-                break
-        }
-    })
-    return {
-        contents: values.map<Monaco.IMarkdownString>(
-            (value): Monaco.IMarkdownString => ({
-                value,
-            })
-        ),
-        range,
-    }
 }
