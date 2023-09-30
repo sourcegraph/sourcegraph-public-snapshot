@@ -11,12 +11,7 @@ import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import {
-    EditorHint,
-    QueryChangeSource,
-    type QueryState,
-    type SearchPatternTypeProps,
-} from '@sourcegraph/shared/src/search'
+import { EditorHint, QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
@@ -35,13 +30,7 @@ import type { QueryInputProps } from './QueryInput'
 import styles from './CodeMirrorQueryInput.module.scss'
 
 export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
-    /**
-     * Used to be compatible with MonacoQueryInput's interface, but we only
-     * support the `readOnly` flag.
-     */
-    editorOptions?: {
-        readOnly?: boolean
-    }
+    readOnly?: boolean
 
     /**
      * When provided the query input will allow the user to "cycle" through the
@@ -81,7 +70,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     className,
     preventNewLine = true,
     placeholder,
-    editorOptions,
+    readOnly,
     ariaLabel = 'Search query',
     ariaLabelledby,
     ariaInvalid,
@@ -165,7 +154,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
             extensions.push(placeholderExtension(element))
         }
 
-        if (editorOptions?.readOnly) {
+        if (readOnly) {
             extensions.push(EditorView.editable.of(false))
         }
 
@@ -193,7 +182,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         autocompletion,
         placeholder,
         preventNewLine,
-        editorOptions,
+        readOnly,
         searchHistory,
         onSelectSearchFromHistory,
     ])
@@ -270,12 +259,9 @@ function useOnValueChanged<T = unknown>(value: T, func: () => void): void {
 
 const EMPTY: any[] = []
 
-interface CodeMirrorQueryInputProps extends SearchPatternTypeProps {
+interface CodeMirrorQueryInputProps
+    extends Pick<QueryInputProps<EditorView>, 'interpretComments' | 'onEditorCreated' | 'patternType' | 'className'> {
     value: string
-    onEditorCreated?: (editor: EditorView) => void
-    // Whether comments are parsed and highlighted
-    interpretComments?: boolean
-    className?: string
     extensions: Extension[]
 }
 
