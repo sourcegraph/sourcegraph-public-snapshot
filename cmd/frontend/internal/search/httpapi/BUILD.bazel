@@ -28,6 +28,7 @@ go_test(
         "//internal/observation",
         "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
+        "//internal/types",
         "//internal/uploadstore/mocks",
         "//lib/iterator",
         "@com_github_gorilla_mux//:mux",
