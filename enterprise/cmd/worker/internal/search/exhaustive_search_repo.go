@@ -94,3 +94,17 @@ func (h *exhaustiveSearchRepoHandler) Handle(ctx context.Context, logger log.Log
 
 	return nil
 }
+
+func newExhaustiveSearchRepoWorkerResetter(
+	observationCtx *observation.Context,
+	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoJob],
+) *dbworker.Resetter[*types.ExhaustiveSearchRepoJob] {
+	options := dbworker.ResetterOptions{
+		Name:     "exhaustive_search_repo_worker_resetter",
+		Interval: 1 * time.Minute,
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "exhaustive_search_repo_worker"),
+	}
+
+	resetter := dbworker.NewResetter(observationCtx.Logger, workerStore, options)
+	return resetter
+}

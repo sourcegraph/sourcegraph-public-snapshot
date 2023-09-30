@@ -23,18 +23,14 @@ abstract class BaseLoginDialog(
 
   protected val loginPanel = CodyLoginPanel(executorFactory, isAccountUnique)
 
-  private var _login = ""
-  private var _displayName: String? = null
-  private var _token = ""
+  var login: String = ""
+    private set
 
-  val login: String
-    get() = _login
+  var displayName: String? = null
+    private set
 
-  val displayName: String?
-    get() = _displayName
-
-  val token: String
-    get() = _token
+  var token: String = ""
+    private set
 
   val server: SourcegraphServerPath
     get() = loginPanel.getServer()
@@ -69,10 +65,10 @@ abstract class BaseLoginDialog(
     loginPanel
         .acquireDetailsAndToken(emptyProgressIndicator)
         .completionOnEdt(modalityState) { finishGettingToken() }
-        .successOnEdt(modalityState) { (details, token) ->
-          _login = details.username
-          _displayName = details.displayName
-          _token = token
+        .successOnEdt(modalityState) { (details, newToken) ->
+          login = details.username
+          displayName = details.displayName
+          token = newToken
 
           close(OK_EXIT_CODE, true)
         }

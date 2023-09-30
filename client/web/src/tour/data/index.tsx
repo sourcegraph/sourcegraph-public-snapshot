@@ -97,7 +97,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 label: 'Search commit titles and messages with-in a specific organization and repository',
                 action: {
                     type: 'search-query',
-                    query: 'repo:$$userorg/$$userrepo lang:$$userlang type:commit before:"last week"',
+                    query: 'repo:$$userrepo lang:$$userlang type:commit before:"last week"',
                 },
             },
         ],
@@ -111,7 +111,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 label: 'Search diffs for changes in code via filters like before, after, and author',
                 action: {
                     type: 'search-query',
-                    query: 'repo:$$userorg/$$userrepo type:diff after:"last month" $$snippet',
+                    query: 'repo:$$userrepo type:diff after:"last month" $$snippet',
                 },
             },
         ],
@@ -180,6 +180,14 @@ export const authenticatedExtraTask: TourTaskType = {
 
 export const defaultSnippets: Record<string, string[]> = {
     Go: ['stuct {', 'interface {', 'func ('],
-    C: ['switch(', 'static void', 'if(', 'etc', '){'],
-    '*': ['todo', 'fixme'],
+    Java: ['import static', 'synchronized (', 'content:"class "'],
+    Python: ['content:"with "', 'print(', 'content:"def "'],
+    'C++': ['content:"class "', 'using namespace', '#include'],
+    'C#': ['content:"class "', 'public void', '=>'],
+    JavaScript: ['content:"class "', 'async function', '=>'],
+    TypeScript: ['content:"class "', ': void', '=>'],
+    PHP: ['content:"class "', 'fn(', '(Exception'],
+    Ruby: ['undef', 'class <<', '.each do'],
+    C: ['switch(', 'static void', 'if(', '){'],
+    '*': ['todo OR fixme'],
 }

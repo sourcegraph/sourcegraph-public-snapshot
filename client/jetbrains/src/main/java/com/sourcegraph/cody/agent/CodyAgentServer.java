@@ -74,4 +74,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("autocomplete/clearLastCandidate")
   void autocompleteClearLastCandidate();
+
+  @JsonNotification("$/cancelRequest")
+  void cancelRequest(CancelParams cancelParams);
 }

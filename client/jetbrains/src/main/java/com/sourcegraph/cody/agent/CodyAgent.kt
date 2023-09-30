@@ -3,6 +3,7 @@ package com.sourcegraph.cody.agent
 import com.google.gson.GsonBuilder
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
@@ -17,6 +18,7 @@ import com.sourcegraph.config.ConfigUtil
 import java.io.File
 import java.io.IOException
 import java.io.PrintWriter
+import java.net.URI
 import java.nio.file.*
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -34,6 +36,7 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
  * The class {{[com.sourcegraph.cody.CodyAgentProjectListener]}} is responsible for initializing and
  * shutting down the agent.
  */
+@Service(Service.Level.PROJECT)
 class CodyAgent(private val project: Project) : Disposable {
   var disposable = Disposer.newDisposable("CodyAgent")
   private val client = CodyAgentClient()
@@ -59,18 +62,15 @@ class CodyAgent(private val project: Project) : Disposable {
       startListeningToAgent()
       executorService.submit {
         try {
-          val server = client.server
-          if (server == null) {
-            return@submit
-          }
+          val server = client.server ?: return@submit
           val info =
               server
                   .initialize(
-                      ClientInfo()
-                          .setName("JetBrains")
-                          .setVersion(ConfigUtil.getPluginVersion())
-                          .setWorkspaceRootPath(ConfigUtil.getWorkspaceRoot(project))
-                          .setExtensionConfiguration(ConfigUtil.getAgentConfiguration(project)))
+                      ClientInfo(
+                          name = "JetBrains",
+                          version = ConfigUtil.getPluginVersion(),
+                          workspaceRootUri = URI("file://${ConfigUtil.getWorkspaceRoot(project)}"),
+                          extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
                   .get()
           logger.info("connected to Cody agent " + info.name)
           server.initialized()
@@ -118,7 +118,8 @@ class CodyAgent(private val project: Project) : Disposable {
     val binary = agentBinary()
     logger.info("starting Cody agent " + binary.absolutePath)
     val processBuilder = ProcessBuilder(binary.absolutePath)
-    if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically")) {
+    if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
+        ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
       processBuilder.environment()["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
     }
 

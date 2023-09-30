@@ -5,8 +5,8 @@ go 1.19
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/charmbracelet/glamour v0.5.0
-	github.com/cockroachdb/errors v1.9.1
-	github.com/cockroachdb/redact v1.1.4
+	github.com/cockroachdb/errors v1.11.1
+	github.com/cockroachdb/redact v1.1.5
 	github.com/derision-test/go-mockgen v1.3.7
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
@@ -57,7 +57,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/envoyproxy/protoc-gen-validate v0.6.13 // indirect
+	github.com/envoyproxy/protoc-gen-validate v0.9.1 // indirect
 	github.com/getsentry/sentry-go v0.21.0 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
@@ -121,8 +121,8 @@ require (
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
-	google.golang.org/grpc v1.51.0 // indirect
+	google.golang.org/genproto v0.0.0-20230227214838-9b19f0bdc514 // indirect
+	google.golang.org/grpc v1.53.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gotest.tools/v3 v3.0.3 // indirect
 	mvdan.cc/gofumpt v0.4.0 // indirect

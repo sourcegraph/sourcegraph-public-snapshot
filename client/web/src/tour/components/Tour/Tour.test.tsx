@@ -8,7 +8,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { Tour } from './Tour'
 
-const TourId = 'MockTour'
+const tourId = 'MockTour'
 const StepVideo: TourTaskStepType = {
     id: 'Video',
     label: 'Video',
@@ -47,7 +47,7 @@ const setup = (overrideTasks?: TourTaskType[]): RenderResult =>
             <MockTemporarySettings settings={{}}>
                 <Tour
                     telemetryService={mockedTelemetryService}
-                    id={TourId}
+                    id={tourId}
                     tasks={overrideTasks ?? mockedTasks}
                     defaultSnippets={{}}
                 />
@@ -65,7 +65,7 @@ describe('Tour.tsx', () => {
     test('renders and triggers initial event log', () => {
         const { getByTestId } = setup()
         expect(getByTestId('tour-content')).toBeTruthy()
-        expect(mockedTelemetryService.log.withArgs(TourId + 'Shown').calledOnce).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs('TourShown', { tourId }).calledOnce).toBeTruthy()
     })
 
     test('handles closing tour and triggers event log', () => {
@@ -75,7 +75,7 @@ describe('Tour.tsx', () => {
         fireEvent.click(getByTestId('tour-close-btn'))
 
         expect(() => getByTestId('tour-content')).toThrow()
-        expect(mockedTelemetryService.log.withArgs(TourId + 'Closed').calledOnce).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs('TourClosed', { tourId }).calledOnce).toBeTruthy()
     })
 
     test('handles "type=video" step and triggers event log', () => {
@@ -86,13 +86,17 @@ describe('Tour.tsx', () => {
 
         // click somewhere outside to close video modal
         fireEvent.click(getByTestId('modal-video-close'))
-        expect(mockedTelemetryService.log.withArgs(TourId + StepVideo.id + 'Clicked').calledOnce).toBeTruthy()
+        expect(
+            mockedTelemetryService.log.withArgs('TourStepClicked', { tourId, stepId: StepVideo.id }).calledOnce
+        ).toBeTruthy()
     })
 
     test('handles "type=link" step and triggers event log', () => {
         const { getByText } = setup()
         fireEvent.click(getByText(StepLink.label))
-        expect(mockedTelemetryService.log.withArgs(TourId + StepLink.id + 'Clicked').calledOnce).toBeTruthy()
+        expect(
+            mockedTelemetryService.log.withArgs('TourStepClicked', { tourId, stepId: StepLink.id }).calledOnce
+        ).toBeTruthy()
     })
 
     test('handles "type=restart" and triggers event log', () => {
@@ -100,7 +104,7 @@ describe('Tour.tsx', () => {
 
         fireEvent.click(getByText(StepRestart.action.value))
 
-        expect(mockedTelemetryService.log.withArgs(TourId + StepRestart.id + 'Clicked').callCount).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs('TourRestartClicked', { tourId }).callCount).toBeTruthy()
     })
 
     test('handles completing tour and triggers event log', () => {
@@ -108,6 +112,6 @@ describe('Tour.tsx', () => {
         act(() => {
             fireEvent.click(getByText(StepLink.label))
         })
-        expect(mockedTelemetryService.log.withArgs(TourId + 'Completed').calledOnce).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs('TourCompleted', { tourId }).calledOnce).toBeTruthy()
     })
 })

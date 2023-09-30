@@ -22,8 +22,6 @@ service GitserverService {
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
-  // TODO: Remove this endpoint after 5.2, it is deprecated.
-  rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -445,19 +443,6 @@ message RepoUpdateResponse {
   google.protobuf.Timestamp last_changed = 2;
   // error is the error that occurred during the update.
   string error = 3;
-}
-
-// ReposStatsRequest is a empty request for the ReposStats RPC.
-message ReposStatsRequest {}
-
-// ReposStats is an aggregation of statistics from a gitserver.
-message ReposStatsResponse {
-  // git_dir_bytes is the amount of bytes stored in .git directories.
-  uint64 git_dir_bytes = 1;
-  // updated_at is the time these statistics were computed. If updated_at is
-  // zero, the statistics have not yet been computed. This can happen on a
-  // new gitserver.
-  google.protobuf.Timestamp updated_at = 2;
 }
 
 message P4ExecRequest {

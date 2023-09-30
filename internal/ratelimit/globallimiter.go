@@ -79,12 +79,12 @@ func NewGlobalRateLimiter(logger log.Logger, bucketName string) GlobalLimiter {
 	// prevent the instance from breaking entirely. Note that the limits may NOT
 	// be enforced like configured then and should be treated as best effort only.
 	// Errors will be logged frequently.
-	// In App, this will still correctly limit globally, because all the services
-	// run in the same process and share memory. Outside of App, it is best effort only.
+	// In single-program mode, this will still correctly limit globally, because all the services
+	// run in the same process and share memory. Otherwise, it is best effort only.
 	pool, ok := kv().Pool()
 	if !ok {
-		if !deploy.IsApp() {
-			// Outside of app, this should be considered a configuration mistake.
+		if !deploy.IsSingleBinary() {
+			// Outside of single-program mode, this should be considered a configuration mistake.
 			logger.Error("Redis pool not set, global rate limiter will not work as expected")
 		}
 		rl := -1 // Documented default in site-config JSON schema. -1 means infinite.

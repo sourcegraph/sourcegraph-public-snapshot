@@ -29,13 +29,13 @@ type TelemetryEventsExportQueueStore interface {
 	// QueueForExport caches a set of events for later export. It is currently
 	// feature-flagged, such that if the flag is not enabled for the given
 	// context, we do not cache the event for export.
+	//
+	// 🚨 SECURITY: The implementation strips out sensitive contents from events
+	// that are not in sensitivemetadataallowlist.AllowedEventTypes().
 	QueueForExport(context.Context, []*telemetrygatewayv1.Event) error
 
 	// ListForExport returns the cached events that should be exported next. All
 	// events returned should be exported.
-	//
-	// 🚨 SECURITY: The implementation strips out sensitive contents from events
-	// that are not in sensitivemetadataallowlist.AllowedEventTypes().
 	ListForExport(ctx context.Context, limit int) ([]*telemetrygatewayv1.Event, error)
 
 	// MarkAsExported marks all events in the set of IDs as exported.
@@ -98,21 +98,27 @@ func insertChannel(logger log.Logger, events []*telemetrygatewayv1.Event) <-chan
 	go func() {
 		defer close(ch)
 
-		for _, ev := range events {
-			payloadPB, err := proto.Marshal(ev)
+		sensitiveAllowlist := sensitivemetadataallowlist.AllowedEventTypes()
+		for _, event := range events {
+			// 🚨 SECURITY: Apply sensitive data redaction of the payload.
+			// Redaction mutates the payload so we should make a copy.
+			event := proto.Clone(event).(*telemetrygatewayv1.Event)
+			sensitiveAllowlist.Redact(event)
+
+			payloadPB, err := proto.Marshal(event)
 			if err != nil {
 				logger.Error("failed to marshal telemetry event",
-					log.String("event.feature", ev.GetFeature()),
-					log.String("event.action", ev.GetAction()),
-					log.String("event.source.client.name", ev.GetSource().GetClient().GetName()),
-					log.String("event.source.client.version", ev.GetSource().GetClient().GetVersion()),
+					log.String("event.feature", event.GetFeature()),
+					log.String("event.action", event.GetAction()),
+					log.String("event.source.client.name", event.GetSource().GetClient().GetName()),
+					log.String("event.source.client.version", event.GetSource().GetClient().GetVersion()),
 					log.Error(err))
 				continue
 			}
 			ch <- []any{
-				ev.Id,                 // id
-				ev.Timestamp.AsTime(), // timestamp
-				payloadPB,             // payload_pb
+				event.Id,                 // id
+				event.Timestamp.AsTime(), // timestamp
+				payloadPB,                // payload_pb
 			}
 		}
 	}()
@@ -140,8 +146,6 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 	}
 	defer rows.Close()
 
-	sensitiveAllowlist := sensitivemetadataallowlist.AllowedEventTypes()
-
 	events := make([]*telemetrygatewayv1.Event, 0, limit)
 	for rows.Next() {
 		var id string
@@ -161,9 +165,6 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 			// investigation.
 			continue
 		}
-
-		// 🚨 SECURITY: Apply sensitive data redaction of the payload.
-		sensitiveAllowlist.Redact(event)
 
 		events = append(events, event)
 	}

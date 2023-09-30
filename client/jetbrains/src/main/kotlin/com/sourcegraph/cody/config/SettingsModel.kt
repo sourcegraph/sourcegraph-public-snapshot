@@ -12,4 +12,5 @@ data class SettingsModel(
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Color? = null,
     var blacklistedLanguageIds: List<String> = listOf(),
+    var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
 )

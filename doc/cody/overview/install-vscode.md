@@ -77,7 +77,7 @@
 
 <p class="subtitle">Learn how to use Cody and its features with the VS Code editor.</p>
 
-The Cody extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code sugsgestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your VS Code environment.
+The Cody extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code suggestions, context-aware autocomplete, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your VS Code environment.
 
 <ul class="limg">
   <li>
@@ -119,7 +119,7 @@ You can connect either an enterprise instance or Sourcegraph.com via the followi
 
 ### For Sourcegraph enterprise users
 
-Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). From here, generate a new access token.
+Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`). From here, generate a new access token.
 
 Then, you will paste your access token and instance address in to the Cody extension.
 

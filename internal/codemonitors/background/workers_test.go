@@ -10,12 +10,21 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestActionRunner(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "https://www.sourcegraph.com",
+		},
+	})
+	defer conf.Mock(nil)
+
 	logger := logtest.Scoped(t)
 	tests := []struct {
 		name           string

@@ -20,6 +20,11 @@ type ExhaustiveSearchJob struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	// The aggregate state of the job. This is only set when the job is returned
+	// from ListSearchJobs. This state is different from WorkerJob.State, because it
+	// reflects the combined state of all jobs created as part of the search job.
+	AggState JobState
 }
 
 func (j *ExhaustiveSearchJob) RecordID() int {

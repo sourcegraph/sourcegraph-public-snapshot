@@ -33,7 +33,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { useMeasure } from '../../hooks'
 import type { ForwardReferenceComponent } from '../../types'
 import { Input, type InputProps } from '../Form'
-import { PopoverContent, Position } from '../Popover'
+import { PopoverContent, type PopoverContentProps, Position } from '../Popover'
 import { Heading, type HeadingElement } from '../Typography'
 
 import styles from './Combobox.module.scss'
@@ -98,7 +98,7 @@ export const ComboboxInput = forwardRef(function ComboboxInput(props, ref) {
     return <ReachComboboxInput ref={mergedRef} as={Component} {...attributes} />
 }) as ForwardReferenceComponent<'input', ComboboxInputProps>
 
-interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {
+interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement>, PopoverContentProps {
     target?: HTMLElement | null
     open?: boolean
 }

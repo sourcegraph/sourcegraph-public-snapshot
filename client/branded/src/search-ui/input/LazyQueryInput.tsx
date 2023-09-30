@@ -19,8 +19,8 @@ export interface IEditor {
 const CodeMirrorQueryInput = lazyComponent(() => import('./CodeMirrorQueryInput'), 'CodeMirrorMonacoFacade')
 
 /**
- * A plain query input displayed during lazy-loading of the MonacoQueryInput.
- * It has no suggestions, but still allows to type in and submit queries.
+ * A plain query input displayed during lazy-loading of the LazyQueryInput. It has no suggestions
+ * but still allows typing and submitting queries.
  */
 export const PlainQueryInput: React.FunctionComponent<
     React.PropsWithChildren<
@@ -49,7 +49,8 @@ export const PlainQueryInput: React.FunctionComponent<
 export type LazyQueryInputProps = CodeMirrorQueryInputFacadeProps
 
 /**
- * A lazily-loaded {@link MonacoQueryInput}, displaying a read-only query field as a fallback during loading.
+ * A lazily-loaded {@link CodeMirrorQueryInput}, displaying a read-only query field as a fallback
+ * during loading.
  */
 export const LazyQueryInput: React.FunctionComponent<LazyQueryInputProps> = ({ ...props }) => (
     <Suspense fallback={<PlainQueryInput {...props} placeholder={props.placeholder} />}>
