@@ -131,11 +131,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
-			redirect := r.URL.Query().Get("redirect")
-			if redirect == "" {
-				redirect = r.URL.Query().Get("returnTo")
-			}
-			RedirectToAuthRequest(w, r, p, stateCookieName, redirect)
+			RedirectToAuthRequest(w, r, p, stateCookieName, r.URL.Query().Get("redirect"))
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
