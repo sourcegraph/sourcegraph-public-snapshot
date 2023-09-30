@@ -93,7 +93,6 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             editorOptions={monacoOptions}
             autoFocus={autoFocus}
             onBlur={onBlur}
-            applySuggestionsOnEnter={false}
             tabIndex={tabIndex}
         />
     )

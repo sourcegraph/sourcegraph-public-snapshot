@@ -57,6 +57,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
 - The federation feature that could redirect users from their own Sourcegraph instance to public repositories on Sourcegraph.com has been removed. It allowed users to open a repository URL on their own Sourcegraph instance and, if the repository wasn't found on that instance, the user would be redirect to the repository on Sourcegraph.com, where it was possibly found. The feature has been broken for over a year though and we don't know that it was used. If you want to use it, please open a feature-request issue and tag the `@sourcegraph/source` team. [#55161](https://github.com/sourcegraph/sourcegraph/pull/55161)
+- The `applySearchQuerySuggestionOnEnter` experimental feature flag in user settings was removed, and this behavior is now always enabled. Previously, this behavior was on by default, but it was possible to disable it.
 
 ## 5.1.9
 
