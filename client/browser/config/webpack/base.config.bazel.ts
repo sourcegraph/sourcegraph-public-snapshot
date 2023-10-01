@@ -17,7 +17,7 @@ const browserWorkspacePath = path.resolve(process.cwd(), 'client/browser')
 const JS_OUTPUT_FOLDER = 'scripts'
 const CSS_OUTPUT_FOLDER = 'css'
 
-const extensionHostWorker = /main\.worker\.js$/
+const extensionHostWorker = /extensionHostWorker\.[tj]s$/
 
 export const config = {
     stats: {

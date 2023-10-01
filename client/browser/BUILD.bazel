@@ -216,6 +216,7 @@ ts_project(
         "src/shared/components/TrackAnchorClick.tsx",
         "src/shared/components/WildcardThemeProvider.tsx",
         "src/shared/context.ts",
+        "src/shared/extensionHostWorker.ts",
         "src/shared/platform/context.ts",
         "src/shared/platform/extensionHost.ts",
         "src/shared/platform/inlineExtensionsService.ts",

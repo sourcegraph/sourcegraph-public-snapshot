@@ -18,7 +18,7 @@ import {
 export const browserWorkspacePath = path.resolve(ROOT_PATH, 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
 
-const extensionHostWorker = /main\.worker\.ts$/
+const extensionHostWorker = /extensionHostWorker\.ts$/
 
 export const config = {
     target: 'browserslist',
