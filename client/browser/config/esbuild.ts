@@ -18,25 +18,25 @@ const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
  */
 export function esbuildBuildOptions(mode: 'dev' | 'prod'): esbuild.BuildOptions {
     return {
-        entryPoints: {
+        entryPoints: [
             // Browser extension
-            background: path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
-            inject: path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
-            options: path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
-            'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
+            path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
+            path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
+            path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
+            path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
 
             // Common native integration entry point (Gitlab, Bitbucket)
-            integration: path.resolve(browserSourcePath, 'native-integration/integration.main.ts'),
+            path.resolve(browserSourcePath, 'native-integration/integration.main.ts'),
             // Phabricator-only native integration entry point
-            phabricator: path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.ts'),
+            path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.ts'),
 
             // Styles
-            style: path.join(browserSourcePath, 'app.scss'),
-            'branded-style': path.join(browserSourcePath, 'branded.scss'),
+            path.join(browserSourcePath, 'app.scss'),
+            path.join(browserSourcePath, 'branded.scss'),
 
             // Worker
-            extensionHostWorker: path.resolve(browserSourcePath, 'shared/main.worker.ts'),
-        },
+            path.resolve(browserSourcePath, 'shared/main.worker.ts'),
+        ],
         format: 'cjs',
         platform: 'browser',
         plugins: [stylePlugin, copyAssetsPlugin, browserBuildStepsPlugin(mode)],
@@ -50,7 +50,7 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod'): esbuild.BuildOptions 
         jsx: 'automatic',
         outdir: path.join(browserWorkspacePath, 'build/dist'),
         chunkNames: '[ext]/[hash].chunk',
-        entryNames: '[ext]/[name].bundle',
+        entryNames: '[ext]/[dir]/[name].bundle',
         target: 'esnext',
         sourcemap: true,
         alias: { path: 'path-browserify' },

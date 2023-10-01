@@ -12,10 +12,10 @@ describe('Native integrations regression test suite', () => {
         const assets = [
             '/.assets/extension/scripts/integration.bundle.js',
             '/.assets/extension/scripts/phabricator.bundle.js',
-            '/.assets/extension/scripts/extensionHostWorker.bundle.js',
-            '/.assets/extension/css/style.bundle.css',
-            '/.assets/extension/css/inject.bundle.css',
             '/.assets/extension/extensionHostFrame.html',
+            '/.assets/extension/js/shared/main.worker.bundle.js',
+            '/.assets/extension/css/app.bundle.css',
+            '/.assets/extension/css/branded.bundle.css',
         ]
         await merge(
             ...assets.map(asset =>

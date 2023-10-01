@@ -11,7 +11,7 @@
                 // Catch SecurityErrors caused by accessing cross-origin iframes
                 // when the assets are not self-hosted by a code host.
             }
-            const hostWorker = new Worker(new URL('scripts/extensionHostWorker.bundle.js', assetsUrl).href)
+            const hostWorker = new Worker(new URL('js/shared/main.worker.bundle', assetsUrl).href)
             // Forward extension host worker init message,
             // making sur to transfer the endpoint MessagePort objects.
             window.addEventListener('message', ({ data }) => {

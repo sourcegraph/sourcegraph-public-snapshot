@@ -24,8 +24,8 @@ The tooltips include features like:
 
 It works as follows:
 
-- when visiting e.g. https://github.com/..., the extension injects a content script (inject.bundle.js)
-- there is a background script running to access certain chrome APIs, like storage (background.bundle.js)
+- when visiting e.g. https://github.com/..., the extension injects a content script (contentPage.main.bundle.js)
+- there is a background script running to access certain chrome APIs, like storage (backgroundPage.main.bundle.js)
 - a "code view" contains rendered (syntax highlighted) code (in an HTML table); the extension adds event listeners to the code view which control the tooltip
 - when the user mouses over a code table cell, the extension modifies the DOM node:
   - text nodes are wrapped in `<span>` (so hover/click events have appropriate specificity)

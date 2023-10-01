@@ -361,17 +361,17 @@ esbuild(
         "//client/browser/assets",
     ],
     config = "//client/browser/config:esbuild-config",
-    entry_points = {
-        "src/browser-extension/scripts/backgroundPage.main.js": "background",
-        "src/browser-extension/scripts/contentPage.main.js": "inject",
-        "src/browser-extension/scripts/optionsPage.main.js": "options",
-        "src/browser-extension/scripts/afterInstallPage.main.js": "after-install",
-        "src/native-integration/integration.main.js": "integration",
-        "src/native-integration/phabricator/integration.main.js": "phabricator",
-        "src/app.css": "style",
-        "src/branded.css": "branded-style",
-        "src/shared/main.worker.ts": "extensionHostWorker",
-    },
+    entry_points = [
+        "src/browser-extension/scripts/backgroundPage.main.ts",
+        "src/browser-extension/scripts/contentPage.main.ts",
+        "src/browser-extension/scripts/optionsPage.main.tsx",
+        "src/browser-extension/scripts/afterInstallPage.main.tsx",
+        "src/native-integration/integration.main.ts",
+        "src/native-integration/phabricator/integration.main.ts",
+        "src/app.css",
+        "src/branded.css",
+        "src/shared/main.worker.ts",
+    ],
     deps = ["//client/browser/config"],
 )
 

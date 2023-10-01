@@ -207,7 +207,7 @@ async function main(): Promise<void> {
                          * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
                          */
                         await browser.tabs.executeScript(tabId, {
-                            file: 'js/inject.bundle.js',
+                            file: 'js/browser-extension/scripts/contentPage.main.bundle.js',
                             runAt: 'document_end',
                         })
                     }
@@ -361,7 +361,7 @@ async function main(): Promise<void> {
     console.log('Sourcegraph background page initialized')
 }
 
-const workerBundleURL = browser.runtime.getURL('js/extensionHostWorker.bundle.js')
+const workerBundleURL = browser.runtime.getURL('js/shared/main.worker.bundle.js')
 
 /**
  * Handle an incoming browser port pair coming from a content script.
