@@ -7,7 +7,6 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use scip_syntax::get_globals;
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};

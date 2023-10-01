@@ -4,7 +4,24 @@ use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
 use scip_treesitter::types::PackedRange;
 
-use crate::languages::TagConfiguration;
+use crate::{
+    languages::TagConfiguration,
+    traversal::{ChildContainer, RangeContainer},
+};
+
+#[derive(Debug)]
+pub struct Global {
+    pub range: PackedRange,
+    pub enclosing: Option<PackedRange>,
+    pub descriptors: Vec<Descriptor>,
+    pub kind: symbol_information::Kind,
+}
+
+impl RangeContainer for Global {
+    fn range(&self) -> &PackedRange {
+        &self.range
+    }
+}
 
 #[derive(Debug)]
 pub struct Scope {
@@ -16,37 +33,25 @@ pub struct Scope {
     pub kind: symbol_information::Kind,
 }
 
-#[derive(Debug)]
-pub struct Global {
-    pub range: PackedRange,
-    pub enclosing: Option<PackedRange>,
-    pub descriptors: Vec<Descriptor>,
-    pub kind: symbol_information::Kind,
+impl RangeContainer for Scope {
+    fn range(&self) -> &PackedRange {
+        &self.scope_range
+    }
+}
+
+impl ChildContainer for Scope {
+    fn children(&mut self) -> &mut Vec<Self> {
+        &mut self.children
+    }
 }
 
 impl Scope {
     pub fn insert_scope(&mut self, scope: Scope) {
-        if let Some(child) = self
-            .children
-            .iter_mut()
-            .find(|child| child.scope_range.contains(&scope.scope_range))
-        {
-            child.insert_scope(scope);
-        } else {
-            self.children.push(scope);
-        }
+        self.insert_item(scope, &mut |s, item| s.children.push(item))
     }
 
     pub fn insert_global(&mut self, global: Global) {
-        if let Some(child) = self
-            .children
-            .iter_mut()
-            .find(|child| child.scope_range.contains(&global.range))
-        {
-            child.insert_global(global)
-        } else {
-            self.globals.push(global);
-        }
+        self.insert_item(global, &mut |s, item| s.globals.push(item))
     }
 
     pub fn into_document(&mut self, hint: usize, base_descriptors: Vec<Descriptor>) -> Document {
@@ -56,14 +61,6 @@ impl Scope {
         let mut symbols = Vec::with_capacity(hint);
         self.traverse(true, &mut occurrences, &mut descriptor_stack, &mut symbols);
 
-        // let symbols = occurrences
-        //     .iter()
-        //     .map(|o| scip::types::SymbolInformation {
-        //         symbol: o.symbol.clone(),
-        //         ..Default::default()
-        //     })
-        //     .collect();
-        //
         Document {
             occurrences,
             symbols,
