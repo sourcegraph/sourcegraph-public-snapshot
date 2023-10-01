@@ -9,12 +9,8 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 ts_project(
     name = "config",
     srcs = [
-        "webpack/base.config.bazel.ts",
-        "webpack/base.config.ts",
-        "webpack/development.config.ts",
-        "webpack/production.config.bazel.ts",
-        "webpack/production.config.ts",
-        "webpack/utils.ts",
+        "esbuild.ts",
+        "utils.ts",
     ],
     module = "commonjs",
     tsconfig = "//client/browser:tsconfig",
@@ -22,22 +18,21 @@ ts_project(
     deps = [
         "//:node_modules/@babel/runtime",  #keep
         "//:node_modules/@types/node",
-        "//:node_modules/css-loader",  #keep
-        "//:node_modules/css-minimizer-webpack-plugin",
-        "//:node_modules/mini-css-extract-plugin",
+        "//:node_modules/esbuild",
         # HACKS: bundle-time css import
         "//:node_modules/open-color",  #keep
         "//:node_modules/path-browserify",  #keep
-        "//:node_modules/style-loader",  #keep
-        "//:node_modules/terser-webpack-plugin",
-        "//:node_modules/webpack",
-        "//:node_modules/worker-loader",  #keep
         "//client/browser:node_modules/@sourcegraph/build-config",
     ],
 )
 
 js_library(
-    name = "webpack-config",
-    srcs = ["webpack/production.config.bazel.js"],
+    name = "esbuild-config",
+    srcs = ["esbuild.bazel.js"],
     visibility = ["//client:__subpackages__"],
+    deps = [
+        "//client/browser:node_modules/@sourcegraph/build-config",
+        "//client/browser/config",
+        "//client/build-config:build-config_lib",
+    ],
 )
