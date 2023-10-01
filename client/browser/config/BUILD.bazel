@@ -11,10 +11,10 @@ ts_project(
     srcs = [
         "build-npm.ts",
         "esbuild.ts",
-        "tasks.ts",
-        "utils.ts",
         "manifest.spec.json",
         "schema.json",
+        "tasks.ts",
+        "utils.ts",
     ],
     module = "commonjs",
     tsconfig = "//client/browser:tsconfig",
@@ -31,7 +31,7 @@ ts_project(
 
 js_library(
     name = "esbuild-config",
-    srcs = ["esbuild.config.js"],
+    srcs = ["esbuild.bazel.js"],
     visibility = ["//client:__subpackages__"],
     deps = [
         "//client/browser:node_modules/@sourcegraph/build-config",
