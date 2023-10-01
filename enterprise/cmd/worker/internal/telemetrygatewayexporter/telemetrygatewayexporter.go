@@ -15,6 +15,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var (
+	// A past assessment of events throughput is used as a rough ballpark for
+	// this configuration: roughly 3500 daily events per 10 users.
+	//
+	// Based on this, for a 5000-user instance, we need to be able to process
+	// 1.75M events per day. At a 5-minute interval, we can export
+	// 288 * 10000 =~ 2.8M events per day by default, leaving us with plenty of
+	// headroom on most instances, with the ability to configure higher batch
+	// sizes as needed.
+	//
+	// Observed 5k events ~ 3MB, 10k in each batch should be safe. The exporter
+	// will split a batch into several payloads within an export stream.
+	defaultExportInterval  = 5 * time.Minute
+	defaultExportBatchSize = 10000
+)
+
 type config struct {
 	env.BaseConfig
 
@@ -36,13 +52,13 @@ func (c *config) Load() {
 	// 'https://telemetry-gateway.sourcegraph.com', and eventually, won't be configurable.
 	c.ExportAddress = env.Get("TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR", "", "Target Telemetry Gateway address")
 
-	c.ExportInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL", 10*time.Minute,
+	c.ExportInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL", defaultExportInterval,
 		"Interval at which to export telemetry")
 	if c.ExportInterval > 1*time.Hour {
 		c.AddError(errors.New("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL cannot be more than 1 hour"))
 	}
 
-	c.MaxExportBatchSize = env.MustGetInt("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE", 5000,
+	c.MaxExportBatchSize = env.MustGetInt("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE", defaultExportBatchSize,
 		"Maximum number of events to export in each batch")
 	if c.MaxExportBatchSize < 100 {
 		c.AddError(errors.New("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE must be no less than 100"))
