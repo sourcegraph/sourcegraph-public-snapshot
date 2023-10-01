@@ -13,6 +13,8 @@ import { generateBundleUID } from './utils'
 const browserWorkspacePath = path.resolve(ROOT_PATH, 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
 
+const isBazel = process.env.BAZEL_BINDIR
+
 /**
  * Returns the esbuild build options for the browser extension build.
  */
@@ -39,7 +41,11 @@ export function esbuildBuildOptions(mode: 'dev' | 'prod'): esbuild.BuildOptions 
         ],
         format: 'cjs',
         platform: 'browser',
-        plugins: [stylePlugin, copyAssetsPlugin, browserBuildStepsPlugin(mode)],
+        plugins: [
+            stylePlugin,
+            isBazel ? null : copyAssetsPlugin,
+            isBazel ? null : browserBuildStepsPlugin(mode),
+        ].filter((plugin): plugin is esbuild.Plugin => plugin !== null),
         define: {
             'process.env.NODE_ENV': mode === 'dev' ? 'development' : 'production',
             'process.env.BUNDLE_UID': JSON.stringify(generateBundleUID()),
