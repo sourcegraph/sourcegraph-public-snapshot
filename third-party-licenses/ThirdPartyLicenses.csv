@@ -456,7 +456,6 @@ PNPM,@slack/types,1.7.0,MIT,"",Approved
 PNPM,@slack/web-api,5.15.0,MIT,"",Approved
 PNPM,@snyk/dep-graph,2.6.0,Apache 2.0,"",Approved
 PNPM,@snyk/graphlib,2.1.9-patch.3,MIT,"",Approved
-PNPM,@socket.io/component-emitter,3.1.0,MIT,"",Approved
 PNPM,@sourcegraph/codemod-cli,1.0.0,Apache 2.0,"",Approved
 PNPM,@sourcegraph/codemod-common,1.0.0,Apache 2.0,"",Approved
 PNPM,@sourcegraph/codemod-toolkit-packages,1.0.1,Apache 2.0,"",Approved
@@ -609,7 +608,6 @@ PNPM,@types/compression,1.7.2,MIT,"",Approved
 PNPM,@types/connect,3.4.32,MIT,"",Approved
 PNPM,@types/connect-history-api-fallback,1.3.5,MIT,"",Approved
 PNPM,@types/cookie,0.5.1,MIT,"",Approved
-PNPM,@types/cors,2.8.12,MIT,"",Approved
 PNPM,@types/cross-spawn,6.0.2,MIT,"",Approved
 PNPM,@types/d3-color,1.4.1,MIT,"",Approved
 PNPM,@types/d3-format,2.0.0,MIT,"",Approved
@@ -727,7 +725,6 @@ PNPM,@types/signale,1.4.1,MIT,"",Approved
 PNPM,@types/simmerjs,0.5.1,MIT,"",Approved
 PNPM,@types/sinon,9.0.4,MIT,"",Approved
 PNPM,@types/sinonjs__fake-timers,6.0.1,MIT,"",Approved
-PNPM,@types/socket.io-client,1.4.33,MIT,"",Approved
 PNPM,@types/sockjs,0.3.33,MIT,"",Approved
 PNPM,@types/speed-measure-webpack-plugin,1.3.4,MIT,"",Approved
 PNPM,@types/stack-utils,2.0.1,MIT,"",Approved
@@ -1295,9 +1292,6 @@ PNPM,emojis-list,3.0.0,MIT,"",Approved
 PNPM,encodeurl,1.0.2,MIT,"",Approved
 PNPM,end-of-stream,1.1.0,MIT,"",Approved
 PNPM,endent,2.0.1,MIT,"",Approved
-PNPM,engine.io,6.2.0,MIT,"",Approved
-PNPM,engine.io-client,6.2.2,MIT,"",Approved
-PNPM,engine.io-parser,5.0.4,MIT,"",Approved
 PNPM,enhanced-resolve,5.10.0,MIT,"",Approved
 PNPM,enquirer,2.3.6,MIT,"",Approved
 PNPM,entities,2.1.0,Simplified BSD,"",Approved
@@ -2909,10 +2903,6 @@ PNPM,snapdragon-node,2.1.1,MIT,"",Approved
 PNPM,snapdragon-util,3.0.1,MIT,"",Approved
 PNPM,snyk-config,5.1.0,(Apache-2.0 AND MIT),"",Approved
 PNPM,snyk-nodejs-lockfile-parser,1.48.2,Apache 2.0,"",Approved
-PNPM,socket.io,4.5.2,MIT,"",Approved
-PNPM,socket.io-adapter,2.4.0,MIT,"",Approved
-PNPM,socket.io-client,4.5.2,MIT,"",Approved
-PNPM,socket.io-parser,4.2.1,MIT,"",Approved
 PNPM,sockjs,0.3.24,MIT,"",Approved
 PNPM,socks,2.7.0,MIT,"",Approved
 PNPM,socks-proxy-agent,5.0.1,MIT,"",Approved
@@ -3276,7 +3266,6 @@ PNPM,wrap-ansi,8.1.0,MIT,"",Approved
 PNPM,wrappy,1.0.2,ISC,"",Approved
 PNPM,write-file-atomic,4.0.2,ISC,"",Approved
 PNPM,write-json-file,2.3.0,MIT,"",Approved
-PNPM,ws,6.2.2,MIT,"",Approved
 PNPM,x-default-browser,0.4.0,MIT,"",Approved
 PNPM,x2js,3.4.4,Apache 2.0,"",Approved
 PNPM,xdg-basedir,3.0.0,MIT,"",Approved
@@ -3285,7 +3274,6 @@ PNPM,xml-name-validator,4.0.0,Apache 2.0,"",Approved
 PNPM,xml2js,0.4.23,MIT,"",Approved
 PNPM,xmlbuilder,11.0.1,MIT,"",Approved
 PNPM,xmlchars,2.2.0,MIT,"",Approved
-PNPM,xmlhttprequest-ssl,2.0.0,MIT,"",Approved
 PNPM,xregexp,2.0.0,MIT,"",Approved
 PNPM,xtend,4.0.2,MIT,"",Approved
 PNPM,y18n,4.0.3,ISC,"",Approved

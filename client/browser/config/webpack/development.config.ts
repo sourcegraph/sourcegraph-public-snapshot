@@ -7,16 +7,10 @@ import { getCacheConfig } from '@sourcegraph/build-config'
 import { config as baseConfig, browserWorkspacePath } from './base.config'
 import { generateBundleUID } from './utils'
 
-const { plugins, entry: entries, ...base } = baseConfig
-
-const entriesWithAutoReload = {
-    ...entries,
-    background: [path.join(__dirname, 'auto-reloading.ts'), ...entries.background],
-}
+const { plugins, ...base } = baseConfig
 
 export const config: webpack.Configuration = {
     ...base,
-    entry: process.env.AUTO_RELOAD === 'false' ? entries : entriesWithAutoReload,
     mode: 'development',
     // Use cache only in `development` mode to speed up production build.
     cache: getCacheConfig({ invalidateCacheFiles: [path.resolve(browserWorkspacePath, 'babel.config.js')] }),

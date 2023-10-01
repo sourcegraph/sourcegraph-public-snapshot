@@ -117,11 +117,11 @@ async function main(): Promise<void> {
                         const styleSheets = [
                             {
                                 id: 'ext-style-sheet',
-                                path: 'css/style.bundle.css',
+                                path: 'css/app.bundle.css',
                             },
                             {
                                 id: 'ext-style-sheet-css-modules',
-                                path: 'css/inject.bundle.css',
+                                path: 'css/contentPage.main.bundle.css',
                             },
                         ]
 

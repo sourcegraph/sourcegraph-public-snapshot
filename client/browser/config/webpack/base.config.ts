@@ -22,25 +22,22 @@ const extensionHostWorker = /main\.worker\.ts$/
 
 export const config = {
     target: 'browserslist',
-    entry: {
+    entry: [
         // Browser extension
-        background: path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
-        inject: path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
-        options: path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
-        'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
+        path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
+        path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
+        path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
+        path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
 
         // Common native integration entry point (Gitlab, Bitbucket)
-        integration: path.resolve(browserSourcePath, 'native-integration/nativeIntegration.main.ts'),
+        path.resolve(browserSourcePath, 'native-integration/nativeIntegration.main.ts'),
         // Phabricator-only native integration entry point
-        phabricator: path.resolve(
-            browserSourcePath,
-            'native-integration/phabricator/phabricatorNativeIntegration.main.ts'
-        ),
+        path.resolve(browserSourcePath, 'native-integration/phabricator/phabricatorNativeIntegration.main.ts'),
 
         // Styles
-        style: path.join(browserSourcePath, 'app.scss'),
-        'branded-style': path.join(browserSourcePath, 'branded.scss'),
-    },
+        path.join(browserSourcePath, 'app.scss'),
+        path.join(browserSourcePath, 'branded.scss'),
+    ],
     output: {
         path: path.join(browserWorkspacePath, 'build/dist/js'),
         filename: '[name].bundle.js',

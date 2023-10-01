@@ -48,8 +48,8 @@ function init(): void {
     } else {
         injectExtensionMarker()
     }
-    insertStyleSheet({ id: 'sourcegraph-styles', path: 'css/style.bundle.css', assetsURL })
-    insertStyleSheet({ id: 'sourcegraph-styles-css-modules', path: 'css/inject.bundle.css', assetsURL })
+    insertStyleSheet({ id: 'sourcegraph-styles', path: 'css/app.bundle.css', assetsURL })
+    insertStyleSheet({ id: 'sourcegraph-styles-css-modules', path: 'css/contentPage.main.bundle.css', assetsURL })
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription

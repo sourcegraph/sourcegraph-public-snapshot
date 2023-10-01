@@ -1,15 +1,11 @@
-import { noop } from 'lodash'
 import signale from 'signale'
 import webpack from 'webpack'
 
 import { config } from '../config/webpack/development.config'
 
-import * as autoReloading from './auto-reloading'
 import * as tasks from './tasks'
 
 signale.config({ displayTimestamp: true })
-
-const triggerReload = process.env.AUTO_RELOAD === 'false' ? noop : autoReloading.initializeServer()
 
 const buildChrome = tasks.buildChrome('dev')
 const buildFirefox = tasks.buildFirefox('dev')
@@ -40,6 +36,5 @@ compiler.watch(
         buildEdge()
         buildFirefox()
         tasks.copyIntegrationAssets()
-        triggerReload()
     }
 )
