@@ -30,9 +30,12 @@ export const config = {
         'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
 
         // Common native integration entry point (Gitlab, Bitbucket)
-        integration: path.resolve(browserSourcePath, 'native-integration/integration.main.ts'),
+        integration: path.resolve(browserSourcePath, 'native-integration/nativeIntegration.main.ts'),
         // Phabricator-only native integration entry point
-        phabricator: path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.ts'),
+        phabricator: path.resolve(
+            browserSourcePath,
+            'native-integration/phabricator/phabricatorNativeIntegration.main.ts'
+        ),
 
         // Styles
         style: path.join(browserSourcePath, 'app.scss'),
