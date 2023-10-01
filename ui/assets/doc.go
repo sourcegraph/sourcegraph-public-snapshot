@@ -3,14 +3,10 @@
 // It exports a Provider global variable, that should be used by all code
 // seeking to provide access to assets, regardless of their type (dev, oss
 // or enterprise).
+
+// You must also import the embedded assets:
 //
-// To select a particular bundle variant, use _one_ of the following imports in
-// the main.go:
-//
-//   - If you want the oss bundle:
-//     import _ "github.com/sourcegraph/sourcegraph/ui/assets/oss" // Select oss assets
-//   - If you want the enterprise bundle:
-//     import _ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+//	import _ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 //
 // And to support working with dev assets, with the webpack process handling them for you, you can use:
 //
