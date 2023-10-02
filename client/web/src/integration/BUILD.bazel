@@ -112,9 +112,9 @@ mocha_test(
         "--parallel",
         "--jobs 16",
     ],
-    data = ["//client/web:app-enterprise"],
+    data = ["//client/web:app"],
     env = {
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
     },
     flaky = True,
     is_percy_enabled = True,

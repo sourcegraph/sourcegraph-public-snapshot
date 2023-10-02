@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -435,25 +433,6 @@ func (gs *GRPCServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest
 	grpcResp := gs.Server.repoUpdate(&in)
 
 	return grpcResp.ToProto(), nil
-}
-
-// TODO: Remove this endpoint after 5.2, it is deprecated.
-func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
-	size, err := gs.Server.DB.GitserverRepos().GetGitserverGitDirSize(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	shardCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
-
-	resp := protocol.ReposStats{
-		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.
-		// Divide the size by shard count so that the cumulative number on the client
-		// side is correct again.
-		GitDirBytes: size / int64(shardCount),
-	}
-
-	return resp.ToProto(), nil
 }
 
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {

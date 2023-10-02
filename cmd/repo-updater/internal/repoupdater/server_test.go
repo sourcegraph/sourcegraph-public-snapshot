@@ -32,10 +32,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repos/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
@@ -83,10 +85,10 @@ func TestServer_handleRepoLookup(t *testing.T) {
 
 	t.Run("args", func(t *testing.T) {
 		called := false
-		mockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		mockRepoLookup = func(repoName api.RepoName) (*protocol.RepoLookupResult, error) {
 			called = true
-			if want := api.RepoName("github.com/a/b"); args.Repo != want {
-				t.Errorf("got owner %q, want %q", args.Repo, want)
+			if want := api.RepoName("github.com/a/b"); repoName != want {
+				t.Errorf("got owner %q, want %q", repoName, want)
 			}
 			return &protocol.RepoLookupResult{Repo: nil}, nil
 		}
@@ -99,7 +101,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		mockRepoLookup = func(api.RepoName) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{Repo: nil}, nil
 		}
 		defer func() { mockRepoLookup = nil }()
@@ -110,7 +112,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 
 	t.Run("unexpected error", func(t *testing.T) {
-		mockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		mockRepoLookup = func(api.RepoName) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
 		defer func() { mockRepoLookup = nil }()
@@ -137,7 +139,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 				Fork:        true,
 			},
 		}
-		mockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		mockRepoLookup = func(api.RepoName) (*protocol.RepoLookupResult, error) {
 			return &want, nil
 		}
 		defer func() { mockRepoLookup = nil }()
@@ -455,9 +457,6 @@ func TestServer_RepoLookup(t *testing.T) {
 			name: "synced - npm package host",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("npm/package"),
-				// In order for new versions of package repos to be synced quickly, it's necessary to enqueue
-				// a high priority git update.
-				Update: true,
 			},
 			stored: []*types.Repo{},
 			src:    repos.NewFakeSource(&npmSource, nil, npmRepository),
@@ -663,7 +662,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				ObsvCtx: observation.TestContextTB(t),
 			}
 
-			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB())
+			scheduler := scheduler.NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
 
 			s := &Server{
 				Logger:    logger,
@@ -691,13 +690,6 @@ func TestServer_RepoLookup(t *testing.T) {
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
 				t.Fatalf("response mismatch(-have, +want): %s", diff)
-			}
-
-			if tc.args.Update {
-				scheduleInfo := scheduler.ScheduleInfo(res.Repo.ID)
-				if have, want := scheduleInfo.Queue.Priority, 1; have != want { // highPriority
-					t.Fatalf("scheduler update priority mismatch: have %d, want %d", have, want)
-				}
 			}
 
 			if tc.assert != nil {

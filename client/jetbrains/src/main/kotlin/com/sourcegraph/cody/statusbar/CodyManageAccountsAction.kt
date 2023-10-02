@@ -5,7 +5,7 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAwareAction
 import com.sourcegraph.cody.config.ui.AccountConfigurable
 
-class CodyManageAccountsAction : DumbAwareAction() {
+class CodyManageAccountsAction : DumbAwareAction("Manage Accounts") {
   override fun actionPerformed(e: AnActionEvent) {
     ShowSettingsUtil.getInstance().showSettingsDialog(e.project, AccountConfigurable::class.java)
   }

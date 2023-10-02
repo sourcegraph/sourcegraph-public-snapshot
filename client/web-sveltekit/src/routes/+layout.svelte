@@ -1,11 +1,11 @@
 <script lang="ts">
     import { setContext } from 'svelte'
-    import { readable, writable, type Readable } from 'svelte/store'
+    import { readable, writable } from 'svelte/store'
 
     import { browser } from '$app/environment'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
-    import { KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
+    import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
@@ -19,23 +19,8 @@
 
     export let data: LayoutData
 
-    function createLightThemeStore(): Readable<boolean> {
-        if (browser) {
-            const matchMedia = window.matchMedia('(prefers-color-scheme: dark)')
-            return readable(!matchMedia.matches, set => {
-                const listener = (event: MediaQueryListEventMap['change']) => {
-                    set(!event.matches)
-                }
-                matchMedia.addEventListener('change', listener)
-                return () => matchMedia.removeEventListener('change', listener)
-            })
-        }
-        return readable(true)
-    }
-
     const user = writable(data.user ?? null)
     const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
-    const isLightTheme = createLightThemeStore()
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
@@ -45,7 +30,6 @@
     setContext<SourcegraphContext>(KEY, {
         user,
         settings,
-        isLightTheme,
         temporarySettingsStorage,
         featureFlags: createFeatureFlagStore(data.featureFlags, fetchEvaluatedFeatureFlags),
         client: readable(data.graphqlClient),

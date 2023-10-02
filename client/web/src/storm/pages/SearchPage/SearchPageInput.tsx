@@ -15,7 +15,6 @@ import {
     type SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
@@ -76,8 +75,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     const isLightTheme = useIsLightTheme()
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const [experimentalQueryInput] = useExperimentalQueryInput()
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const { recentSearches } = useRecentSearches()
 
@@ -191,7 +188,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             autoFocus={!isTouchOnlyDevice}
             isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
             structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-            applySuggestionsOnEnter={applySuggestionsOnEnter}
             showSearchHistory={true}
             recentSearches={recentSearches}
         />

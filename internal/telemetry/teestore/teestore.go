@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,6 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+var counterV1Events = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "telemetry_teestore",
+	Name:      "v1_events",
+	Help:      "Events tee'd to the V1 event_logs table",
+}, []string{"failed"})
 
 // Store tees events into both the event_logs table and the new telemetry export
 // queue, translating the message into the existing event_logs format on a
@@ -40,7 +49,11 @@ func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 	})
 	if !shouldDisableV1(ctx) {
 		wg.Go(func() error {
-			if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
+			err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events))
+			counterV1Events.
+				WithLabelValues(strconv.FormatBool(err != nil)).
+				Add(float64(len(events)))
+			if err != nil {
 				return errors.Wrap(err, "bulk inserting events logs")
 			}
 			return nil

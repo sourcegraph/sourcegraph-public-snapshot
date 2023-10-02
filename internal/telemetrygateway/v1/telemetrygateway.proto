@@ -100,17 +100,20 @@ message Event {
   optional EventFeatureFlags feature_flags = 8;
   // Optional marketing campaign tracking parameters.
   //
-  // 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
-  // sensitive data. Currently, only Sourcegraph.com should export this.
+  // 🚨 SECURITY: This metadata is NEVER exported from an instance, and is only
+  // exported for events tracked in the public Sourcegraph.com instance.
   optional EventMarketingTracking marketing_tracking = 9;
 }
 
 message EventSource {
   message Server {
+    // Version of the Sourcegraph server.
     string version = 1;
   }
   message Client {
+    // Source client of the event.
     string name = 1;
+    // Version of the cleint.
     optional string version = 2;
   }
 
@@ -122,18 +125,22 @@ message EventSource {
 
 message EventParameters {
   // Version of the event parameters, used for indicating the "shape" of this
-  // event's metadata, beginning at 0.
+  // event's metadata, beginning at 0. Useful for denoting if the shape of
+  // metadata has changed in any way.
   int32 version = 1;
-  // Strictly typed metadata, restricted to integer values.
+  // Strictly typed metadata, restricted to integer values to avoid accidentally
+  // exporting sensitive or private data.
   map<string, int64> metadata = 2;
   // Additional potentially sensitive metadata - i.e. not restricted to integer
   // values.
-
-  // 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
-  // arbitrarily-shaped data that may accidentally contain sensitive contents.
   //
-  // This should only be exported on an allowlist basis based on combinations
-  // of event feature and action, alongside careful audit of callsites.
+  // 🚨 SECURITY: This metadata is NOT exported from instances by default, as it
+  // can contain arbitrarily-shaped data that may accidentally contain sensitive
+  // or private contents.
+  //
+  // This metadata is only exported on an allowlist basis based on terms of
+  // use agreements and combinations of event feature and action, alongside
+  // careful audit of callsites.
   optional google.protobuf.Struct private_metadata = 3;
   // Optional billing-related metadata.
   optional EventBillingMetadata billing_metadata = 4;
@@ -147,13 +154,14 @@ message EventBillingMetadata {
 }
 
 message EventUser {
-  // Database user ID of signed in user.
+  // Database user ID of signed in user. User IDs are specific to a Sourcegraph
+  // instance, and not universal.
   //
   // We use an int64 as an ID because in Sourcegraph, database user IDs are
   // always integers.
   optional int64 user_id = 1;
-  // Randomized unique identifier for client (i.e. stored in localstorage in web
-  // client).
+  // Randomized unique identifier for an actor (e.g. stored in localstorage in
+  // web client).
   optional string anonymous_user_id = 2;
 }
 
@@ -167,13 +175,26 @@ message EventFeatureFlags {
   map<string, string> flags = 1;
 }
 
+// Marketing campaign tracking metadata.
+//
+// 🚨 SECURITY: This metadata is NEVER exported from private Sourcegraph
+// instances, and is only exported for events tracked in the public
+// Sourcegraph.com instance.
 message EventMarketingTracking {
+  // URL the event occurred on.
   optional string url = 1;
+  // Initial URL the user landed on.
   optional string first_source_url = 2;
+  // Cohort ID to identify the user as part of a specific A/B test.
   optional string cohort_id = 3;
+  // Referrer URL that refers the user to Sourcegraph.
   optional string referrer = 4;
+  // Last source URL visited by the user.
   optional string last_source_url = 5;
+  // Device session ID to identify the user's session.
   optional string device_session_id = 6;
+  // Session referrer URL for the user.
   optional string session_referrer = 7;
+  // First URL the user visited in their current session.
   optional string session_first_url = 8;
 }
