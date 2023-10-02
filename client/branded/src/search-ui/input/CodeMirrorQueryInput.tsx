@@ -1,29 +1,25 @@
 import React, { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { EditorSelection, type Extension, Prec, Compartment, EditorState } from '@codemirror/state'
+import { EditorSelection, type Extension, Prec, EditorState } from '@codemirror/state'
 import { EditorView, type ViewUpdate, keymap, placeholder as placeholderExtension } from '@codemirror/view'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { EditorHint, QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
+import { BaseCodeMirrorQueryInput, type BaseCodeMirrorQueryInputProps } from './BaseCodeMirrorQueryInput'
 import { createDefaultSuggestions, singleLine } from './codemirror'
 import { decorateActiveFilter, filterPlaceholder } from './codemirror/active-filter'
 import { queryDiagnostic } from './codemirror/diagnostics'
 import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
-import { parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
-import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { tokenInfo } from './codemirror/token-info'
 import type { QueryInputProps } from './QueryInput'
 
@@ -230,10 +226,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
             <CodeMirrorQueryInput
                 onEditorCreated={editorCreated}
                 patternType={patternType}
-                interpretComments={interpretComments}
+                interpretComments={interpretComments ?? false}
                 value={queryState.query}
                 className={className}
-                extensions={extensions}
+                extension={extensions}
             />
             {focusSearchBarShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={globalFocus} />
@@ -257,94 +253,31 @@ function useOnValueChanged<T = unknown>(value: T, func: () => void): void {
     }, [value, func])
 }
 
-const EMPTY: any[] = []
+interface CodeMirrorQueryInputProps extends BaseCodeMirrorQueryInputProps {}
 
-interface CodeMirrorQueryInputProps
-    extends Pick<QueryInputProps<EditorView>, 'interpretComments' | 'onEditorCreated' | 'patternType' | 'className'> {
-    value: string
-    extensions: Extension[]
-}
+const staticExtension: Extension = [
+    queryDiagnostic(),
+    // The precedence of these extensions needs to be decreased
+    // explicitly, otherwise the diagnostic indicators will be
+    // hidden behind the highlight background color
+    Prec.low([tokenInfo(), decorateActiveFilter, filterPlaceholder]),
+]
 
 /**
- * "Core" codemirror query input component. Provides the basic behavior such as
- * theming, syntax highlighting and token info.
+ * Simple query input which offers query diagnostics, token hover information,
+ * and active filter highlight.
  */
-export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
-    ({ onEditorCreated, patternType, interpretComments, value, className, extensions = EMPTY }) => {
-        const containerRef = useRef<HTMLDivElement | null>(null)
-        const isLightTheme = useIsLightTheme()
-        const externalExtensions = useMemo(() => new Compartment(), [])
-        const themeExtension = useMemo(() => new Compartment(), [])
-
-        const editorRef = useRef<EditorView | null>(null)
-
-        // Update pattern type and/or interpretComments when changed
-        useEffect(() => {
-            editorRef.current?.dispatch({ effects: setQueryParseOptions.of({ patternType, interpretComments }) })
-        }, [patternType, interpretComments])
-
-        // Update theme if it changes
-        useEffect(() => {
-            editorRef.current?.dispatch({
-                effects: themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false)),
-            })
-        }, [themeExtension, isLightTheme])
-
-        // Update external extensions if they changed
-        useEffect(() => {
-            editorRef.current?.dispatch({ effects: externalExtensions.reconfigure(extensions) })
-        }, [externalExtensions, extensions])
-
-        useCodeMirror(
-            editorRef,
-            containerRef,
-            value,
-            useMemo(
-                () => [
-                    keymap.of(historyKeymap),
-                    keymap.of(defaultKeymap),
-                    history(),
-                    themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
-                    parseInputAsQuery({ patternType, interpretComments }),
-                    queryDiagnostic(),
-                    // The precedence of these extensions needs to be decreased
-                    // explicitly, otherwise the diagnostic indicators will be
-                    // hidden behind the highlight background color
-                    Prec.low([tokenInfo(), querySyntaxHighlighting, decorateActiveFilter, filterPlaceholder]),
-                    externalExtensions.of(extensions),
-                ],
-                // patternType and interpretComments are updated via a
-                // transaction since there is no need to re-initialize all
-                // extensions
-                // The extensions passed in via `extensions` are update via a
-                // compartment
-                // The theme (`isLightTheme`) is also updated via a compartment
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-                [themeExtension, externalExtensions]
-            )
-        )
-
-        // Notify parent component about editor instance. Among other things,
-        // having a reference to the editor allows other components to initiate
-        // transactions.
-        useEffect(() => {
-            if (editorRef.current) {
-                onEditorCreated?.(editorRef.current)
-            }
-        }, [onEditorCreated])
-
-        return (
-            <TraceSpanProvider name="CodeMirrorQueryInput">
-                <div
-                    ref={containerRef}
-                    className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
-                    data-editor="codemirror6"
-                />
-            </TraceSpanProvider>
-        )
-    }
+export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = ({
+    extension = [],
+    className,
+    ...props
+}) => (
+    <BaseCodeMirrorQueryInput
+        {...props}
+        className={classNames(className, styles.root)}
+        extension={useMemo(() => [staticExtension, extension], [extension])}
+    />
 )
-CodeMirrorQueryInput.displayName = 'CodeMirrorQueryInput'
 
 /**
  * Update the editor's value, selection and cursor depending on how the search

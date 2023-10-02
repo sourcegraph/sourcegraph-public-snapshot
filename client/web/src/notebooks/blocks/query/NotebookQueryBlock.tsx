@@ -16,7 +16,7 @@ import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEdito
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
@@ -171,7 +171,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 patternType={SearchPatternType.standard}
                                 interpretComments={true}
                                 onEditorCreated={setEditor}
-                                extensions={useMemo(
+                                extension={useMemo(
                                     () => [
                                         EditorView.lineWrapping,
                                         queryCompletion,

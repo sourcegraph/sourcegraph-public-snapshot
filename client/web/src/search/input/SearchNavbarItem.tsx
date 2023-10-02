@@ -27,7 +27,6 @@ interface Props
     isSourcegraphDotCom: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    isLightTheme: boolean
 }
 
 const selectQueryState = ({
@@ -93,7 +92,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     queryState={queryState}
                     onChange={setQueryState}
                     onSubmit={onSubmit}
-                    isLightTheme={props.isLightTheme}
                     platformContext={props.platformContext}
                     authenticatedUser={props.authenticatedUser}
                     fetchSearchContexts={props.fetchSearchContexts}

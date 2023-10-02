@@ -54,7 +54,7 @@ const hoverStyle = [
         '.sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-02)',
         },
-        '&dark .sg-decorated-token-hover': {
+        '.theme-dark & .sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-08)',
         },
     }),
