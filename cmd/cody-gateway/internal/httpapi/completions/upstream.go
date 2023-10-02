@@ -52,7 +52,10 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (httpStatus int, flagged bool, _ error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
-	transformBody func(*ReqT, *actor.Actor)
+	//
+	// If the upstream supports it, the given identifier string should be
+	// provided to assist in abuse detection.
+	transformBody func(_ *ReqT, identifier string)
 	// transformRequest can be used to modify the HTTP request before it is sent
 	// upstream. To manipulate the body, use transformBody.
 	transformRequest func(*http.Request)
@@ -168,7 +171,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 
-			methods.transformBody(&body, act)
+			// identifier that can be provided to upstream for abuse detection
+			// has the format '$ACTOR_ID:$SG_ACTOR_ID'. The latter is anonymized
+			// (specific per-instance)
+			identifier := fmt.Sprintf("%s:%s", act.ID, sgActorID)
+			methods.transformBody(&body, identifier)
 
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
