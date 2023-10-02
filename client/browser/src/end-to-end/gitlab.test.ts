@@ -17,7 +17,7 @@ const { sourcegraphBaseUrl, ...restConfig } = getConfig('sourcegraphBaseUrl')
 describe('Sourcegraph browser extension on Gitlab Server', () => {
     let driver: Driver
 
-    before(async function () {
+    before(async function() {
         this.timeout(4 * 60 * 1000)
         driver = await createDriverForTest({ loadExtension: true, sourcegraphBaseUrl })
 
@@ -48,7 +48,7 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     const url = new URL(
-        '/sourcegraph/jsonrpc2/blob/dbf20885e7ff39b0d5b64878148113e8433571f1/call_opt.go',
+        '/SourcegraphCody/jsonrpc2/blob/dbf20885e7ff39b0d5b64878148113e8433571f1/call_opt.go',
         GITLAB_BASE_URL
     )
     testSingleFilePage({
