@@ -14,7 +14,6 @@ func TestFromCiphertext(t *testing.T) {
 		Ciphertext: []byte("ciphertext"),
 		Nonce:      []byte("nonce"),
 	}
-	sek.SetChecksum([]byte("plaintext"))
 
 	serialized, err := sek.Serialize()
 	require.NoError(t, err)
@@ -23,14 +22,4 @@ func TestFromCiphertext(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, sek, recoveredSek)
-}
-
-func TestChecksum(t *testing.T) {
-	sek := &StorableEncryptedKey{}
-	plaintext := []byte("plaintext")
-	sek.SetChecksum(plaintext)
-
-	require.NoError(t, sek.VerifyChecksum(plaintext))
-
-	require.Error(t, sek.VerifyChecksum([]byte("wrong plaintext")))
 }

@@ -3,7 +3,6 @@ package wrapper
 import (
 	"encoding/base64"
 	"encoding/json"
-	"hash/crc32"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,8 +18,6 @@ type StorableEncryptedKey struct {
 	Ciphertext []byte
 	// Nonce is an additional value to store a nonce that was used to encrypt Ciphertext.
 	Nonce []byte
-	// Checksum is a checksum of the unencrypted value to detect corruption.
-	Checksum uint32
 }
 
 func FromCiphertext(ciphertext []byte) (*StorableEncryptedKey, error) {
@@ -42,21 +39,4 @@ func (sek *StorableEncryptedKey) Serialize() ([]byte, error) {
 		return nil, errors.Wrap(err, "marshaling StorableEncryptedKey to JSON")
 	}
 	return []byte(base64.StdEncoding.EncodeToString(jsonKey)), nil
-}
-
-func (sek *StorableEncryptedKey) SetChecksum(plaintext []byte) {
-	sek.Checksum = crc32Sum(plaintext)
-}
-
-func (sek *StorableEncryptedKey) VerifyChecksum(plaintext []byte) error {
-	if crc32Sum(plaintext) != sek.Checksum {
-		return errors.New("invalid checksum, either the wrong key was used, or the request was corrupted in transit")
-	}
-
-	return nil
-}
-
-func crc32Sum(data []byte) uint32 {
-	t := crc32.MakeTable(crc32.Castagnoli)
-	return crc32.Checksum(data, t)
 }

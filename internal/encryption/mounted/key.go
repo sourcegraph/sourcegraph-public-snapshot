@@ -88,7 +88,7 @@ func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 		Ciphertext: ev.Ciphertext,
 		Nonce:      ev.Nonce,
 	}
-	ek.SetChecksum(plaintext)
+
 	return ek.Serialize()
 }
 
@@ -120,10 +120,6 @@ func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secre
 			return nil, err
 		}
 
-		if err := wr.VerifyChecksum(plaintext); err != nil {
-			return nil, errors.New("invalid checksum, either the wrong key was used, or the request was corrupted in transit")
-		}
-
 		s := encryption.NewSecret(string(plaintext))
 		return &s, nil
 	case mechanismEnvelope:
@@ -148,10 +144,6 @@ func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secre
 			Nonce:      wr.Nonce,
 		})
 		if err != nil {
-			return nil, err
-		}
-
-		if err := wr.VerifyChecksum(plaintext); err != nil {
 			return nil, err
 		}
 

@@ -137,11 +137,6 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*encryption.Secre
 			return nil, err
 		}
 
-		// Verify the data.
-		if err := wr.VerifyChecksum(plaintext); err != nil {
-			return nil, err
-		}
-
 		s := encryption.NewSecret(string(plaintext))
 		return &s, nil
 	default:
@@ -172,7 +167,7 @@ func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 		Ciphertext: ev.Ciphertext,
 		Nonce:      ev.Nonce,
 	}
-	ek.SetChecksum(plaintext)
+
 	return ek.Serialize()
 }
 
