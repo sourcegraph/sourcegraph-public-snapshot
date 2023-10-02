@@ -16,6 +16,7 @@ import (
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/paths"
@@ -41,9 +42,10 @@ const (
 	embedEntireFileTokensThreshold          = 384
 	embeddingChunkTokensThreshold           = 256
 	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
-	embeddingsBatchSize                     = 512
 	embeddingsTolerableFailureRatio         = 0.10
 )
+
+var embeddingsBatchSize = env.MustGetInt("SRC_EMBEDDINGS_BATCH_SIZE", 512, "Number of chunks to embed at a time.")
 
 var splitOptions = codeintelContext.SplitOptions{
 	NoSplitTokensThreshold:         embedEntireFileTokensThreshold,
