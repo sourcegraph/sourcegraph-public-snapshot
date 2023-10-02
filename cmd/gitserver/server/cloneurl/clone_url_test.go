@@ -1,4 +1,4 @@
-package repos
+package cloneurl
 
 import (
 	"context"

@@ -493,16 +493,9 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
            To use Sourcegraph on private repositories, 
           <a
             class="anchorLink"
-            href="https://about.sourcegraph.com/app"
-          >
-            download Cody app
-          </a>
-           or 
-          <a
-            class="anchorLink"
             href="https://sourcegraph.com/get-started?t=enterprise"
           >
-            get Sourcegraph Enterprise
+            consider Sourcegraph Enterprise
           </a>
           .
         </p>

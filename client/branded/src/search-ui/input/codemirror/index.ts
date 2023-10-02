@@ -64,10 +64,6 @@ export const singleLine = EditorState.transactionFilter.of(transaction => {
 interface CreateDefaultSuggestionsOptions extends Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
     navigate?: NavigateFunction
-    /**
-     * Whether or not to allow suggestions selection by Enter key.
-     */
-    applyOnEnter?: boolean
 }
 
 /**
@@ -80,7 +76,6 @@ export const createDefaultSuggestions = ({
     disableFilterCompletion,
     disableSymbolCompletion,
     navigate,
-    applyOnEnter,
     showWhenEmpty,
 }: CreateDefaultSuggestionsOptions): Extension => [
     searchQueryAutocompletion(
@@ -90,10 +85,8 @@ export const createDefaultSuggestions = ({
             disableSymbolCompletion,
             disableFilterCompletion,
             showWhenEmpty,
-            applyOnEnter,
         }),
-        navigate,
-        applyOnEnter
+        navigate
     ),
     loadingIndicator(),
 ]
