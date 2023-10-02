@@ -26,6 +26,10 @@ go_test(
         "//:darwin_docker_e2e_go": "darwin",
         "//conditions:default": None,
     }),  # Force targeting darwin/arm64 if we're building for locally running e2e tests.
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     visibility = [
         "//testing:__pkg__",
         "//testing:__subpackages__",
