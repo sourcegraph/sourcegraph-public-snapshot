@@ -12,6 +12,8 @@ public interface Icons {
     Icon Indexed = IconLoader.getIcon("/icons/repositoryIndexed.svg", Icons.class);
     Icon NoEmbedding = IconLoader.getIcon("/icons/repositoryNoEmbedding.svg", Icons.class);
     Icon Missing = IconLoader.getIcon("/icons/repositoryMissing.svg", Icons.class);
+    Icon NotFoundOnInstance =
+        IconLoader.getIcon("/icons/repositoryNotFoundOnInstance.svg", Icons.class);
   }
 
   interface Actions {
@@ -23,6 +25,9 @@ public interface Icons {
     Icon CodyAvailable = IconLoader.getIcon("/icons/codyLogoMonochromatic.svg", Icons.class);
     Icon CodyAutocompleteDisabled =
         IconLoader.getIcon("/icons/codyLogoMonochromaticMuted.svg", Icons.class);
+
+    Icon CodyAutocompleteUnavailable =
+        IconLoader.getIcon("/icons/codyLogoMonochromaticUnavailable.svg", Icons.class);
   }
 
   interface Onboarding {

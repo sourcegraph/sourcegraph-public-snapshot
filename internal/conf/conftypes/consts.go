@@ -43,6 +43,32 @@ type EmbeddingsConfig struct {
 	MaxTextEmbeddingsPerRepo   int
 	PolicyRepositoryMatchLimit *int
 	ExcludeChunkOnError        bool
+	Qdrant                     QdrantConfig
+}
+
+type QdrantConfig struct {
+	Enabled                  bool
+	QdrantHNSWConfig         QdrantHNSWConfig
+	QdrantOptimizersConfig   QdrantOptimizersConfig
+	QdrantQuantizationConfig QdrantQuantizationConfig
+}
+
+type QdrantHNSWConfig struct {
+	EfConstruct       *uint64
+	FullScanThreshold *uint64
+	M                 *uint64
+	OnDisk            bool
+	PayloadM          *uint64
+}
+
+type QdrantOptimizersConfig struct {
+	IndexingThreshold uint64
+	MemmapThreshold   uint64
+}
+
+type QdrantQuantizationConfig struct {
+	Enabled  bool
+	Quantile float32
 }
 
 type EmbeddingsProviderName string

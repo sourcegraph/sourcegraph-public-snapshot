@@ -33,9 +33,10 @@ func TestGetAndSaveUser(t *testing.T) {
 		createIfNotExistIrrelevant bool
 
 		// expected return values
-		expUserID  int32
-		expSafeErr string
-		expErr     error
+		expUserID         int32
+		expSafeErr        string
+		expErr            error
+		expNewUserCreated bool
 
 		// expected side effects
 		expSavedExtAccts                 map[int32][]extsvc.AccountSpec
@@ -107,6 +108,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct exists, username and email don't exist",
@@ -121,6 +123,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct exists, email belongs to another user",
@@ -135,6 +138,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct doesn't exist, user with username and email exists",
@@ -149,6 +153,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
@@ -175,6 +180,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should create user",
@@ -192,6 +198,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                true,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
@@ -200,8 +207,9 @@ func TestGetAndSaveUser(t *testing.T) {
 					UserProps:        userProps("u-new", "u-new@example.com"),
 					CreateIfNotExist: false,
 				},
-				expSafeErr: "User account with verified email \"u-new@example.com\" does not exist. Ask a site admin to create your account and then verify your email.",
-				expErr:     database.MockUserNotFoundErr,
+				expSafeErr:        "User account with verified email \"u-new@example.com\" does not exist. Ask a site admin to create your account and then verify your email.",
+				expErr:            database.MockUserNotFoundErr,
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct exists, (ignore username and email), authenticated",
@@ -217,6 +225,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, email and username match, authenticated",
@@ -232,6 +241,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, email matches but username doesn't, authenticated",
@@ -248,6 +258,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, email doesn't match existing user, authenticated",
@@ -267,6 +278,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, user has same username, lookupByUsername=true",
@@ -282,6 +294,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 		},
 	}
@@ -396,7 +409,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
-						userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
+						newUserCreated, userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
 
 						if userID != c.expUserID {
 							t.Errorf("mismatched userID, want: %v, but got %v", c.expUserID, userID)
@@ -428,6 +441,10 @@ func TestGetAndSaveUser(t *testing.T) {
 
 						if c.expCalledGrantPendingPermissions != m.calledGrantPendingPermissions {
 							t.Fatalf("calledGrantPendingPermissions: want %v but got %v", c.expCalledGrantPendingPermissions, m.calledGrantPendingPermissions)
+						}
+
+						if newUserCreated != c.expNewUserCreated {
+							t.Errorf("mismatched newUserCreated, want %v but got %v", c.expNewUserCreated, newUserCreated)
 						}
 					})
 				}
@@ -465,7 +482,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
-		_, _, err := GetAndSaveUser(
+		_, _, _, err := GetAndSaveUser(
 			ctx,
 			db,
 			GetAndSaveUserOp{
@@ -588,7 +605,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
 				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
 			}
-			if _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
+			if _, _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
 				t.Fatal(err)
 			}
 			if user.DisplayName != test.wantDisplayName {

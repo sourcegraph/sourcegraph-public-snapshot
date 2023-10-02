@@ -57,6 +57,7 @@ go_library(
         "//internal/session",
         "//internal/src-prometheus",
         "//internal/telemetry",
+        "//internal/telemetry/teestore",
         "//internal/telemetry/telemetryrecorder",
         "//internal/trace",
         "//internal/usagestats",

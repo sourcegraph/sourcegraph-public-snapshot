@@ -122,7 +122,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             const args = { platform, version }
             this.log('BrowserExtensionConnectedToServer', args, args)
 
-            if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+            if (debugEventLoggingEnabled()) {
                 logger.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
         })
@@ -201,7 +201,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
-        if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+        if (debugEventLoggingEnabled()) {
             logger.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
@@ -458,6 +458,16 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 }
 
 export const eventLogger = new EventLogger()
+
+export function debugEventLoggingEnabled(): boolean {
+    return !!localStorage && localStorage.getItem('eventLogDebug') === 'true'
+}
+
+export function setDebugEventLoggingEnabled(enabled: boolean): void {
+    if (localStorage) {
+        localStorage.setItem('eventLogDebug', String(enabled))
+    }
+}
 
 /**
  * Log events associated with URL query string parameters, and remove those parameters as necessary

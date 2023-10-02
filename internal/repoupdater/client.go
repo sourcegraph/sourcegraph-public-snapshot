@@ -41,7 +41,7 @@ func repoUpdaterURLDefault() string {
 		return u
 	}
 
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return "http://127.0.0.1:3182"
 	}
 

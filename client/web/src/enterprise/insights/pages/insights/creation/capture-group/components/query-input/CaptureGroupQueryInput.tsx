@@ -1,5 +1,3 @@
-import { forwardRef } from 'react'
-
 import { mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -13,12 +11,11 @@ import {
 
 import styles from './CaptureGroupQueryInput.module.scss'
 
-export interface CaptureGroupQueryInputProps extends Omit<InsightQueryInputProps, 'patternType'> {}
+interface CaptureGroupQueryInputProps extends Omit<InsightQueryInputProps, 'patternType'> {}
 
-export const CaptureGroupQueryInput = forwardRef<HTMLInputElement, CaptureGroupQueryInputProps>((props, reference) => (
+export const CaptureGroupQueryInput: React.FunctionComponent<CaptureGroupQueryInputProps> = props => (
     <InsightQueryInput
         {...props}
-        ref={reference}
         patternType={SearchPatternType.regexp}
         className={classNames(props.className, styles.input)}
     >
@@ -28,4 +25,4 @@ export const CaptureGroupQueryInput = forwardRef<HTMLInputElement, CaptureGroupQ
             </Button>
         </Tooltip>
     </InsightQueryInput>
-))
+)

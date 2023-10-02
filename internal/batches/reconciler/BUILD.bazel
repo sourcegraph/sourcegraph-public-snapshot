@@ -49,7 +49,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/globals",
         "//internal/actor",
         "//internal/batches/sources",
         "//internal/batches/sources/testing",

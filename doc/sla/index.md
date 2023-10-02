@@ -94,9 +94,11 @@ td:first-child {
 }
 </style>
 
-# Service Level Agreements (SLAs)
+# SLAs and Premium Support
 
-<p class="subtitle">This document explains the Sourcegraph's default contractual Service Level Agreements.</p>
+<p class="subtitle">This document explains the Sourcegraph's default contractual Service Level Agreements and Premium Support Offerings.</p>
+
+## Service Level Agreements (SLAs)
 
 Our service level agreements (SLAs) are designed for products that are generally available and exclude [beta and experimental features](../admin/beta_and_experimental_features.md). SLA response times indicate how quickly we aim to provide an initial response to your inquiries or concerns. Our team will resolve all issues as quickly as possible. However, it's important to understand that SLA times differ from guaranteed resolution times.
 
@@ -113,7 +115,7 @@ The following policy applies to both our cloud-based (managed instance) and on-p
 | 2 | Medium impact: Core features are unavailable or somewhat slowed; workaround exists | Within eight business hours of identifying the issue | 24x5 (Monday-Friday) |
 | 3 | Minimal impact: Questions or clarifications regarding features, documentation, or deployments | Within two business days of identifying the issue | 24x5 (Monday-Friday) |
 
-## For enterprise Starter plans
+### For enterprise Starter plans
 
 | Severity level | Description | Response time | Support availability |
 | -------------- | ----------- | ------------- | -------------------- |
@@ -174,3 +176,35 @@ A Severity 0 - Emergency typically does not include the following situations:
 - Any issues with repository synchronization
 
 >NOTE: Custom support agreements apply to Enterprise Plus and Elite customers. Please consult your contract for details regarding custom service-level agreements.
+
+## Sourcegraph Premium Support
+
+### Benefits of Premium Support
+
+Purchasing Premium Support provides several of the following services beyond those provided by Sourcegraph's enterprise or enterprise starter support models:
+- Accelerated Service Level Agreements (SLAs) - Accelerated triaging and queue priority lead to reduced times to resolution.
+- Elevated Support Expertise - Two named, dedicated senior support engineers possessing deep knowledge and understanding of your specific organization’s setup and tech stack with the ability to assist in the resolution of issues that arise.
+- Heightened Support via Slack - Faster response times and closer collaboration through direct access to Sourcegraph experts with closer connection to end users and administrators.
+- More Proactive Collaboration - Hands-on technical guidance to ensure successful migrations, upgrades, and maintenance; early access to new features; quarterly insights reports.
+
+### Premium Support SLAs
+
+Premium Support SLAs give customers access to our Support team 24x7 for Severity 0 and 1 issues that critically impact your instance and ability to use Sourcegraph.
+
+First response times remain the same according to our SLAs. However, Emergency and Severe Impact issues are supported 24x7 with Premium Support (versus 24x5 without Premium Support).  
+
+This service is provided for all GA products Sourcegraph offers, not for any Experimental or Beta features (see here for more details).
+
+>NOTE: This package includes access to Slack Support & Slack Account Management
+
+### Dedicated Support
+
+Access to named senior support engineers who will have knowledge of your infrastructure and can help reduce the time needed to triage, diagnose, and resolve an issue in your instance.
+
+>NOTE: This package includes access to Slack Support & Slack Account Management
+
+### Slack Support & Slack Account Management
+
+Slack Support provides access to creating tickets directly from Slack, allowing customers to resolve tickets directly from a familiar interface and allowing for greater collaboration between Support and customers.
+
+Slack Account Management allows customers direct access to their Account team, including their Technical Advisor (if applicable). It can help resolve any non-technical issues or questions that come up.

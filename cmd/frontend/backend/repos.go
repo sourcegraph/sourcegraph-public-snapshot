@@ -101,7 +101,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
-	newName, err := s.add(ctx, name)
+	newName, err := s.addRepoToSourcegraphDotCom(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -115,10 +115,10 @@ var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
 }, []string{"status"})
 
-// add adds the repository with the given name to the database by calling
+// addRepoToSourcegraphDotCom adds the repository with the given name to the database by calling
 // repo-updater when in sourcegraph.com mode. It's possible that the repo has
 // been renamed on the code host in which case a different name may be returned.
-func (s *repos) add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
+func (s *repos) addRepoToSourcegraphDotCom(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
 	ctx, done := startTrace(ctx, "Add", name, &err)
 	defer done()
 
@@ -135,6 +135,8 @@ func (s *repos) add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 		metricIsRepoCloneable.WithLabelValues(status).Inc()
 	}()
 
+	// For package hosts, IsRepoCloneable is a noop, so we don't need to spend
+	// time talking to gitserver for those.
 	if !codehost.IsPackageHost() {
 		if err := s.gitserverClient.IsRepoCloneable(ctx, name); err != nil {
 			if ctx.Err() != nil {

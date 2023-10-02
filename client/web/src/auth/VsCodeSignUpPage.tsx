@@ -90,10 +90,6 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                 googleLabel="Continue with Google"
                 onClick={logEvent}
             />
-
-            <div className="mb-4">
-                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
-            </div>
         </>
     )
 
