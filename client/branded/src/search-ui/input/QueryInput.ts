@@ -6,12 +6,12 @@ import type {
 } from '@sourcegraph/shared/src/search'
 import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
-import type { IEditor } from './LazyQueryInput'
+import type { IEditor as BaseEditor } from './LazyQueryInput'
 
 /**
- * Props that the Monaco and CodeMirror implementation have in common.
+ * Props for the query input field.
  */
-export interface QueryInputProps
+export interface QueryInputProps<E extends BaseEditor = BaseEditor>
     extends Pick<CaseSensitivityProps, 'caseSensitive'>,
         SearchPatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
@@ -22,7 +22,7 @@ export interface QueryInputProps
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
-    onEditorCreated?: (editor: IEditor) => void
+    onEditorCreated?: (editor: E) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
 

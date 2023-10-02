@@ -63,7 +63,7 @@ export const ALIASES: Record<string, string> = {
 export const resolveFieldAlias = (field: string): string => ALIASES[field] || field
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
-export const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
+const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
 
 export const filterTypeKeys: FilterType[] = Object.keys(FilterType) as FilterType[]
 export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
@@ -71,7 +71,7 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
     ...Object.keys(AliasedFilterType),
 ] as (FilterType | AliasedFilterType)[]
 
-export enum NegatedFilters {
+enum NegatedFilters {
     author = '-author',
     committer = '-committer',
     content = '-content',
@@ -88,7 +88,7 @@ export enum NegatedFilters {
 }
 
 /** The list of filters that are able to be negated. */
-export type NegatableFilter =
+type NegatableFilter =
     | FilterType.repo
     | FilterType.file
     | FilterType.repohasfile
@@ -102,7 +102,7 @@ export const isNegatableFilter = (filter: FilterType): filter is NegatableFilter
     Object.keys(NegatedFilters).includes(filter)
 
 /** The list of all negated filters. i.e. all valid filters that have `-` as a suffix. */
-export const negatedFilters = Object.values(NegatedFilters)
+const negatedFilters = Object.values(NegatedFilters)
 
 export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
     negatedFilters.includes(filter as NegatedFilters)
@@ -157,7 +157,7 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
     description: (negated: boolean) => string
 }
 
-export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
+type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
 const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
     {
