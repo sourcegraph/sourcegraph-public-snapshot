@@ -1,3 +1,6 @@
+// Set globals first before any imports.
+import '../../config/page.entry'
+// Polyfill before other imports.
 import '@sourcegraph/shared/src/polyfills'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
@@ -65,11 +68,11 @@ async function init(): Promise<void> {
     const styleSheets = [
         {
             id: 'sourcegraph-styles',
-            cssURL: sourcegraphURL + '/.assets/extension/css/style.bundle.css',
+            cssURL: sourcegraphURL + '/.assets/extension/css/app.bundle.css',
         },
         {
             id: 'sourcegraph-styles-css-modules',
-            cssURL: sourcegraphURL + '/.assets/extension/css/inject.bundle.css',
+            cssURL: sourcegraphURL + '/.assets/extension/css/contentPage.main.bundle.css',
         },
     ]
     await Promise.all(styleSheets.map(appendHeadStyles))
