@@ -44,6 +44,7 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/auth",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
@@ -53,6 +54,7 @@ go_test(
         "//internal/search/exhaustive/types",
         "//internal/uploadstore/mocks",
         "//lib/iterator",
+        "//schema",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_stretchr_testify//require",
     ],

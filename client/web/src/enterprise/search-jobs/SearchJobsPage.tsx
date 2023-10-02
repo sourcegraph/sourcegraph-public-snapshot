@@ -185,7 +185,10 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                 description={
                     <>
                         Manage Sourcegraph queries that have been run exhaustively to return all results.{' '}
-                        <Link to="">Learn more</Link> about search jobs.
+                        <Link to="/help/code_search/how-to/search-jobs" target="_blank" rel="noopener noreferrer">
+                            Learn more
+                        </Link>{' '}
+                        about search jobs.
                     </>
                 }
             />
@@ -469,7 +472,12 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
                     limit.
                 </Text>
 
-                <Text>Learn more in the search jobs documentation page.</Text>
+                <Text>
+                    Learn more in the search jobs{' '}
+                    <Link to="/help/code_search/how-to/search-jobs" target="_blank" rel="noopener noreferrer">
+                        documentation page
+                    </Link>
+                </Text>
             </div>
         </div>
     )

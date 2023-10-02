@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -25,11 +26,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExhaustiveSearch(t *testing.T) {
 	// This test exercises the full worker infra from the time a search job is
 	// created until it is done.
+
+	enabled := true
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{SearchJobs: &enabled}}})
+	defer conf.Mock(nil)
 
 	require := require.New(t)
 	observationCtx := observation.TestContextTB(t)
