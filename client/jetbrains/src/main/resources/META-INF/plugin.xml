@@ -145,6 +145,16 @@
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
             <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>
+        <action id="cody.cycleForwardAutocompleteAction"
+                class="com.sourcegraph.cody.autocomplete.action.CycleForwardAutocompleteAction">
+            <keyboard-shortcut first-keystroke="alt OPEN_BRACKET" keymap="$default"/>
+            <override-text place="MainMenu" text="Cycle Autocomplete Suggestion"/>
+        </action>
+        <action id="cody.cycleBackAutocompleteAction"
+                class="com.sourcegraph.cody.autocomplete.action.CycleBackwardAutocompleteAction">
+            <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET" keymap="$default"/>
+            <override-text place="MainMenu" text="Cycle Autocomplete Suggestion"/>
+        </action>
 
         <action id="cody.disposeInlays" class="com.sourcegraph.cody.autocomplete.action.DisposeInlaysAction">
             <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>

@@ -226,16 +226,14 @@ class CodyAutocompleteManager {
       return
     }
     val inlayModel = editor.inlayModel
-    val item =
-        result.items.firstOrNull()
-            ?: run {
-              // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
-              // We don't do anything now because it's unclear what would be the most idiomatic
-              // IntelliJ API to use.
-              if (triggerKind == InlineCompletionTriggerKind.INVOKE)
-                  logger.warn("autocomplete returned empty suggestions")
-              return
-            }
+    if (result.items.isEmpty()) {
+      // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
+      // We don't do anything now because it's unclear what would be the most idiomatic
+      // IntelliJ API to use.
+      if (triggerKind == InlineCompletionTriggerKind.INVOKE)
+          logger.warn("autocomplete returned empty suggestions")
+      return
+    }
     ApplicationManager.getApplication().invokeLater {
       if (cancellationToken.isCancelled) {
         return@invokeLater
@@ -251,11 +249,11 @@ class CodyAutocompleteManager {
       if (LookupManager.getInstance(project).activeLookup != null) {
         if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
             UserLevelConfig.isVerboseLoggingEnabled()) {
-          logger.warn("Skipping autocomplete because lookup is active: $item")
+          logger.warn("Skipping autocomplete because lookup is active: ${result.items.first()}")
         }
         return@invokeLater
       }
-      displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind)
+      displayAgentAutocomplete(editor, offset, result.items, inlayModel, triggerKind)
     }
   }
 
@@ -265,17 +263,19 @@ class CodyAutocompleteManager {
    * The reason we have a custom code path to render hints for agent autocompletions is because we
    * can use `insertText` directly and the `range` encloses the entire line.
    */
-  private fun displayAgentAutocomplete(
+  fun displayAgentAutocomplete(
       editor: Editor,
       offset: Int,
-      item: InlineAutocompleteItem,
+      items: List<InlineAutocompleteItem>,
       inlayModel: InlayModel,
       triggerKind: InlineCompletionTriggerKind
   ) {
-    val range = getTextRange(editor.document, item.range)
+    val defaultItem = items.firstOrNull() ?: return
+    val range = getTextRange(editor.document, defaultItem.range)
     val originalText = editor.document.getText(range)
-    val insertTextFirstLine: String = item.insertText.lines().firstOrNull() ?: ""
-    val multilineInsertText: String = item.insertText.lines().drop(1).joinToString(separator = "\n")
+    val insertTextFirstLine: String = defaultItem.insertText.lines().firstOrNull() ?: ""
+    val multilineInsertText: String =
+        defaultItem.insertText.lines().drop(1).joinToString(separator = "\n")
 
     // Run Myers diff between the existing text in the document and the first line of the
     // `insertText` that is returned from the agent.
@@ -300,7 +300,7 @@ class CodyAutocompleteManager {
       inlayModel.addInlineElement(
           range.startOffset + delta.original.position,
           true,
-          CodyAutocompleteSingleLineRenderer(text, item, editor, AutocompleteRendererType.INLINE))
+          CodyAutocompleteSingleLineRenderer(text, items, editor, AutocompleteRendererType.INLINE))
     }
 
     // Insert remaining lines of multiline completions as a single block element under the
@@ -313,7 +313,7 @@ class CodyAutocompleteManager {
           true,
           false,
           Int.MAX_VALUE,
-          CodyAutocompleteBlockElementRenderer(multilineInsertText, item, editor))
+          CodyAutocompleteBlockElementRenderer(multilineInsertText, items, editor))
     }
   }
 

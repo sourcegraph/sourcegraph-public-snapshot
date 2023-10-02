@@ -14,7 +14,7 @@ import java.util.function.Supplier
 
 abstract class CodyAutocompleteElementRenderer(
     val text: String,
-    val completionItem: InlineAutocompleteItem,
+    val completionItems: List<InlineAutocompleteItem>,
     protected val editor: Editor,
     val type: AutocompleteRendererType
 ) : EditorCustomElementRenderer {
