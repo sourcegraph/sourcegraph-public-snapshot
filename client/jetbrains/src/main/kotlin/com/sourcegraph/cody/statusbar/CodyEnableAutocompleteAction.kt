@@ -5,7 +5,7 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.config.ConfigUtil
 
-class CodyEnableAutocompleteAction : DumbAwareAction() {
+class CodyEnableAutocompleteAction : DumbAwareAction("Enable Cody Autocomplete") {
   override fun actionPerformed(e: AnActionEvent) {
     CodyApplicationSettings.instance.isCodyAutocompleteEnabled = true
   }

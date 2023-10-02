@@ -5,7 +5,7 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAwareAction
 import com.sourcegraph.cody.config.ui.CodyConfigurable
 
-class CodyOpenSettingsAction : DumbAwareAction() {
+class CodyOpenSettingsAction : DumbAwareAction("Open Settings") {
   override fun actionPerformed(e: AnActionEvent) {
     ShowSettingsUtil.getInstance().showSettingsDialog(e.project, CodyConfigurable::class.java)
   }

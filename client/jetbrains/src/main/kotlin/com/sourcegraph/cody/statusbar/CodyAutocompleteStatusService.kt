@@ -79,7 +79,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
     }
   }
 
-  override fun dispose() {}
+  override fun dispose() = Unit
 
   companion object {
 
