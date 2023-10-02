@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -101,6 +102,7 @@ func Init(logger log.Logger, c WatchableConfigurationSource) {
 	// Create and set up global tracers from provider. We will be making updates to these
 	// tracers through the debugMode ref and underlying provider.
 	otelTracerProvider := newTracer(logger, provider, debugMode)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
 	otel.SetTracerProvider(otelTracerProvider)
 
 	// Initially everything is disabled since we haven't read conf yet - start a goroutine

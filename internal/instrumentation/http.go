@@ -38,9 +38,7 @@ var defaultOTELHTTPOptions = []otelhttp.Option{
 	// Disable OTEL metrics which can be quite high-cardinality by setting
 	// a no-op MeterProvider.
 	otelhttp.WithMeterProvider(noop.NewMeterProvider()),
-	// Make sure we use the global propagator, which should be set up on
-	// service initialization to support all our commonly used propagation
-	// formats (OpenTelemetry, W3c, Jaeger, etc)
+	// tracePropagator uses the W3C standard for trace context to propagate traces across services
 	otelhttp.WithPropagators(otel.GetTextMapPropagator()),
 }
 
