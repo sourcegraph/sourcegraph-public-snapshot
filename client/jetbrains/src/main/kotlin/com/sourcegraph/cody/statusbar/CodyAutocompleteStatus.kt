@@ -30,7 +30,7 @@ enum class CodyAutocompleteStatus : PresentableEnum, WithIcon {
     override val icon: Icon = Icons.StatusBar.CodyAutocompleteUnavailable
   },
   CodyAgentNotRunning {
-    override fun getPresentableText(): String = "Cody Agent not running"
+    override fun getPresentableText(): String = "Cody encountered an unexpected error"
 
     override val icon: Icon = Icons.StatusBar.CodyAutocompleteUnavailable
   },

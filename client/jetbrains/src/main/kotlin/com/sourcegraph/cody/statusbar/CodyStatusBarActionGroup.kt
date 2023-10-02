@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.statusbar
 
-import com.intellij.idea.ActionsBundle
+import com.intellij.ide.actions.AboutAction
 import com.intellij.internal.OpenLogAction
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -14,6 +14,18 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
   }
 
   override fun getChildren(e: AnActionEvent?): Array<AnAction> {
+    if (CodyAutocompleteStatusService.getCurrentStatus() ==
+        CodyAutocompleteStatus.CodyAgentNotRunning)
+        return listOf(
+                OpenLogAction().apply {
+                  templatePresentation.text = "Open Log To Troubleshoot Issue"
+                },
+                AboutAction().apply {
+                  templatePresentation.text = "Open About To Troubleshoot Issue"
+                },
+                ReportCodyBugAction())
+            .toTypedArray()
+
     return listOfNotNull(
             CodyEnableAutocompleteAction(),
             CodyDisableAutocompleteAction(),
@@ -21,12 +33,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
             CodyDisableLanguageForAutocompleteAction(),
             CodyManageAccountsAction(),
             CodyOpenSettingsAction(),
-            if (CodyAutocompleteStatusService.getCurrentStatus() ==
-                CodyAutocompleteStatus.CodyAgentNotRunning)
-                OpenLogAction().apply {
-                  templatePresentation.text = ActionsBundle.message("action.OpenLog.text")
-                }
-            else null)
+        )
         .toTypedArray()
   }
 }

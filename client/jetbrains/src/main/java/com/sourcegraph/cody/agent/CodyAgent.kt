@@ -87,6 +87,7 @@ class CodyAgent(private val project: Project) : Disposable {
     } catch (e: Exception) {
       agentNotRunningExplanation = "unable to start Cody agent"
       logger.warn(agentNotRunningExplanation, e)
+      CodyAutocompleteStatusService.resetApplication(project)
     }
   }
 
