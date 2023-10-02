@@ -162,7 +162,6 @@ commands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      ENTERPRISE: 1
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
@@ -220,8 +219,6 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
-    env:
-      ENTERPRISE: 1
     watch:
       - lib
       - internal
@@ -389,7 +386,6 @@ commands:
     cmd: ./node_modules/.bin/gulp --color dev
     install: pnpm install
     env:
-      ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
@@ -415,14 +411,12 @@ commands:
     description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
-      ENTERPRISE: 1
       INTEGRATION_TESTS: true
 
   web-integration-build-prod:
     description: Build production web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
-      ENTERPRISE: 1
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
@@ -940,7 +934,6 @@ commands:
       go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
-      ENTERPRISE: 1
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       WEBPACK_DEV_SERVER: 1
@@ -992,7 +985,6 @@ bazelCommands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      ENTERPRISE: 1
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
@@ -1005,8 +997,6 @@ bazelCommands:
     target: //cmd/repo-updater
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    env:
-      ENTERPRISE: 1
   symbols:
     target: //enterprise/cmd/symbols
     checkBinary: .bin/symbols
@@ -1466,15 +1456,11 @@ commandsets:
     commands:
       - web-standalone-http
       - caddy
-    env:
-      ENTERPRISE: 1
 
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
       - caddy
-    env:
-      ENTERPRISE: 1
 
   # For testing our OpenTelemetry stack
   otel:
