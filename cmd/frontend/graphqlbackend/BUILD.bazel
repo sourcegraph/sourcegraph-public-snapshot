@@ -52,7 +52,6 @@ go_library(
         "default_settings.go",
         "doc.go",
         "dotcom.go",
-        "email_invitation.go",
         "embeddings.go",
         "empty_response.go",
         "event_log.go",
