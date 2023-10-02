@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -21,6 +22,11 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
+	// No code monitors on sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		return nil
+	}
+
 	enterpriseServices.CodeMonitorsResolver = resolvers.NewResolver(log.Scoped("codeMonitorResolver", ""), db)
 	return nil
 }

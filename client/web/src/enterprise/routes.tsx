@@ -62,7 +62,12 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.CodeMonitoring,
-        element: <LegacyRoute render={props => <GlobalCodeMonitoringArea {...props} />} />,
+        element: (
+            <LegacyRoute
+                condition={props => props.codeMonitoringEnabled}
+                render={props => <GlobalCodeMonitoringArea {...props} />}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.Insights,

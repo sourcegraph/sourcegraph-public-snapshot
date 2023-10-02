@@ -68,7 +68,7 @@ const hardcodedConfig = {
     codeInsightsEnabled: true,
     searchContextsEnabled: true,
     notebooksEnabled: true,
-    codeMonitoringEnabled: true,
+    codeMonitoringEnabled: !window.context?.sourcegraphDotComMode,
     searchAggregationEnabled: true,
     ownEnabled: true,
 } satisfies StaticHardcodedAppConfig

@@ -146,7 +146,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isCodyApp && !isSourcegraphDotCom
+    const showCodeMonitoring = codeMonitoringEnabled && !isCodyApp
     const showSearchNotebook = notebooksEnabled && !isCodyApp && !isSourcegraphDotCom
     const isLicensed = !!window.context?.licenseInfo || isCodyApp // Assume licensed when running as a native app
     const showBatchChanges = props.batchChangesEnabled && isLicensed && !isCodyApp && !isSourcegraphDotCom

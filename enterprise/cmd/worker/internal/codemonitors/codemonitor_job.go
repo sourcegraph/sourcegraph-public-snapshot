@@ -3,6 +3,7 @@ package codemonitors
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
@@ -26,6 +27,11 @@ func (j *codeMonitorJob) Config() []env.Config {
 }
 
 func (j *codeMonitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	// No code monitors on sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
