@@ -2112,7 +2112,6 @@ func (s *permsStore) scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User,
 		&u.BuiltinAuth,
 		&u.InvalidatedSessionsAt,
 		&u.TosAccepted,
-		&u.Searchable,
 		&dbutil.NullTime{Time: &updatedAt},
 	)
 	if err != nil {
@@ -2137,7 +2136,6 @@ SELECT
 	users.passwd IS NOT NULL,
 	users.invalidated_sessions_at,
 	users.tos_accepted,
-	users.searchable,
 	urp.updated_at AS permissions_updated_at
 FROM
 	users

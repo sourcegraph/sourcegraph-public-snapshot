@@ -856,7 +856,6 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	CompletedPostSignup   bool
-	Searchable            bool
 	SCIMControlled        bool
 }
 

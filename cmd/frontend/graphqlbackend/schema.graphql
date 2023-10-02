@@ -278,10 +278,6 @@ type Mutation {
     """
     setTosAccepted(userID: ID): EmptyResponse!
     """
-    Current user opt in/out from being searchable in the users picker.
-    """
-    setSearchable(searchable: Boolean!): EmptyResponse!
-    """
     Sets the user to have completed the post-signup flow.
     If the ID is omitted, the current user is assumed.
 
@@ -6450,10 +6446,6 @@ type User implements Node & SettingsSubject & Namespace {
     Whether the user has already accepted the terms of service or not.
     """
     tosAccepted: Boolean!
-    """
-    Whether the user accepted to be searched in the users picker or not.
-    """
-    searchable: Boolean!
     """
     The user's usage statistics on Sourcegraph.
     """
