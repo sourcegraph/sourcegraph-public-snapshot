@@ -96,7 +96,9 @@ impl<'a> Scope<'a> {
                 if child.range.end_line == reference.range.end_line
                     && child.range.end_col == reference.range.end_col
                 {
-                    todo!("I'm not sure what to do yet, think more now (is a scope with the same range being recorded twice?)");
+                    // We're generally safe to ignore this, I believe; I'll take the safe route and return here
+                    eprintln!("TODO: I'm not sure what to do yet, think more now (is a scope with the same range being recorded twice?)");
+                    return;
                 }
 
                 self.children[idx].insert_reference(reference);
@@ -302,10 +304,16 @@ pub enum ScopeModifier {
     Global,
 }
 
+/// Define how strong a definition is, useful for languages that use
+/// the same syntax for defining a variable and setting it, like Python.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum DefinitionStrength {
+    /// A "strong" definition will record the latest definition
+    /// in scope as the definition site.
     #[default]
     Strong,
+    /// A "weak" definition will record the first definition
+    /// in scope as the definition site.
     Weak,
 }
 
