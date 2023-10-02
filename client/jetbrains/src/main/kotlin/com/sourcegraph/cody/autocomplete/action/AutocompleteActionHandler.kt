@@ -25,12 +25,6 @@ open class AutocompleteActionHandler : EditorActionHandler() {
   private fun hasAnyAutocompleteItems(project: Project, caret: Caret): Boolean =
       CodyAgent.isConnected(project) && getCurrentAutocompleteItem(caret) != null
 
-  protected fun hasMultipleAutocompleteItems(project: Project, caret: Caret): Boolean {
-    val allAutocompleteItems = getAllAutocompleteItems(caret)
-    logger.warn("allAutocompleteItems: ${allAutocompleteItems.size}")
-    return CodyAgent.isConnected(project) && allAutocompleteItems.isNotEmpty()
-  }
-
   private fun getAutocompleteRenderers(caret: Caret): List<CodyAutocompleteElementRenderer> =
       InlayModelUtil.getAllInlaysForEditor(caret.editor)
           .map { it.renderer }
