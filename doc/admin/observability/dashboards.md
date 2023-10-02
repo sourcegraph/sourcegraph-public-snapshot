@@ -30829,6 +30829,27 @@ Query: `sum(src_telemetrygatewayexporter_queue_size)`
 
 <br />
 
+#### telemetry: telemetry_gateway_exporter_queue_growth
+
+<p class="subtitle">Rate of growth of export queue over 30m</p>
+
+A positive value indicates the queue is growing.
+
+Refer to the [alerts reference](./alerts.md#telemetry-telemetry-gateway-exporter-queue-growth) for 2 alerts related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(deriv(src_telemetrygatewayexporter_queue_size[30m]))`
+
+</details>
+
+<br />
+
 #### telemetry: src_telemetrygatewayexporter_exported_events
 
 <p class="subtitle">Events exported from queue per hour</p>
@@ -30837,7 +30858,7 @@ The number of events being exported.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100310` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
 
@@ -30858,7 +30879,7 @@ The number of events exported in each batch.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100311` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
 

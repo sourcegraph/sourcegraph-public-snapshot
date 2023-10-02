@@ -39,6 +39,25 @@ func Telemetry() *monitoring.Dashboard {
 							Interpretation: "The number of events queued to be exported.",
 						},
 						{
+							Name:           "telemetry_gateway_exporter_queue_growth",
+							Description:    "rate of growth of export queue over 30m",
+							Owner:          monitoring.ObservableOwnerDataAnalytics,
+							Query:          `max(deriv(src_telemetrygatewayexporter_queue_size[30m]))`,
+							Panel:          monitoring.Panel().LegendFormat("growth").MinAuto(),
+							Interpretation: `A positive value indicates the queue is growing.`,
+							// Warn when steadily growing
+							Warning: monitoring.Alert().Greater(1).For(1 * time.Hour),
+							// Critical when it grows without ever reducing
+							Critical: monitoring.Alert().Greater(1).For(36 * time.Hour),
+							NextSteps: `
+								- Increase 'TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE' to export more events per batch.
+								- Reduce 'TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL' to schedule more export jobs.
+								- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details to see if any export errors are occuring - if logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph's Telemetry Gateway service.
+							`,
+						},
+					},
+					{
+						{
 							Name:           "src_telemetrygatewayexporter_exported_events",
 							Description:    "events exported from queue per hour",
 							Owner:          monitoring.ObservableOwnerDataAnalytics,
