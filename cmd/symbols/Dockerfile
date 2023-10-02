@@ -22,7 +22,7 @@ RUN cargo rustc --release --bin scip-ctags
 
 RUN cp ./target/release/scip-ctags /usr/local/bin/scip-ctags
 
-FROM golang:1.19.8-alpine@sha256:841c160ed35923d96c95c52403c4e6db5decd9cbce034aa851e412ade5d4b74f AS symbols-build
+FROM golang:1.19.8-alpine@sha256:1a444aca58a76ddde335f566b80c31dab081dffd52f3c60367cc3744bd323079 AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
