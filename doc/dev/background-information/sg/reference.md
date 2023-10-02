@@ -51,6 +51,7 @@ Available comamndsets in `sg.config.yaml`:
 * monitoring-alerts
 * otel
 * qdrant
+* single-program
 * web-standalone
 * web-standalone-prod
 
@@ -105,6 +106,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor-firecracker
 * codeintel-executor-kubernetes
 * codeintel-worker
+* cody-app: Cody App
 * cody-gateway
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
@@ -130,7 +132,7 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
-* sourcegraph: Single program (Go static binary) distribution
+* sourcegraph: Single-program distribution
 * storybook
 * symbols
 * syntax-highlighter

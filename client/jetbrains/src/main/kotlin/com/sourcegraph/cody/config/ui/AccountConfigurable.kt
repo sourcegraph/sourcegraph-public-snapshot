@@ -53,7 +53,7 @@ class AccountConfigurable(val project: Project) :
               .applyToComponent { this.preferredSize = Dimension(Int.MAX_VALUE, 200) }
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
-                  if (CodyAccountsHost.KEY.`is`(key)) accountsModel else null
+                  if (CodyAccountsHost.DATA_KEY.`is`(key)) accountsModel else null
                 }
               }
         }
@@ -90,7 +90,7 @@ class AccountConfigurable(val project: Project) :
     publisher.beforeAction(serverUrlChanged)
     super.apply()
     val context = AccountSettingChangeContext(serverUrlChanged, accessTokenChanged)
-    CodyAuthenticationManager.getInstance().setActiveAccount(project, activeAccount)
+    CodyAuthenticationManager.instance.setActiveAccount(project, activeAccount)
     accountsModel.activeAccount = activeAccount
     publisher.afterAction(context)
   }

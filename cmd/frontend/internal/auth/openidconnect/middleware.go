@@ -131,7 +131,11 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
-			RedirectToAuthRequest(w, r, p, stateCookieName, r.URL.Query().Get("redirect"))
+			redirect := r.URL.Query().Get("redirect")
+			if redirect == "" {
+				redirect = r.URL.Query().Get("returnTo")
+			}
+			RedirectToAuthRequest(w, r, p, stateCookieName, redirect)
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
@@ -332,14 +336,16 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 		return c.Value
 	}
 	anonymousId, _ := cookie.AnonymousUID(r)
-	actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
-
+	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 	if err != nil {
 		return nil,
 			safeErrMsg,
 			http.StatusInternalServerError,
 			errors.Wrap(err, "look up authenticated user")
 	}
+
+	// Add a ?signup= or ?signin= parameter to the redirect URL.
+	redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated)
 
 	user, err := db.Users().GetByID(r.Context(), actor.UID)
 	if err != nil {
@@ -355,7 +361,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 			AccessToken: oauth2Token.AccessToken,
 			TokenType:   oauth2Token.TokenType,
 		},
-		Redirect: state.Redirect,
+		Redirect: auth.SafeRedirectURL(redirectURL),
 	}, "", 0, nil
 }
 

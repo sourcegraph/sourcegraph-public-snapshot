@@ -48,12 +48,11 @@ message RepoQueueState {
 }
 
 message RepoLookupRequest {
+  reserved 2;
+  reserved "update";
+
   // Repo is the repository name to look up.
   string repo = 1;
-
-  // Update will enqueue a high priority git update for this repo if it
-  // exists and this field is true.
-  bool update = 2;
 }
 
 message RepoLookupResponse {

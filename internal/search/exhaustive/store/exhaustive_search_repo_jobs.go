@@ -24,10 +24,10 @@ var repoSearchJobWorkerOpts = dbworkerstore.Options[*types.ExhaustiveSearchRepoJ
 	OrderByExpression: sqlf.Sprintf("exhaustive_search_repo_jobs.state = 'errored', exhaustive_search_repo_jobs.updated_at DESC"),
 
 	StalledMaxAge: 60 * time.Second,
-	MaxNumResets:  0,
+	MaxNumResets:  maxNumResets,
 
 	RetryAfter:    5 * time.Second,
-	MaxNumRetries: 0,
+	MaxNumRetries: maxNumRetries,
 }
 
 // NewRepoSearchJobWorkerStore returns a dbworkerstore.Store that wraps the "exhaustive_search_repo_jobs" table.

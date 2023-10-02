@@ -87,6 +87,7 @@ JOIN user_external_accounts ON user_external_accounts.user_id = users.id
 WHERE
 	user_external_accounts.service_type = %s
 	AND user_external_accounts.created_at <= %s
+	AND user_external_accounts.deleted_at IS NULL
 GROUP BY user_id
 `,
 		auth.SourcegraphOperatorProviderType,
@@ -174,6 +175,7 @@ GROUP BY user_id
 	if err := h.db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
 		IDs:         deleteExternalAccountIDs,
 		ServiceType: auth.SourcegraphOperatorProviderType,
+		HardDelete:  true,
 	}); err != nil && !errcode.IsNotFound(err) {
 		return errors.Wrap(err, "remove SOAP accounts")
 	}

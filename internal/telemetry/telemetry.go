@@ -17,6 +17,15 @@ type constString string
 // Keys must be const strings.
 type EventMetadata map[constString]int64
 
+// MetadataBool returns 1 for true and 0 for false, for use in EventMetadata's
+// restricted int64 values.
+func MetadataBool(value bool) int64 {
+	if value {
+		return 1 // true
+	}
+	return 0 // 0
+}
+
 // EventBillingMetadata records metadata that attributes the event to product
 // billing categories.
 type EventBillingMetadata struct {

@@ -36,4 +36,10 @@ object CodyAgentManager {
     val service = project.getService(CodyAgent::class.java) ?: return
     service.shutdown()
   }
+
+  @JvmStatic
+  fun restartAgent(project: Project) {
+    stopAgent(project)
+    startAgent(project)
+  }
 }

@@ -95,10 +95,10 @@ function _run_server_image() {
 
   echo "--- Loading server image"
   echo "Loading $image_tarball in Docker"
-  docker load --input "$image_tarball"
+  "$image_tarball" # this is a shell script
 
   echo "-- Starting $image_name"
-  # echo "Listening at: $url"
+  echo "Listening at: $url"
   echo "Data and config volume bounds: $data"
   echo "Database startup timeout: $DB_STARTUP_TIMEOUT"
   echo "License key generator present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"

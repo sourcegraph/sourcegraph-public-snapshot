@@ -105,7 +105,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	stdr.SetVerbosity(10)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		if !deploy.IsApp() {
+		if !deploy.IsSingleBinary() {
 			logger.Warn("Skipping out-of-band migrations check")
 		}
 	} else {

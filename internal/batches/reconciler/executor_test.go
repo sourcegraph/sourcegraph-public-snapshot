@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
@@ -1217,7 +1215,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})
 
-	globals.SetExternalURL(&url.URL{Scheme: "https", Host: "sourcegraph.test"})
+	mockExternalURL(t, "https://sourcegraph.test")
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {

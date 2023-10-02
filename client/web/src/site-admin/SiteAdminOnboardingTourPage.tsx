@@ -12,7 +12,16 @@ import type {
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, Button, Alert } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    Text,
+    Container,
+    BeforeUnloadPrompt,
+    LoadingSpinner,
+    Button,
+    Alert,
+    Badge,
+} from '@sourcegraph/wildcard'
 
 import onboardingSchemaJSON from '../../../../schema/onboardingtour.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -101,7 +110,14 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
             <PageTitle title="End user onboarding" />
             <PageHeader className="mb-3">
                 <PageHeader.Heading as="h3" styleAs="h2">
-                    <PageHeader.Breadcrumb>End user onboarding</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>
+                        <span className="d-inline-flex align-items-center">
+                            <span>End user onboarding</span>{' '}
+                            <Badge className="ml-2" variant="warning">
+                                Experimental
+                            </Badge>
+                        </span>
+                    </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
             <Text>This settings controls the onboarding task list that is displayed to all users by default.</Text>

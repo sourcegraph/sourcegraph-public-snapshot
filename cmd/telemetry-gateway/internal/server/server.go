@@ -82,14 +82,23 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			// Validate self-reported instance identifier
 			switch metadata.GetIdentifier().Identifier.(type) {
 			case *telemetrygatewayv1.Identifier_LicensedInstance:
-				licenseKey := metadata.Identifier.GetLicensedInstance().GetLicenseKey()
-				licenseInfo, _, err := licensing.ParseProductLicenseKey(licenseKey)
+				identifier := metadata.Identifier.GetLicensedInstance()
+				licenseInfo, _, err := licensing.ParseProductLicenseKey(identifier.GetLicenseKey())
 				if err != nil {
-					return status.Errorf(codes.InvalidArgument, "invalid license key: %s", err)
+					return status.Errorf(codes.InvalidArgument, "invalid license_key: %s", err)
 				}
 				logger.Info("handling events submission stream for licensed instance",
+					log.String("instanceID", identifier.InstanceId),
 					log.Stringp("license.salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
 					log.Stringp("license.salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
+
+			case *telemetrygatewayv1.Identifier_UnlicensedInstance:
+				identifier := metadata.Identifier.GetUnlicensedInstance()
+				if identifier.InstanceId == "" {
+					return status.Error(codes.InvalidArgument, "instance_id is required for unlicensed instance")
+				}
+				logger.Info("handling events submission stream for unlicensed instance",
+					log.String("instanceID", identifier.InstanceId))
 
 			default:
 				logger.Error("unknown identifier type",

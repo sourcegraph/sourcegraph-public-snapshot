@@ -30,46 +30,11 @@ class CodyOnboardingGuidancePanel(val originalDisplayName: String?) : JPanel() {
   private val mainButton: JButton = createMainButton("Get started")
 
   init {
-    val introductionMessage =
-        createIntroductionMessage(
-            buildString {
-              append("<html><body><h2>${createGreetings()}</h2>")
-              append(
-                  "<p>Let's start by getting you familiar with all the possibilities Cody provides:</p>")
-              append("</body></html>")
-            })
-
     val contentPanel = JPanel()
     contentPanel.layout = BoxLayout(contentPanel, BoxLayout.Y_AXIS)
-    val chatWithCodyPanel =
-        createSectionWithTextAndImage(
-            buildString {
-              append("<html><body><h3>Chat with Cody</h3>")
-              append(
-                  "<p>Use this sidebar to engage with Cody. Get <b>answers</b> and suggestions about the code you are working on.</p>")
-              append("</body></html>")
-            },
-            Icons.Onboarding.Chat)
-    contentPanel.add(chatWithCodyPanel)
-
-    val autocompletionsPanel =
-        createSectionWithTextAndImage(
-            buildString {
-              append("<html><body><h3>Autocompletions</h3>")
-              append(
-                  "<p>Start typing code to get <b>autocompletions</b> base on the surrounding context (press Tab to accept them):</p>")
-              append("</body></html>")
-            },
-            Icons.Onboarding.Autocomplete)
-    contentPanel.add(autocompletionsPanel)
-
-    val exploreCommandsPanel =
-        createSectionWithTextAndImage(
-            "<html><body><h3>Explore the Commands</h3>" +
-                "<p>Use <b>commands</b> to execute useful tasks on your code, like generating unit tests, docstrings and more</p>" +
-                "</body></html>",
-            Icons.Onboarding.Commands)
-    contentPanel.add(exploreCommandsPanel)
+    contentPanel.add(createChatWithCodyPanel())
+    contentPanel.add(createAutocompletePanel())
+    contentPanel.add(createExploreCommandsPanel())
 
     val scrollPanel =
         JBScrollPane(
@@ -82,7 +47,7 @@ class CodyOnboardingGuidancePanel(val originalDisplayName: String?) : JPanel() {
     val buttonPanel = createGetStartedButton()
     this.border = JBUI.Borders.empty(PADDING)
     this.layout = BoxLayout(this, BoxLayout.Y_AXIS)
-    this.add(introductionMessage)
+    this.add(createIntroductionMessage())
     this.add(scrollPanel)
     this.add(buttonPanel)
   }
@@ -94,11 +59,15 @@ class CodyOnboardingGuidancePanel(val originalDisplayName: String?) : JPanel() {
     return "Hi"
   }
 
-  private fun createIntroductionMessage(introductionMessageText: String): JEditorPane {
+  private fun createIntroductionMessage(): JEditorPane {
     val introductionMessage = createHtmlViewer(UIUtil.getPanelBackground())
     val introductionMessageEditorKit = introductionMessage.editorKit as HTMLEditorKit
     introductionMessageEditorKit.styleSheet.addRule(paragraphColorStyle)
-    introductionMessage.text = introductionMessageText
+    introductionMessage.text = buildString {
+      append("<html><body><h2>${createGreetings()}</h2>")
+      append("<p>Let's start by getting you familiar with all the possibilities Cody provides:</p>")
+      append("</body></html>")
+    }
     introductionMessage.setMargin(JBUI.emptyInsets())
     introductionMessage.preventStretching()
     return introductionMessage
@@ -113,17 +82,44 @@ class CodyOnboardingGuidancePanel(val originalDisplayName: String?) : JPanel() {
   }
 
   private fun createSectionWithTextAndImage(sectionText: String, sectionImage: Icon?): JPanel {
-    val exploreCommandsPanel = sectionPanel()
-    val exploreRecipesMessage = createInfoSection()
-    exploreRecipesMessage.text = sectionText
-    exploreRecipesMessage.setMargin(JBUI.insets(PADDING))
-    exploreCommandsPanel.add(exploreRecipesMessage, BorderLayout.NORTH)
-    val exploreCommandsImagePanel = JPanel(BorderLayout())
-    exploreCommandsImagePanel.border = BorderFactory.createEmptyBorder(0, PADDING, PADDING, PADDING)
-    exploreCommandsImagePanel.add(JBLabel(sectionImage), BorderLayout.SOUTH)
-    exploreCommandsPanel.add(exploreCommandsImagePanel)
-    return exploreCommandsPanel
+    val sectionPanel = sectionPanel()
+    val infoSectionEditorPane = createInfoSection()
+    infoSectionEditorPane.text = sectionText
+    infoSectionEditorPane.setMargin(JBUI.insets(PADDING))
+    sectionPanel.add(infoSectionEditorPane, BorderLayout.NORTH)
+    val imagePanel = JPanel(BorderLayout())
+    imagePanel.border = BorderFactory.createEmptyBorder(0, PADDING, PADDING, PADDING)
+    imagePanel.add(JBLabel(sectionImage), BorderLayout.SOUTH)
+    sectionPanel.add(imagePanel)
+    return sectionPanel
   }
+
+  private fun createChatWithCodyPanel() =
+      createSectionWithTextAndImage(
+          buildString {
+            append("<html><body><h3>Chat with Cody</h3>")
+            append(
+                "<p>Use this sidebar to engage with Cody. Get <b>answers</b> and suggestions about the code you are working on.</p>")
+            append("</body></html>")
+          },
+          Icons.Onboarding.Chat)
+
+  private fun createAutocompletePanel() =
+      createSectionWithTextAndImage(
+          buildString {
+            append("<html><body><h3>Autocompletions</h3>")
+            append(
+                "<p>Start typing code to get <b>autocompletions</b> base on the surrounding context (press Tab to accept them):</p>")
+            append("</body></html>")
+          },
+          Icons.Onboarding.Autocomplete)
+
+  private fun createExploreCommandsPanel() =
+      createSectionWithTextAndImage(
+          "<html><body><h3>Explore the Commands</h3>" +
+              "<p>Use <b>commands</b> to execute useful tasks on your code, like generating unit tests, docstrings and more</p>" +
+              "</body></html>",
+          Icons.Onboarding.Commands)
 
   private fun JComponent.preventStretching() {
     maximumSize = Dimension(Int.MAX_VALUE, getPreferredSize().height)

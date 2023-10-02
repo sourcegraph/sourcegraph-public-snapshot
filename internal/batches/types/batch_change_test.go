@@ -2,22 +2,22 @@ package types
 
 import (
 	"context"
-	"net/url"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestBatchChange_URL(t *testing.T) {
 	ctx := context.Background()
 	bc := &BatchChange{Name: "bar", NamespaceOrgID: 123}
-	globals.SetExternalURL(&url.URL{Scheme: "foo", Host: "//:bar"})
+
 	t.Run("errors", func(t *testing.T) {
-		for _, name := range []string{
-			"invalid URL",
+		for name, url := range map[string]string{
+			"invalid URL": "foo://:bar",
 		} {
 			t.Run(name, func(t *testing.T) {
+				mockExternalURL(t, url)
 				if _, err := bc.URL(ctx, "namespace"); err == nil {
 					t.Error("unexpected nil error")
 				}
@@ -26,7 +26,7 @@ func TestBatchChange_URL(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		globals.SetExternalURL(&url.URL{Scheme: "https", Host: "sourcegraph.test"})
+		mockExternalURL(t, "https://sourcegraph.test")
 		url, err := bc.URL(
 			ctx,
 			"foo",
@@ -66,4 +66,12 @@ func TestNamespaceURL(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mockExternalURL(t *testing.T, url string) {
+	oldConf := conf.Get()
+	newConf := *oldConf
+	newConf.ExternalURL = url
+	conf.Mock(&newConf)
+	t.Cleanup(func() { conf.Mock(oldConf) })
 }

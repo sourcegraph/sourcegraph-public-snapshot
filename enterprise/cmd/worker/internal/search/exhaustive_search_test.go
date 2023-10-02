@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -24,11 +26,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExhaustiveSearch(t *testing.T) {
 	// This test exercises the full worker infra from the time a search job is
 	// created until it is done.
+
+	enabled := true
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{SearchJobs: &enabled}}})
+	defer conf.Mock(nil)
 
 	require := require.New(t)
 	observationCtx := observation.TestContextTB(t)
@@ -37,9 +46,10 @@ func TestExhaustiveSearch(t *testing.T) {
 	mockUploadStore, bucket := newMockUploadStore(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, s, mockUploadStore)
+	svc := service.New(observationCtx, s, mockUploadStore, service.NewSearcherFake())
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
+	userBadID := insertRow(t, s.Store, "users", "username", "mallory")
 	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
 	insertRow(t, s.Store, "repo", "id", 2, "name", "repob")
 
@@ -71,6 +81,15 @@ func TestExhaustiveSearch(t *testing.T) {
 	{
 		jobs, err := svc.ListSearchJobs(userCtx, store.ListArgs{})
 		require.NoError(err)
+
+		// HACK: Don't test agg state. Here we compare a result from GetSearchJob and
+		// ListSearchJobs. However, AggState is only set in ListSearchJobs.
+		//
+		// We don't want to set AggState in GetSearchJob because it is fairly expensive,
+		// and we call GetSearchJob a lot as part of the security checks, so we want to
+		// keep it as lean as possible.
+		jobs[0].AggState = job.AggState
+
 		require.Equal([]*types.ExhaustiveSearchJob{job}, jobs)
 	}
 
@@ -121,6 +140,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		// only assert on State since the rest are non-deterministic.
 		require.Equal(types.JobStateCompleted, job2.State)
 		job2.WorkerJob = job.WorkerJob
+		job2.AggState = job.AggState
 		require.Equal(job, job2)
 	}
 
@@ -139,16 +159,26 @@ func TestExhaustiveSearch(t *testing.T) {
 	// lines and columns matches our expectation.
 	{
 		service.JobLogsIterLimit = 2
-		buf := bytes.Buffer{}
-		err = svc.WriteSearchJobLogs(userCtx, &buf, job.ID)
+		writerTo, err := svc.GetSearchJobLogsWriterTo(userCtx, job.ID)
+		require.NoError(err)
+		var buf bytes.Buffer
+		_, err = writerTo.WriteTo(&buf)
 		require.NoError(err)
 		lines := strings.Split(buf.String(), "\n")
 		// 1 header + 3 rows + 1 newline
 		require.Equal(5, len(lines), fmt.Sprintf("got %q", buf))
-		require.Equal("repo,rev,start,end,status,failure_message", lines[0])
+		require.Equal("repository,revision,started_at,finished_at,status,failure_message", lines[0])
 		// We should use the CSV reader to parse this but since we know none of the
 		// columns have a "," in the context of this test, this is fine.
 		require.Equal(6, len(strings.Split(lines[1], ",")))
+	}
+
+	// Assert that we fail without writing anything if the user is not allowed
+	// to view the logs
+	{
+		userBadCtx := actor.WithActor(context.Background(), actor.FromUser(userBadID))
+		_, err = svc.GetSearchJobLogsWriterTo(userBadCtx, job.ID)
+		require.ErrorIs(err, auth.ErrMustBeSiteAdminOrSameUser)
 	}
 
 	// Assert that cancellation affects the number of rows we expect. This is a bit

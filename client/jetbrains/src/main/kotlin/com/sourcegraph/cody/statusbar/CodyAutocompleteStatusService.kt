@@ -2,6 +2,7 @@ package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -9,6 +10,7 @@ import com.sourcegraph.config.CodySignedOutNotification
 import com.sourcegraph.config.ConfigUtil
 import javax.annotation.concurrent.GuardedBy
 
+@Service
 class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable {
 
   @GuardedBy("this") private var status: CodyAutocompleteStatus = CodyAutocompleteStatus.CodyUninit
@@ -42,8 +44,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
                 CodyAutocompleteStatus.CodyDisabled
               } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
                 CodyAutocompleteStatus.AutocompleteDisabled
-              } else if (CodyAuthenticationManager.getInstance().getActiveAccount(project) ==
-                  null) {
+              } else if (CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
                 CodySignedOutNotification.show(project)
                 CodyAutocompleteStatus.CodyNotSignedIn
               } else {
