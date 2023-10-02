@@ -9,17 +9,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type PerforceSource struct {
-	server          schema.PerforceConnection
+	conn            schema.PerforceConnection
 	gitServerClient gitserver.Client
-	perforceCreds   *gitserver.PerforceCredentials
+	perforceCreds   *v1.PerforceConnectionDetails
 }
 
 func NewPerforceSource(ctx context.Context, gitserverClient gitserver.Client, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
@@ -33,7 +35,7 @@ func NewPerforceSource(ctx context.Context, gitserverClient gitserver.Client, sv
 	}
 
 	return &PerforceSource{
-		server:          c,
+		conn:            c,
 		gitServerClient: gitserverClient,
 	}, nil
 }
@@ -49,7 +51,7 @@ func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushCon
 	if err == nil {
 		depot = "//" + u.Path + "/"
 	}
-	remoteURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.perforceCreds.Username, s.perforceCreds.Password, s.server.P4Port, depot)
+	remoteURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.perforceCreds.GetP4User(), s.perforceCreds.GetP4Passwd(), s.conn.P4Port, depot)
 	return &protocol.PushConfig{
 		RemoteURL: remoteURL,
 	}, nil
@@ -61,16 +63,16 @@ func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushCon
 func (s PerforceSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch av := a.(type) {
 	case *auth.BasicAuthWithSSH:
-		s.perforceCreds = &gitserver.PerforceCredentials{
-			Username: av.Username,
-			Password: av.Password,
-			Host:     s.server.P4Port,
+		s.perforceCreds = &v1.PerforceConnectionDetails{
+			P4Port:   s.conn.P4Port,
+			P4User:   av.Username,
+			P4Passwd: av.Password,
 		}
 	case *auth.BasicAuth:
-		s.perforceCreds = &gitserver.PerforceCredentials{
-			Username: av.Username,
-			Password: av.Password,
-			Host:     s.server.P4Port,
+		s.perforceCreds = &v1.PerforceConnectionDetails{
+			P4Port:   s.conn.P4Port,
+			P4User:   av.Username,
+			P4Passwd: av.Password,
 		}
 	default:
 		return s, errors.New("unexpected auther type for Perforce Source")
@@ -85,7 +87,7 @@ func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
 	if s.perforceCreds == nil {
 		return errors.New("no credentials set for Perforce Source")
 	}
-	return s.gitServerClient.CheckPerforceCredentials(ctx, s.perforceCreds.Host, s.perforceCreds.Username, s.perforceCreds.Password)
+	return s.gitServerClient.CheckPerforceCredentials(ctx, s.perforceCreds)
 }
 
 // LoadChangeset loads the given Changeset from the source and updates it. If
@@ -95,10 +97,11 @@ func (s PerforceSource) LoadChangeset(ctx context.Context, cs *Changeset) error 
 	if s.perforceCreds == nil {
 		return errors.New("no credentials set for Perforce Source")
 	}
-	cl, err := s.gitServerClient.P4GetChangelist(ctx, cs.ExternalID, *s.perforceCreds)
+	cl, err := s.gitServerClient.PerforceGetChangelist(ctx, s.perforceCreds, cs.ExternalID)
 	if err != nil {
 		return errors.Wrap(err, "getting changelist")
 	}
+
 	return errors.Wrap(s.setChangesetMetadata(cl, cs), "setting perforce changeset metadata")
 }
 
@@ -114,7 +117,7 @@ func (s PerforceSource) CreateDraftChangeset(_ context.Context, _ *Changeset) (b
 	return false, errors.New("not implemented")
 }
 
-func (s PerforceSource) setChangesetMetadata(cl *protocol.PerforceChangelist, cs *Changeset) error {
+func (s PerforceSource) setChangesetMetadata(cl *perforce.Changelist, cs *Changeset) error {
 	if err := cs.SetMetadata(cl); err != nil {
 		return errors.Wrap(err, "setting changeset metadata")
 	}

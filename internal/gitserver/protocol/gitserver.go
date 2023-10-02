@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -361,36 +360,6 @@ func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
 		RepoCommit:    rc,
 		CommandOutput: p.GetCommandOutput(),
 		CommandError:  p.GetCommandError(),
-	}
-}
-
-// P4ExecRequest is a request to execute a p4 command with given arguments.
-//
-// Note that this request is deserialized by both gitserver and the frontend's
-// internal proxy route and any major change to this structure will need to be
-// reconciled in both places.
-type P4ExecRequest struct {
-	P4Port   string   `json:"p4port"`
-	P4User   string   `json:"p4user"`
-	P4Passwd string   `json:"p4passwd"`
-	Args     []string `json:"args"`
-}
-
-func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
-	return &proto.P4ExecRequest{
-		P4Port:   r.P4Port,
-		P4User:   r.P4User,
-		P4Passwd: r.P4Passwd,
-		Args:     stringsToByteSlices(r.Args),
-	}
-}
-
-func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
-	*r = P4ExecRequest{
-		P4Port:   p.GetP4Port(),
-		P4User:   p.GetP4User(),
-		P4Passwd: p.GetP4Passwd(),
-		Args:     byteSlicesToStrings(p.GetArgs()),
 	}
 }
 
@@ -861,56 +830,6 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 		Object: gitObj,
 	}
 
-}
-
-type PerforceChangelist struct {
-	ID           string
-	CreationDate time.Time
-	State        PerforceChangelistState
-	Author       string
-	Title        string
-	Message      string
-}
-
-type PerforceChangelistState string
-
-const (
-	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
-	PerforceChangelistStatePending   PerforceChangelistState = "pending"
-	PerforceChangelistStateShelved   PerforceChangelistState = "shelved"
-	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
-	PerforceChangelistStateClosed PerforceChangelistState = "closed"
-)
-
-func ParsePerforceChangelistState(state string) (PerforceChangelistState, error) {
-	switch strings.ToLower(strings.TrimSpace(state)) {
-	case "submitted":
-		return PerforceChangelistStateSubmitted, nil
-	case "pending":
-		return PerforceChangelistStatePending, nil
-	case "shelved":
-		return PerforceChangelistStateShelved, nil
-	case "closed":
-		return PerforceChangelistStateClosed, nil
-	default:
-		return "", errors.Newf("invalid Perforce changelist state: %s", state)
-	}
-}
-
-func stringsToByteSlices(in []string) [][]byte {
-	res := make([][]byte, len(in))
-	for i, s := range in {
-		res[i] = []byte(s)
-	}
-	return res
-}
-
-func byteSlicesToStrings(in [][]byte) []string {
-	res := make([]string, len(in))
-	for i, s := range in {
-		res[i] = string(s)
-	}
-	return res
 }
 
 // IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.

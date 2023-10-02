@@ -28,13 +28,18 @@ const (
 	GitserverService_ListGitolite_FullMethodName                = "/gitserver.v1.GitserverService/ListGitolite"
 	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName                     = "/gitserver.v1.GitserverService/Archive"
-	GitserverService_P4Exec_FullMethodName                      = "/gitserver.v1.GitserverService/P4Exec"
 	GitserverService_RepoClone_FullMethodName                   = "/gitserver.v1.GitserverService/RepoClone"
 	GitserverService_RepoCloneProgress_FullMethodName           = "/gitserver.v1.GitserverService/RepoCloneProgress"
 	GitserverService_RepoDelete_FullMethodName                  = "/gitserver.v1.GitserverService/RepoDelete"
 	GitserverService_RepoUpdate_FullMethodName                  = "/gitserver.v1.GitserverService/RepoUpdate"
 	GitserverService_IsPerforcePathCloneable_FullMethodName     = "/gitserver.v1.GitserverService/IsPerforcePathCloneable"
 	GitserverService_CheckPerforceCredentials_FullMethodName    = "/gitserver.v1.GitserverService/CheckPerforceCredentials"
+	GitserverService_PerforceUsers_FullMethodName               = "/gitserver.v1.GitserverService/PerforceUsers"
+	GitserverService_PerforceProtectsForUser_FullMethodName     = "/gitserver.v1.GitserverService/PerforceProtectsForUser"
+	GitserverService_PerforceProtectsForDepot_FullMethodName    = "/gitserver.v1.GitserverService/PerforceProtectsForDepot"
+	GitserverService_PerforceGroupMembers_FullMethodName        = "/gitserver.v1.GitserverService/PerforceGroupMembers"
+	GitserverService_IsPerforceSuperUser_FullMethodName         = "/gitserver.v1.GitserverService/IsPerforceSuperUser"
+	GitserverService_PerforceGetChangelist_FullMethodName       = "/gitserver.v1.GitserverService/PerforceGetChangelist"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -50,13 +55,18 @@ type GitserverServiceClient interface {
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
-	P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error)
 	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
 	RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error)
 	RepoUpdate(ctx context.Context, in *RepoUpdateRequest, opts ...grpc.CallOption) (*RepoUpdateResponse, error)
 	IsPerforcePathCloneable(ctx context.Context, in *IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*IsPerforcePathCloneableResponse, error)
 	CheckPerforceCredentials(ctx context.Context, in *CheckPerforceCredentialsRequest, opts ...grpc.CallOption) (*CheckPerforceCredentialsResponse, error)
+	PerforceUsers(ctx context.Context, in *PerforceUsersRequest, opts ...grpc.CallOption) (*PerforceUsersResponse, error)
+	PerforceProtectsForUser(ctx context.Context, in *PerforceProtectsForUserRequest, opts ...grpc.CallOption) (*PerforceProtectsForUserResponse, error)
+	PerforceProtectsForDepot(ctx context.Context, in *PerforceProtectsForDepotRequest, opts ...grpc.CallOption) (*PerforceProtectsForDepotResponse, error)
+	PerforceGroupMembers(ctx context.Context, in *PerforceGroupMembersRequest, opts ...grpc.CallOption) (*PerforceGroupMembersResponse, error)
+	IsPerforceSuperUser(ctx context.Context, in *IsPerforceSuperUserRequest, opts ...grpc.CallOption) (*IsPerforceSuperUserResponse, error)
+	PerforceGetChangelist(ctx context.Context, in *PerforceGetChangelistRequest, opts ...grpc.CallOption) (*PerforceGetChangelistResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -242,38 +252,6 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 	return m, nil
 }
 
-func (c *gitserverServiceClient) P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_P4Exec_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &gitserverServiceP4ExecClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type GitserverService_P4ExecClient interface {
-	Recv() (*P4ExecResponse, error)
-	grpc.ClientStream
-}
-
-type gitserverServiceP4ExecClient struct {
-	grpc.ClientStream
-}
-
-func (x *gitserverServiceP4ExecClient) Recv() (*P4ExecResponse, error) {
-	m := new(P4ExecResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *gitserverServiceClient) RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error) {
 	out := new(RepoCloneResponse)
 	err := c.cc.Invoke(ctx, GitserverService_RepoClone_FullMethodName, in, out, opts...)
@@ -328,6 +306,60 @@ func (c *gitserverServiceClient) CheckPerforceCredentials(ctx context.Context, i
 	return out, nil
 }
 
+func (c *gitserverServiceClient) PerforceUsers(ctx context.Context, in *PerforceUsersRequest, opts ...grpc.CallOption) (*PerforceUsersResponse, error) {
+	out := new(PerforceUsersResponse)
+	err := c.cc.Invoke(ctx, GitserverService_PerforceUsers_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) PerforceProtectsForUser(ctx context.Context, in *PerforceProtectsForUserRequest, opts ...grpc.CallOption) (*PerforceProtectsForUserResponse, error) {
+	out := new(PerforceProtectsForUserResponse)
+	err := c.cc.Invoke(ctx, GitserverService_PerforceProtectsForUser_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) PerforceProtectsForDepot(ctx context.Context, in *PerforceProtectsForDepotRequest, opts ...grpc.CallOption) (*PerforceProtectsForDepotResponse, error) {
+	out := new(PerforceProtectsForDepotResponse)
+	err := c.cc.Invoke(ctx, GitserverService_PerforceProtectsForDepot_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) PerforceGroupMembers(ctx context.Context, in *PerforceGroupMembersRequest, opts ...grpc.CallOption) (*PerforceGroupMembersResponse, error) {
+	out := new(PerforceGroupMembersResponse)
+	err := c.cc.Invoke(ctx, GitserverService_PerforceGroupMembers_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) IsPerforceSuperUser(ctx context.Context, in *IsPerforceSuperUserRequest, opts ...grpc.CallOption) (*IsPerforceSuperUserResponse, error) {
+	out := new(IsPerforceSuperUserResponse)
+	err := c.cc.Invoke(ctx, GitserverService_IsPerforceSuperUser_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) PerforceGetChangelist(ctx context.Context, in *PerforceGetChangelistRequest, opts ...grpc.CallOption) (*PerforceGetChangelistResponse, error) {
+	out := new(PerforceGetChangelistResponse)
+	err := c.cc.Invoke(ctx, GitserverService_PerforceGetChangelist_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -341,13 +373,18 @@ type GitserverServiceServer interface {
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
-	P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error
 	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
 	RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error)
 	RepoUpdate(context.Context, *RepoUpdateRequest) (*RepoUpdateResponse, error)
 	IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error)
 	CheckPerforceCredentials(context.Context, *CheckPerforceCredentialsRequest) (*CheckPerforceCredentialsResponse, error)
+	PerforceUsers(context.Context, *PerforceUsersRequest) (*PerforceUsersResponse, error)
+	PerforceProtectsForUser(context.Context, *PerforceProtectsForUserRequest) (*PerforceProtectsForUserResponse, error)
+	PerforceProtectsForDepot(context.Context, *PerforceProtectsForDepotRequest) (*PerforceProtectsForDepotResponse, error)
+	PerforceGroupMembers(context.Context, *PerforceGroupMembersRequest) (*PerforceGroupMembersResponse, error)
+	IsPerforceSuperUser(context.Context, *IsPerforceSuperUserRequest) (*IsPerforceSuperUserResponse, error)
+	PerforceGetChangelist(context.Context, *PerforceGetChangelistRequest) (*PerforceGetChangelistResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -382,9 +419,6 @@ func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverServi
 func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
 }
-func (UnimplementedGitserverServiceServer) P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error {
-	return status.Errorf(codes.Unimplemented, "method P4Exec not implemented")
-}
 func (UnimplementedGitserverServiceServer) RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoClone not implemented")
 }
@@ -402,6 +436,24 @@ func (UnimplementedGitserverServiceServer) IsPerforcePathCloneable(context.Conte
 }
 func (UnimplementedGitserverServiceServer) CheckPerforceCredentials(context.Context, *CheckPerforceCredentialsRequest) (*CheckPerforceCredentialsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPerforceCredentials not implemented")
+}
+func (UnimplementedGitserverServiceServer) PerforceUsers(context.Context, *PerforceUsersRequest) (*PerforceUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PerforceUsers not implemented")
+}
+func (UnimplementedGitserverServiceServer) PerforceProtectsForUser(context.Context, *PerforceProtectsForUserRequest) (*PerforceProtectsForUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PerforceProtectsForUser not implemented")
+}
+func (UnimplementedGitserverServiceServer) PerforceProtectsForDepot(context.Context, *PerforceProtectsForDepotRequest) (*PerforceProtectsForDepotResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PerforceProtectsForDepot not implemented")
+}
+func (UnimplementedGitserverServiceServer) PerforceGroupMembers(context.Context, *PerforceGroupMembersRequest) (*PerforceGroupMembersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PerforceGroupMembers not implemented")
+}
+func (UnimplementedGitserverServiceServer) IsPerforceSuperUser(context.Context, *IsPerforceSuperUserRequest) (*IsPerforceSuperUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsPerforceSuperUser not implemented")
+}
+func (UnimplementedGitserverServiceServer) PerforceGetChangelist(context.Context, *PerforceGetChangelistRequest) (*PerforceGetChangelistResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PerforceGetChangelist not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -595,27 +647,6 @@ func (x *gitserverServiceArchiveServer) Send(m *ArchiveResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _GitserverService_P4Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(P4ExecRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(GitserverServiceServer).P4Exec(m, &gitserverServiceP4ExecServer{stream})
-}
-
-type GitserverService_P4ExecServer interface {
-	Send(*P4ExecResponse) error
-	grpc.ServerStream
-}
-
-type gitserverServiceP4ExecServer struct {
-	grpc.ServerStream
-}
-
-func (x *gitserverServiceP4ExecServer) Send(m *P4ExecResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 func _GitserverService_RepoClone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RepoCloneRequest)
 	if err := dec(in); err != nil {
@@ -724,6 +755,114 @@ func _GitserverService_CheckPerforceCredentials_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_PerforceUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PerforceUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).PerforceUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_PerforceUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).PerforceUsers(ctx, req.(*PerforceUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_PerforceProtectsForUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PerforceProtectsForUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).PerforceProtectsForUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_PerforceProtectsForUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).PerforceProtectsForUser(ctx, req.(*PerforceProtectsForUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_PerforceProtectsForDepot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PerforceProtectsForDepotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).PerforceProtectsForDepot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_PerforceProtectsForDepot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).PerforceProtectsForDepot(ctx, req.(*PerforceProtectsForDepotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_PerforceGroupMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PerforceGroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).PerforceGroupMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_PerforceGroupMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).PerforceGroupMembers(ctx, req.(*PerforceGroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_IsPerforceSuperUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsPerforceSuperUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).IsPerforceSuperUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_IsPerforceSuperUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).IsPerforceSuperUser(ctx, req.(*IsPerforceSuperUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_PerforceGetChangelist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PerforceGetChangelistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).PerforceGetChangelist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_PerforceGetChangelist_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).PerforceGetChangelist(ctx, req.(*PerforceGetChangelistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -775,6 +914,30 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "CheckPerforceCredentials",
 			Handler:    _GitserverService_CheckPerforceCredentials_Handler,
 		},
+		{
+			MethodName: "PerforceUsers",
+			Handler:    _GitserverService_PerforceUsers_Handler,
+		},
+		{
+			MethodName: "PerforceProtectsForUser",
+			Handler:    _GitserverService_PerforceProtectsForUser_Handler,
+		},
+		{
+			MethodName: "PerforceProtectsForDepot",
+			Handler:    _GitserverService_PerforceProtectsForDepot_Handler,
+		},
+		{
+			MethodName: "PerforceGroupMembers",
+			Handler:    _GitserverService_PerforceGroupMembers_Handler,
+		},
+		{
+			MethodName: "IsPerforceSuperUser",
+			Handler:    _GitserverService_IsPerforceSuperUser_Handler,
+		},
+		{
+			MethodName: "PerforceGetChangelist",
+			Handler:    _GitserverService_PerforceGetChangelist_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -795,11 +958,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Archive",
 			Handler:       _GitserverService_Archive_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "P4Exec",
-			Handler:       _GitserverService_P4Exec_Handler,
 			ServerStreams: true,
 		},
 	},

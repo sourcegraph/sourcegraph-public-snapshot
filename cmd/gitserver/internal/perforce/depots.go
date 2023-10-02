@@ -43,7 +43,7 @@ type PerforceDepot struct {
 
 // P4Depots returns all of the depots to which the user has access on the host
 // and whose names match the given nameFilter, which can contain asterisks (*) for wildcards
-// if nameFilter is blank, return all depots
+// if nameFilter is blank, return all depots.
 func P4Depots(ctx context.Context, p4home, p4port, p4user, p4passwd, nameFilter string) ([]PerforceDepot, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()

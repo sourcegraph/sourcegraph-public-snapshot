@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,7 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestProvider_FetchAccount(t *testing.T) {
@@ -30,16 +31,14 @@ func TestProvider_FetchAccount(t *testing.T) {
 		Username: "alice",
 	}
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		data := `
-alice <alice@example.com> (Alice) accessed 2020/12/04
-cindy <cindy@example.com> (Cindy) accessed 2020/12/04
-`
-		return io.NopCloser(strings.NewReader(data)), nil, nil
-	})
+	gitserverClient := gitserver.NewStrictMockClient()
+	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*v1.PerforceUser{
+		{Username: "alice", Email: "alice@example.com"},
+		{Username: "cindy", Email: "cindy@example.com"},
+	}, nil)
 
 	t.Run("no matching account", func(t *testing.T) {
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		got, err := p.FetchAccount(ctx, user, nil, []string{"bob@example.com"})
 		if err != nil {
 			t.Fatal(err)
@@ -51,7 +50,7 @@ cindy <cindy@example.com> (Cindy) accessed 2020/12/04
 	})
 
 	t.Run("found matching account", func(t *testing.T) {
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		got, err := p.FetchAccount(ctx, user, nil, []string{"alice@example.com"})
 		if err != nil {
 			t.Fatal(err)
@@ -297,13 +296,14 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 	// Specific behaviour is tested in TestScanFullRepoPermissions
 	t.Run("SubRepoPermissions", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-			return io.NopCloser(strings.NewReader(`
-read user alice * //Sourcegraph/Engineering/...
-read user alice * -//Sourcegraph/Security/...
-`)), nil, nil
-		})
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+
+		gitserverClient := gitserver.NewStrictMockClient()
+		gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*v1.PerforceProtect{
+			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Engineering/..."},
+			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Security/...", IsExclusion: true},
+		}, nil)
+
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		p.depots = append(p.depots, "//Sourcegraph/")
 
 		got, err := p.FetchUserPerms(ctx,
@@ -370,54 +370,36 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			t.Fatalf("err: want %q but got %q", want, got)
 		}
 	})
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		var data string
 
-		switch args[0] {
-
-		case "protects":
-			data = `
-## The actual depot prefix does not matter, the "-" sign does
-list user * * -//...
-write user alice * //Sourcegraph/...
-write user bob * //Sourcegraph/...
-admin group Backend * //Sourcegraph/...   ## includes "alice" and "cindy"
-
-admin group Frontend * -//Sourcegraph/... ## excludes "bob", "david" and "frank"
-read user cindy * -//Sourcegraph/...
-
-list user david * //Sourcegraph/...       ## "list" can't grant read access
-`
-		case "users":
-			data = `
-alice <alice@example.com> (Alice) accessed 2020/12/04
-bob <bob@example.com> (Bob) accessed 2020/12/04
-cindy <cindy@example.com> (Cindy) accessed 2020/12/04
-david <david@example.com> (David) accessed 2020/12/04
-frank <frank@example.com> (Frank) accessed 2020/12/04
-`
-		case "group":
-			switch args[2] {
-			case "Backend":
-				data = `
-Users:
-	alice
-	cindy
-`
-			case "Frontend":
-				data = `
-Users:
-	bob
-	david
-	frank
-`
-			}
+	gitserverClient := gitserver.NewStrictMockClient()
+	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*v1.PerforceUser{
+		{Username: "alice", Email: "alice@example.com"},
+		{Username: "bob", Email: "bob@example.com"},
+		{Username: "cindy", Email: "cindy@example.com"},
+		{Username: "david", Email: "david@example.com"},
+		{Username: "frank", Email: "frank@example.com"},
+	}, nil)
+	gitserverClient.PerforceGroupMembersFunc.SetDefaultHook(func(ctx context.Context, conn *v1.PerforceConnectionDetails, group string) ([]string, error) {
+		switch group {
+		case "Backend":
+			return []string{"alice", "cindy"}, nil
+		case "Frontend":
+			return []string{"bob", "david", "frank"}, nil
+		default:
+			return nil, errors.New("invalid group")
 		}
-
-		return io.NopCloser(strings.NewReader(data)), nil, nil
 	})
+	gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*v1.PerforceProtect{
+		{Level: "list", EntityType: "user", EntityName: "*", Host: "*", Match: "//...", IsExclusion: true},
+		{Level: "write", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/..."},
+		{Level: "write", EntityType: "user", EntityName: "bob", Host: "*", Match: "//Sourcegraph/..."},
+		{Level: "admin", EntityType: "group", EntityName: "Backend", Host: "*", Match: "//Sourcegraph/..."},                     // includes "alice" and "cindy"
+		{Level: "admin", EntityType: "group", EntityName: "Frontend", Host: "*", Match: "//Sourcegraph/...", IsExclusion: true}, // excludes "bob", "david" and "frank"
+		{Level: "read", EntityType: "user", EntityName: "cindy", Host: "*", Match: "//Sourcegraph/...", IsExclusion: true},
+		{Level: "list", EntityType: "user", EntityName: "david", Host: "*", Match: "//Sourcegraph/..."}, // "list" can't grant read access
+	}, nil)
 
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	got, err := p.FetchRepoPerms(ctx,
 		&extsvc.Repository{
 			URI: "gitlab.com/user/repo",
@@ -436,16 +418,4 @@ Users:
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
-}
-
-func NewTestProvider(logger log.Logger, urn, host, user, password string, execer p4Execer) *Provider {
-	p := NewProvider(logger, gitserver.NewClient(), urn, host, user, password, []extsvc.RepoID{}, false)
-	p.p4Execer = execer
-	return p
-}
-
-type p4ExecFunc func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
-
-func (p p4ExecFunc) P4Exec(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-	return p(ctx, host, user, password, args...)
 }

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -32,7 +33,6 @@ type operations struct {
 	lstat            *observation.Operation
 	mergeBase        *observation.Operation
 	newFileReader    *observation.Operation
-	p4Exec           *observation.Operation
 	readDir          *observation.Operation
 	readFile         *observation.Operation
 	resolveRevision  *observation.Operation
@@ -107,7 +107,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		lstat:            subOp("lStat"),
 		mergeBase:        op("MergeBase"),
 		newFileReader:    op("NewFileReader"),
-		p4Exec:           op("P4Exec"),
 		readDir:          op("ReadDir"),
 		readFile:         op("ReadFile"),
 		resolveRevision:  resolveRevisionOperation,

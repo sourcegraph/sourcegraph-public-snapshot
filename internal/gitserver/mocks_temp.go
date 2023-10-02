@@ -10,7 +10,6 @@ import (
 	"context"
 	"io"
 	"io/fs"
-	"net/http"
 	"sync"
 	"time"
 
@@ -19,6 +18,8 @@ import (
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	perforce "github.com/sourcegraph/sourcegraph/internal/perforce"
 )
 
 // MockClient is a mock implementation of the Client interface (from the
@@ -109,6 +110,9 @@ type MockClient struct {
 	// IsPerforcePathCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsPerforcePathCloneable.
 	IsPerforcePathCloneableFunc *ClientIsPerforcePathCloneableFunc
+	// IsPerforceSuperUserFunc is an instance of a mock function object
+	// controlling the behavior of the method IsPerforceSuperUser.
+	IsPerforceSuperUserFunc *ClientIsPerforceSuperUserFunc
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *ClientIsRepoCloneableFunc
@@ -136,12 +140,21 @@ type MockClient struct {
 	// NewFileReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method NewFileReader.
 	NewFileReaderFunc *ClientNewFileReaderFunc
-	// P4ExecFunc is an instance of a mock function object controlling the
-	// behavior of the method P4Exec.
-	P4ExecFunc *ClientP4ExecFunc
-	// P4GetChangelistFunc is an instance of a mock function object
-	// controlling the behavior of the method P4GetChangelist.
-	P4GetChangelistFunc *ClientP4GetChangelistFunc
+	// PerforceGetChangelistFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceGetChangelist.
+	PerforceGetChangelistFunc *ClientPerforceGetChangelistFunc
+	// PerforceGroupMembersFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceGroupMembers.
+	PerforceGroupMembersFunc *ClientPerforceGroupMembersFunc
+	// PerforceProtectsForDepotFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceProtectsForDepot.
+	PerforceProtectsForDepotFunc *ClientPerforceProtectsForDepotFunc
+	// PerforceProtectsForUserFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceProtectsForUser.
+	PerforceProtectsForUserFunc *ClientPerforceProtectsForUserFunc
+	// PerforceUsersFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceUsers.
+	PerforceUsersFunc *ClientPerforceUsersFunc
 	// ReadDirFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadDir.
 	ReadDirFunc *ClientReadDirFunc
@@ -224,7 +237,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
-			defaultHook: func(context.Context, string, string, string) (r0 error) {
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails) (r0 error) {
 				return
 			},
 		},
@@ -329,7 +342,12 @@ func NewMockClient() *MockClient {
 			},
 		},
 		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
-			defaultHook: func(context.Context, string, string, string, string) (r0 error) {
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) (r0 error) {
+				return
+			},
+		},
+		IsPerforceSuperUserFunc: &ClientIsPerforceSuperUserFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails) (r0 error) {
 				return
 			},
 		},
@@ -378,13 +396,28 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		P4ExecFunc: &ClientP4ExecFunc{
-			defaultHook: func(context.Context, string, string, string, ...string) (r0 io.ReadCloser, r1 http.Header, r2 error) {
+		PerforceGetChangelistFunc: &ClientPerforceGetChangelistFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) (r0 *perforce.Changelist, r1 error) {
 				return
 			},
 		},
-		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, PerforceCredentials) (r0 *protocol.PerforceChangelist, r1 error) {
+		PerforceGroupMembersFunc: &ClientPerforceGroupMembersFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) (r0 []string, r1 error) {
+				return
+			},
+		},
+		PerforceProtectsForDepotFunc: &ClientPerforceProtectsForDepotFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) (r0 []*v1.PerforceProtect, r1 error) {
+				return
+			},
+		},
+		PerforceProtectsForUserFunc: &ClientPerforceProtectsForUserFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) (r0 []*v1.PerforceProtect, r1 error) {
+				return
+			},
+		},
+		PerforceUsersFunc: &ClientPerforceUsersFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails) (r0 []*v1.PerforceUser, r1 error) {
 				return
 			},
 		},
@@ -501,7 +534,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
-			defaultHook: func(context.Context, string, string, string) error {
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails) error {
 				panic("unexpected invocation of MockClient.CheckPerforceCredentials")
 			},
 		},
@@ -606,8 +639,13 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
-			defaultHook: func(context.Context, string, string, string, string) error {
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) error {
 				panic("unexpected invocation of MockClient.IsPerforcePathCloneable")
+			},
+		},
+		IsPerforceSuperUserFunc: &ClientIsPerforceSuperUserFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails) error {
+				panic("unexpected invocation of MockClient.IsPerforceSuperUser")
 			},
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
@@ -655,14 +693,29 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.NewFileReader")
 			},
 		},
-		P4ExecFunc: &ClientP4ExecFunc{
-			defaultHook: func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-				panic("unexpected invocation of MockClient.P4Exec")
+		PerforceGetChangelistFunc: &ClientPerforceGetChangelistFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
+				panic("unexpected invocation of MockClient.PerforceGetChangelist")
 			},
 		},
-		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
-				panic("unexpected invocation of MockClient.P4GetChangelist")
+		PerforceGroupMembersFunc: &ClientPerforceGroupMembersFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error) {
+				panic("unexpected invocation of MockClient.PerforceGroupMembers")
+			},
+		},
+		PerforceProtectsForDepotFunc: &ClientPerforceProtectsForDepotFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+				panic("unexpected invocation of MockClient.PerforceProtectsForDepot")
+			},
+		},
+		PerforceProtectsForUserFunc: &ClientPerforceProtectsForUserFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+				panic("unexpected invocation of MockClient.PerforceProtectsForUser")
+			},
+		},
+		PerforceUsersFunc: &ClientPerforceUsersFunc{
+			defaultHook: func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error) {
+				panic("unexpected invocation of MockClient.PerforceUsers")
 			},
 		},
 		ReadDirFunc: &ClientReadDirFunc{
@@ -831,6 +884,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
 			defaultHook: i.IsPerforcePathCloneable,
 		},
+		IsPerforceSuperUserFunc: &ClientIsPerforceSuperUserFunc{
+			defaultHook: i.IsPerforceSuperUser,
+		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
 		},
@@ -858,11 +914,20 @@ func NewMockClientFrom(i Client) *MockClient {
 		NewFileReaderFunc: &ClientNewFileReaderFunc{
 			defaultHook: i.NewFileReader,
 		},
-		P4ExecFunc: &ClientP4ExecFunc{
-			defaultHook: i.P4Exec,
+		PerforceGetChangelistFunc: &ClientPerforceGetChangelistFunc{
+			defaultHook: i.PerforceGetChangelist,
 		},
-		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
-			defaultHook: i.P4GetChangelist,
+		PerforceGroupMembersFunc: &ClientPerforceGroupMembersFunc{
+			defaultHook: i.PerforceGroupMembers,
+		},
+		PerforceProtectsForDepotFunc: &ClientPerforceProtectsForDepotFunc{
+			defaultHook: i.PerforceProtectsForDepot,
+		},
+		PerforceProtectsForUserFunc: &ClientPerforceProtectsForUserFunc{
+			defaultHook: i.PerforceProtectsForUser,
+		},
+		PerforceUsersFunc: &ClientPerforceUsersFunc{
+			defaultHook: i.PerforceUsers,
 		},
 		ReadDirFunc: &ClientReadDirFunc{
 			defaultHook: i.ReadDir,
@@ -1568,24 +1633,24 @@ func (c ClientBranchesContainingFuncCall) Results() []interface{} {
 // CheckPerforceCredentials method of the parent MockClient instance is
 // invoked.
 type ClientCheckPerforceCredentialsFunc struct {
-	defaultHook func(context.Context, string, string, string) error
-	hooks       []func(context.Context, string, string, string) error
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails) error
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails) error
 	history     []ClientCheckPerforceCredentialsFuncCall
 	mutex       sync.Mutex
 }
 
 // CheckPerforceCredentials delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockClient) CheckPerforceCredentials(v0 context.Context, v1 string, v2 string, v3 string) error {
-	r0 := m.CheckPerforceCredentialsFunc.nextHook()(v0, v1, v2, v3)
-	m.CheckPerforceCredentialsFunc.appendCall(ClientCheckPerforceCredentialsFuncCall{v0, v1, v2, v3, r0})
+func (m *MockClient) CheckPerforceCredentials(v0 context.Context, v1 *v1.PerforceConnectionDetails) error {
+	r0 := m.CheckPerforceCredentialsFunc.nextHook()(v0, v1)
+	m.CheckPerforceCredentialsFunc.appendCall(ClientCheckPerforceCredentialsFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // CheckPerforceCredentials method of the parent MockClient instance is
 // invoked and the hook queue is empty.
-func (f *ClientCheckPerforceCredentialsFunc) SetDefaultHook(hook func(context.Context, string, string, string) error) {
+func (f *ClientCheckPerforceCredentialsFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails) error) {
 	f.defaultHook = hook
 }
 
@@ -1593,7 +1658,7 @@ func (f *ClientCheckPerforceCredentialsFunc) SetDefaultHook(hook func(context.Co
 // CheckPerforceCredentials method of the parent MockClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ClientCheckPerforceCredentialsFunc) PushHook(hook func(context.Context, string, string, string) error) {
+func (f *ClientCheckPerforceCredentialsFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1602,19 +1667,19 @@ func (f *ClientCheckPerforceCredentialsFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientCheckPerforceCredentialsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string) error {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientCheckPerforceCredentialsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, string) error {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails) error {
 		return r0
 	})
 }
 
-func (f *ClientCheckPerforceCredentialsFunc) nextHook() func(context.Context, string, string, string) error {
+func (f *ClientCheckPerforceCredentialsFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1653,13 +1718,7 @@ type ClientCheckPerforceCredentialsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
+	Arg1 *v1.PerforceConnectionDetails
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1668,7 +1727,7 @@ type ClientCheckPerforceCredentialsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientCheckPerforceCredentialsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -3947,24 +4006,24 @@ func (c ClientHeadFuncCall) Results() []interface{} {
 // IsPerforcePathCloneable method of the parent MockClient instance is
 // invoked.
 type ClientIsPerforcePathCloneableFunc struct {
-	defaultHook func(context.Context, string, string, string, string) error
-	hooks       []func(context.Context, string, string, string, string) error
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails, string) error
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails, string) error
 	history     []ClientIsPerforcePathCloneableFuncCall
 	mutex       sync.Mutex
 }
 
 // IsPerforcePathCloneable delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockClient) IsPerforcePathCloneable(v0 context.Context, v1 string, v2 string, v3 string, v4 string) error {
-	r0 := m.IsPerforcePathCloneableFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.IsPerforcePathCloneableFunc.appendCall(ClientIsPerforcePathCloneableFuncCall{v0, v1, v2, v3, v4, r0})
+func (m *MockClient) IsPerforcePathCloneable(v0 context.Context, v1 *v1.PerforceConnectionDetails, v2 string) error {
+	r0 := m.IsPerforcePathCloneableFunc.nextHook()(v0, v1, v2)
+	m.IsPerforcePathCloneableFunc.appendCall(ClientIsPerforcePathCloneableFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // IsPerforcePathCloneable method of the parent MockClient instance is
 // invoked and the hook queue is empty.
-func (f *ClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(context.Context, string, string, string, string) error) {
+func (f *ClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) error) {
 	f.defaultHook = hook
 }
 
@@ -3972,7 +4031,7 @@ func (f *ClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(context.Con
 // IsPerforcePathCloneable method of the parent MockClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ClientIsPerforcePathCloneableFunc) PushHook(hook func(context.Context, string, string, string, string) error) {
+func (f *ClientIsPerforcePathCloneableFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3981,19 +4040,19 @@ func (f *ClientIsPerforcePathCloneableFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientIsPerforcePathCloneableFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string, string) error {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientIsPerforcePathCloneableFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, string, string) error {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails, string) error {
 		return r0
 	})
 }
 
-func (f *ClientIsPerforcePathCloneableFunc) nextHook() func(context.Context, string, string, string, string) error {
+func (f *ClientIsPerforcePathCloneableFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4032,16 +4091,10 @@ type ClientIsPerforcePathCloneableFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 *v1.PerforceConnectionDetails
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -4050,12 +4103,117 @@ type ClientIsPerforcePathCloneableFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientIsPerforcePathCloneableFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientIsPerforcePathCloneableFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ClientIsPerforceSuperUserFunc describes the behavior when the
+// IsPerforceSuperUser method of the parent MockClient instance is invoked.
+type ClientIsPerforceSuperUserFunc struct {
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails) error
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails) error
+	history     []ClientIsPerforceSuperUserFuncCall
+	mutex       sync.Mutex
+}
+
+// IsPerforceSuperUser delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) IsPerforceSuperUser(v0 context.Context, v1 *v1.PerforceConnectionDetails) error {
+	r0 := m.IsPerforceSuperUserFunc.nextHook()(v0, v1)
+	m.IsPerforceSuperUserFunc.appendCall(ClientIsPerforceSuperUserFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the IsPerforceSuperUser
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientIsPerforceSuperUserFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsPerforceSuperUser method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientIsPerforceSuperUserFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientIsPerforceSuperUserFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientIsPerforceSuperUserFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails) error {
+		return r0
+	})
+}
+
+func (f *ClientIsPerforceSuperUserFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientIsPerforceSuperUserFunc) appendCall(r0 ClientIsPerforceSuperUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientIsPerforceSuperUserFuncCall objects
+// describing the invocations of this function.
+func (f *ClientIsPerforceSuperUserFunc) History() []ClientIsPerforceSuperUserFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientIsPerforceSuperUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientIsPerforceSuperUserFuncCall is an object that describes an
+// invocation of method IsPerforceSuperUser on an instance of MockClient.
+type ClientIsPerforceSuperUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.PerforceConnectionDetails
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientIsPerforceSuperUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientIsPerforceSuperUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -5082,161 +5240,36 @@ func (c ClientNewFileReaderFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ClientP4ExecFunc describes the behavior when the P4Exec method of the
-// parent MockClient instance is invoked.
-type ClientP4ExecFunc struct {
-	defaultHook func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)
-	hooks       []func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)
-	history     []ClientP4ExecFuncCall
+// ClientPerforceGetChangelistFunc describes the behavior when the
+// PerforceGetChangelist method of the parent MockClient instance is
+// invoked.
+type ClientPerforceGetChangelistFunc struct {
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error)
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error)
+	history     []ClientPerforceGetChangelistFuncCall
 	mutex       sync.Mutex
 }
 
-// P4Exec delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) P4Exec(v0 context.Context, v1 string, v2 string, v3 string, v4 ...string) (io.ReadCloser, http.Header, error) {
-	r0, r1, r2 := m.P4ExecFunc.nextHook()(v0, v1, v2, v3, v4...)
-	m.P4ExecFunc.appendCall(ClientP4ExecFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the P4Exec method of the
-// parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientP4ExecFunc) SetDefaultHook(hook func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// P4Exec method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientP4ExecFunc) PushHook(hook func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientP4ExecFunc) SetDefaultReturn(r0 io.ReadCloser, r1 http.Header, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientP4ExecFunc) PushReturn(r0 io.ReadCloser, r1 http.Header, r2 error) {
-	f.PushHook(func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *ClientP4ExecFunc) nextHook() func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientP4ExecFunc) appendCall(r0 ClientP4ExecFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientP4ExecFuncCall objects describing the
-// invocations of this function.
-func (f *ClientP4ExecFunc) History() []ClientP4ExecFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientP4ExecFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientP4ExecFuncCall is an object that describes an invocation of method
-// P4Exec on an instance of MockClient.
-type ClientP4ExecFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg4 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 io.ReadCloser
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 http.Header
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c ClientP4ExecFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg4 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientP4ExecFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// ClientP4GetChangelistFunc describes the behavior when the P4GetChangelist
-// method of the parent MockClient instance is invoked.
-type ClientP4GetChangelistFunc struct {
-	defaultHook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)
-	hooks       []func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)
-	history     []ClientP4GetChangelistFuncCall
-	mutex       sync.Mutex
-}
-
-// P4GetChangelist delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockClient) P4GetChangelist(v0 context.Context, v1 string, v2 PerforceCredentials) (*protocol.PerforceChangelist, error) {
-	r0, r1 := m.P4GetChangelistFunc.nextHook()(v0, v1, v2)
-	m.P4GetChangelistFunc.appendCall(ClientP4GetChangelistFuncCall{v0, v1, v2, r0, r1})
+// PerforceGetChangelist delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockClient) PerforceGetChangelist(v0 context.Context, v1 *v1.PerforceConnectionDetails, v2 string) (*perforce.Changelist, error) {
+	r0, r1 := m.PerforceGetChangelistFunc.nextHook()(v0, v1, v2)
+	m.PerforceGetChangelistFunc.appendCall(ClientPerforceGetChangelistFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the P4GetChangelist
-// method of the parent MockClient instance is invoked and the hook queue is
-// empty.
-func (f *ClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)) {
+// SetDefaultHook sets function that is called when the
+// PerforceGetChangelist method of the parent MockClient instance is invoked
+// and the hook queue is empty.
+func (f *ClientPerforceGetChangelistFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// P4GetChangelist method of the parent MockClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)) {
+// PerforceGetChangelist method of the parent MockClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ClientPerforceGetChangelistFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5244,20 +5277,20 @@ func (f *ClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientP4GetChangelistFunc) SetDefaultReturn(r0 *protocol.PerforceChangelist, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
+func (f *ClientPerforceGetChangelistFunc) SetDefaultReturn(r0 *perforce.Changelist, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientP4GetChangelistFunc) PushReturn(r0 *protocol.PerforceChangelist, r1 error) {
-	f.PushHook(func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
+func (f *ClientPerforceGetChangelistFunc) PushReturn(r0 *perforce.Changelist, r1 error) {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientP4GetChangelistFunc) nextHook() func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
+func (f *ClientPerforceGetChangelistFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5270,38 +5303,38 @@ func (f *ClientP4GetChangelistFunc) nextHook() func(context.Context, string, Per
 	return hook
 }
 
-func (f *ClientP4GetChangelistFunc) appendCall(r0 ClientP4GetChangelistFuncCall) {
+func (f *ClientPerforceGetChangelistFunc) appendCall(r0 ClientPerforceGetChangelistFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ClientP4GetChangelistFuncCall objects
+// History returns a sequence of ClientPerforceGetChangelistFuncCall objects
 // describing the invocations of this function.
-func (f *ClientP4GetChangelistFunc) History() []ClientP4GetChangelistFuncCall {
+func (f *ClientPerforceGetChangelistFunc) History() []ClientPerforceGetChangelistFuncCall {
 	f.mutex.Lock()
-	history := make([]ClientP4GetChangelistFuncCall, len(f.history))
+	history := make([]ClientPerforceGetChangelistFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ClientP4GetChangelistFuncCall is an object that describes an invocation
-// of method P4GetChangelist on an instance of MockClient.
-type ClientP4GetChangelistFuncCall struct {
+// ClientPerforceGetChangelistFuncCall is an object that describes an
+// invocation of method PerforceGetChangelist on an instance of MockClient.
+type ClientPerforceGetChangelistFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 *v1.PerforceConnectionDetails
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 PerforceCredentials
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol.PerforceChangelist
+	Result0 *perforce.Changelist
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -5309,13 +5342,457 @@ type ClientP4GetChangelistFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ClientP4GetChangelistFuncCall) Args() []interface{} {
+func (c ClientPerforceGetChangelistFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ClientP4GetChangelistFuncCall) Results() []interface{} {
+func (c ClientPerforceGetChangelistFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientPerforceGroupMembersFunc describes the behavior when the
+// PerforceGroupMembers method of the parent MockClient instance is invoked.
+type ClientPerforceGroupMembersFunc struct {
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error)
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error)
+	history     []ClientPerforceGroupMembersFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceGroupMembers delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) PerforceGroupMembers(v0 context.Context, v1 *v1.PerforceConnectionDetails, v2 string) ([]string, error) {
+	r0, r1 := m.PerforceGroupMembersFunc.nextHook()(v0, v1, v2)
+	m.PerforceGroupMembersFunc.appendCall(ClientPerforceGroupMembersFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PerforceGroupMembers
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientPerforceGroupMembersFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceGroupMembers method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientPerforceGroupMembersFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientPerforceGroupMembersFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientPerforceGroupMembersFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientPerforceGroupMembersFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails, string) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientPerforceGroupMembersFunc) appendCall(r0 ClientPerforceGroupMembersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientPerforceGroupMembersFuncCall objects
+// describing the invocations of this function.
+func (f *ClientPerforceGroupMembersFunc) History() []ClientPerforceGroupMembersFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientPerforceGroupMembersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientPerforceGroupMembersFuncCall is an object that describes an
+// invocation of method PerforceGroupMembers on an instance of MockClient.
+type ClientPerforceGroupMembersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.PerforceConnectionDetails
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientPerforceGroupMembersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientPerforceGroupMembersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientPerforceProtectsForDepotFunc describes the behavior when the
+// PerforceProtectsForDepot method of the parent MockClient instance is
+// invoked.
+type ClientPerforceProtectsForDepotFunc struct {
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)
+	history     []ClientPerforceProtectsForDepotFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceProtectsForDepot delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockClient) PerforceProtectsForDepot(v0 context.Context, v1 *v1.PerforceConnectionDetails, v2 string) ([]*v1.PerforceProtect, error) {
+	r0, r1 := m.PerforceProtectsForDepotFunc.nextHook()(v0, v1, v2)
+	m.PerforceProtectsForDepotFunc.appendCall(ClientPerforceProtectsForDepotFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// PerforceProtectsForDepot method of the parent MockClient instance is
+// invoked and the hook queue is empty.
+func (f *ClientPerforceProtectsForDepotFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceProtectsForDepot method of the parent MockClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ClientPerforceProtectsForDepotFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientPerforceProtectsForDepotFunc) SetDefaultReturn(r0 []*v1.PerforceProtect, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientPerforceProtectsForDepotFunc) PushReturn(r0 []*v1.PerforceProtect, r1 error) {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientPerforceProtectsForDepotFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientPerforceProtectsForDepotFunc) appendCall(r0 ClientPerforceProtectsForDepotFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientPerforceProtectsForDepotFuncCall
+// objects describing the invocations of this function.
+func (f *ClientPerforceProtectsForDepotFunc) History() []ClientPerforceProtectsForDepotFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientPerforceProtectsForDepotFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientPerforceProtectsForDepotFuncCall is an object that describes an
+// invocation of method PerforceProtectsForDepot on an instance of
+// MockClient.
+type ClientPerforceProtectsForDepotFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.PerforceConnectionDetails
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*v1.PerforceProtect
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientPerforceProtectsForDepotFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientPerforceProtectsForDepotFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientPerforceProtectsForUserFunc describes the behavior when the
+// PerforceProtectsForUser method of the parent MockClient instance is
+// invoked.
+type ClientPerforceProtectsForUserFunc struct {
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)
+	history     []ClientPerforceProtectsForUserFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceProtectsForUser delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockClient) PerforceProtectsForUser(v0 context.Context, v1 *v1.PerforceConnectionDetails, v2 string) ([]*v1.PerforceProtect, error) {
+	r0, r1 := m.PerforceProtectsForUserFunc.nextHook()(v0, v1, v2)
+	m.PerforceProtectsForUserFunc.appendCall(ClientPerforceProtectsForUserFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// PerforceProtectsForUser method of the parent MockClient instance is
+// invoked and the hook queue is empty.
+func (f *ClientPerforceProtectsForUserFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceProtectsForUser method of the parent MockClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ClientPerforceProtectsForUserFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientPerforceProtectsForUserFunc) SetDefaultReturn(r0 []*v1.PerforceProtect, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientPerforceProtectsForUserFunc) PushReturn(r0 []*v1.PerforceProtect, r1 error) {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientPerforceProtectsForUserFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails, string) ([]*v1.PerforceProtect, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientPerforceProtectsForUserFunc) appendCall(r0 ClientPerforceProtectsForUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientPerforceProtectsForUserFuncCall
+// objects describing the invocations of this function.
+func (f *ClientPerforceProtectsForUserFunc) History() []ClientPerforceProtectsForUserFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientPerforceProtectsForUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientPerforceProtectsForUserFuncCall is an object that describes an
+// invocation of method PerforceProtectsForUser on an instance of
+// MockClient.
+type ClientPerforceProtectsForUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.PerforceConnectionDetails
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*v1.PerforceProtect
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientPerforceProtectsForUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientPerforceProtectsForUserFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientPerforceUsersFunc describes the behavior when the PerforceUsers
+// method of the parent MockClient instance is invoked.
+type ClientPerforceUsersFunc struct {
+	defaultHook func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error)
+	hooks       []func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error)
+	history     []ClientPerforceUsersFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceUsers delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) PerforceUsers(v0 context.Context, v1 *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error) {
+	r0, r1 := m.PerforceUsersFunc.nextHook()(v0, v1)
+	m.PerforceUsersFunc.appendCall(ClientPerforceUsersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PerforceUsers method
+// of the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientPerforceUsersFunc) SetDefaultHook(hook func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceUsers method of the parent MockClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientPerforceUsersFunc) PushHook(hook func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientPerforceUsersFunc) SetDefaultReturn(r0 []*v1.PerforceUser, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientPerforceUsersFunc) PushReturn(r0 []*v1.PerforceUser, r1 error) {
+	f.PushHook(func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientPerforceUsersFunc) nextHook() func(context.Context, *v1.PerforceConnectionDetails) ([]*v1.PerforceUser, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientPerforceUsersFunc) appendCall(r0 ClientPerforceUsersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientPerforceUsersFuncCall objects
+// describing the invocations of this function.
+func (f *ClientPerforceUsersFunc) History() []ClientPerforceUsersFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientPerforceUsersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientPerforceUsersFuncCall is an object that describes an invocation of
+// method PerforceUsers on an instance of MockClient.
+type ClientPerforceUsersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.PerforceConnectionDetails
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*v1.PerforceUser
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientPerforceUsersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientPerforceUsersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

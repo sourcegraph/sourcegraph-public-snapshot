@@ -17,13 +17,18 @@ service GitserverService {
   rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
-  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {}
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
   rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {}
   rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {}
+  rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {}
+  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {}
+  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {}
+  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {}
+  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {}
+  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {}
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -447,17 +452,6 @@ message RepoUpdateResponse {
   string error = 3;
 }
 
-message P4ExecRequest {
-  string p4port = 1;
-  string p4user = 2;
-  string p4passwd = 3;
-  repeated bytes args = 4;
-}
-
-message P4ExecResponse {
-  bytes data = 1;
-}
-
 // ListGitoliteRequest is a request to list all repositories in gitolite.
 message ListGitoliteRequest {
   // host is the hostname of the gitolite instance
@@ -509,10 +503,8 @@ message GitObject {
 
 // IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
 message IsPerforcePathCloneableRequest {
-  string p4port = 1;
-  string p4user = 2;
-  string p4passwd = 3;
-  string depot_path = 4;
+  PerforceConnectionDetails connection_details = 1;
+  string depot_path = 2;
 }
 
 // IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
@@ -520,10 +512,95 @@ message IsPerforcePathCloneableResponse {}
 
 // CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
 message CheckPerforceCredentialsRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+message CheckPerforceCredentialsResponse {}
+
+message PerforceConnectionDetails {
   string p4port = 1;
   string p4user = 2;
   string p4passwd = 3;
 }
 
-// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
-message CheckPerforceCredentialsResponse {}
+message PerforceGetChangelistRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string changelist_id = 2;
+}
+
+message PerforceGetChangelistResponse {
+  PerforceChangelist changelist = 1;
+}
+
+message PerforceChangelist {
+  enum PerforceChangelistState {
+    SUBMITTED = 0;
+    PENDING = 1;
+    SHELVED = 2;
+    // Perforce doesn't actually return a state for closed changelists, so this is
+    // one we use to indicate the changelist is closed.
+    CLOSED = 3;
+  }
+  string id = 1;
+  google.protobuf.Timestamp creation_date = 2;
+  PerforceChangelistState state = 3;
+  string author = 4;
+  string title = 5;
+  string message = 6;
+}
+
+message IsPerforceSuperUserRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+message IsPerforceSuperUserResponse {}
+
+message PerforceProtectsForDepotRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string depot = 2;
+}
+
+message PerforceProtectsForDepotResponse {
+  repeated PerforceProtect protects = 1;
+}
+
+message PerforceGroupMembersRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string group = 2;
+}
+
+message PerforceGroupMembersResponse {
+  repeated string usernames = 1;
+}
+
+message PerforceProtectsForUserRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string username = 2;
+}
+
+message PerforceProtectsForUserResponse {
+  repeated PerforceProtect protects = 1;
+}
+
+message PerforceProtect {
+  string level = 1;
+  string entity_type = 2;
+  string entity_name = 3;
+  string match = 4;
+  bool is_exclusion = 5;
+  string host = 6;
+}
+
+message PerforceUsersRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+message PerforceUsersResponse {
+  repeated PerforceUser users = 1;
+}
+
+message PerforceUser {
+  string username = 1;
+  string email = 2;
+}
