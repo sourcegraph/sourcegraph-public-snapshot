@@ -31,29 +31,6 @@ td:first-child {
 
 Here's a feature parity matrix that compares the capabilities of Cody Clients across different platforms like VS Code, JetBrains, Neovim, Sourcegraph.com (Web UI), and Cody app.
 
-## Authentication
-
-| **Feature**               | **VS Code** | **JetBrains** | **Neovim** | **Web UI** | **App** |
-|-------------------------|---------|-----------|--------|--------|-----|
-| Between multiple accounts     |    ✓    |     ✓     |   ✓    |  N/A   |  x  |
-| Auth through browsers     |    x    |     ✓     |   x    |  x   |  x  |
-
-## Cody Agent
-
-| **Feature**               | **VS Code** | **JetBrains** | **Neovim** | **Web UI** | **App** |
-|-------------------------|---------|-----------|--------|--------|-----|
-| Uses agent for Chat     |    ✓    |     ✓     |   ✓    |  N/A   |  x  |
-| Uses agent for Recipes     |     ✓    |     ✓     |   ✓    |  N/A   |  x  |
-| Uses agent for Autocomplete     |    ✓    |     ✓     |   ✓    |  N/A   |  x  |
-
-## Cody app connection
-
-| **Feature**               | **VS Code** | **JetBrains** | **Neovim** | **Web UI** | **App** |
-|-------------------------|---------|-----------|--------|--------|-----|
-| Get context as back-end     |    ✓    |     x     |   x    |  N/A   |  N/A  |
-| Indexing a repo     |    ✓    |     x     |   x    |  N/A   |  ✓  |
-| Show indexing progress     |    ✓    |     x     |   x    |  N/A   |  ✓  |
-
 ## Chat
 
 | **Feature**               | **VS Code** | **JetBrains** | **Neovim** | **Web UI** | **App** |
@@ -98,7 +75,7 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Fix-ups     |    ✓    |     x     |   ✓    |  x   |  x  |
 | Touch     |    ✓    |     x     |   x    |  x   |  x  |
 
-## Commands/Recipes
+## Commands
 
 | **Feature**               | **VS Code** | **JetBrains** | **Neovim** | **Web UI** | **App** |
 |-------------------------|---------|-----------|--------|--------|-----|
@@ -112,12 +89,11 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Restart Cody/Sourcegraph     |    x    |     x     |   ✓    |  x   |  x  |
 | Toggle chat window     |    x    |     x     |   ✓    |  x   |  x  |
 | Improve variable names     |    x    |     ✓     |   x    |  ✓   |  ✓  |
-| Symf search     |    -    |     ✓     |   x    |  x   |  x  |
-| Generate README     |x    |     ✓     |   x    |  x   |  x  |
-| Commit message suggestion     |x    |     ✓     |   x    |  x   |  x  |
 
-## Recipes
+## Cody app connection
 
 | **Feature**               | **VS Code** | **JetBrains** | **Neovim** | **Web UI** | **App** |
 |-------------------------|---------|-----------|--------|--------|-----|
-| Optimize Code     |    x    |     x     |   ✓    |  x   |  x  |
+| Get context as back-end     |    ✓    |     x     |   x    |  N/A   |  N/A  |
+| Indexing a repo     |    ✓    |     x     |   x    |  N/A   |  ✓  |
+| Show indexing progress     |    ✓    |     x     |   x    |  N/A   |  ✓  |
