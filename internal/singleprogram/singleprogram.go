@@ -28,10 +28,9 @@ type CleanupFunc func() error
 
 func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
-		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version(), runtime.GOOS, runtime.GOARCH)
-	}
-	if deploy.IsAppFullSourcegraph() {
-		fmt.Fprintln(os.Stderr, "✱✱✱ Sourcegraph App ✱✱✱ full Sourcegraph mode enabled!")
+		fmt.Fprintln(os.Stderr, "✱ Cody App version:", version.Version(), runtime.GOOS, runtime.GOARCH)
+	} else if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		fmt.Fprintln(os.Stderr, "✱ Sourcegraph (single-program) version:", version.Version(), runtime.GOOS, runtime.GOARCH)
 	}
 
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
@@ -162,7 +161,7 @@ func Init(logger log.Logger) CleanupFunc {
 		}
 	}
 
-	if deploy.IsAppFullSourcegraph() || !deploy.IsApp() {
+	if !deploy.IsApp() {
 		setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 
 		haveDocker := isDockerAvailable()
@@ -289,7 +288,7 @@ func setupAppDir(root string, defaultDirFn func() (string, error)) (string, erro
 // rm -rf $HOME/Library/Application\ Support/sourcegraph-sp
 // rm -rf $HOME/Library/Caches/sourcegraph-sp
 //
-// This deletes data from old Sourcegraph app directories, which came from before we switched to
+// This deletes data from old Cody app directories, which came from before we switched to
 // Tauri - so that users don't have to. In theory, these directories have no impact and can't conflict,
 // but just for our own sanity we get rid of them.
 func removeLegacyDirs() error {

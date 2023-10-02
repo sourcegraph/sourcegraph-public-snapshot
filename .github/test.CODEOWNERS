@@ -60,7 +60,6 @@
 
 /dev/gqltest/**/* @unknwon
 
-/doc/**/admin/** @sourcegraph/delivery
 /doc/dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj
 
 /doc/batch_changes/**/* @eseliger
@@ -76,8 +75,6 @@
 /docker-images/cadvisor/**/* @bobheadxi
 
 /docker-images/grafana/**/* @bobheadxi
-
-/docker-images/postgres-12-alpine/**/* @sourcegraph/delivery
 
 /docker-images/prometheus/**/* @bobheadxi
 
@@ -222,7 +219,7 @@
 
 /lib/servicecatalog/**/* @sourcegraph/cloud @sourcegraph/security
 
-/monitoring/**/* @bobheadxi @slimsag @sourcegraph/delivery
+/monitoring/**/* @bobheadxi @slimsag
 /monitoring/frontend.go @efritz
 /monitoring/precise_code_intel_* @efritz @sourcegraph/code-intelligence
 

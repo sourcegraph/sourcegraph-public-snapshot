@@ -45,6 +45,7 @@ Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** up
 | `v5.0.0`     | `v5.1.0`   | Standard     | A minor version                       |
 | `v5.0.0`     | `v5.2.0`   | Multiversion  | Two minor versions                    |
 | `v3.41.0`    | `v3.42.2`  | Standard     | A minor version and patch version     |
+| `v5.1.0`     | `v5.1.3`   | Standard     | Multiple patch versions     |
 | `v3.43.0`    | `v4.0.0`   | Standard     | A major version change but only one absolute version |
 | `v5.0.0`     | `v5.2.2`   | Multiversion  | Two minor versions and patch          |
 | `v3.33.0`    | `v5.2.0`   | Multiversion  | Major and minor                       |
@@ -115,3 +116,4 @@ If your instance has schema drift or unfinished oob migrations you may need to a
 - [Upgrading Early Versions](./migrator/upgrading-early-versions.md)
 - [Troubleshooting upgrades](./migrator/troubleshooting-upgrades.md)
 - [Downgrading](./migrator/downgrading.md)
+- [Sourcegraph 5.2 gRPC Configuration Guide](./grpc/index.md)

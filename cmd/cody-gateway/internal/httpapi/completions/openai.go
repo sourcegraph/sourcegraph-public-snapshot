@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -42,22 +41,22 @@ func NewOpenAIHandler(
 		openAIURL,
 		allowedModels,
 		upstreamHandlerMethods[openaiRequest]{
-			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, error) {
+			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, bool, error) {
 				if feature == codygateway.FeatureCodeCompletions {
-					return http.StatusNotImplemented,
+					return http.StatusNotImplemented, false,
 						errors.Newf("feature %q is currently not supported for OpenAI",
 							feature)
 				}
-				return 0, nil
+				return 0, false, nil
 			},
-			transformBody: func(body *openaiRequest, act *actor.Actor) {
+			transformBody: func(body *openaiRequest, identifier string) {
 				// We don't want to let users generate multiple responses, as this would
 				// mess with rate limit counting.
 				if body.N > 1 {
 					body.N = 1
 				}
 				// We forward the actor ID to support tracking.
-				body.User = act.ID
+				body.User = identifier
 			},
 			getRequestMetadata: func(body openaiRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{"stream": body.Stream}

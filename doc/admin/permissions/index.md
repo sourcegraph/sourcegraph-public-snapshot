@@ -8,21 +8,36 @@ see the entities that they can see on the code host. These permissions are enfor
 across the product for all the use cases that need to read data from a repository, 
 including the existence of such repository on the code host.
 
-## Example
-
 Imagine a scenario, with 2 users, `alice` and `bob`: 
 
-- `alice` can access repositories `horsegraph/global` and `horsegraph/alice` on the code host
-- `bob` has access to repositories `horsegraph/global` and `horsegraph/docs` on the code host
-- there is also a public repository `horsegraph/public`
-- all of the mentioned repositories are synced to Sourcegraph
+- `alice` can access repositories `my-organisation/global` and `my-organisation/alice` on the code host
+- `bob` has access to repositories `my-organisation/global` and `my-organisation/docs` on the code host
+- There is a public repository `my-organisation/public`
+- All of the mentioned repositories are synced to Sourcegraph
 
-If `alice` tries to run a search on Sourcegraph, the results will only contain data from the public `horsegraph/global` repository 
-and the ones she has access to (`horsegraph/global` and `horsegraph/alice`). `alice` will not be able to see results 
-from the `horsegraph/docs`. If `alice` creates a code insight, she will only see results from the repositories she has access to.
+With permissions set up, when `alice` tries to run a search on Sourcegraph, the results will only contain data from the public `my-organisation/global` repository and the ones she has access to (`my-organisation/global` and `my-organisation/alice`). `alice` will not be able to see results from the `my-organisation/docs`. If `alice` creates a code insight, she will only see results from the repositories she has access to.
 
-Same for `bob`, the search results or any other feature will not show him the existence of `horsegraph/alice` repository on 
-Sourcegraph, since `bob` does not have access to it on the code host.
+Same for `bob`, the search results or any other feature will not show him the existence of `my-organisation/alice` repository on Sourcegraph, since `bob` does not have access to it on the code host.
+
+## Getting started
+
+To set up permissions by [syncing them from a code host](syncing.md) you need two things: [an authentication provider](../auth/index.md) that can tell which users should see which repositories and [a code host connection](../external_service/index.md) with authorization enabled.
+
+1. Configure an authentication provider for the code host from which you want to sync permissions:
+    - [GitHub](../auth/index.md#github)
+    - [GitLab](../auth/index.md#gitlab)
+    - [Bitbucket Cloud](../auth/index.md#bitbucket-cloud)
+    - [Gerrit](../auth/index.md#gerrit)
+    - Bitbucket Server doesn't require an authentication provider, but has [other prerequisites](../external_service/bitbucket_server.md#prerequisites)
+    - Perforce doesn't need a separate authentication provider
+2. Configure the code host connection to use authorization:
+    - [GitHub](../external_service/github.md#repository-permissions)
+    - [GitLab](../external_service/gitlab.md#repository-permissions)
+    - [Bitbucket Cloud](../external_service/bitbucket_cloud.md#repository-permissions)
+    - [Gerrit](../external_service/gerrit.md#add-gerrit-as-an-authentication-provider)
+    - [Perforce](../repo/perforce.md#repository-permissions)
+
+It's also possible to use other methods to get permission data from a code host into the Sourcegraph instance.
 
 ## Supported methods to sync permissions
 

@@ -14,8 +14,8 @@ val isAgentEnabled = findProperty("enableAgent") != "false"
 plugins {
   id("java")
   // Dependencies are locked at this version to work with JDK 11 on CI.
-  id("org.jetbrains.kotlin.jvm") version "1.7.0"
-  id("org.jetbrains.intellij") version "1.13.3"
+  id("org.jetbrains.kotlin.jvm") version "1.9.10"
+  id("org.jetbrains.intellij") version "1.15.0"
   id("org.jetbrains.changelog") version "1.3.1"
   id("com.diffplug.spotless") version "6.21.0"
 }
@@ -71,7 +71,7 @@ java {
     // Always compile the codebase with Java 11 regardless of what Java
     // version is installed on the computer. Gradle will download Java 11
     // even if you already have it installed on your computer.
-    languageVersion.set(JavaLanguageVersion.of(11))
+    languageVersion.set(JavaLanguageVersion.of(properties("javaVersion").toInt()))
   }
 }
 
@@ -192,11 +192,10 @@ tasks {
     ideVersions.set(listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2"))
     val skippedFailureLevels =
         EnumSet.of(
-            FailureLevel.DEPRECATED_API_USAGES, // TODO: remove deprecated API calls
+            FailureLevel.DEPRECATED_API_USAGES,
+            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES, // blocked by: Kotlin UI DSL Cell.align
             FailureLevel.EXPERIMENTAL_API_USAGES,
-            FailureLevel.INTERNAL_API_USAGES, // TODO: remove internal API calls
-            FailureLevel.NOT_DYNAMIC,
-            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES) // TODO: remove to-be-removed API calls
+            FailureLevel.NOT_DYNAMIC)
     failureLevel.set(EnumSet.complementOf(skippedFailureLevels))
   }
 

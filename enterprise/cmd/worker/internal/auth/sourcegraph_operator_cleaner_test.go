@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -48,15 +49,22 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	})
 
 	// Create test users:
-	//   1. logan, who has no external accounts
-	//   2. morgan, who is an expired SOAP user but has more external accounts
-	//   3. jordan, who is a SOAP user that has not expired
-	//   4. riley, who is an expired SOAP user (will be cleaned up)
-	//   5. cris, who has a non-SOAP external account
-	//   6. cami, who is an expired SOAP user on the permanent accounts list
-	//      (is a service account)
-	// All the above except riley will be deleted.
-	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami"}
+	//   1. logan, who has no external accounts and is a site admin (will not be changed)
+	//      (like a customer site admin)
+	//   2. morgan, who is an expired SOAP user but has more external accounts (will be demoted)
+	//      (like a Sourcegraph teammate who used SOAP via Entitle, and has an external account)
+	//   3. jordan, who is a SOAP user that has not expired (will not be changed)
+	//   4. riley, who is an expired SOAP user with no external accounts (will be deleted)
+	//   5. cris, who has a non-SOAP external account and is not a site admin (will not be changed)
+	//   6. cami, who is an expired SOAP user and is a service account (will not be changed)
+	//   7. dani, who has no external accounts and is not a site admin (will not be changed)
+	//   8. alex, who has a very old soft-deleted SOAP account and is also currently a SOAP user (will not be changed)
+	// In all of the above, SOAP users are also made site admins.
+	// The lists below indicate who will and will not be deleted or otherwise
+	// modified.
+	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami", "dani", "alex"}
+	wantAdmins := []string{"logan", "jordan", "cami", "alex"}
+	wantNonSOAPUsers := []string{"logan", "morgan", "cris", "dani"}
 
 	_, err := db.Users().Create(
 		ctx,
@@ -80,7 +88,8 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), morgan.ID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), morgan.ID)
 	require.NoError(t, err)
 	err = db.UserExternalAccounts().AssociateUserAndSave(
 		ctx,
@@ -94,8 +103,9 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, morgan.ID, true))
 
-	_, err = db.UserExternalAccounts().CreateUserAndSave(
+	jordan, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
 		database.NewUser{
 			Username: "jordan",
@@ -109,6 +119,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, jordan.ID, true))
 
 	riley, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
@@ -124,8 +135,10 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), riley.ID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), riley.ID)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, riley.ID, true))
 
 	_, err = db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
@@ -160,8 +173,51 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		accountData,
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), cami.ID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), cami.ID)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, cami.ID, true))
+
+	_, err = db.Users().Create(ctx, database.NewUser{
+		Username:        "dani",
+		Email:           "dani@example.com",
+		EmailIsVerified: true,
+	})
+	require.NoError(t, err)
+
+	alex, err := db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		database.NewUser{
+			Username: "alex",
+		},
+		extsvc.AccountSpec{
+			ServiceType: auth.SourcegraphOperatorProviderType,
+			ServiceID:   "https://sourcegraph.com",
+			ClientID:    "soap",
+			AccountID:   "alex",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
+	// pretend it was made long ago
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-999*time.Minute), alex.ID)
+	require.NoError(t, err)
+	// soft delete alex's external account
+	require.NoError(t, db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+		UserID: alex.ID,
+	}))
+	// make another SOAP account, this one isn't expired
+	require.NoError(t, db.UserExternalAccounts().AssociateUserAndSave(ctx, alex.ID,
+		extsvc.AccountSpec{
+			ServiceType: auth.SourcegraphOperatorProviderType,
+			ServiceID:   "https://sourcegraph.com",
+			ClientID:    "soap",
+			AccountID:   "alex2",
+		},
+		extsvc.AccountData{}))
+	// make alex and admin, alex shouldn't be changed
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, alex.ID, true))
 
 	t.Run("handle with cleanup", func(t *testing.T) {
 		err = handler.Handle(ctx)
@@ -171,9 +227,32 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		got := make([]string, 0, len(users))
+		gotAdmins := make([]string, 0, len(users))
+		gotNonSOAPUsers := make([]string, 0, len(users))
 		for _, u := range users {
 			got = append(got, u.Username)
+			if u.SiteAdmin {
+				gotAdmins = append(gotAdmins, u.Username)
+			}
+			ext, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+				UserID:      u.ID,
+				ServiceType: auth.SourcegraphOperatorProviderType,
+			})
+			require.NoError(t, err)
+			if len(ext) == 0 {
+				gotNonSOAPUsers = append(gotNonSOAPUsers, u.Username)
+			}
 		}
-		assert.Equal(t, wantNotDeleted, got)
+
+		slices.Sort(wantNotDeleted)
+		slices.Sort(got)
+		slices.Sort(wantAdmins)
+		slices.Sort(gotAdmins)
+		slices.Sort(wantNonSOAPUsers)
+		slices.Sort(gotNonSOAPUsers)
+
+		assert.Equal(t, wantNotDeleted, got, "want not deleted")
+		assert.Equal(t, wantAdmins, gotAdmins, "want admins")
+		assert.Equal(t, wantNonSOAPUsers, gotNonSOAPUsers, "want SOAP")
 	})
 }

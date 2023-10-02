@@ -76,6 +76,7 @@ type Handlers struct {
 
 	// Search jobs
 	SearchJobsDataExportHandler http.Handler
+	SearchJobsLogsHandler       http.Handler
 
 	// Dotcom license check
 	NewDotcomLicenseCheckHandler enterprise.NewDotcomLicenseCheckHandler
@@ -167,7 +168,7 @@ func NewHandler(
 		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
 
-		updatecheckHandler, err := updatecheck.HandlerWithLog(logger)
+		updatecheckHandler, err := updatecheck.ForwardHandler()
 		if err != nil {
 			return nil, errors.Errorf("create updatecheck handler: %v", err)
 		}
@@ -181,7 +182,8 @@ func NewHandler(
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Get(apirouter.SearchJob).Handler(trace.Route(handlers.SearchJobsDataExportHandler))
+	m.Get(apirouter.SearchJobResults).Handler(trace.Route(handlers.SearchJobsDataExportHandler))
+	m.Get(apirouter.SearchJobLogs).Handler(trace.Route(handlers.SearchJobsLogsHandler))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))

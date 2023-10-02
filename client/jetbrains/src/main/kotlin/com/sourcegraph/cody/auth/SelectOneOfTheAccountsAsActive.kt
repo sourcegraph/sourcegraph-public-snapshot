@@ -8,7 +8,7 @@ import com.sourcegraph.cody.initialization.Activity
 
 class SelectOneOfTheAccountsAsActive : Activity {
   override fun runActivity(project: Project) {
-    val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
+    val codyAuthenticationManager = CodyAuthenticationManager.instance
     if (codyAuthenticationManager.getActiveAccount(project) == null) {
       val newActiveAccount = codyAuthenticationManager.getAccounts().getFirstAccountOrNull()
       codyAuthenticationManager.setActiveAccount(project, newActiveAccount)

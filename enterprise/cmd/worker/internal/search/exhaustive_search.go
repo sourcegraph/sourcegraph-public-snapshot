@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
@@ -54,12 +55,10 @@ var _ workerutil.Handler[*types.ExhaustiveSearchJob] = &exhaustiveSearchHandler{
 func (h *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchJob) (err error) {
 	// TODO observability? read other handlers to see if we are missing stuff
 
-	q, err := h.newSearcher.NewSearch(ctx, record.Query)
-	if err != nil {
-		return err
-	}
+	userID := record.InitiatorID
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
-	repoRevSpecs, err := q.RepositoryRevSpecs(ctx)
+	q, err := h.newSearcher.NewSearch(ctx, userID, record.Query)
 	if err != nil {
 		return err
 	}
@@ -70,10 +69,12 @@ func (h *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger,
 	}
 	defer func() { err = tx.Done(err) }()
 
-	for _, repoRevSpec := range repoRevSpecs {
+	it := q.RepositoryRevSpecs(ctx)
+	for it.Next() {
+		repoRevSpec := it.Current()
 		_, err := tx.CreateExhaustiveSearchRepoJob(ctx, types.ExhaustiveSearchRepoJob{
 			RepoID:      repoRevSpec.Repository,
-			RefSpec:     repoRevSpec.RevisionSpecifier,
+			RefSpec:     repoRevSpec.RevisionSpecifiers.String(),
 			SearchJobID: record.ID,
 		})
 		if err != nil {
@@ -81,5 +82,19 @@ func (h *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger,
 		}
 	}
 
-	return nil
+	return it.Err()
+}
+
+func newExhaustiveSearchWorkerResetter(
+	observationCtx *observation.Context,
+	workerStore dbworkerstore.Store[*types.ExhaustiveSearchJob],
+) *dbworker.Resetter[*types.ExhaustiveSearchJob] {
+	options := dbworker.ResetterOptions{
+		Name:     "exhaustive_search_worker_resetter",
+		Interval: 1 * time.Minute,
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "exhaustive_search_worker"),
+	}
+
+	resetter := dbworker.NewResetter(observationCtx.Logger, workerStore, options)
+	return resetter
 }

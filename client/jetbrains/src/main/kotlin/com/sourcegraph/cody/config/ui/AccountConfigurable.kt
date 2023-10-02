@@ -4,7 +4,6 @@ import com.intellij.collaboration.util.ProgressIndicatorsProvider
 import com.intellij.ide.DataManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
-import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.Disposer
@@ -54,20 +53,9 @@ class AccountConfigurable(val project: Project) :
               .applyToComponent { this.preferredSize = Dimension(Int.MAX_VALUE, 200) }
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
-                  if (CodyAccountsHost.KEY.`is`(key)) accountsModel else null
+                  if (CodyAccountsHost.DATA_KEY.`is`(key)) accountsModel else null
                 }
               }
-        }
-        row {
-          link("Open ${ConfigUtil.CODY_DISPLAY_NAME} settings...") {
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable::class.java)
-          }
-        }
-        row {
-          link("Open ${ConfigUtil.CODE_SEARCH_DISPLAY_NAME} settings...") {
-            ShowSettingsUtil.getInstance()
-                .showSettingsDialog(project, CodeSearchConfigurable::class.java)
-          }
         }
       }
     }
@@ -102,7 +90,7 @@ class AccountConfigurable(val project: Project) :
     publisher.beforeAction(serverUrlChanged)
     super.apply()
     val context = AccountSettingChangeContext(serverUrlChanged, accessTokenChanged)
-    CodyAuthenticationManager.getInstance().setActiveAccount(project, activeAccount)
+    CodyAuthenticationManager.instance.setActiveAccount(project, activeAccount)
     accountsModel.activeAccount = activeAccount
     publisher.afterAction(context)
   }

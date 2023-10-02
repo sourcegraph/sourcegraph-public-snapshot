@@ -31,8 +31,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
@@ -269,6 +271,37 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	}
 	siteConfig, err := conf.RedactSecrets(conf.Raw())
 	return JSONCString(siteConfig.Site), err
+}
+
+type licenseInfoResolver struct {
+	tags      []string
+	userCount int32
+	expiresAt gqlutil.DateTime
+}
+
+func (r *licenseInfoResolver) Tags() []string   { return r.tags }
+func (r *licenseInfoResolver) UserCount() int32 { return r.userCount }
+
+func (r *licenseInfoResolver) ExpiresAt() gqlutil.DateTime {
+	return r.expiresAt
+}
+
+func (r *siteConfigurationResolver) LicenseInfo(ctx context.Context) (*licenseInfoResolver, error) {
+	// 🚨 SECURITY: Only site admins can view license information.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	license, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	return &licenseInfoResolver{
+		tags:      license.Tags,
+		userCount: int32(license.UserCount),
+		expiresAt: gqlutil.DateTime{Time: license.ExpiresAt},
+	}, nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {

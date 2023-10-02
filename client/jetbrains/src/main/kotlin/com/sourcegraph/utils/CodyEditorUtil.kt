@@ -3,11 +3,13 @@ package com.sourcegraph.utils
 import com.intellij.application.options.CodeStyle
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
@@ -15,6 +17,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings.IndentOptions
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -98,6 +101,16 @@ object CodyEditorUtil {
   }
 
   @JvmStatic
+  fun getFocusedEditorForAnActionEvent(e: AnActionEvent): Editor? {
+    return FileEditorManager.getInstance(e.project!!).selectedTextEditor
+  }
+
+  @JvmStatic
+  fun getLanguageForFocusedEditor(e: AnActionEvent): Language? {
+    return getFocusedEditorForAnActionEvent(e)?.let { getLanguage(it) }
+  }
+
+  @JvmStatic
   fun isEditorInstanceSupported(editor: Editor): Boolean {
     return editor.project != null &&
         !editor.isViewer &&
@@ -160,4 +173,8 @@ object CodyEditorUtil {
         command == RIGHT_COMMAND ||
         command.contains(MOVE_CARET_COMMAND))
   }
+
+  @JvmStatic
+  fun getVirtualFile(editor: Editor): VirtualFile? =
+      FileDocumentManager.getInstance().getFile(editor.document)
 }

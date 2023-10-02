@@ -2,7 +2,6 @@
 
 **/* @bobheadxi
 **/* @slimsag
-**/* @sourcegraph/delivery
 
 frontend.go @efritz
 precise_code_intel_* @efritz

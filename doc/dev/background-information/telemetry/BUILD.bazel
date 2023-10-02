@@ -1,0 +1,22 @@
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+filegroup(
+    name = "doc_files",
+    srcs = glob(
+        ["**/*"],
+        [
+            ".gitattributes",
+        ],
+    ),
+    visibility = ["//doc:__pkg__"],
+)
+
+write_generated_to_source_files(
+    name = "write_telemetrygateway_doc",
+    src = "//internal/telemetrygateway/v1:protocol.md",
+    files = [
+        "internal/telemetrygateway/v1/protocol.md/protocol.md",
+    ],
+    strip_prefix = "internal/telemetrygateway/v1/protocol.md/",
+    tags = ["go_generate"],
+)

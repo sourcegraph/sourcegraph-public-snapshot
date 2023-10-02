@@ -10,13 +10,13 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Profile',
         to: '/profile',
         exact: true,
-        condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         label: 'Emails',
         to: '/emails',
         exact: true,
-        condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         label: 'Access tokens',
@@ -27,7 +27,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Account security',
         to: '/security',
         exact: true,
-        condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         label: 'Quotas',

@@ -10,5 +10,7 @@ class CodySettingChangeContext(
     val oldCustomAutocompleteColor: Int?,
     val customAutocompleteColor: Int?,
     val oldBlacklistedAutocompleteLanguageIds: List<String>,
-    val newBlacklistedAutocompleteLanguageIds: List<String>
+    val newBlacklistedAutocompleteLanguageIds: List<String>,
+    val oldShouldAcceptNonTrustedCertificatesAutomatically: Boolean,
+    val newShouldAcceptNonTrustedCertificatesAutomatically: Boolean
 )

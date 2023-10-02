@@ -994,9 +994,8 @@ func TestToTextPatternInfo(t *testing.T) {
 			return "Empty"
 		}
 		b := plan[0]
-		mode := search.Batch
 		resultTypes := computeResultTypes(b, query.SearchTypeLiteral)
-		p := toTextPatternInfo(b, resultTypes, mode)
+		p := toTextPatternInfo(b, resultTypes, limits.DefaultMaxSearchResults)
 		v, _ := json.Marshal(p)
 		return string(v)
 	}

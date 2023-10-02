@@ -38,6 +38,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Explanations](cody/explanations/index.md)
 - [Cody Use Cases](cody/use-cases.md)
 - [Custom Commands](cody/custom-commands.md)
+- [Feature Parity Reference](cody/feature-reference.md)
 - [Troubleshooting](cody/troubleshooting.md)
 - [FAQ](cody/faq.md)
 
@@ -141,4 +142,5 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Dotcom](dotcom/index.md)
 - [★ Search query syntax](code_search/reference/queries.md)
 - [★ Sourcegraph API](api/index.md)
+- [★ SLAs and Premium Support](sla/index.md)
 - [★ Changelog](CHANGELOG.md)

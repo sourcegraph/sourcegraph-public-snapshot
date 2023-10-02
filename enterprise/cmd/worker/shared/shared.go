@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/githubapps"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/search"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetrygatewayexporter"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -50,6 +51,7 @@ var additionalJobs = map[string]job.Job{
 	"permission-sync-job-cleaner":           permissions.NewPermissionSyncJobCleaner(),
 	"permission-sync-job-scheduler":         permissions.NewPermissionSyncJobScheduler(),
 	"export-usage-telemetry":                telemetry.NewTelemetryJob(),
+	"telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
 
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 	"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),

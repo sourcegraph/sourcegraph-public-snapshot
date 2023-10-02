@@ -15,7 +15,7 @@ func Searcher() *monitoring.Dashboard {
 		grpcServiceName = "searcher.v1.SearcherService"
 	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("searcher", grpcServiceName)
 
 	// instanceSelector is a helper for inserting the instance selector.
 	// Should be used on strings created via `` since you can't escape in
@@ -228,7 +228,8 @@ regularly above 0 it is a sign for further investigation.`,
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 
-					InstanceFilterRegex: `${instance:regex}`,
+					InstanceFilterRegex:  `${instance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.NewGRPCInternalErrorMetricsGroup(

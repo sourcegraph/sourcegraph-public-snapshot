@@ -397,7 +397,7 @@ func TestClient_Remove(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: true,
+					EnableGRPC: boolPointer(true),
 				},
 			},
 		})
@@ -414,7 +414,7 @@ func TestClient_Remove(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: false,
+					EnableGRPC: boolPointer(false),
 				},
 			},
 		})
@@ -584,7 +584,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: true,
+					EnableGRPC: boolPointer(true),
 				},
 			},
 		})
@@ -632,7 +632,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: false,
+					EnableGRPC: boolPointer(false),
 				},
 			},
 		})
@@ -866,7 +866,7 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						EnableGRPC: true,
+						EnableGRPC: boolPointer(true),
 					},
 				},
 			})
@@ -1011,7 +1011,7 @@ func TestClient_P4Exec(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						EnableGRPC: false,
+						EnableGRPC: boolPointer(false),
 					},
 				},
 			})
@@ -1128,7 +1128,7 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: true,
+				EnableGRPC: boolPointer(true),
 			},
 		},
 	})
@@ -1226,7 +1226,29 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 
 func TestClient_BatchLog(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
-	source := gitserver.NewTestClientSource(t, addrs)
+	source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
+		o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
+				var out []*proto.BatchLogResult
+
+				for _, repoCommit := range in.GetRepoCommits() {
+					out = append(out, &proto.BatchLogResult{
+						RepoCommit:    repoCommit,
+						CommandOutput: fmt.Sprintf("out<%s: %s@%s>", fmt.Sprintf("http://%s/batch-log", conn.Target()), repoCommit.GetRepo(), repoCommit.GetCommit()),
+						CommandError:  nil,
+					})
+				}
+
+				return &proto.BatchLogResponse{
+					Results: out,
+				}, nil
+			}
+
+			return &mockClient{
+				mockBatchLog: mockBatchLog,
+			}
+		}
+	})
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -1402,7 +1424,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: true,
+					EnableGRPC: boolPointer(true),
 				},
 			},
 		})
@@ -1439,7 +1461,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: false,
+					EnableGRPC: boolPointer(false),
 				},
 			},
 		})
@@ -1509,7 +1531,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: true,
+					EnableGRPC: boolPointer(true),
 				},
 			},
 		})
@@ -1540,7 +1562,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: false,
+					EnableGRPC: boolPointer(false),
 				},
 			},
 		})
@@ -1604,7 +1626,7 @@ func TestClient_SystemInfo(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: true,
+					EnableGRPC: boolPointer(true),
 				},
 			},
 		})
@@ -1635,7 +1657,7 @@ func TestClient_SystemInfo(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: false,
+					EnableGRPC: boolPointer(false),
 				},
 			},
 		})
@@ -1690,7 +1712,6 @@ type mockClient struct {
 	mockRepoClone                   func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error)
 	mockRepoCloneProgress           func(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error)
 	mockRepoDelete                  func(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error)
-	mockRepoStats                   func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
 	mockRepoUpdate                  func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error)
 	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
@@ -1756,11 +1777,6 @@ func (ms *mockClient) IsRepoCloneable(ctx context.Context, in *proto.IsRepoClone
 	return ms.mockIsRepoCloneable(ctx, in, opts...)
 }
 
-// ReposStats implements v1.GitserverServiceClient
-func (ms *mockClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
-	return ms.mockRepoStats(ctx, in, opts...)
-}
-
 // Search implements v1.GitserverServiceClient
 func (ms *mockClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
 	return ms.mockSearch(ctx, in, opts...)
@@ -1785,3 +1801,7 @@ func (fuzzTime) Generate(rand *rand.Rand, _ int) reflect.Value {
 }
 
 var _ quick.Generator = fuzzTime{}
+
+func boolPointer(b bool) *bool {
+	return &b
+}

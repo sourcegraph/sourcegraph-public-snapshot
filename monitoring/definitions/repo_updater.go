@@ -23,7 +23,7 @@ func RepoUpdater() *monitoring.Dashboard {
 		},
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("repo_updater", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "repo-updater",
@@ -580,8 +580,9 @@ func RepoUpdater() *monitoring.Dashboard {
 					HumanServiceName:   "repo_updater",
 					RawGRPCServiceName: grpcServiceName,
 
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${instance:regex}`,
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${instance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSource),
 
 			shared.NewGRPCInternalErrorMetricsGroup(

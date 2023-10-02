@@ -28,10 +28,12 @@ import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
 import { NotepadContainer } from '../../../search/Notepad'
 import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
+import { useDeveloperSettings } from '../../../stores'
 
 import styles from './LayoutPage.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard/SetupWizard'), 'SetupWizard')
+const LazyDeveloperDialog = lazyComponent(() => import('../../../devsettings/DeveloperDialog'), 'DeveloperDialog')
 
 export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
     children?: never
@@ -85,6 +87,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
+    const showDeveloperDialog = useDeveloperSettings(state => state.showDialog)
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(props.authenticatedUser?.id, isRepositoryRelatedPage)
 
@@ -192,7 +195,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isCodyApp={props.isCodyApp} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
@@ -220,7 +223,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     showFeedbackModal={showFeedbackModal}
                 />
             )}
-            {props.isSourcegraphApp && <StartupUpdateChecker />}
+            {props.isCodyApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ErrorBoundary location={location}>
                 <Suspense
@@ -262,6 +265,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     userHistory={userHistory}
                 />
             )}
+            {showDeveloperDialog && <LazyDeveloperDialog />}
             <SearchQueryStateObserver
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}

@@ -10,18 +10,18 @@ import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-internal abstract class CodyCredentialsUi {
+abstract class CodyCredentialsUi {
   abstract fun getPreferredFocusableComponent(): JComponent?
 
   abstract fun getValidator(): Validator
 
   abstract fun createExecutor(): SourcegraphApiRequestExecutor
 
-  abstract fun acquireLoginAndToken(
+  abstract fun acquireDetailsAndToken(
       server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
       indicator: ProgressIndicator
-  ): Pair<String, String>
+  ): Pair<CodyAccountDetails, String>
 
   abstract fun handleAcquireError(error: Throwable): ValidationInfo
 

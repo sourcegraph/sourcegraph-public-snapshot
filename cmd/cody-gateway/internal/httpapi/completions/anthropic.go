@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -109,9 +108,9 @@ func NewAnthropicHandler(
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
-			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, error) {
+			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, bool, error) {
 				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return http.StatusBadRequest, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+					return http.StatusBadRequest, false, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
 				}
 
 				if flagged, reason, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
@@ -133,17 +132,18 @@ func NewAnthropicHandler(
 
 					// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
 					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
-						logger.Error("failed to record flagged prompt", log.Error(err))
+						logger.Warn("failed to record flagged prompt", log.Error(err))
 					}
+					return 0, true, nil
 				}
 
-				return 0, nil
+				return 0, false, nil
 			},
-			transformBody: func(body *anthropicRequest, act *actor.Actor) {
+			transformBody: func(body *anthropicRequest, identifier string) {
 				// Overwrite the metadata field, we don't want to allow users to specify it:
 				body.Metadata = &anthropicRequestMetadata{
 					// We forward the actor ID to support tracking.
-					UserID: act.ID,
+					UserID: identifier,
 				}
 			},
 			getRequestMetadata: func(body anthropicRequest) (model string, additionalMetadata map[string]any) {

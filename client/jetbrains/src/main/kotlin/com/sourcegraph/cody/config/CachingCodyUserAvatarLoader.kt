@@ -5,6 +5,7 @@ import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.util.ProgressIndicatorsProvider
 import com.intellij.execution.process.ProcessIOExecutorService
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -21,6 +22,7 @@ import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletableFuture
 
+@Service
 class CachingCodyUserAvatarLoader : Disposable {
 
   private val indicatorProvider = ProgressIndicatorsProvider().also { Disposer.register(this, it) }
@@ -50,16 +52,16 @@ class CachingCodyUserAvatarLoader : Disposable {
       url: String,
       maximumSize: Int
   ): Image? {
-    try {
+    return try {
       val image =
           requestExecutor.execute(indicator, SourcegraphApiRequests.CurrentUser.getAvatar(url))
-      return if (image.getWidth(null) <= maximumSize && image.getHeight(null) <= maximumSize) image
+      if (image.getWidth(null) <= maximumSize && image.getHeight(null) <= maximumSize) image
       else ImageLoader.scaleImage(image, maximumSize)
     } catch (e: ProcessCanceledException) {
-      return null
+      null
     } catch (e: Exception) {
       LOG.debug("Error loading image from $url", e)
-      return null
+      null
     }
   }
 

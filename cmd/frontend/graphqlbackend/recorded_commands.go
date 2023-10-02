@@ -83,6 +83,8 @@ type RecordedCommandResolver interface {
 	Command() string
 	Dir() string
 	Path() string
+	Output() string
+	IsSuccess() bool
 }
 
 type recordedCommandResolver struct {
@@ -111,4 +113,28 @@ func (r *recordedCommandResolver) Dir() string {
 
 func (r *recordedCommandResolver) Path() string {
 	return r.command.Path
+}
+
+func (r *recordedCommandResolver) Output() string {
+	return r.command.Output
+}
+
+func (r *recordedCommandResolver) IsSuccess() bool {
+	return r.command.IsSuccess
+}
+
+func (r *RepositoryResolver) IsRecordingEnabled() bool {
+	recordingConf := conf.Get().SiteConfig().GitRecorder
+	if recordingConf != nil && len(recordingConf.Repos) > 0 {
+		if recordingConf.Repos[0] == "*" {
+			return true
+		}
+
+		for _, repo := range recordingConf.Repos {
+			if strings.EqualFold(repo, r.Name()) {
+				return true
+			}
+		}
+	}
+	return false
 }

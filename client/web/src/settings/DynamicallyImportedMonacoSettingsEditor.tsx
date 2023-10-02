@@ -58,6 +58,7 @@ interface Props<T extends object>
 interface State {
     /** The current contents of the editor, if changed from Props.value. */
     value?: string
+    actionsAvailable: boolean
 }
 
 const MonacoSettingsEditor = React.lazy(async () => ({
@@ -69,7 +70,9 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     Props<T>,
     State
 > {
-    public state: State = {}
+    public state: State = {
+        actionsAvailable: false,
+    }
 
     private subscriptions = new Subscription()
 
@@ -126,10 +129,15 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 {blockNavigationIfDirty && (
                     <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
                 )}
-                {this.props.actions && (
-                    <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
-                )}
+
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
+                    {this.props.actions && (
+                        <EditorActionsGroup
+                            actions={this.props.actions}
+                            onClick={this.runAction.bind(this)}
+                            actionsAvailable={this.state.actionsAvailable}
+                        />
+                    )}
                     <MonacoSettingsEditor
                         {...otherProps}
                         onDidSave={this.onSave}
@@ -208,6 +216,8 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                                     this.props.telemetryService
                                 )
                             }
+
+                            this.setState({ actionsAvailable: true })
                         }
                     })
                 )
@@ -218,10 +228,12 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     private runAction(id: string): void {
         if (this.configEditor) {
             const action = this.configEditor.getAction(id)
-            action.run().then(
-                () => undefined,
-                error => logger.error(error)
-            )
+            if (action) {
+                action.run().then(
+                    () => undefined,
+                    error => logger.error(error)
+                )
+            }
         } else {
             alert('Wait for editor to load before running action.')
         }

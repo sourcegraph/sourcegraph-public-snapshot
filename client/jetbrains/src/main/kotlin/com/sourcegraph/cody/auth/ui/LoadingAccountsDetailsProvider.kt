@@ -2,8 +2,7 @@ package com.sourcegraph.cody.auth.ui
 
 import com.intellij.collaboration.async.CompletableFutureUtil
 import com.intellij.collaboration.util.ProgressIndicatorsProvider
-import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.util.IconUtil
 import com.intellij.util.ui.EmptyIcon
@@ -12,7 +11,6 @@ import com.sourcegraph.cody.auth.AccountDetails
 import com.sourcegraph.cody.auth.SingleValueModel
 import java.awt.Image
 import java.util.concurrent.CompletableFuture
-import java.util.function.BiConsumer
 import javax.swing.Icon
 import org.jetbrains.annotations.Nls
 
@@ -34,14 +32,13 @@ abstract class LoadingAccountsDetailsProvider<in A : Account, D : AccountDetails
       runningProcesses++
       loadingStateModel.value = true
       scheduleLoad(account, indicator)
-          .whenComplete(
-              BiConsumer { _, _ ->
-                invokeAndWaitIfNeeded(ModalityState.any()) {
-                  progressIndicatorsProvider.releaseIndicator(indicator)
-                  runningProcesses--
-                  if (runningProcesses == 0) loadingStateModel.value = false
-                }
-              })
+          .whenComplete { _, _ ->
+            ApplicationManager.getApplication().invokeAndWait {
+              progressIndicatorsProvider.releaseIndicator(indicator)
+              runningProcesses--
+              if (runningProcesses == 0) loadingStateModel.value = false
+            }
+          }
           .exceptionally {
             val error = CompletableFutureUtil.extractError(it)
             DetailsLoadingResult(null, null, error.localizedMessage, false)

@@ -1,9 +1,12 @@
 package search
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -12,6 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -20,22 +25,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExhaustiveSearch(t *testing.T) {
 	// This test exercises the full worker infra from the time a search job is
 	// created until it is done.
 
+	enabled := true
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{SearchJobs: &enabled}}})
+	defer conf.Mock(nil)
+
 	require := require.New(t)
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, store)
 
-	userID := insertRow(t, store.Store, "users", "username", "alice")
-	insertRow(t, store.Store, "repo", "id", 1, "name", "repoa")
-	insertRow(t, store.Store, "repo", "id", 2, "name", "repob")
+	mockUploadStore, bucket := newMockUploadStore(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	s := store.New(db, observation.TestContextTB(t))
+	svc := service.New(observationCtx, s, mockUploadStore, service.NewSearcherFake())
+
+	userID := insertRow(t, s.Store, "users", "username", "alice")
+	userBadID := insertRow(t, s.Store, "users", "username", "mallory")
+	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
+	insertRow(t, s.Store, "repo", "id", 2, "name", "repob")
 
 	workerCtx, cancel1 := context.WithCancel(actor.WithInternalActor(context.Background()))
 	defer cancel1()
@@ -63,8 +79,17 @@ func TestExhaustiveSearch(t *testing.T) {
 	// TODO these sort of tests need to live somewhere that makes more sense.
 	// But for now we have a fully functioning setup here lets test List.
 	{
-		jobs, err := svc.ListSearchJobs(userCtx)
+		jobs, err := svc.ListSearchJobs(userCtx, store.ListArgs{})
 		require.NoError(err)
+
+		// HACK: Don't test agg state. Here we compare a result from GetSearchJob and
+		// ListSearchJobs. However, AggState is only set in ListSearchJobs.
+		//
+		// We don't want to set AggState in GetSearchJob because it is fairly expensive,
+		// and we call GetSearchJob a lot as part of the security checks, so we want to
+		// keep it as lean as possible.
+		jobs[0].AggState = job.AggState
+
 		require.Equal([]*types.ExhaustiveSearchJob{job}, jobs)
 	}
 
@@ -77,25 +102,11 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	// Each entry in bucket corresponds to one 1 uploaded csv file.
-	mu := sync.Mutex{}
-	var bucket []string
+	newSearcherFactory := func(_ *observation.Context, _ database.DB) service.NewSearcher {
+		return service.NewSearcherFake()
+	}
 
-	mockStore := mocks.NewMockStore()
-	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			return 0, err
-		}
-
-		mu.Lock()
-		bucket = append(bucket, string(b))
-		mu.Unlock()
-
-		return int64(len(b)), nil
-	})
-
-	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockStore)
+	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore, newSearcherFactory)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
@@ -109,12 +120,16 @@ func TestExhaustiveSearch(t *testing.T) {
 	// that somehow the work happened (but doesn't dive into the guts of how
 	// we co-ordinate our workers)
 	{
-		sort.Strings(bucket)
+		var vals []string
+		for _, v := range bucket {
+			vals = append(vals, v)
+		}
+		sort.Strings(vals)
 		require.Equal([]string{
 			"repo,revspec,revision\n1,spec,rev1\n",
 			"repo,revspec,revision\n1,spec,rev2\n",
 			"repo,revspec,revision\n2,spec,rev3\n",
-		}, bucket)
+		}, vals)
 	}
 
 	// Minor assertion that the job is regarded as finished.
@@ -125,7 +140,45 @@ func TestExhaustiveSearch(t *testing.T) {
 		// only assert on State since the rest are non-deterministic.
 		require.Equal(types.JobStateCompleted, job2.State)
 		job2.WorkerJob = job.WorkerJob
+		job2.AggState = job.AggState
 		require.Equal(job, job2)
+	}
+
+	{
+		stats, err := svc.GetAggregateRepoRevState(userCtx, job.ID)
+		require.NoError(err)
+		require.Equal(&types.RepoRevJobStats{
+			Total:      6,
+			Completed:  6, // 1 search job + 2 repo jobs + 3 repo rev jobs
+			Failed:     0,
+			InProgress: 0,
+		}, stats)
+	}
+
+	// Assert that we can write the job logs to a writer and that the number of
+	// lines and columns matches our expectation.
+	{
+		service.JobLogsIterLimit = 2
+		writerTo, err := svc.GetSearchJobLogsWriterTo(userCtx, job.ID)
+		require.NoError(err)
+		var buf bytes.Buffer
+		_, err = writerTo.WriteTo(&buf)
+		require.NoError(err)
+		lines := strings.Split(buf.String(), "\n")
+		// 1 header + 3 rows + 1 newline
+		require.Equal(5, len(lines), fmt.Sprintf("got %q", buf))
+		require.Equal("repository,revision,started_at,finished_at,status,failure_message", lines[0])
+		// We should use the CSV reader to parse this but since we know none of the
+		// columns have a "," in the context of this test, this is fine.
+		require.Equal(6, len(strings.Split(lines[1], ",")))
+	}
+
+	// Assert that we fail without writing anything if the user is not allowed
+	// to view the logs
+	{
+		userBadCtx := actor.WithActor(context.Background(), actor.FromUser(userBadID))
+		_, err = svc.GetSearchJobLogsWriterTo(userBadCtx, job.ID)
+		require.ErrorIs(err, auth.ErrMustBeSiteAdminOrSameUser)
 	}
 
 	// Assert that cancellation affects the number of rows we expect. This is a bit
@@ -133,9 +186,19 @@ func TestExhaustiveSearch(t *testing.T) {
 	// However, cancellation affects the rows independently of the job state.
 	{
 		wantCount := 6
-		gotCount, err := store.CancelSearchJob(userCtx, job.ID)
+		gotCount, err := s.CancelSearchJob(userCtx, job.ID)
 		require.NoError(err)
 		require.Equal(wantCount, gotCount)
+	}
+
+	// Delete should remove the job from the database and the uploadstore.
+	{
+		require.Equal(3, len(bucket))
+		err = svc.DeleteSearchJob(userCtx, job.ID)
+		require.NoError(err)
+		require.Equal(0, len(bucket))
+		_, err = svc.GetSearchJob(userCtx, job.ID)
+		require.Error(err)
 	}
 }
 
@@ -171,4 +234,46 @@ func tTimeout(t *testing.T, max time.Duration) time.Duration {
 		return max
 	}
 	return timeout
+}
+
+func newMockUploadStore(t *testing.T) (*mocks.MockStore, map[string]string) {
+	t.Helper()
+
+	// Each entry in bucket corresponds to one 1 uploaded csv file.
+	mu := sync.Mutex{}
+	bucket := make(map[string]string)
+
+	mockStore := mocks.NewMockStore()
+	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+
+		mu.Lock()
+		bucket[key] = string(b)
+		mu.Unlock()
+
+		return int64(len(b)), nil
+	})
+
+	mockStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, key string) error {
+		mu.Lock()
+		delete(bucket, key)
+		mu.Unlock()
+
+		return nil
+	})
+
+	mockStore.ListFunc.SetDefaultHook(func(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+		var keys []string
+		mu.Lock()
+		for k := range bucket {
+			keys = append(keys, k)
+		}
+		mu.Unlock()
+		return iterator.From(keys), nil
+	})
+
+	return mockStore, bucket
 }

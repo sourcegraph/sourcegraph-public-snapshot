@@ -105,7 +105,7 @@ Cody uses Sourcegraph to provide contextually relevant answers and code. To inst
 
 <ul class="limg">
   <li>
-    <a class="card text-left" target="_blank" href="https://sourcegraph.com/sign-in">
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/cody">
       <h3><img alt="JetBrains" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody with Sourcegraph.com</h3>
       <p>Connect Cody with your Sourcegraph account.</p>
     </a>
@@ -114,11 +114,11 @@ Cody uses Sourcegraph to provide contextually relevant answers and code. To inst
 
 ## Initial setup
 
-1. [Create a Sourcegraph.com account](https://sourcegraph.com/sign-up)
-2. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-3. Open the Cody extension
-4. Click on **Other Sign In Options...** and select Sign in to Sourcegraph.com
-5. Follow the prompts to authorize Cody to access your Sourcegraph.com account
+- [Create a Sourcegraph.com account](https://sourcegraph.com/sign-up)
+- Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+- Open the Cody extension
+- Click on **Other Sign In Options...** and select Sign in to Sourcegraph.com
+- Follow the prompts to authorize Cody to access your Sourcegraph.com account
 
 You've now successfully connected Cody to your Sourcegraph.com instance.
 
@@ -141,7 +141,7 @@ The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the C
 
 ## More benefits
 
-Read more about [Cody Capabilities](./../capabilities.md) to learn about all the features it provides to boost your development productivity.
+Read more about [Cody capabilities](./../capabilities.md) to learn about all the features it provides to boost your development productivity.
 
 ## More resources
 

@@ -51,6 +51,7 @@ Available comamndsets in `sg.config.yaml`:
 * monitoring-alerts
 * otel
 * qdrant
+* single-program
 * web-standalone
 * web-standalone-prod
 
@@ -105,6 +106,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor-firecracker
 * codeintel-executor-kubernetes
 * codeintel-worker
+* cody-app: Cody App
 * cody-gateway
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
@@ -130,11 +132,12 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
-* sourcegraph: Single program (Go static binary) distribution
+* sourcegraph: Single-program distribution
 * storybook
 * symbols
 * syntax-highlighter
 * tauri: App shell (Tauri)
+* telemetry-gateway
 * web-integration-build-prod: Build production web application for integration tests
 * web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
@@ -1191,6 +1194,7 @@ Build Wolfi packages and images locally, and update base image hashes
 ```sh
 # Update base image hashes
 $ sg wolfi update-hashes
+$ sg wolfi update-hashes jaeger-agent
 
 # Build a specific package using a manifest from wolfi-packages/
 $ sg wolfi package jaeger
@@ -1239,9 +1243,10 @@ Flags:
 Update Wolfi base images hashes to the latest versions.
 
 ```sh
-$ Update the hash references for all Wolfi base images in the 'dev/oci_deps.bzl' file.
+$ Update the hash references for Wolfi base images in the 'dev/oci_deps.bzl' file.
+$ By default all hashes will be updated; pass in a base image name to update a specific image.
 
-$ This is done by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
+$ Hash references are updated by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
 ```
 
 Flags:
@@ -1638,23 +1643,6 @@ Commands used by operations teams to perform common tasks.
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
 
-### sg ops update-images
-
-Updates images in given directory to latest published image.
-
-Updates images in given directory to latest published image.
-Ex: in deploy-sourcegraph-cloud, run `sg ops update-images base/.`
-
-Arguments: `<dir>`
-
-Flags:
-
-* `--cr-password="<value>"`: `password` or access token for the container registry
-* `--cr-username="<value>"`: `username` for the container registry
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
-* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
-
 ### sg ops inspect-tag
 
 Inspect main branch tag details from a image or tag.
@@ -1674,6 +1662,22 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--property, -p="<value>"`: only output a specific `property` (one of: 'build', 'date', 'commit')
+
+### sg ops update-images
+
+Update images across a sourcegraph/deploy-sourcegraph/* manifests.
+
+Arguments: `<dir>`
+
+Flags:
+
+* `--docker-password, --cr-password="<value>"`: dockerhub password
+* `--docker-username, --cr-username="<value>"`: dockerhub username
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
+* `--registry="<value>"`: Sets the registry we want images to update to, public or internal. (default: public)
+* `--skip, --skip-images="<value>"`: List of comma separated images to skip updating, ex: --skip 'gitserver,indexed-server'
 
 ## sg page
 
@@ -1710,6 +1714,34 @@ Install or upgrade local `mi2` CLI (for Cloud V2).
 
 To learn more about Cloud V2, see https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg managed-services-platform
+
+EXPERIMENTAL: Generate and manage services deployed on the Sourcegraph Managed Services Platform.
+
+WARNING: This is currently still an experimental project.
+To learm more, refer to go/rfc-msp and go/msp (https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform)
+
+MSP commands are currently build-flagged to avoid increasing 'sg' binary sizes. To install a build of 'sg' that includes 'sg msp', run:
+
+	go build -tags=msp -o=./sg ./dev/sg && ./sg install -f -p=false
+
+MSP commands should then be available under 'sg msp --help'.
+
+```sh
+# Create a service specification
+$ sg msp init $SERVICE
+
+# Provision Terraform Cloud workspaces
+$ sg msp tfc sync $SERVICE $ENVIRONMENT
+
+# Generate Terraform manifests
+$ sg msp generate $SERVICE $ENVIRONMENT
+```
 
 Flags:
 

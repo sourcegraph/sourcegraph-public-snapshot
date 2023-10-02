@@ -60,7 +60,7 @@ const getEmptyFormData = (account: string, latestLicense: License | undefined): 
     salesforceOpportunityID: latestLicense?.info?.salesforceOpportunityID ?? '',
     plan: 'enterprise-1',
     userCount: 1,
-    expiresAt: endOfDay(addDays(Date.now(), 366)),
+    expiresAt: endOfDay(Date.now()),
 })
 
 const DURATION_LINKS = [

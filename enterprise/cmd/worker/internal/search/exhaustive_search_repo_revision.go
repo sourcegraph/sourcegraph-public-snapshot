@@ -7,10 +7,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -58,12 +60,14 @@ type exhaustiveSearchRepoRevHandler struct {
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}
 
 func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoRevisionJob) error {
-	jobID, query, repoRev, err := h.store.GetQueryRepoRev(ctx, record)
+	jobID, query, repoRev, initiatorID, err := h.store.GetQueryRepoRev(ctx, record)
 	if err != nil {
 		return err
 	}
 
-	q, err := h.newSearcher.NewSearch(ctx, query)
+	ctx = actor.WithActor(ctx, actor.FromUser(initiatorID))
+
+	q, err := h.newSearcher.NewSearch(ctx, initiatorID, query)
 	if err != nil {
 		return err
 	}
@@ -76,4 +80,18 @@ func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.
 	}
 
 	return err
+}
+
+func newExhaustiveSearchRepoRevisionWorkerResetter(
+	observationCtx *observation.Context,
+	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
+) *dbworker.Resetter[*types.ExhaustiveSearchRepoRevisionJob] {
+	options := dbworker.ResetterOptions{
+		Name:     "exhaustive_search_repo_revision_worker_resetter",
+		Interval: 1 * time.Minute,
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "exhaustive_search_repo_revision_worker"),
+	}
+
+	resetter := dbworker.NewResetter(observationCtx.Logger, workerStore, options)
+	return resetter
 }

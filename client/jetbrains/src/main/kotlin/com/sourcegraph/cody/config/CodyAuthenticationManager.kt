@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.AuthData
@@ -17,6 +18,7 @@ internal class CodyAuthData(val account: CodyAccount, login: String, token: Stri
 }
 
 /** Entry point for interactions with Sourcegraph authentication subsystem */
+@Service
 class CodyAuthenticationManager internal constructor() {
   private val accountManager: CodyAccountManager
     get() = service()
@@ -41,11 +43,13 @@ class CodyAuthenticationManager internal constructor() {
   internal fun updateAccountToken(account: CodyAccount, newToken: String) =
       accountManager.updateAccount(account, newToken)
 
-  fun getActiveAccount(project: Project): CodyAccount? =
-      project.service<CodyProjectActiveAccountHolder>().account
+  fun getActiveAccount(project: Project): CodyAccount? {
+    return if (!project.isDisposed) project.service<CodyProjectActiveAccountHolder>().account
+    else null
+  }
 
   fun setActiveAccount(project: Project, account: CodyAccount?) {
-    project.service<CodyProjectActiveAccountHolder>().account = account
+    if (!project.isDisposed) project.service<CodyProjectActiveAccountHolder>().account = account
   }
 
   fun getActiveAccountType(project: Project): AccountType {
@@ -53,6 +57,8 @@ class CodyAuthenticationManager internal constructor() {
   }
 
   companion object {
-    @JvmStatic fun getInstance(): CodyAuthenticationManager = service()
+    @JvmStatic
+    val instance: CodyAuthenticationManager
+      get() = service()
   }
 }
