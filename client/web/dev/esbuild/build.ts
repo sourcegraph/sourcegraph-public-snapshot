@@ -25,11 +25,11 @@ const isCodyApp = ENVIRONMENT_CONFIG.CODY_APP
 const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
-    entryPoints: {
-        'scripts/app': isCodyApp
-            ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-main.tsx')
+    entryPoints: [
+        isCodyApp
+            ? path.join(ROOT_PATH, 'client/web/src/enterprise/app/main.tsx')
             : path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
-    },
+    ],
     bundle: true,
     minify: IS_PRODUCTION,
     format: 'esm',
@@ -38,7 +38,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     jsxDev: IS_DEVELOPMENT,
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
-    entryNames: IS_PRODUCTION ? 'scripts/[name]-[hash]' : undefined,
+    entryNames: IS_PRODUCTION ? 'scripts/[name]-[hash]' : 'scripts/[name]',
     outdir: STATIC_ASSETS_PATH,
     plugins: [
         stylePlugin,

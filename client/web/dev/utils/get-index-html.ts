@@ -16,10 +16,10 @@ export const getWebpackManifest = (): WebpackManifest =>
     JSON.parse(readFileSync(WEBPACK_MANIFEST_PATH, 'utf-8')) as WebpackManifest
 
 export interface WebpackManifest {
-    /** Main app entry JS bundle */
-    'app.js': string
-    /** Main app entry CSS bundle, only used in production mode */
-    'app.css'?: string
+    /** Main JS bundle */
+    'main.js': string
+    /** Main CSS bundle, only used in production mode */
+    'main.css'?: string
     /** Runtime bundle, only used in development mode */
     'runtime.js'?: string
     /** React entry bundle, only used in production mode */
@@ -55,8 +55,8 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
     const { manifestFile, jsContext, jsContextScript } = options
 
     const {
-        'app.js': appBundle,
-        'app.css': cssBundle,
+        'main.js': mainBundle,
+        'main.css': mainBundleCSS,
         'runtime.js': runtimeBundle,
         'react.js': reactBundle,
         'opentelemetry.js': oTelBundle,
@@ -72,7 +72,7 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
         <meta name="viewport" content="width=device-width, viewport-fit=cover" />
         <meta name="referrer" content="origin-when-cross-origin"/>
         <meta name="color-scheme" content="light dark"/>
-        ${cssBundle ? `<link rel="stylesheet" href="${cssBundle}">` : ''}
+        ${mainBundleCSS ? `<link rel="stylesheet" href="${mainBundleCSS}">` : ''}
         ${
             ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE
                 ? '<script src="https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js" crossorigin="anonymous"></script>'
@@ -99,7 +99,7 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
         ${runtimeBundle ? `<script src="${runtimeBundle}"></script>` : ''}
         ${reactBundle ? `<script src="${reactBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
         ${oTelBundle ? `<script src="${oTelBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
-        <script src="${appBundle}" ${isModule ? 'type="module"' : ''}></script>
+        <script src="${mainBundle}" ${isModule ? 'type="module"' : ''}></script>
     </body>
 </html>
 `
