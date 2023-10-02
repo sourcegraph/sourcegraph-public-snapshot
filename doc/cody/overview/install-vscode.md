@@ -109,6 +109,16 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Clicking it prompts you to start with codehosts like GitHub, GitLab, and your Google login. This allows Cody to access your Sourcegraph.com account.
 
+![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-sign-in.png)
+
+You can also connect with the Sourcegraph Enterprise Instance in the following ways:
+
+- Sign in to Sourcegraph Enterprise instance
+- Sign in to Sourcegraph Enterprise instance via Access Token
+- Sign in to Sourcegraph.com
+- Sign in with URL and Access Token
+- Sourcegraph.com
+
 ## Verifying the installation
 
 Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected:
