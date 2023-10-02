@@ -107,31 +107,7 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
-
-You can connect either an enterprise instance or Sourcegraph.com via the following ways:
-
-- Sign in to Sourcegraph Enterprise instance
-- Sign in to Sourcegraph Enterprise instance via Access Token
-- Sign in to Sourcegraph.com
-- Sign in with URL and Access Token
-- Sourcegraph.com
-
-### For Sourcegraph enterprise users
-
-Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`). From here, generate a new access token.
-
-Then, you will paste your access token and instance address in to the Cody extension.
-
-### For Sourcegraph.com users
-
-Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll be taken to Sourcegraph.com, which will authenticate your extension.
-
-## Embeddings
-
-For **free** users, installing the VS Code extension prompts installing the Cody app for better responses with embeddings. Enterprise users are guided to contact their admin for embeddings.
-
-You no longer need to log in again on the Cody app. Select the repositories during the app setup, and VS Code gains context of those embeddings for a streamlined experience.
+After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Clicking it prompts you to start with codehosts like GitHub, GitLab, and your Google login. This allows Cody to access your Sourcegraph.com account.
 
 ## Verifying the installation
 
@@ -150,8 +126,6 @@ Cody also supports executing reusable prompts known as **Commands** from within 
 - `explain`: Explains code
 - `test`: Generates unit tests
 - `smell`: Find code smells
-- `example-generate-readme (example)`: Generates a README.md file for the current directory
-- `commit-message-suggestion`: Commits your message suggestions to code
 - `reset`: Clears the Cody chat
 
 [Learn more about Commands here →](./../capabilities.md#commands)
