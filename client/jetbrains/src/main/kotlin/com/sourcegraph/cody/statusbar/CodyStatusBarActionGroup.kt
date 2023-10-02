@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.statusbar
 
-import com.intellij.ide.actions.ShowLogAction
 import com.intellij.idea.ActionsBundle
 import com.intellij.internal.OpenLogAction
 import com.intellij.openapi.actionSystem.AnAction
@@ -24,7 +23,9 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
             CodyOpenSettingsAction(),
             if (CodyAutocompleteStatusService.getCurrentStatus() ==
                 CodyAutocompleteStatus.CodyAgentNotRunning)
-                OpenLogAction().apply { templatePresentation.text = ActionsBundle.message("action.OpenLog.text") }
+                OpenLogAction().apply {
+                  templatePresentation.text = ActionsBundle.message("action.OpenLog.text")
+                }
             else null)
         .toTypedArray()
   }
