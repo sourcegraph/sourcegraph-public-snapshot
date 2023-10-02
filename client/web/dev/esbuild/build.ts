@@ -25,11 +25,12 @@ const isCodyApp = ENVIRONMENT_CONFIG.CODY_APP
 const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
-    entryPoints: [
-        isCodyApp
-            ? path.join(ROOT_PATH, 'client/web/src/enterprise/app/main.tsx')
-            : path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
-    ],
+    entryPoints: isCodyApp
+        ? [path.join(ROOT_PATH, 'client/web/src/enterprise/app/main.tsx')]
+        : [
+              path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
+              path.join(ROOT_PATH, 'client/web/src/enterprise/embed/embedMain.tsx'),
+          ],
     bundle: true,
     minify: IS_PRODUCTION,
     format: 'esm',

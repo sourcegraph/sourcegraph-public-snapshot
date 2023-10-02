@@ -722,7 +722,7 @@ ts_project(
         "src/enterprise/dotcom/productSubscriptions/features.ts",
         "src/enterprise/embed/EmbeddedWebApp.tsx",
         "src/enterprise/embed/OpenNewTabAnchorLink.tsx",
-        "src/enterprise/embed/main.tsx",
+        "src/enterprise/embed/embedMain.tsx",
         "src/enterprise/executors/ExecutorsSiteAdminArea.tsx",
         "src/enterprise/executors/ExecutorsUserArea.tsx",
         "src/enterprise/executors/instances/ExecutorCompatibilityAlert.tsx",
@@ -2130,7 +2130,7 @@ BUNDLE_DATA_DEPS = [
         ],
         entry_points = {
             "src/enterprise/main.js": "main",
-            "src/enterprise/embed/main.js": "embed",
+            "src/enterprise/embed/embedMain.js": "embed",
         },
         env = {
             "NODE_ENV": "production" if prod else "development",
