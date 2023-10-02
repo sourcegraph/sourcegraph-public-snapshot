@@ -28176,6 +28176,19 @@
           "Comment": ""
         },
         {
+          "Name": "site_admin",
+          "Index": 12,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "tags",
           "Index": 15,
           "TypeName": "text[]",

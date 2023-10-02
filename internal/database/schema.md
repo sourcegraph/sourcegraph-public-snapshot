@@ -4293,6 +4293,7 @@ Foreign-key constraints:
  passwd                  | text                     |           |          | 
  passwd_reset_code       | text                     |           |          | 
  passwd_reset_time       | timestamp with time zone |           |          | 
+ site_admin              | boolean                  |           | not null | false
  page_views              | integer                  |           | not null | 0
  search_queries          | integer                  |           | not null | 0
  tags                    | text[]                   |           |          | '{}'::text[]
