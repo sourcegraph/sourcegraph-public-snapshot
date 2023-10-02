@@ -35,6 +35,8 @@ type GitTreeTranslator interface {
 	// that the translation was successful. If revese is true, then the source and target commits
 	// are swapped.
 	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error)
+
+	SourceCommit() string
 }
 
 type gitTreeTranslator struct {
@@ -80,6 +82,10 @@ func NewGitTreeTranslator(client gitserver.Client, args *requestArgs, hunkCache 
 		hunkCache:        hunkCache,
 		localRequestArgs: args,
 	}
+}
+
+func (g *gitTreeTranslator) SourceCommit() string {
+	return g.localRequestArgs.commit
 }
 
 // GetTargetCommitPathFromSourcePath translates the given path from the source commit into the given target

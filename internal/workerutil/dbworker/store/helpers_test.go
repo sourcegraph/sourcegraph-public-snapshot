@@ -133,7 +133,7 @@ func defaultTestStoreOptions[T workerutil.Record](clock glock.Clock, scanFn func
 		StalledMaxAge: time.Second * 5,
 		MaxNumResets:  5,
 		MaxNumRetries: 3,
-		clock:         clock,
+		Clock:         clock,
 	}
 }
 

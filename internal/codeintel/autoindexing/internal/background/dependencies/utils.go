@@ -1,6 +1,7 @@
 package dependencies
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -8,6 +9,7 @@ import (
 
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -23,16 +25,37 @@ const stalledIndexMaxAge = time.Second * 25
 // "queued" on its next reset.
 const indexMaxNumResets = 3
 
-var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
-	Name:              "codeintel_index",
-	TableName:         "lsif_indexes",
-	ViewName:          "lsif_indexes_with_repository_name u",
-	ColumnExpressions: indexColumnsWithNullRank,
-	Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
-	OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at, u.id"),
-	StalledMaxAge:     stalledIndexMaxAge,
-	MaxNumResets:      indexMaxNumResets,
-}
+var (
+	AutoIndexingUseFifoAlgorithm = env.MustGetBool("CODEINTEL_AUTOINDEXING_DEQUEUE_FIFO_ALGORITHM", false, "Use the original FIFO dequeueing algorithm instead of the newer moving-window algorithm.")
+	indexLookbackWindow          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_CANDIDATE_JOB_WINDOW", "1d", "The maximum age of index records prioritized for dequeue. Records older than this age will be visible for processing after the configured cooldown debuff.")
+	repoDequeueCooldown          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_COOLDOWN_DEBUFF", "6h", "The minimum time since the last dequeue for a repository before records outside of the lookback window are made visible for processing. This allows older records of a repo to be processed, but with lower priority than records within the lookback window for other repositories.")
+)
+
+var IndexWorkerStoreOptions = func() dbworkerstore.Options[uploadsshared.Index] {
+	if AutoIndexingUseFifoAlgorithm {
+		return dbworkerstore.Options[uploadsshared.Index]{
+			Name:              "codeintel_index",
+			TableName:         "lsif_indexes",
+			ViewName:          "lsif_indexes_with_repository_name u",
+			ColumnExpressions: indexColumnsWithNullRank,
+			Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
+			OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at DESC, u.id"),
+			StalledMaxAge:     stalledIndexMaxAge,
+			MaxNumResets:      indexMaxNumResets,
+		}
+	} else {
+		return dbworkerstore.Options[uploadsshared.Index]{
+			Name:              "codeintel_index",
+			TableName:         "lsif_indexes",
+			ViewName:          fmt.Sprintf("lsif_indexes_enqueue_candidates('%s'::interval, '%s'::interval) u", indexLookbackWindow, repoDequeueCooldown),
+			ColumnExpressions: indexColumnsWithNullRank,
+			Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
+			OrderByExpression: sqlf.Sprintf("TRUE"),
+			StalledMaxAge:     stalledIndexMaxAge,
+			MaxNumResets:      indexMaxNumResets,
+		}
+	}
+}()
 
 var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
@@ -46,19 +69,19 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_resets"),
 	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
-	sqlf.Sprintf(`u.repository_name`),
-	sqlf.Sprintf(`u.docker_steps`),
-	sqlf.Sprintf(`u.root`),
-	sqlf.Sprintf(`u.indexer`),
-	sqlf.Sprintf(`u.indexer_args`),
-	sqlf.Sprintf(`u.outfile`),
-	sqlf.Sprintf(`u.execution_logs`),
+	sqlf.Sprintf("u.repository_name"),
+	sqlf.Sprintf("u.docker_steps"),
+	sqlf.Sprintf("u.root"),
+	sqlf.Sprintf("u.indexer"),
+	sqlf.Sprintf("u.indexer_args"),
+	sqlf.Sprintf("u.outfile"),
+	sqlf.Sprintf("u.execution_logs"),
 	sqlf.Sprintf("NULL"),
-	sqlf.Sprintf(`u.local_steps`),
-	sqlf.Sprintf(`(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id`),
-	sqlf.Sprintf(`u.should_reindex`),
-	sqlf.Sprintf(`u.requested_envvars`),
-	sqlf.Sprintf(`u.enqueuer_user_id`),
+	sqlf.Sprintf("u.local_steps"),
+	sqlf.Sprintf("(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id"),
+	sqlf.Sprintf("u.should_reindex"),
+	sqlf.Sprintf("u.requested_envvars"),
+	sqlf.Sprintf("u.enqueuer_user_id"),
 }
 
 func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {

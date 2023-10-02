@@ -45,6 +45,7 @@ Sourcegraph aggregates usage and performance metrics for some product features i
   - Total number of repositories with and without an uploaded precise code navigation index
   - Total number of code navigation queries (e.g., hover tooltips) per week grouped by language
   - Number of users performing code navigation queries (e.g., hover tooltips) per week grouped by language
+  - Count, standard deviation, min, max and P10/P50/P75/P90 distributions of nearest commit servicing precise code navigation queries grouped by indexer and auto-indexing algorithm
 <!-- depends-on-source: ~/internal/usagestats/batches.go -->
 - Batch Changes usage data
   - Total count of page views on the batch change apply page

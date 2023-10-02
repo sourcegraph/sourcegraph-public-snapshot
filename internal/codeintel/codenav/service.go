@@ -3,9 +3,12 @@ package codenav
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/distribution/distribution/v3/reference"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
@@ -14,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -25,28 +29,31 @@ import (
 )
 
 type Service struct {
-	repoStore  database.RepoStore
-	lsifstore  lsifstore.LsifStore
-	gitserver  gitserver.Client
-	uploadSvc  UploadService
-	operations *operations
-	logger     log.Logger
+	repoStore     database.RepoStore
+	lsifstore     lsifstore.LsifStore
+	eventlogStore database.EventLogStore
+	gitserver     gitserver.Client
+	uploadSvc     UploadService
+	operations    *operations
+	logger        log.Logger
 }
 
 func newService(
 	observationCtx *observation.Context,
 	repoStore database.RepoStore,
 	lsifstore lsifstore.LsifStore,
+	eventlogStore database.EventLogStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
 ) *Service {
 	return &Service{
-		repoStore:  repoStore,
-		lsifstore:  lsifstore,
-		gitserver:  gitserver,
-		uploadSvc:  uploadSvc,
-		operations: newOperations(observationCtx),
-		logger:     log.Scoped("codenav", ""),
+		repoStore:     repoStore,
+		lsifstore:     lsifstore,
+		eventlogStore: eventlogStore,
+		gitserver:     gitserver,
+		uploadSvc:     uploadSvc,
+		operations:    newOperations(observationCtx),
+		logger:        log.Scoped("codenav", ""),
 	}
 }
 
@@ -63,7 +70,7 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 	}})
 	defer endObservation()
 
-	adjustedUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
+	adjustedUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState, "hover")
 	if err != nil {
 		return "", shared.Range{}, false, err
 	}
@@ -193,7 +200,7 @@ func (s *Service) GetReferences(ctx context.Context, args PositionalRequestArgs,
 
 	// References at the given file:line:character could come from multiple uploads, so we
 	// need to look in all uploads and merge the results.
-	adjustedUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState)
+	adjustedUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState, "references")
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -665,7 +672,7 @@ func (s *Service) GetImplementations(ctx context.Context, args PositionalRequest
 	// Adjust the path and position for each visible upload based on its git difference to
 	// the target commit. This data may already be stashed in the cursor decoded above, in
 	// which case we don't need to hit the database.
-	visibleUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState)
+	visibleUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState, "implementations")
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -760,7 +767,7 @@ func (s *Service) GetPrototypes(ctx context.Context, args PositionalRequestArgs,
 	// Adjust the path and position for each visible upload based on its git difference to
 	// the target commit. This data may already be stashed in the cursor decoded above, in
 	// which case we don't need to hit the database.
-	visibleUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState)
+	visibleUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState, "prototypes")
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -838,7 +845,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args PositionalRequestArgs
 
 	// Adjust the path and position for each visible upload based on its git difference to
 	// the target commit.
-	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
+	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState, "definitions")
 	if err != nil {
 		return nil, err
 	}
@@ -1295,7 +1302,7 @@ var ErrConcurrentModification = errors.New("result set changed while paginating"
 //
 // An error is returned if the set of visible uploads has changed since the previous request of this
 // result set (specifically if an index becomes invisible). This behavior may change in the future.
-func (s *Service) getVisibleUploadsFromCursor(ctx context.Context, line, character int, cursorsToVisibleUploads *[]CursorToVisibleUpload, r RequestState) ([]visibleUpload, []CursorToVisibleUpload, error) {
+func (s *Service) getVisibleUploadsFromCursor(ctx context.Context, line, character int, cursorsToVisibleUploads *[]CursorToVisibleUpload, r RequestState, operationName string) ([]visibleUpload, []CursorToVisibleUpload, error) {
 	if *cursorsToVisibleUploads != nil {
 		visibleUploads := make([]visibleUpload, 0, len(*cursorsToVisibleUploads))
 		for _, u := range *cursorsToVisibleUploads {
@@ -1315,7 +1322,7 @@ func (s *Service) getVisibleUploadsFromCursor(ctx context.Context, line, charact
 		return visibleUploads, *cursorsToVisibleUploads, nil
 	}
 
-	visibleUploads, err := s.getVisibleUploads(ctx, line, character, r)
+	visibleUploads, err := s.getVisibleUploads(ctx, line, character, r, operationName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1336,7 +1343,7 @@ func (s *Service) getVisibleUploadsFromCursor(ctx context.Context, line, charact
 // getVisibleUploads adjusts the current target path and the given position for each upload visible
 // from the current target commit. If an upload cannot be adjusted, it will be omitted from the
 // returned slice.
-func (s *Service) getVisibleUploads(ctx context.Context, line, character int, r RequestState) ([]visibleUpload, error) {
+func (s *Service) getVisibleUploads(ctx context.Context, line, character int, r RequestState, operationName string) ([]visibleUpload, error) {
 	visibleUploads := make([]visibleUpload, 0, len(r.dataLoader.uploads))
 	for i := range r.dataLoader.uploads {
 		adjustedUpload, ok, err := s.getVisibleUpload(ctx, line, character, r.dataLoader.uploads[i], r)
@@ -1348,7 +1355,63 @@ func (s *Service) getVisibleUploads(ctx context.Context, line, character int, r 
 		}
 	}
 
+	if len(visibleUploads) > 0 {
+		s.logClosestUploadDistanceEvent(ctx, visibleUploads, r, operationName)
+	}
+
 	return visibleUploads, nil
+}
+
+func (s *Service) logClosestUploadDistanceEvent(ctx context.Context, visibleUploads []visibleUpload, state RequestState, operationName string) {
+	currentActor := actor.FromContext(ctx)
+
+	distanceEvent := &database.Event{
+		Name:      "codeintel.commitDistance",
+		Source:    "BACKEND",
+		UserID:    uint32(currentActor.UID),
+		Timestamp: time.Now(),
+	}
+
+	repo, err := s.repoStore.Get(ctx, api.RepoID(state.RepositoryID))
+	if err != nil {
+		return
+	}
+
+	closestUpload := visibleUploads[0]
+	closestDistance, err := s.gitserver.CommitDistance(ctx, repo.Name, api.CommitID(closestUpload.Upload.Commit), api.CommitID(state.Commit))
+	if err != nil {
+		return
+	}
+	for _, upload := range visibleUploads[1:] {
+		distance, err := s.gitserver.CommitDistance(ctx, repo.Name, api.CommitID(upload.Upload.Commit), api.CommitID(state.Commit))
+		if err != nil {
+			continue
+		}
+		if distance < closestDistance {
+			closestUpload = upload
+			closestDistance = distance
+		}
+	}
+
+	ref, _ := reference.ParseDockerRef(closestUpload.Upload.Indexer)
+	jsond, _ := json.Marshal(map[string]any{
+		"distance": closestDistance,
+		"opName":   operationName,
+		"indexer": func() string {
+			if ref != nil {
+				// if the customer is using a mirror, this correctly strips any internal domain stuff
+				// and just returns the image name.
+				return reference.Path(ref)
+			}
+			return ""
+		},
+		"algorithm": map[bool]string{
+			true:  "fifo",
+			false: "window",
+		}[autoindexing.AutoIndexingUseFifoAlgorithm],
+	})
+	distanceEvent.Argument = jsond
+	_ = s.eventlogStore.Insert(ctx, distanceEvent)
 }
 
 // getVisibleUpload returns the current target path and the given position for the given upload. If

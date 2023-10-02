@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -26,7 +27,7 @@ func TestImplementations(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, dbmocks.NewMockEventLogStore(), mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -91,7 +92,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, dbmocks.NewMockEventLogStore(), mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -168,7 +169,7 @@ func TestImplementationsRemote(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, dbmocks.NewMockEventLogStore(), mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -286,7 +287,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, dbmocks.NewMockEventLogStore(), mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}

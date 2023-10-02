@@ -291,6 +291,10 @@ type Client interface {
 	// ListBranches returns a list of all branches in the repository.
 	ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error)
 
+	// CommitDistance reutrns the number of commits between [old..new] along the first-parent path e.g. the
+	// distance between [X..X] is 0 and [X^..X] is 1.
+	CommitDistance(ctx context.Context, repo api.RepoName, old, new api.CommitID) (int, error)
+
 	// MergeBase returns the merge base commit for the specified commits.
 	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
 
@@ -1044,7 +1048,6 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		return resp.Body, resp.Trailer, nil
 
 	}
-
 }
 
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -1474,7 +1477,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 			req := req
 			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
 				return client.RepoCloneProgress(ctx, req)
-
 			})
 		}
 
@@ -1487,13 +1489,11 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 			Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
 		}
 		for _, r := range res {
-
 			for repo, info := range r.Results {
 				var rp protocol.RepoCloneProgress
 				rp.FromProto(info)
 				result.Results[api.RepoName(repo)] = &rp
 			}
-
 		}
 
 		return result, nil
@@ -1779,7 +1779,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 		grpcResp, err := client.GetObject(ctx, req.ToProto())
 		if err != nil {
-
 			return nil, err
 		}
 
