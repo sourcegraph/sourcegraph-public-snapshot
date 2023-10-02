@@ -25,14 +25,14 @@ import (
 )
 
 func TestServeSearchJobDownload(t *testing.T) {
-	observationCtx := observation.TestContextTB(t)
-	logger := observationCtx.Logger
-
 	enabled := true
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{SearchJobs: &enabled}}})
 	defer conf.Mock(nil)
+
+	observationCtx := observation.TestContextTB(t)
+	logger := observationCtx.Logger
 
 	mockUploadStore := mocks.NewMockStore()
 	mockUploadStore.ListFunc.SetDefaultHook(
