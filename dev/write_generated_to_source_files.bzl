@@ -11,11 +11,7 @@ def write_generated_to_source_files(name, src, files, strip_prefix = "", verbose
     write_source_files(
         name = name,
         files =  {
-            out.removeprefix(strip_prefix): make_directory_path(
-                out + "_directory_path",
-                "copy_" + name,
-                out,
-            )
+            out: src
             for out in files
         },
         suggested_update_target = "//dev:write_all_generated",

@@ -115,7 +115,7 @@ genrule(
         ["json-schema-draft*.json"],
     ),
     outs = [
-        "schema.go",
+        "_schema.go",
     ],
     cmd = """
     $(location @com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler:go-jsonschema-compiler) -o $@ -pkg schema $(SRCS)
