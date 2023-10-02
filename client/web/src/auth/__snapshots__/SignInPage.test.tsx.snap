@@ -51,7 +51,7 @@ exports[`SignInPage renders "Other login methods" if primary provider count is l
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -162,7 +162,7 @@ exports[`SignInPage renders different prefix on provider buttons 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -185,7 +185,7 @@ exports[`SignInPage renders different prefix on provider buttons 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -319,7 +319,7 @@ exports[`SignInPage renders non-primary auth provider if primary provider count 
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -415,7 +415,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -438,7 +438,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -556,7 +556,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -579,7 +579,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -993,7 +993,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1016,7 +1016,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1127,7 +1127,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1150,7 +1150,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1261,7 +1261,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1284,7 +1284,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1395,7 +1395,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1418,7 +1418,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
             >
               <svg
                 aria-hidden="true"
@@ -1441,7 +1441,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href=""
+              href="http://localhost/?returnTo=%2Fsearch"
             >
                Continue with Sourcegraph Operators
             </a>

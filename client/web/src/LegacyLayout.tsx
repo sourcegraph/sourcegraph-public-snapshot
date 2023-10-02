@@ -207,6 +207,14 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !props.authenticatedUser.completedPostSignup &&
         !isPostSignUpPage
     ) {
+        if (location.pathname !== '/search') {
+            const returnTo = window.location.href
+            const params = new URLSearchParams()
+            params.set('returnTo', returnTo)
+            const navigateTo = PageRoutes.PostSignUp + '?' + params.toString()
+            return <Navigate to={navigateTo.toString()} replace={true} />
+        }
+
         return <Navigate to={PageRoutes.PostSignUp} replace={true} />
     }
 
