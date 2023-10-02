@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
@@ -14,6 +15,7 @@ import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.util.system.CpuArch
 import com.sourcegraph.cody.CodyAgentFocusListener
 import com.sourcegraph.cody.agent.protocol.ClientInfo
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import java.io.File
 import java.io.IOException
@@ -22,6 +24,7 @@ import java.net.URI
 import java.nio.file.*
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
@@ -84,6 +87,7 @@ class CodyAgent(private val project: Project) : Disposable {
     } catch (e: Exception) {
       agentNotRunningExplanation = "unable to start Cody agent"
       logger.warn(agentNotRunningExplanation, e)
+      CodyAutocompleteStatusService.resetApplication(project)
     }
   }
 
@@ -128,6 +132,11 @@ class CodyAgent(private val project: Project) : Disposable {
             .redirectErrorStream(false)
             .redirectError(ProcessBuilder.Redirect.PIPE)
             .start()
+    process.onExit().thenApplyAsync {
+      if (it.exitValue() != 0) {
+        CodyAutocompleteStatusService.resetApplication(project)
+      }
+    }
 
     // Redirect agent stderr into idea.log by buffering line by line into `logger.warn()`
     // statements. Without this logic, the stderr output of the agent process is lost if the process
@@ -165,27 +174,25 @@ class CodyAgent(private val project: Project) : Disposable {
   companion object {
     var logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
-    @JvmField val executorService = Executors.newCachedThreadPool()
+    @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
     @JvmStatic
     fun getClient(project: Project): CodyAgentClient {
-      return project.getService(CodyAgent::class.java).client
+      return project.service<CodyAgent>().client
     }
 
     @JvmStatic
     fun getInitializedServer(project: Project): CompletableFuture<CodyAgentServer?> {
-      return project.getService(CodyAgent::class.java).initialized
+      return project.service<CodyAgent>().initialized
     }
 
     @JvmStatic
     fun isConnected(project: Project): Boolean {
-      val agent = project.getService(CodyAgent::class.java)
+      val agent = project.service<CodyAgent>()
       // NOTE(olafurpg): there are probably too many conditions below. We test multiple conditions
       // because we don't know 100% yet what exactly constitutes a "connected" state. Out of
-      // abundance
-      // of caution, we check everything we can think of.
-      return (agent?.agentProcess != null &&
-          agent.agentProcess!!.isAlive &&
+      // abundance of caution, we check everything we can think of.
+      return (agent.agentProcess?.isAlive == true &&
           !agent.listeningToJsonRpc.isDone &&
           !agent.listeningToJsonRpc.isCancelled &&
           agent.client.server != null)
@@ -218,7 +225,7 @@ class CodyAgent(private val project: Project) : Disposable {
 
     private fun agentDirectory(): Path? {
       val fromProperty = System.getProperty("cody-agent.directory", "")
-      if (!fromProperty.isEmpty()) {
+      if (fromProperty.isNotEmpty()) {
         return Paths.get(fromProperty)
       }
       val plugin = PluginManagerCore.getPlugin(PLUGIN_ID) ?: return null
@@ -253,7 +260,7 @@ class CodyAgent(private val project: Project) : Disposable {
 
     private fun traceWriter(): PrintWriter? {
       val tracePath = System.getProperty("cody-agent.trace-path", "")
-      if (!tracePath.isEmpty()) {
+      if (tracePath.isNotEmpty()) {
         val trace = Paths.get(tracePath)
         try {
           Files.createDirectories(trace.parent)
