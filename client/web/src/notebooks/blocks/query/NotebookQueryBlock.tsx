@@ -16,7 +16,7 @@ import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEdito
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
@@ -77,8 +77,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [editor, setEditor] = useState<EditorView>()
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
-        const applySuggestionsOnEnter =
-            useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
         const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
         const searchMode = useNavbarQueryState(state => state.searchMode)
@@ -136,9 +134,8 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 createDefaultSuggestions({
                     isSourcegraphDotCom,
                     fetchSuggestions: fetchStreamSuggestions,
-                    applyOnEnter: applySuggestionsOnEnter,
                 }),
-            [isSourcegraphDotCom, applySuggestionsOnEnter]
+            [isSourcegraphDotCom]
         )
 
         // Focus editor on component creation if necessary

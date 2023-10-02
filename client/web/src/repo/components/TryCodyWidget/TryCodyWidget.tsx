@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiClose, mdiEmailOutline } from '@mdi/js'
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
@@ -85,19 +85,11 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                         context={context}
                         githubLabel="GitHub"
                         gitlabLabel="GitLab"
+                        googleLabel="Google"
                         withCenteredText={true}
                         onClick={logEvent}
                         ctaClassName={styles.authButton}
-                        iconClassName={styles.buttonIcon}
                     />
-                    <Link
-                        to="https://sourcegraph.com/sign-up?showEmail=true"
-                        className={classNames('text-decoration-none', styles.emailAuthButton)}
-                        onClick={() => logEvent('builtin')}
-                    >
-                        <Icon className="mr-1" svgPath={mdiEmailOutline} inline={false} aria-hidden={true} />
-                        Email
-                    </Link>
                 </div>
                 <Text className="mb-2 mt-2">
                     By registering, you agree to our{' '}

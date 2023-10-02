@@ -1,9 +1,7 @@
-FROM docker:23.0.6-dind@sha256:eb9f1d80fbe98f6343fd432d8f89db19d5de324096498e67886c4a984f6ac670
+FROM docker:24.0.6-dind@sha256:154bd903f793987eb2926aa9bb0f11e2596bec9e8a338c1695d4615d52b4ff91
 
 RUN rm -f /usr/libexec/docker/cli-plugins/docker-compose && \
     rm -f /usr/libexec/docker/cli-plugins/docker-buildx
-
-RUN apk update && apk add --no-cache 'e2fsprogs>=1.46.6-r0' 'libcom_err>=1.46.6-r0' 'e2fsprogs-libs>=1.46.6-r0' 'libcrypto3>=3.0.8-r3' 'libssl3>=3.0.8-r3' 'openssl>=3.0.8-r3'
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
