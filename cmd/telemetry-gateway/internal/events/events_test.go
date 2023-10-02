@@ -3,7 +3,10 @@ package events_test
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -13,17 +16,26 @@ import (
 )
 
 func TestPublish(t *testing.T) {
+	done := make(chan struct{})
 	memTopic := pubsubtest.NewMemoryTopicClient()
+
+	// Emulate semi-random blockage to emulate concurrency
+	var count atomic.Int32
+	memTopic.PrePublishHook = func() {
+		count.Add(1)
+		if count.Load()%2 == 0 {
+			<-done
+		}
+	}
 
 	publisher, err := events.NewPublisherForStream(memTopic, &telemetrygatewayv1.RecordEventsRequestMetadata{})
 	require.NoError(t, err)
 
-	events := []*telemetrygatewayv1.Event{
-		{Id: "1"},
-		{Id: "2"},
-		{Id: "3"},
-		{Id: "4"},
-		{Id: "5"},
+	events := make([]*telemetrygatewayv1.Event, 100)
+	for i := range events {
+		events[i] = &telemetrygatewayv1.Event{
+			Id: strconv.Itoa(i),
+		}
 	}
 
 	// Collect sets of things we expect
@@ -36,7 +48,11 @@ func TestPublish(t *testing.T) {
 		publishedEvents[e.Id] = false
 	}
 
-	// Publish the events
+	// Publish the events, blocking some goroutines for a bit
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		close(done)
+	}()
 	results := publisher.Publish(context.Background(), events)
 
 	// Collect all the results we got
@@ -55,13 +71,11 @@ func TestPublish(t *testing.T) {
 	}
 
 	// Make our assertions - all events should be have results or be published
-	t.Logf("results: %+v", eventResults)
 	for eventID, found := range eventResults {
 		if !found {
 			t.Errorf("expected event result %q", eventID)
 		}
 	}
-	t.Logf("published: %+v", publishedEvents)
 	for eventID, published := range publishedEvents {
 		if !published {
 			t.Errorf("expected published event %q", eventID)

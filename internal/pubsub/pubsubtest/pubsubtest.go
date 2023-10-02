@@ -17,11 +17,15 @@ func NewMemoryTopicClient() *MemoryTopicClient {
 }
 
 type MemoryTopicClient struct {
-	mux      sync.Mutex
-	Messages [][]byte
+	mux            sync.Mutex
+	PrePublishHook func()
+	Messages       [][]byte
 }
 
 func (c *MemoryTopicClient) Publish(ctx context.Context, messages ...[]byte) error {
+	if c.PrePublishHook != nil {
+		c.PrePublishHook()
+	}
 	c.mux.Lock()
 	c.Messages = append(c.Messages, messages...)
 	c.mux.Unlock()
