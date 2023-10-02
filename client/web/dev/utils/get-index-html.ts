@@ -26,6 +26,8 @@ export interface WebBuildManifest {
     'react.js'?: string
     /** Opentelemetry entry bundle, only used in production mode */
     'opentelemetry.js'?: string
+    /** Embed entry bundle */
+    'embed.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
     /** The node env value `production | development` */

@@ -31,8 +31,6 @@ export const ENVIRONMENT_CONFIG = {
     // Can be used to expose global variables to integration tests (e.g., CodeMirror API).
     // Enabled in the dev environment to allow debugging integration tests with the dev server.
     INTEGRATION_TESTS: getEnvironmentBoolean('INTEGRATION_TESTS') || IS_DEVELOPMENT,
-    // Enables `embed` entrypoint.
-    EMBED_DEVELOPMENT: getEnvironmentBoolean('EMBED_DEVELOPMENT'),
 
     // Should the web builder serve `index.html` with `HTMLWebpackPlugin`.
     WEB_BUILDER_SERVE_INDEX: getEnvironmentBoolean('WEB_BUILDER_SERVE_INDEX'),
