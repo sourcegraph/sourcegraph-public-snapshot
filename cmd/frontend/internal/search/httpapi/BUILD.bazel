@@ -23,6 +23,7 @@ go_test(
     tags = ["requires-network"],
     deps = [
         "//internal/actor",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
@@ -31,6 +32,7 @@ go_test(
         "//internal/search/exhaustive/store",
         "//internal/uploadstore/mocks",
         "//lib/iterator",
+        "//schema",
         "@com_github_gorilla_mux//:mux",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_stretchr_testify//require",

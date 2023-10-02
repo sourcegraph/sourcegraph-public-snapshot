@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -20,9 +21,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestServeSearchJobDownload(t *testing.T) {
+	enabled := true
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{SearchJobs: &enabled}}})
+	defer conf.Mock(nil)
+
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
 
