@@ -134,9 +134,10 @@ public class CodyToolWindowContent implements UpdatableChat {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
             // When no text in prompt, pop from history.
-            if (!chatMessageHistory.getUpperStack().isEmpty()
-                && (promptInput.getText().isEmpty()
-                    || promptInput.getText().equals(chatMessageHistory.getCurrentValue()))) {
+            if ((promptInput.getText().isEmpty()
+                    || promptInput.getText().equals(chatMessageHistory.getCurrentValue()))
+                && !chatMessageHistory.getUpperStack().isEmpty()
+                && promptInput.getCaretPosition() == 0) {
               chatMessageHistory.popUpperMessage(promptInput);
             } else {
               int caretPosition = promptInput.getCaretPosition();
@@ -167,8 +168,9 @@ public class CodyToolWindowContent implements UpdatableChat {
           public void actionPerformed(@NotNull AnActionEvent e) {
             int promptLastPosition = promptInput.getText().length();
             // When no text in prompt, pop from history.
-            if (promptInput.getText().isEmpty()
-                || promptInput.getText().equals(chatMessageHistory.getCurrentValue())) {
+            if ((promptInput.getText().isEmpty()
+                    || promptInput.getText().equals(chatMessageHistory.getCurrentValue()))
+                && promptInput.getCaretPosition() == promptLastPosition) {
               chatMessageHistory.popLowerMessage(promptInput);
             } else {
               int caretPosition = promptInput.getCaretPosition();
