@@ -2,7 +2,7 @@
  * The script collects web application bundlesize information from the disk and uploads it to Honeycomb.
  *
  * 1. Build web application using:
- * ENTERPRISE=1 NODE_ENV=production DISABLE_TYPECHECKING=true WEBPACK_USE_NAMED_CHUNKS=true pnpm build-web
+ * NODE_ENV=production DISABLE_TYPECHECKING=true WEBPACK_USE_NAMED_CHUNKS=true pnpm build-web
  *
  * 2. Upload bundlesize information to Honeycomb:
  * HONEYCOMB_API_KEY=XXX pnpm --filter @sourcegraph/observability-server run bundlesize:web:upload
@@ -13,7 +13,7 @@ import { execSync } from 'child_process'
 import path from 'path'
 
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { cleanEnv, bool, str } from 'envalid'
+import { cleanEnv, str } from 'envalid'
 
 import { STATIC_ASSETS_PATH, WORKSPACES_PATH } from '@sourcegraph/build-config'
 
@@ -23,7 +23,6 @@ import { libhoneySDK } from '../sdk'
 import { getBundleSizeStats } from './getBundleSizeStats'
 
 const environment = cleanEnv(process.env, {
-    ENTERPRISE: bool({ default: false }),
     NODE_ENV: str({ choices: ['development', 'production'] }),
 })
 
@@ -56,7 +55,6 @@ for (const [baseFilePath, fileInfo] of Object.entries(bundleSizeStats)) {
         'bundle.file.isDefaultVendors': fileInfo.isDefaultVendors,
         'bundle.file.isCss': fileInfo.isCss,
         'bundle.file.isJs': fileInfo.isJs,
-        'bundle.enterprise': environment.ENTERPRISE,
         'bundle.env': environment.NODE_ENV,
 
         ...SDK_INFO,

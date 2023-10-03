@@ -9,11 +9,6 @@ if [ -z "$USE_KEYCLOAK" ]; then
   exit 0
 fi
 
-if [ -z "$ENTERPRISE" ]; then
-  echo Not using Keycloak. Only runs in enterprise mode.
-  exit 0
-fi
-
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")" # cd to dev/auth-provider dir
 

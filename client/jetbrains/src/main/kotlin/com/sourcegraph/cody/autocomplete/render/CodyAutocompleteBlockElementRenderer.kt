@@ -12,9 +12,9 @@ import java.awt.Rectangle
 /** Implements the logic to render an autocomplete item inline in the editor. */
 class CodyAutocompleteBlockElementRenderer(
     text: String,
-    completionItem: InlineAutocompleteItem,
+    completionItems: List<InlineAutocompleteItem>,
     editor: Editor
-) : CodyAutocompleteElementRenderer(text, completionItem, editor, AutocompleteRendererType.BLOCK) {
+) : CodyAutocompleteElementRenderer(text, completionItems, editor, AutocompleteRendererType.BLOCK) {
   override fun calcWidthInPixels(inlay: Inlay<*>): Int {
     val editor = inlay.editor as EditorImpl
     val longestLine: String =

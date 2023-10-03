@@ -79,13 +79,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	weaviate := newWeaviateClient(
-		logger,
-		config.WeaviateURL,
-	)
-
 	// Create HTTP server
-	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding, weaviate)
+	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding)
 	handler = handlePanic(logger, handler)
 	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
@@ -109,7 +104,6 @@ func NewHandler(
 	logger log.Logger,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
-	weaviate *weaviateClient,
 ) http.Handler {
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
@@ -126,7 +120,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndexes(r.Context(), args, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
+		res, err := searchRepoEmbeddingIndexes(r.Context(), args, getRepoEmbeddingIndex, getQueryEmbedding)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

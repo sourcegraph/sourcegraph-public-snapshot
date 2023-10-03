@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -50,14 +49,14 @@ func NewOpenAIHandler(
 				}
 				return 0, false, nil
 			},
-			transformBody: func(body *openaiRequest, act *actor.Actor) {
+			transformBody: func(body *openaiRequest, identifier string) {
 				// We don't want to let users generate multiple responses, as this would
 				// mess with rate limit counting.
 				if body.N > 1 {
 					body.N = 1
 				}
 				// We forward the actor ID to support tracking.
-				body.User = act.ID
+				body.User = identifier
 			},
 			getRequestMetadata: func(body openaiRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{"stream": body.Stream}

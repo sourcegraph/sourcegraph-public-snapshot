@@ -127,8 +127,6 @@ Follow these steps to install the Cody extension for JetBrains IntelliJ:
 
 Alternatively, you can also [Download and install the extension from the Jetbrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
 
-> NOTE: Cody works well equally on other JetBrains IDEs like PyCharm, RubyMine, WebStorm etc. The installation steps remain the same.
-
 ## Connect the extension to Sourcegraph
 
 After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
@@ -178,6 +176,24 @@ Autocomplete suggestions appear as inlay suggestions. Press `Option+\` (for macO
 Autocomplete is triggered by default. You can disable the automatic trigger optionally through the Cody icon in the status bar or from the Cody Settings.
 
 In addition, autocomplete suggestions use the same color as inline parameter hints according to your configured theme. You can optionally customize this color from the Cody settings.
+
+## Supported JetBrains IDEs
+
+The Cody plugin works with all JetBrains IDEs, including:
+
+- IntelliJ IDEA
+- IntelliJ IDEA Community Edition
+- PhpStorm
+- WebStorm
+- PyCharm
+- PyCharm Community Edition
+- RubyMine
+- AppCode
+- CLion
+- GoLand
+- DataGrip
+- Rider
+- Android Studio
 
 ## Enable code graph context for context-aware answers (Optional)
 

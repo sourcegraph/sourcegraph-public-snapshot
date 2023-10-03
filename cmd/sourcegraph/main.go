@@ -16,9 +16,9 @@ import (
 	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared"
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
+	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	embeddings_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/shared"
 	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
-	worker_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
 
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
