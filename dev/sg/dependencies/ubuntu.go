@@ -14,11 +14,8 @@ import (
 )
 
 func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
-	commands := []string{
-		`sudo apt-get update`,
-	}
-	commands = append(commands, preinstall...)
-	commands = append(commands, fmt.Sprintf("sudo apt-get install -y %s", pkg))
+	commands := preinstall
+	commands = append(commands, "sudo apt-get update", fmt.Sprintf("sudo apt-get install -y %s", pkg))
 	return cmdFixes(commands...)
 }
 
