@@ -96,13 +96,13 @@
 
 /cmd/repo-updater/internal/authz/**/* @unknwon
 
-/enterprise/cmd/worker/**/* @efritz
+/cmd/worker/**/* @efritz
 
-/enterprise/cmd/worker/internal/batches/**/* @eseliger
+/cmd/worker/internal/batches/**/* @eseliger
 
-/enterprise/cmd/worker/internal/executorqueue/**/* @efritz @eseliger
+/cmd/worker/internal/executorqueue/**/* @efritz @eseliger
 
-/enterprise/cmd/worker/internal/executors/**/* @efritz
+/cmd/worker/internal/executors/**/* @efritz
 
 /enterprise/dev/ci/**/* @bobheadxi
 
