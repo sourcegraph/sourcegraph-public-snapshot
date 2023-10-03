@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent
 
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import java.util.concurrent.TimeUnit
 
 object CodyAgentManager {
@@ -18,14 +19,18 @@ object CodyAgentManager {
 
   @JvmStatic
   fun startAgent(project: Project) {
-    if (project.isDisposed) {
-      return
+    try {
+      if (project.isDisposed) {
+        return
+      }
+      val service = project.getService(CodyAgent::class.java) ?: return
+      if (CodyAgent.isConnected(project)) {
+        return
+      }
+      service.initialize()
+    } finally {
+      CodyAutocompleteStatusService.resetApplication(project)
     }
-    val service = project.getService(CodyAgent::class.java) ?: return
-    if (CodyAgent.isConnected(project)) {
-      return
-    }
-    service.initialize()
   }
 
   @JvmStatic

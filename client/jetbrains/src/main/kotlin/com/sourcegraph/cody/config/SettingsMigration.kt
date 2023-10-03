@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture
 
 class SettingsMigration : Activity {
 
-  private val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
+  private val codyAuthenticationManager = CodyAuthenticationManager.instance
 
   override fun runActivity(project: Project) {
     RunOnceUtil.runOnceForProject(project, "CodyProjectSettingsMigration") {
@@ -43,11 +43,11 @@ class SettingsMigration : Activity {
   private fun toggleCodyToolbarWindow(project: Project) {
     val toolWindowManager = ToolWindowManager.getInstance(project)
     val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
-    toolWindow?.setAvailable(CodyApplicationSettings.getInstance().isCodyEnabled, null)
+    toolWindow?.setAvailable(CodyApplicationSettings.instance.isCodyEnabled, null)
   }
 
   private fun migrateAccounts(project: Project, customRequestHeaders: String) {
-    val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.getInstance()
+    val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.instance
     migrateDotcomAccount(project, requestExecutorFactory, customRequestHeaders)
     migrateEnterpriseAccount(project, requestExecutorFactory, customRequestHeaders)
   }
@@ -136,9 +136,8 @@ class SettingsMigration : Activity {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
       val codyAccount = CodyAccount.create(it.name, it.displayName, server, id)
       addAccount(codyAccount, accessToken)
-      if (CodyAuthenticationManager.getInstance().getActiveAccount(project) == null) {
-        CodyAuthenticationManager.getInstance().setActiveAccount(project, codyAccount)
-      }
+      if (CodyAuthenticationManager.instance.getActiveAccount(project) == null)
+          CodyAuthenticationManager.instance.setActiveAccount(project, codyAccount)
     }
   }
 

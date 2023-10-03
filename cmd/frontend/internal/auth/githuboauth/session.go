@@ -45,7 +45,7 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventGitHubAuthFailed
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 
 	if ghUser == nil {
@@ -54,7 +54,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		} else {
 			err = errors.New("could not read user from context")
 		}
-		return nil, "Could not read GitHub user from callback request.", err
+		return false, nil, "Could not read GitHub user from callback request.", err
 	}
 	dc := conf.Get().Dotcom
 
@@ -63,13 +63,13 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
 
 		if ghUser.CreatedAt.After(earliestValidCreationDate) {
-			return nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
+			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
 		}
 	}
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))
 	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
+		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
 	ghClient := s.newClient(token.AccessToken)
@@ -77,20 +77,20 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// 🚨 SECURITY: Ensure that the user email is verified
 	verifiedEmails := getVerifiedEmails(ctx, ghClient)
 	if len(verifiedEmails) == 0 {
-		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
+		return false, nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
 	}
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
 	userBelongsToAllowedOrgsOrTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
 	if !userBelongsToAllowedOrgsOrTeams {
 		message := "user does not belong to allowed GitHub organizations or teams."
-		return nil, message, errors.New(message)
+		return false, nil, message, errors.New(message)
 	}
 
 	// Try every verified email in succession until the first that succeeds
 	var data extsvc.AccountData
 	if err := githubsvc.SetExternalAccountData(&data, ghUser, token); err != nil {
-		return nil, "", err
+		return false, nil, "", err
 	}
 	var (
 		lastSafeErrMsg string
@@ -124,7 +124,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	for _, attempt := range attempts {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+		newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username: login,
 
@@ -150,13 +150,13 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				FirstSourceURL:  firstSourceURL,
 				LastSourceURL:   lastSourceURL,
 			})
-			return actor.FromUser(userID), "", nil // success
+			return newUserCreated, actor.FromUser(userID), "", nil // success
 		}
 		lastSafeErrMsg, lastErr = safeErrMsg, err
 	}
 
 	// On failure, return the last error
-	return nil, fmt.Sprintf("Could not find existing user matching any of the verified emails: %s %s \n\nLast error was: %s", strings.Join(verifiedEmails, ", "), signupErrorMessage, lastSafeErrMsg), lastErr
+	return false, nil, fmt.Sprintf("Could not find existing user matching any of the verified emails: %s %s \n\nLast error was: %s", strings.Join(verifiedEmails, ", "), signupErrorMessage, lastSafeErrMsg), lastErr
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

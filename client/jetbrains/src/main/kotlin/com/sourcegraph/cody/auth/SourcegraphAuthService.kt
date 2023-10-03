@@ -28,9 +28,11 @@ internal class SourcegraphAuthService : AuthServiceBase() {
   companion object {
     private const val SERVICE_NAME = "sourcegraph"
 
+    @JvmStatic
     val instance: SourcegraphAuthService
       get() = service()
 
+    @JvmStatic
     val SERVICE_URL: Url =
         Urls.newFromEncoded(ConfigUtil.DOTCOM_URL + "user/settings/tokens/new/callback")
   }
