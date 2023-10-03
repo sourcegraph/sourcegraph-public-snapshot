@@ -40,7 +40,7 @@ jobs:
         uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
-        if: ${{ github.head_ref == 'wb/ctags-workflow' }}
+        if: ${{ github.ref_name == 'main' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-darwin/'
@@ -70,7 +70,7 @@ jobs:
         uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
-        if: ${{ github.head_ref == 'wb/ctags-workflow' }}
+        if: ${{ github.ref_name == 'main' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/aarch64-darwin'
@@ -99,7 +99,7 @@ jobs:
         uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
-        if: ${{ github.head_ref == 'wb/ctags-workflow' }}
+        if: ${{ github.ref_name == 'main' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-linux'
