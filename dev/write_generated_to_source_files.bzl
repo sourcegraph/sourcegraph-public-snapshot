@@ -12,7 +12,7 @@ def write_generated_to_source_files(name, target, output_files, verbose_copy=Fal
     # First we copy to a directory all outputs from the target, so we can refer to them
     # individually.
     copy_to_directory(
-        name = name + "_flattened",
+        name = name + "_copy",
         srcs = [target],
     )
 
@@ -22,7 +22,7 @@ def write_generated_to_source_files(name, target, output_files, verbose_copy=Fal
         files = {
             dest: make_directory_path(
                 orig + "_directory_path",
-                name + "_flattened",
+                name + "_copy",
                 orig,
             )
             for dest, orig in output_files.items()
