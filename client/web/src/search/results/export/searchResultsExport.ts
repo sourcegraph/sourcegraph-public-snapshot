@@ -62,10 +62,10 @@ export const searchResultsToFileContent = (
                         // "[pkg/microservice/systemconfig/core/codehost/repository/models/codehost.go, [[35, 43], [62,70]]]"
                         const pathMatches = result.pathMatches
                             ? JSON.stringify(
-                                `[${result.path}, [${result.pathMatches
-                                    .map(match => `[${match.start.column}, ${match.end.column}]`)
-                                    .join(' ')}]]`
-                            )
+                                  `[${result.path}, [${result.pathMatches
+                                      .map(match => `[${match.start.column}, ${match.end.column}]`)
+                                      .join(' ')}]]`
+                              )
                             : ''
 
                         // e.g. for query "codehost" the chunk match record can be
@@ -75,15 +75,15 @@ export const searchResultsToFileContent = (
                         const chunkMatches =
                             'chunkMatches' in result
                                 ? JSON.stringify(
-                                    result.chunkMatches
-                                        ?.map(
-                                            match =>
-                                                `[${match.contentStart.line}, [${match.ranges
-                                                    .map(range => `[${range.start.column}, ${range.end.column}]`)
-                                                    .join(' ')}]]`
-                                        )
-                                        .join('; ')
-                                )
+                                      result.chunkMatches
+                                          ?.map(
+                                              match =>
+                                                  `[${match.contentStart.line}, [${match.ranges
+                                                      .map(range => `[${range.start.column}, ${range.end.column}]`)
+                                                      .join(' ')}]]`
+                                          )
+                                          .join('; ')
+                                  )
                                 : ''
 
                         return [
@@ -138,13 +138,13 @@ export const searchResultsToFileContent = (
                         new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
                         ...(enableRepositoryMetadata
                             ? [
-                                '"' +
-                                Object.entries(result.metadata ?? {})
-                                    .map(([key, value]) => (value ? `${key}:${value}` : key))
-                                    .join('\n')
-                                    .replaceAll('"', '""') +
-                                '"',
-                            ]
+                                  '"' +
+                                      Object.entries(result.metadata ?? {})
+                                          .map(([key, value]) => (value ? `${key}:${value}` : key))
+                                          .join('\n')
+                                          .replaceAll('"', '""') +
+                                      '"',
+                              ]
                             : []),
                     ]),
             ]
