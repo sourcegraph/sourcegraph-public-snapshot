@@ -36,12 +36,11 @@ jobs:
         name: Show hash of ctags
         run: |
           shasum -a 256 ./result/bin/universal-ctags-*
-          echo "1. ${{ github.ref_name }}"
-          echo "2. ${{ github.head_ref }}"
-          echo "3. ${{ github.ref_name || github.head_ref }}"
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.head_ref == 'wb/ctags-workflow' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-darwin/'
@@ -67,12 +66,11 @@ jobs:
         name: Show hash of ctags
         run: |
           shasum -a 256 ./result/bin/universal-ctags-*
-          echo "1. ${{ github.ref_name }}"
-          echo "2. ${{ github.head_ref }}"
-          echo "3. ${{ github.ref_name || github.head_ref }}"
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.head_ref == 'wb/ctags-workflow' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/aarch64-darwin'
@@ -97,12 +95,11 @@ jobs:
         name: Show hash of ctags
         run: |
           sha256sum ./result/bin/universal-ctags-*
-          echo "1. ${{ github.ref_name }}"
-          echo "2. ${{ github.head_ref }}"
-          echo "3. ${{ github.ref_name || github.head_ref }}"
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.head_ref == 'wb/ctags-workflow' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-linux'
