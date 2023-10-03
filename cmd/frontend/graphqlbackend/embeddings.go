@@ -14,6 +14,7 @@ type EmbeddingsResolver interface {
 	EmbeddingsMultiSearch(ctx context.Context, args EmbeddingsMultiSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
 	IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryInputArgs) (bool, error)
 	RepoEmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error)
+	MigrateToQdrant(ctx context.Context) (*EmptyResponse, error)
 
 	ScheduleRepositoriesForEmbedding(ctx context.Context, args ScheduleRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
 	CancelRepoEmbeddingJob(ctx context.Context, args CancelRepoEmbeddingJobArgs) (*EmptyResponse, error)

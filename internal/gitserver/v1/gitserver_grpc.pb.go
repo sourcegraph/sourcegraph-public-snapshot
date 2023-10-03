@@ -33,7 +33,6 @@ const (
 	GitserverService_RepoCloneProgress_FullMethodName           = "/gitserver.v1.GitserverService/RepoCloneProgress"
 	GitserverService_RepoDelete_FullMethodName                  = "/gitserver.v1.GitserverService/RepoDelete"
 	GitserverService_RepoUpdate_FullMethodName                  = "/gitserver.v1.GitserverService/RepoUpdate"
-	GitserverService_ReposStats_FullMethodName                  = "/gitserver.v1.GitserverService/ReposStats"
 	GitserverService_IsPerforcePathCloneable_FullMethodName     = "/gitserver.v1.GitserverService/IsPerforcePathCloneable"
 )
 
@@ -55,8 +54,6 @@ type GitserverServiceClient interface {
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
 	RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error)
 	RepoUpdate(ctx context.Context, in *RepoUpdateRequest, opts ...grpc.CallOption) (*RepoUpdateResponse, error)
-	// TODO: Remove this endpoint after 5.2, it is deprecated.
-	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 	IsPerforcePathCloneable(ctx context.Context, in *IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*IsPerforcePathCloneableResponse, error)
 }
 
@@ -311,15 +308,6 @@ func (c *gitserverServiceClient) RepoUpdate(ctx context.Context, in *RepoUpdateR
 	return out, nil
 }
 
-func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error) {
-	out := new(ReposStatsResponse)
-	err := c.cc.Invoke(ctx, GitserverService_ReposStats_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *gitserverServiceClient) IsPerforcePathCloneable(ctx context.Context, in *IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*IsPerforcePathCloneableResponse, error) {
 	out := new(IsPerforcePathCloneableResponse)
 	err := c.cc.Invoke(ctx, GitserverService_IsPerforcePathCloneable_FullMethodName, in, out, opts...)
@@ -347,8 +335,6 @@ type GitserverServiceServer interface {
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
 	RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error)
 	RepoUpdate(context.Context, *RepoUpdateRequest) (*RepoUpdateResponse, error)
-	// TODO: Remove this endpoint after 5.2, it is deprecated.
-	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
@@ -398,9 +384,6 @@ func (UnimplementedGitserverServiceServer) RepoDelete(context.Context, *RepoDele
 }
 func (UnimplementedGitserverServiceServer) RepoUpdate(context.Context, *RepoUpdateRequest) (*RepoUpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoUpdate not implemented")
-}
-func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReposStats not implemented")
 }
 func (UnimplementedGitserverServiceServer) IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPerforcePathCloneable not implemented")
@@ -690,24 +673,6 @@ func _GitserverService_RepoUpdate_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReposStatsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GitserverServiceServer).ReposStats(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GitserverService_ReposStats_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).ReposStats(ctx, req.(*ReposStatsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _GitserverService_IsPerforcePathCloneable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IsPerforcePathCloneableRequest)
 	if err := dec(in); err != nil {
@@ -768,10 +733,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RepoUpdate",
 			Handler:    _GitserverService_RepoUpdate_Handler,
-		},
-		{
-			MethodName: "ReposStats",
-			Handler:    _GitserverService_ReposStats_Handler,
 		},
 		{
 			MethodName: "IsPerforcePathCloneable",

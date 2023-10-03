@@ -16,7 +16,6 @@ import { USERS_MANAGEMENT_SUMMARY } from './queries'
 import styles from './index.module.scss'
 
 export interface UsersManagementProps {
-    isEnterprise: boolean
     renderAssignmentModal: (
         onCancel: () => void,
         onSuccess: (user: { username: string }) => void,
@@ -24,10 +23,7 @@ export interface UsersManagementProps {
     ) => React.ReactNode
 }
 
-export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
-    isEnterprise,
-    renderAssignmentModal,
-}) => {
+export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({ renderAssignmentModal }) => {
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
     }, [])
@@ -121,11 +117,7 @@ export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
                 ) : (
                     <ValueLegendList className="mb-3" items={legends} />
                 )}
-                <UsersList
-                    onActionEnd={refetch}
-                    isEnterprise={isEnterprise}
-                    renderAssignmentModal={renderAssignmentModal}
-                />
+                <UsersList onActionEnd={refetch} renderAssignmentModal={renderAssignmentModal} />
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.

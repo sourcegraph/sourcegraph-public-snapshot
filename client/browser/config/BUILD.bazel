@@ -9,7 +9,6 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 ts_project(
     name = "config",
     srcs = [
-        "webpack/auto-reloading.ts",
         "webpack/base.config.bazel.ts",
         "webpack/base.config.ts",
         "webpack/development.config.ts",
@@ -23,14 +22,12 @@ ts_project(
     deps = [
         "//:node_modules/@babel/runtime",  #keep
         "//:node_modules/@types/node",
-        "//:node_modules/@types/socket.io-client",
         "//:node_modules/css-loader",  #keep
         "//:node_modules/css-minimizer-webpack-plugin",
         "//:node_modules/mini-css-extract-plugin",
         # HACKS: bundle-time css import
         "//:node_modules/open-color",  #keep
         "//:node_modules/path-browserify",  #keep
-        "//:node_modules/socket.io-client",
         "//:node_modules/style-loader",  #keep
         "//:node_modules/terser-webpack-plugin",
         "//:node_modules/webpack",

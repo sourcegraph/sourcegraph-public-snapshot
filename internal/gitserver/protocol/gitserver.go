@@ -529,34 +529,6 @@ type RepoDeleteRequest struct {
 	Repo api.RepoName
 }
 
-// ReposStats is an aggregation of statistics from a gitserver.
-type ReposStats struct {
-	// UpdatedAt is the time these statistics were computed. If UpdateAt is
-	// zero, the statistics have not yet been computed. This can happen on a
-	// new gitserver.
-	UpdatedAt time.Time
-
-	// GitDirBytes is the amount of bytes stored in .git directories.
-	GitDirBytes int64
-}
-
-func (rs *ReposStats) FromProto(x *proto.ReposStatsResponse) {
-	protoGitDirBytes := x.GetGitDirBytes()
-	protoUpdatedAt := x.GetUpdatedAt().AsTime()
-
-	*rs = ReposStats{
-		UpdatedAt:   protoUpdatedAt,
-		GitDirBytes: int64(protoGitDirBytes),
-	}
-}
-
-func (rs *ReposStats) ToProto() *proto.ReposStatsResponse {
-	return &proto.ReposStatsResponse{
-		GitDirBytes: uint64(rs.GitDirBytes),
-		UpdatedAt:   timestamppb.New(rs.UpdatedAt),
-	}
-}
-
 // RepoCloneProgressRequest is a request for information about the clone progress of multiple
 // repositories on gitserver.
 type RepoCloneProgressRequest struct {
