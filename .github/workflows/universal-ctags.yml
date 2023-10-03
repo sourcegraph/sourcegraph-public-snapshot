@@ -5,7 +5,7 @@ on:
     paths:
       - 'dev/nix/ctags.nix'
     branches:
-        - 'main'
+        - 'wb/ctags-workflow'
   pull_request:
     paths:
       - 'dev/nix/ctags.nix'
@@ -38,7 +38,7 @@ jobs:
           shasum -a 256 ./result/bin/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: ${{ env.GITHUB_REF_NAME == 'main' }}
+        if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-darwin/'
@@ -66,7 +66,7 @@ jobs:
           shasum -a 256 ./result/bin/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: ${{ env.GITHUB_REF_NAME == 'main' }}
+        if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/aarch64-darwin'
@@ -93,7 +93,7 @@ jobs:
           sha256sum ./result/bin/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: ${{ env.GITHUB_REF_NAME == 'main' }}
+        if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-linux'
