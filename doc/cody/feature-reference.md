@@ -55,13 +55,13 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Multi-line, inline autocompletion     |    ✓    |     ✓     |   ✓    |
 | Enable/Disable by language     |    x    |     ✓     |   ✓    |
 | Customize autocomplete colors     |    x    |     ✓     |   ✓    |
-| Cycle through multiple completion suggestions     |    x    |     x     |   ✓    |
+| Cycle through multiple completion suggestions     |    x    |     ✓     |   ✓    |
 
 ## Code Context
 
 | **Feature**               | **VS Code** | **JetBrains** | **Neovim** |
 |-------------------------|---------|-----------|--------|
-| Multi-repo context (10 repos)     |    x    |     x     |   x    |
+| Multi-repo context     |    x    |     x     |   x    |
 | Repo selection for context     |    ✓    |     ✓     |   x    |
 | Local repo context     |    ✓    |     x     |   x    |
 | Embeddings     |    ✓    |     ✓     |   ✓    |
@@ -90,7 +90,7 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Toggle chat window     |    x    |     x     |   ✓    |
 | Improve variable names     |    x    |     ✓     |   x    |
 
-## Cody app connection
+## Connect to Cody app
 
 | **Feature**               | **VS Code** | **JetBrains** | **Neovim** |
 |-------------------------|---------|-----------|--------|
