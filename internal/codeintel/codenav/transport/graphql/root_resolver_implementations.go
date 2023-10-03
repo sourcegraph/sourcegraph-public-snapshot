@@ -55,7 +55,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
 
-	impls, implsCursor, err := r.codeNavSvc.NewGetImplementations(ctx, requestArgs, r.requestState, cursor)
+	impls, implsCursor, err := r.codeNavSvc.GetImplementations(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "codeNavSvc.GetImplementations")
 	}
@@ -112,7 +112,7 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
 
-	prototypes, protoCursor, err := r.codeNavSvc.NewGetPrototypes(ctx, requestArgs, r.requestState, cursor)
+	prototypes, protoCursor, err := r.codeNavSvc.GetPrototypes(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "codeNavSvc.GetPrototypes")
 	}
