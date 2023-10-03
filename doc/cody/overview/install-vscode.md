@@ -133,10 +133,10 @@ Cody also supports executing reusable prompts known as **Commands** from within 
 - `/ask`: Asks a question
 - `/edit[instruction]`: Edits code
 - `/doc`: Generates code documentation
-- `explain`: Explains code
-- `test`: Generates unit tests
-- `smell`: Find code smells
-- `reset`: Clears the Cody chat
+- `/explain`: Explains code
+- `/test`: Generates unit tests
+- `/smell`: Find code smells
+- `/reset`: Clears the Cody chat
 
 [Learn more about Commands here →](./../capabilities.md#commands)
 
