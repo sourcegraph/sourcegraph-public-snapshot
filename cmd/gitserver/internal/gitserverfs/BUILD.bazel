@@ -28,6 +28,7 @@ go_test(
         "initfs_test.go",
     ],
     embed = [":gitserverfs"],
+    tags = ["requires-network"],
     deps = [
         "//cmd/gitserver/internal/common",
         "//internal/api",
