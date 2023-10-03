@@ -22,6 +22,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
@@ -523,10 +524,17 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 	if rs.StatusCode != http.StatusOK {
 		return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
 	}
-	var resp proto.DiskInfoResponse
-	if err := json.NewDecoder(rs.Body).Decode(&resp); err != nil {
-		return nil, err
+
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading read disk info response body")
 	}
+
+	var resp proto.DiskInfoResponse
+	if err := protojson.Unmarshal(body, &resp); err != nil {
+		return nil, errors.Wrap(err, "parsing disk info response body")
+	}
+
 	return &resp, nil
 }
 
