@@ -87,12 +87,9 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                 context={context}
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
+                googleLabel="Continue with Google"
                 onClick={logEvent}
             />
-
-            <div className="mb-4">
-                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
-            </div>
         </>
     )
 

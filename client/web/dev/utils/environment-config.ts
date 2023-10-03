@@ -77,7 +77,6 @@ export const ENVIRONMENT_CONFIG = {
      * Application features configuration.
      * ----------------------------------------
      */
-    ENTERPRISE: getEnvironmentBoolean('ENTERPRISE'),
     SOURCEGRAPHDOTCOM_MODE: getEnvironmentBoolean('SOURCEGRAPHDOTCOM_MODE'),
     CODY_APP: getEnvironmentBoolean('CODY_APP'),
 

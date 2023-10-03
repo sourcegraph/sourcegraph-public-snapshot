@@ -2,12 +2,15 @@ package database
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -22,6 +25,13 @@ import (
 // FeatureFlagTelemetryExport enables telemetry export by allowing events to be
 // queued for export via (TelemetryEventsExportQueueStore).QueueForExport
 const FeatureFlagTelemetryExport = "telemetry-export"
+
+var counterQueuedEvents = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "telemetry_export_store",
+	Name:      "queued_events",
+	Help:      "Events added to the telemetry export queue",
+}, []string{"failed"})
 
 type TelemetryEventsExportQueueStore interface {
 	basestore.ShareableStore
@@ -80,7 +90,8 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	if len(events) == 0 {
 		return nil
 	}
-	return batch.InsertValues(ctx,
+
+	err := batch.InsertValues(ctx,
 		s.Handle(),
 		"telemetry_events_export_queue",
 		batch.MaxNumPostgresParameters,
@@ -90,6 +101,10 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 			"payload_pb",
 		},
 		insertChannel(logger, events))
+	counterQueuedEvents.
+		WithLabelValues(strconv.FormatBool(err != nil)).
+		Add(float64(len(events)))
+	return err
 }
 
 func insertChannel(logger log.Logger, events []*telemetrygatewayv1.Event) <-chan []any {

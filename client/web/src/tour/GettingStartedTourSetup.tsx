@@ -35,6 +35,7 @@ import type { AuthenticatedUser } from '../auth'
 import { LoaderButton } from '../components/LoaderButton'
 import type { UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVariables } from '../graphql-operations'
 import { useLanguageCompletionSource, useRepositoryCompletionSource } from '../search/autocompletion/hooks'
+import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './GettingStartedTourSetup.module.scss'
 
@@ -54,8 +55,15 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
 
     const nextStep = (): void => setStep(step => step + 1)
     const done = (): void => {
+        eventLogger.log('TourSetupCompleted')
         setOpen(false)
     }
+
+    useEffect(() => {
+        if (open) {
+            eventLogger.log('TourSetupShown')
+        }
+    }, [open])
 
     useEffect(() => {
         if (!open && repoInput && emailInput && languageInput) {
@@ -122,6 +130,10 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
         event.preventDefault()
         onHandleNext?.()
     }
+    const skip = (): void => {
+        eventLogger.log('TourSetupSkipped')
+        setConfig({ skipped: true })
+    }
     return (
         <Form onSubmit={onSubmit}>
             <div className={styles.fade}>
@@ -134,7 +146,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
                 </div>
                 <div className={styles.container}>
                     <div className="text-muted">{`${step} of ${totalSteps}`}</div>
-                    <Button variant="link" onClick={() => setConfig({ skipped: true })}>
+                    <Button variant="link" onClick={skip}>
                         Skip
                     </Button>
                     <LoaderButton

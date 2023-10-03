@@ -10,25 +10,45 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
+	repoembeddings "github.com/sourcegraph/sourcegraph/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executormultiqueue"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executors"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
+	workerinsights "github.com/sourcegraph/sourcegraph/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/own"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/permissions"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetrygatewayexporter"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -47,31 +67,73 @@ type namedBackgroundRoutine struct {
 	JobName string
 }
 
-func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
+func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
 	symbols.LoadConfig()
 
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(register.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]workerjob.Job{
-		"webhook-log-janitor":       webhooks.NewJanitor(),
-		"out-of-band-migrations":    workermigrations.NewMigrator(registerMigrators),
-		"gitserver-metrics":         gitserver.NewMetricsJob(),
-		"record-encrypter":          encryption.NewRecordEncrypterJob(),
-		"repo-statistics-compactor": repostatistics.NewCompactor(),
-		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
-		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
-		"license-check":             licensecheck.NewJob(),
-		"cody-gateway-usage-check":  codygateway.NewUsageJob(),
-		"rate-limit-config":         ratelimit.NewRateLimitConfigJob(),
+		"webhook-log-janitor":                   webhooks.NewJanitor(),
+		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
+		"gitserver-metrics":                     gitserver.NewMetricsJob(),
+		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
+		"repo-statistics-compactor":             repostatistics.NewCompactor(),
+		"zoekt-repos-updater":                   zoektrepos.NewUpdater(),
+		"outbound-webhook-sender":               outboundwebhooks.NewSender(),
+		"license-check":                         licensecheck.NewJob(),
+		"cody-gateway-usage-check":              codygateway.NewUsageJob(),
+		"rate-limit-config":                     ratelimit.NewRateLimitConfigJob(),
+		"codehost-version-syncing":              versions.NewSyncingJob(),
+		"insights-job":                          workerinsights.NewInsightsJob(),
+		"insights-query-runner-job":             workerinsights.NewInsightsQueryRunnerJob(),
+		"insights-data-retention-job":           workerinsights.NewInsightsDataRetentionJob(),
+		"batches-janitor":                       batches.NewJanitorJob(),
+		"batches-scheduler":                     batches.NewSchedulerJob(),
+		"batches-reconciler":                    batches.NewReconcilerJob(),
+		"batches-bulk-processor":                batches.NewBulkOperationProcessorJob(),
+		"batches-workspace-resolver":            batches.NewWorkspaceResolverJob(),
+		"executors-janitor":                     executors.NewJanitorJob(),
+		"executors-metricsserver":               executors.NewMetricsServerJob(),
+		"executors-multiqueue-metrics-reporter": executormultiqueue.NewMultiqueueMetricsReporterJob(),
+		"codemonitors-job":                      codemonitors.NewCodeMonitorJob(),
+		"bitbucket-project-permissions":         permissions.NewBitbucketProjectPermissionsJob(),
+		"permission-sync-job-cleaner":           permissions.NewPermissionSyncJobCleaner(),
+		"permission-sync-job-scheduler":         permissions.NewPermissionSyncJobScheduler(),
+		"export-usage-telemetry":                telemetry.NewTelemetryJob(),
+		"telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
+
+		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
+		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
+		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
+		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
+		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
+		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
+		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
+		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
+		"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
+		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
+		"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
+		"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
+		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
+
+		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
+
+		"repo-embedding-janitor":   repoembeddings.NewRepoEmbeddingJanitorJob(),
+		"repo-embedding-job":       repoembeddings.NewRepoEmbeddingJob(),
+		"repo-embedding-scheduler": repoembeddings.NewRepoEmbeddingSchedulerJob(),
+
+		"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
+
+		"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
+
+		"exhaustive-search-job": search.NewSearchJob(),
 	}
 
 	var config Config
 	config.Jobs = map[string]workerjob.Job{}
 
 	for name, job := range builtins {
-		config.Jobs[name] = job
-	}
-	for name, job := range additionalJobs {
 		config.Jobs[name] = job
 	}
 
@@ -315,4 +377,35 @@ func jobNames(jobs map[string]workerjob.Job) []string {
 	sort.Strings(names)
 
 	return names
+}
+
+// SetAuthzProviders waits for the database to be initialized, then periodically refreshes the
+// global authz providers. This changes the repositories that are visible for reads based on the
+// current actor stored in an operation's context, which is likely an internal actor for many of
+// the jobs configured in this service. This also enables repository update operations to fetch
+// permissions from code hosts.
+func setAuthzProviders(ctx context.Context, observationCtx *observation.Context) {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider", ""), observationCtx)
+	db, err := workerdb.InitDB(observationCtx)
+	if err != nil {
+		return
+	}
+
+	// authz also relies on UserMappings being setup.
+	globals.WatchPermissionsUserMapping()
+
+	for range time.NewTicker(providers.RefreshInterval()).C {
+		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+		authz.SetProviders(allowAccessByDefault, authzProviders)
+	}
+}
+
+func getEnterpriseInit(logger log.Logger) func(database.DB) {
+	return func(db database.DB) {
+		var err error
+		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
+		if err != nil {
+			logger.Fatal("Failed to create sub-repo client", log.Error(err))
+		}
+	}
 }

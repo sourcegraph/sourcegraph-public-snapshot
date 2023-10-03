@@ -9,7 +9,7 @@ import com.sourcegraph.utils.CodyLanguageUtil
 
 class CodyEnableLanguageForAutocompleteAction : DumbAwareAction() {
   override fun actionPerformed(e: AnActionEvent) {
-    val applicationSettings = CodyApplicationSettings.getInstance()
+    val applicationSettings = CodyApplicationSettings.instance
     applicationSettings.blacklistedLanguageIds =
         applicationSettings.blacklistedLanguageIds.filterNot {
           it == CodyEditorUtil.getLanguageForFocusedEditor(e)?.id
