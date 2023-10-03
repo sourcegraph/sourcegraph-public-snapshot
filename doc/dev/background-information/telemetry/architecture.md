@@ -24,7 +24,7 @@ Note that before events are stored into `telemetry_events_export_queue`, [sensit
 
 ## Exporting events
 
-The [`telemetrygatewayexporter`](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/worker/internal/telemetrygatewayexporter/telemetrygatewayexporter.go) running in the worker service spawns a set of background jobs that handle:
+The [`telemetrygatewayexporter`](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/worker/internal/telemetrygatewayexporter/telemetrygatewayexporter.go) running in the worker service spawns a set of background jobs that handle:
 
 1. Reporting metrics on the `telemetry_events_export_queue`
 2. Cleaning up already-exported entries in the `telemetry_events_export_queue`
