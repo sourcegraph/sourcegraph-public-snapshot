@@ -33,9 +33,11 @@ func init() {
 
 func validateExternalURLConfig(cfg conftypes.SiteConfigQuerier) (problems Problems) {
 	if val := cfg.SiteConfig().ExternalURL; val != "" {
-		var err error
-		if _, err = url.Parse(val); err != nil {
+		eURL, err := url.Parse(val)
+		if err != nil {
 			problems = append(problems, NewSiteProblem("Could not parse `externalURL`."))
+		} else if eURL.Path != "/" && eURL.Path != "" {
+			problems = append(problems, NewSiteProblem("externalURL must not be a non-root URL."))
 		}
 	}
 	return problems
