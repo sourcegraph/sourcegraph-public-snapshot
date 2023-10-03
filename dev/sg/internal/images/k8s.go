@@ -77,10 +77,14 @@ func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
 			}
 
 			// Wrap access to the image field
+			parentNode := node
 			updateFn := func(node *yaml.RNode) error {
 				// Find the previous value.
-				oldImage, err := f.lookup(node)
+				oldImage, err := f.lookup(node, parentNode)
 				if err != nil {
+					if errors.As(err, &ErrNoImage{Kind: parentNode.GetKind(), Name: parentNode.GetName()}) {
+						return nil
+					}
 					return err
 				}
 				r, err := ParseRepository(oldImage)
@@ -121,10 +125,10 @@ func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
 	return inputs, nil
 }
 
-func (f imageUpdater) lookup(node *yaml.RNode) (string, error) {
+func (f imageUpdater) lookup(node *yaml.RNode, parentNode *yaml.RNode) (string, error) {
 	imageNode := node.Field("image")
 	if imageNode == nil {
-		return "", errors.Wrapf(ErrNoImage{node.GetKind(), node.GetName()}, "couldn't find image for container %s: %w", node.GetName())
+		return "", errors.Wrapf(ErrNoImage{parentNode.GetKind(), parentNode.GetName()}, "couldn't find image for container %s", parentNode.GetName())
 	}
 	image, err := imageNode.Value.String()
 	if err != nil {

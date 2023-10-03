@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -140,11 +139,11 @@ func NewAnthropicHandler(
 
 				return 0, false, nil
 			},
-			transformBody: func(body *anthropicRequest, act *actor.Actor) {
+			transformBody: func(body *anthropicRequest, identifier string) {
 				// Overwrite the metadata field, we don't want to allow users to specify it:
 				body.Metadata = &anthropicRequestMetadata{
 					// We forward the actor ID to support tracking.
-					UserID: act.ID,
+					UserID: identifier,
 				}
 			},
 			getRequestMetadata: func(body anthropicRequest) (model string, additionalMetadata map[string]any) {

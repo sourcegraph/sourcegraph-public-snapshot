@@ -65,7 +65,7 @@ func TestReposService_List(t *testing.T) {
 	require.Equal(t, wantRepos, repos)
 }
 
-func TestRepos_Add(t *testing.T) {
+func TestRepos_AddRepoToSourcegraphDotCom(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
@@ -97,7 +97,7 @@ func TestRepos_Add(t *testing.T) {
 		logger:          logtest.Scoped(t),
 		gitserverClient: gsClient,
 	}
-	addedName, err := s.add(ctx, repoName)
+	addedName, err := s.addRepoToSourcegraphDotCom(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 	defer func() { gitserver.MockIsRepoCloneable = nil }()
 
 	// The repoName could change if it has been renamed on the code host
-	_, err := s.add(ctx, repoName)
+	_, err := s.addRepoToSourcegraphDotCom(ctx, repoName)
 	if !errcode.IsNotFound(err) {
 		t.Fatalf("expected a not found error, got: %v", err)
 	}

@@ -214,9 +214,9 @@ export const searchResultsToFileContent = (
 
 export const buildFileName = (query?: string): string => {
     const formattedQuery = query?.trim().replace(/\W/g, '-')
-    const downloadFilename = `sourcegraph-search-export${formattedQuery ? `-${formattedQuery}` : ''}.csv`
-
-    return downloadFilename
+    // truncate query to account for Windows OS failing to build a file with a name > 255 characters in length
+    const truncatedQuery = formattedQuery?.slice(0, 225)
+    return `sourcegraph-search-export${truncatedQuery ? `-${truncatedQuery}` : ''}.csv`
 }
 
 // If this number is too big, the search will take a very long time and likely fail

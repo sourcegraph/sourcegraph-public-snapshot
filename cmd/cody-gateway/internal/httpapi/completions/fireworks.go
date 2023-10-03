@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -49,7 +48,7 @@ func NewFireworksHandler(
 				}
 				return 0, false, nil
 			},
-			transformBody: func(body *fireworksRequest, act *actor.Actor) {
+			transformBody: func(body *fireworksRequest, identifier string) {
 				// We don't want to let users generate multiple responses, as this would
 				// mess with rate limit counting.
 				if body.N > 1 {

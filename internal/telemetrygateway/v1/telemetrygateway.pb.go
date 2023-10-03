@@ -333,8 +333,8 @@ type Event struct {
 	FeatureFlags *EventFeatureFlags `protobuf:"bytes,8,opt,name=feature_flags,json=featureFlags,proto3,oneof" json:"feature_flags,omitempty"`
 	// Optional marketing campaign tracking parameters.
 	//
-	// 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
-	// sensitive data. Currently, only Sourcegraph.com should export this.
+	// 🚨 SECURITY: This metadata is NEVER exported from an instance, and is only
+	// exported for events tracked in the public Sourcegraph.com instance.
 	MarketingTracking *EventMarketingTracking `protobuf:"bytes,9,opt,name=marketing_tracking,json=marketingTracking,proto3,oneof" json:"marketing_tracking,omitempty"`
 }
 
@@ -496,15 +496,22 @@ type EventParameters struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Version of the event parameters, used for indicating the "shape" of this
-	// event's metadata, beginning at 0.
+	// event's metadata, beginning at 0. Useful for denoting if the shape of
+	// metadata has changed in any way.
 	Version int32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	// Strictly typed metadata, restricted to integer values.
+	// Strictly typed metadata, restricted to integer values to avoid accidentally
+	// exporting sensitive or private data.
 	Metadata map[string]int64 `protobuf:"bytes,2,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
-	// 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
-	// arbitrarily-shaped data that may accidentally contain sensitive contents.
+	// Additional potentially sensitive metadata - i.e. not restricted to integer
+	// values.
 	//
-	// This should only be exported on an allowlist basis based on combinations
-	// of event feature and action, alongside careful audit of callsites.
+	// 🚨 SECURITY: This metadata is NOT exported from instances by default, as it
+	// can contain arbitrarily-shaped data that may accidentally contain sensitive
+	// or private contents.
+	//
+	// This metadata is only exported on an allowlist basis based on terms of
+	// use agreements and combinations of event feature and action, alongside
+	// careful audit of callsites.
 	PrivateMetadata *structpb.Struct `protobuf:"bytes,3,opt,name=private_metadata,json=privateMetadata,proto3,oneof" json:"private_metadata,omitempty"`
 	// Optional billing-related metadata.
 	BillingMetadata *EventBillingMetadata `protobuf:"bytes,4,opt,name=billing_metadata,json=billingMetadata,proto3,oneof" json:"billing_metadata,omitempty"`
@@ -632,13 +639,14 @@ type EventUser struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Database user ID of signed in user.
+	// Database user ID of signed in user. User IDs are specific to a Sourcegraph
+	// instance, and not universal.
 	//
 	// We use an int64 as an ID because in Sourcegraph, database user IDs are
 	// always integers.
 	UserId *int64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`
-	// Randomized unique identifier for client (i.e. stored in localstorage in web
-	// client).
+	// Randomized unique identifier for an actor (e.g. stored in localstorage in
+	// web client).
 	AnonymousUserId *string `protobuf:"bytes,2,opt,name=anonymous_user_id,json=anonymousUserId,proto3,oneof" json:"anonymous_user_id,omitempty"`
 }
 
@@ -741,18 +749,31 @@ func (x *EventFeatureFlags) GetFlags() map[string]string {
 	return nil
 }
 
+// Marketing campaign tracking metadata.
+//
+// 🚨 SECURITY: This metadata is NEVER exported from private Sourcegraph
+// instances, and is only exported for events tracked in the public
+// Sourcegraph.com instance.
 type EventMarketingTracking struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Url             *string `protobuf:"bytes,1,opt,name=url,proto3,oneof" json:"url,omitempty"`
-	FirstSourceUrl  *string `protobuf:"bytes,2,opt,name=first_source_url,json=firstSourceUrl,proto3,oneof" json:"first_source_url,omitempty"`
-	CohortId        *string `protobuf:"bytes,3,opt,name=cohort_id,json=cohortId,proto3,oneof" json:"cohort_id,omitempty"`
-	Referrer        *string `protobuf:"bytes,4,opt,name=referrer,proto3,oneof" json:"referrer,omitempty"`
-	LastSourceUrl   *string `protobuf:"bytes,5,opt,name=last_source_url,json=lastSourceUrl,proto3,oneof" json:"last_source_url,omitempty"`
+	// URL the event occurred on.
+	Url *string `protobuf:"bytes,1,opt,name=url,proto3,oneof" json:"url,omitempty"`
+	// Initial URL the user landed on.
+	FirstSourceUrl *string `protobuf:"bytes,2,opt,name=first_source_url,json=firstSourceUrl,proto3,oneof" json:"first_source_url,omitempty"`
+	// Cohort ID to identify the user as part of a specific A/B test.
+	CohortId *string `protobuf:"bytes,3,opt,name=cohort_id,json=cohortId,proto3,oneof" json:"cohort_id,omitempty"`
+	// Referrer URL that refers the user to Sourcegraph.
+	Referrer *string `protobuf:"bytes,4,opt,name=referrer,proto3,oneof" json:"referrer,omitempty"`
+	// Last source URL visited by the user.
+	LastSourceUrl *string `protobuf:"bytes,5,opt,name=last_source_url,json=lastSourceUrl,proto3,oneof" json:"last_source_url,omitempty"`
+	// Device session ID to identify the user's session.
 	DeviceSessionId *string `protobuf:"bytes,6,opt,name=device_session_id,json=deviceSessionId,proto3,oneof" json:"device_session_id,omitempty"`
+	// Session referrer URL for the user.
 	SessionReferrer *string `protobuf:"bytes,7,opt,name=session_referrer,json=sessionReferrer,proto3,oneof" json:"session_referrer,omitempty"`
+	// First URL the user visited in their current session.
 	SessionFirstUrl *string `protobuf:"bytes,8,opt,name=session_first_url,json=sessionFirstUrl,proto3,oneof" json:"session_first_url,omitempty"`
 }
 
@@ -1001,6 +1022,7 @@ type EventSource_Server struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Version of the Sourcegraph server.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -1048,7 +1070,9 @@ type EventSource_Client struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name    string  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Source client of the event.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Version of the cleint.
 	Version *string `protobuf:"bytes,2,opt,name=version,proto3,oneof" json:"version,omitempty"`
 }
 

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { chunk, upperFirst } from 'lodash'
 
 import type { TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
-import { Button, Icon, Text } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
@@ -28,9 +28,18 @@ const Header: React.FunctionComponent<React.PropsWithChildren<{ onClose: () => v
     onClose,
     title = 'Quick start',
 }) => (
-    <div className="d-flex justify-content-between align-items-start">
+    <div className="d-flex align-items-start">
         <Text className={styles.title}>{title}</Text>
-        <Button variant="icon" data-testid="tour-close-btn" onClick={onClose} aria-label="Close quick start">
+        <Badge className="ml-2" variant="warning">
+            Experimental
+        </Badge>
+        <Button
+            className="ml-auto"
+            variant="icon"
+            data-testid="tour-close-btn"
+            onClick={onClose}
+            aria-label="Close quick start"
+        >
             <Icon aria-hidden={true} svgPath={mdiClose} /> {children}
         </Button>
     </div>

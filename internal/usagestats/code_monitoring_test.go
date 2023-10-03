@@ -251,6 +251,7 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 		P50TriggerRunTimeSeconds:                      ptr(float32(3)),
 		P90TriggerRunTimeSeconds:                      ptr(float32(6)),
 		MonitorsEnabled:                               ptr(int32(8)),
+		MonitorsEnabledUniqueUsers:                    ptr(int32(8)),
 	}
 	require.Equal(t, want, have)
 }
