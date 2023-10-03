@@ -455,7 +455,7 @@ func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 		return nil, status.Error(codes.InvalidArgument, "no DepotPath given")
 	}
 
-	err := isDepotPathCloneable(ctx, req.P4Port, req.P4User, req.P4Passwd, req.DepotPath)
+	err := isDepotPathCloneable(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd(), req.GetDepotPath())
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
