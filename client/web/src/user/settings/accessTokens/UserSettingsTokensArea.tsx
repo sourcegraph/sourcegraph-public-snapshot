@@ -20,6 +20,11 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticat
 
 export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [newToken, setNewToken] = useState<CreateAccessTokenResult['createAccessToken'] | undefined>()
+
+    const onDidPresentNewToken = useCallback(() => {
+        setNewToken(undefined)
+    }, [])
+
     if (props.isSourcegraphDotCom && props.authenticatedUser && !props.authenticatedUser.completedPostSignup) {
         const returnTo = window.location.href
         const params = new URLSearchParams()
@@ -27,11 +32,6 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
         const navigateTo = PageRoutes.PostSignUp + '?' + params.toString()
         return <Navigate to={navigateTo.toString()} replace={true} />
     }
-
-    const onDidPresentNewToken = useCallback(() => {
-        setNewToken(undefined)
-    }, [])
-
     return (
         <Routes>
             <Route
