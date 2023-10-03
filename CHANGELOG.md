@@ -31,7 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
-## Unreleased 5.2.0 (planned release date: October 4, 2023)
+## 5.2.0
 
 ### Added
 
