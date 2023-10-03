@@ -18,21 +18,31 @@ go_library(
 )
 
 genrule(
-    name = "generate_stringdata_code",
+    name = "generate_stringdata_batch_spec",
     srcs = [
         "//schema:batch_spec.schema.json",
+    ],
+    outs = ["_batch_spec_stringdata.go"],
+    cmd = """\
+    $(location //lib/batches/schema/gen:stringdata) -i $< -name BatchSpecJSON -pkg schema -o $@
+    $(location @go_sdk//:bin/gofmt) -s -w $@
+    """,
+    tools = [
+        "//lib/batches/schema/gen:stringdata",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "generate_stringdata_changeset_spec",
+    srcs = [
         "//schema:changeset_spec.schema.json",
     ],
-    outs = GENERATED_FILES,
-    cmd = """
-    srcs=($(SRCS))
-    outs=($(OUTS))
-
-    $(location //lib/batches/schema/gen:stringdata) -i $${srcs[0]} -name BatchSpecJSON -pkg schema -o $${outs[0]}
-    $(location @go_sdk//:bin/gofmt) -s -w $${outs[0]}
-
-    $(location //lib/batches/schema/gen:stringdata) -i $${srcs[1]} -name ChangesetSpecJSON -pkg schema -o $${outs[1]}
-    $(location @go_sdk//:bin/gofmt) -s -w $${outs[1]}
+    outs = ["_changeset_spec_stringdata.go"],
+    cmd = """\
+    $(location //lib/batches/schema/gen:stringdata) -i $< -name ChangesetSpecJSON -pkg schema -o $@
+    $(location @go_sdk//:bin/gofmt) -s -w $@
     """,
     tools = [
         "//lib/batches/schema/gen:stringdata",
@@ -42,8 +52,15 @@ genrule(
 )
 
 write_generated_to_source_files(
-    name = "write_generated_code",
-    src = ":generate_stringdata_code",
-    files = GENERATED_FILES,
+    name = "write_generated_batch_spec",
+    target = ":generate_stringdata_batch_spec",
+    output_files = {"batch_spec_stringdata.go": "_batch_spec_stringdata.go"},
+    tags = ["go_generate"],
+)
+
+write_generated_to_source_files(
+    name = "write_generated_changeset_spec",
+    target = ":generate_stringdata_changeset_spec",
+    output_files = {"changeset_spec_stringdata.go": "_changeset_spec_stringdata.go"},
     tags = ["go_generate"],
 )
