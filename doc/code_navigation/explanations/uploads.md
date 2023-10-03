@@ -29,7 +29,7 @@ Processing of a code graph index file may occur due to malformed input or due to
 
 At any point, the upload record may be deleted. This can happen because the record is being replaced by a newer upload, due to [age of the upload record](../how-to/configure_data_retention.md), or due to explicit deletion by the user. Deleting a record that could be used to resolve to code navigation queries will first move into the `DELETING` state. Moving temporarily into this state allows Sourcegraph to smoothly transition the set of code graph uploads that are visible for query resolution.
 
-Changing the state of an upload to or from the `COMPLETED` state requires that the [repository commit graph](#repository-commit-graph) be [updated](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/cmd/worker/internal/codeintel/uploads/internal/commitgraph/updater%5C.go+func+%28u+*Updater%29+update%28ctx&patternType=literal). This process can be computationally expensive for the worker service and/or postgres database.
+Changing the state of an upload to or from the `COMPLETED` state requires that the [repository commit graph](#repository-commit-graph) be [updated](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%cmd/worker/internal/codeintel/uploads/internal/commitgraph/updater%5C.go+func+%28u+*Updater%29+update%28ctx&patternType=literal). This process can be computationally expensive for the worker service and/or postgres database.
 ## Lifecycle of an upload (via UI)
 
 After successful upload of an index file, the Sourcegraph CLI will display a URL on the target instance that shows the progress of that upload.
