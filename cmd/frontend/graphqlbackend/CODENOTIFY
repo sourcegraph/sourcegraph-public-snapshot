@@ -5,8 +5,8 @@ site_monitoring.go @bobheadxi
 
 # Search
 
-*search_.go @keegancsmith
-*zoekt_.go @keegancsmith
+*search*.go @keegancsmith
+*zoekt*.go @keegancsmith
 
 # Batch changes
 
