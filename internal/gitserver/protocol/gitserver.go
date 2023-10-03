@@ -912,3 +912,14 @@ func byteSlicesToStrings(in [][]byte) []string {
 	}
 	return res
 }
+
+// IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
+type IsPerforcePathCloneableRequest struct {
+	P4Port    string `json:"p4port"`
+	P4User    string `json:"p4user"`
+	P4Passwd  string `json:"p4passwd"`
+	DepotPath string `json:"depotPath"`
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
+type IsPerforcePathCloneableResponse struct{}

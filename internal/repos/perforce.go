@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -21,8 +19,9 @@ import (
 // A PerforceSource yields depots from a single Perforce connection configured
 // in Sourcegraph via the external services configuration.
 type PerforceSource struct {
-	svc    *types.ExternalService
-	config *schema.PerforceConnection
+	gitserverClient gitserver.Client
+	svc             *types.ExternalService
+	config          *schema.PerforceConnection
 }
 
 // NewPerforceSource returns a new PerforceSource from the given external
@@ -36,13 +35,14 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService) (*Perfor
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newPerforceSource(svc, &c)
+	return newPerforceSource(gitserver.NewClient(), svc, &c)
 }
 
-func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection) (*PerforceSource, error) {
+func newPerforceSource(gitserverClient gitserver.Client, svc *types.ExternalService, c *schema.PerforceConnection) (*PerforceSource, error) {
 	return &PerforceSource{
-		svc:    svc,
-		config: c,
+		svc:             svc,
+		config:          c,
+		gitserverClient: gitserverClient,
 	}, nil
 }
 
@@ -72,25 +72,13 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 			return
 		}
 
-		u := url.URL{
-			Scheme: "perforce",
-			Host:   s.config.P4Port,
-			Path:   depot,
-			User:   url.UserPassword(s.config.P4User, s.config.P4Passwd),
-		}
-		p4Url, err := vcs.ParseURL(u.String())
+		err := s.gitserverClient.IsPerforcePathCloneable(ctx, s.config.P4Port, s.config.P4User, s.config.P4Passwd, depot)
 		if err != nil {
-			results <- SourceResult{Source: s, Err: err}
+			results <- SourceResult{Source: s, Err: errors.Wrap(err, "checking if perforce path is cloneable")}
 			continue
 		}
-		syncer := server.PerforceDepotSyncer{}
-		// We don't need to provide repo name and use "" instead because p4 commands are
-		// not recorded in the following `syncer.IsCloneable` call.
-		if err := syncer.IsCloneable(ctx, "", p4Url); err == nil {
-			results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
-		} else {
-			results <- SourceResult{Source: s, Err: err}
-		}
+
+		results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
 	}
 }
 

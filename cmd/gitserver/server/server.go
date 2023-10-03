@@ -340,6 +340,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
 	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
 	mux.HandleFunc("/disk-info", trace.WithRouteName("disk-info", s.handleDiskInfo))
+	mux.HandleFunc("/is-perforce-path-cloneable", trace.WithRouteName("is-perforce-path-cloneable", s.handleIsPerforcePathCloneable))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -2884,4 +2885,28 @@ func isAbsoluteRevision(s string) bool {
 		}
 	}
 	return true
+}
+
+func (s *Server) handleIsPerforcePathCloneable(w http.ResponseWriter, r *http.Request) {
+	var req protocol.IsPerforcePathCloneableRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.DepotPath == "" {
+		http.Error(w, "no DepotPath given", http.StatusBadRequest)
+		return
+	}
+
+	err := isDepotPathCloneable(r.Context(), req.P4Port, req.P4User, req.P4Passwd, req.DepotPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(protocol.IsPerforcePathCloneableResponse{}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

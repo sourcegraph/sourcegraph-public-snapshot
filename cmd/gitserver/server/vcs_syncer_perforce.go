@@ -70,10 +70,6 @@ func (s *PerforceDepotSyncer) Type() string {
 	return "perforce"
 }
 
-func (s *PerforceDepotSyncer) CanConnect(ctx context.Context, host, username, password string) error {
-	return p4testWithTrust(ctx, host, username, password)
-}
-
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, remoteURL *vcs.URL) error {
 	username, password, host, path, err := decomposePerforceRemoteURL(remoteURL)
@@ -81,8 +77,12 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 		return errors.Wrap(err, "decompose")
 	}
 
+	return isDepotPathCloneable(ctx, host, username, password, path)
+}
+
+func isDepotPathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error {
 	// start with a test and set up trust if necessary
-	if err := p4testWithTrust(ctx, host, username, password); err != nil {
+	if err := p4testWithTrust(ctx, p4port, p4user, p4passwd); err != nil {
 		return err
 	}
 
@@ -92,18 +92,20 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 	// the first path part will be the depot - subsequent parts define a directory path into a depot
 	// ignore the directory parts for now, and only test for access to the depot
 	// TODO: revisit if we want to also test for access to the directories, if any are included
-	depot := strings.Split(strings.TrimLeft(path, "/"), "/")[0]
+	depot := strings.Split(strings.TrimLeft(depotPath, "/"), "/")[0]
 
 	// get a list of depots that match the supplied depot (if it's defined)
-	if depots, err := p4depots(ctx, host, username, password, depot); err != nil {
+	depots, err := p4depots(ctx, p4port, p4user, p4passwd, depot)
+	if err != nil {
 		return err
-	} else if len(depots) == 0 {
+	}
+	if len(depots) == 0 {
 		// this user doesn't have access to any depots,
 		// or to the given depot
 		if depot != "" {
-			return errors.Newf("the user %s does not have access to the depot %s on the server %s", username, depot, host)
+			return errors.Newf("the user %s does not have access to the depot %s on the server %s", p4user, depot, p4port)
 		} else {
-			return errors.Newf("the user %s does not have access to any depots on the server %s", username, host)
+			return errors.Newf("the user %s does not have access to any depots on the server %s", p4user, p4port)
 		}
 	}
 
