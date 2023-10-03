@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -56,9 +57,9 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			var err error
 			token, sudoUser, err = authz.ParseAuthorizationHeader(logger, r, headerValue)
 			if err != nil {
-				if authz.IsUnrecognizedScheme(err) {
+				if !envvar.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
-					// 🚨 SECURITY: md5sum the authorization header value so we redact it
+					// 🚨 SECURITY: sha256 the authorization header value so we redact it
 					// while still retaining the ability to link it back to a token, assuming
 					// the logs reader has the value in clear.
 					var redactedValue string
