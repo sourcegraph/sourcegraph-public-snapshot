@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -69,7 +70,7 @@ func QuickSymbolicRefHead(dir common.GitDir) (string, error) {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if IsAbsoluteRevision(string(head)) {
+	if gitdomain.IsAbsoluteRevision(string(head)) {
 		return "", errors.New("ref HEAD is not a symbolic ref")
 	}
 
@@ -90,7 +91,7 @@ func QuickRevParseHead(dir common.GitDir) (string, error) {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if h := string(head); IsAbsoluteRevision(h) {
+	if h := string(head); gitdomain.IsAbsoluteRevision(h) {
 		return h, nil
 	}
 
@@ -132,26 +133,6 @@ func QuickRevParseHead(dir common.GitDir) (string, error) {
 
 	// Didn't find the refs/heads/$HEAD_BRANCH in packed_refs
 	return "", errors.New("could not compute `git rev-parse HEAD` in-process, try running `git` process")
-}
-
-// IsAbsoluteRevision checks if the revision is a git OID SHA string.
-//
-// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
-// isn't a ref. Git allows 40-char hexadecimal strings to be references.
-//
-// copied from internal/vcs/git to avoid cyclic import
-func IsAbsoluteRevision(s string) bool {
-	if len(s) != 40 {
-		return false
-	}
-	for _, r := range s {
-		if !(('0' <= r && r <= '9') ||
-			('a' <= r && r <= 'f') ||
-			('A' <= r && r <= 'F')) {
-			return false
-		}
-	}
-	return true
 }
 
 // RemoveBadRefs removes bad refs and tags from the git repo at dir. This

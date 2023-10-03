@@ -393,7 +393,7 @@ index 51a59ef1c..493090958 100644
 		})
 		usePermissionsForFilePermissionsFunc(checker)
 		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
-		if !reflect.DeepEqual(err, os.ErrNotExist) {
+		if !os.IsNotExist(err) {
 			t.Errorf("unexpected error: %s", err)
 		}
 		if hunks != nil {
@@ -503,21 +503,6 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	}
 	if !reflect.DeepEqual(hunks, wantHunks) {
 		t.Errorf("%s: hunks != wantHunks\n\nhunks ==========\n%s\n\nwantHunks ==========\n%s", label, AsJSON(hunks), AsJSON(wantHunks))
-	}
-}
-
-func TestIsAbsoluteRevision(t *testing.T) {
-	yes := []string{"8cb03d28ad1c6a875f357c5d862237577b06e57c", "20697a062454c29d84e3f006b22eb029d730cd00"}
-	no := []string{"ref: refs/heads/appsinfra/SHEP-20-review", "master", "HEAD", "refs/heads/master", "20697a062454c29d84e3f006b22eb029d730cd0", "20697a062454c29d84e3f006b22eb029d730cd000", "  20697a062454c29d84e3f006b22eb029d730cd00  ", "20697a062454c29d84e3f006b22eb029d730cd0 "}
-	for _, s := range yes {
-		if !IsAbsoluteRevision(s) {
-			t.Errorf("%q should be an absolute revision", s)
-		}
-	}
-	for _, s := range no {
-		if IsAbsoluteRevision(s) {
-			t.Errorf("%q should not be an absolute revision", s)
-		}
 	}
 }
 

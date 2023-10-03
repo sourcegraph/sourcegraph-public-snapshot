@@ -17,6 +17,7 @@ go_library(
         "//cmd/gitserver/internal/gitserverfs",
         "//internal/conf",
         "//internal/fileutil",
+        "//internal/gitserver/gitdomain",
         "//internal/syncx",
         "//internal/wrexec",
         "//lib/errors",
