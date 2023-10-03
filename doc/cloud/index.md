@@ -104,7 +104,7 @@ Sourcegraph Cloud instances are deployed in one of Google Cloud Platform data ce
 
 - North America (USA) - `us-central1`
 - Europe (UK or Germany) - `europe-west2` or `europe-west3`
-- Asia (Japan) - `asia-northeast1`
+- Asia (Japan or South Korea) - `asia-northeast1` or `asia-northeast3`
 - Australia - `australia-southeast1`
 
 If you have specific requirements for the region, please reach out to your Sourcegraph account team.
