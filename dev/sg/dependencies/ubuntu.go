@@ -110,10 +110,10 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "p4 CLI (Perforce)",
-				Check: checkAction(check.InPath("helix-cli")),
+				Check: checkAction(check.InPath("p4")),
 				// https://www.perforce.com/perforce-packages
 				// https://superuser.com/a/1512272/186941
-				Fix: aptGetInstall("p4",
+				Fix: aptGetInstall("helix-cli",
 					"wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -",
 					"printf \"deb http://package.perforce.com/apt/ubuntu $(lsb_release -sc) release | sudo tee /etc/apt/sources.list.d/perforce.list\""),
 			},
