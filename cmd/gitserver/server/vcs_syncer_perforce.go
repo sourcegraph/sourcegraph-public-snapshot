@@ -370,19 +370,21 @@ func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
 }
 
 // p4testWithTrust attempts to test the Perforce server and performs a trust operation when needed.
-func p4testWithTrust(ctx context.Context, host, username, password string) error {
+func p4testWithTrust(ctx context.Context, port, username, password string) error {
 	// Attempt to check connectivity, may be prompted to trust.
-	err := p4test(ctx, host, username, password)
+	err := p4test(ctx, port, username, password)
 	if err == nil {
 		return nil // The test worked, session still valid for the user
 	}
 
+	// If the output indicates that we have to run p4trust first, do that.
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {
-		err := p4trust(ctx, host)
+		err := p4trust(ctx, port)
 		if err != nil {
 			return errors.Wrap(err, "trust")
 		}
-		return nil
+		// Now attempt to run p4test again.
+		return p4test(ctx, port, username, password)
 	}
 
 	// Something unexpected happened, bubble up the error

@@ -23,6 +23,7 @@ service GitserverService {
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
   rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {}
+  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {}
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -516,3 +517,13 @@ message IsPerforcePathCloneableRequest {
 
 // IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
 message IsPerforcePathCloneableResponse {}
+
+// CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
+message CheckPerforceCredentialsRequest {
+  string p4port = 1;
+  string p4user = 2;
+  string p4passwd = 3;
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+message CheckPerforceCredentialsResponse {}

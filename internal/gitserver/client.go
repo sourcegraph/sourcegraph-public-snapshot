@@ -462,6 +462,9 @@ type Client interface {
 	// IsPerforcePathCloneable checks if the given Perforce depot path is cloneable by
 	// checking if it is a valid depot and the given user has permission to access it.
 	IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error
+
+	// CheckPerforceCredentials checks if the given Perforce credentials are valid
+	CheckPerforceCredentials(ctx context.Context, p4port, p4user, p4passwd string) error
 }
 
 type SystemInfo struct {
@@ -1619,7 +1622,7 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 
 func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error {
 	if conf.IsGRPCEnabled(ctx) {
-		// depotPath is not actually a repo name, but it will spread the load if isPerforcePathCloneable
+		// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
 		// key here.
 		client, err := c.ClientForRepo(ctx, api.RepoName(depotPath))
@@ -1670,7 +1673,59 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port,
 	}
 
 	return nil
+}
 
+func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, p4port, p4user, p4passwd string) error {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(p4port))
+		if err != nil {
+			return err
+		}
+		_, err = client.CheckPerforceCredentials(ctx, &proto.CheckPerforceCredentialsRequest{
+			P4Port:   p4port,
+			P4User:   p4user,
+			P4Passwd: p4passwd,
+		})
+		if err != nil {
+			// Unwrap proto errors for nicer error messages.
+			if s, ok := status.FromError(err); ok {
+				return errors.New(s.Message())
+			}
+			return err
+		}
+
+		return nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(p4port))
+	b, err := json.Marshal(&protocol.CheckPerforceCredentialsRequest{
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + addr + "/check-perforce-credentials"
+	resp, err := c.do(ctx, "check-perforce-credentials", uri, b)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CheckPerforceCredentials",
+			Err: errors.Errorf("CheckPerforceCredentials: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	return nil
 }
 
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance

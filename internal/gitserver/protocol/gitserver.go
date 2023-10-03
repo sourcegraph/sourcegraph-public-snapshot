@@ -923,3 +923,13 @@ type IsPerforcePathCloneableRequest struct {
 
 // IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
 type IsPerforcePathCloneableResponse struct{}
+
+// CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
+type CheckPerforceCredentialsRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+type CheckPerforceCredentialsResponse struct{}

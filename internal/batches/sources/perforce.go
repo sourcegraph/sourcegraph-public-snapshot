@@ -85,12 +85,7 @@ func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
 	if s.perforceCreds == nil {
 		return errors.New("no credentials set for Perforce Source")
 	}
-	rc, _, err := s.gitServerClient.P4Exec(ctx, s.perforceCreds.Host, s.perforceCreds.Username, s.perforceCreds.Password, "users")
-	if err == nil {
-		_ = rc.Close()
-		return nil
-	}
-	return err
+	return s.gitServerClient.CheckPerforceCredentials(ctx, s.perforceCreds.Host, s.perforceCreds.Username, s.perforceCreds.Password)
 }
 
 // LoadChangeset loads the given Changeset from the source and updates it. If
