@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
