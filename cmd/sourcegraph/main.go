@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 
 	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
+	embeddings_shared "github.com/sourcegraph/sourcegraph/cmd/embeddings/shared"
 	executor_singlebinary "github.com/sourcegraph/sourcegraph/cmd/executor/singlebinary"
 	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	gitserver_shared "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
@@ -17,7 +18,6 @@ import (
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
-	embeddings_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/shared"
 	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
 
 	"github.com/sourcegraph/sourcegraph/ui/assets"

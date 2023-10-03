@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa"
+	"github.com/sourcegraph/sourcegraph/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
@@ -21,7 +21,7 @@ import (
 )
 
 // This embed is handled by Bazel, and using the traditional go test command will fail.
-// See //enterprise/cmd/embeddings/shared:assets.bzl
+// See //cmd/embeddings/shared:assets.bzl
 //
 //go:embed testdata/*
 var fs embed.FS

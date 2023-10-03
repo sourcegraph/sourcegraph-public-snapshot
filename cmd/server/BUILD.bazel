@@ -92,7 +92,7 @@ pkg_tar(
 DEPS = [
     "//cmd/precise-code-intel-worker",
     "//cmd/searcher",
-    "//enterprise/cmd/embeddings",
+    "//cmd/embeddings",
     "//cmd/frontend",
     "//cmd/gitserver",
     "//enterprise/cmd/migrator",

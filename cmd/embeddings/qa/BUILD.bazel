@@ -4,7 +4,7 @@ go_library(
     name = "qa",
     srcs = ["eval.go"],
     embedsrcs = ["context_data.tsv"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/embeddings/qa",
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",

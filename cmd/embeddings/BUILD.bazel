@@ -7,10 +7,10 @@ load("//dev:oci_defs.bzl", "image_repository")
 go_library(
     name = "embeddings_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/embeddings",
     visibility = ["//visibility:private"],
     deps = [
-        "//enterprise/cmd/embeddings/shared",
+        "//cmd/embeddings/shared",
         "//internal/sanitycheck",
         "//internal/service/svcmain",
     ],
