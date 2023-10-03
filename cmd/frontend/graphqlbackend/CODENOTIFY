@@ -4,17 +4,14 @@ observability.go @bobheadxi
 site_monitoring.go @bobheadxi
 
 # Search
-*search*.go @keegancsmith
-*zoekt*.go @keegancsmith
+
+_search_.go @keegancsmith
+_zoekt_.go @keegancsmith
 
 # Batch changes
+
 batches.go @eseliger
 
 # Insights
+
 insights.go @sourcegraph/code-insights-backend
-
-# Code intelligence
-codeintel.go @efritz
-
-# Migrations
-oobmigrations.go @efritz
