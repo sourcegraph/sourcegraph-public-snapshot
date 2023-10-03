@@ -13,6 +13,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 5.2.0
+
+### Added
+
 - Added flag to configure the concurrency of uploading multipart code-intel indexes, for when limited upload bandwidth causes individual parts to timeout. [#1023](https://github.com/sourcegraph/src-cli/pull/1023)
 
 ### Changed
