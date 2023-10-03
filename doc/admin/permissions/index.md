@@ -157,3 +157,17 @@ the removal of `horsegraph-v1` from the set.
 
 After the update, the synced permissions of `alice` will be [`horsegraph/global`, `horsegraph/hay-v2`], but explicit permissions 
 were not touched, leading to effective permissions of [`horsegraph/global`, `horsegraph-hay-v2`, `horsegraph/hay-dev`]
+
+## Troubleshooting
+
+### Users can access all repositories even though they don't have access on the code host
+
+The two most common scenarios where users may be able to access repositories on Sourcegraph that they don't have access to on the code host are:
+1. The user is a site admin, and Sourcegraph has not been configured to enforce permissions for site admins. [Configure Sourcegraph to enforce permissions for site admins](#site-administrators).
+2. The code host connection is not configured to enforce repository permissions. [Enable authorization on the code host connection](#getting-started).
+
+### Users cannot access repositories even though they have access on the code host
+
+In order to sync repository permissions from the code host, Sourcegraph needs to be able to associate each user on Sourcegraph with a user on the code host. To achieve this, an [auth provider needs to be configured](../auth/index.md) for the code host you would like to sync repository permissions for.
+
+If an auth provider is already configured, then each user needs to connect their code host account to their Sourcegraph account. This can be done by either signing into Sourcegraph using the appropriate "Continue with ..." button on the sign in page, or by visiting the Account Security page in their user profile and connecting their code host account there.
