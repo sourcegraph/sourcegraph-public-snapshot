@@ -113,7 +113,6 @@ var Ubuntu = []category{
 				Fix: aptGetInstall("helix-cli",
 					"wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -",
 					"printf \"deb http://package.perforce.com/apt/ubuntu $(lsb_release -sc) release\" | sudo tee /etc/apt/sources.list.d/perforce.list",
-					"sudo cat /etc/apt/sources.list.d/perforce.list",
 				),
 			},
 		},
