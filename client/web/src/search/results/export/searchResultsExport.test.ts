@@ -1424,9 +1424,9 @@ describe('buildFileName', () => {
         ['context:global function greeting( ', 'sourcegraph-search-export-context-global-function-greeting-.csv'],
         // Test that very long queries are truncated to less than 255 characters
         [
-            'context:global (repo:^github\.com/sourcegraph/sourcegraph$ OR repo:^github\.com/sourcegraph/sourcegraph-jetbrains$ OR repo:^github\.com/sourcegraph/prototools$ ) count:all (lang:Java OR lang:Python OR lang:C++ OR lang:JavaScript) select:file',
-            'sourcegraph-search-export-context-global--repo--github-com-sourcegraph-sourcegraph--OR-repo--github-com-sourcegraph-sourcegraph-jetbrains--OR-repo--github-com-sourcegraph-prototools----count-all--lang-Java-OR-lang-Python-OR-lang-C---OR-lang-JavaScript.csv'
-        ]
+            'context:global (repo:^github.com/sourcegraph/sourcegraph$ OR repo:^github.com/sourcegraph/sourcegraph-jetbrains$ OR repo:^github.com/sourcegraph/prototools$ ) count:all (lang:Java OR lang:Python OR lang:C++ OR lang:JavaScript) select:file',
+            'sourcegraph-search-export-context-global--repo--github-com-sourcegraph-sourcegraph--OR-repo--github-com-sourcegraph-sourcegraph-jetbrains--OR-repo--github-com-sourcegraph-prototools----count-all--lang-Java-OR-lang-Python-OR-lang-C---OR-lang-JavaScript.csv',
+        ],
     ]
 
     test.each(data)('builds correct fileName from query "%s"', (query, fileName) => {
