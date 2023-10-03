@@ -99,7 +99,7 @@ var Ubuntu = []category{
 				Name: "asdf",
 				// TODO add the if Keegan check
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+				Fix: func(ctx context.Context, cio check.IO, _ CheckArgs) error {
 					if err := usershell.Run(ctx, "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.9.0").StreamLines(cio.Verbose); err != nil {
 						return err
 					}
@@ -107,6 +107,15 @@ var Ubuntu = []category{
 						`echo ". $HOME/.asdf/asdf.sh" >>`, usershell.ShellConfigPath(ctx),
 					).Wait()
 				},
+			},
+			{
+				Name:  "p4 CLI (Perforce)",
+				Check: checkAction(check.InPath("helix-cli")),
+				// https://www.perforce.com/perforce-packages
+				// https://superuser.com/a/1512272/186941
+				Fix: aptGetInstall("p4",
+					"wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -",
+					"printf \"deb http://package.perforce.com/apt/ubuntu $(lsb_release -sc) release | sudo tee /etc/apt/sources.list.d/perforce.list\""),
 			},
 		},
 	},
