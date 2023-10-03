@@ -13,8 +13,8 @@ import (
 
 // MockBookmarkStore is a mock implementation of the bookmarkStore interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry) used
+// for unit testing.
 type MockBookmarkStore struct {
 	// GetBookmarkFunc is an instance of a mock function object controlling
 	// the behavior of the method GetBookmark.
@@ -60,8 +60,8 @@ func NewStrictMockBookmarkStore() *MockBookmarkStore {
 
 // surrogateMockBookmarkStore is a copy of the bookmarkStore interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry).
-// It is redefined here as it is unexported in the source package.
+// github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry). It is
+// redefined here as it is unexported in the source package.
 type surrogateMockBookmarkStore interface {
 	GetBookmark(context.Context) (int, error)
 	UpdateBookmark(context.Context, int) error
