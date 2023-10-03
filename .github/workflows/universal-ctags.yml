@@ -31,19 +31,25 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags
-          ls ./result/bin/universal-ctags-* | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
           sudo codesign --force -s - ./result/bin/universal-ctags-*
+      - id: 'rename-and-upload'
+        name: Rename an prepare for upload
+        run: |
+          mkdir -p dist
+          cp -r ./result/bin/ dist/
+          ls dist/universal-ctags-* | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          shasum -a 256 ./result/bin/universal-ctags-*
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
-          shasum -a 256 ./result/bin/universal-ctags-*
+          shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
         if: ${{ github.ref_name == 'main' }}
         with:
-          path: './result/bin/'
+          path: './dist/'
           destination: 'universal_ctags/x86_64-darwin/'
           glob: 'universal-ctags-*'
   aarch64-darwin:
@@ -62,19 +68,25 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags-aarch64-darwin
-          ls ./result/bin/universal-ctags-* | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
           sudo codesign --force -s - ./result/bin/universal-ctags-*
+      - id: 'rename-and-upload'
+        name: Rename an prepare for upload
+        run: |
+          mkdir -p dist
+          cp -r ./result/bin/ dist/
+          ls dist/universal-ctags-* | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          shasum -a 256 ./result/bin/universal-ctags-*
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
-          shasum -a 256 ./result/bin/universal-ctags-*
+          shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
         if: ${{ github.ref_name == 'main' }}
         with:
-          path: './result/bin/'
+          path: './dist/'
           destination: 'universal_ctags/aarch64-darwin'
           glob: 'universal-ctags-*'
   x86_64-linux:
@@ -93,17 +105,23 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags
-          ls ./result/bin/universal-ctags-* | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+      - id: 'rename-and-upload'
+        name: Rename an prepare for upload
+        run: |
+          mkdir -p dist
+          cp -r ./result/bin/ dist/
+          ls dist/universal-ctags-* | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          shasum -a 256 ./result/bin/universal-ctags-*
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
-          sha256sum ./result/bin/universal-ctags-*
+          shasum -a 256 ./dist/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
         if: ${{ github.ref_name == 'main' }}
         with:
-          path: './result/bin/'
+          path: './dist/'
           destination: 'universal_ctags/x86_64-linux'
           glob: 'universal-ctags-*'
