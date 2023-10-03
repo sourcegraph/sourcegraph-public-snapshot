@@ -22,7 +22,8 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	g := gitserver.NewClient()
+	// TODO: More fine-grained needed?
+	g := gitserver.NewClient("graphql.own")
 	enterpriseServices.OwnResolver = resolvers.New(db, g, observationCtx.Logger.Scoped("own", "Code ownership"))
 	return nil
 }

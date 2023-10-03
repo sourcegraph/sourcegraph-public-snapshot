@@ -86,10 +86,12 @@ type ClientSource interface {
 }
 
 // NewClient returns a new gitserver.Client.
-func NewClient() Client {
+// See Client.Scoped() for info on scoped clients.
+func NewClient(scope string) Client {
 	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
 	return &clientImplementor{
 		logger:      logger,
+		scope:       scope,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -110,6 +112,7 @@ func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
 		logger:      logger,
 		httpClient:  cli,
 		HTTPLimiter: limiter.New(500),
+		scope:       "gitserver.test",
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -199,6 +202,9 @@ type clientImplementor struct {
 	// the telemetry in gitserver.
 	userAgent string
 
+	// the current scope of the client.
+	scope string
+
 	// HTTP client to use
 	httpClient httpcli.Doer
 
@@ -210,6 +216,25 @@ type clientImplementor struct {
 
 	// clientSource is used to get the corresponding gprc client or address for a given repository
 	clientSource ClientSource
+}
+
+func (c *clientImplementor) Scoped(scope string) Client {
+	return &clientImplementor{
+		logger:       c.logger,
+		scope:        appendScope(c.scope, scope),
+		httpClient:   c.httpClient,
+		HTTPLimiter:  c.HTTPLimiter,
+		userAgent:    c.userAgent,
+		operations:   c.operations,
+		clientSource: c.clientSource,
+	}
+}
+
+func appendScope(existing, new string) string {
+	if existing == "" {
+		return new
+	}
+	return existing + "." + new
 }
 
 type RawBatchLogResult struct {
@@ -232,6 +257,11 @@ type CommitLog struct {
 }
 
 type Client interface {
+	// Scoped adds a usage scope to the client and returns a new client with that scope.
+	// Usage scopes should be descriptive and be lowercase plaintext, eg. batches.reconciler.
+	// We use scopes to add context to logs and metrics.
+	Scoped(scope string) Client
+
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(ctx context.Context, repoName api.RepoName) string
 
@@ -667,10 +697,13 @@ func (e badRequestError) BadRequest() bool { return true }
 
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
-	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		c.repo.Attr(),
-		attribute.StringSlice("args", c.args[1:]),
-	}})
+	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			c.repo.Attr(),
+			attribute.StringSlice("args", c.args[1:]),
+		},
+	})
 	done := func() {
 		cancel()
 		endObservation(1, observation.Args{})
@@ -838,12 +871,15 @@ func isRevisionNotFound(err string) bool {
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		args.Repo.Attr(),
-		attribute.Stringer("query", args.Query),
-		attribute.Bool("diff", args.IncludeDiff),
-		attribute.Int("limit", args.Limit),
-	}})
+	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			args.Repo.Attr(),
+			attribute.Stringer("query", args.Query),
+			attribute.Bool("diff", args.IncludeDiff),
+			attribute.Int("limit", args.Limit),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	repoName := protocol.NormalizeRepo(args.Repo)
@@ -952,10 +988,13 @@ func convertGitserverError(err error) error {
 }
 
 func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, err error) {
-	ctx, _, endObservation := c.operations.p4Exec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("host", host),
-		attribute.StringSlice("args", args),
-	}})
+	ctx, _, endObservation := c.operations.p4Exec.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("host", host),
+			attribute.StringSlice("args", args),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -1089,7 +1128,7 @@ type PerforceCredentials struct {
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 // to abort processing further results.
 func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
+	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs(), MetricLabelValues: []string{c.scope}})
 	defer endObservation(1, observation.Args{})
 
 	type clientAndError struct {
@@ -1105,6 +1144,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
 		ctx, logger, endObservation := c.operations.batchLogSingle.With(ctx, &err, observation.Args{
+			MetricLabelValues: []string{c.scope},
 			Attrs: []attribute.KeyValue{
 				attribute.String("addr", addr),
 				attribute.Int("numRepos", len(repoNames)),
@@ -1274,6 +1314,7 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 		execer: c,
 		args:   append([]string{git}, arg...),
 		execOp: c.operations.exec,
+		scope:  c.scope,
 	}
 }
 
@@ -1746,11 +1787,14 @@ func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName,
 		return nil, errors.Wrap(err, "do")
 	}
 
-	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repoForTracing.Attr(),
-		attribute.String("method", method),
-		attribute.String("path", parsedURL.Path),
-	}})
+	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repoForTracing.Attr(),
+			attribute.String("method", method),
+			attribute.String("path", parsedURL.Path),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	req, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewReader(payload))

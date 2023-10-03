@@ -50,7 +50,8 @@ type gitserverClient struct {
 
 func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient(),
+		// TODO: can we get more fine grained here?
+		innerClient: gitserver.NewClient("symbols"),
 		operations:  newOperations(observationCtx),
 	}
 }

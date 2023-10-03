@@ -51,7 +51,7 @@ func (r *resolvedBatchSpecWorkspaceResolver) SearchResultPaths() []string {
 func (r *resolvedBatchSpecWorkspaceResolver) computeRepoResolver() *graphqlbackend.RepositoryResolver {
 	r.repoResolverOnce.Do(func() {
 		db := r.store.DatabaseDB()
-		r.repoResolver = graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(), r.workspace.Repo)
+		r.repoResolver = graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient("graphql.batches.resolvedworkspacerepo"), r.workspace.Repo)
 	})
 
 	return r.repoResolver

@@ -125,7 +125,7 @@ func (r symbolResolver) Location() *locationResolver {
 		Stat:   stat,
 	}
 	return &locationResolver{
-		resource: NewGitTreeEntryResolver(r.db, gitserver.NewClient(), opts),
+		resource: NewGitTreeEntryResolver(r.db, gitserver.NewClient("graphql.symbols"), opts),
 		lspRange: &sr,
 	}
 }

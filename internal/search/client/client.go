@@ -57,7 +57,7 @@ func New(logger log.Logger, db database.DB) SearchClient {
 			Zoekt:                       search.Indexed(),
 			SearcherURLs:                search.SearcherURLs(),
 			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
-			Gitserver:                   gitserver.NewClient(),
+			Gitserver:                   gitserver.NewClient("search-client"),
 		},
 		settingsService:       settings.NewService(db),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),

@@ -27,7 +27,7 @@ func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api
 	// to see all repos and files
 	internalCtx := actor.WithInternalActor(ctx)
 
-	indexer := newRecentContributorsIndexer(gitserver.NewClient(), db, lgr, subRepoPermsCache)
+	indexer := newRecentContributorsIndexer(gitserver.NewClient("own.recentcontributors"), db, lgr, subRepoPermsCache)
 	return indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
 }
 

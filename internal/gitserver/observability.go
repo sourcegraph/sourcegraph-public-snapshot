@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -46,7 +47,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"gitserver_client",
-		metrics.WithLabels("op"),
+		metrics.WithLabels("op", "scope"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 

@@ -29,7 +29,7 @@ type StreamingQueryExecutor struct {
 
 func NewStreamingExecutor(db database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
-		gitserverClient: internalGitserver.NewClient(),
+		gitserverClient: internalGitserver.NewClient("insights.queryexecutor"),
 		previewExecutor: previewExecutor{
 			repoStore: db.Repos(),
 			filter:    &compression.NoopFilter{},
