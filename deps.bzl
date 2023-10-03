@@ -3194,9 +3194,8 @@ def go_dependencies():
         name = "com_github_graphql_go_graphql",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/graphql-go/graphql",
-        replace = "github.com/jamesdphillips/graphql-go",
-        sum = "h1:v97ti/6TlQgWGie/nGuO6GrDabur7Basxomhlp/vzW4=",
-        version = "v0.7.4-0.20220810211622-efd2a06de890",
+        sum = "h1:p7/Ou/WpmulocJeEx7wjQy611rtXGQaAcXGqanuMMgc=",
+        version = "v0.8.1",
     )
     go_repository(
         name = "com_github_gregjones_httpcache",
