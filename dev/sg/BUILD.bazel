@@ -172,7 +172,7 @@ go_test(
 genrule(
     name = "generate_reference_doc",
     srcs = ["//:sg.config.yaml"],
-    outs = ["reference.md"],
+    outs = ["_reference.md"],
     cmd = """
     SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
             --no-dev-private \

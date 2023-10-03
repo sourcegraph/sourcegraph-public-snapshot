@@ -450,6 +450,19 @@ func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoClon
 	return resp.ToProto(), nil
 }
 
+func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.IsPerforcePathCloneableRequest) (*proto.IsPerforcePathCloneableResponse, error) {
+	if req.DepotPath == "" {
+		return nil, status.Error(codes.InvalidArgument, "no DepotPath given")
+	}
+
+	err := isDepotPathCloneable(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd(), req.GetDepotPath())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	return &proto.IsPerforcePathCloneableResponse{}, nil
+}
+
 func byteSlicesToStrings(in [][]byte) []string {
 	res := make([]string, len(in))
 	for i, b := range in {

@@ -56,16 +56,12 @@ func TestRecall(t *testing.T) {
 		return embeddings.DownloadRepoEmbeddingIndex(context.Background(), mockStore, repoID, repoName)
 	}
 
-	// Weaviate is disabled per default. We don't need it for this test.
-	weaviate := &weaviateClient{}
-
 	searcher := func(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error) {
 		return searchRepoEmbeddingIndexes(
 			ctx,
 			args,
 			getRepoEmbeddingIndex,
 			lookupQueryEmbedding,
-			weaviate,
 		)
 	}
 
