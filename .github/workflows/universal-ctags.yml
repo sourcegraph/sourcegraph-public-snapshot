@@ -36,6 +36,9 @@ jobs:
         name: Show hash of ctags
         run: |
           shasum -a 256 ./result/bin/universal-ctags-*
+          echo "${GITHUB_REF_NAME}"
+          echo "${GITHUB_REF_NAME}"
+          env
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
@@ -64,6 +67,8 @@ jobs:
         name: Show hash of ctags
         run: |
           shasum -a 256 ./result/bin/universal-ctags-*
+          echo "${GITHUB_REF_NAME}"
+          env
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
@@ -91,6 +96,8 @@ jobs:
         name: Show hash of ctags
         run: |
           sha256sum ./result/bin/universal-ctags-*
+          echo "${GITHUB_REF_NAME}"
+          env
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         if: ${{ env.GITHUB_REF_NAME == 'wb/ctags-workflow' }}
