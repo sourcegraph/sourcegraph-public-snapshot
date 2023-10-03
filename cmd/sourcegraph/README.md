@@ -10,6 +10,8 @@ Cody App is a single-binary distribution of Sourcegraph that runs on your local 
 sg start app
 ```
 
+(Or `sg start single-program` if you want all of Sourcegraph, not just Cody functionality.)
+
 If your are running app on a fresh database instance you also have to perform the following steps:
 
 - After opening the web app you will be directed to `/sign-in`, NOT the local repo setup step that is shown in production.

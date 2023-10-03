@@ -1,4 +1,4 @@
-import { writable, type Unsubscriber, type Writable, type Readable } from 'svelte/store'
+import { writable, type Unsubscriber, type Writable, type Readable, derived } from 'svelte/store'
 
 function isWritable<T>(value: any): value is Writable<T> {
     if (!value) {
@@ -58,4 +58,22 @@ export function createForwardStore<T>(store: Writable<T> | Readable<T>) {
             }
         },
     } satisfies ReadableForwardStore<T>
+}
+
+export function createMappingStore<T, U>(
+    store: Writable<T>,
+    reader: (value: T) => U,
+    writer: (value: U) => T
+): Writable<U> {
+    const { subscribe } = derived<Readable<T>, U>(store, $store => reader($store))
+
+    return {
+        subscribe,
+        set(value) {
+            store.set(writer(value))
+        },
+        update(updater) {
+            store.update(value => writer(updater(reader(value))))
+        },
+    }
 }

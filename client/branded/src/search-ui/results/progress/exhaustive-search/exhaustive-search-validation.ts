@@ -9,6 +9,7 @@ enum ValidationErrorType {
     HAS_CONTENT_PREDICATE = 'has_content_predicate',
     HAS_FILE_PREDICATE = 'has_file_predicate',
     OR_OPERATOR = 'or_operator',
+    AND_OPERATOR = 'and_operator',
 }
 
 interface ValidationError {
@@ -40,6 +41,17 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
             validationErrors.push({
                 type: ValidationErrorType.MULTIPLE_REV,
                 reason: 'Multiple rev operators are not compatible',
+            })
+        }
+
+        const hasTypeFiltersOtherThanFile: boolean = filters
+            .filter(filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value)
+            .some(filter => filter.value?.value !== 'file')
+
+        if (hasTypeFiltersOtherThanFile) {
+            validationErrors.push({
+                type: ValidationErrorType.INVALID_QUERY,
+                reason: 'only type:file is supported',
             })
         }
 
@@ -79,7 +91,16 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
         if (hasOr) {
             validationErrors.push({
                 type: ValidationErrorType.OR_OPERATOR,
-                reason: 'Or operator is not compatible for exhaustive search',
+                reason: 'OR operator is not compatible',
+            })
+        }
+
+        const hasAnd = keywords.some(filter => filter.kind === 'and')
+
+        if (hasAnd) {
+            validationErrors.push({
+                type: ValidationErrorType.AND_OPERATOR,
+                reason: 'AND operator is not compatible',
             })
         }
     }

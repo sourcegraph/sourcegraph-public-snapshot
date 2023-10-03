@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -49,6 +50,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repos/scheduler"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -109,7 +111,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	sourceMetrics.MustRegister(prometheus.DefaultRegisterer)
 	src := repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
 	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := repos.NewUpdateScheduler(logger, db)
+	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient())
 	server := &repoupdater.Server{
 		Logger:                logger,
 		ObservationCtx:        observationCtx,
@@ -363,7 +365,7 @@ func repoUpdaterStatsHandler(debugDumpers map[string]debugserver.Dumper) http.Ha
 		// Showing the HTML version of repository syncing schedule as the default,
 		// also the only dumper that supports rendering the HTML version.
 		if (wantDumper == "" || wantDumper == "repos") && wantFormat != "json" {
-			reposDumper, ok := debugDumpers["repos"].(*repos.UpdateScheduler)
+			reposDumper, ok := debugDumpers["repos"].(*scheduler.UpdateScheduler)
 			if !ok {
 				http.Error(w, "No debug dumper for repos found", http.StatusInternalServerError)
 				return
@@ -408,7 +410,7 @@ func watchSyncer(
 	ctx context.Context,
 	logger log.Logger,
 	syncer *repos.Syncer,
-	sched *repos.UpdateScheduler,
+	sched *scheduler.UpdateScheduler,
 	changesetSyncer syncer.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -439,7 +441,7 @@ func watchSyncer(
 // the uncloned repositories on gitserver and update the scheduler with the list.
 // It also ensures that if any of our indexable repos are missing from the cloned
 // list they will be added for cloning ASAP.
-func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *repos.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
+func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *scheduler.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {

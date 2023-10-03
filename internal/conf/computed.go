@@ -40,13 +40,15 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
 	case deploy.IsDeployTypeApp(deployType):
 		return confdefaults.App
+	case deploy.IsDeployTypeSingleProgram(deployType):
+		return confdefaults.SingleProgram
 	default:
-		panic("deploy type did not register default configuration")
+		panic("deploy type did not register default configuration: " + deployType)
 	}
 }
 
 func ExecutorsAccessToken() string {
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return confdefaults.AppInMemoryExecutorPassword
 	}
 	return Get().ExecutorsAccessToken

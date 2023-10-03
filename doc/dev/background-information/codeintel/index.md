@@ -11,7 +11,7 @@ Code navigation-specific code:
 - [lib/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/lib/codeintel)
 - [dev/codeintel-qa](https://github.com/sourcegraph/sourcegraph/tree/main/dev/codeintel-qa)
 - [enterprise/internal/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/internal/codeintel)
-- [enterprise/cmd/worker/internal/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/worker/internal/codeintel)
+- [cmd/worker/internal/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/cmd/worker/internal/codeintel)
 - [cmd/frontend/internal/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/cmd/frontend/internal/codeintel)
 - [cmd/frontend/internal/executorqueue/queues/codeintel](https://github.com/sourcegraph/sourcegraph/tree/main/cmd/frontend/internal/executorqueue/queues/codeintel)
 

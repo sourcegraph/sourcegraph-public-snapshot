@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
@@ -23,12 +24,19 @@ import (
 )
 
 // New returns a Service.
-func New(observationCtx *observation.Context, store *store.Store, uploadStore uploadstore.Store) *Service {
+func New(
+	observationCtx *observation.Context,
+	store *store.Store,
+	uploadStore uploadstore.Store,
+	newSearcher NewSearcher,
+) *Service {
 	logger := log.Scoped("searchjobs.Service", "search job service")
+
 	svc := &Service{
 		logger:      logger,
 		store:       store,
 		uploadStore: uploadStore,
+		newSearcher: newSearcher,
 		operations:  newOperations(observationCtx),
 	}
 
@@ -39,6 +47,7 @@ type Service struct {
 	logger      log.Logger
 	store       *store.Store
 	uploadStore uploadstore.Store
+	newSearcher NewSearcher
 	operations  *operations
 }
 
@@ -52,8 +61,18 @@ type operations struct {
 	deleteSearchJob          *observation.Operation
 	listSearchJobs           *observation.Operation
 	cancelSearchJob          *observation.Operation
-	writeSearchJobCSV        *observation.Operation
 	getAggregateRepoRevState *observation.Operation
+
+	getSearchJobCSVWriterTo  operationWithWriterTo
+	getSearchJobLogsWriterTo operationWithWriterTo
+}
+
+// operationWithWriterTo encodes our pattern around our CSV WriterTo were we
+// have two steps that run adjacent to each other. First validating we can get
+// the job, then we return a WriterTo which actually writes.
+type operationWithWriterTo struct {
+	get      *observation.Operation
+	writerTo *observation.Operation
 }
 
 var (
@@ -88,8 +107,16 @@ func newOperations(observationCtx *observation.Context) *operations {
 			deleteSearchJob:          op("DeleteSearchJob"),
 			listSearchJobs:           op("ListSearchJobs"),
 			cancelSearchJob:          op("CancelSearchJob"),
-			writeSearchJobCSV:        op("WriteSearchJobCSV"),
 			getAggregateRepoRevState: op("GetAggregateRepoRevState"),
+
+			getSearchJobCSVWriterTo: operationWithWriterTo{
+				get:      op("GetSearchJobCSVWriterTo"),
+				writerTo: op("GetSearchJobCSVWriterTo.WriteTo"),
+			},
+			getSearchJobLogsWriterTo: operationWithWriterTo{
+				get:      op("GetSearchJobLogsWriterTo"),
+				writerTo: op("GetSearchJobLogsWriterTo.WriteTo"),
+			},
 		}
 	})
 	return singletonOperations
@@ -101,9 +128,19 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 	))
 	defer endObservation(1, observation.Args{})
 
+	if !isEnabled() {
+		return nil, errors.New("search jobs is an experimental feature, enable it by setting \"experimentalFeatures.searchJobs: true\" in site configuration")
+	}
+
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("search jobs can only be created by an authenticated user")
+	}
+
+	// Validate query
+	_, err = s.newSearcher.NewSearch(ctx, actor.UID, query)
+	if err != nil {
+		return nil, err
 	}
 
 	tx, err := s.store.Transact(ctx)
@@ -162,41 +199,33 @@ func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs
 	return s.store.ListExhaustiveSearchJobs(ctx, args)
 }
 
-func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
+// GetSearchJobLogsWriterTo returns a WriterTo which can be called once to
+// write the logs for job id. Note: ctx is used by WriterTo.
+//
+// io.WriterTo is a specialization of an io.Reader. We expect callers of this
+// function to want to write an http response, so we avoid an io.Pipe and
+// instead pass a more direct use.
+func (s *Service) GetSearchJobLogsWriterTo(parentCtx context.Context, id int64) (_ io.WriterTo, err error) {
+	ctx, _, endObservation := s.operations.getSearchJobLogsWriterTo.get.With(parentCtx, &err, opAttrs(
+		attribute.Int64("id", id)))
+	defer endObservation(1, observation.Args{})
+
+	// 🚨 SECURITY: only someone with access to the job may copy the blobs
+	if _, err := s.GetSearchJob(ctx, id); err != nil {
+		return nil, err
+	}
+
 	iter := s.getJobLogsIter(ctx, id)
 
-	cw := csv.NewWriter(w)
-	defer cw.Flush()
+	return writerToFunc(func(w io.Writer) (n int64, err error) {
+		_, _, endObservation := s.operations.getSearchJobLogsWriterTo.writerTo.With(parentCtx, &err, opAttrs(
+			attribute.Int64("id", id)))
+		defer func() {
+			endObservation(1, opAttrs(attribute.Int64("bytesWritten", n)))
+		}()
 
-	header := []string{
-		"repository",
-		"revision",
-		"started_at",
-		"finished_at",
-		"status",
-		"failure_message",
-	}
-	err = cw.Write(header)
-	if err != nil {
-		return err
-	}
-
-	for iter.Next() {
-		job := iter.Current()
-		err = cw.Write([]string{
-			string(job.RepoName),
-			job.Revision,
-			formatOrNULL(job.StartedAt),
-			formatOrNULL(job.FinishedAt),
-			string(job.State),
-			job.FailureMessage,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return iter.Err()
+		return writeSearchJobLogs(iter, w)
+	}), nil
 }
 
 // JobLogsIterLimit is the number of lines the iterator will read from the
@@ -281,28 +310,40 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 }
 
 // WriteSearchJobCSV copies all CSVs associated with a search job to the given
-// writer.
-func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) (err error) {
-	ctx, _, endObservation := s.operations.writeSearchJobCSV.With(ctx, &err, opAttrs(
+// writer. It returns the number of bytes written and any error encountered.
+
+// GetSearchJobCSVWriterTo returns a WriterTo which can be called once to
+// write all CSVs associated with a search job to the given writer for job id.
+// Note: ctx is used by WriterTo.
+//
+// io.WriterTo is a specialization of an io.Reader. We expect callers of this
+// function to want to write an http response, so we avoid an io.Pipe and
+// instead pass a more direct use.
+func (s *Service) GetSearchJobCSVWriterTo(parentCtx context.Context, id int64) (_ io.WriterTo, err error) {
+	ctx, _, endObservation := s.operations.getSearchJobCSVWriterTo.get.With(parentCtx, &err, opAttrs(
 		attribute.Int64("id", id)))
 	defer endObservation(1, observation.Args{})
 
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
 	_, err = s.GetSearchJob(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	iter, err := s.uploadStore.List(ctx, getPrefix(id))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = writeSearchJobCSV(ctx, iter, s.uploadStore, w)
-	if err != nil {
-		return errors.Wrapf(err, "writing csv for job %d", id)
-	}
-	return nil
+	return writerToFunc(func(w io.Writer) (n int64, err error) {
+		ctx, _, endObservation := s.operations.getSearchJobCSVWriterTo.writerTo.With(parentCtx, &err, opAttrs(
+			attribute.Int64("id", id)))
+		defer func() {
+			endObservation(1, opAttrs(attribute.Int64("bytesWritten", n)))
+		}()
+
+		return writeSearchJobCSV(ctx, iter, s.uploadStore, w)
+	}), nil
 }
 
 // GetAggregateRepoRevState returns the map of state -> count for all repo
@@ -353,14 +394,13 @@ func discardUntil(br *bufio.Reader, delim byte) error {
 	}
 }
 
-func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) error {
+func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) (int64, error) {
 	// keep a single bufio.Reader so we can reuse its buffer.
 	var br bufio.Reader
-	writeKey := func(key string, skipHeader bool) error {
+	writeKey := func(key string, skipHeader bool) (int64, error) {
 		rc, err := uploadStore.Get(ctx, key)
 		if err != nil {
-			_ = rc.Close()
-			return err
+			return 0, err
 		}
 		defer rc.Close()
 
@@ -372,25 +412,98 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 			if err == io.EOF {
 				// reached end of file before finding the newline. Write
 				// nothing
-				return nil
+				return 0, nil
 			} else if err != nil {
-				return err
+				return 0, err
 			}
 		}
 
-		_, err = br.WriteTo(w)
-		return err
+		return br.WriteTo(w)
 	}
 
 	// For the first blob we want the header, for the rest we don't
 	skipHeader := false
+	var n int64
 	for iter.Next() {
 		key := iter.Current()
-		if err := writeKey(key, skipHeader); err != nil {
-			return errors.Wrapf(err, "writing csv for key %q", key)
+		m, err := writeKey(key, skipHeader)
+		n += m
+		if err != nil {
+			return n, errors.Wrapf(err, "writing csv for key %q", key)
 		}
 		skipHeader = true
 	}
 
-	return iter.Err()
+	return n, iter.Err()
+}
+
+func writeSearchJobLogs(iter *iterator.Iterator[types.SearchJobLog], w io.Writer) (int64, error) {
+	// For csv.NewWriter we have no way to track bytes written, so we wrap
+	// w to find out. The implementation of csv writer uses a
+	// bufio.NewWriter and avoids any uses of optimized interfaces like
+	// WriterTo so this has no perf impact.
+	writeCounter := &writeCounter{w: w}
+	cw := csv.NewWriter(writeCounter)
+
+	header := []string{
+		"repository",
+		"revision",
+		"started_at",
+		"finished_at",
+		"status",
+		"failure_message",
+	}
+	err := cw.Write(header)
+	if err != nil {
+		return writeCounter.n, err
+	}
+
+	for iter.Next() {
+		job := iter.Current()
+		err = cw.Write([]string{
+			string(job.RepoName),
+			job.Revision,
+			formatOrNULL(job.StartedAt),
+			formatOrNULL(job.FinishedAt),
+			string(job.State),
+			job.FailureMessage,
+		})
+		if err != nil {
+			return writeCounter.n, err
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return writeCounter.n, err
+	}
+
+	// Flush data before checking for any final write errors.
+	cw.Flush()
+	return writeCounter.n, cw.Error()
+}
+
+type writerToFunc func(w io.Writer) (int64, error)
+
+func (f writerToFunc) WriteTo(w io.Writer) (int64, error) {
+	return f(w)
+}
+
+// writeCounter wraps an io.Writer and keeps track of bytes written.
+type writeCounter struct {
+	w io.Writer
+	// n is the number of bytes written to w
+	n int64
+}
+
+func (c *writeCounter) Write(p []byte) (n int, err error) {
+	n, err = c.w.Write(p)
+	c.n += int64(n)
+	return
+}
+
+func isEnabled() bool {
+	if experimentalFeatures := conf.SiteConfig().ExperimentalFeatures; experimentalFeatures != nil {
+		return experimentalFeatures.SearchJobs != nil && *experimentalFeatures.SearchJobs
+	}
+	return false
 }

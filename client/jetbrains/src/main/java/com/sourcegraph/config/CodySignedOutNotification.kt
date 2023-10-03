@@ -16,8 +16,7 @@ object CodySignedOutNotification {
 
   fun show(project: Project) {
     synchronized(this) {
-      if (current != null ||
-          CodyApplicationSettings.getInstance().isNotLoggedInNotificationDismissed)
+      if (current != null || CodyApplicationSettings.instance.isNotLoggedInNotificationDismissed)
           return
       val notification =
           Notification(
@@ -38,7 +37,7 @@ object CodySignedOutNotification {
           object : DumbAwareAction("Never Show Again") {
             override fun actionPerformed(e: AnActionEvent) {
               notification.expire()
-              CodyApplicationSettings.getInstance().isNotLoggedInNotificationDismissed = true
+              CodyApplicationSettings.instance.isNotLoggedInNotificationDismissed = true
             }
           })
       notification.setIcon(Icons.CodyLogo)

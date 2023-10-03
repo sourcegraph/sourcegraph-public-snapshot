@@ -49,7 +49,7 @@ export enum EditorHint {
 
 /**
  * The search query and additional information depending on how the query was
- * changed. See MonacoQueryInput for how this data is applied to the editor.
+ * changed.
  */
 export type QueryState =
     | {

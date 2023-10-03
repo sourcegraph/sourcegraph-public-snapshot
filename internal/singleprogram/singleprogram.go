@@ -29,9 +29,8 @@ type CleanupFunc func() error
 func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
 		fmt.Fprintln(os.Stderr, "✱ Cody App version:", version.Version(), runtime.GOOS, runtime.GOARCH)
-	}
-	if deploy.IsAppFullSourcegraph() {
-		fmt.Fprintln(os.Stderr, "✱✱✱ Cody App ✱✱✱ full Sourcegraph mode enabled!")
+	} else if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+		fmt.Fprintln(os.Stderr, "✱ Sourcegraph (single-program) version:", version.Version(), runtime.GOOS, runtime.GOARCH)
 	}
 
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
@@ -162,7 +161,7 @@ func Init(logger log.Logger) CleanupFunc {
 		}
 	}
 
-	if deploy.IsAppFullSourcegraph() || !deploy.IsApp() {
+	if !deploy.IsApp() {
 		setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 
 		haveDocker := isDockerAvailable()

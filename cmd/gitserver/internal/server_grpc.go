@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -438,25 +436,6 @@ func (gs *GRPCServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest
 	return grpcResp.ToProto(), nil
 }
 
-// TODO: Remove this endpoint after 5.2, it is deprecated.
-func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
-	size, err := gs.Server.DB.GitserverRepos().GetGitserverGitDirSize(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	shardCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
-
-	resp := protocol.ReposStats{
-		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.
-		// Divide the size by shard count so that the cumulative number on the client
-		// side is correct again.
-		GitDirBytes: size / int64(shardCount),
-	}
-
-	return resp.ToProto(), nil
-}
-
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
 
@@ -477,7 +456,7 @@ func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 		return nil, status.Error(codes.InvalidArgument, "no DepotPath given")
 	}
 
-	err := perforce.IsDepotPathCloneable(ctx, req.P4Port, req.P4User, req.P4Passwd, req.DepotPath)
+	err := perforce.IsDepotPathCloneable(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd(), req.GetDepotPath())
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -486,7 +465,7 @@ func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 }
 
 func (gs *GRPCServer) CheckPerforceCredentials(ctx context.Context, req *proto.CheckPerforceCredentialsRequest) (*proto.CheckPerforceCredentialsResponse, error) {
-	err := perforce.P4TestWithTrust(ctx, req.P4Port, req.P4User, req.P4Passwd)
+	err := perforce.P4TestWithTrust(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

@@ -87,14 +87,12 @@ func TestEmbeddingsSearch(t *testing.T) {
 		logger,
 		getRepoEmbeddingIndex,
 		getMockQueryEmbedding,
-		nil,
 	))
 
 	server2 := httptest.NewServer(NewHandler(
 		logger,
 		getRepoEmbeddingIndex,
 		getMockQueryEmbedding,
-		nil,
 	))
 
 	client := embeddings.NewClient(endpoint.Static(server1.URL, server2.URL), http.DefaultClient)
@@ -282,7 +280,6 @@ func TestEmbeddingModelMismatch(t *testing.T) {
 		logger,
 		getRepoEmbeddingIndex,
 		getQueryEmbedding,
-		nil,
 	))
 
 	client := embeddings.NewClient(endpoint.Static(server.URL), http.DefaultClient)

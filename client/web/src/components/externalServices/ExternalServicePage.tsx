@@ -250,6 +250,7 @@ export const ExternalServicePage: FC<Props> = props => {
                     <ExternalServiceInformation
                         displayName={externalService.displayName}
                         codeHostID={externalService.id}
+                        rateLimiterState={externalService.rateLimiterState}
                         reposNumber={numberOfRepos === 0 ? externalService.repoCount : numberOfRepos}
                         syncInProgress={syncInProgress}
                         gitHubApp={ghApp}

@@ -38,7 +38,7 @@ var frontendInternal = func() *url.URL {
 var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return "localhost:3090"
 	}
 	return "sourcegraph-frontend-internal"
