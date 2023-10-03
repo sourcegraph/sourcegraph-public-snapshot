@@ -51,7 +51,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Additional flags
 		"FORCE_COLOR": "3",
-		"ENTERPRISE":  "1",
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes

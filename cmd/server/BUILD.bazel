@@ -98,7 +98,7 @@ DEPS = [
     "//enterprise/cmd/migrator",
     "//cmd/repo-updater",
     "//enterprise/cmd/symbols",
-    "//enterprise/cmd/worker",
+    "//cmd/worker",
 ]
 
 ZOEKT_DEPS = [

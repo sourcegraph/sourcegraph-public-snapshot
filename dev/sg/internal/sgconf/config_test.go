@@ -83,7 +83,6 @@ commands:
     install: go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
-      ENTERPRISE: 1
       EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
     watch:
       - lib
@@ -120,7 +119,7 @@ commands:
 		Cmd:         ".bin/frontend",
 		Install:     "go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend",
 		CheckBinary: ".bin/frontend",
-		Env:         map[string]string{"ENTERPRISE": "1", "EXTSVC_CONFIG_FILE": ""},
+		Env:         map[string]string{"EXTSVC_CONFIG_FILE": ""},
 		Watch: []string{
 			"lib",
 			"internal",

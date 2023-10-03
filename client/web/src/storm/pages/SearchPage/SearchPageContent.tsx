@@ -147,8 +147,6 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
-                            queryState={queryState}
-                            setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     )}

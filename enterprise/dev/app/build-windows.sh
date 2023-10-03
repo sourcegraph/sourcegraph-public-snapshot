@@ -5,7 +5,7 @@ echo "Building version: ${version}"
 
 echo "--- :chrome: Building web"
 pnpm install
-NODE_ENV=production ENTERPRISE=1 CODY_APP=1 pnpm run build-web
+NODE_ENV=production CODY_APP=1 pnpm run build-web
 
 export PATH=$PATH:/c/msys64/ucrt64/bin
 platform="x86_64-pc-windows-msvc" # This is the name Tauri expects for the Windows executable
