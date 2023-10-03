@@ -2,9 +2,70 @@
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.4.0]
+
 ### Highlights
 
+- New: alt-bracket shortcut to cycle between autocomplete items.
+- New: error icon with actionable buttons in the status bar when Cody is not working.
+- Fixed: network issues related to proxies.
+- Fixed: autocomplete now works on Windows.
+- Fixed: signing in with Google account on sourcegraph.com.
+- Fixed: repository selection dialog is now more responsive.
+- Fixed: one bug related to scrolling in the sidebar. We still have one other
+  [outstanding bug related to auto-scroll](https://github.com/sourcegraph/sourcegraph/issues/56494).
+
 ### Merged PRs
+
+- Total [18 PRs merged](https://github.com/sourcegraph/sourcegraph/milestone/235?closed=1)
+- JetBrains: fix autocomplete on Windows,
+  by [@olafurpg](https://github.com/olafurpg) ([#55916](https://github.com/sourcegraph/sourcegraph/issues/55916))
+- Agent: make chat client respect NODE_TLS_REJECT_UNAUTHORIZED,
+  by [@olafurpg](https://github.com/olafurpg) ([#57312](https://github.com/sourcegraph/sourcegraph/issues/57312))
+- JetBrains: show icon when agent doesnt start/crashes,
+  by [@Strum355](https://github.com/Strum355) ([#57251](https://github.com/sourcegraph/sourcegraph/pull/57251))
+- [OCT Launch] Add JetBrains supported IDEs for Cody,
+  by [@MaedahBatool](https://github.com/MaedahBatool) ([#57250](https://github.com/sourcegraph/sourcegraph/pull/57250))
+- Check for returnTo in openidconnect redirect check,
+  by [@pjlast](https://github.com/pjlast) ([#57202](https://github.com/sourcegraph/sourcegraph/pull/57202))
+- JetBrains: Cody: Add actions for cycling over autocomplete items,
+  by [@Gedochao](https://github.com/Gedochao) ([#57194](https://github.com/sourcegraph/sourcegraph/pull/57194))
+- JetBrains: validate git url in codebase selection asynchronously without blocking the EDT,
+  by [@szymonprz](https://github.com/szymonprz) ([#57185](https://github.com/sourcegraph/sourcegraph/pull/57185))
+- JetBrains: set .editorconfig indent size for java + kotlin,
+  by [@Strum355](https://github.com/Strum355) ([#57146](https://github.com/sourcegraph/sourcegraph/pull/57146))
+- JetBrains: Cody: Refactor: favor `instance` over `getInstance` for consistency in Kotlin services,
+  by [@Gedochao](https://github.com/Gedochao) ([#57143](https://github.com/sourcegraph/sourcegraph/pull/57143))
+- JetBrains: Cody: Refactor autocomplete logic & move to Kotlin,
+  by [@Gedochao](https://github.com/Gedochao) ([#57138](https://github.com/sourcegraph/sourcegraph/pull/57138))
+- JetBrains: migrate from deprecated workspaceRootPath to workspaceRootUri,
+  by [@Strum355](https://github.com/Strum355) ([#57142](https://github.com/sourcegraph/sourcegraph/pull/57142))
+- JetBrains: display new status when repository is not found on sourcegraph instance,
+  by [@szymonprz](https://github.com/szymonprz) ([#57128](https://github.com/sourcegraph/sourcegraph/pull/57128))
+- JetBrains: migrate `ClientInfo`, `ConfigUtil` & `ExtensionConfiguration` to Kotlin,
+  by [@Strum355](https://github.com/Strum355) ([#57082](https://github.com/sourcegraph/sourcegraph/pull/57082))
+- JetBrains: Cody: Refactor `ChatScrollPane` and move to Kotlin,
+  by [@Gedochao](https://github.com/Gedochao) ([#57081](https://github.com/sourcegraph/sourcegraph/pull/57081))
+- JetBrains: Cody: Fix random tool panel refreshing ,
+  by [@Gedochao](https://github.com/Gedochao) ([#57078](https://github.com/sourcegraph/sourcegraph/pull/57078))
+- JetBrains: remove old onboarding about cody app,
+  by [@szymonprz](https://github.com/szymonprz) ([#57075](https://github.com/sourcegraph/sourcegraph/pull/57075))
+- [OCT Launch] Cody Client: Docs updates for JetBrains,
+  by [@MaedahBatool](https://github.com/MaedahBatool) ([#56991](https://github.com/sourcegraph/sourcegraph/pull/56991))
+- JetBrains: fixed logging in multiple times to sourcegraph.com from settings page,
+  by [@szymonprz](https://github.com/szymonprz) ([#57073](https://github.com/sourcegraph/sourcegraph/pull/57073))
 
 ## [3.3.0]
 
