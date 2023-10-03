@@ -80,9 +80,9 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 	return isDepotPathCloneable(ctx, host, username, password, path)
 }
 
-func isDepotPathCloneable(ctx context.Context, p4port, p4username, p4passwd, depotPath string) error {
+func isDepotPathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error {
 	// start with a test and set up trust if necessary
-	if err := p4testWithTrust(ctx, p4port, p4username, p4passwd); err != nil {
+	if err := p4testWithTrust(ctx, p4port, p4user, p4passwd); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func isDepotPathCloneable(ctx context.Context, p4port, p4username, p4passwd, dep
 	depot := strings.Split(strings.TrimLeft(depotPath, "/"), "/")[0]
 
 	// get a list of depots that match the supplied depot (if it's defined)
-	depots, err := p4depots(ctx, p4port, p4username, p4passwd, depot)
+	depots, err := p4depots(ctx, p4port, p4user, p4passwd, depot)
 	if err != nil {
 		return err
 	}
@@ -103,9 +103,9 @@ func isDepotPathCloneable(ctx context.Context, p4port, p4username, p4passwd, dep
 		// this user doesn't have access to any depots,
 		// or to the given depot
 		if depot != "" {
-			return errors.Newf("the user %s does not have access to the depot %s on the server %s", p4username, depot, p4port)
+			return errors.Newf("the user %s does not have access to the depot %s on the server %s", p4user, depot, p4port)
 		} else {
-			return errors.Newf("the user %s does not have access to any depots on the server %s", p4username, p4port)
+			return errors.Newf("the user %s does not have access to any depots on the server %s", p4user, p4port)
 		}
 	}
 

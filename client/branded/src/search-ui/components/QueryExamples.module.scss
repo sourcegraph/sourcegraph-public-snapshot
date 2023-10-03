@@ -67,25 +67,6 @@
     }
 }
 
-.tip {
-    color: var(--text-muted);
-    display: flex;
-    align-items: baseline;
-    align-content: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    min-height: 2rem;
-    margin-bottom: 2.25rem;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.25s;
-
-    &--visible {
-        visibility: visible;
-        opacity: 1;
-    }
-}
-
 .tab-header {
     border: none !important;
 

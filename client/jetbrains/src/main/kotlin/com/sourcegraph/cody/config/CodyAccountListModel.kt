@@ -33,18 +33,17 @@ class CodyAccountListModel(private val project: Project) :
     val authData =
         if (!account.isCodyApp()) {
           val token = newCredentials[account] ?: getOldToken(account)
-          CodyAuthenticationManager.getInstance()
-              .login(
-                  project,
-                  parentComponent,
-                  CodyLoginRequest(
-                      login = account.name,
-                      server = account.server,
-                      token = token,
-                      customRequestHeaders = account.server.customRequestHeaders,
-                      title = "Edit Sourcegraph Account",
-                      loginButtonText = "Save account",
-                  ))
+          CodyAuthenticationManager.instance.login(
+              project,
+              parentComponent,
+              CodyLoginRequest(
+                  login = account.name,
+                  server = account.server,
+                  token = token,
+                  customRequestHeaders = account.server.customRequestHeaders,
+                  title = "Edit Sourcegraph Account",
+                  loginButtonText = "Save account",
+              ))
         } else {
           val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
           if (localAppAccessToken != null) {
@@ -64,7 +63,7 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   private fun getOldToken(account: CodyAccount) =
-      CodyAuthenticationManager.getInstance().getTokenForAccount(account)
+      CodyAuthenticationManager.instance.getTokenForAccount(account)
 
   override fun addAccount(
       server: SourcegraphServerPath,

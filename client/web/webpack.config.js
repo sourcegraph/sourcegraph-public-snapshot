@@ -34,7 +34,6 @@ const {
   NODE_ENV,
   CI: IS_CI,
   INTEGRATION_TESTS,
-  ENTERPRISE,
   EMBED_DEVELOPMENT,
   ENABLE_SENTRY,
   ENABLE_OPEN_TELEMETRY,
@@ -56,7 +55,7 @@ const {
 
 const isHotReloadEnabled = NODE_ENV !== 'production' && !IS_CI
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
-const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))
+const IS_EMBED_ENTRY_POINT_ENABLED = IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT)
 
 const RUNTIME_ENV_VARIABLES = {
   NODE_ENV,
@@ -127,15 +126,10 @@ const config = {
     }),
   },
   entry: {
-    // Desktop app vs. Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
-    // strict superset of the OSS entrypoint. The app endoint imports a strict superset of the enterprise entrypoint.
-    app: CODY_APP
-      ? path.join(enterpriseDirectory, 'app-main.tsx')
-      : ENTERPRISE
-      ? path.join(enterpriseDirectory, 'main.tsx')
-      : path.join(__dirname, 'src', 'main.tsx'),
+    // Desktop app vs. web builds use different entrypoints.
+    app: CODY_APP ? path.join(enterpriseDirectory, 'app-main.tsx') : path.join(enterpriseDirectory, 'main.tsx'),
     // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
-    // iframes on 3rd party sites. Added only in production enterprise builds or if embed development is enabled.
+    // iframes on 3rd party sites. Added only in production builds or if embed development is enabled.
     ...(IS_EMBED_ENTRY_POINT_ENABLED && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
   },
   output: {

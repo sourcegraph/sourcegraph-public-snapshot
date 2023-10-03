@@ -90,7 +90,7 @@ class AccountConfigurable(val project: Project) :
     publisher.beforeAction(serverUrlChanged)
     super.apply()
     val context = AccountSettingChangeContext(serverUrlChanged, accessTokenChanged)
-    CodyAuthenticationManager.getInstance().setActiveAccount(project, activeAccount)
+    CodyAuthenticationManager.instance.setActiveAccount(project, activeAccount)
     accountsModel.activeAccount = activeAccount
     publisher.afterAction(context)
   }

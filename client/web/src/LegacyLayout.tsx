@@ -29,11 +29,13 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
+import { useDeveloperSettings } from './stores'
 import { isAccessTokenCallbackPage } from './user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard/SetupWizard'), 'SetupWizard')
+const LazyDeveloperDialog = lazyComponent(() => import('./devsettings/DeveloperDialog'), 'DeveloperDialog')
 
 export interface LegacyLayoutProps
     extends Omit<LegacyLayoutRouteContext, 'breadcrumbs' | 'useBreadcrumb' | 'setBreadcrumb' | 'isMacPlatform'> {
@@ -80,6 +82,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
+    const showDeveloperDialog = useDeveloperSettings(state => state.showDialog)
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings, or it's the Cody app
         fuzzyFinder: features.fuzzyFinder ?? !props.isCodyApp,
@@ -204,6 +207,14 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !props.authenticatedUser.completedPostSignup &&
         !isPostSignUpPage
     ) {
+        if (location.pathname !== '/search') {
+            const returnTo = window.location.href
+            const params = new URLSearchParams()
+            params.set('returnTo', returnTo)
+            const navigateTo = PageRoutes.PostSignUp + '?' + params.toString()
+            return <Navigate to={navigateTo.toString()} replace={true} />
+        }
+
         return <Navigate to={PageRoutes.PostSignUp} replace={true} />
     }
 
@@ -285,6 +296,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     userHistory={userHistory}
                 />
             )}
+            {showDeveloperDialog && <LazyDeveloperDialog />}
             <SearchQueryStateObserver
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}

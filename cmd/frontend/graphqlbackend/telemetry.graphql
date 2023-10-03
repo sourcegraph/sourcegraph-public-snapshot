@@ -51,6 +51,9 @@ input TelemetryEventInput {
 
     """
     Optional marketing campaign tracking parameters.
+
+    🚨 SECURITY: This metadata is NEVER exported from private Sourcegraph instances,
+    and is only exported for events tracked in the public Sourcegraph.com instance.
     """
     marketingTracking: TelemetryEventMarketingTrackingInput
 }
@@ -60,9 +63,7 @@ Properties comprising the source of a telemetry V2 event reported by a client.
 """
 input TelemetryEventSourceInput {
     """
-    Source client of the event. Clients must come from a static set of predefined
-    metadata keys in libraries - it is left as a string in the API to allow some
-    backwards/forwards flexibility.
+    Source client of the event.
     """
     client: String!
     """
@@ -88,7 +89,9 @@ input TelemetryEventParametersInput {
     Private metadata in JSON format. Unlike metadata, values can be of any type,
     not just numeric.
 
-    By default, this metadata is assumed to be unsafe for export from an instance.
+    🚨 SECURITY: This metadata is NOT exported from instances by default, as it
+    can contain arbitrarily-shaped data that may accidentally contain sensitive
+    or private contents.
     """
     privateMetadata: JSONValue
     """
@@ -102,12 +105,12 @@ A single, PII-free metadata item for telemetry V2 events.
 """
 input TelemetryEventMetadataInput {
     """
-    Metadata keys must come from a static set of predefined metadata keys in
-    libraries - it is left as a string in the API to allow some flexibility.
+    The key identifying this metadata entry.
     """
     key: String!
     """
-    Numeric value associated with the key.
+    Numeric value associated with the key. Enforcing numeric values eliminates
+    risks of accidentally shipping sensitive or private data.
     """
     value: Int!
 }
@@ -135,7 +138,8 @@ input TelemetryEventBillingMetadataInput {
 """
 Marketing campaign tracking parameters for a telemetry V2 event.
 
-By default, this metadata is assumed to be unsafe for export from an instance.
+🚨 SECURITY: This metadata is NEVER exported from private Sourcegraph instances,
+and is only exported for events tracked in the public Sourcegraph.com instance.
 """
 input TelemetryEventMarketingTrackingInput {
     """

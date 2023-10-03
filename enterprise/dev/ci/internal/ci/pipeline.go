@@ -51,7 +51,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Additional flags
 		"FORCE_COLOR": "3",
-		"ENTERPRISE":  "1",
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
@@ -89,7 +88,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "5.1.0"
+	const minimumUpgradeableVersion = "5.2.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()

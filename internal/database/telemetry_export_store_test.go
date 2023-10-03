@@ -77,6 +77,13 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, export, limit)
 
+		// Check we got the exact event IDs we want to export
+		var gotIDs []string
+		for _, e := range export {
+			gotIDs = append(gotIDs, e.GetId())
+		}
+		assert.Equal(t, eventsToExport, gotIDs)
+
 		// Check integrity of first item
 		original, err := proto.Marshal(events[0])
 		require.NoError(t, err)
@@ -102,7 +109,9 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 	t.Run("after export: QueueForExport", func(t *testing.T) {
 		export, err := store.ListForExport(ctx, len(events))
 		require.NoError(t, err)
-		assert.Len(t, export, len(events)-len(eventsToExport))
+		assert.Len(t, export, 1)
+		// ID is exactly as expected
+		assert.Equal(t, "3", export[0].GetId())
 	})
 
 	t.Run("after export: DeleteExported", func(t *testing.T) {

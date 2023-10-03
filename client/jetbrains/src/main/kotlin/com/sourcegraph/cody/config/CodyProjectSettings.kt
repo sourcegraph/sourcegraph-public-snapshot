@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.config
 
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
@@ -9,6 +10,7 @@ import com.intellij.util.xmlb.annotations.Transient
 import com.sourcegraph.find.Search
 
 @State(name = "CodyProjectSettings", storages = [Storage("cody_project_settings.xml")])
+@Service(Service.Level.PROJECT)
 data class CodyProjectSettings(
     var defaultBranchName: String = "main",
     var remoteUrlReplacements: String = "",

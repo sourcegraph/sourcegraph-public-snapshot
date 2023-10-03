@@ -89,6 +89,18 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const providers = showMoreProviders ? moreProviders : primaryProviders
 
+    const dotcomCTAs = (
+        <>
+            <Link
+                to="https://sourcegraph.com/get-started?t=enterprise"
+                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
+            >
+                consider Sourcegraph Enterprise
+            </Link>
+            .
+        </>
+    )
+
     const body = !hasProviders ? (
         <Alert className="mt-3" variant="info">
             No authentication providers are available. Contact a site administrator for help.
@@ -125,29 +137,37 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 {builtInAuthProvider && showMoreProviders && providers.length > 0 && (
                     <OrDivider className="mb-3 py-1" />
                 )}
-                {providers.map((provider, index) => (
+                {providers.map((provider, index) => {
                     // Use index as key because display name may not be unique. This is OK
                     // here because this list will not be updated during this component's lifetime.
                     /* eslint-disable react/no-array-index-key */
-                    <div className="mb-2" key={index}>
-                        <Button
-                            to={provider.authenticationURL}
-                            display="block"
-                            variant={showMoreProviders ? 'secondary' : 'primary'}
-                            as={AnchorLink}
-                        >
-                            {provider.serviceType === 'github' && <Icon aria-hidden={true} svgPath={mdiGithub} />}
-                            {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
-                            {provider.serviceType === 'bitbucketCloud' && (
-                                <Icon aria-hidden={true} svgPath={mdiBitbucket} />
-                            )}
-                            {provider.serviceType === 'azuredevops' && (
-                                <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
-                            )}{' '}
-                            {provider.displayPrefix ?? 'Continue with'} {provider.displayName}
-                        </Button>
-                    </div>
-                ))}
+                    const authURL = new URL(provider.authenticationURL, window.location.href)
+                    if (returnTo) {
+                        // propagate return to callback parameter
+                        authURL.searchParams.set('returnTo', returnTo)
+                    }
+
+                    return (
+                        <div className="mb-2" key={index}>
+                            <Button
+                                to={authURL.toString()}
+                                display="block"
+                                variant={showMoreProviders ? 'secondary' : 'primary'}
+                                as={AnchorLink}
+                            >
+                                {provider.serviceType === 'github' && <Icon aria-hidden={true} svgPath={mdiGithub} />}
+                                {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
+                                {provider.serviceType === 'bitbucketCloud' && (
+                                    <Icon aria-hidden={true} svgPath={mdiBitbucket} />
+                                )}
+                                {provider.serviceType === 'azuredevops' && (
+                                    <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
+                                )}{' '}
+                                {provider.displayPrefix ?? 'Continue with'} {provider.displayName}
+                            </Button>
+                        </div>
+                    )
+                })}
                 {showMoreWaysToLogin && (
                     <div className="mb-2">
                         <Button display="block" variant="secondary" onClick={() => toggleMoreProviders(true)}>
@@ -159,32 +179,23 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             {context.allowSignup ? (
                 <Text>
                     New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
-                    {context.sourcegraphDotComMode && (
-                        <>
-                            To use Sourcegraph on private repositories,{' '}
-                            <Link
-                                to="https://about.sourcegraph.com/app"
-                                onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })}
-                            >
-                                download Cody app
-                            </Link>{' '}
-                            or{' '}
-                            <Link
-                                to="https://sourcegraph.com/get-started?t=enterprise"
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
-                            >
-                                get Sourcegraph Enterprise
-                            </Link>
-                            .
-                        </>
-                    )}
+                    {context.sourcegraphDotComMode && <>To use Sourcegraph on private repositories, {dotcomCTAs}</>}
                 </Text>
             ) : isRequestAccessAllowed ? (
                 <Text className="text-muted">
                     Need an account? <Link to="/request-access">Request access</Link> or contact your site admin.
                 </Text>
             ) : (
-                <Text className="text-muted">Need an account? Contact your site admin.</Text>
+                <Text className="text-muted">
+                    {context.sourcegraphDotComMode ? (
+                        <>
+                            Currently, we are unable to create accounts using email. Please use the providers listed
+                            above to continue. <br /> For private code, {dotcomCTAs}
+                        </>
+                    ) : (
+                        <>Need an account? Contact your site admin.</>
+                    )}
+                </Text>
             )}
         </div>
     )

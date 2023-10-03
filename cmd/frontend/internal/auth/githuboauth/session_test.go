@@ -267,7 +267,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					return ci.ghUserTeams, false, 0, ci.ghUserTeamsErr
 				}
 				var gotAuthUserOp *auth.GetAndSaveUserOp
-				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
 					}
@@ -275,9 +275,9 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					gotAuthUserOp = &op
 
 					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
-						return uid, "", nil
+						return false, uid, "", nil
 					}
-					return 0, "safeErr", errors.New("auth.GetAndSaveUser error")
+					return false, 0, "safeErr", errors.New("auth.GetAndSaveUser error")
 				}
 				defer func() {
 					auth.MockGetAndSaveUser = nil
@@ -296,7 +296,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				_, actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
@@ -330,7 +330,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		}, nil
 	}
 	// We just want to make sure that we end up getting to the secondary email
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 		if op.CreateIfNotExist {
 			// We should not get here as we should hit the second email address
 			// before trying again with creation enabled.
@@ -338,9 +338,9 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		}
 		// Mock the second email address matching
 		if op.UserProps.Email == "secondary@example.com" {
-			return 1, "", nil
+			return false, 1, "", nil
 		}
-		return 0, "no match", errors.New("no match")
+		return false, 0, "no match", errors.New("no match")
 	}
 	defer func() {
 		githubsvc.MockGetAuthenticatedUserEmails = nil
@@ -363,7 +363,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -387,13 +387,13 @@ func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
 	errorMessage := "could not create new user account, license limit has been reached"
 
 	// We just want to make sure that we end up getting to the signup part
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 		if op.CreateIfNotExist {
 			// We should not get here as we should hit the second email address
 			// before trying again with creation enabled.
-			return 0, errorMessage, errors.New(errorMessage)
+			return false, 0, errorMessage, errors.New(errorMessage)
 		}
-		return 0, "no match", errors.New("no match")
+		return false, 0, "no match", errors.New("no match")
 	}
 	defer func() {
 		githubsvc.MockGetAuthenticatedUserEmails = nil
@@ -416,7 +416,7 @@ func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

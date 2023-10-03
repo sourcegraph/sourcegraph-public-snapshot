@@ -80,7 +80,7 @@ message SearchResponse {
 // with the parts of the file that matched.
 message FileMatch {
   // The file's path
-  string path = 1;
+  bytes path = 1;
 
   // A list of matched chunks
   repeated ChunkMatch chunk_matches = 2;
@@ -95,7 +95,7 @@ message FileMatch {
 message ChunkMatch {
   // The raw content that contains the match. Will always
   // contain complete lines.
-  string content = 1;
+  bytes content = 1;
 
   // The location relative to the start of the file
   // where the chunk content starts.

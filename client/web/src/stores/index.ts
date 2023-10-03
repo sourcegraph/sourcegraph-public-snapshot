@@ -22,6 +22,7 @@ export {
 } from './navbarSearchQueryState'
 
 export { useNotepadState, useNotepad } from './notepad'
+export * from './devSettings'
 
 /**
  * observeStore converts a zustand store to an observable. The observable emits

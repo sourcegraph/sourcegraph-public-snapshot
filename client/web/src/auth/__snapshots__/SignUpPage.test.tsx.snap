@@ -151,17 +151,6 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           Create a free account
         </h2>
-        <div
-          class="mb-4"
-        >
-          Or, 
-          <a
-            class="anchorLink"
-            href="/sign-up?showEmail=true"
-          >
-            continue with email
-          </a>
-        </div>
         <small
           class="text-muted"
         >
