@@ -254,12 +254,12 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
+      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/cmd/embeddings
     checkBinary: .bin/embeddings
     watch:
       - lib
       - internal
-      - enterprise/cmd/embeddings
+      - cmd/embeddings
       - internal/embeddings
   qdrant:
     cmd: |
