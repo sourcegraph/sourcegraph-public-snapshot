@@ -240,6 +240,7 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 
 	obj, err := git.GetObject(ctx, gs.Server.RecordingCommandFactory, gs.Server.ReposDir, api.RepoName(req.Repo), req.ObjectName)
 	if err != nil {
+		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err
 	}
 
