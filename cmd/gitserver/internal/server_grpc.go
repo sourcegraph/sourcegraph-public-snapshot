@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -145,7 +146,7 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		log.Strings("path", req.GetPathspecs()),
 	)
 
-	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
+	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -237,7 +238,7 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 	// Log which actor is accessing the repo.
 	accesslog.Record(ctx, string(internalReq.Repo), log.String("objectname", internalReq.ObjectName))
 
-	obj, err := getObject(ctx, gs.Server.RecordingCommandFactory, gs.Server.ReposDir, getObjectType, revParse, api.RepoName(req.Repo), req.ObjectName)
+	obj, err := git.GetObject(ctx, gs.Server.RecordingCommandFactory, gs.Server.ReposDir, api.RepoName(req.Repo), req.ObjectName)
 	if err != nil {
 		return nil, err
 	}

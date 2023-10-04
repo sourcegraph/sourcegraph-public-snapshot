@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func cloneStatus(cloned, cloning bool) types.CloneStatus {
@@ -32,15 +31,6 @@ func cloneStatus(cloned, cloning bool) types.CloneStatus {
 
 func isAlwaysCloningTest(name api.RepoName) bool {
 	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
-}
-
-// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
-func checkSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
-	}
-	return nil
 }
 
 // repoLastFetched returns the mtime of the repo's FETCH_HEAD, which is the date of the last successful `git remote

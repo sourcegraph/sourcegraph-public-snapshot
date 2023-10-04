@@ -120,7 +120,6 @@ go_test(
         "//internal/database/dbtest",
         "//internal/extsvc/gitolite",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc",
