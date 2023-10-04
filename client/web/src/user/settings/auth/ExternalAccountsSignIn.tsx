@@ -44,12 +44,12 @@ const getNormalizedAccounts = (
 
     const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 
-    let normalizedAccounts: NormalizedExternalAccount[] = []
+    const normalizedAccounts: NormalizedExternalAccount[] = []
     const providerAccounts = accounts.filter(
         acc => acc.clientID === authProvider.clientID && acc.serviceID === authProvider.serviceID
     )
     for (const providerAccount of providerAccounts || []) {
-        let normalizedAccount: NormalizedExternalAccount = {
+        const normalizedAccount: NormalizedExternalAccount = {
             icon,
             name,
             authProvider,
@@ -85,12 +85,10 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
     onDidError,
     onDidAdd,
 }) => {
-    const accountGroups = authProviders.map(authProvider => {
-        return {
-            authProvider,
-            accounts: getNormalizedAccounts(accounts, authProvider),
-        }
-    })
+    const accountGroups = authProviders.map(authProvider => ({
+        authProvider,
+        accounts: getNormalizedAccounts(accounts, authProvider),
+    }))
     const accountsList = accountGroups
         .flatMap(group => group.accounts)
         .map(account => (
