@@ -434,71 +434,50 @@ type Client interface {
 	Addrs() []string
 
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
-	SystemsInfo(ctx context.Context) ([]SystemInfo, error)
+	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
 
 	// SystemInfo returns information about the gitserver instance at the given address.
-	SystemInfo(ctx context.Context, addr string) (SystemInfo, error)
+	SystemInfo(ctx context.Context, addr string) (protocol.SystemInfo, error)
 
 	// IsPerforcePathCloneable checks if the given Perforce depot path is cloneable by
 	// checking if it is a valid depot and the given user has permission to access it.
-	IsPerforcePathCloneable(ctx context.Context, conn PerforceConnectionDetails, depotPath string) error
+	IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) error
 
 	// CheckPerforceCredentials checks if the given Perforce credentials are valid
-	CheckPerforceCredentials(ctx context.Context, conn PerforceConnectionDetails) error
+	CheckPerforceCredentials(ctx context.Context, conn protocol.PerforceConnectionDetails) error
 
 	// PerforceUsers lists all the users known to the given Perforce server.
-	PerforceUsers(ctx context.Context, conn PerforceConnectionDetails) ([]*proto.PerforceUser, error)
+	PerforceUsers(ctx context.Context, conn protocol.PerforceConnectionDetails) ([]*perforce.User, error)
 
 	// PerforceProtectsForUser returns all protects that apply to the given Perforce user.
-	PerforceProtectsForUser(ctx context.Context, conn PerforceConnectionDetails, username string) ([]*proto.PerforceProtect, error)
+	PerforceProtectsForUser(ctx context.Context, conn protocol.PerforceConnectionDetails, username string) ([]*perforce.Protect, error)
 
 	// PerforceProtectsForDepot returns all protects that apply to the given Perforce depot.
-	PerforceProtectsForDepot(ctx context.Context, conn PerforceConnectionDetails, depot string) ([]*proto.PerforceProtect, error)
+	PerforceProtectsForDepot(ctx context.Context, conn protocol.PerforceConnectionDetails, depot string) ([]*perforce.Protect, error)
 
 	// PerforceGroupMembers returns the members of the given Perforce group.
-	PerforceGroupMembers(ctx context.Context, conn PerforceConnectionDetails, group string) ([]string, error)
+	PerforceGroupMembers(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error)
 
 	// IsPerforceSuperUser checks if the given Perforce user is a super user, and otherwise returns an error.
-	IsPerforceSuperUser(ctx context.Context, conn PerforceConnectionDetails) error
+	IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) error
 
 	// PerforceGetChangelist gets the perforce changelist details for the given changelist ID.
-	PerforceGetChangelist(ctx context.Context, conn PerforceConnectionDetails, changelist string) (*perforce.Changelist, error)
+	PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (*perforce.Changelist, error)
 }
 
-type PerforceConnectionDetails struct {
-	P4Port   string
-	P4User   string
-	P4Passwd string
-}
-
-func (c PerforceConnectionDetails) ToProto() *proto.PerforceConnectionDetails {
-	return &proto.PerforceConnectionDetails{
-		P4Port:   c.P4Port,
-		P4User:   c.P4User,
-		P4Passwd: c.P4Passwd,
-	}
-}
-
-type SystemInfo struct {
-	Address     string
-	FreeSpace   uint64
-	TotalSpace  uint64
-	PercentUsed float32
-}
-
-func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, error) {
+func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error) {
 	addresses := c.clientSource.Addresses()
 
-	wg := pool.NewWithResults[SystemInfo]().WithErrors().WithContext(ctx)
+	wg := pool.NewWithResults[protocol.SystemInfo]().WithErrors().WithContext(ctx)
 
 	for _, addr := range addresses {
 		addr := addr // capture addr
-		wg.Go(func(ctx context.Context) (SystemInfo, error) {
+		wg.Go(func(ctx context.Context) (protocol.SystemInfo, error) {
 			response, err := c.getDiskInfo(ctx, addr)
 			if err != nil {
-				return SystemInfo{}, err
+				return protocol.SystemInfo{}, err
 			}
-			return SystemInfo{
+			return protocol.SystemInfo{
 				Address:     addr.Address(),
 				FreeSpace:   response.GetFreeSpace(),
 				TotalSpace:  response.GetTotalSpace(),
@@ -510,18 +489,18 @@ func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, erro
 	return wg.Wait()
 }
 
-func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (SystemInfo, error) {
+func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (protocol.SystemInfo, error) {
 	ac := c.clientSource.GetAddressWithClient(addr)
 	if ac == nil {
-		return SystemInfo{}, errors.Newf("no client for address: %s", addr)
+		return protocol.SystemInfo{}, errors.Newf("no client for address: %s", addr)
 	}
 
 	response, err := c.getDiskInfo(ctx, ac)
 	if err != nil {
-		return SystemInfo{}, nil
+		return protocol.SystemInfo{}, err
 	}
 
-	return SystemInfo{
+	return protocol.SystemInfo{
 		Address:    ac.Address(),
 		FreeSpace:  response.FreeSpace,
 		TotalSpace: response.TotalSpace,
@@ -1510,7 +1489,7 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 	return nil
 }
 
-func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn PerforceConnectionDetails, depotPath string) error {
+func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) error {
 	if conf.IsGRPCEnabled(ctx) {
 		// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1563,7 +1542,7 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn Pe
 	return nil
 }
 
-func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn PerforceConnectionDetails) error {
+func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn protocol.PerforceConnectionDetails) error {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1614,7 +1593,7 @@ func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn P
 	return nil
 }
 
-func (c *clientImplementor) PerforceUsers(ctx context.Context, conn PerforceConnectionDetails) ([]*proto.PerforceUser, error) {
+func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1630,7 +1609,11 @@ func (c *clientImplementor) PerforceUsers(ctx context.Context, conn PerforceConn
 			return nil, err
 		}
 
-		return resp.GetUsers(), nil
+		users := make([]*perforce.User, len(resp.GetUsers()))
+		for i, u := range resp.GetUsers() {
+			users[i] = perforce.UserFromProto(u)
+		}
+		return users, nil
 	}
 
 	// TODO: Implement HTTP.
@@ -1638,7 +1621,7 @@ func (c *clientImplementor) PerforceUsers(ctx context.Context, conn PerforceConn
 	return nil, nil
 }
 
-func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn PerforceConnectionDetails, username string) ([]*proto.PerforceProtect, error) {
+func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn protocol.PerforceConnectionDetails, username string) ([]*perforce.Protect, error) {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1655,7 +1638,11 @@ func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn Pe
 			return nil, err
 		}
 
-		return resp.GetProtects(), nil
+		protects := make([]*perforce.Protect, len(resp.GetProtects()))
+		for i, p := range resp.GetProtects() {
+			protects[i] = perforce.ProtectFromProto(p)
+		}
+		return protects, nil
 	}
 
 	// TODO: Implement HTTP.
@@ -1663,7 +1650,7 @@ func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn Pe
 	return nil, nil
 }
 
-func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn PerforceConnectionDetails, depot string) ([]*proto.PerforceProtect, error) {
+func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn protocol.PerforceConnectionDetails, depot string) ([]*perforce.Protect, error) {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1680,7 +1667,11 @@ func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn P
 			return nil, err
 		}
 
-		return resp.GetProtects(), nil
+		protects := make([]*perforce.Protect, len(resp.GetProtects()))
+		for i, p := range resp.GetProtects() {
+			protects[i] = perforce.ProtectFromProto(p)
+		}
+		return protects, nil
 	}
 
 	// TODO: Implement HTTP.
@@ -1688,7 +1679,7 @@ func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn P
 	return nil, nil
 }
 
-func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn PerforceConnectionDetails, group string) ([]string, error) {
+func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error) {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1713,7 +1704,7 @@ func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn Perfo
 	return nil, nil
 }
 
-func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn PerforceConnectionDetails) error {
+func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) error {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1733,7 +1724,7 @@ func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn Perfor
 	return nil
 }
 
-func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn PerforceConnectionDetails, changelist string) (*perforce.Changelist, error) {
+func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (*perforce.Changelist, error) {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing

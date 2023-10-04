@@ -28,6 +28,7 @@ const (
 	GitserverService_ListGitolite_FullMethodName                = "/gitserver.v1.GitserverService/ListGitolite"
 	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName                     = "/gitserver.v1.GitserverService/Archive"
+	GitserverService_P4Exec_FullMethodName                      = "/gitserver.v1.GitserverService/P4Exec"
 	GitserverService_RepoClone_FullMethodName                   = "/gitserver.v1.GitserverService/RepoClone"
 	GitserverService_RepoCloneProgress_FullMethodName           = "/gitserver.v1.GitserverService/RepoCloneProgress"
 	GitserverService_RepoDelete_FullMethodName                  = "/gitserver.v1.GitserverService/RepoDelete"
@@ -55,6 +56,8 @@ type GitserverServiceClient interface {
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
+	// Deprecated: Do not use.
+	P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error)
 	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
 	RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error)
@@ -252,6 +255,39 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 	return m, nil
 }
 
+// Deprecated: Do not use.
+func (c *gitserverServiceClient) P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_P4Exec_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceP4ExecClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_P4ExecClient interface {
+	Recv() (*P4ExecResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceP4ExecClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceP4ExecClient) Recv() (*P4ExecResponse, error) {
+	m := new(P4ExecResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *gitserverServiceClient) RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error) {
 	out := new(RepoCloneResponse)
 	err := c.cc.Invoke(ctx, GitserverService_RepoClone_FullMethodName, in, out, opts...)
@@ -373,6 +409,8 @@ type GitserverServiceServer interface {
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
+	// Deprecated: Do not use.
+	P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error
 	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
 	RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error)
@@ -418,6 +456,9 @@ func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverServi
 }
 func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
+}
+func (UnimplementedGitserverServiceServer) P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error {
+	return status.Errorf(codes.Unimplemented, "method P4Exec not implemented")
 }
 func (UnimplementedGitserverServiceServer) RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoClone not implemented")
@@ -644,6 +685,27 @@ type gitserverServiceArchiveServer struct {
 }
 
 func (x *gitserverServiceArchiveServer) Send(m *ArchiveResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _GitserverService_P4Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(P4ExecRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).P4Exec(m, &gitserverServiceP4ExecServer{stream})
+}
+
+type GitserverService_P4ExecServer interface {
+	Send(*P4ExecResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceP4ExecServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceP4ExecServer) Send(m *P4ExecResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -958,6 +1020,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Archive",
 			Handler:       _GitserverService_Archive_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "P4Exec",
+			Handler:       _GitserverService_P4Exec_Handler,
 			ServerStreams: true,
 		},
 	},

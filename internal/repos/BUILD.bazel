@@ -175,7 +175,6 @@ go_test(
         "//internal/extsvc/phabricator",
         "//internal/github_apps/types",
         "//internal/gitserver",
-        "//internal/gitserver/v1:gitserver",
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/httptestutil",

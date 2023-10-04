@@ -852,3 +852,26 @@ type CheckPerforceCredentialsRequest struct {
 
 // IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
 type CheckPerforceCredentialsResponse struct{}
+
+// PerforceConnectionDetails holds all the details required to talk to a Perforce server.
+type PerforceConnectionDetails struct {
+	P4Port   string
+	P4User   string
+	P4Passwd string
+}
+
+func (c PerforceConnectionDetails) ToProto() *proto.PerforceConnectionDetails {
+	return &proto.PerforceConnectionDetails{
+		P4Port:   c.P4Port,
+		P4User:   c.P4User,
+		P4Passwd: c.P4Passwd,
+	}
+}
+
+// SystemInfo holds info on a Gitserver instance.
+type SystemInfo struct {
+	Address     string
+	FreeSpace   uint64
+	TotalSpace  uint64
+	PercentUsed float32
+}
