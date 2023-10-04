@@ -1282,6 +1282,12 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	// Log which actor is accessing p4-exec.
 	//
 	// p4-exec is currently only used for fetching user based permissions information
@@ -1293,7 +1299,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := perforce.P4TestWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1328,7 +1334,6 @@ func (s *Server) p4execHTTP(w http.ResponseWriter, r *http.Request, req *protoco
 }
 
 func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) execStatus {
-
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
 	exitStatus := executil.UnsetExitStatus
@@ -1407,6 +1412,11 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 		}()
 	}
 
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		return execStatus{ExitStatus: -1, Err: err}
+	}
+
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
 	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
@@ -1417,6 +1427,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 		"P4PORT="+req.P4Port,
 		"P4USER="+req.P4User,
 		"P4PASSWD="+req.P4Passwd,
+		"HOME="+p4home,
 	)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
@@ -2224,7 +2235,13 @@ func (s *Server) handleIsPerforcePathCloneable(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err := perforce.IsDepotPathCloneable(r.Context(), req.P4Port, req.P4User, req.P4Passwd, req.DepotPath)
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.IsDepotPathCloneable(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.DepotPath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -2243,7 +2260,13 @@ func (s *Server) handleCheckPerforceCredentials(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err := perforce.P4TestWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

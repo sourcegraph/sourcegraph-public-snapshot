@@ -25,13 +25,13 @@ const TempDirName = ".tmp"
 // and where it will store cache data.
 const P4HomeName = ".p4home"
 
-func MakeP4HomeDir(reposDir string) (p4home string, _ error) {
+func MakeP4HomeDir(reposDir string) (string, error) {
 	p4Home := filepath.Join(reposDir, P4HomeName)
 	// Ensure the directory exists
 	if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
 		return "", errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
 	}
-	return p4home, nil
+	return p4Home, nil
 }
 
 func RepoDirFromName(reposDir string, name api.RepoName) common.GitDir {

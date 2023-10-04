@@ -44,7 +44,7 @@ type PerforceDepot struct {
 // P4Depots returns all of the depots to which the user has access on the host
 // and whose names match the given nameFilter, which can contain asterisks (*) for wildcards
 // if nameFilter is blank, return all depots
-func P4Depots(ctx context.Context, host, username, password, nameFilter string) ([]PerforceDepot, error) {
+func P4Depots(ctx context.Context, p4home, p4port, p4user, p4passwd, nameFilter string) ([]PerforceDepot, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -55,9 +55,10 @@ func P4Depots(ctx context.Context, host, username, password, nameFilter string) 
 		cmd = exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "depots", "-e", nameFilter)
 	}
 	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"P4USER="+username,
-		"P4PASSWD="+password,
+		"P4PORT="+p4port,
+		"P4USER="+p4user,
+		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
 	)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
