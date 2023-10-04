@@ -40,7 +40,7 @@ Set the following environment variables to target an S3 bucket you've already pr
 
 ### Using GCS
 
-To target a GCS bucket you've already provisioned, set the following environment variables. Authentication is done through a service account key, supplied as either a path to a volume-mounted file, or the contents read in as an environment variable payload.
+Set the following environment variables to target a GCS bucket you've already provisioned. Authentication is done through a service account key, either as a path to a volume-mounted file or the contents read in as an environment variable payload.
 
 - `SEARCH_JOBS_UPLOAD_BACKEND=GCS`
 - `SEARCH_JOBS_UPLOAD_BUCKET=<my bucket name>`
