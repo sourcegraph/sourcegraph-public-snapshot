@@ -37,7 +37,7 @@ jobs:
         run: |
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
-          ls dist/ | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
@@ -73,7 +73,7 @@ jobs:
         run: |
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
-          ls dist/ | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
@@ -108,7 +108,7 @@ jobs:
         run: |
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
-          ls dist/ | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
