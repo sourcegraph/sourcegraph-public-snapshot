@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -21,7 +20,7 @@ import (
 type PerforceSource struct {
 	conn            schema.PerforceConnection
 	gitServerClient gitserver.Client
-	perforceCreds   *v1.PerforceConnectionDetails
+	perforceCreds   *gitserver.PerforceConnectionDetails
 }
 
 func NewPerforceSource(ctx context.Context, gitserverClient gitserver.Client, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
@@ -42,6 +41,10 @@ func NewPerforceSource(ctx context.Context, gitserverClient gitserver.Client, sv
 
 // GitserverPushConfig returns an authenticated push config used for pushing commits to the code host.
 func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	if s.perforceCreds == nil {
+		return nil, errors.New("no credentials set for Perforce Source")
+	}
+
 	// Return a PushConfig with a crafted URL that includes the Perforce scheme and the credentials
 	// The perforce scheme will tell `createCommitFromPatch` that this repo is a Perforce repo
 	// so it can handle it differently from Git repos.
@@ -51,7 +54,7 @@ func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushCon
 	if err == nil {
 		depot = "//" + u.Path + "/"
 	}
-	remoteURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.perforceCreds.GetP4User(), s.perforceCreds.GetP4Passwd(), s.conn.P4Port, depot)
+	remoteURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.perforceCreds.P4User, s.perforceCreds.P4Passwd, s.conn.P4Port, depot)
 	return &protocol.PushConfig{
 		RemoteURL: remoteURL,
 	}, nil
@@ -63,13 +66,13 @@ func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushCon
 func (s PerforceSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch av := a.(type) {
 	case *auth.BasicAuthWithSSH:
-		s.perforceCreds = &v1.PerforceConnectionDetails{
+		s.perforceCreds = &gitserver.PerforceConnectionDetails{
 			P4Port:   s.conn.P4Port,
 			P4User:   av.Username,
 			P4Passwd: av.Password,
 		}
 	case *auth.BasicAuth:
-		s.perforceCreds = &v1.PerforceConnectionDetails{
+		s.perforceCreds = &gitserver.PerforceConnectionDetails{
 			P4Port:   s.conn.P4Port,
 			P4User:   av.Username,
 			P4Passwd: av.Password,
@@ -87,7 +90,7 @@ func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
 	if s.perforceCreds == nil {
 		return errors.New("no credentials set for Perforce Source")
 	}
-	return s.gitServerClient.CheckPerforceCredentials(ctx, s.perforceCreds)
+	return s.gitServerClient.CheckPerforceCredentials(ctx, *s.perforceCreds)
 }
 
 // LoadChangeset loads the given Changeset from the source and updates it. If
@@ -97,7 +100,7 @@ func (s PerforceSource) LoadChangeset(ctx context.Context, cs *Changeset) error 
 	if s.perforceCreds == nil {
 		return errors.New("no credentials set for Perforce Source")
 	}
-	cl, err := s.gitServerClient.PerforceGetChangelist(ctx, s.perforceCreds, cs.ExternalID)
+	cl, err := s.gitServerClient.PerforceGetChangelist(ctx, *s.perforceCreds, cs.ExternalID)
 	if err != nil {
 		return errors.Wrap(err, "getting changelist")
 	}

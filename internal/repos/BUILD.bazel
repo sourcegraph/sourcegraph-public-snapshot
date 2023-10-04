@@ -77,7 +77,6 @@ go_library(
         "//internal/extsvc/pypi",
         "//internal/extsvc/rubygems",
         "//internal/gitserver",
-        "//internal/gitserver/v1:gitserver",
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/httptestutil",

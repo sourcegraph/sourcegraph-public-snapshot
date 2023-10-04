@@ -403,8 +403,13 @@ func (gs *GRPCServer) CheckPerforceCredentials(ctx context.Context, req *proto.C
 }
 
 func (gs *GRPCServer) PerforceUsers(ctx context.Context, req *proto.PerforceUsersRequest) (*proto.PerforceUsersResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	conn := req.GetConnectionDetails()
-	err := perforce.P4TestWithTrust(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -440,8 +445,13 @@ func (gs *GRPCServer) PerforceUsers(ctx context.Context, req *proto.PerforceUser
 }
 
 func (gs *GRPCServer) PerforceProtectsForUser(ctx context.Context, req *proto.PerforceProtectsForUserRequest) (*proto.PerforceProtectsForUserResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	conn := req.GetConnectionDetails()
-	err := perforce.P4TestWithTrust(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -468,8 +478,13 @@ func (gs *GRPCServer) PerforceProtectsForUser(ctx context.Context, req *proto.Pe
 }
 
 func (gs *GRPCServer) PerforceProtectsForDepot(ctx context.Context, req *proto.PerforceProtectsForDepotRequest) (*proto.PerforceProtectsForDepotResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	conn := req.GetConnectionDetails()
-	err := perforce.P4TestWithTrust(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -496,8 +511,13 @@ func (gs *GRPCServer) PerforceProtectsForDepot(ctx context.Context, req *proto.P
 }
 
 func (gs *GRPCServer) PerforceGroupMembers(ctx context.Context, req *proto.PerforceGroupMembersRequest) (*proto.PerforceGroupMembersResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	conn := req.GetConnectionDetails()
-	err := perforce.P4TestWithTrust(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -542,8 +562,13 @@ func (gs *GRPCServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerf
 }
 
 func (gs *GRPCServer) PerforceGetChangelist(ctx context.Context, req *proto.PerforceGetChangelistRequest) (*proto.PerforceGetChangelistResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	conn := req.GetConnectionDetails()
-	err := perforce.P4TestWithTrust(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()

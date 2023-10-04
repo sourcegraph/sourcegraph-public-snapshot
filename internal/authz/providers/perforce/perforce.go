@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -98,7 +97,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		emailSet[email] = struct{}{}
 	}
 
-	users, err := p.gitserverClient.PerforceUsers(ctx, &v1.PerforceConnectionDetails{
+	users, err := p.gitserverClient.PerforceUsers(ctx, gitserver.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,
@@ -159,7 +158,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	// -u User : Displays protection lines that apply to the named user. This option
 	// requires super access.
-	protects, err := p.gitserverClient.PerforceProtectsForUser(ctx, &v1.PerforceConnectionDetails{
+	protects, err := p.gitserverClient.PerforceProtectsForUser(ctx, gitserver.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,
@@ -190,7 +189,7 @@ func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, err
 	}
 
 	userEmails := make(map[string]string)
-	users, err := p.gitserverClient.PerforceUsers(ctx, &v1.PerforceConnectionDetails{
+	users, err := p.gitserverClient.PerforceUsers(ctx, gitserver.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,
@@ -242,7 +241,7 @@ func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string,
 
 	members, err := p.gitserverClient.PerforceGroupMembers(
 		ctx,
-		&v1.PerforceConnectionDetails{
+		gitserver.PerforceConnectionDetails{
 			P4Port:   p.host,
 			P4User:   p.user,
 			P4Passwd: p.password,
@@ -309,7 +308,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	// access.
 	protects, err := p.gitserverClient.PerforceProtectsForDepot(
 		ctx,
-		&v1.PerforceConnectionDetails{
+		gitserver.PerforceConnectionDetails{
 			P4Port:   p.host,
 			P4User:   p.user,
 			P4Passwd: p.password,
@@ -357,7 +356,7 @@ func (p *Provider) URN() string {
 }
 
 func (p *Provider) ValidateConnection(ctx context.Context) error {
-	return p.gitserverClient.IsPerforceSuperUser(ctx, &v1.PerforceConnectionDetails{
+	return p.gitserverClient.IsPerforceSuperUser(ctx, gitserver.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,

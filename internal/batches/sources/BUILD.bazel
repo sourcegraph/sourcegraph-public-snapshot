@@ -43,7 +43,6 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
-        "//internal/gitserver/v1:gitserver",
         "//internal/httpcli",
         "//internal/jsonc",
         "//internal/perforce",

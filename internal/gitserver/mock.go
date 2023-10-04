@@ -80,9 +80,6 @@ type MockGitserverServiceClient struct {
 	// RepoUpdateFunc is an instance of a mock function object controlling
 	// the behavior of the method RepoUpdate.
 	RepoUpdateFunc *GitserverServiceClientRepoUpdateFunc
-	// ReposStatsFunc is an instance of a mock function object controlling
-	// the behavior of the method ReposStats.
-	ReposStatsFunc *GitserverServiceClientReposStatsFunc
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *GitserverServiceClientSearchFunc
@@ -190,11 +187,6 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		RepoUpdateFunc: &GitserverServiceClientRepoUpdateFunc{
 			defaultHook: func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (r0 *v1.RepoUpdateResponse, r1 error) {
-				return
-			},
-		},
-		ReposStatsFunc: &GitserverServiceClientReposStatsFunc{
-			defaultHook: func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (r0 *v1.ReposStatsResponse, r1 error) {
 				return
 			},
 		},
@@ -311,11 +303,6 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.RepoUpdate")
 			},
 		},
-		ReposStatsFunc: &GitserverServiceClientReposStatsFunc{
-			defaultHook: func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.ReposStats")
-			},
-		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
 			defaultHook: func(context.Context, *v1.SearchRequest, ...grpc.CallOption) (v1.GitserverService_SearchClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.Search")
@@ -388,9 +375,6 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		RepoUpdateFunc: &GitserverServiceClientRepoUpdateFunc{
 			defaultHook: i.RepoUpdate,
-		},
-		ReposStatsFunc: &GitserverServiceClientReposStatsFunc{
-			defaultHook: i.ReposStats,
 		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
 			defaultHook: i.Search,
@@ -2816,127 +2800,6 @@ func (c GitserverServiceClientRepoUpdateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientRepoUpdateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverServiceClientReposStatsFunc describes the behavior when the
-// ReposStats method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientReposStatsFunc struct {
-	defaultHook func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error)
-	hooks       []func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error)
-	history     []GitserverServiceClientReposStatsFuncCall
-	mutex       sync.Mutex
-}
-
-// ReposStats delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) ReposStats(v0 context.Context, v1 *v1.ReposStatsRequest, v2 ...grpc.CallOption) (*v1.ReposStatsResponse, error) {
-	r0, r1 := m.ReposStatsFunc.nextHook()(v0, v1, v2...)
-	m.ReposStatsFunc.appendCall(GitserverServiceClientReposStatsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReposStats method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientReposStatsFunc) SetDefaultHook(hook func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReposStats method of the parent MockGitserverServiceClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverServiceClientReposStatsFunc) PushHook(hook func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientReposStatsFunc) SetDefaultReturn(r0 *v1.ReposStatsResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientReposStatsFunc) PushReturn(r0 *v1.ReposStatsResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientReposStatsFunc) nextHook() func(context.Context, *v1.ReposStatsRequest, ...grpc.CallOption) (*v1.ReposStatsResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientReposStatsFunc) appendCall(r0 GitserverServiceClientReposStatsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientReposStatsFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientReposStatsFunc) History() []GitserverServiceClientReposStatsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientReposStatsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientReposStatsFuncCall is an object that describes an
-// invocation of method ReposStats on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientReposStatsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.ReposStatsRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.ReposStatsResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientReposStatsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientReposStatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

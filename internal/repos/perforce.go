@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,7 +51,7 @@ func newPerforceSource(gitserverClient gitserver.Client, svc *types.ExternalServ
 // from the code host configuration.
 func (s PerforceSource) CheckConnection(ctx context.Context) error {
 	gclient := gitserver.NewClient()
-	err := gclient.CheckPerforceCredentials(ctx, &v1.PerforceConnectionDetails{
+	err := gclient.CheckPerforceCredentials(ctx, gitserver.PerforceConnectionDetails{
 		P4Port:   s.config.P4Port,
 		P4User:   s.config.P4User,
 		P4Passwd: s.config.P4Passwd,
@@ -74,7 +73,7 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 			return
 		}
 
-		conn := &v1.PerforceConnectionDetails{
+		conn := gitserver.PerforceConnectionDetails{
 			P4Port:   s.config.P4Port,
 			P4User:   s.config.P4User,
 			P4Passwd: s.config.P4Passwd,

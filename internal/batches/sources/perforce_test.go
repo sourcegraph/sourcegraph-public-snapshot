@@ -59,7 +59,7 @@ func TestPerforceSource_LoadChangeset(t *testing.T) {
 		s, client := mockPerforceSource()
 
 		change := mockPerforceChange()
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*perforce.Changelist, error) {
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*perforce.Changelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
 			assert.Equal(t, testPerforceCredentials, credentials)
 			return change, nil
