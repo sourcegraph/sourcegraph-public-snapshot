@@ -231,7 +231,7 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
@@ -242,7 +242,7 @@ commands:
       - lib
       - internal
       - cmd/symbols
-      - enterprise/cmd/symbols
+      - cmd/symbols
       - internal/rockskip
 
   embeddings:
@@ -997,7 +997,7 @@ bazelCommands:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   symbols:
-    target: //enterprise/cmd/symbols
+    target: //cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev

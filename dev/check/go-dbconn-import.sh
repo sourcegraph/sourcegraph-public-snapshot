@@ -18,7 +18,7 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/migrator
   github.com/sourcegraph/sourcegraph/enterprise/cmd/migrator
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+  github.com/sourcegraph/sourcegraph/cmd/symbols
   github.com/sourcegraph/sourcegraph/cmd/embeddings
   # Doesn't connect but uses db internals for use with sqlite
   github.com/sourcegraph/sourcegraph/cmd/symbols

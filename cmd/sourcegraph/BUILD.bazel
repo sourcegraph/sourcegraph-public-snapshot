@@ -16,7 +16,7 @@ go_library(
         "//cmd/searcher/shared",
         "//cmd/sourcegraph/osscmd",
         "//cmd/worker/shared",
-        "//enterprise/cmd/symbols/shared",
+        "//cmd/symbols/shared",
         "//internal/sanitycheck",
         "//internal/service",
         "//internal/service/localcodehost",
