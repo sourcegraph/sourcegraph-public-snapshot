@@ -14,8 +14,8 @@ go_library(
     deps = [
         "//cmd/gitserver/internal",
         "//cmd/gitserver/internal/accesslog",
+        "//cmd/gitserver/internal/cloneurl",
         "//cmd/gitserver/internal/perforce",
-        "//cmd/gitserver/server/cloneurl",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
