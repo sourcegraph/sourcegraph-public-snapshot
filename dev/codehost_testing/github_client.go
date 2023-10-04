@@ -1,4 +1,4 @@
-package codehost_scenario
+package codehost_testing
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-github/v53/github"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/dev/codehost_scenario/config"
+	"github.com/sourcegraph/sourcegraph/dev/codehost_testing/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

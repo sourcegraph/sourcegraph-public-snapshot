@@ -1,4 +1,4 @@
-package codehost_scenario
+package codehost_testing
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/dev/codehost_scenario/config"
+	"github.com/sourcegraph/sourcegraph/dev/codehost_testing/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
