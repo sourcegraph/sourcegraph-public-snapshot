@@ -230,13 +230,15 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				if flaggingResult.IsFlagged() {
 					// keep this for backwards-compatibility of abuse data
 					requestMetadata["flagged"] = true
-					requestMetadata["flagging_result"] = map[string]any{
-						"reason":               flaggingResult.reasons,
-						"blocked":              flaggingResult.blocked,
-						"promptPrefix":         flaggingResult.promptPrefix,
-						"max_tokens_to_sample": flaggingResult.maxTokensToSample,
-						"prompt_token_count":   flaggingResult.promptTokenCount,
+					flaggingMetadata := map[string]any{
+						"reason":  flaggingResult.reasons,
+						"blocked": flaggingResult.blocked,
 					}
+					// only record prompt prefixes for .com actors
+					if act.IsDotComActor() {
+						flaggingMetadata["promptPrefix"] = flaggingResult.promptPrefix
+					}
+					requestMetadata["flagging_result"] = flaggingMetadata
 				}
 				usageData := map[string]any{
 					"prompt_character_count":     promptUsage.characters,

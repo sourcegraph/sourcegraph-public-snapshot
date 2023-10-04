@@ -300,8 +300,8 @@ type dotcomPromptRecorder struct {
 var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
-	// Only log prompts from Sourcegraph.com: https://sourcegraph.com/site-admin/dotcom/product/subscriptions/d3d2b638-d0a2-4539-a099-b36860b09819
-	if actor.FromContext(ctx).ID != "d3d2b638-d0a2-4539-a099-b36860b09819" {
+	// Only log prompts from Sourcegraph.com
+	if !actor.FromContext(ctx).IsDotComActor() {
 		return errors.New("attempted to record prompt from non-dotcom actor")
 	}
 	// Must expire entries
