@@ -385,9 +385,9 @@ var MockGetAuthenticatedUserOrgs struct {
 	PagesMock map[int][]*Org
 }
 
-// GetAuthenticatedUserOrgsForPage returns given page of 100 organizations associated with the currently
+// GetAuthenticatedUserOrgs returns given page of 100 organizations associated with the currently
 // authenticated user.
-func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int) (
+func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context, page int) (
 	orgs []*Org,
 	hasNextPage bool,
 	rateLimitCost int,
@@ -431,7 +431,7 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 	rateLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
+	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgs(ctx, page)
 	if err != nil {
 		return
 	}
