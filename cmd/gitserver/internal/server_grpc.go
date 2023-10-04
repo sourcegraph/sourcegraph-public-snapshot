@@ -425,7 +425,7 @@ func (gs *GRPCServer) PerforceUsers(ctx context.Context, req *proto.PerforceUser
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	users, err := perforce.P4Users(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	users, err := perforce.P4Users(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -467,7 +467,7 @@ func (gs *GRPCServer) PerforceProtectsForUser(ctx context.Context, req *proto.Pe
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	protects, err := perforce.P4ProtectsForUser(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetUsername())
+	protects, err := perforce.P4ProtectsForUser(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetUsername())
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +500,7 @@ func (gs *GRPCServer) PerforceProtectsForDepot(ctx context.Context, req *proto.P
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	protects, err := perforce.P4ProtectsForDepot(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetDepot())
+	protects, err := perforce.P4ProtectsForDepot(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetDepot())
 	if err != nil {
 		return nil, err
 	}
@@ -533,7 +533,7 @@ func (gs *GRPCServer) PerforceGroupMembers(ctx context.Context, req *proto.Perfo
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	members, err := perforce.P4GroupMembers(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetGroup())
+	members, err := perforce.P4GroupMembers(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetGroup())
 	if err != nil {
 		return nil, err
 	}
@@ -544,8 +544,13 @@ func (gs *GRPCServer) PerforceGroupMembers(ctx context.Context, req *proto.Perfo
 }
 
 func (gs *GRPCServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerforceSuperUserRequest) (*proto.IsPerforceSuperUserResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	conn := req.GetConnectionDetails()
-	err := perforce.P4UserIsSuperUser(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4UserIsSuperUser(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -584,7 +589,7 @@ func (gs *GRPCServer) PerforceGetChangelist(ctx context.Context, req *proto.Perf
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	changelist, err := perforce.GetChangelistByID(ctx, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetChangelistId())
+	changelist, err := perforce.GetChangelistByID(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetChangelistId())
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,10 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "perforce",
-    srcs = ["changelist.go"],
+    srcs = [
+        "changelist.go",
+        "types.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/perforce",
     visibility = ["//:__subpackages__"],
     deps = [

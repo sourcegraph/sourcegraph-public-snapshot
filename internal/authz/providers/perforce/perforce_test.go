@@ -18,7 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,7 +33,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 	}
 
 	gitserverClient := gitserver.NewStrictMockClient()
-	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*v1.PerforceUser{
+	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*p4types.User{
 		{Username: "alice", Email: "alice@example.com"},
 		{Username: "cindy", Email: "cindy@example.com"},
 	}, nil)
@@ -298,7 +299,7 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 		logger := logtest.Scoped(t)
 
 		gitserverClient := gitserver.NewStrictMockClient()
-		gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*v1.PerforceProtect{
+		gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*p4types.Protect{
 			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Engineering/..."},
 			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Security/...", IsExclusion: true},
 		}, nil)
@@ -372,14 +373,14 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	gitserverClient := gitserver.NewStrictMockClient()
-	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*v1.PerforceUser{
+	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*p4types.User{
 		{Username: "alice", Email: "alice@example.com"},
 		{Username: "bob", Email: "bob@example.com"},
 		{Username: "cindy", Email: "cindy@example.com"},
 		{Username: "david", Email: "david@example.com"},
 		{Username: "frank", Email: "frank@example.com"},
 	}, nil)
-	gitserverClient.PerforceGroupMembersFunc.SetDefaultHook(func(ctx context.Context, conn *v1.PerforceConnectionDetails, group string) ([]string, error) {
+	gitserverClient.PerforceGroupMembersFunc.SetDefaultHook(func(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error) {
 		switch group {
 		case "Backend":
 			return []string{"alice", "cindy"}, nil
@@ -389,7 +390,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			return nil, errors.New("invalid group")
 		}
 	})
-	gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*v1.PerforceProtect{
+	gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*p4types.Protect{
 		{Level: "list", EntityType: "user", EntityName: "*", Host: "*", Match: "//...", IsExclusion: true},
 		{Level: "write", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/..."},
 		{Level: "write", EntityType: "user", EntityName: "bob", Host: "*", Match: "//Sourcegraph/..."},

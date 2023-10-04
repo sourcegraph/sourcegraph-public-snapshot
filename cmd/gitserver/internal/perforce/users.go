@@ -32,18 +32,17 @@ type PerforceUser struct {
 	// Access is seconds since the Epoch, but p4 quotes it in the output, so it's a string
 	Access string           `json:"Access,omitempty"`
 	Update string           `json:"Update,omitempty"`
-	Type   PerforceUserType `json:"type,omitempty"`
+	Type   PerforceUserType `json:"Type,omitempty"`
 }
 
-// P4Users returns all of the depots to which the user has access on the host
-// and whose names match the given nameFilter, which can contain asterisks (*) for wildcards
-// if nameFilter is blank, return all depots
-func P4Users(ctx context.Context, port, username, password string) ([]PerforceUser, error) {
+// P4Users returns all of users known to the Perforce server.
+func P4Users(ctx context.Context, p4home, p4port, p4user, p4passwd string) ([]PerforceUser, error) {
 	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "users")
 	cmd.Env = append(os.Environ(),
-		"P4PORT="+port,
-		"P4USER="+username,
-		"P4PASSWD="+password,
+		"P4PORT="+p4port,
+		"P4USER="+p4user,
+		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
 	)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
@@ -66,7 +65,7 @@ func P4Users(ctx context.Context, port, username, password string) ([]PerforceUs
 	lr := byteutils.NewLineReader(out)
 	for lr.Scan() {
 		line := lr.Line()
-		// the output of `p4 -Mj -ztag users` is a series of JSON-formatted depot definitions, one per line
+		// the output of `p4 -Mj -ztag users` is a series of JSON-formatted user definitions, one per line.
 		var user PerforceUser
 		err := json.Unmarshal(line, &user)
 		if err != nil {

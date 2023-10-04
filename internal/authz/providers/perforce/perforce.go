@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -97,7 +98,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		emailSet[email] = struct{}{}
 	}
 
-	users, err := p.gitserverClient.PerforceUsers(ctx, gitserver.PerforceConnectionDetails{
+	users, err := p.gitserverClient.PerforceUsers(ctx, protocol.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,
@@ -107,15 +108,15 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	}
 
 	for _, p4User := range users {
-		if p4User.GetEmail() == "" || p4User.GetUsername() == "" {
+		if p4User.Email == "" || p4User.Username == "" {
 			continue
 		}
 
-		if _, ok := emailSet[p4User.GetEmail()]; ok {
+		if _, ok := emailSet[p4User.Email]; ok {
 			accountData, err := jsoniter.Marshal(
 				perforce.AccountData{
-					Username: p4User.GetUsername(),
-					Email:    p4User.GetEmail(),
+					Username: p4User.Username,
+					Email:    p4User.Email,
 				},
 			)
 			if err != nil {
@@ -127,7 +128,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: p.codeHost.ServiceType,
 					ServiceID:   p.codeHost.ServiceID,
-					AccountID:   p4User.GetEmail(),
+					AccountID:   p4User.Email,
 				},
 				AccountData: extsvc.AccountData{
 					Data: extsvc.NewUnencryptedData(accountData),
@@ -156,9 +157,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no user found in the external account data")
 	}
 
-	// -u User : Displays protection lines that apply to the named user. This option
-	// requires super access.
-	protects, err := p.gitserverClient.PerforceProtectsForUser(ctx, gitserver.PerforceConnectionDetails{
+	protects, err := p.gitserverClient.PerforceProtectsForUser(ctx, protocol.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,
@@ -189,7 +188,7 @@ func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, err
 	}
 
 	userEmails := make(map[string]string)
-	users, err := p.gitserverClient.PerforceUsers(ctx, gitserver.PerforceConnectionDetails{
+	users, err := p.gitserverClient.PerforceUsers(ctx, protocol.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,
@@ -199,10 +198,10 @@ func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, err
 	}
 
 	for _, p4User := range users {
-		if p4User.GetUsername() == "" || p4User.GetEmail() == "" {
+		if p4User.Username == "" || p4User.Email == "" {
 			continue
 		}
-		userEmails[p4User.GetUsername()] = p4User.GetEmail()
+		userEmails[p4User.Username] = p4User.Email
 	}
 
 	p.emailsCacheMutex.Lock()
@@ -241,7 +240,7 @@ func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string,
 
 	members, err := p.gitserverClient.PerforceGroupMembers(
 		ctx,
-		gitserver.PerforceConnectionDetails{
+		protocol.PerforceConnectionDetails{
 			P4Port:   p.host,
 			P4User:   p.user,
 			P4Passwd: p.password,
@@ -304,11 +303,9 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchRepoPerms for sub-repo permissions"}
 	}
 
-	// -a : Displays protection lines for all users. This option requires super
-	// access.
 	protects, err := p.gitserverClient.PerforceProtectsForDepot(
 		ctx,
-		gitserver.PerforceConnectionDetails{
+		protocol.PerforceConnectionDetails{
 			P4Port:   p.host,
 			P4User:   p.user,
 			P4Passwd: p.password,
@@ -356,7 +353,7 @@ func (p *Provider) URN() string {
 }
 
 func (p *Provider) ValidateConnection(ctx context.Context) error {
-	return p.gitserverClient.IsPerforceSuperUser(ctx, gitserver.PerforceConnectionDetails{
+	return p.gitserverClient.IsPerforceSuperUser(ctx, protocol.PerforceConnectionDetails{
 		P4Port:   p.host,
 		P4User:   p.user,
 		P4Passwd: p.password,

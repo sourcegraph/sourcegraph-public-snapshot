@@ -14,19 +14,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// P4Groups returns all usernames that are members of the given group.
-func P4GroupMembers(ctx context.Context, port, username, password, group string) ([]string, error) {
+// P4GroupMembers returns all usernames that are members of the given group.
+func P4GroupMembers(ctx context.Context, p4home, p4port, p4user, p4passwd, group string) ([]string, error) {
 	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "group", "-o", group)
 	cmd.Env = append(os.Environ(),
-		"P4PORT="+port,
-		"P4USER="+username,
-		"P4PASSWD="+password,
+		"P4PORT="+p4port,
+		"P4USER="+p4user,
+		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
 	)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = errors.Wrap(ctxerr, "p4 users context error")
+			err = errors.Wrap(ctxerr, "p4 group context error")
 		}
 
 		if len(out) > 0 {
@@ -55,6 +56,7 @@ func parseP4GroupMembers(out []byte) ([]string, error) {
 	currentUserIdx := 0
 	for {
 		user, ok := jsonGroup[fmt.Sprintf("Users%d", currentUserIdx)]
+		currentUserIdx++
 		if !ok {
 			break
 		}
@@ -63,7 +65,6 @@ func parseP4GroupMembers(out []byte) ([]string, error) {
 			continue
 		}
 		users = append(users, username)
-		currentUserIdx++
 	}
 
 	return users, nil

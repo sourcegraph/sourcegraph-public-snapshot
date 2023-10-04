@@ -6,8 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/schema"
 
@@ -18,7 +17,7 @@ import (
 
 var (
 	testPerforceChangeID    = "111"
-	testPerforceCredentials = gitserver.PerforceCredentials{Username: "user", Password: "pass", Host: "perforce.sgdev.org:1666"}
+	testPerforceCredentials = protocol.PerforceConnectionDetails{P4User: "user", P4Passwd: "pass", P4Port: "perforce.sgdev.org:1666"}
 )
 
 func TestPerforceSource_ValidateAuthenticator(t *testing.T) {
@@ -43,7 +42,7 @@ func TestPerforceSource_LoadChangeset(t *testing.T) {
 		cs, _ := mockPerforceChangeset()
 		s, client := mockPerforceSource()
 		want := errors.New("error")
-		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*perforce.Changelist, error) {
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, credentials protocol.PerforceConnectionDetails, changeID string) (*perforce.Changelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
 			assert.Equal(t, testPerforceCredentials, credentials)
 			return new(perforce.Changelist), want
@@ -59,7 +58,7 @@ func TestPerforceSource_LoadChangeset(t *testing.T) {
 		s, client := mockPerforceSource()
 
 		change := mockPerforceChange()
-		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*perforce.Changelist, error) {
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, credentials protocol.PerforceConnectionDetails, changeID string) (*perforce.Changelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
 			assert.Equal(t, testPerforceCredentials, credentials)
 			return change, nil
@@ -77,9 +76,9 @@ func TestPerforceSource_CreateChangeset(t *testing.T) {
 		cs, _ := mockPerforceChangeset()
 		s, client := mockPerforceSource()
 		want := errors.New("error")
-		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, conn *v1.PerforceConnectionDetails, changeID string) (*perforce.Changelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, conn protocol.PerforceConnectionDetails, changelistID string) (*perforce.Changelist, error) {
+			assert.Equal(t, changelistID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, conn)
 			return new(perforce.Changelist), want
 		})
 
@@ -94,9 +93,9 @@ func TestPerforceSource_CreateChangeset(t *testing.T) {
 		s, client := mockPerforceSource()
 
 		change := mockPerforceChange()
-		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*perforce.Changelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, conn protocol.PerforceConnectionDetails, changelistID string) (*perforce.Changelist, error) {
+			assert.Equal(t, changelistID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, conn)
 			return change, nil
 		})
 

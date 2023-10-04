@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func GetChangelistByID(ctx context.Context, p4port, p4user, p4passwd string, changelistID string) (*p4types.Changelist, error) {
+func GetChangelistByID(ctx context.Context, p4home, p4port, p4user, p4passwd, changelistID string) (*p4types.Changelist, error) {
 	cmd := exec.CommandContext(
 		ctx,
 		"p4",
@@ -34,6 +34,7 @@ func GetChangelistByID(ctx context.Context, p4port, p4user, p4passwd string, cha
 		"P4PORT="+p4port,
 		"P4USER="+p4user,
 		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
 	)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))

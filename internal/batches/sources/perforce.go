@@ -20,7 +20,7 @@ import (
 type PerforceSource struct {
 	conn            schema.PerforceConnection
 	gitServerClient gitserver.Client
-	perforceCreds   *gitserver.PerforceConnectionDetails
+	perforceCreds   *protocol.PerforceConnectionDetails
 }
 
 func NewPerforceSource(ctx context.Context, gitserverClient gitserver.Client, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
@@ -66,13 +66,13 @@ func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushCon
 func (s PerforceSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch av := a.(type) {
 	case *auth.BasicAuthWithSSH:
-		s.perforceCreds = &gitserver.PerforceConnectionDetails{
+		s.perforceCreds = &protocol.PerforceConnectionDetails{
 			P4Port:   s.conn.P4Port,
 			P4User:   av.Username,
 			P4Passwd: av.Password,
 		}
 	case *auth.BasicAuth:
-		s.perforceCreds = &gitserver.PerforceConnectionDetails{
+		s.perforceCreds = &protocol.PerforceConnectionDetails{
 			P4Port:   s.conn.P4Port,
 			P4User:   av.Username,
 			P4Passwd: av.Password,

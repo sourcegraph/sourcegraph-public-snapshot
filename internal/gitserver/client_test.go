@@ -769,7 +769,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 		gitserverAddr2 = "172.16.8.2:8080"
 	)
 
-	expectedResponses := []gitserver.SystemInfo{
+	expectedResponses := []protocol.SystemInfo{
 		{
 			Address:    gitserverAddr1,
 			FreeSpace:  102400,

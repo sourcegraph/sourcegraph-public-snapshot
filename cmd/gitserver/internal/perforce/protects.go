@@ -17,12 +17,15 @@ import (
 )
 
 // P4ProtectsForUser returns all protect definitions that apply to the given username.
-func P4ProtectsForUser(ctx context.Context, p4port, p4username, p4password, username string) ([]*v1.PerforceProtect, error) {
+func P4ProtectsForUser(ctx context.Context, p4home, p4port, p4user, p4passwd, username string) ([]*v1.PerforceProtect, error) {
+	// -u User : Displays protection lines that apply to the named user. This option
+	// requires super access.
 	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "protects", "-u", username)
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+p4port,
-		"P4USER="+p4username,
-		"P4PASSWD="+p4password,
+		"P4USER="+p4user,
+		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
 	)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
@@ -47,12 +50,15 @@ func P4ProtectsForUser(ctx context.Context, p4port, p4username, p4password, user
 }
 
 // P4ProtectsForUser returns all protect definitions that apply to the given depot.
-func P4ProtectsForDepot(ctx context.Context, p4port, p4username, p4password, depot string) ([]*v1.PerforceProtect, error) {
+func P4ProtectsForDepot(ctx context.Context, p4home, p4port, p4user, p4passwd, depot string) ([]*v1.PerforceProtect, error) {
+	// -a : Displays protection lines for all users. This option requires super
+	// access.
 	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "protects", "-a", depot)
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+p4port,
-		"P4USER="+p4username,
-		"P4PASSWD="+p4password,
+		"P4USER="+p4user,
+		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
 	)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))

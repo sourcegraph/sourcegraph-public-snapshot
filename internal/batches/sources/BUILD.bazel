@@ -103,7 +103,6 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
-        "//internal/gitserver/v1:gitserver",
         "//internal/httpcli",
         "//internal/httptestutil",
         "//internal/perforce",

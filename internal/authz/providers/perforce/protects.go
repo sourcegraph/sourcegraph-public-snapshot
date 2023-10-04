@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -206,7 +206,7 @@ type protectsScanner struct {
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(logger log.Logger, protects []*v1.PerforceProtect, s *protectsScanner, ignoreRulesWithHost bool) error {
+func scanProtects(logger log.Logger, protects []*perforce.Protect, s *protectsScanner, ignoreRulesWithHost bool) error {
 	logger = logger.Scoped("scanProtects", "")
 	for _, protect := range protects {
 		// skip any rule that relies on particular client IP addresses or hostnames
@@ -215,16 +215,16 @@ func scanProtects(logger log.Logger, protects []*v1.PerforceProtect, s *protects
 		// GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/53374
 		// Subsequent approaches will need to add more sophisticated handling of hosts
 		// perhaps even capturing the browser IP address and comparing it to the host field.
-		if ignoreRulesWithHost && protect.GetHost() != "*" {
+		if ignoreRulesWithHost && protect.Host != "*" {
 			continue
 		}
 
 		parsedLine := p4ProtectLine{
-			level:       protect.GetLevel(),
-			entityType:  protect.GetEntityType(),
-			name:        protect.GetEntityName(),
-			match:       protect.GetMatch(),
-			isExclusion: protect.GetIsExclusion(),
+			level:       protect.Level,
+			entityType:  protect.EntityType,
+			name:        protect.EntityName,
+			match:       protect.Match,
+			isExclusion: protect.IsExclusion,
 		}
 
 		// We only care about read access. If the permission doesn't change read access,
