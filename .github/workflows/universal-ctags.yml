@@ -5,7 +5,7 @@ on:
     paths:
       - 'dev/nix/ctags.nix'
     branches:
-        - 'wb/ctags-workflow'
+        - 'main'
   pull_request:
     paths:
       - 'dev/nix/ctags.nix'
