@@ -10,13 +10,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Repo represents a GitHub repository in the scenario
 type Repo struct {
-	s    *GithubScenario
+	// s is the GithubScenario instance this repo is part of. Actions it creates will be added to this scenario
+	s *GithubScenario
+	// team is the team this repo belongs to
 	team *Team
-	org  *Org
+	// org is the Org that owns this repo
+	org *Org
+	// name is the name of the repo
 	name string
 }
 
+// Get returns the corresponding GitHub Repository object that was created by the `CreateOrg`
+//
+// This method will only return a Repository if the Scenario that created it has been applied otherwise
+// it will panic.
 func (r *Repo) Get(ctx context.Context) (*github.Repository, error) {
 	if r.s.IsApplied() {
 		return r.get(ctx)
@@ -24,10 +33,14 @@ func (r *Repo) Get(ctx context.Context) (*github.Repository, error) {
 	panic("cannot retrieve repo before scenario is applied")
 }
 
+// get retrieves the GitHub repository without panicking if not applied. It is meant as an
+// internal helper method while actions are getting applied.
 func (r *Repo) get(ctx context.Context) (*github.Repository, error) {
 	return r.s.client.GetRepo(ctx, r.org.name, r.name)
 }
 
+// AddTeam creats an action that will update the repo permissions so that the given team
+// has access to this repo.
 func (r *Repo) AddTeam(team *Team) {
 	r.team = team
 	action := &action{
@@ -60,6 +73,7 @@ func (r *Repo) AddTeam(team *Team) {
 	r.s.append(action)
 }
 
+// SetPermissions adds an action that will set the permissions (public or private) for the repository
 func (r *Repo) SetPermissions(private bool) {
 	permissionKey := "private"
 	if !private {
@@ -90,6 +104,8 @@ func (r *Repo) SetPermissions(private bool) {
 	r.s.append(action)
 }
 
+// WaitTillExists creates an action that waits for the repository to exist on GitHub. This action is especially
+// useful for when a repo is forked since a forked repo doesn't immediately exist when requested on GitHub.
 func (r *Repo) WaitTillExists() {
 	action := &action{
 		name: fmt.Sprintf("repo:exists:%s", r.name),

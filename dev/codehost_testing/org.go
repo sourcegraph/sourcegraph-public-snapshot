@@ -148,6 +148,9 @@ func (o *Org) CreateRepo(name string, public bool) *Repo {
 }
 
 // CreateRepoFork adds an action to the scenario to fork a target repo into the org.
+//
+// NOTE: This method actually adds two actions to the scenario. One which performs the Fork and a subsequent
+// action which waits till the forked repo exists on GitHub.
 func (o *Org) CreateRepoFork(target string) *Repo {
 	baseRepo := &Repo{
 		s:    o.s,
