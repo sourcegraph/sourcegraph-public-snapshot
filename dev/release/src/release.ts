@@ -189,22 +189,22 @@ const steps: Step[] = [
             const next = await getReleaseDefinition(config)
             const name = releaseName(new SemVer(next.current))
             const events: EventOptions[] = [
-                {
-                    title: `Security Team to Review Release Container Image Scans ${name}`,
-                    description: '(This is not an actual event to attend, just a calendar marker.)',
-                    anyoneCanAddSelf: true,
-                    attendees: [config.metadata.teamEmail],
-                    transparency: 'transparent',
-                    ...calendarTime(next.securityApprovalDate),
-                },
-                {
-                    title: `Cut Sourcegraph ${name}`,
-                    description: '(This is not an actual event to attend, just a calendar marker.)',
-                    anyoneCanAddSelf: true,
-                    attendees: [config.metadata.teamEmail],
-                    transparency: 'transparent',
-                    ...calendarTime(next.codeFreezeDate),
-                },
+                // {
+                //     title: `Security Team to Review Release Container Image Scans ${name}`,
+                //     description: '(This is not an actual event to attend, just a calendar marker.)',
+                //     anyoneCanAddSelf: true,
+                //     attendees: [config.metadata.teamEmail],
+                //     transparency: 'transparent',
+                //     ...calendarTime(next.securityApprovalDate),
+                // },
+                // {
+                //     title: `Cut Sourcegraph ${name}`,
+                //     description: '(This is not an actual event to attend, just a calendar marker.)',
+                //     anyoneCanAddSelf: true,
+                //     attendees: [config.metadata.teamEmail],
+                //     transparency: 'transparent',
+                //     ...calendarTime(next.codeFreezeDate),
+                // },
                 {
                     title: `Release Sourcegraph ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
