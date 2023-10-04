@@ -549,9 +549,11 @@ func cleanupRepos(
 	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) (done bool) {
 		for _, cfn := range cleanups {
 			// Check if context has been canceled, if so skip the rest of the repos.
-			if err := ctx.Err(); err != nil {
-				logger.Warn("aborting janitor run", log.Error(err))
+			select {
+			case <-ctx.Done():
+				logger.Warn("aborting janitor run", log.Error(ctx.Err()))
 				return true
+			default:
 			}
 
 			start := time.Now()
@@ -698,8 +700,10 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 		}
 
 		// Fast-exit if the context has been canceled.
-		if err := ctx.Err(); err != nil {
-			return err
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
 		}
 
 		delta := dirSize(d.Path("."))
