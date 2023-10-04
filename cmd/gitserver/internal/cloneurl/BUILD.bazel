@@ -4,8 +4,8 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "cloneurl",
     srcs = ["clone_url.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/cloneurl",
-    visibility = ["//visibility:public"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl",
+    visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//internal/conf/reposource",
         "//internal/database",
