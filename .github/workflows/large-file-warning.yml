@@ -17,14 +17,14 @@ jobs:
         git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
 
         # Check for added or modified files larger than 1MB
-        files=$(git diff --name-only --diff-filter=AM ${{ github.base_ref }} | while read file; do
-          if [ $(git ls-tree -r HEAD "$file" | cut -f 5 -d ' ' | awk '{ if ($1 >= 1048576) print $1 }') ]; then
+        # changed_files=$(git diff --name-only --diff-filter=AM --merge-base ${{ github.base_ref }})
+        changed_files=$(git diff --name-only --diff-filter=A --merge-base ${{ github.base_ref }})
+        while read file; do
+          old_size=$(git ls-tree -r ${{ github.base_ref }} -l "$file" | cut -f 4 -w)
+          old_size=${old_size:-0}
+          new_size=$(git ls-tree -r HEAD -l "$file" | cut -f 4 -w)
+          if [ "$new_size" -gt "1000000" ] && [ "$old_size" -le "1000000" ]; then
             echo "$file exceeds 1MB"
+            exit 1
           fi
-        done)
-
-        if [[ ! -z "$files" ]]; then
-          echo "$files"
-          exit 1
-        fi
-
+        done <<< "$changed_files"
