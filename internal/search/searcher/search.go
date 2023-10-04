@@ -229,29 +229,29 @@ func (s *TextSearchJob) searchFilesInRepo(
 }
 
 func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string, fm *proto.FileMatch, pathRegexps []*regexp.Regexp) result.Match {
-	chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
-	for _, cm := range fm.ChunkMatches {
-		ranges := make(result.Ranges, 0, len(cm.Ranges))
+	chunkMatches := make(result.ChunkMatches, 0, len(fm.GetChunkMatches()))
+	for _, cm := range fm.GetChunkMatches() {
+		ranges := make(result.Ranges, 0, len(cm.GetRanges()))
 		for _, rr := range cm.Ranges {
 			ranges = append(ranges, result.Range{
 				Start: result.Location{
-					Offset: int(rr.Start.Offset),
-					Line:   int(rr.Start.Line),
-					Column: int(rr.Start.Column),
+					Offset: int(rr.GetStart().GetOffset()),
+					Line:   int(rr.GetStart().GetLine()),
+					Column: int(rr.GetStart().GetColumn()),
 				},
 				End: result.Location{
-					Offset: int(rr.End.Offset),
-					Line:   int(rr.End.Line),
-					Column: int(rr.End.Column),
+					Offset: int(rr.GetEnd().GetOffset()),
+					Line:   int(rr.GetEnd().GetLine()),
+					Column: int(rr.GetEnd().GetColumn()),
 				},
 			})
 		}
 
 		chunkMatches = append(chunkMatches, result.ChunkMatch{
-			Content: cm.Content,
+			Content: string(cm.GetContent()),
 			ContentStart: result.Location{
-				Offset: int(cm.ContentStart.Offset),
-				Line:   int(cm.ContentStart.Line),
+				Offset: int(cm.GetContentStart().GetOffset()),
+				Line:   int(cm.GetContentStart().GetLine()),
 				Column: 0,
 			},
 			Ranges: ranges,
@@ -261,18 +261,18 @@ func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string,
 
 	var pathMatches []result.Range
 	for _, pathRe := range pathRegexps {
-		pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
+		pathSubmatches := pathRe.FindAllStringSubmatchIndex(string(fm.GetPath()), -1)
 		for _, sm := range pathSubmatches {
 			pathMatches = append(pathMatches, result.Range{
 				Start: result.Location{
 					Offset: sm[0],
 					Line:   0,
-					Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
+					Column: utf8.RuneCountInString(string(fm.GetPath()[:sm[0]])),
 				},
 				End: result.Location{
 					Offset: sm[1],
 					Line:   0,
-					Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
+					Column: utf8.RuneCountInString(string(fm.GetPath()[:sm[1]])),
 				},
 			})
 		}
@@ -280,14 +280,14 @@ func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string,
 
 	return &result.FileMatch{
 		File: result.File{
-			Path:     fm.Path,
+			Path:     string(fm.GetPath()),
 			Repo:     repo,
 			CommitID: commit,
 			InputRev: rev,
 		},
 		ChunkMatches: chunkMatches,
 		PathMatches:  pathMatches,
-		LimitHit:     fm.LimitHit,
+		LimitHit:     fm.GetLimitHit(),
 	}
 }
 
