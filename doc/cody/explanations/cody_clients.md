@@ -35,10 +35,13 @@ Cody currently supports:
   - [RubyMine](https://www.jetbrains.com/ruby/)
   - [WebStorm](https://www.jetbrains.com/webstorm/)
 
+Experimental:
+- [Neovim](https://neovim.io/)
+
 Coming soon:
 
 - [Emacs](https://www.gnu.org/software/emacs/)
-- [Neovim](https://neovim.io/)
+
 
 See the full feature comparison for Cody IDE extensions:
 
