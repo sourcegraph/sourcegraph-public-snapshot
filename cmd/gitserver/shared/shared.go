@@ -18,10 +18,10 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
+	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/cloneurl"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
