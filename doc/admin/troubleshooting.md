@@ -1,5 +1,9 @@
 # Administration troubleshooting
 
+Some other troubleshooting sections you might be interested in:
+
+- [Repository permissions](./permissions/index.md#troubleshooting)
+
 ### Docker Toolbox on Windows: `New state of 'nil' is invalid`
 
 If you are using Docker Toolbox on Windows to run Sourcegraph, you may see an error in the `frontend` log output:
