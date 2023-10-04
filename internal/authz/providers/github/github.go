@@ -31,6 +31,8 @@ type Provider struct {
 	// groupsCache may be nil if group caching is disabled (negative TTL)
 	groupsCache *cachedGroups
 
+	syncInternalRepoPermissions bool
+
 	// enableGithubInternalRepoVisibility is a feature flag to optionally enable a fix for
 	// internal repos on GithHub Enterprise. At the moment we do not handle internal repos
 	// explicitly and allow all org members to read it irrespective of repo permissions. We have
@@ -51,6 +53,8 @@ type ProviderOptions struct {
 	GroupsCacheTTL time.Duration
 	IsApp          bool
 	DB             database.DB
+
+	SyncInternalRepoPermissions bool
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
@@ -78,7 +82,8 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		client: func() (client, error) {
 			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
 		},
-		db: opts.DB,
+		db:                          opts.DB,
+		syncInternalRepoPermissions: opts.SyncInternalRepoPermissions,
 	}
 }
 
@@ -372,10 +377,10 @@ func (p *Provider) fetchAuthenticatedUserPerms(ctx context.Context, cli client, 
 		return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, errors.Wrap(err, "list repos for user")
 	}
 
-	// If cache is disabled, we also need to fetch a list of internal repositories for each
-	// org the user belongs to.
+	// If cache is disabled and syncInternalRepoPermissions is true, we also need to fetch a list of
+	// internal repositories for each org the user belongs to.
 	// If caching is enabled, then the internal repositories will be fetched as part of the group sync.
-	if p.groupsCache == nil {
+	if p.groupsCache == nil && p.syncInternalRepoPermissions {
 		internalRepos, err := getAllAuthenticatedUserInternalRepositories(ctx, cli)
 		for _, r := range internalRepos {
 			userRepos.Add(extsvc.RepoID(r.ID))

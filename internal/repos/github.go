@@ -50,6 +50,8 @@ type GitHubSource struct {
 	originalHostname string
 
 	logger log.Logger
+
+	markInternalReposAsPublic bool
 }
 
 var (
@@ -188,15 +190,16 @@ func newGitHubSource(
 	}
 
 	return &GitHubSource{
-		svc:              svc,
-		config:           c,
-		exclude:          exclude,
-		baseURL:          baseURL,
-		githubDotCom:     githubDotCom,
-		v3Client:         v3Client,
-		v4Client:         v4Client,
-		searchClient:     searchClient,
-		originalHostname: originalHostname,
+		svc:                       svc,
+		config:                    c,
+		exclude:                   exclude,
+		baseURL:                   baseURL,
+		githubDotCom:              githubDotCom,
+		v3Client:                  v3Client,
+		v4Client:                  v4Client,
+		searchClient:              searchClient,
+		originalHostname:          originalHostname,
+		markInternalReposAsPublic: (c.Authorization != nil) && c.Authorization.MarkInternalReposAsPublic,
 		logger: logger.With(
 			log.Object("GitHubSource",
 				log.Bool("excludeForks", excludeForks),
@@ -396,6 +399,11 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	// so we don't want to store it.
 	metadata.ViewerPermission = ""
 	metadata.Description = sanitizeToUTF8(metadata.Description)
+
+	if r.Visibility == github.VisibilityInternal && s.markInternalReposAsPublic {
+		r.IsPrivate = false
+	}
+
 	return &types.Repo{
 		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,

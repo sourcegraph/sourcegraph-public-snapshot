@@ -1903,6 +1903,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 		RepositoryTopics: RepositoryTopics{topics},
+		Visibility:       Visibility(restRepo.Visibility),
 	}
 
 	if restRepo.Parent != nil {
@@ -1910,10 +1911,6 @@ func convertRestRepo(restRepo restRepository) *Repository {
 			NameWithOwner: restRepo.Parent.FullName,
 			IsFork:        restRepo.Parent.Fork,
 		}
-	}
-
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
-		repo.Visibility = Visibility(restRepo.Visibility)
 	}
 
 	return &repo
