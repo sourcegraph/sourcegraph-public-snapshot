@@ -36,8 +36,8 @@ jobs:
         name: Rename an prepare for upload
         run: |
           mkdir -p dist
-          cp -R -L ./result/bin/* dist/
-          ls 'dist/universal-ctags-*' | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          cp -R -L ./result/bin/universal-ctags-* dist/
+          ls dist/ | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
@@ -72,9 +72,8 @@ jobs:
         name: Rename an prepare for upload
         run: |
           mkdir -p dist
-          cp -R -L ./result/bin/* dist/
-          ls -la dist/
-          ls 'dist/universal-ctags-*' | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          cp -R -L ./result/bin/universal-ctags-* dist/
+          ls dist/ | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
@@ -108,9 +107,8 @@ jobs:
         name: Rename an prepare for upload
         run: |
           mkdir -p dist
-          cp -R -L ./result/bin/* dist/
-          ls -la dist/
-          ls 'dist/universal-ctags-*' | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+          cp -R -L ./result/bin/universal-ctags-* dist/
+          ls dist/ | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
         run: |
