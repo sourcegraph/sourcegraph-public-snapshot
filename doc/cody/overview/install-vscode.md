@@ -111,13 +111,7 @@ After a successful installation, the Cody icon appears in the [Activity sidebar]
 
 ![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-sign-in.png)
 
-You can also connect with the Sourcegraph Enterprise Instance in the following ways:
-
-- Sign in to Sourcegraph Enterprise instance
-- Sign in to Sourcegraph Enterprise instance via Access Token
-- Sign in to Sourcegraph.com
-- Sign in with URL and Access Token
-- Sourcegraph.com
+You can also connect with the Sourcegraph Enterprise Instance.
 
 ## Verifying the installation
 
