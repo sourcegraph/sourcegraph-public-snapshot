@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -144,6 +145,7 @@ func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
 			log.String("name", string(event.Name)),
 			log.String("source", event.Source),
 			log.String("identifier", event.Identifier),
+			log.String("metadata", fmt.Sprint(event.Metadata)),
 		),
 	)
 	return nil
