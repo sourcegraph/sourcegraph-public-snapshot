@@ -14,9 +14,7 @@ jobs:
     - name: Check for large files
       run: |
         # Fetch the target branch to compare
-        git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
-
-        git log -n 10
+        git fetch --depth=1 origin ${{ github.base_ref }}:${{ github.base_ref }}
 
         # Check for added or modified files larger than 1MB
         changed_files=$(git diff --name-only --diff-filter=AM ${{ github.base_ref }})
