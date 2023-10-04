@@ -3,10 +3,10 @@ import { render } from '@testing-library/react'
 import type { AuthProvider } from '../../../jscontext'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
-import { UserExternalAccount } from './UserSettingsSecurityPage'
+import type { UserExternalAccount } from './UserSettingsSecurityPage'
 
-const mockAccountsByServiceID: Partial<Record<string, UserExternalAccount[]>> = {
-    '123': [
+const mockAccounts: UserExternalAccount[] =
+    [
         {
             id: '1',
             serviceID: '123',
@@ -29,8 +29,7 @@ const mockAccountsByServiceID: Partial<Record<string, UserExternalAccount[]>> = 
             },
             clientID: '123',
         },
-    ],
-}
+    ]
 
 const mockAuthProviders: AuthProvider[] = [
     {
@@ -47,7 +46,7 @@ describe('ExternalAccountsSignIn', () => {
     test('renders multiple accounts correctly', () => {
         const cmp = render(
             <ExternalAccountsSignIn
-                accounts={mockAccountsByServiceID}
+                accounts={mockAccounts}
                 authProviders={mockAuthProviders}
                 onDidRemove={() => {}}
                 onDidAdd={() => {}}
