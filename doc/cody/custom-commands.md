@@ -158,6 +158,20 @@ Type: `string`
 
 Example: `"Summarize the given git changes in 3-5 sentences"`
 
+#### `commands.<id>.mode`
+
+The interaction mode to use. Allows you to choose if the command add to the current Cody chat, starts a new inline chat, or inserts/replaces code directly in the editor.
+
+Type: `string`
+
+Default: `"ask"`
+
+Values:
+- `"ask"` — Focus the chat view and add to the current chat
+- `"inline"` — Start a new inline chat
+- `"insert"` — Insert the response above the code
+- `"replace"` — Replace the code with the response
+
 #### `commands.<id>.context`
 
 Optional context data to generate and pass to Cody.
