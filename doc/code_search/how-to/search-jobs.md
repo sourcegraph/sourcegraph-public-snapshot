@@ -10,7 +10,7 @@ With Search Jobs, you can start a search, let it run in the background, and then
 
 ## Enable Search Jobs
 
-To enable Search Jobs you need to configure a managed object storage service to store the results of your search jobs and then enable the feature in the site administration.
+To enable Search Jobs, you need to configure a managed object storage service to store the results of your search jobs and then enable the feature in the site administration.
 
 ### Storing search results
 
