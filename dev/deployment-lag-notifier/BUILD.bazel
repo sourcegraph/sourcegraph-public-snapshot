@@ -8,7 +8,7 @@ go_library(
         "main.go",
         "slack.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/dev/deployment-lag-notifier",
+    importpath = "github.com/sourcegraph/sourcegraph/dev/deployment-lag-notifier",
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",

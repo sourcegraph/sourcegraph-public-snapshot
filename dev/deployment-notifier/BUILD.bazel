@@ -10,7 +10,7 @@ go_library(
         "slack.go",
         "trace.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/dev/deployment-notifier",
+    importpath = "github.com/sourcegraph/sourcegraph/dev/deployment-notifier",
     visibility = ["//visibility:private"],
     deps = [
         "//dev/team",
