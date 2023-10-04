@@ -23,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -270,7 +271,7 @@ func cleanupRepos(
 
 	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
-		name := repoNameFromDir(reposDir, dir)
+		name := gitserverfs.RepoNameFromDir(reposDir, dir)
 		repoToSize[name] = size
 
 		// Record the number and disk usage used of repos that should
@@ -304,7 +305,7 @@ func cleanupRepos(
 			return false, err
 		}
 
-		repoName := repoNameFromDir(reposDir, dir)
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
 		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
 		if err != nil {
 			logger.Warn("failed to log repo corruption", log.String("repo", string(repoName)), log.Error(err))
@@ -323,7 +324,7 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		_, err := db.GitserverRepos().GetByName(ctx, repoNameFromDir(reposDir, dir))
+		_, err := db.GitserverRepos().GetByName(ctx, gitserverfs.RepoNameFromDir(reposDir, dir))
 		// Repo still exists, nothing to do.
 		if err == nil {
 			return false, nil
@@ -403,7 +404,7 @@ func cleanupRepos(
 		}
 
 		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := repoNameFromDir(reposDir, dir)
+		repo := gitserverfs.RepoNameFromDir(reposDir, dir)
 		recloneLogger := logger.With(
 			log.String("repo", string(repo)),
 			log.Time("cloned", recloneTime),
@@ -731,7 +732,7 @@ func gitDirModTime(d common.GitDir) (time.Time, error) {
 // git directories found on disk.
 func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
 	return bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, dir) {
+		if gitserverfs.IgnorePath(reposDir, dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
@@ -797,7 +798,7 @@ func removeRepoDirectory(ctx context.Context, logger log.Logger, db database.DB,
 	}
 
 	// Rename out of the location, so we can atomically stop using the repo.
-	tmp, err := tempDir(reposDir, "delete-repo")
+	tmp, err := gitserverfs.TempDir(reposDir, "delete-repo")
 	if err != nil {
 		return err
 	}
@@ -816,7 +817,7 @@ func removeRepoDirectory(ctx context.Context, logger log.Logger, db database.DB,
 
 	if updateCloneStatus {
 		// Set as not_cloned in the database.
-		if err := db.GitserverRepos().SetCloneStatus(ctx, repoNameFromDir(reposDir, gitDir), types.CloneStatusNotCloned, shardID); err != nil {
+		if err := db.GitserverRepos().SetCloneStatus(ctx, gitserverfs.RepoNameFromDir(reposDir, gitDir), types.CloneStatusNotCloned, shardID); err != nil {
 			logger.Warn("failed to update clone status", log.Error(err))
 		}
 	}
@@ -1005,7 +1006,7 @@ var (
 func gitIsNonBareBestEffort(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) bool {
 	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
+	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	b, _ := wrappedCmd.Output()
 	b = bytes.TrimSpace(b)
 	return bytes.Equal(b, []byte("false"))
@@ -1017,7 +1018,7 @@ func gitIsNonBareBestEffort(rcf *wrexec.RecordingCommandFactory, reposDir string
 func gitGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
+	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	err := wrappedCmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
@@ -1184,7 +1185,7 @@ func pruneIfNeeded(rcf *wrexec.RecordingCommandFactory, reposDir string, dir com
 	// continuously trigger repacks until the loose objects expire.
 	cmd := exec.Command("git", "prune", "--expire", "now")
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
+	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	err = wrappedCmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-prune")
@@ -1328,7 +1329,7 @@ func gitSetAutoGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir comm
 func gitConfigGet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", key)
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
+	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	out, err := wrappedCmd.Output()
 	if err != nil {
 		// Exit code 1 means the key is not set.
@@ -1344,7 +1345,7 @@ func gitConfigGet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir comm
 func gitConfigSet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key, value string) error {
 	cmd := exec.Command("git", "config", key, value)
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
+	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	err := wrappedCmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
@@ -1355,7 +1356,7 @@ func gitConfigSet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir comm
 func gitConfigUnset(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) error {
 	cmd := exec.Command("git", "config", "--unset-all", key)
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
+	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	out, err := wrappedCmd.CombinedOutput()
 	if err != nil {
 		// Exit code 5 means the key is not set.

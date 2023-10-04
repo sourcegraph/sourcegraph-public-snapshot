@@ -1,4 +1,4 @@
-package internal
+package executil
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"path"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -20,32 +21,57 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
-// unsetExitStatus is a sentinel value for an unknown/unset exit status.
-const unsetExitStatus = -10810
+// ShortGitCommandTimeout returns the timeout for git commands that should not
+// take a long time. Some commands such as "git archive" are allowed more time
+// than "git rev-parse", so this will return an appropriate timeout given the
+// command.
+func ShortGitCommandTimeout(args []string) time.Duration {
+	if len(args) < 1 {
+		return time.Minute
+	}
+	switch args[0] {
+	case "archive":
+		// This is a long time, but this never blocks a user request for this
+		// long. Even repos that are not that large can take a long time, for
+		// example a search over all repos in an organization may have several
+		// large repos. All of those repos will be competing for IO => we need
+		// a larger timeout.
+		return conf.GitLongCommandTimeout()
 
-// updateRunCommandMock sets the runCommand mock function for use in tests
-func updateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
+	case "ls-remote":
+		return 30 * time.Second
+
+	default:
+		return time.Minute
+	}
+}
+
+// UnsetExitStatus is a sentinel value for an unknown/unset exit status.
+const UnsetExitStatus = -10810
+
+// UpdateRunCommandMock sets the runCommand mock function for use in tests
+func UpdateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
 	runCommandMockMu.Lock()
 	defer runCommandMockMu.Unlock()
 
-	runCommandMock = mock
+	RunCommandMock = mock
 }
 
 // runCommmandMockMu protects runCommandMock against simultaneous access across
 // multiple goroutines
 var runCommandMockMu sync.RWMutex
 
-// runCommandMock is set by tests. When non-nil it is run instead of
+// RunCommandMock is set by tests. When non-nil it is run instead of
 // runCommand
-var runCommandMock func(context.Context, *exec.Cmd) (int, error)
+var RunCommandMock func(context.Context, *exec.Cmd) (int, error)
 
-// runCommand runs the command and returns the exit status. All clients of this function should set the context
+// RunCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
+func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
 	runCommandMockMu.RLock()
 
-	if runCommandMock != nil {
-		code, err := runCommandMock(ctx, cmd.Unwrap())
+	if RunCommandMock != nil {
+		code, err := RunCommandMock(ctx, cmd.Unwrap())
 		runCommandMockMu.RUnlock()
 		return code, err
 	}
@@ -63,26 +89,26 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	}()
 
 	err = cmd.Run()
-	exitStatus := unsetExitStatus
+	exitStatus := UnsetExitStatus
 	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 	return exitStatus, err
 }
 
-// runCommandCombinedOutput runs the command with runCommand and returns its
+// RunCommandCombinedOutput runs the command with runCommand and returns its
 // combined standard output and standard error.
-func runCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
+func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
 	var buf bytes.Buffer
 	cmd.Unwrap().Stdout = &buf
 	cmd.Unwrap().Stderr = &buf
-	_, err := runCommand(ctx, cmd)
+	_, err := RunCommand(ctx, cmd)
 	return buf.Bytes(), err
 }
 
-// runRemoteGitCommand runs the command after applying the remote options. If
+// RunRemoteGitCommand runs the command after applying the remote options. If
 // progress is not nil, all output is written to it in a separate goroutine.
-func runRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
@@ -110,7 +136,7 @@ func runRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts
 	}
 
 	// We don't care about exitStatus, we just rely on error.
-	_, err := runCommand(ctx, cmd)
+	_, err := RunCommand(ctx, cmd)
 
 	return b.Bytes(), err
 }

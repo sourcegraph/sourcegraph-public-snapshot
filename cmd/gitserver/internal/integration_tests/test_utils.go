@@ -17,6 +17,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -79,8 +80,8 @@ func InitGitserver() {
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return filepath.Join(root, "remotes", string(name)), nil
 		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,

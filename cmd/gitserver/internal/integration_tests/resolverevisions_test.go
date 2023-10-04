@@ -15,6 +15,7 @@ import (
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -76,8 +77,8 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			return remote, nil
 		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),

@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -21,7 +20,9 @@ import (
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -68,32 +69,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	// Prepare the file system.
-	{
-		// Ensure the ReposDir exists.
-		if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
-			return errors.Wrap(err, "creating SRC_REPOS_DIR")
-		}
-		// Ensure the Perforce Dir exists.
-		p4Home := filepath.Join(config.ReposDir, server.P4HomeName)
-		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
-			return errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
-		}
-		// Ensure the tmp dir exists, is cleaned up, and TMP_DIR is set properly.
-		tmpDir, err := setupAndClearTmp(logger, config.ReposDir)
-		if err != nil {
-			return errors.Wrap(err, "failed to setup temporary directory")
-		}
-		// Additionally, set TMP_DIR so other temporary files we may accidentally
-		// create are on the faster RepoDir mount.
-		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-			return errors.Wrap(err, "setting TMP_DIR")
-		}
-
-		// Delete the old reposStats file, which was used on gitserver prior to
-		// 2023-08-14.
-		if err := os.Remove(filepath.Join(config.ReposDir, "repos-stats.json")); err != nil && !os.IsNotExist(err) {
-			logger.Error("failed to remove old reposStats file", log.Error(err))
-		}
+	if err := gitserverfs.InitGitserverFileSystem(logger, config.ReposDir); err != nil {
+		return err
 	}
 
 	// Create a database connection.
@@ -125,7 +102,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
-		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
+		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
 			return getVCSSyncer(ctx, &newVCSSyncerOpts{
 				externalServiceStore:    db.ExternalServices(),
 				repoStore:               db.Repos(),
@@ -274,9 +251,9 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	return grpcServer
 }
 
-func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
+func configureFusionClient(conn schema.PerforceConnection) vcssyncer.FusionConfig {
 	// Set up default settings first
-	fc := server.FusionConfig{
+	fc := vcssyncer.FusionConfig{
 		Enabled:             false,
 		Client:              conn.P4Client,
 		LookAhead:           2000,
@@ -378,7 +355,7 @@ type newVCSSyncerOpts struct {
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
-func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer, error) {
+func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (vcssyncer.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -416,13 +393,12 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 			return nil, err
 		}
 
-		p4Home := filepath.Join(opts.reposDir, server.P4HomeName)
-		// Ensure the directory exists
-		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
-			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
+		p4Home, err := gitserverfs.MakeP4HomeDir(opts.reposDir)
+		if err != nil {
+			return nil, err
 		}
 
-		return &server.PerforceDepotSyncer{
+		return &vcssyncer.PerforceDepotSyncer{
 			MaxChanges:   int(c.MaxChanges),
 			Client:       c.P4Client,
 			FusionConfig: configureFusionClient(c),
@@ -433,7 +409,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
+		return vcssyncer.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -444,7 +420,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
+		return vcssyncer.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -452,7 +428,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return server.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
+		return vcssyncer.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
 		urn, err := extractOptions(&c)
@@ -463,7 +439,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 		if err != nil {
 			return nil, err
 		}
-		return server.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
+		return vcssyncer.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)
@@ -474,7 +450,7 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 		if err != nil {
 			return nil, err
 		}
-		return server.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
+		return vcssyncer.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
 		urn, err := extractOptions(&c)
@@ -485,9 +461,9 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 		if err != nil {
 			return nil, err
 		}
-		return server.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
+		return vcssyncer.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
 	}
-	return server.NewGitRepoSyncer(opts.recordingCommandFactory), nil
+	return vcssyncer.NewGitRepoSyncer(opts.recordingCommandFactory), nil
 }
 
 // methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
@@ -578,57 +554,4 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 		}
 		return true
 	}
-}
-
-// setupAndClearTmp sets up the tempdir for reposDir as well as clearing it
-// out. It returns the temporary directory location.
-func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
-	logger = logger.Scoped("setupAndClearTmp", "sets up the the tempdir for ReposDir as well as clearing it out")
-
-	// Additionally, we create directories with the prefix .tmp-old which are
-	// asynchronously removed. We do not remove in place since it may be a
-	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
-	dir := filepath.Join(reposDir, server.TempDirName) // .tmp
-	oldPrefix := server.TempDirName + "-old"
-	if _, err := os.Stat(dir); err == nil {
-		// Rename the current tmp file, so we can asynchronously remove it. Use
-		// a consistent pattern so if we get interrupted, we can clean it
-		// another time.
-		oldTmp, err := os.MkdirTemp(reposDir, oldPrefix)
-		if err != nil {
-			return "", err
-		}
-		// oldTmp dir exists, so we need to use a child of oldTmp as the
-		// rename target.
-		if err := os.Rename(dir, filepath.Join(oldTmp, server.TempDirName)); err != nil {
-			return "", err
-		}
-	}
-
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return "", err
-	}
-
-	// Asynchronously remove old temporary directories.
-	// TODO: Why async?
-	files, err := os.ReadDir(reposDir)
-	if err != nil {
-		logger.Error("failed to do tmp cleanup", log.Error(err))
-	} else {
-		for _, f := range files {
-			// Remove older .tmp directories as well as our older tmp-
-			// directories we would place into ReposDir. In September 2018 we
-			// can remove support for removing tmp- directories.
-			if !strings.HasPrefix(f.Name(), oldPrefix) && !strings.HasPrefix(f.Name(), "tmp-") {
-				continue
-			}
-			go func(path string) {
-				if err := os.RemoveAll(path); err != nil {
-					logger.Error("failed to remove old temporary directory", log.String("path", path), log.Error(err))
-				}
-			}(filepath.Join(reposDir, f.Name()))
-		}
-	}
-
-	return dir, nil
 }

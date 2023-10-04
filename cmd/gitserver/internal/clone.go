@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -17,7 +18,7 @@ import (
 // Note: If disableAutoGitUpdates is set in the site config, no operation is taken and
 // a NotFound error is returned.
 func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool) {
-	dir := repoDirFromName(s.ReposDir, repo)
+	dir := gitserverfs.RepoDirFromName(s.ReposDir, repo)
 	if repoCloned(dir) {
 		return nil, true
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -126,8 +127,8 @@ func TestCheckSSRFHeader(t *testing.T) {
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:         db,
 		Locker:     NewRepositoryLocker(),
