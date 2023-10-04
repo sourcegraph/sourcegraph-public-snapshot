@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1049,20 +1051,42 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 }
 
 func TestClient_SystemsInfo(t *testing.T) {
-	const gitserverAddr = "172.16.8.1:8080"
-	var mockResponse = &proto.DiskInfoResponse{
-		FreeSpace:  102400,
-		TotalSpace: 409600,
+	const (
+		gitserverAddr1 = "172.16.8.1:8080"
+		gitserverAddr2 = "172.16.8.2:8080"
+	)
+
+	expectedResponses := []gitserver.SystemInfo{
+		{
+			Address:    gitserverAddr1,
+			FreeSpace:  102400,
+			TotalSpace: 409600,
+		},
+		{
+			Address:    gitserverAddr2,
+			FreeSpace:  51200,
+			TotalSpace: 204800,
+		},
 	}
+	sort.Slice(expectedResponses, func(i, j int) bool {
+		return expectedResponses[i].Address < expectedResponses[j].Address
+	})
 
 	runTest := func(t *testing.T, client gitserver.Client) {
 		ctx := context.Background()
 		info, err := client.SystemsInfo(ctx)
 		require.NoError(t, err, "unexpected error")
-		require.Len(t, info, 1, "expected 1 disk info")
-		require.Equal(t, gitserverAddr, info[0].Address)
-		require.Equal(t, mockResponse.FreeSpace, info[0].FreeSpace)
-		require.Equal(t, mockResponse.TotalSpace, info[0].TotalSpace)
+
+		sort.Slice(info, func(i, j int) bool {
+			return info[i].Address < info[j].Address
+		})
+
+		require.Len(t, info, len(expectedResponses), "expected %d disk info(s)", len(expectedResponses))
+		for i := range expectedResponses {
+			require.Equal(t, info[i].Address, expectedResponses[i].Address)
+			require.Equal(t, info[i].FreeSpace, expectedResponses[i].FreeSpace)
+			require.Equal(t, info[i].TotalSpace, expectedResponses[i].TotalSpace)
+		}
 	}
 
 	t.Run("GRPC", func(t *testing.T) {
@@ -1078,11 +1102,26 @@ func TestClient_SystemsInfo(t *testing.T) {
 		})
 
 		called := false
-		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr1, gitserverAddr2}, func(o *gitserver.TestClientSourceOptions) {
+			responseByAddress := make(map[string]*proto.DiskInfoResponse, len(expectedResponses))
+			for _, response := range expectedResponses {
+				responseByAddress[response.Address] = &proto.DiskInfoResponse{
+					FreeSpace:   response.FreeSpace,
+					TotalSpace:  response.TotalSpace,
+					PercentUsed: response.PercentUsed,
+				}
+			}
+
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
+					address := cc.Target()
+					response, ok := responseByAddress[address]
+					if !ok {
+						t.Fatalf("received unexpected address %q", address)
+					}
+
 					called = true
-					return mockResponse, nil
+					return response, nil
 				}
 				return &gitserver.MockGRPCClient{MockDiskInfo: mockDiskInfo}
 			}
@@ -1107,14 +1146,13 @@ func TestClient_SystemsInfo(t *testing.T) {
 		t.Cleanup(func() {
 			conf.Mock(nil)
 		})
-		expected := fmt.Sprintf("http://%s", gitserverAddr)
 
 		called := false
-		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr1, gitserverAddr2}, func(o *gitserver.TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 					called = true
-					return mockResponse, nil
+					return nil, nil
 				}
 				return &gitserver.MockGRPCClient{MockDiskInfo: mockDiskInfo}
 			}
@@ -1122,17 +1160,27 @@ func TestClient_SystemsInfo(t *testing.T) {
 
 		client := gitserver.NewTestClient(
 			httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
-				switch r.URL.String() {
-				case expected + "/disk-info":
-					encoded, _ := json.Marshal(mockResponse)
-					body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
-					return &http.Response{
-						StatusCode: 200,
-						Body:       body,
-					}, nil
-				default:
-					return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+				responseByAddress := make(map[string]*proto.DiskInfoResponse, len(expectedResponses))
+				for _, response := range expectedResponses {
+					responseByAddress[fmt.Sprintf("http://%s/disk-info", response.Address)] = &proto.DiskInfoResponse{
+						FreeSpace:   response.FreeSpace,
+						TotalSpace:  response.TotalSpace,
+						PercentUsed: response.PercentUsed,
+					}
 				}
+
+				address := r.URL.String()
+				response, ok := responseByAddress[address]
+				if !ok {
+					return nil, errors.Newf("unexpected URL: %q", address)
+				}
+
+				encoded, _ := protojson.Marshal(response)
+				body := io.NopCloser(strings.NewReader(string(encoded)))
+				return &http.Response{
+					StatusCode: 200,
+					Body:       body,
+				}, nil
 			}),
 			source,
 		)
