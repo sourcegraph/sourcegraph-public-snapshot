@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// GitHub represents the GitHub client configuration to connect  to a GitHub codehost
 type GitHub struct {
 	URL       string `json:"url"`
 	AdminUser string `json:"adminUser"`
@@ -19,11 +20,16 @@ type SourcegraphCfg struct {
 	Token    string `json:"token"`
 }
 
+// Config represents the configuration which should be used when connecting to codehosts.
+//
+// Currently we only support connecting to GitHub.
 type Config struct {
 	GitHub      GitHub         `json:"github"`
 	Sourcegraph SourcegraphCfg `json:"sourcegraph"`
 }
 
+// FromFile reads the configuration from the specified file. This method will return an error when we either fail
+// to open a file or fail to decode the JSON into the Config struct.
 func FromFile(filename string) (*Config, error) {
 	var c Config
 
