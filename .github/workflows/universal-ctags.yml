@@ -36,7 +36,7 @@ jobs:
         name: Rename an prepare for upload
         run: |
           mkdir -p dist
-          cp -r ./result/bin/ dist/
+          cp -r ./result/bin/* dist/
           ls 'dist/universal-ctags-*' | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
         name: Show hash of ctags
@@ -72,7 +72,7 @@ jobs:
         name: Rename an prepare for upload
         run: |
           mkdir -p dist
-          cp -r ./result/bin/ dist/
+          cp -r ./result/bin/* dist/
           ls -la dist/
           ls 'dist/universal-ctags-*' | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
@@ -108,7 +108,7 @@ jobs:
         name: Rename an prepare for upload
         run: |
           mkdir -p dist
-          cp -r ./result/bin/ dist/
+          cp -r ./result/bin/* dist/
           ls -la dist/
           ls 'dist/universal-ctags-*' | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
       - id: 'show-hash'
