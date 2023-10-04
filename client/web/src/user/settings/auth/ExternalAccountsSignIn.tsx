@@ -8,7 +8,7 @@ import type { ErrorLike } from '@sourcegraph/common'
 import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
 import { ExternalAccount } from './ExternalAccount'
-import type { AccountsByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
+import type { UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
 
@@ -23,7 +23,7 @@ export interface NormalizedExternalAccount {
 }
 
 interface Props {
-    accounts: AccountsByServiceID
+    accounts: UserExternalAccount[]
     authProviders: AuthProvider[]
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
@@ -31,7 +31,7 @@ interface Props {
 }
 
 const getNormalizedAccounts = (
-    accounts: Partial<Record<string, UserExternalAccount[]>>,
+    accounts: UserExternalAccount[],
     authProvider: AuthProvider
 ): NormalizedExternalAccount[] => {
     if (
@@ -45,7 +45,9 @@ const getNormalizedAccounts = (
     const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 
     let normalizedAccounts: NormalizedExternalAccount[] = []
-    const providerAccounts = accounts[authProvider.serviceID]?.filter(acc => acc.clientID === authProvider.clientID)
+    const providerAccounts = accounts.filter(
+        acc => acc.clientID === authProvider.clientID && acc.serviceID === authProvider.serviceID
+    )
     for (const providerAccount of providerAccounts || []) {
         let normalizedAccount: NormalizedExternalAccount = {
             icon,
