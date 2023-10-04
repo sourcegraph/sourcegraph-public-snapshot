@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	scenario "github.com/sourcegraph/sourcegraph/dev/codehost_scenario"
-	"github.com/sourcegraph/sourcegraph/dev/codehost_scenario/config"
+	scenario "github.com/sourcegraph/sourcegraph/dev/codehost_testing"
+	"github.com/sourcegraph/sourcegraph/dev/codehost_testing/config"
 )
 
 var runGithub bool
