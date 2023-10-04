@@ -6,28 +6,30 @@ import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 import { UserExternalAccount } from './UserSettingsSecurityPage'
 
 const mockAccountsByServiceID: Partial<Record<string, UserExternalAccount[]>> = {
-    '123': [{
-        id: '1',
-        serviceID: '123',
-        serviceType: 'github',
-        publicAccountData: {
-            displayName: 'account1',
-            login: 'account1',
-            url: 'https://example.com/account1',
+    '123': [
+        {
+            id: '1',
+            serviceID: '123',
+            serviceType: 'github',
+            publicAccountData: {
+                displayName: 'account1',
+                login: 'account1',
+                url: 'https://example.com/account1',
+            },
+            clientID: '123',
         },
-        clientID: '123',
-    },
-    {
-        id: '2',
-        serviceID: '123',
-        serviceType: 'github',
-        publicAccountData: {
-            displayName: 'account2',
-            login: 'account2',
-            url: 'https://example.com/account2',
+        {
+            id: '2',
+            serviceID: '123',
+            serviceType: 'github',
+            publicAccountData: {
+                displayName: 'account2',
+                login: 'account2',
+                url: 'https://example.com/account2',
+            },
+            clientID: '123',
         },
-        clientID: '123',
-    }]
+    ],
 }
 
 const mockAuthProviders: AuthProvider[] = [
@@ -47,9 +49,9 @@ describe('ExternalAccountsSignIn', () => {
             <ExternalAccountsSignIn
                 accounts={mockAccountsByServiceID}
                 authProviders={mockAuthProviders}
-                onDidRemove={() => { }}
-                onDidAdd={() => { }}
-                onDidError={() => { }}
+                onDidRemove={() => {}}
+                onDidAdd={() => {}}
+                onDidError={() => {}}
             />
         )
         expect(cmp.asFragment()).toMatchSnapshot()
