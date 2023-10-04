@@ -328,20 +328,12 @@ type Mutation {
     # reasonable defaults instead.
     addExternalAccount(serviceType: String!, serviceID: String!, accountDetails: String!): EmptyResponse!
     """
-    Sends an invitation to join Sourcegraph to the given email address.
-
-    Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
-    may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
-    or if the user has been invited too recently.
-    """
-    inviteEmailToSourcegraph(email: String!): EmptyResponse!
-    """
     Invite the user with the given username to join the organization. The invited user account must already
     exist.
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
@@ -356,31 +348,6 @@ type Mutation {
         The response to the invitation.
         """
         responseType: OrganizationInvitationResponseType!
-    ): EmptyResponse!
-    """
-    Resend the notification about an organization invitation to the recipient.
-
-    Only site admins and any member of the organization may perform this mutation.
-    """
-    resendOrganizationInvitationNotification(
-        """
-        The organization invitation.
-        """
-        organizationInvitation: ID!
-    ): EmptyResponse!
-    """
-    Revoke an existing organization invitation.
-
-    If the invitation has been accepted or rejected, it may no longer be revoked. After an
-    invitation is revoked, the recipient may not accept or reject it. Both cases yield an error.
-
-    Only site admins and any member of the organization may perform this mutation.
-    """
-    revokeOrganizationInvitation(
-        """
-        The organization invitation.
-        """
-        organizationInvitation: ID!
     ): EmptyResponse!
     """
     Immediately add a user as a member to the organization, without sending an invitation email.
@@ -2061,16 +2028,6 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
-
-    """
-    Get pending invitations for the specific organization
-    """
-    pendingInvitations(
-        """
-        The organization ID
-        """
-        organization: ID!
-    ): [OrganizationInvitation!]!
 
     """
     Search for users that opt-in to search autocomplete.

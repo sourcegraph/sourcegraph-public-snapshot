@@ -1229,7 +1229,6 @@ ts_project(
         "src/org/settings/DeleteOrgModal.tsx",
         "src/org/settings/OrgSettingsArea.tsx",
         "src/org/settings/OrgSettingsSidebar.tsx",
-        "src/org/settings/codeHosts/InstallGitHubAppSuccessPage.tsx",
         "src/org/settings/members/InviteForm.tsx",
         "src/org/settings/members/OrgSettingsMembersPage.tsx",
         "src/org/settings/profile/OrgSettingsProfilePage.tsx",
