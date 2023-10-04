@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -60,22 +59,8 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitCommandReposDir string
 }
 
-// initConnsOnce is used internally in getAtomicGitServerConns. Only use it there.
-var initConnsOnce sync.Once
-
 // conns is the global variable holding a reference to the gitserver connections.
-//
-// WARNING: Do not use it directly. Instead use getAtomicGitServerConns to ensure conns is
-// initialised correctly.
-var conns *atomicGitServerConns
-
-func getAtomicGitserverConns() *atomicGitServerConns {
-	initConnsOnce.Do(func() {
-		conns = &atomicGitServerConns{}
-	})
-
-	return conns
-}
+var conns = &atomicGitServerConns{}
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
@@ -111,7 +96,7 @@ func NewClient() Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: getAtomicGitserverConns(),
+		clientSource: conns,
 	}
 }
 
