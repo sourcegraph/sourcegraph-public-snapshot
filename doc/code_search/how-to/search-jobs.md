@@ -31,7 +31,7 @@ Set the following environment variables to target an S3 bucket you've already pr
 - `SEARCH_JOBS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` (optional; set to use EC2 metadata API over static credentials)
 - `SEARCH_JOBS_UPLOAD_AWS_REGION=us-east-1` (default)
 
-**_Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
+> NOTE: If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
 
 > NOTE: You don't need to set the `SEARCH_JOBS_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `SEARCH_JOBS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved.
 
