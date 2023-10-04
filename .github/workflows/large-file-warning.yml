@@ -7,6 +7,7 @@ on:
 jobs:
   check-size:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip filesize check')"
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -23,7 +24,8 @@ jobs:
           old_size=${old_size:-0} # default to zero if the file didn't exist on main
           new_size=$(git ls-tree -r HEAD -l "$file" | awk '{print $4}')
           if [ "$new_size" -gt "1000000" ] && [ "$old_size" -le "1000000" ]; then
-            echo "$file exceeds 1MB"
+            echo "ERROR: this PR added or modified $file which now exceeds 1MB. Please remove the committed file."
+            echo "If you are SUPER sure you want to do this, push a commit with the message 'skip filesize check'"
             exit 1
           fi
         done <<< "$changed_files"
