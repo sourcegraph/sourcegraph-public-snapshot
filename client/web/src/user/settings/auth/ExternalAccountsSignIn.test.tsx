@@ -5,31 +5,30 @@ import type { AuthProvider } from '../../../jscontext'
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 import type { UserExternalAccount } from './UserSettingsSecurityPage'
 
-const mockAccounts: UserExternalAccount[] =
-    [
-        {
-            id: '1',
-            serviceID: '123',
-            serviceType: 'github',
-            publicAccountData: {
-                displayName: 'account1',
-                login: 'account1',
-                url: 'https://example.com/account1',
-            },
-            clientID: '123',
+const mockAccounts: UserExternalAccount[] = [
+    {
+        id: '1',
+        serviceID: '123',
+        serviceType: 'github',
+        publicAccountData: {
+            displayName: 'account1',
+            login: 'account1',
+            url: 'https://example.com/account1',
         },
-        {
-            id: '2',
-            serviceID: '123',
-            serviceType: 'github',
-            publicAccountData: {
-                displayName: 'account2',
-                login: 'account2',
-                url: 'https://example.com/account2',
-            },
-            clientID: '123',
+        clientID: '123',
+    },
+    {
+        id: '2',
+        serviceID: '123',
+        serviceType: 'github',
+        publicAccountData: {
+            displayName: 'account2',
+            login: 'account2',
+            url: 'https://example.com/account2',
         },
-    ]
+        clientID: '123',
+    },
+]
 
 const mockAuthProviders: AuthProvider[] = [
     {
