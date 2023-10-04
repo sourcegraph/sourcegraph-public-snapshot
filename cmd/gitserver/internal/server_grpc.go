@@ -12,11 +12,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -146,7 +146,7 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		log.Strings("path", req.GetPathspecs()),
 	)
 
-	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
+	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -232,21 +232,13 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 }
 
 func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
-	gitAdapter := &adapters.Git{
-		ReposDir:                gs.Server.ReposDir,
-		RecordingCommandFactory: gs.Server.RecordingCommandFactory,
-	}
-
-	getObjectService := gitdomain.GetObjectService{
-		RevParse:      gitAdapter.RevParse,
-		GetObjectType: gitAdapter.GetObjectType,
-	}
-
 	var internalReq protocol.GetObjectRequest
 	internalReq.FromProto(req)
-	accesslog.Record(ctx, req.Repo, log.String("objectname", internalReq.ObjectName))
 
-	obj, err := getObjectService.GetObject(ctx, internalReq.Repo, internalReq.ObjectName)
+	// Log which actor is accessing the repo.
+	accesslog.Record(ctx, string(internalReq.Repo), log.String("objectname", internalReq.ObjectName))
+
+	obj, err := git.GetObject(ctx, gs.Server.RecordingCommandFactory, gs.Server.ReposDir, api.RepoName(req.Repo), req.ObjectName)
 	if err != nil {
 		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err

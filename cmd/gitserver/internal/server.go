@@ -48,7 +48,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -308,6 +307,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/disk-info", trace.WithRouteName("disk-info", s.handleDiskInfo))
 	mux.HandleFunc("/is-perforce-path-cloneable", trace.WithRouteName("is-perforce-path-cloneable", s.handleIsPerforcePathCloneable))
 	mux.HandleFunc("/check-perforce-credentials", trace.WithRouteName("check-perforce-credentials", s.handleCheckPerforceCredentials))
+	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", s.handleGetObject))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -326,32 +326,6 @@ func (s *Server) Handler() http.Handler {
 			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
 		},
 	)))
-
-	// Migration to hexagonal architecture starting here:
-	gitAdapter := &adapters.Git{
-		ReposDir:                s.ReposDir,
-		RecordingCommandFactory: s.RecordingCommandFactory,
-	}
-	getObjectService := gitdomain.GetObjectService{
-		RevParse:      gitAdapter.RevParse,
-		GetObjectType: gitAdapter.GetObjectType,
-	}
-	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
-		// Tracing is server concern, so add it here. Once generics lands we should be
-		// able to create some simple wrappers
-		tr, ctx := trace.New(ctx, "GetObject",
-			attribute.String("objectName", objectName))
-		defer tr.EndWithErr(&err)
-
-		return getObjectService.GetObject(ctx, repo, objectName)
-	})
-
-	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object",
-		accesslog.HTTPMiddleware(
-			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
-			conf.DefaultClient(),
-			handleGetObject(s.Logger.Scoped("commands/get-object", "handles get object"), getObjectFunc),
-		)))
 
 	// 🚨 SECURITY: This must be wrapped in headerXRequestedWithMiddleware.
 	return headerXRequestedWithMiddleware(mux)
@@ -714,7 +688,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		log.Strings("path", pathspecs),
 	)
 
-	if err := checkSpecArgSafety(treeish); err != nil {
+	if err := git.CheckSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s.Logger.Error("gitserver.archive.CheckSpecArgSafety", log.Error(err))
 		return
@@ -1171,7 +1145,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := git.QuickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
+		if resolved, err := git.QuickRevParseHead(dir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
 			return execStatus{}, nil
 		}
@@ -2196,7 +2170,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 
 	// rev-parse on an OID does not check if the commit actually exists, so it always
 	// works. So we append ^0 to force the check
-	if git.IsAbsoluteRevision(rev) {
+	if gitdomain.IsAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
@@ -2273,6 +2247,32 @@ func (s *Server) handleCheckPerforceCredentials(w http.ResponseWriter, r *http.R
 	}
 
 	if err := json.NewEncoder(w).Encode(protocol.CheckPerforceCredentialsResponse{}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleGetObject(w http.ResponseWriter, r *http.Request) {
+	var req protocol.GetObjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, errors.Wrap(err, "decoding body").Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Log which actor is accessing the repo.
+	accesslog.Record(r.Context(), string(req.Repo), log.String("objectname", req.ObjectName))
+
+	obj, err := git.GetObject(r.Context(), s.RecordingCommandFactory, s.ReposDir, req.Repo, req.ObjectName)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "getting object").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := protocol.GetObjectResponse{
+		Object: *obj,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
