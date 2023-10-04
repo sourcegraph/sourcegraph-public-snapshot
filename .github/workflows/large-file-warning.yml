@@ -16,11 +16,13 @@ jobs:
         # Fetch the target branch to compare
         git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
 
+        git log -n 10
+
         # Check for added or modified files larger than 1MB
         changed_files=$(git diff --name-only --diff-filter=AM --merge-base ${{ github.base_ref }})
         while read file; do
           old_size=$(git ls-tree -r ${{ github.base_ref }} -l "$file" | cut -f 4 -w)
-          old_size=${old_size:-0}
+          old_size=${old_size:-0} # default to zero if the file didn't exist on main
           new_size=$(git ls-tree -r HEAD -l "$file" | cut -f 4 -w)
           if [ "$new_size" -gt "1000000" ] && [ "$old_size" -le "1000000" ]; then
             echo "$file exceeds 1MB"
