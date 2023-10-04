@@ -51,7 +51,6 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'settingsURL'
     | 'viewerCanAdminister'
     | 'tosAccepted'
-    | 'searchable'
     | 'organizations'
     | 'session'
     | 'emails'

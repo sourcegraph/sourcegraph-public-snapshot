@@ -160,6 +160,18 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                         <IntellijIcon className={styles.joinWaitlistButtonIcon} />
                                     </span>
                                     <span className={styles.downloadForIdeText}>Cody for IntelliJ </span>
+                                </Link>
+                            </div>
+                            <div>
+                                <Link
+                                    to="https://github.com/sourcegraph/sg.nvim"
+                                    className={classNames('text-decoration-none', styles.downloadForIde)}
+                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'Neovim')}
+                                >
+                                    <span className={styles.ideIcon}>
+                                        <NeovimIcon className={styles.joinWaitlistButtonIcon} />
+                                    </span>
+                                    <span className={styles.downloadForIdeText}>Cody for Neovim </span>
                                     <Badge className={classNames(styles.badge, 'px-2 py-1')}>Experimental</Badge>
                                 </Link>
                             </div>
@@ -167,11 +179,6 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         <div className={styles.comingSoonWrapper}>
                             <Text className={styles.comingSoonWrapperText}>Coming soon:</Text>
                             <div className={styles.joinWaitlistButtonWrapper}>
-                                <WaitListButton
-                                    to="https://info.sourcegraph.com/waitlist"
-                                    icon={<NeovimIcon className={styles.joinWaitlistButtonIcon} />}
-                                    title="Neovim"
-                                />
                                 <WaitListButton
                                     to="https://info.sourcegraph.com/waitlist"
                                     icon={<EmacsIcon className={styles.joinWaitlistButtonIcon} />}

@@ -275,6 +275,30 @@ Repo-centric permission syncing is done by calling the [list repository collabor
 
 > NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
+### Internal repositories
+
+GitHub Enterprise has internal repositories in addition to the usual public and private repositories. Depending on how your organization structure is configured, you may want to make these internal repositories available to everyone on your Sourcegraph instance without relying on permission syncs. To mark all internal repositories as public, add the following field to the `authorization` field:
+
+```json
+{
+  // ...
+  "authorization": {
+    "markInternalReposAsPublic": true
+  }
+}
+```
+
+If you would like internal repositories to remain private, but you're experiencing issues where user permission syncs aren't granting access to internal repositories, you can add the following field instead:
+
+```json
+{
+  // ...
+  "authorization": {
+    "syncInternalRepoPermissions": true
+  }
+}
+```
+
 ### Trigger permissions sync from GitHub webhooks
 
 Follow the link to [configure webhooks for permissions for Github](../config/webhooks/incoming.md#user-permissions)

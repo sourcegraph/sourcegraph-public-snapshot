@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,6 +22,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
@@ -60,22 +60,8 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitCommandReposDir string
 }
 
-// initConnsOnce is used internally in getAtomicGitServerConns. Only use it there.
-var initConnsOnce sync.Once
-
 // conns is the global variable holding a reference to the gitserver connections.
-//
-// WARNING: Do not use it directly. Instead use getAtomicGitServerConns to ensure conns is
-// initialised correctly.
-var conns *atomicGitServerConns
-
-func getAtomicGitserverConns() *atomicGitServerConns {
-	initConnsOnce.Do(func() {
-		conns = &atomicGitServerConns{}
-	})
-
-	return conns
-}
+var conns = &atomicGitServerConns{}
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
@@ -111,7 +97,7 @@ func NewClient() Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: getAtomicGitserverConns(),
+		clientSource: conns,
 	}
 }
 
@@ -538,10 +524,17 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 	if rs.StatusCode != http.StatusOK {
 		return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
 	}
-	var resp proto.DiskInfoResponse
-	if err := json.NewDecoder(rs.Body).Decode(&resp); err != nil {
-		return nil, err
+
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading read disk info response body")
 	}
+
+	var resp proto.DiskInfoResponse
+	if err := protojson.Unmarshal(body, &resp); err != nil {
+		return nil, errors.Wrap(err, "parsing disk info response body")
+	}
+
 	return &resp, nil
 }
 
