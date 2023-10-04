@@ -561,8 +561,16 @@ func cleanupRepos(
 		})
 	}
 
-	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) {
+	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) (done bool) {
 		for _, cfn := range cleanups {
+			// Check if context has been canceled, if so skip the rest of the repos.
+			select {
+			case <-ctx.Done():
+				logger.Warn("aborting janitor run", log.Error(ctx.Err()))
+				return true
+			default:
+			}
+
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
@@ -576,6 +584,8 @@ func cleanupRepos(
 				break
 			}
 		}
+
+		return false
 	})
 	if err != nil {
 		logger.Error("error iterating over repositories", log.Error(err))
@@ -703,6 +713,14 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 		if spaceFreed >= howManyBytesToFree {
 			return nil
 		}
+
+		// Fast-exit if the context has been canceled.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		delta := gitserverfs.DirSize(d.Path("."))
 		if err := gitserverfs.RemoveRepoDirectory(ctx, logger, db, shardID, reposDir, d, true); err != nil {
 			return errors.Wrap(err, "removing repo directory")
@@ -744,7 +762,7 @@ func gitDirModTime(d common.GitDir) (time.Time, error) {
 
 // iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the
 // git directories found on disk.
-func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
+func iterateGitDirs(reposDir string, walkFn func(common.GitDir) (done bool)) error {
 	return gitserverfs.BestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
 		if gitserverfs.IgnorePath(reposDir, dir) {
 			if fi.IsDir() {
@@ -761,7 +779,9 @@ func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
 		// We are sure this is a GIT_DIR after the above check
 		gitDir := common.GitDir(dir)
 
-		walkFn(gitDir)
+		if done := walkFn(gitDir); done {
+			return filepath.SkipAll
+		}
 
 		return filepath.SkipDir
 	})
@@ -770,8 +790,9 @@ func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
 // findGitDirs collects the GitDirs of all repos under reposDir.
 func findGitDirs(reposDir string) ([]common.GitDir, error) {
 	var dirs []common.GitDir
-	return dirs, iterateGitDirs(reposDir, func(dir common.GitDir) {
+	return dirs, iterateGitDirs(reposDir, func(dir common.GitDir) bool {
 		dirs = append(dirs, dir)
+		return false
 	})
 }
 
