@@ -103,6 +103,9 @@ class LinkBuilder implements PluginValue {
                         lineDecorations = []
 
                         const start = line.from + occurrence.range.start.character
+                        // There is likely something wrong with the LSIF/SCIP data that is causing
+                        // The last character in a file to go unhighlighted. This is a temporary workaround
+                        // and shouldn't be necessary when this is fixed on the code intel side.
                         const end = start + line.length
 
                         const links = getLinksFromString({
