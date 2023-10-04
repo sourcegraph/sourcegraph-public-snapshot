@@ -1,4 +1,4 @@
-package codehost_scenario
+package codehost_testing
 
 func boolp(v bool) *bool {
 	return &v
