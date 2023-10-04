@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 )
 
@@ -95,5 +96,35 @@ func TestAnthropicRequestGetPromptTokenCount(t *testing.T) {
 		count2, err := newRequest.GetPromptTokenCount(tk)
 		require.NoError(t, err)
 		assert.Equal(t, originalRequest.promptTokens.count, count2, "token count should be unchanged")
+	})
+}
+
+func TestActor_IsDotComActor(t *testing.T) {
+	t.Run("with dotcom actor", func(t *testing.T) {
+		actor := &actor.Actor{
+			ID: "d3d2b638-d0a2-4539-a099-b36860b09819",
+		}
+
+		isDotCom := actor.IsDotComActor()
+
+		require.True(t, isDotCom)
+	})
+
+	t.Run("with nondotcom actor", func(t *testing.T) {
+		actor := &actor.Actor{
+			ID: "NOT_DOTCOM",
+		}
+
+		isDotCom := actor.IsDotComActor()
+
+		require.False(t, isDotCom)
+	})
+
+	t.Run("with dotcom actor", func(t *testing.T) {
+		var actor *actor.Actor = nil
+
+		isDotCom := actor.IsDotComActor()
+
+		require.False(t, isDotCom)
 	})
 }
