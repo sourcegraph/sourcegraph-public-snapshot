@@ -1716,6 +1716,8 @@ type mockClient struct {
 	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
 	mockP4Exec                      func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error)
+	mockIsPerforcePathCloneable     func(ctx context.Context, in *proto.IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*proto.IsPerforcePathCloneableResponse, error)
+	mockCheckPerforceCredentials    func(ctx context.Context, in *proto.CheckPerforceCredentialsRequest, opts ...grpc.CallOption) (*proto.CheckPerforceCredentialsResponse, error)
 }
 
 // BatchLog implements v1.GitserverServiceClient.
@@ -1784,6 +1786,14 @@ func (ms *mockClient) Search(ctx context.Context, in *proto.SearchRequest, opts 
 
 func (mc *mockClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
 	return mc.mockArchive(ctx, in, opts...)
+}
+
+func (mc *mockClient) IsPerforcePathCloneable(ctx context.Context, in *proto.IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*proto.IsPerforcePathCloneableResponse, error) {
+	return mc.mockIsPerforcePathCloneable(ctx, in, opts...)
+}
+
+func (mc *mockClient) CheckPerforceCredentials(ctx context.Context, in *proto.CheckPerforceCredentialsRequest, opts ...grpc.CallOption) (*proto.CheckPerforceCredentialsResponse, error) {
+	return mc.mockCheckPerforceCredentials(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &mockClient{}

@@ -119,6 +119,11 @@ var Mac = []category{
 					).Wait()
 				},
 			},
+			{
+				Name:  "p4 CLI (Perforce)",
+				Check: checkAction(check.InPath("p4")),
+				Fix:   cmdFix(`brew install --cask p4`),
+			},
 		},
 	},
 	{
