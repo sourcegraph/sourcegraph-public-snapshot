@@ -1995,6 +1995,7 @@ ts_project(
         "src/tracking/util.test.ts",
         "src/user/index.test.ts",
         "src/user/settings/auth/ExternalAccount.test.tsx",
+        "src/user/settings/auth/ExternalAccountsSignIn.test.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.test.tsx",
         "src/user/settings/research/ProductResearch.test.tsx",
         "src/util/checkRequestAccessAllowed.test.ts",
