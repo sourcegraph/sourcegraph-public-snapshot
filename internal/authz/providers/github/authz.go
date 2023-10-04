@@ -145,7 +145,7 @@ func newAuthzProvider(
 		BaseAuther:                  auther,
 		GroupsCacheTTL:              ttl,
 		DB:                          db,
-		SyncInternalRepoPermissions: c.Authorization.SyncInternalRepoPermissions,
+		SyncInternalRepoPermissions: (c.Authorization != nil) && c.Authorization.SyncInternalRepoPermissions,
 	}), nil
 }
 

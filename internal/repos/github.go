@@ -400,7 +400,7 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	metadata.ViewerPermission = ""
 	metadata.Description = sanitizeToUTF8(metadata.Description)
 
-	if r.Visibility == github.VisibilityInternal && s.markInternalReposAsPublic {
+	if github.Visibility(strings.ToLower(string(r.Visibility))) == github.VisibilityInternal && s.markInternalReposAsPublic {
 		r.IsPrivate = false
 	}
 

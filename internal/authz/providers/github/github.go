@@ -388,7 +388,9 @@ func (p *Provider) fetchAuthenticatedUserPerms(ctx context.Context, cli client, 
 		if err != nil {
 			return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, err
 		}
-	} else {
+	}
+
+	if p.groupsCache != nil {
 		// If groups caching is enabled, we need to fetch cached repositories as well
 		groupsPerms, err := p.fetchCachedAuthenticatedUserPerms(ctx, logger, cli, accountID, opts)
 		userRepos = userRepos.Union(groupsPerms)

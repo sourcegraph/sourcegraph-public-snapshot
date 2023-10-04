@@ -1810,7 +1810,7 @@ type Repository struct {
 	// This is available for GitHub Enterprise Cloud and GitHub Enterprise Server 3.3.0+ and is used
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
-	Visibility Visibility `json:",omitempty"`
+	Visibility Visibility `json:"visibility,omitempty"`
 
 	// Parent is non-nil for forks and contains details of the parent repository.
 	Parent *ParentRepository `json:",omitempty"`
