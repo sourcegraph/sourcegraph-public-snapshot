@@ -408,7 +408,12 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	repo := string(req.Repo)
 	baseCommit := string(req.BaseCommit)
 
-	p4user, p4passwd, p4host, p4depot, _ := perforce.DecomposePerforceRemoteURL(remoteURL)
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		return "", err
+	}
+
+	p4user, p4passwd, p4port, p4depot, _ := perforce.DecomposePerforceRemoteURL(remoteURL)
 
 	if p4depot == "" {
 		// the remoteURL was constructed without a path to indicate the depot
@@ -444,9 +449,10 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	commonEnv := append(os.Environ(), []string{
 		tmpGitPathEnv,
 		altObjectsEnv,
-		fmt.Sprintf("P4PORT=%s", p4host),
+		fmt.Sprintf("P4PORT=%s", p4port),
 		fmt.Sprintf("P4USER=%s", p4user),
 		fmt.Sprintf("P4PASSWD=%s", p4passwd),
+		fmt.Sprintf("HOME=%s", p4home),
 		fmt.Sprintf("P4CLIENT=%s", p4client),
 	}...)
 
