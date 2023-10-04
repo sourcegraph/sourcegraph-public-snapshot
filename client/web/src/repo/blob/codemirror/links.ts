@@ -106,9 +106,6 @@ class LinkBuilder implements PluginValue {
                         const end = start + line.length
 
                         const links = getLinksFromString({
-                            // The 'end + 1' ensures that the last character in the last line of a group of links
-                            // will not be cut off, and will have the correct link registered to it
-                            // See issue #57043: https://github.com/sourcegraph/sourcegraph/issues/57043
                             input: textDocument.sliceString(start, end),
                         })
 
