@@ -297,7 +297,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgs(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
