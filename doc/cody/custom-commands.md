@@ -160,7 +160,7 @@ Example: `"Summarize the given git changes in 3-5 sentences"`
 
 #### `commands.<id>.mode`
 
-The interaction mode to use. Allows you to choose if the command add to the current Cody chat, starts a new inline chat, or inserts/replaces code directly in the editor.
+The interaction mode to use.
 
 Type: `string`
 
