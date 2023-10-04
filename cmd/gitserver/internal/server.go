@@ -291,6 +291,11 @@ func (s *Server) Handler() http.Handler {
 	)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleP4Exec,
+	)))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
