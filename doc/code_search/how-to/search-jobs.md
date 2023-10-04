@@ -45,7 +45,7 @@ To target a GCS bucket you've already provisioned, set the following environment
 - `SEARCH_JOBS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE=</path/to/file>`
 - `SEARCH_JOBS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT=<{"my": "content"}>`
 
-#### Provisioning buckets
+### Provisioning buckets
 
 If you would like to allow your Sourcegraph instance to control the creation and lifecycle configuration management of the target buckets, set the following environment variables:
 
