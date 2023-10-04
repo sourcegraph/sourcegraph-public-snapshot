@@ -9,10 +9,11 @@ import {
     useMemo,
     useRef,
     useState,
+    useImperativeHandle,
 } from 'react'
 
 import { EditorSelection, EditorState, type Extension, Prec } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 import inRange from 'lodash/inRange'
@@ -20,7 +21,7 @@ import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
 import type { HistoryOrNavigate } from '@sourcegraph/common'
-import { type Editor, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { type Editor, useCompartment, viewToEditor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
@@ -28,11 +29,11 @@ import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { BaseCodeMirrorQueryInput } from '../BaseCodeMirrorQueryInput'
-import { singleLine, placeholder as placeholderExtension } from '../codemirror'
+import { placeholder as placeholderExtension } from '../codemirror'
 import { queryDiagnostic } from '../codemirror/diagnostics'
 import { tokens } from '../codemirror/parsedQuery'
+import { useUpdateInputFromQueryState } from '../codemirror/react'
 import { tokenInfo } from '../codemirror/token-info'
-import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
 import { overrideContextOnPaste } from './codemirror/searchcontext'
 import { filterDecoration } from './codemirror/syntax-highlighting'
@@ -44,8 +45,6 @@ import styles from './CodeMirrorQueryInputWrapper.module.scss'
 interface ExtensionConfig {
     popoverID: string
     placeholder: string
-    onChange: (querySate: QueryState) => void
-    onSubmit?: () => void
     suggestionsContainer: HTMLDivElement | null
     suggestionSource?: Source
     historyOrNavigate: HistoryOrNavigate
@@ -88,48 +87,14 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
 function configureExtensions({
     popoverID,
     placeholder,
-    onChange,
-    onSubmit,
     suggestionsContainer,
     suggestionSource,
     historyOrNavigate,
 }: ExtensionConfig): Extension {
-    const extensions = [
-        EditorView.updateListener.of(update => {
-            if (update.docChanged) {
-                onChange({
-                    query: update.state.sliceDoc(),
-                    changeSource: QueryChangeSource.userInput,
-                })
-            }
-        }),
-    ]
+    const extensions = []
 
     if (placeholder) {
         extensions.push(placeholderExtension(placeholder, showWhenEmptyWithoutContext))
-    }
-
-    if (onSubmit) {
-        extensions.push(
-            Prec.high(
-                keymap.of([
-                    {
-                        key: 'Enter',
-                        run() {
-                            onSubmit()
-                            return true
-                        },
-                    },
-                    {
-                        key: 'Mod-Enter',
-                        run() {
-                            onSubmit()
-                            return true
-                        },
-                    },
-                ])
-            )
-        )
     }
 
     if (suggestionSource && suggestionsContainer) {
@@ -175,7 +140,6 @@ const staticExtensions: Extension = [
         }
         return transaction
     }),
-    singleLine,
     modeScope([queryDiagnostic(), overrideContextOnPaste], [null]),
     Prec.low([modeScope([tokenInfo(), filterDecoration], [null])]),
     EditorView.theme({
@@ -210,8 +174,6 @@ const staticExtensions: Extension = [
     }),
 ]
 
-const empty: any[] = []
-
 export enum QueryInputVisualMode {
     Standard = 'standard',
     Compact = 'compact',
@@ -240,7 +202,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             patternType,
             placeholder,
             suggestionSource,
-            extensions: externalExtensions = empty,
+            extensions: externalExtensions,
             visualMode = QueryInputVisualMode.Standard,
             className,
             children,
@@ -253,7 +215,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
 
         // References
         const editorRef = useRef<EditorView | null>(null)
-        const setEditorRef = useCallback((view: EditorView) => (editorRef.current = view), [editorRef])
+        useImperativeHandle(ref, () => viewToEditor(editorRef))
 
         // Local state
         const [mode, setMode, modeNotifierExtension] = useInputMode()
@@ -263,52 +225,47 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         const onSubmitRef = useMutableValue(onSubmit)
         const onChangeRef = useMutableValue(onChange)
 
-        const hasSubmitHandler = !!onSubmit
+        const onSubmitHandler = useCallback(
+            (view: EditorView): boolean => {
+                if (onSubmitRef.current) {
+                    onSubmitRef.current()
+                    view.contentDOM.blur()
+                    return true
+                }
+                return false
+            },
+            [onSubmitRef]
+        )
+
+        const onChangeHandler = useCallback(
+            (value: string) => onChangeRef.current?.({ query: value, changeSource: QueryChangeSource.userInput }),
+            [onChangeRef]
+        )
 
         // Update extensions whenever any of these props change
         const dynamicExtensions = useCompartment(
             editorRef,
             useMemo(
-                () => [
+                () =>
                     configureExtensions({
                         popoverID,
                         placeholder,
-                        onChange: (...args) => onChangeRef.current(...args),
-                        onSubmit: hasSubmitHandler
-                            ? (): void => {
-                                  if (onSubmitRef.current) {
-                                      onSubmitRef.current()
-                                      editorRef.current?.contentDOM.blur()
-                                  }
-                              }
-                            : undefined,
                         suggestionsContainer,
                         suggestionSource,
                         historyOrNavigate: navigate,
                     }),
-                    externalExtensions,
-                    modeNotifierExtension,
-                ],
-                [
-                    popoverID,
-                    placeholder,
-                    hasSubmitHandler,
-                    suggestionsContainer,
-                    suggestionSource,
-                    navigate,
-                    externalExtensions,
-                    modeNotifierExtension,
-                    onChangeRef,
-                    onSubmitRef,
-                ]
+                [popoverID, placeholder, suggestionsContainer, suggestionSource, navigate]
             )
         )
 
         // Update editor state whenever query state changes
-        useUpdateEditorFromQueryState(editorRef, queryState, startCompletion)
+        useUpdateInputFromQueryState(editorRef, queryState, startCompletion)
 
         const allExtensions = useMemo(
             () => [
+                externalExtensions ?? [],
+                dynamicExtensions,
+                modeNotifierExtension,
                 EditorView.contentAttributes.of({
                     role: 'combobox',
                     // CodeMirror sets aria-multiline: true by default but it seems
@@ -319,19 +276,20 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     'aria-label': 'Search query',
                 }),
                 staticExtensions,
-                dynamicExtensions,
             ],
-            [popoverID, dynamicExtensions]
+            [popoverID, dynamicExtensions, externalExtensions, modeNotifierExtension]
         )
 
-        // Position cursor at the end of the input when it is initialized
+        // Position cursor at the end of the input when the input changes from external sources.
+        // This is necessary because the initial value might be set asynchronously.
         useEffect(() => {
-            if (editorRef.current) {
-                editorRef.current.dispatch({
-                    selection: { anchor: editorRef.current.state.doc.length },
+            const editor = editorRef.current
+            if (editor && !editor.hasFocus && queryState.changeSource !== QueryChangeSource.userInput) {
+                editor.dispatch({
+                    selection: { anchor: editor.state.doc.length },
                 })
             }
-        }, [])
+        }, [queryState])
 
         const focus = useCallback(() => {
             editorRef.current?.focus()
@@ -358,13 +316,15 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 <div className={styles.focusContainer}>
                     <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
                     <BaseCodeMirrorQueryInput
-                        ref={ref}
+                        ref={editorRef}
                         className={styles.input}
                         value={queryState.query}
                         patternType={patternType}
                         interpretComments={interpretComments}
                         extension={allExtensions}
-                        onEditorCreated={setEditorRef}
+                        onEnter={onSubmitHandler}
+                        onChange={onChangeHandler}
+                        multiLine={false}
                     />
                     {!mode && children}
                 </div>
