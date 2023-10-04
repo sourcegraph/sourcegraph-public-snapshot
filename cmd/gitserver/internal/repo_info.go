@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -15,7 +16,7 @@ import (
 )
 
 func repoCloneProgress(reposDir string, locker RepositoryLocker, repo api.RepoName) *protocol.RepoCloneProgress {
-	dir := repoDirFromName(reposDir, repo)
+	dir := gitserverfs.RepoDirFromName(reposDir, repo)
 	resp := protocol.RepoCloneProgress{
 		Cloned: repoCloned(dir),
 	}
@@ -73,7 +74,7 @@ func deleteRepo(
 ) error {
 	// The repo may be deleted in the database, in this case we need to get the
 	// original name in order to find it on disk
-	err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, repoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)
+	err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, gitserverfs.RepoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}

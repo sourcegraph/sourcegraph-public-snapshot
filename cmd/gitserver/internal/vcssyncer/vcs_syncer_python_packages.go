@@ -1,4 +1,4 @@
-package internal
+package vcssyncer
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -124,7 +125,7 @@ func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) er
 		// memory, which isn't great for multi-megabyte+ files.
 
 		// Create a tmpdir that gitserver manages.
-		tmpdir, err := tempDir(reposDir, "pypi-packages")
+		tmpdir, err := gitserverfs.TempDir(reposDir, "pypi-packages")
 		if err != nil {
 			return err
 		}

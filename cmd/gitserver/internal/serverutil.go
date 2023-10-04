@@ -18,23 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func repoDirFromName(reposDir string, name api.RepoName) common.GitDir {
-	p := string(protocol.NormalizeRepo(name))
-	return common.GitDir(filepath.Join(reposDir, filepath.FromSlash(p), ".git"))
-}
-
-func repoNameFromDir(reposDir string, dir common.GitDir) api.RepoName {
-	// dir == ${s.ReposDir}/${name}/.git
-	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"
-	name := strings.TrimPrefix(parent, reposDir)          // remove prefix "${s.ReposDir}"
-	name = strings.Trim(name, string(filepath.Separator)) // remove /
-	name = filepath.ToSlash(name)                         // filepath -> path
-	return protocol.NormalizeRepo(api.RepoName(name))
-}
 
 func cloneStatus(cloned, cloning bool) types.CloneStatus {
 	switch {
@@ -48,11 +33,6 @@ func cloneStatus(cloned, cloning bool) types.CloneStatus {
 
 func isAlwaysCloningTest(name api.RepoName) bool {
 	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
-}
-
-func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
-	return strings.EqualFold(remoteURL.Host, "github.com") &&
-		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest")
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
@@ -290,7 +291,7 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4testWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ss.Context().Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
@@ -455,7 +456,7 @@ func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 		return nil, status.Error(codes.InvalidArgument, "no DepotPath given")
 	}
 
-	err := isDepotPathCloneable(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd(), req.GetDepotPath())
+	err := perforce.IsDepotPathCloneable(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd(), req.GetDepotPath())
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -464,7 +465,7 @@ func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 }
 
 func (gs *GRPCServer) CheckPerforceCredentials(ctx context.Context, req *proto.CheckPerforceCredentialsRequest) (*proto.CheckPerforceCredentialsResponse, error) {
-	err := p4testWithTrust(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
+	err := perforce.P4TestWithTrust(ctx, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

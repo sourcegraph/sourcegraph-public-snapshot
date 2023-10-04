@@ -18,14 +18,16 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/sshagent"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/perforce"
+	internalperforce "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -132,7 +134,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}()
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := tempDir(s.ReposDir, "patch-repo-")
+	tmpRepoDir, err := gitserverfs.TempDir(s.ReposDir, "patch-repo-")
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return http.StatusInternalServerError, resp
@@ -153,7 +155,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		t := time.Now()
 
 		// runRemoteGitCommand since one of our commands could be git push
-		out, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
+		out, err := executil.RunRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
 		logger := logger.With(
 			log.String("prefix", prefix),
 			log.String("command", redactor.Redact(argsToString(cmd.Args))),
@@ -370,7 +372,7 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	r := urlredactor.New(remoteURL)
-	_, err := runCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
+	_, err := executil.RunCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {
@@ -406,7 +408,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	repo := string(req.Repo)
 	baseCommit := string(req.BaseCommit)
 
-	p4user, p4passwd, p4host, p4depot, _ := decomposePerforceRemoteURL(remoteURL)
+	p4user, p4passwd, p4host, p4depot, _ := perforce.DecomposePerforceRemoteURL(remoteURL)
 
 	if p4depot == "" {
 		// the remoteURL was constructed without a path to indicate the depot
@@ -416,7 +418,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 			return "", errors.Wrap(err, "failed getting a remote url")
 		}
 		// and decompose again
-		_, _, _, p4depot, _ = decomposePerforceRemoteURL(remoteURL)
+		_, _, _, p4depot, _ = perforce.DecomposePerforceRemoteURL(remoteURL)
 	}
 
 	logger := s.Logger.Scoped("shelveChangelist", "").
@@ -432,7 +434,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
 
 	// do all work in (another) temporary directory
-	tmpClientDir, err := tempDir(s.ReposDir, "perforce-client-")
+	tmpClientDir, err := gitserverfs.TempDir(s.ReposDir, "perforce-client-")
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
 	}
@@ -609,7 +611,7 @@ func (g gitCommand) getChangelistIdFromCommit(baseCommit string) (string, error)
 		return "", errors.Wrap(err, "unable to retrieve base commit message")
 	}
 	// extract the base changelist id from the commit message
-	baseCID, err := perforce.GetP4ChangelistID(string(out))
+	baseCID, err := internalperforce.GetP4ChangelistID(string(out))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse base changelist id from"+string(out))
 	}
@@ -660,7 +662,7 @@ func (p p4Command) changeListIDFromClientSpecName(p4client string) (string, erro
 	if err != nil {
 		return "", errors.Wrap(err, string(out))
 	}
-	pcl, err := perforce.ParseChangelistOutput(string(out))
+	pcl, err := internalperforce.ParseChangelistOutput(string(out))
 	if err != nil {
 		return "", errors.Wrap(err, string(out))
 	}

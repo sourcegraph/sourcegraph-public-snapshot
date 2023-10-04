@@ -1,9 +1,9 @@
 Renames stdlib x509 package to cacert for update.bash
 
-diff --git a/cmd/gitserver/server/internal/cacert/root_linux.go b/cmd/gitserver/server/internal/cacert/root_linux.go
+diff --git a/cmd/gitserver/internal/cacert/root_linux.go b/cmd/gitserver/internal/cacert/root_linux.go
 index e32989b999..04024be2c9 100644
---- a/cmd/gitserver/server/internal/cacert/root_linux.go
-+++ b/cmd/gitserver/server/internal/cacert/root_linux.go
+--- a/cmd/gitserver/internal/cacert/root_linux.go
++++ b/cmd/gitserver/internal/cacert/root_linux.go
 @@ -2,7 +2,7 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.
@@ -13,10 +13,10 @@ index e32989b999..04024be2c9 100644
  
  // Possible certificate files; stop after finding one.
  var certFiles = []string{
-diff --git a/cmd/gitserver/server/internal/cacert/root_unix.go b/cmd/gitserver/server/internal/cacert/root_unix.go
+diff --git a/cmd/gitserver/internal/cacert/root_unix.go b/cmd/gitserver/internal/cacert/root_unix.go
 index aa54f891ca..dd85298ce0 100644
---- a/cmd/gitserver/server/internal/cacert/root_unix.go
-+++ b/cmd/gitserver/server/internal/cacert/root_unix.go
+--- a/cmd/gitserver/internal/cacert/root_unix.go
++++ b/cmd/gitserver/internal/cacert/root_unix.go
 @@ -2,9 +2,9 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.

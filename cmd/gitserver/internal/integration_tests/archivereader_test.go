@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -105,8 +106,8 @@ func TestClient_ArchiveReader(t *testing.T) {
 					}
 					return "", errors.Errorf("no remote for %s", test.name)
 				},
-				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
+					return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  server.NewRepositoryLocker(),

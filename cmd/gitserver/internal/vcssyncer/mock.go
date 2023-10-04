@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package internal
+package vcssyncer
 
 import (
 	"context"
@@ -17,8 +17,9 @@ import (
 )
 
 // MockVCSSyncer is a mock implementation of the VCSSyncer interface (from
-// the package github.com/sourcegraph/sourcegraph/cmd/gitserver/internal)
-// used for unit testing.
+// the package
+// github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer) used
+// for unit testing.
 type MockVCSSyncer struct {
 	// CloneCommandFunc is an instance of a mock function object controlling
 	// the behavior of the method CloneCommand.
