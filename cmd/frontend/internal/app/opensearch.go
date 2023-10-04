@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"html/template"
 	"net/http"
+	"net/url"
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 var openSearchDescription = template.Must(template.New("").Parse(`
@@ -26,7 +27,11 @@ func openSearch(w http.ResponseWriter, r *http.Request) {
 		BaseURL   string
 		SearchURL string
 	}
-	externalURL := globals.ExternalURL()
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		log15.Error("Failed to parse External URL", "err", err)
+		return
+	}
 	externalURLStr := externalURL.String()
 	data := vars{
 		BaseURL:   externalURLStr,

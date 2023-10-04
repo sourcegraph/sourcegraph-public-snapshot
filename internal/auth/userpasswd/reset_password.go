@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -26,13 +25,18 @@ func SendResetPasswordURLEmail(ctx context.Context, email, username string, rese
 		emailTemplate = txemail.FromSiteConfigTemplateWithDefault(customTemplates.ResetPassword, emailTemplate)
 	}
 
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return err
+	}
+
 	return txemail.Send(ctx, "password_reset", txemail.Message{
 		To:       []string{email},
 		Template: emailTemplate,
 		Data: SetPasswordEmailTemplateData{
 			Username: username,
-			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
-			Host:     globals.ExternalURL().Host,
+			URL:      externalURL.ResolveReference(resetURL).String(),
+			Host:     externalURL.Host,
 		},
 	})
 }

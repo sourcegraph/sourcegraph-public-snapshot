@@ -95,7 +95,8 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				EmailSmtp: nil,
+				ExternalURL: "http://example.com",
+				EmailSmtp:   nil,
 			},
 		})
 		t.Cleanup(func() { conf.Mock(nil) })
@@ -132,7 +133,8 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 	t.Run("with SMTP enabled", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				EmailSmtp: &schema.SMTPServerConfig{},
+				ExternalURL: "http://example.com",
+				EmailSmtp:   &schema.SMTPServerConfig{},
 			},
 		})
 
@@ -186,7 +188,8 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 	t.Run("with SMTP enabled, without verifiedEmail", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				EmailSmtp: &schema.SMTPServerConfig{},
+				EmailSmtp:   &schema.SMTPServerConfig{},
+				ExternalURL: "http://example.com",
 			},
 		})
 

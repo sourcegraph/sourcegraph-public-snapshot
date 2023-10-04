@@ -3,6 +3,7 @@ package conf
 import (
 	"encoding/hex"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -26,7 +27,20 @@ func init() {
 		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
 	}
 
+	ContributeValidator(validateExternalURLConfig)
 	confdefaults.Default = defaultConfigForDeployment()
+}
+
+func validateExternalURLConfig(cfg conftypes.SiteConfigQuerier) (problems Problems) {
+	if val := cfg.SiteConfig().ExternalURL; val != "" {
+		eURL, err := url.Parse(val)
+		if err != nil {
+			problems = append(problems, NewSiteProblem("Could not parse `externalURL`."))
+		} else if eURL.Path != "/" && eURL.Path != "" {
+			problems = append(problems, NewSiteProblem("externalURL must not be a non-root URL."))
+		}
+	}
+	return problems
 }
 
 func defaultConfigForDeployment() conftypes.RawUnified {

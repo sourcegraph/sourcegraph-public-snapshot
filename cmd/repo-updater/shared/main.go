@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -128,7 +129,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	go globals.WatchExternalURL()
 	go watchAuthzProviders(ctx, db)
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
@@ -333,6 +333,12 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 			ExternalServiceURL string `json:"external_service_url"`
 		}
 
+		externalURL, err := url.Parse(conf.Get().ExternalURL)
+		if err != nil {
+			http.Error(w, "failed to parse external url: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		_, providers := ossAuthz.GetProviders()
 		infos := make([]providerInfo, len(providers))
 		for i, p := range providers {
@@ -343,7 +349,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 			infos[i] = providerInfo{
 				ServiceType:        p.ServiceType(),
 				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", externalURL, relay.MarshalID("ExternalService", id)),
 			}
 		}
 

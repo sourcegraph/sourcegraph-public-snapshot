@@ -23,7 +23,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
         "//internal/actor",
         "//internal/api",

@@ -38,6 +38,7 @@ func mockSiteConfigSigningKey(withEmails *bool) string {
 	signingKey := "Zm9v"
 
 	siteConfig := schema.SiteConfiguration{
+		ExternalURL: "http://example.com",
 		OrganizationInvitations: &schema.OrganizationInvitations{
 			SigningKey: signingKey,
 		},
@@ -165,6 +166,12 @@ func TestInviteUserToOrganization(t *testing.T) {
 	defer func() {
 		timeNow = time.Now
 	}()
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
 	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)

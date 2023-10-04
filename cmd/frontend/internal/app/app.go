@@ -2,10 +2,10 @@ package app
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
@@ -33,7 +33,13 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 			// Sourcegraph using Safari/WebKit.
 			return false
 		}
-		return globals.ExternalURL().Scheme == "https"
+
+		externalURL, err := url.Parse(conf.Get().ExternalURL)
+		if err != nil {
+			return false
+		}
+
+		return externalURL.Scheme == "https"
 	}))
 
 	logger = logger.Scoped("appHandler", "handles routes for all app related requests")

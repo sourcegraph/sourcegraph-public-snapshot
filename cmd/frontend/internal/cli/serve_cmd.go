@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -206,7 +207,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	globals.WatchBranding()
-	globals.WatchExternalURL()
 	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
@@ -253,7 +253,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		// This is not a log entry and is usually disabled
 		println(fmt.Sprintf("\n\n%s\n\n", logoColor))
 	}
-	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return err
+	}
+	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", externalURL))
 	ready()
 
 	// We only want to run this task once Sourcegraph is ready to serve user requests.

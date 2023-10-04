@@ -2,7 +2,6 @@
 package globals
 
 import (
-	"net/url"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -12,59 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var defaultExternalURL = &url.URL{
-	Scheme: "http",
-	Host:   "example.com",
-}
-
-var externalURL = func() atomic.Value {
-	var v atomic.Value
-	v.Store(defaultExternalURL)
-	return v
-}()
-
-var watchExternalURLOnce sync.Once
-
-// WatchExternalURL watches for changes in the `externalURL` site configuration
-// so that changes are reflected in what is returned by the ExternalURL function.
-func WatchExternalURL() {
-	watchExternalURLOnce.Do(func() {
-		conf.Watch(func() {
-			after := defaultExternalURL
-			if val := conf.Get().ExternalURL; val != "" {
-				var err error
-				if after, err = url.Parse(val); err != nil {
-					log15.Error("globals.ExternalURL", "value", val, "error", err)
-					return
-				}
-			}
-
-			if before := ExternalURL(); !reflect.DeepEqual(before, after) {
-				SetExternalURL(after)
-				if before.Host != "example.com" {
-					log15.Info(
-						"globals.ExternalURL",
-						"updated", true,
-						"before", before,
-						"after", after,
-					)
-				}
-			}
-		})
-	})
-}
-
-// ExternalURL returns the fully-resolved, externally accessible frontend URL.
-// Callers must not mutate the returned pointer.
-func ExternalURL() *url.URL {
-	return externalURL.Load().(*url.URL)
-}
-
-// SetExternalURL sets the fully-resolved, externally accessible frontend URL.
-func SetExternalURL(u *url.URL) {
-	externalURL.Store(u)
-}
 
 var defaultPermissionsUserMapping = &schema.PermissionsUserMapping{
 	Enabled: false,

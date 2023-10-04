@@ -3,14 +3,15 @@ package bg
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -26,7 +27,11 @@ func AppReady(db database.DB, logger log.Logger) {
 
 	// Our goal is to open the browser to a special sign-in URL containing a in-memory
 	// secret (signInURL).
-	displayURL := globals.ExternalURL().String()
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		logger.Error("failed to parse external url", log.Error(err))
+	}
+	displayURL := externalURL.String()
 	browserURL := displayURL
 
 	if signInURL, err := userpasswd.AppSiteInit(ctx, logger, db); err != nil {

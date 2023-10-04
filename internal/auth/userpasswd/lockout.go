@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -121,9 +120,19 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 	effectiveTTL := effectiveUnlockTTL(ttl)
 	expiryTime := time.Now().Add(time.Second * time.Duration(effectiveTTL))
 
+	u := conf.Get().ExternalURL
+	if u == "" {
+		u = "http://example.com"
+	}
+
+	externalURL, err := url.Parse(u)
+	if err != nil {
+		return "", "", err
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &unlockAccountClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    globals.ExternalURL().String(),
+			Issuer:    externalURL.String(),
 			ExpiresAt: jwt.NewNumericDate(expiryTime),
 			Subject:   strconv.FormatInt(int64(userID), 10),
 		},
@@ -144,7 +153,7 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 
 	path := fmt.Sprintf("/unlock-account/%s", tokenString)
 
-	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), tokenString, nil
+	return externalURL.ResolveReference(&url.URL{Path: path}).String(), tokenString, nil
 }
 
 // take site config link expiry into account as well when setting unlock expiry

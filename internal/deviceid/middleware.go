@@ -3,11 +3,12 @@ package deviceid
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 )
 
@@ -17,12 +18,18 @@ func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
 		if _, ok := cookie.DeviceID(r); !ok {
+
+			externalURL, err := url.Parse(conf.Get().ExternalURL)
+			if err != nil {
+				externalURL = &url.URL{Scheme: "http", Host: "example.com"}
+			}
+
 			newDeviceId, _ := uuid.NewRandom()
 			http.SetCookie(w, &http.Cookie{
 				Name:    "sourcegraphDeviceId",
 				Value:   newDeviceId.String(),
 				Expires: time.Now().AddDate(1, 0, 0),
-				Secure:  globals.ExternalURL().Scheme == "https",
+				Secure:  externalURL.Scheme == "https",
 				Domain:  r.URL.Host,
 			})
 		}

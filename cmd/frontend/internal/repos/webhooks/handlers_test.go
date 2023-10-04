@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,9 +22,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -60,6 +61,13 @@ func TestGitHubHandler(t *testing.T) {
 	store := repos.NewStore(logger, db)
 	repoStore := store.RepoStore()
 	esStore := store.ExternalServiceStore()
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "https://www.sourcegraph.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	repo := &types.Repo{
 		ID:   1,
@@ -166,7 +174,12 @@ func TestGitHubHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	targetURL := fmt.Sprintf("%s/github-webhooks", globals.ExternalURL())
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	targetURL := fmt.Sprintf("%s/github-webhooks", externalURL)
 	req, err := http.NewRequest("POST", targetURL, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatal(err)

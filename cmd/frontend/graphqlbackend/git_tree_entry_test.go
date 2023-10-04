@@ -6,8 +6,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -23,6 +26,11 @@ func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 		},
 		Stat: CreateFileInfo("a/b", true),
 	}
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
 	got := NewGitTreeEntryResolver(db, gitserverClient, opts).RawZipArchiveURL()
 	want := "http://example.com/my/repo/-/raw/a/b?format=zip"
 	if got != want {
@@ -36,6 +44,11 @@ func TestGitTreeEntry_Content(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
 
 	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
 		if name != wantPath {

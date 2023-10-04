@@ -2,9 +2,9 @@ package userpasswd
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -24,7 +24,12 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32, usern
 		return "", errors.Wrap(err, "make password reset URL")
 	}
 
-	shareableResetURL := globals.ExternalURL().ResolveReference(resetURL).String()
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return "", errors.Wrap(err, "parse external URL")
+	}
+
+	shareableResetURL := externalURL.ResolveReference(resetURL).String()
 	emailedResetURL := shareableResetURL
 
 	if !emailVerified {
@@ -32,7 +37,7 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32, usern
 		if err != nil {
 			return shareableResetURL, errors.Wrap(err, "attach email verification")
 		}
-		emailedResetURL = globals.ExternalURL().ResolveReference(newURL).String()
+		emailedResetURL = externalURL.ResolveReference(newURL).String()
 	}
 
 	// Configure the template
@@ -47,7 +52,7 @@ func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32, usern
 		Data: SetPasswordEmailTemplateData{
 			Username: username,
 			URL:      emailedResetURL,
-			Host:     globals.ExternalURL().Host,
+			Host:     externalURL.Host,
 		},
 	}); err != nil {
 		return shareableResetURL, err

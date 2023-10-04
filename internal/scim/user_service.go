@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -105,8 +104,8 @@ func (u *UserSCIMService) Get(ctx context.Context, id string) (scim.Resource, er
 		return scim.Resource{}, err
 	}
 	return user.ToResource(), nil
-
 }
+
 func (u *UserSCIMService) GetAll(ctx context.Context, start int, count *int) (totalCount int, entities []scim.Resource, err error) {
 	return getAllUsersFromDB(ctx, u.db.Users(), start, count)
 }
@@ -132,7 +131,6 @@ func (u *UserSCIMService) Update(ctx context.Context, id string, applySCIMUpdate
 		txErr = updateUser.Update(ctx, &resourceBeforeUpdate, &resourceAfterUpdate)
 		return txErr
 	})
-
 	if err != nil {
 		multiErr, ok := err.(errors.MultiError)
 		if !ok || len(multiErr.Errors()) == 0 {
@@ -185,7 +183,7 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 		// The user exists, but is not SCIM-controlled, so we'll update the user with the new attributes,
 		// and make the user SCIM-controlled (which is the same as a replace)
 		return u.Update(ctx, strconv.Itoa(int(userID)), func(getResource func() scim.Resource) (updated scim.Resource, _ error) {
-			var now = time.Now()
+			now := time.Now()
 			return scim.Resource{
 				ID:         strconv.Itoa(int(userID)),
 				ExternalID: getOptionalExternalID(attributes),
@@ -263,10 +261,10 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 	// Attempt to send emails in the background.
 	goroutine.Go(func() {
 		_ = sendPasswordResetEmail(u.getLogger(), u.db, user, primaryEmail)
-		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), u.getLogger())
+		_ = sendWelcomeEmail(primaryEmail, conf.Get().ExternalURL, u.getLogger())
 	})
 
-	var now = time.Now()
+	now := time.Now()
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
@@ -277,6 +275,7 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 		},
 	}, nil
 }
+
 func (u *UserSCIMService) Delete(ctx context.Context, id string) error {
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -347,7 +346,7 @@ func getAllUsersFromDB(ctx context.Context, store database.UserStore, startIndex
 	}
 
 	// Get users and convert them to SCIM resources
-	var opt = &database.UsersListOptions{}
+	opt := &database.UsersListOptions{}
 	if count != nil {
 		opt = &database.UsersListOptions{
 			LimitOffset: &database.LimitOffset{Limit: *count, Offset: offset},

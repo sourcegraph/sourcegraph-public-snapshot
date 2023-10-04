@@ -4,10 +4,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -61,12 +62,19 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 		// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
 		pathElements := strings.Split(req.URL.Path[1:], "/")
 		if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
-			host := globals.ExternalURL().Host
+			host := ""
+			externalURL, err := url.Parse(conf.Get().ExternalURL)
+			if err != nil {
+				log.Println("error parsing external url:", err)
+			}
+			if externalURL != nil {
+				host = externalURL.Host
+			}
 
 			user := pathElements[0]
 			repo := pathElements[1]
 
-			err := goImportMetaTagTemplate.Execute(w, goImportMetaTag{
+			err = goImportMetaTagTemplate.Execute(w, goImportMetaTag{
 				ImportPrefix: path.Join(host, user, repo),
 				VCS:          "git",
 				RepoRoot:     "https://github.com/" + user + "/" + repo,

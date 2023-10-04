@@ -15,11 +15,11 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
         "//cmd/frontend/internal/app/ui",
         "//cmd/frontend/internal/app/ui/router",
         "//internal/actor",
+        "//internal/conf",
         "//internal/env",
         "//internal/trace",
         "//lib/errors",
@@ -31,5 +31,9 @@ go_test(
     name = "middleware_test",
     timeout = "short",
     srcs = ["goimportpath_test.go"],
-    deps = [":middleware"],
+    deps = [
+        ":middleware",
+        "//internal/conf",
+        "//schema",
+    ],
 )
