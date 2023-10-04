@@ -53,6 +53,8 @@ import com.sourcegraph.cody.ui.ChatScrollPane;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -95,6 +97,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   private CodyOnboardingGuidancePanel codyOnboardingGuidancePanel;
   private final @NotNull CodyChatMessageHistory chatMessageHistory =
       new CodyChatMessageHistory(CHAT_MESSAGE_HISTORY_CAPACITY);
+  private boolean isInHistoryMode = true;
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -133,11 +136,7 @@ public class CodyToolWindowContent implements UpdatableChat {
         new DumbAwareAction() {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
-            // When no text in prompt, pop from history.
-            if ((promptInput.getText().isEmpty()
-                    || promptInput.getText().equals(chatMessageHistory.getCurrentValue()))
-                && !chatMessageHistory.getUpperStack().isEmpty()
-                && promptInput.getCaretPosition() == 0) {
+            if (isInHistoryMode) {
               chatMessageHistory.popUpperMessage(promptInput);
             } else {
               int caretPosition = promptInput.getCaretPosition();
@@ -167,10 +166,7 @@ public class CodyToolWindowContent implements UpdatableChat {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
             int promptLastPosition = promptInput.getText().length();
-            // When no text in prompt, pop from history.
-            if ((promptInput.getText().isEmpty()
-                    || promptInput.getText().equals(chatMessageHistory.getCurrentValue()))
-                && promptInput.getCaretPosition() == promptLastPosition) {
+            if (isInHistoryMode) {
               chatMessageHistory.popLowerMessage(promptInput);
             } else {
               int caretPosition = promptInput.getCaretPosition();
@@ -180,10 +176,12 @@ public class CodyToolWindowContent implements UpdatableChat {
                 int lineCount = promptInput.getLineCount();
                 // When not on the last line, move caret to the same position in line below.
                 if (lineNumber + 1 < lineCount) {
-                  int maxNextLineOffset = promptInput.getLineEndOffset(lineNumber + 1);
+                  int endOfNextLine =
+                      (lineNumber + 1 == lineCount - 1)
+                          ? promptInput.getLineEndOffset(lineNumber + 1)
+                          : promptInput.getLineEndOffset(lineNumber + 1) - 1;
                   int positionInLine = caretPosition - promptInput.getLineStartOffset(lineNumber);
-                  int newCaretPosition =
-                      Math.min(maxNextLineOffset - 1, positionInLine + lineEndOffset);
+                  int newCaretPosition = Math.min(endOfNextLine, positionInLine + lineEndOffset);
                   promptInput.setCaretPosition(newCaretPosition);
                 }
                 // When on last line, move caret to the end of prompt.
@@ -201,12 +199,25 @@ public class CodyToolWindowContent implements UpdatableChat {
         new DumbAwareAction() {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
-            sendChatMessage(project);
+            if (!promptInput.getText().isEmpty()) {
+              sendChatMessage(project);
+            }
           }
         };
     sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
     upperMessageAction.registerCustomShortcutSet(POP_UPPER_MESSAGE_ACTION_SHORTCUT, promptInput);
     lowerMessageAction.registerCustomShortcutSet(POP_LOWER_MESSAGE_ACTION_SHORTCUT, promptInput);
+    promptInput.addKeyListener(
+        new KeyAdapter() {
+          @Override
+          public void keyReleased(KeyEvent e) {
+            int keyCode = e.getKeyCode();
+
+            if (keyCode != VK_UP && keyCode != VK_DOWN) {
+              isInHistoryMode = promptInput.getText().isEmpty();
+            }
+          }
+        });
     // Enable/disable the send button based on whether promptInput is empty
     promptInput
         .getDocument()
