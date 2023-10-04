@@ -12,7 +12,7 @@ With Search Jobs, you can start a search, let it run in the background, and then
 
 To enable Search Jobs, you need to configure a managed object storage service to store the results of your search jobs and then enable the feature in the site administration.
 
-### Storing search results
+## Storing search results
 
 To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. **If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker-compose or Kubernetes, set the environment variables on the `frontend` and `worker` containers.**
 
