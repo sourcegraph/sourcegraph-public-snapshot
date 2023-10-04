@@ -977,10 +977,10 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		}
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
 		if err != nil {
-			t.Errorf("got err %v, want nil", err)
+			t.Fatalf("got err %v, want nil", err)
 		}
 		if len(ru) != 1 {
-			t.Errorf("got %d users, want 1", len(ru))
+			t.Fatalf("got %d users, want 1", len(ru))
 		}
 		if ru[0] != user.ID {
 			t.Errorf("got user %d, want %d", ru[0], user.ID)

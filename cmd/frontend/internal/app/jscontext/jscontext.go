@@ -106,7 +106,6 @@ type CurrentUser struct {
 	SettingsURL         string     `json:"settingsURL"`
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
 	TosAccepted         bool       `json:"tosAccepted"`
-	Searchable          bool       `json:"searchable"`
 	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
 	CompletedPostSignUp bool       `json:"completedPostSignup"`
 
@@ -458,7 +457,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		ID:                  userResolver.ID(),
 		LatestSettings:      resolveLatestSettings(ctx, userResolver),
 		Organizations:       resolveUserOrganizations(ctx, userResolver),
-		Searchable:          userResolver.Searchable(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
 		TosAccepted:         userResolver.TosAccepted(ctx),

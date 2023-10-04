@@ -1601,15 +1601,11 @@ insert_sources AS (
   INSERT INTO external_service_repos (
     external_service_id,
     repo_id,
-    user_id,
-    org_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
-    es.namespace_user_id,
-    es.namespace_org_id,
     clone_url
   FROM sources_list
   JOIN external_services es ON (es.id = external_service_id)

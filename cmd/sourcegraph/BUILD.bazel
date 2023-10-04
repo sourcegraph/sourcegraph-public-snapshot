@@ -7,6 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/blobstore/shared",
+        "//cmd/embeddings/shared",
         "//cmd/executor/singlebinary",
         "//cmd/frontend/shared",
         "//cmd/gitserver/shared",
@@ -15,7 +16,6 @@ go_library(
         "//cmd/searcher/shared",
         "//cmd/sourcegraph/osscmd",
         "//cmd/worker/shared",
-        "//enterprise/cmd/embeddings/shared",
         "//enterprise/cmd/symbols/shared",
         "//internal/sanitycheck",
         "//internal/service",

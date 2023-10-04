@@ -15,9 +15,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -84,10 +84,7 @@ func TestGetVCSSyncer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, ok := s.(*server.PerforceDepotSyncer)
-	if !ok {
-		t.Fatalf("Want *server.PerforceDepotSyncer, got %T", s)
-	}
+	require.Equal(t, "perforce", s.Type())
 }
 
 func TestMethodSpecificStreamInterceptor(t *testing.T) {

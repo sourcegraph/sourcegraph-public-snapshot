@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,7 +23,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
@@ -61,22 +59,8 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitCommandReposDir string
 }
 
-// initConnsOnce is used internally in getAtomicGitServerConns. Only use it there.
-var initConnsOnce sync.Once
-
 // conns is the global variable holding a reference to the gitserver connections.
-//
-// WARNING: Do not use it directly. Instead use getAtomicGitServerConns to ensure conns is
-// initialised correctly.
-var conns *atomicGitServerConns
-
-func getAtomicGitserverConns() *atomicGitServerConns {
-	initConnsOnce.Do(func() {
-		conns = &atomicGitServerConns{}
-	})
-
-	return conns
-}
+var conns = &atomicGitServerConns{}
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
@@ -112,7 +96,7 @@ func NewClient() Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: getAtomicGitserverConns(),
+		clientSource: conns,
 	}
 }
 
@@ -459,6 +443,13 @@ type Client interface {
 
 	// SystemInfo returns information about the gitserver instance at the given address.
 	SystemInfo(ctx context.Context, addr string) (SystemInfo, error)
+
+	// IsPerforcePathCloneable checks if the given Perforce depot path is cloneable by
+	// checking if it is a valid depot and the given user has permission to access it.
+	IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error
+
+	// CheckPerforceCredentials checks if the given Perforce credentials are valid
+	CheckPerforceCredentials(ctx context.Context, p4port, p4user, p4passwd string) error
 }
 
 type SystemInfo struct {
@@ -470,27 +461,26 @@ type SystemInfo struct {
 
 func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, error) {
 	addresses := c.clientSource.Addresses()
-	infos := make([]SystemInfo, 0, len(addresses))
-	wg := conc.NewWaitGroup()
-	var errs errors.MultiError
+
+	wg := pool.NewWithResults[SystemInfo]().WithErrors().WithContext(ctx)
+
 	for _, addr := range addresses {
 		addr := addr // capture addr
-		wg.Go(func() {
+		wg.Go(func(ctx context.Context) (SystemInfo, error) {
 			response, err := c.getDiskInfo(ctx, addr)
 			if err != nil {
-				errs = errors.Append(errs, err)
-				return
+				return SystemInfo{}, err
 			}
-			infos = append(infos, SystemInfo{
+			return SystemInfo{
 				Address:     addr.Address(),
 				FreeSpace:   response.GetFreeSpace(),
 				TotalSpace:  response.GetTotalSpace(),
 				PercentUsed: response.GetPercentUsed(),
-			})
+			}, nil
 		})
 	}
-	wg.Wait()
-	return infos, errs
+
+	return wg.Wait()
 }
 
 func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (SystemInfo, error) {
@@ -498,10 +488,12 @@ func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (System
 	if ac == nil {
 		return SystemInfo{}, errors.Newf("no client for address: %s", addr)
 	}
+
 	response, err := c.getDiskInfo(ctx, ac)
 	if err != nil {
 		return SystemInfo{}, nil
 	}
+
 	return SystemInfo{
 		Address:    ac.Address(),
 		FreeSpace:  response.FreeSpace,
@@ -1610,6 +1602,114 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 			Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 		}
 	}
+	return nil
+}
+
+func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error {
+	if conf.IsGRPCEnabled(ctx) {
+		// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(depotPath))
+		if err != nil {
+			return err
+		}
+		_, err = client.IsPerforcePathCloneable(ctx, &proto.IsPerforcePathCloneableRequest{
+			P4Port:    p4port,
+			P4User:    p4user,
+			P4Passwd:  p4passwd,
+			DepotPath: depotPath,
+		})
+		if err != nil {
+			// Unwrap proto errors for nicer error messages.
+			if s, ok := status.FromError(err); ok {
+				return errors.New(s.Message())
+			}
+			return err
+		}
+
+		return nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(depotPath))
+	b, err := json.Marshal(&protocol.IsPerforcePathCloneableRequest{
+		P4Port:    p4port,
+		P4User:    p4user,
+		P4Passwd:  p4passwd,
+		DepotPath: depotPath,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + addr + "/is-perforce-path-cloneable"
+	resp, err := c.do(ctx, "is-perforce-path-cloneable", uri, b)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "IsPerforcePathCloneable",
+			Err: errors.Errorf("IsPerforcePathCloneable: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	return nil
+}
+
+func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, p4port, p4user, p4passwd string) error {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(p4port))
+		if err != nil {
+			return err
+		}
+		_, err = client.CheckPerforceCredentials(ctx, &proto.CheckPerforceCredentialsRequest{
+			P4Port:   p4port,
+			P4User:   p4user,
+			P4Passwd: p4passwd,
+		})
+		if err != nil {
+			// Unwrap proto errors for nicer error messages.
+			if s, ok := status.FromError(err); ok {
+				return errors.New(s.Message())
+			}
+			return err
+		}
+
+		return nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(p4port))
+	b, err := json.Marshal(&protocol.CheckPerforceCredentialsRequest{
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + addr + "/check-perforce-credentials"
+	resp, err := c.do(ctx, "check-perforce-credentials", uri, b)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CheckPerforceCredentials",
+			Err: errors.Errorf("CheckPerforceCredentials: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
 	return nil
 }
 

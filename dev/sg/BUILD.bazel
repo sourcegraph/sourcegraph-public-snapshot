@@ -48,6 +48,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg",
     visibility = ["//visibility:private"],
     deps = [
+        "//cmd/embeddings/qa",
         "//dev/sg/adr",
         "//dev/sg/buf",
         "//dev/sg/ci",
@@ -78,7 +79,6 @@ go_library(
         "//dev/sg/msp",
         "//dev/sg/root",
         "//dev/team",
-        "//enterprise/cmd/embeddings/qa",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/connections/live",

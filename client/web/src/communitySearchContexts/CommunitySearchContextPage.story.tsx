@@ -64,7 +64,6 @@ const authUser: AuthenticatedUser = {
     completedPostSignup: true,
     databaseID: 0,
     tosAccepted: true,
-    searchable: true,
     emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
     permissions: { nodes: [] },

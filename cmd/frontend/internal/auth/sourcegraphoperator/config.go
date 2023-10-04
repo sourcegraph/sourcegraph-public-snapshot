@@ -6,12 +6,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
-	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 )
 
 // GetOIDCProvider looks up the registered Sourcegraph Operator authentication
@@ -49,7 +49,7 @@ func Init() {
 	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
 
 	// Register enterprise handler implementation in OSS
-	osssourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
+	sourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
