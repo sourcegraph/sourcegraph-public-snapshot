@@ -56,7 +56,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 		return errors.Wrap(err, "decompose")
 	}
 
-	return perforce.IsDepotPathCloneable(ctx, host, username, password, path)
+	return perforce.IsDepotPathCloneable(ctx, s.P4Home, host, username, password, path)
 }
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
@@ -66,7 +66,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = perforce.P4TestWithTrust(ctx, p4port, username, password)
+	err = perforce.P4TestWithTrust(ctx, s.P4Home, p4port, username, password)
 	if err != nil {
 		return nil, errors.Wrap(err, "test with trust")
 	}
@@ -112,7 +112,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = perforce.P4TestWithTrust(ctx, host, username, password)
+	err = perforce.P4TestWithTrust(ctx, s.P4Home, host, username, password)
 	if err != nil {
 		return nil, errors.Wrap(err, "test with trust")
 	}
@@ -145,6 +145,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 			"P4PORT="+host,
 			"P4USER="+username,
 			"P4PASSWD="+password,
+			"HOME="+s.P4Home,
 		)
 		dir.Set(cmd.Cmd)
 		if output, err := executil.RunCommandCombinedOutput(ctx, cmd); err != nil {

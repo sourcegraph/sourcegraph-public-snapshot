@@ -177,7 +177,7 @@ func TestExecRequest(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
-	reposDir := "/testroot"
+	reposDir := t.TempDir()
 	s := &Server{
 		Logger:            logtest.Scoped(t),
 		ObservationCtx:    observation.TestContextTB(t),
@@ -289,7 +289,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 
 		s := &Server{
 			Logger:                  logger,
-			ReposDir:                "/testroot",
+			ReposDir:                t.TempDir(),
 			ObservationCtx:          observation.TestContextTB(t),
 			skipCloneForTests:       true,
 			DB:                      dbmocks.NewMockDB(),
