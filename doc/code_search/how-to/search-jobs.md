@@ -18,7 +18,7 @@ To target a managed object storage service, you will need to set a handful of en
 
 #### Using S3
 
-To target an S3 bucket you've already provisioned, set the following environment variables. Authentication can be done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token), or via the EC2 metadata API.
+Set the following environment variables to target an S3 bucket you've already provisioned. Authentication can be done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optionally through session token) or via the EC2 metadata API.
 
 **_Warning:_** Remember never to commit aws access keys in git. Consider using a secret handling service offered by your cloud provider.
 
