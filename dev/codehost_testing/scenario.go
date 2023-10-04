@@ -253,6 +253,8 @@ func (s *GitHubScenario) CreateOrg(name string) *Org {
 	return baseOrg
 }
 
+// CreateUser adds an action to the scenario that will create a GitHub user with the given name. The username of the
+// user will have the following format `user-{name}-{scenario id}` and email `test-user-e2e@sourcegraph.com`.
 func (s *GithubScenario) CreateUser(name string) *User {
 	baseUser := &User{
 		s:    s,
@@ -281,6 +283,11 @@ func (s *GithubScenario) CreateUser(name string) *User {
 	return baseUser
 }
 
+// GetAdmin returns a User representing the GitHub admin user configured in the client.
+//
+// NOTE: this method does not actually add an explicit action to the scenario, but will still
+// require that the scenario has been applied before the admin user can be retrieved - even though
+// it is not strictly required as the Admin already exists.
 func (s *GithubScenario) GetAdmin() *User {
 	baseUser := &User{
 		s:    s,
