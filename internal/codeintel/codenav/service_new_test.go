@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-func TestNewGetDefinitions(t *testing.T) {
+func TestGetDefinitions(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
@@ -60,7 +60,7 @@ func TestNewGetDefinitions(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, err := svc.NewGetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
@@ -148,7 +148,7 @@ func TestNewGetDefinitions(t *testing.T) {
 			Character: 20,
 		}
 		remoteUploads := dumps
-		adjustedLocations, err := svc.NewGetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
@@ -201,7 +201,7 @@ func TestNewGetDefinitions(t *testing.T) {
 	})
 }
 
-func TestNewGetReferences(t *testing.T) {
+func TestGetReferences(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
@@ -250,7 +250,7 @@ func TestNewGetReferences(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, _, err := svc.NewGetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
+		adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
 			t.Fatalf("unexpected error querying references: %s", err)
 		}
@@ -380,7 +380,7 @@ func TestNewGetReferences(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, _, err := svc.NewGetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
+		adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
 			t.Fatalf("unexpected error querying references: %s", err)
 		}
@@ -447,7 +447,7 @@ func TestNewGetReferences(t *testing.T) {
 	})
 }
 
-func TestNewGetImplementations(t *testing.T) {
+func TestGetImplementations(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
@@ -494,7 +494,7 @@ func TestNewGetImplementations(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, _, err := svc.NewGetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
+		adjustedLocations, _, err := svc.GetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
 			t.Fatalf("unexpected error querying implementations: %s", err)
 		}

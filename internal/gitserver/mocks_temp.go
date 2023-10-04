@@ -43,6 +43,9 @@ type MockClient struct {
 	// BranchesContainingFunc is an instance of a mock function object
 	// controlling the behavior of the method BranchesContaining.
 	BranchesContainingFunc *ClientBranchesContainingFunc
+	// CheckPerforceCredentialsFunc is an instance of a mock function object
+	// controlling the behavior of the method CheckPerforceCredentials.
+	CheckPerforceCredentialsFunc *ClientCheckPerforceCredentialsFunc
 	// CommitDateFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitDate.
 	CommitDateFunc *ClientCommitDateFunc
@@ -103,6 +106,9 @@ type MockClient struct {
 	// HeadFunc is an instance of a mock function object controlling the
 	// behavior of the method Head.
 	HeadFunc *ClientHeadFunc
+	// IsPerforcePathCloneableFunc is an instance of a mock function object
+	// controlling the behavior of the method IsPerforcePathCloneable.
+	IsPerforcePathCloneableFunc *ClientIsPerforcePathCloneableFunc
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *ClientIsRepoCloneableFunc
@@ -217,6 +223,11 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
+		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
+			defaultHook: func(context.Context, string, string, string) (r0 error) {
+				return
+			},
+		},
 		CommitDateFunc: &ClientCommitDateFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID) (r0 string, r1 time.Time, r2 bool, r3 error) {
 				return
@@ -314,6 +325,11 @@ func NewMockClient() *MockClient {
 		},
 		HeadFunc: &ClientHeadFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) (r0 string, r1 bool, r2 error) {
+				return
+			},
+		},
+		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
+			defaultHook: func(context.Context, string, string, string, string) (r0 error) {
 				return
 			},
 		},
@@ -484,6 +500,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.BranchesContaining")
 			},
 		},
+		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
+			defaultHook: func(context.Context, string, string, string) error {
+				panic("unexpected invocation of MockClient.CheckPerforceCredentials")
+			},
+		},
 		CommitDateFunc: &ClientCommitDateFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
 				panic("unexpected invocation of MockClient.CommitDate")
@@ -582,6 +603,11 @@ func NewStrictMockClient() *MockClient {
 		HeadFunc: &ClientHeadFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) (string, bool, error) {
 				panic("unexpected invocation of MockClient.Head")
+			},
+		},
+		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
+			defaultHook: func(context.Context, string, string, string, string) error {
+				panic("unexpected invocation of MockClient.IsPerforcePathCloneable")
 			},
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
@@ -739,6 +765,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		BranchesContainingFunc: &ClientBranchesContainingFunc{
 			defaultHook: i.BranchesContaining,
 		},
+		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
+			defaultHook: i.CheckPerforceCredentials,
+		},
 		CommitDateFunc: &ClientCommitDateFunc{
 			defaultHook: i.CommitDate,
 		},
@@ -798,6 +827,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		HeadFunc: &ClientHeadFunc{
 			defaultHook: i.Head,
+		},
+		IsPerforcePathCloneableFunc: &ClientIsPerforcePathCloneableFunc{
+			defaultHook: i.IsPerforcePathCloneable,
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
@@ -1530,6 +1562,119 @@ func (c ClientBranchesContainingFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientBranchesContainingFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientCheckPerforceCredentialsFunc describes the behavior when the
+// CheckPerforceCredentials method of the parent MockClient instance is
+// invoked.
+type ClientCheckPerforceCredentialsFunc struct {
+	defaultHook func(context.Context, string, string, string) error
+	hooks       []func(context.Context, string, string, string) error
+	history     []ClientCheckPerforceCredentialsFuncCall
+	mutex       sync.Mutex
+}
+
+// CheckPerforceCredentials delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockClient) CheckPerforceCredentials(v0 context.Context, v1 string, v2 string, v3 string) error {
+	r0 := m.CheckPerforceCredentialsFunc.nextHook()(v0, v1, v2, v3)
+	m.CheckPerforceCredentialsFunc.appendCall(ClientCheckPerforceCredentialsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// CheckPerforceCredentials method of the parent MockClient instance is
+// invoked and the hook queue is empty.
+func (f *ClientCheckPerforceCredentialsFunc) SetDefaultHook(hook func(context.Context, string, string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CheckPerforceCredentials method of the parent MockClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ClientCheckPerforceCredentialsFunc) PushHook(hook func(context.Context, string, string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientCheckPerforceCredentialsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientCheckPerforceCredentialsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, string, string) error {
+		return r0
+	})
+}
+
+func (f *ClientCheckPerforceCredentialsFunc) nextHook() func(context.Context, string, string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientCheckPerforceCredentialsFunc) appendCall(r0 ClientCheckPerforceCredentialsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientCheckPerforceCredentialsFuncCall
+// objects describing the invocations of this function.
+func (f *ClientCheckPerforceCredentialsFunc) History() []ClientCheckPerforceCredentialsFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientCheckPerforceCredentialsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientCheckPerforceCredentialsFuncCall is an object that describes an
+// invocation of method CheckPerforceCredentials on an instance of
+// MockClient.
+type ClientCheckPerforceCredentialsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientCheckPerforceCredentialsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientCheckPerforceCredentialsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ClientCommitDateFunc describes the behavior when the CommitDate method of
@@ -3796,6 +3941,122 @@ func (c ClientHeadFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientHeadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ClientIsPerforcePathCloneableFunc describes the behavior when the
+// IsPerforcePathCloneable method of the parent MockClient instance is
+// invoked.
+type ClientIsPerforcePathCloneableFunc struct {
+	defaultHook func(context.Context, string, string, string, string) error
+	hooks       []func(context.Context, string, string, string, string) error
+	history     []ClientIsPerforcePathCloneableFuncCall
+	mutex       sync.Mutex
+}
+
+// IsPerforcePathCloneable delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockClient) IsPerforcePathCloneable(v0 context.Context, v1 string, v2 string, v3 string, v4 string) error {
+	r0 := m.IsPerforcePathCloneableFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.IsPerforcePathCloneableFunc.appendCall(ClientIsPerforcePathCloneableFuncCall{v0, v1, v2, v3, v4, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// IsPerforcePathCloneable method of the parent MockClient instance is
+// invoked and the hook queue is empty.
+func (f *ClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(context.Context, string, string, string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsPerforcePathCloneable method of the parent MockClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ClientIsPerforcePathCloneableFunc) PushHook(hook func(context.Context, string, string, string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientIsPerforcePathCloneableFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, string, string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientIsPerforcePathCloneableFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, string, string, string) error {
+		return r0
+	})
+}
+
+func (f *ClientIsPerforcePathCloneableFunc) nextHook() func(context.Context, string, string, string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientIsPerforcePathCloneableFunc) appendCall(r0 ClientIsPerforcePathCloneableFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientIsPerforcePathCloneableFuncCall
+// objects describing the invocations of this function.
+func (f *ClientIsPerforcePathCloneableFunc) History() []ClientIsPerforcePathCloneableFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientIsPerforcePathCloneableFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientIsPerforcePathCloneableFuncCall is an object that describes an
+// invocation of method IsPerforcePathCloneable on an instance of
+// MockClient.
+type ClientIsPerforcePathCloneableFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientIsPerforcePathCloneableFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientIsPerforcePathCloneableFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ClientIsRepoCloneableFunc describes the behavior when the IsRepoCloneable

@@ -396,8 +396,8 @@ func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 	qs := []string{
 		`INSERT INTO users(username ) VALUES ('alice')`,
 
-		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
-		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
+		`INSERT INTO external_services(id, display_name, kind, config,  last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', NOW() + INTERVAL '10min')`,
+		`INSERT INTO external_services(id, display_name, kind, config,  last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', NOW() + INTERVAL '10min')`,
 
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(1, 'github.com/foo/bar', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==', 'github', 'https://github.com/')`,
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(2, 'github.com/foo/baz', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`,

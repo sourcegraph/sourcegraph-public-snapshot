@@ -12,7 +12,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 	"golang.org/x/time/rate"
@@ -21,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -1534,8 +1534,6 @@ SELECT
 	external_service_id,
 	repo_id,
 	clone_url,
-	user_id,
-	org_id,
 	created_at
 FROM external_service_repos
 WHERE %s
@@ -1551,27 +1549,16 @@ var scanExternalServiceRepos = basestore.NewSliceScanner(scanExternalServiceRepo
 
 func scanExternalServiceRepo(s dbutil.Scanner) (*types.ExternalServiceRepo, error) {
 	var (
-		repo   types.ExternalServiceRepo
-		userID sql.NullInt32
-		orgID  sql.NullInt32
+		repo types.ExternalServiceRepo
 	)
 
 	if err := s.Scan(
 		&repo.ExternalServiceID,
 		&repo.RepoID,
 		&repo.CloneURL,
-		&userID,
-		&orgID,
 		&repo.CreatedAt,
 	); err != nil {
 		return nil, err
-	}
-
-	if userID.Valid {
-		repo.UserID = userID.Int32
-	}
-	if orgID.Valid {
-		repo.OrgID = orgID.Int32
 	}
 
 	return &repo, nil

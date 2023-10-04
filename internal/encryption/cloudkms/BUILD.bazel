@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -10,6 +11,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
+        "//internal/encryption/envelope",
+        "//internal/encryption/wrapper",
         "//lib/errors",
         "//schema",
         "@com_github_prometheus_client_golang//prometheus",
@@ -17,6 +20,28 @@ go_library(
         "@com_google_cloud_go_kms//apiv1",
         "@com_google_cloud_go_kms//apiv1/kmspb",
         "@org_golang_google_api//option",
+        "@org_golang_google_protobuf//types/known/wrapperspb",
+    ],
+)
+
+go_test(
+    name = "cloudkms_test",
+    srcs = ["cloud_kms_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":cloudkms"],
+    deps = [
+        "//internal/encryption/envelope",
+        "//internal/httpcli",
+        "//internal/httptestutil",
+        "//lib/errors",
+        "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_dnaeon_go_vcr//recorder",
+        "@com_github_stretchr_testify//require",
+        "@com_google_cloud_go_kms//apiv1",
+        "@com_google_cloud_go_kms//apiv1/kmspb",
+        "@org_golang_google_api//option",
+        "@org_golang_google_api//option/internaloption",
+        "@org_golang_google_api//transport/http",
         "@org_golang_google_protobuf//types/known/wrapperspb",
     ],
 )

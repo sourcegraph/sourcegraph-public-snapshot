@@ -370,7 +370,10 @@ impl<'a> DocumentGenerator<'a> {
                     .find(|(_, (offset, _))| *offset == byte_offset)
                 {
                     Some(char) => char.0,
-                    None => line_contents.chars().count() - 1,
+                    None => {
+                        line_contents.chars().count()
+                            - (if line_contents.ends_with("\n") { 1 } else { 0 })
+                    }
                 };
 
                 stack.apply_with_hook(op, |basic_op, _stack| {
