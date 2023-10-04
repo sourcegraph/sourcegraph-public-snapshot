@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -36,7 +35,7 @@ var (
 	minRepoSizeMb = env.MustGetInt("ROCKSKIP_MIN_REPO_SIZE_MB", -1, "all repos that are at least this big will be indexed using Rockskip")
 )
 
-func CreateSetup(config rockskipConfig) shared.SetupFunc {
+func CreateSetup(config rockskipConfig) SetupFunc {
 	repoToSize := map[string]int64{}
 
 	if useRockskip {
@@ -48,7 +47,7 @@ func CreateSetup(config rockskipConfig) shared.SetupFunc {
 
 			// The blanks are the SQLite status endpoint (it's always nil) and the ctags command (same as
 			// Rockskip's).
-			sqliteSearchFunc, _, sqliteBackgroundRoutines, _, err := shared.SetupSqlite(observationCtx, db, gitserverClient, repositoryFetcher)
+			sqliteSearchFunc, _, sqliteBackgroundRoutines, _, err := SetupSqlite(observationCtx, db, gitserverClient, repositoryFetcher)
 			if err != nil {
 				return nil, nil, nil, "", err
 			}
@@ -88,7 +87,7 @@ func CreateSetup(config rockskipConfig) shared.SetupFunc {
 			return searchFunc, rockskipHandleStatus, sqliteBackgroundRoutines, rockskipCtagsCommand, nil
 		}
 	} else {
-		return shared.SetupSqlite
+		return SetupSqlite
 	}
 }
 
