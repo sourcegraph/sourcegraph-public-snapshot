@@ -400,7 +400,6 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 	writeKey := func(key string, skipHeader bool) (int64, error) {
 		rc, err := uploadStore.Get(ctx, key)
 		if err != nil {
-			_ = rc.Close()
 			return 0, err
 		}
 		defer rc.Close()

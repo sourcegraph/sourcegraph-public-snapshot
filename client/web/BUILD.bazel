@@ -8,7 +8,6 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -1230,7 +1229,6 @@ ts_project(
         "src/org/settings/DeleteOrgModal.tsx",
         "src/org/settings/OrgSettingsArea.tsx",
         "src/org/settings/OrgSettingsSidebar.tsx",
-        "src/org/settings/codeHosts/InstallGitHubAppSuccessPage.tsx",
         "src/org/settings/members/InviteForm.tsx",
         "src/org/settings/members/OrgSettingsMembersPage.tsx",
         "src/org/settings/profile/OrgSettingsProfilePage.tsx",
@@ -1996,6 +1994,7 @@ ts_project(
         "src/tracking/util.test.ts",
         "src/user/index.test.ts",
         "src/user/settings/auth/ExternalAccount.test.tsx",
+        "src/user/settings/auth/ExternalAccountsSignIn.test.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.test.tsx",
         "src/user/settings/research/ProductResearch.test.tsx",
         "src/util/checkRequestAccessAllowed.test.ts",

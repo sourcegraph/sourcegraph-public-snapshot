@@ -30,11 +30,7 @@ import type { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 import { type OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
-function queryOrganization(args: {
-    name: string
-    // id: string
-    // flagName: string organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
-}): Observable<OrgAreaOrganizationFields> {
+function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
         gql`
             query Organization($name: String!) {

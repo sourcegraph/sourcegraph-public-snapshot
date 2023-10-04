@@ -281,7 +281,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		return nil, errors.New("no email verification code provided for new user with unverified email")
 	}
 
-	searchable := true
 	createdAt := timeutil.Now()
 	updatedAt := createdAt
 	invalidatedSessionsAt := createdAt
@@ -326,8 +325,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 	var siteAdmin bool
 	err = u.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin, searchable",
-			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin, &searchable)
+		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin)
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) {
@@ -386,7 +385,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		SiteAdmin:             siteAdmin,
 		BuiltinAuth:           info.Password != "",
 		InvalidatedSessionsAt: invalidatedSessionsAt,
-		Searchable:            searchable,
 	}
 
 	{
@@ -529,7 +527,6 @@ type UserUpdate struct {
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
 	TosAccepted            *bool
-	Searchable             *bool
 	CompletedPostSignup    *bool
 }
 
@@ -570,9 +567,6 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	}
 	if update.TosAccepted != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
-	}
-	if update.Searchable != nil {
-		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("searchable=%s", *update.Searchable))
 	}
 	if update.CompletedPostSignup != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("completed_post_signup=%s", *update.CompletedPostSignup))
@@ -1297,7 +1291,6 @@ SELECT u.id,
        u.invalidated_sessions_at,
        u.tos_accepted,
        u.completed_post_signup,
-       u.searchable,
        EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
 FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
@@ -1310,7 +1303,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.Searchable, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
@@ -1345,7 +1338,6 @@ SELECT u.id,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
        u.tos_accepted,
-       u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
        sa.account_id AS scim_external_id,
        sa.account_data AS scim_account_data
@@ -1366,7 +1358,7 @@ func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
 	var deletedAt sql.NullTime
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
