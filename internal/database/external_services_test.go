@@ -2510,38 +2510,16 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// create new user
-	user, err := db.Users().Create(ctx,
-		NewUser{
-			Email:           "alice@example.com",
-			Username:        "alice",
-			Password:        "password",
-			EmailIsVerified: true,
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// create new org
-	displayName := "Acme org"
-	org, err := db.Orgs().Create(ctx, "acme", &displayName)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	const repoId = 1
 	err = db.Repos().Create(ctx, &types.Repo{ID: repoId, Name: "test1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id, org_id) VALUES ($1, $2, $3, $4, $5)",
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES ($1, $2, $3)",
 		es.ID,
 		repoId,
 		"cloneUrl",
-		user.ID,
-		org.ID,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -2562,8 +2540,6 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	require.Exactly(t, es.ID, have.ExternalServiceID, "externalServiceID is incorrect")
 	require.Exactly(t, api.RepoID(repoId), have.RepoID, "repoID is incorrect")
 	require.Exactly(t, "cloneUrl", have.CloneURL, "cloneURL is incorrect")
-	require.Exactly(t, user.ID, have.UserID, "userID is incorrect")
-	require.Exactly(t, org.ID, have.OrgID, "orgID is incorrect")
 
 	// check that repos are found with given externalServiceID
 	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})
