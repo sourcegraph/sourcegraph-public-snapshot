@@ -44,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -530,31 +529,18 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
-	var syncer vcssyncer.VCSSyncer
 	// We use an internal actor here as the repo may be private. It is safe since all
 	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
 	// the only things that could leak here is whether a private repo exists although
 	// the endpoint is only available internally so it's low risk.
 	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
 	if err != nil {
-		// For non-not found errors, we should error out instead, and not attempt
-		// to try an authless git clone.
-		if !errcode.IsNotFound(err) {
-			return protocol.IsRepoCloneableResponse{}, err
-		}
+		return protocol.IsRepoCloneableResponse{}, errors.Wrap(err, "getRemoteURL")
+	}
 
-		// We use this endpoint to verify if a repo exists without consuming
-		// API rate limit, since many users visit private or bogus repos,
-		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL, _ = vcs.ParseURL("https://" + string(repo) + ".git")
-
-		// At this point we are assuming it's a git repo
-		syncer = vcssyncer.NewGitRepoSyncer(s.RecordingCommandFactory)
-	} else {
-		syncer, err = s.GetVCSSyncer(ctx, repo)
-		if err != nil {
-			return protocol.IsRepoCloneableResponse{}, err
-		}
+	syncer, err := s.GetVCSSyncer(ctx, repo)
+	if err != nil {
+		return protocol.IsRepoCloneableResponse{}, errors.Wrap(err, "GetVCSSyncer")
 	}
 
 	resp := protocol.IsRepoCloneableResponse{

@@ -3,13 +3,13 @@ package backend
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,11 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -61,6 +63,7 @@ type repos struct {
 	logger          log.Logger
 	db              database.DB
 	gitserverClient gitserver.Client
+	cf              httpcli.Doer
 	store           database.RepoStore
 	cache           *dbcache.IndexableReposLister
 }
@@ -110,14 +113,10 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 
 }
 
-var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_frontend_repo_add_is_cloneable",
-	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
-}, []string{"status"})
-
 // addRepoToSourcegraphDotCom adds the repository with the given name to the database by calling
 // repo-updater when in sourcegraph.com mode. It's possible that the repo has
 // been renamed on the code host in which case a different name may be returned.
+// name is assumed to not exist as a repo in the database.
 func (s *repos) addRepoToSourcegraphDotCom(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
 	ctx, done := startTrace(ctx, "Add", name, &err)
 	defer done()
@@ -130,25 +129,14 @@ func (s *repos) addRepoToSourcegraphDotCom(ctx context.Context, name api.RepoNam
 		return "", &database.RepoNotFoundErr{Name: name}
 	}
 
-	status := "unknown"
-	defer func() {
-		metricIsRepoCloneable.WithLabelValues(status).Inc()
-	}()
-
-	// For package hosts, IsRepoCloneable is a noop, so we don't need to spend
-	// time talking to gitserver for those.
+	// Verify repo exists and is cloneable publicly before continuing to put load
+	// on repo-updater.
+	// For package hosts, we have no good metric to figure this out at the moment.
 	if !codehost.IsPackageHost() {
-		if err := s.gitserverClient.IsRepoCloneable(ctx, name); err != nil {
-			if ctx.Err() != nil {
-				status = "timeout"
-			} else {
-				status = "fail"
-			}
+		if err := s.isGitRepoPubliclyCloneable(ctx, name); err != nil {
 			return "", err
 		}
 	}
-
-	status = "success"
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
 	// database on sourcegraph.com if that repo is from github.com or gitlab.com
@@ -157,6 +145,69 @@ func (s *repos) addRepoToSourcegraphDotCom(ctx context.Context, name api.RepoNam
 		return lookupResult.Repo.Name, err
 	}
 	return "", err
+}
+
+var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_frontend_repo_add_is_cloneable",
+	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
+}, []string{"status"})
+
+// isGitRepoPubliclyCloneable checks if a git repo with the given name would be
+// cloneable without auth - ie. if sourcegraph.com could clone it with a cloud_default
+// external service. This is explicitly without any auth, so we don't consume
+// any API rate limit, since many users visit private or bogus repos.
+// We deduce the unauthenticated clone URL from the repo name by simply adding .git
+// to it.
+// Name is verified by the caller to be for either of our public cloud default
+// hosts.
+func (s *repos) isGitRepoPubliclyCloneable(ctx context.Context, name api.RepoName) error {
+	// This is on the request path, don't block for too long if upstream is struggling.
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	status := "unknown"
+	defer func() {
+		metricIsRepoCloneable.WithLabelValues(status).Inc()
+	}()
+
+	// Speak git smart protocol to check if repo exists without cloning.
+	remoteURL, err := vcs.ParseURL("https://" + string(name) + ".git/info/refs?service=git-upload-pack")
+	if err != nil {
+		// No idea how to construct a remote URL for this repo, bail.
+		return &database.RepoNotFoundErr{Name: api.RepoName(name)}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, remoteURL.String(), nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to construct request to check if repository exists")
+	}
+
+	cf := httpcli.ExternalDoer
+	if s.cf != nil {
+		cf = s.cf
+	}
+
+	resp, err := cf.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if repository exists")
+	}
+
+	// No interest in the response body.
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if ctx.Err() != nil {
+			status = "timeout"
+		} else {
+			status = "fail"
+		}
+		// Not cloneable without auth.
+		return &database.RepoNotFoundErr{Name: api.RepoName(name)}
+	}
+
+	status = "success"
+
+	return nil
 }
 
 func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {
