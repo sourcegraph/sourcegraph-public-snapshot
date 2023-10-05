@@ -7,8 +7,6 @@ import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
 import sass from 'sass'
 
-// eslint-disable import/extensions
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import postcssConfig from '../../../../postcss.config'
