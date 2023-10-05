@@ -18,7 +18,7 @@ else
   exit 1
 fi
 
-VERSION=$(./enterprise/dev/app/app-version.sh)
+VERSION=$(./dev/app/app-version.sh)
 echo "--- :github: Creating GitHub release for Cody App (${VERSION})"
 echo "Release will have to following assets:"
 ls -al ./dist

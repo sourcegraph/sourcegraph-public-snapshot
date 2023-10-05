@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-version="$(./enterprise/dev/app/app-version.sh)"
+version="$(./dev/app/app-version.sh)"
 echo "Building version: ${version}"
 
 echo "--- :chrome: Building web"
