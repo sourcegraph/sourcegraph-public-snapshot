@@ -1,3 +1,5 @@
+package mystuff
+
 case class Ya(i: Int)
 
 case class Yes(a: Int):
