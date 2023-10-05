@@ -1,17 +1,15 @@
 package perforce
 
 import (
-	"bytes"
-	"encoding/json"
+	"bufio"
 	"io"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // PerformDebugScan will scan protections rules from r and log detailed
@@ -20,58 +18,63 @@ func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID, ignor
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	buf, err := io.ReadAll(r)
+
+	pr, err := parseP4ProtectsRaw(r)
 	if err != nil {
 		return perms, err
 	}
-	pr, err := parseP4Protects(buf)
-	if err != nil {
-		return perms, err
-	}
+
 	scanner := fullRepoPermsScanner(logger, perms, []extsvc.RepoID{depot})
 	err = scanProtects(logger, pr, scanner, ignoreRulesWithHost)
 	return perms, err
 }
 
-type perforceJSONProtect struct {
-	DepotFile string  `json:"depotFile"`
-	Host      string  `json:"host"`
-	Line      string  `json:"line"`
-	Perm      string  `json:"perm"`
-	IsGroup   *string `json:"isgroup,omitempty"`
-	Unmap     *string `json:"unmap,omitempty"`
-	User      string  `json:"user"`
-}
-
-func parseP4Protects(out []byte) ([]*p4types.Protect, error) {
+func parseP4ProtectsRaw(rc io.Reader) ([]*p4types.Protect, error) {
 	protects := make([]*p4types.Protect, 0)
 
-	lr := byteutils.NewLineReader(out)
-	for lr.Scan() {
-		line := lr.Line()
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		line := scanner.Text()
 
 		// Trim whitespace
-		line = bytes.TrimSpace(line)
+		line = strings.TrimSpace(line)
 
-		var parsedLine perforceJSONProtect
-		if err := json.Unmarshal(line, &parsedLine); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal protect line")
+		// Skip comments and blank lines
+		if strings.HasPrefix(line, "##") || line == "" {
+			continue
 		}
 
-		entityType := "user"
-		if parsedLine.IsGroup != nil {
-			entityType = "group"
+		// Trim trailing comments
+		if i := strings.Index(line, "##"); i > -1 {
+			line = line[:i]
+		}
+
+		// Split into fields
+		fields := strings.Fields(line)
+		if len(fields) < 5 {
+			continue
+		}
+
+		parsedLine := p4ProtectLine{
+			level:      fields[0],
+			entityType: fields[1],
+			name:       fields[2],
+			match:      fields[4],
+		}
+		if strings.HasPrefix(parsedLine.match, "-") {
+			parsedLine.isExclusion = true                                // is an exclusion
+			parsedLine.match = strings.TrimPrefix(parsedLine.match, "-") // trim leading -
 		}
 
 		protects = append(protects, &p4types.Protect{
-			Host:        parsedLine.Host,
-			EntityType:  entityType,
-			EntityName:  parsedLine.User,
-			Match:       parsedLine.DepotFile,
-			IsExclusion: parsedLine.Unmap != nil,
-			Level:       parsedLine.Perm,
+			Level:       parsedLine.level,
+			EntityType:  parsedLine.entityType,
+			EntityName:  parsedLine.name,
+			Host:        fields[3],
+			Match:       parsedLine.match,
+			IsExclusion: parsedLine.isExclusion,
 		})
 	}
 
-	return protects, nil
+	return protects, scanner.Err()
 }
