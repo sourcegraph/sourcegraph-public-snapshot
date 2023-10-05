@@ -2,7 +2,7 @@
 
 Some other troubleshooting sections you might be interested in:
 
-- [Repository permissions](./permissions/index.md#troubleshooting)
+- [Users have access to too few or too many repositories](./permissions/index.md#troubleshooting)
 
 ### Docker Toolbox on Windows: `New state of 'nil' is invalid`
 
