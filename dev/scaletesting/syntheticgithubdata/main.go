@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/oauth2"
 

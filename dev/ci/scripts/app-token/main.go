@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/google/go-github/v47/github"
+	"github.com/google/go-github/v55/github"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -74,7 +74,6 @@ func genJwtToken(appID string, keyPath string) (string, error) {
 		return "", errors.Wrap(err, "Failed to create token.")
 	}
 	return jwtString, nil
-
 }
 
 func getInstallAccessToken(ctx context.Context, ghc *github.Client) (*string, error) {

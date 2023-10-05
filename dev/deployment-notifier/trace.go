@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/honeycombio/libhoney-go"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -102,21 +102,21 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 	for prNumber, prServices := range r.ServicesPerPullRequest {
 		pr := prSet[prNumber]
 		if pr.GetMergedAt().Before(oldestPR) {
-			oldestPR = pr.GetMergedAt()
+			oldestPR = pr.GetMergedAt().Time
 		}
 
 		prTraceID := newSpanID("pr", strconv.Itoa(pr.GetNumber()))
 
 		for _, service := range prServices {
 			prServiceEvent := newTraceEvent(deploymentTraceID, r)
-			prServiceEvent.Timestamp = pr.GetMergedAt()
+			prServiceEvent.Timestamp = pr.GetMergedAt().Time
 			prServiceEvent.Add(map[string]any{
 				// Honeycomb fields
 				"name":            service,
 				"service.name":    spanServiceNameService,
 				"trace.parent_id": prTraceID,
 				"trace.span_id":   newSpanID("svc", strconv.Itoa(pr.GetNumber()), service),
-				"duration_ms":     deployTime.Sub(pr.GetMergedAt()) / time.Millisecond,
+				"duration_ms":     deployTime.Sub(pr.GetMergedAt().Time) / time.Millisecond,
 				"user":            pr.GetUser().GetLogin(),
 
 				// Extra metadata
@@ -128,7 +128,7 @@ func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
 		}
 
 		prEvent := newTraceEvent(deploymentTraceID, r)
-		prEvent.Timestamp = pr.GetMergedAt()
+		prEvent.Timestamp = pr.GetMergedAt().Time
 		prEvent.Add(map[string]any{
 			// Honeycomb fields
 			"name":            pr.GetNumber(),

@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v48/github" // v48 is used for dghubble/gologin compatibility
 	"github.com/segmentio/fasthash/fnv1"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"

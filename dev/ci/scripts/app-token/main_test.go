@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/google/go-github/v47/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
@@ -59,7 +59,6 @@ func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client,
 		recorder.SetTransport(httpClient.Transport)
 	}
 	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
-
 }
 
 func TestGetInstallAccessToken(t *testing.T) {
