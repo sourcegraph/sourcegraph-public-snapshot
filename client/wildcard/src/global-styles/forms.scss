@@ -204,7 +204,7 @@ progress {
         opacity: 1;
     }
 
-    &:focus-visible {
+    &.focus-visible {
         border-color: var(--input-focus-border-color);
         box-shadow: var(--input-focus-box-shadow);
     }
