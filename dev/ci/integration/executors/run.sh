@@ -2,7 +2,7 @@
 
 # This script runs the executors-e2e test suite against a candidate server image.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
 set -ex
 
