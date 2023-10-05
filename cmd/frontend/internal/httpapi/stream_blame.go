@@ -83,7 +83,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 
 		requestedPath = strings.TrimPrefix(requestedPath, "/")
 
-		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, repo.Name, requestedPath, &gitserver.BlameOptions{
+		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), repo.Name, requestedPath, &gitserver.BlameOptions{
 			NewestCommit: commitID,
 		})
 		if err != nil {
