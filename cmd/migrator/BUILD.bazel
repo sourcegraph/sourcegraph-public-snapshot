@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//cmd/migrator/shared",
         "//internal/env",
+        "//internal/oobmigration/migrations/register",
         "//internal/sanitycheck",
         "//internal/version",
         "@com_github_sourcegraph_log//:log",
