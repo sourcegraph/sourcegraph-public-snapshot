@@ -49,7 +49,7 @@ type Scenario interface {
 //
 // Once Apply() is called, all the corresponding resources should be realized on GitHub. To fetch the corresponding
 // GitHub resources once can call Get() on the resources.
-type GithubScenario struct {
+type GitHubScenario struct {
 	id               string
 	t                *testing.T
 	client           *GitHubClient
@@ -82,12 +82,12 @@ func NewGithubScenario(ctx context.Context, t *testing.T, cfg config.Config) (*G
 }
 
 // Verbose sets the reporter to ConsoleReporter to enable verbose output
-func (s *GithubScenario) Verbose() {
+func (s *GithubScenario) SetVerbose() {
 	s.reporter = &ConsoleReporter{}
 }
 
 // Quiet sets the reporter to a no-op reporter to reduce output
-func (s *GithubScenario) Quiet() {
+func (s *GithubScenario) SetQuiet() {
 	s.reporter = NoopReporter{}
 }
 
