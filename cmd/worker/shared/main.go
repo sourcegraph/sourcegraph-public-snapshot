@@ -154,14 +154,12 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return errors.Wrap(err, "initializing keyring")
 	}
 
-	if enterpriseInit != nil {
-		db, err := workerdb.InitDB(observationCtx)
-		if err != nil {
-			return errors.Wrap(err, "Failed to create database connection")
-		}
-
-		enterpriseInit(db)
+	db, err := workerdb.InitDB(observationCtx)
+	if err != nil {
+		return errors.Wrap(err, "Failed to create database connection")
 	}
+
+	enterpriseInit(db)
 
 	// Emit metrics to help site admins detect instances that accidentally
 	// omit a job from from the instance's deployment configuration.
