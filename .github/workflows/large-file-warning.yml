@@ -13,6 +13,7 @@ jobs:
 
     - name: Check for large files
       run: |
+        git log -1 --pretty=%B
         if git log -1 --pretty=%B | grep -q "skip filesize check" ; then
           exit 0
         fi
