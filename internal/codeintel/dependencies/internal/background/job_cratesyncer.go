@@ -244,7 +244,6 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 func (j *crateSyncerJob) readIndexArchiveBatch(ctx context.Context, repoName api.RepoName, batch []gitdomain.Pathspec) (io.Reader, error) {
 	reader, err := j.gitClient.ArchiveReader(
 		ctx,
-		nil,
 		repoName,
 		gitserver.ArchiveOptions{
 			Treeish:   "HEAD",

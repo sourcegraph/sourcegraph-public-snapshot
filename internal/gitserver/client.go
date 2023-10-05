@@ -242,7 +242,7 @@ type Client interface {
 	AddrForRepo(ctx context.Context, repoName api.RepoName) string
 
 	// ArchiveReader streams back the file contents of an archived git repo.
-	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
+	ArchiveReader(ctx context.Context, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
 
 	// BatchLog invokes the given callback with the `git log` output for a batch of repository
 	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin

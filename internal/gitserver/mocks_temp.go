@@ -216,7 +216,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (r0 io.ReadCloser, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -513,7 +513,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
+			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockClient.ArchiveReader")
 			},
 		},
@@ -1181,23 +1181,23 @@ func (c ClientAddrsFuncCall) Results() []interface{} {
 // ClientArchiveReaderFunc describes the behavior when the ArchiveReader
 // method of the parent MockClient instance is invoked.
 type ClientArchiveReaderFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
+	defaultHook func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
+	hooks       []func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
 	history     []ClientArchiveReaderFuncCall
 	mutex       sync.Mutex
 }
 
 // ArchiveReader delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) ArchiveReader(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 ArchiveOptions) (io.ReadCloser, error) {
-	r0, r1 := m.ArchiveReaderFunc.nextHook()(v0, v1, v2, v3)
-	m.ArchiveReaderFunc.appendCall(ClientArchiveReaderFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockClient) ArchiveReader(v0 context.Context, v1 api.RepoName, v2 ArchiveOptions) (io.ReadCloser, error) {
+	r0, r1 := m.ArchiveReaderFunc.nextHook()(v0, v1, v2)
+	m.ArchiveReaderFunc.appendCall(ClientArchiveReaderFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ArchiveReader method
 // of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientArchiveReaderFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error)) {
+func (f *ClientArchiveReaderFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
@@ -1205,7 +1205,7 @@ func (f *ClientArchiveReaderFunc) SetDefaultHook(hook func(context.Context, auth
 // ArchiveReader method of the parent MockClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientArchiveReaderFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error)) {
+func (f *ClientArchiveReaderFunc) PushHook(hook func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1214,19 +1214,19 @@ func (f *ClientArchiveReaderFunc) PushHook(hook func(context.Context, authz.SubR
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientArchiveReaderFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientArchiveReaderFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
+	f.PushHook(func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientArchiveReaderFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
+func (f *ClientArchiveReaderFunc) nextHook() func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1264,13 +1264,10 @@ type ClientArchiveReaderFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 authz.SubRepoPermissionChecker
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 ArchiveOptions
+	Arg2 ArchiveOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 io.ReadCloser
@@ -1282,7 +1279,7 @@ type ClientArchiveReaderFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientArchiveReaderFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

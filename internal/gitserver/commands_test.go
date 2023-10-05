@@ -2449,7 +2449,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
 	client := NewClient()
-	if _, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
+	if _, err := client.ArchiveReader(context.Background(), repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
 }
@@ -2484,7 +2484,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
 	client := NewClient()
-	readCloser, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts)
+	readCloser, err := client.ArchiveReader(context.Background(), repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
 	}

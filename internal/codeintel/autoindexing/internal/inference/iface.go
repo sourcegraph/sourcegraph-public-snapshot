@@ -42,5 +42,5 @@ func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commit stri
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	// Note: the sub-repo perms checker is nil here because all paths were already checked via a previous call to s.ListFiles
-	return s.client.ArchiveReader(ctx, nil, repo, opts)
+	return s.client.ArchiveReader(ctx, repo, opts)
 }

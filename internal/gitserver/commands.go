@@ -2472,7 +2472,6 @@ const (
 // ArchiveReader streams back the file contents of an archived git repo.
 func (c *clientImplementor) ArchiveReader(
 	ctx context.Context,
-	checker authz.SubRepoPermissionChecker,
 	repo api.RepoName,
 	options ArchiveOptions,
 ) (_ io.ReadCloser, err error) {
@@ -2485,8 +2484,8 @@ func (c *clientImplementor) ArchiveReader(
 	})
 	defer endObservation(1, observation.Args{})
 
-	if authz.SubRepoEnabled(checker) {
-		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
+	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
+		if enabled, err := authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo); err != nil {
 			return nil, errors.Wrap(err, "sub-repo permissions check:")
 		} else if enabled {
 			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
