@@ -160,20 +160,33 @@ updated_repo_revision_jobs AS (
 SELECT (SELECT count(*) FROM updated_jobs) + (SELECT count(*) FROM updated_repo_jobs) + (SELECT count(*) FROM updated_repo_revision_jobs) as total_canceled
 `
 
+func listSearchJobQuery(where *sqlf.Query) *sqlf.Query {
+	return sqlf.Sprintf(
+		listExhaustiveSearchJobsQueryFmtStr,
+		sqlf.Join(exhaustiveSearchJobColumns, ", "),
+		sqlf.Sprintf(
+			aggStateSubQuery,
+			sqlf.Sprintf(
+				getAggregateStateTable,
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+			),
+		),
+		where,
+	)
+}
+
 func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.ExhaustiveSearchJob, err error) {
 	ctx, _, endObservation := s.operations.getExhaustiveSearchJob.With(ctx, &err, opAttrs(
 		attribute.Int64("ID", id),
 	))
 	defer endObservation(1, observation.Args{})
 
-	where := sqlf.Sprintf("id = %d", id)
-	q := sqlf.Sprintf(
-		getExhaustiveSearchJobQueryFmtStr,
-		sqlf.Join(exhaustiveSearchJobColumns, ", "),
-		where,
-	)
+	where := sqlf.Sprintf("WHERE id = %d", id)
+	q := listSearchJobQuery(where)
 
-	job, err := scanExhaustiveSearchJob(s.Store.QueryRow(ctx, q))
+	job, err := scanExhaustiveSearchJobList(s.Store.QueryRow(ctx, q))
 	if err != nil {
 		// don't leak db error types to caller
 		return nil, errors.Wrapf(ErrNoResults, "failed to scan job with id %d: %s", id, err.Error())
@@ -194,7 +207,10 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 }
 
 // UserHasAccess is a helper function to check if the user has access to the
-// job. If you want to get the job, use GetExhaustiveSearchJob instead.
+// job. It returns an error if the job cannot be found or the user is not
+// authorized, and nil otherwise. It avoids expensive joins and aggregations and
+// is therefore much cheaper to call than GetExhaustiveSearchJob. If you want to
+// get the job, call GetExhaustiveSearchJob instead.
 func (s *Store) UserHasAccess(ctx context.Context, id int64) (err error) {
 	ctx, _, endObservation := s.operations.userHasAccess.With(ctx, &err, opAttrs(
 		attribute.Int64("ID", id),
@@ -218,15 +234,12 @@ func (s *Store) UserHasAccess(ctx context.Context, id int64) (err error) {
 		return ErrNoResults
 	}
 
-	// 🚨 SECURITY: only the initiator, internal or site admins may view a job
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, initiatorID); err != nil {
-		// job id is just an incrementing integer that on any new job is
-		// returned. So this information is not private so we can just return
-		// err to indicate the reason for not returning the job.
-		return err
-	}
-
-	return nil
+	// 🚨 SECURITY: only the initiator, internal or site admins may view a job.
+	//
+	// job id is just an incrementing integer that on any new job is returned. So
+	// this information is not private so we can just return err to indicate the
+	// reason for not returning the job.
+	return auth.CheckSiteAdminOrSameUser(ctx, s.db, initiatorID)
 }
 
 // aggStateSubQuery takes the results from getAggregateStateTable and computes a
@@ -350,20 +363,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		whereClause = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(
-		listExhaustiveSearchJobsQueryFmtStr,
-		sqlf.Join(exhaustiveSearchJobColumns, ", "),
-		sqlf.Sprintf(
-			aggStateSubQuery,
-			sqlf.Sprintf(
-				getAggregateStateTable,
-				sqlf.Sprintf("exhaustive_search_jobs.id"),
-				sqlf.Sprintf("exhaustive_search_jobs.id"),
-				sqlf.Sprintf("exhaustive_search_jobs.id"),
-			),
-		),
-		whereClause,
-	)
+	q := listSearchJobQuery(whereClause)
 	if pagination != nil {
 		q = pagination.AppendOrderToQuery(q)
 		q = pagination.AppendLimitToQuery(q)
