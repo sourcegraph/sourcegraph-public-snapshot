@@ -154,7 +154,9 @@ impl<'a> Scope<'a> {
 
     pub fn into_occurrences(&mut self, hint: usize) -> Vec<Occurrence> {
         let mut occs = Vec::with_capacity(hint);
-        self.rec_into_occurrences(&mut 0, &mut occs, &mut HashMap::default());
+        let mut declarations_above = vec![];
+
+        self.rec_into_occurrences(&mut 0, &mut occs, &mut declarations_above);
         occs
     }
 
@@ -162,9 +164,9 @@ impl<'a> Scope<'a> {
         &self,
         id: &mut usize,
         occurrences: &mut Vec<Occurrence>,
-        declarations_above: &mut HashMap<&str, usize>,
+        declarations_above: &mut Vec<HashMap<&'a str, usize>>,
     ) {
-        let mut declarations_above = declarations_above.clone();
+        let mut our_declarations_above = HashMap::<&str, usize>::default();
 
         // TODO: I'm a little sad about this.
         //  We could probably make this a runtime option, where `self` has a `sorted` value
@@ -178,7 +180,7 @@ impl<'a> Scope<'a> {
             let symbol = match definition.definition_strength {
                 DefinitionStrength::Strong => {
                     let symbol = format_symbol(Symbol::new_local(*id));
-                    declarations_above.insert(definition.identifier, *id);
+                    our_declarations_above.insert(definition.identifier, *id);
                     let symbol_roles = scip::types::SymbolRole::Definition.value();
 
                     occurrences.push(scip::types::Occurrence {
@@ -192,8 +194,14 @@ impl<'a> Scope<'a> {
                     symbol
                 }
                 DefinitionStrength::Weak => {
-                    if let Some(above) = declarations_above.get(definition.identifier) {
-                        let symbol = format_symbol(Symbol::new_local(*above));
+                    if let Some(above) = declarations_above
+                        .into_iter()
+                        .rev()
+                        .find(|x| x.contains_key(definition.identifier))
+                    {
+                        let symbol = format_symbol(Symbol::new_local(
+                            *above.get(definition.identifier).unwrap(),
+                        ));
 
                         occurrences.push(scip::types::Occurrence {
                             range: definition.node.to_scip_range(),
@@ -205,7 +213,7 @@ impl<'a> Scope<'a> {
                         continue;
                     } else {
                         let symbol = format_symbol(Symbol::new_local(*id));
-                        declarations_above.insert(definition.identifier, *id);
+                        our_declarations_above.insert(definition.identifier, *id);
                         let symbol_roles = scip::types::SymbolRole::Definition.value();
 
                         occurrences.push(scip::types::Occurrence {
@@ -236,9 +244,11 @@ impl<'a> Scope<'a> {
                 .for_each(|c| c.occurrences_for_children(definition, symbol.as_str(), occurrences));
         }
 
+        declarations_above.push(our_declarations_above);
         self.children
             .iter()
-            .for_each(|c| c.rec_into_occurrences(id, occurrences, &mut declarations_above));
+            .for_each(|c| c.rec_into_occurrences(id, occurrences, declarations_above));
+        declarations_above.pop();
     }
 
     fn occurrences_for_children(
