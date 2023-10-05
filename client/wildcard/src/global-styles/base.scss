@@ -28,6 +28,7 @@
 :focus:not(:focus-visible) {
     outline: none;
 }
+
 :focus-visible {
     outline: 0;
     box-shadow: var(--focus-box-shadow);

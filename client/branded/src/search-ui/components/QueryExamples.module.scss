@@ -20,13 +20,13 @@
         box-shadow: none;
     }
 
-    &:focus {
+    &:focus-visible {
         border: 1px solid transparent;
         box-shadow: 0 0 0 0.125rem var(--primary-2);
         outline: none;
     }
 
-    &:active:focus {
+    &:active:focus-visible {
         border: 1px solid var(--border-color);
         box-shadow: none;
     }
