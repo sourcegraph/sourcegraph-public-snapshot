@@ -26,10 +26,14 @@ func NewBestEffortEventRecorder(logger log.Logger, recorder *EventRecorder) *Bes
 // actor, logging any recording errors it encounters. Parameters are optional.
 func (r *BestEffortEventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters *EventParameters) {
 	if err := r.recorder.Record(ctx, feature, action, parameters); err != nil {
-		trace.Logger(ctx, r.logger).Error("failed to record telemetry event",
+		fields := []log.Field{
 			log.String("feature", string(feature)),
 			log.String("action", string(action)),
-			log.Int("parameters.version", parameters.Version),
-			log.Error(err))
+			log.Error(err),
+		}
+		if parameters != nil {
+			fields = append(fields, log.Int("parameters.version", parameters.Version))
+		}
+		trace.Logger(ctx, r.logger).Error("failed to record telemetry event", fields...)
 	}
 }
