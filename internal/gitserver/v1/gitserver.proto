@@ -557,12 +557,13 @@ message PerforceGetChangelistResponse {
 message PerforceChangelist {
   // PerforceChangelistState is the valid state values of a Perforce changelist.
   enum PerforceChangelistState {
-    PERFORCE_CHANGELIST_STATE_SUBMITTED = 0;
-    PERFORCE_CHANGELIST_STATE_PENDING = 1;
-    PERFORCE_CHANGELIST_STATE_SHELVED = 2;
+    PERFORCE_CHANGELIST_STATE_UNSPECIFIED = 0;
+    PERFORCE_CHANGELIST_STATE_SUBMITTED = 1;
+    PERFORCE_CHANGELIST_STATE_PENDING = 2;
+    PERFORCE_CHANGELIST_STATE_SHELVED = 3;
     // Perforce doesn't actually return a state for closed changelists, so this is
     // one we use to indicate the changelist is closed.
-    PERFORCE_CHANGELIST_STATE_CLOSED = 3;
+    PERFORCE_CHANGELIST_STATE_CLOSED = 4;
   }
   string id = 1;
   google.protobuf.Timestamp creation_date = 2;

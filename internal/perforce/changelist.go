@@ -58,7 +58,7 @@ func (s ChangelistState) ToProto() v1.PerforceChangelist_PerforceChangelistState
 	case ChangelistStateClosed:
 		return v1.PerforceChangelist_PERFORCE_CHANGELIST_STATE_CLOSED
 	default:
-		return -1
+		return v1.PerforceChangelist_PERFORCE_CHANGELIST_STATE_UNSPECIFIED
 	}
 }
 
