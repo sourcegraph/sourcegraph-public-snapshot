@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 
-import type { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
+import type { ApolloClientOptions, ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import { type GraphQLResult, useQuery } from '@sourcegraph/http-client'
@@ -62,6 +62,7 @@ interface UsePaginatedConnectionConfig<TResult> {
 interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TNode> {
     query: string
     variables: Omit<TVariables, 'first' | 'last' | 'before' | 'after'>
+    errorPolicy: 'none' | 'ignore' | 'all'
     getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TNode> | undefined
     options?: UsePaginatedConnectionConfig<TResult>
 }
@@ -80,6 +81,7 @@ const DEFAULT_PAGE_SIZE = 20
 export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedConnectionQueryArguments, TNode>({
     query,
     variables,
+    errorPolicy,
     getConnection,
     options,
 }: UsePaginatedConnectionParameters<TResult, TVariables, TNode>): UsePaginatedConnectionResult<
@@ -111,6 +113,7 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
         pollInterval: options?.pollInterval,
+        errorPolicy: errorPolicy || 'none',
     })
 
     const data = currentData ?? previousData
