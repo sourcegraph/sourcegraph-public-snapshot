@@ -398,10 +398,10 @@ ts_project(
         "src/devsettings/settings/eventLoggingDebug.tsx",
         "src/devsettings/utils.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
+        "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/components/index.ts",
         "src/enterprise/app/components/zero-states/AppZeroStates.tsx",
-        "src/enterprise/app/main.tsx",
         "src/enterprise/app/routes.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/about/AboutPage.tsx",
@@ -2126,7 +2126,7 @@ BUNDLE_DATA_DEPS = [
             "//:package_json",
         ],
         entry_points = {
-            "src/enterprise/main.js": "main",
+            "src/enterprise/main.js": "app",
             "src/enterprise/embed/main.js": "embed",
         },
         env = {
@@ -2156,7 +2156,7 @@ webpack_web_app(
         "//:package_json",
     ],
     entry_points = {
-        "src/enterprise/main.js": "main",
+        "src/enterprise/main.js": "app",
     },
     env = {
         "NODE_ENV": "production",
