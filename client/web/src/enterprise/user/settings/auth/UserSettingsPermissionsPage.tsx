@@ -116,7 +116,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                                     </span>
                                 </>
                             ) : (
-                                'Never'
+                                <span className="flex-grow-1 pl-2">Never</span>
                             )}
                         </span>
                     </div>

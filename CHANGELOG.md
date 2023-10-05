@@ -14,6 +14,25 @@ All notable changes to Sourcegraph are documented in this file.
 <!-- START CHANGELOG -->
 
 ## Unreleased 5.2.0 (planned release date: October 4, 2023)
+## Unreleased 5.3.0 (planned release date: February, 2024)
+
+### Added
+
+- Added two new authorization configuration options to GitHub code host connections: "markInternalReposAsPublic" and "syncInternalRepoPermissions". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Setting "syncInternalRepoPermissions" to true adds an additional step to user permission syncs that explicitly checks for internal repositories. However, this could lead to longer user permission sync times. [#56677](https://github.com/sourcegraph/sourcegraph/pull/56677)
+
+### Changed
+
+-
+
+### Fixed
+
+- Fixed a user's Permissions page being inaccessible if the user has had no permission syncs with an external account connected. [#57372](https://github.com/sourcegraph/sourcegraph/pull/57372)
+
+### Removed
+
+-
+
+## 5.2.0
 
 ### Added
 
