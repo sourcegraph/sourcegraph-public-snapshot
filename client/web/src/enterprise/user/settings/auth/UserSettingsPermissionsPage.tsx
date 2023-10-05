@@ -197,7 +197,7 @@ const TableColumns: IColumn<INode>[] = [
             ) : (
                 <div className="py-2">
                     <ExternalRepositoryIcon externalRepo={{ serviceType: 'unknown' }} />
-                    You do not have access to this repository
+                    Private repository
                 </div>
             ),
     },
