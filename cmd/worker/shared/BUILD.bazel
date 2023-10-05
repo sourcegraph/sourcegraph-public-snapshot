@@ -57,6 +57,5 @@ go_library(
         "//internal/symbols",
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_sourcegraph_log//:log",
     ],
 )
