@@ -13,7 +13,7 @@ jobs:
 
     - name: Check for large files
       run: |
-        if git log --pretty=%B HEAD...${{ github.base_ref }}| grep -q "skip filesize check" ; then
+        if git log --pretty=%B HEAD...${{ github.base_ref }} -- | grep -q "skip filesize check" ; then
           exit 0
         fi
 
