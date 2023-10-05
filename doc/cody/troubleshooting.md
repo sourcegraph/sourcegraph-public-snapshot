@@ -46,3 +46,7 @@ If you are automatically signed out of Cody upon every VS Code restart due to ke
 Cody supports 1,000 suggested autocompletions per day, per user. For Sourcegraph Enterprise instances, this rate limit is pooled across all users.
 
 If you hit the rate limit, please wait a bit and try again later. You can also contact Sourcegraph Support to discuss increasing your rate limit for your use case.
+
+### Logging in with VS Code forks such as Cursor or IDX
+
+To access VS Code forks such as Cursor or IDX, choose "Sign in with URL and access token" and then generate an access token. Once you have the token, paste it in the designated field, using `https://sourcegraph.com` as the URL.
