@@ -1,4 +1,4 @@
-<!-- DO NOT EDIT: generated via: go generate ./enterprise/dev/ci -->
+<!-- DO NOT EDIT: generated via: go generate ./dev/ci -->
 
 # Pipeline types reference
 

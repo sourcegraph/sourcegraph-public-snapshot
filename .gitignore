@@ -213,3 +213,5 @@ result-*
 
 # JUnit execution reports
 junit.xml
+
+/enterprise/

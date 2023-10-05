@@ -724,7 +724,7 @@ cc @${release.captainGitHubUsername}
 
                             // Support current release as the "previous release" going forward
                             notPatchRelease
-                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
+                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
                             `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/generate.sh`,

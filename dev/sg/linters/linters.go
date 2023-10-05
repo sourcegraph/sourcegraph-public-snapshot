@@ -22,7 +22,7 @@ type linter = check.Check[*repo.State]
 
 // Targets lists all available linter targets. Each target consists of multiple linters.
 //
-// These should align with the names in 'enterprise/dev/ci/internal/ci/changed'
+// These should align with the names in 'dev/ci/internal/ci/changed'
 var Targets = []Target{
 	{
 		Name:        "urls",
