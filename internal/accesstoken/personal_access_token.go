@@ -1,12 +1,13 @@
 package accesstoken
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
@@ -16,6 +17,7 @@ import (
 const PersonalAccessTokenPrefix = "sgph_"
 const LocalInstanceIdentifier = "local"
 const InstanceIdentifierLength = 10
+const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public, as we are not relying on HMAC for authentication
 
 var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{8,16}_)?([a-fA-F0-9]{40})$")
 
@@ -49,7 +51,11 @@ func GeneratePersonalAccessToken(licenseKey string, isDevInstance bool) (string,
 	if isDevInstance || licenseKey == "" {
 		instanceIdentifier = LocalInstanceIdentifier
 	} else {
-		instanceIdentifier = hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(licenseKey)))[:InstanceIdentifierLength]
+		// TODO: Change to an hmac
+		h := hmac.New(sha256.New, []byte(InstanceIdentifierHmacKey))
+		h.Write([]byte(licenseKey))
+
+		instanceIdentifier = hex.EncodeToString(h.Sum(nil))[:InstanceIdentifierLength]
 	}
 
 	token := fmt.Sprintf("%s%s_%s", PersonalAccessTokenPrefix, instanceIdentifier, hex.EncodeToString(b[:]))
