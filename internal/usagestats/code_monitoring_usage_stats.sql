@@ -126,7 +126,11 @@ SELECT
     -- monitors_enabled
     COALESCE(slack_actions.slack_actions_enabled, 0) +
     COALESCE(email_actions.email_actions_enabled, 0) +
-    COALESCE(webhook_actions.webhook_actions_enabled, 0) AS monitors_enabled
+    COALESCE(webhook_actions.webhook_actions_enabled, 0) AS monitors_enabled,
+    -- monitors_enabled_unique_users
+    COALESCE(slack_actions.slack_actions_enabled_unique_users, 0) +
+    COALESCE(email_actions.email_actions_enabled_unique_users, 0) +
+    COALESCE(webhook_actions.webhook_actions_enabled_unique_users, 0) AS monitors_enabled_unique_users
 FROM
     event_log_stats,
     email_actions,

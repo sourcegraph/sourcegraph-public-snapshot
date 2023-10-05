@@ -26,7 +26,7 @@ type permissionsInfoResolver struct {
 	perms        authz.Perms
 	syncedAt     time.Time
 	updatedAt    time.Time
-	source       *string
+	source       string
 	unrestricted bool
 }
 
@@ -46,7 +46,11 @@ func (r *permissionsInfoResolver) UpdatedAt() *gqlutil.DateTime {
 }
 
 func (r *permissionsInfoResolver) Source() *string {
-	return r.source
+	if r.source == "" {
+		return nil
+	}
+
+	return &r.source
 }
 
 func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {

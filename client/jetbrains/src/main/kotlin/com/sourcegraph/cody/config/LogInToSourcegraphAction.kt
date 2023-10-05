@@ -87,7 +87,7 @@ internal class SourcegraphTokenLoginDialog(
     isAccountUnique: UniqueLoginPredicate
 ) :
     BaseLoginDialog(
-        project, parent, SourcegraphApiRequestExecutor.Factory.getInstance(), isAccountUnique) {
+        project, parent, SourcegraphApiRequestExecutor.Factory.instance, isAccountUnique) {
 
   init {
     title = "Login to Sourcegraph"
@@ -105,7 +105,7 @@ internal class CodyAuthLoginDialog(
     isAccountUnique: UniqueLoginPredicate
 ) :
     BaseLoginDialog(
-        project, parent, SourcegraphApiRequestExecutor.Factory.getInstance(), isAccountUnique) {
+        project, parent, SourcegraphApiRequestExecutor.Factory.instance, isAccountUnique) {
 
   init {
     title = "Login to Sourcegraph"

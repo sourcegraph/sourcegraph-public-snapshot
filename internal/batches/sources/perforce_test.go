@@ -3,7 +3,6 @@ package sources
 import (
 	"context"
 	"io"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,6 @@ import (
 )
 
 var (
-	testPerforceProjectName = "testdepot"
 	testPerforceChangeID    = "111"
 	testPerforceCredentials = gitserver.PerforceCredentials{Username: "user", Password: "pass", Host: "https://perforce.sgdev.org:1666"}
 )
@@ -32,7 +30,7 @@ func TestPerforceSource_ValidateAuthenticator(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s, client := mockPerforceSource()
-			client.P4ExecFunc.SetDefaultReturn(fakeCloser{}, http.Header{}, want)
+			client.CheckPerforceCredentialsFunc.PushReturn(want)
 			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
 		})
 	}
@@ -138,6 +136,8 @@ func mockPerforceChange() *protocol.PerforceChangelist {
 
 func mockPerforceSource() (*PerforceSource, *MockGitserverClient) {
 	client := NewStrictMockGitserverClient()
+	// Cred checks should pass by default.
+	client.CheckPerforceCredentialsFunc.SetDefaultReturn(nil)
 	s := &PerforceSource{gitServerClient: client, perforceCreds: &testPerforceCredentials, server: schema.PerforceConnection{P4Port: "https://perforce.sgdev.org:1666"}}
 	return s, client
 }

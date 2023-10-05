@@ -299,13 +299,13 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 	testCases := []struct {
 		name          string
 		nameWithOwner string
-		assert        func(*testing.T, *types.Repo)
+		assert        func(*testing.T, *types.Repo, bool)
 		err           string
 	}{
 		{
 			name:          "internal repo in github enterprise",
 			nameWithOwner: "admiring-austin-120/fluffy-enigma",
-			assert: func(t *testing.T, have *types.Repo) {
+			assert: func(t *testing.T, have *types.Repo, private bool) {
 				t.Helper()
 
 				want := &types.Repo{
@@ -313,7 +313,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 					Description: "Internal repo used in tests in sourcegraph code.",
 					URI:         "ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
 					Stars:       0,
-					Private:     true,
+					Private:     private,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
 						ServiceType: "github",
@@ -400,7 +400,38 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			}
 
 			if tc.assert != nil {
-				tc.assert(t, repo)
+				tc.assert(t, repo, true)
+			}
+
+			// Configure external service to mark internal repositories as public
+			// and sync again
+			svc = &types.ExternalService{
+				Kind: extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://ghe.sgdev.org",
+					Token: gheToken,
+					Authorization: &schema.GitHubAuthorization{
+						MarkInternalReposAsPublic: true,
+					},
+				})),
+			}
+
+			githubSrc, err = NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repo, err = githubSrc.GetRepo(context.Background(), tc.nameWithOwner)
+			if err != nil {
+				t.Fatalf("GetRepo failed: %v", err)
+			}
+
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repo, false)
 			}
 		})
 	}

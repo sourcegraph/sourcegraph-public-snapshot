@@ -24,10 +24,11 @@ type CoreTestOperationsOptions struct {
 	ChromaticShouldAutoAccept bool
 	MinimumUpgradeableVersion string
 	ForceReadyForReview       bool
-	// for addWebAppOSSBuild
-	CacheBundleSize      bool
-	CreateBundleSizeDiff bool
-	IsMainBranch         bool
+
+	CacheBundleSize      bool // for addWebAppEnterpriseBuild
+	CreateBundleSizeDiff bool // for addWebAppEnterpriseBuild
+
+	IsMainBranch bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -132,18 +133,6 @@ func addStylelint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
-// Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebAppOSSBuild(opts CoreTestOperationsOptions) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Webapp build
-		pipeline.AddStep(":webpack::globe_with_meridians: Build",
-			withPnpmCache(),
-			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("ENTERPRISE", ""))
-	}
-}
-
 func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Webapp tests
@@ -167,7 +156,6 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			withPnpmCache(),
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
-			bk.Env("ENTERPRISE", "1"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
 			// Emit a stats.json file for bundle size diffs
 			bk.Env("WEBPACK_EXPORT_STATS", "true"),
@@ -282,7 +270,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
 		withPnpmCache(),
 		bk.Key(prepStepKey),
-		bk.Env("ENTERPRISE", "1"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),

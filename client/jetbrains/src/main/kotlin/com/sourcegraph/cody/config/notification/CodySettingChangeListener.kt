@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.config.notification
 
-import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowContent
@@ -8,12 +8,13 @@ import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
-import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils
+import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtil
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CollectionUtil.Companion.diff
 import java.util.function.Consumer
 
+@Service(Service.Level.PROJECT)
 class CodySettingChangeListener(project: Project) : ChangeListener(project) {
   init {
     connection.subscribe(
@@ -39,7 +40,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
 
             // clear autocomplete suggestions if freshly disabled
             if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
-              CodyAutocompleteManager.getInstance().clearAutocompleteSuggestionsForAllProjects()
+              CodyAutocompleteManager.instance.clearAutocompleteSuggestionsForAllProjects()
             }
 
             // Disable/enable the Cody tool window depending on the setting
@@ -63,10 +64,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
                 (context.oldIsCustomAutocompleteColorEnabled !=
                     context.isCustomAutocompleteColorEnabled)) {
               ConfigUtil.getAllEditors()
-                  .forEach(
-                      Consumer { editor: Editor? ->
-                        AutocompleteRenderUtils.rerenderAllAutocompleteInlays(editor)
-                      })
+                  .forEach(Consumer { AutocompleteRenderUtil.rerenderAllAutocompleteInlays(it) })
             }
 
             // clear autocomplete inlays for blacklisted language editors
@@ -74,8 +72,8 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
                 context.newBlacklistedAutocompleteLanguageIds.diff(
                     context.oldBlacklistedAutocompleteLanguageIds)
             if (languageIdsToClear.isNotEmpty())
-                CodyAutocompleteManager.getInstance()
-                    .clearAutocompleteSuggestionsForLanguageIds(languageIdsToClear)
+                CodyAutocompleteManager.instance.clearAutocompleteSuggestionsForLanguageIds(
+                    languageIdsToClear)
 
             if (context.oldShouldAcceptNonTrustedCertificatesAutomatically !=
                 context.newShouldAcceptNonTrustedCertificatesAutomatically)

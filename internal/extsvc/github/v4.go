@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -617,7 +616,7 @@ fragment RepositoryFields on Repository {
 		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
 	}
 
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
+	if ghe330PlusOrDotComSemver.Check(version) {
 		conditionalGHEFields = append(conditionalGHEFields, "visibility")
 	}
 

@@ -40,6 +40,7 @@ func TestSummarizeFailedEvents(t *testing.T) {
 		autogold.Expect("partial_failure").Equal(t, summary.result)
 		assert.Len(t, summary.errorFields, 1)
 		assert.Len(t, summary.succeededEvents, 1)
+		autogold.Expect([]string{"asdfasdf"}).Equal(t, summary.succeededEvents)
 		assert.Len(t, summary.failedEvents, 1)
 	})
 
@@ -55,6 +56,33 @@ func TestSummarizeFailedEvents(t *testing.T) {
 		autogold.Expect("success").Equal(t, summary.result)
 		assert.Len(t, summary.errorFields, 0)
 		assert.Len(t, summary.succeededEvents, 2)
+		autogold.Expect([]string{"asdf", "asdfasdf"}).Equal(t, summary.succeededEvents)
 		assert.Len(t, summary.failedEvents, 0)
+	})
+
+	t.Run("all succeeded (large set)", func(t *testing.T) {
+		results := make([]events.PublishEventResult, 100)
+		wantSucceeded := make(map[string]bool)
+		for i := range results {
+			id := strconv.Itoa(i)
+			results[i] = events.PublishEventResult{EventID: id}
+			wantSucceeded[id] = false
+		}
+
+		summary := summarizePublishEventsResults(results)
+		autogold.Expect("all events in batch submitted successfully").Equal(t, summary.message)
+		autogold.Expect("success").Equal(t, summary.result)
+		assert.Len(t, summary.errorFields, 0)
+		assert.Len(t, summary.succeededEvents, 100)
+		assert.Len(t, summary.failedEvents, 0)
+
+		for _, ev := range summary.succeededEvents {
+			wantSucceeded[ev] = true
+		}
+		for ev, succeeded := range wantSucceeded {
+			if !succeeded {
+				t.Logf("event %s not marked as succeeded", ev)
+			}
+		}
 	})
 }

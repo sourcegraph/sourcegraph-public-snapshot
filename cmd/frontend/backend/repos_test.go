@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
@@ -25,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -65,7 +68,7 @@ func TestReposService_List(t *testing.T) {
 	require.Equal(t, wantRepos, repos)
 }
 
-func TestRepos_Add(t *testing.T) {
+func TestRepos_AddRepoToSourcegraphDotCom(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
@@ -84,20 +87,15 @@ func TestRepos_Add(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	gsClient := gitserver.NewMockClient()
-	gsClient.IsRepoCloneableFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) error {
-		if name != repoName {
-			t.Errorf("got %q, want %q", name, repoName)
-		}
-		return nil
-	})
-
 	// The repoName could change if it has been renamed on the code host
 	s = repos{
-		logger:          logtest.Scoped(t),
-		gitserverClient: gsClient,
+		logger: logtest.Scoped(t),
+		cf: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			require.Equal(t, "https://github.com/my/repo.git/info/refs?service=git-upload-pack", r.URL.String())
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(""))}, nil
+		}),
 	}
-	addedName, err := s.add(ctx, repoName)
+	addedName, err := s.addRepoToSourcegraphDotCom(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +105,18 @@ func TestRepos_Add(t *testing.T) {
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")
 	}
+
+	// Verify that non 200 codes return the right error.
+	s = repos{
+		logger: logtest.Scoped(t),
+		cf: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			require.Equal(t, "https://github.com/my/repo.git/info/refs?service=git-upload-pack", r.URL.String())
+			return &http.Response{StatusCode: 401, Body: io.NopCloser(strings.NewReader(""))}, nil
+		}),
+	}
+	_, err = s.addRepoToSourcegraphDotCom(ctx, repoName)
+	require.Error(t, err)
+	require.IsType(t, &database.RepoNotFoundErr{}, err)
 }
 
 func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
@@ -128,7 +138,7 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 	defer func() { gitserver.MockIsRepoCloneable = nil }()
 
 	// The repoName could change if it has been renamed on the code host
-	_, err := s.add(ctx, repoName)
+	_, err := s.addRepoToSourcegraphDotCom(ctx, repoName)
 	if !errcode.IsNotFound(err) {
 		t.Fatalf("expected a not found error, got: %v", err)
 	}
