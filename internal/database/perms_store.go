@@ -1884,7 +1884,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	}
 
 	conds := []*sqlf.Query{authzParams.ToAuthzQuery()}
-	order := sqlf.Sprintf("es.id, repo.name ASC")
+	order := sqlf.Sprintf("repo.name ASC")
 	limit := sqlf.Sprintf("")
 
 	if args != nil {
