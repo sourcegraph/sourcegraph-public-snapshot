@@ -31,7 +31,7 @@ Check the **Cody App release** bot in [`#app`](https://app.slack.com/client/T02F
 To build it locally for all platforms (without releasing, uploading, or publishing it anywhere), run:
 
 ```shell
-VERSION=0.0.0+dev enterprise/dev/app/release.sh --snapshot
+VERSION=0.0.0+dev dev/app/release.sh --snapshot
 ```
 
 The builds are written to the `dist` directory.

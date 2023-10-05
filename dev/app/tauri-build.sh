@@ -26,7 +26,7 @@ set_version() {
 
 bundle_path() {
   local platform
-  platform="$(./enterprise/dev/app/detect-platform.sh)"
+  platform="$(./dev/app/detect-platform.sh)"
   echo "./src-tauri/target/${platform}/release/bundle"
 }
 
@@ -189,9 +189,9 @@ if [[ ${CI:-""} == "true" ]]; then
   download_artifacts
 fi
 
-VERSION=$(./enterprise/dev/app/app-version.sh)
+VERSION=$(./dev/app/app-version.sh)
 set_version "${VERSION}"
-PLATFORM="$(./enterprise/dev/app/detect-platform.sh)"
+PLATFORM="$(./dev/app/detect-platform.sh)"
 
 if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
   # We want any xcode related tools to be picked up first so inject it here in the path
