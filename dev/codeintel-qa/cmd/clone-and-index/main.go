@@ -150,28 +150,8 @@ type IndexerPair struct {
 }
 
 var indexFunMap = map[string]IndexerPair{
-	// "lsif-go":         {"dump", indexGoWithLSIF},
 	"scip-go": {"scip", indexGoWithSCIP},
-	// "scip-typescript": {"scip", indexTypeScriptWithSCIP},
 }
-
-// func indexGoWithLSIF(ctx context.Context, reposDir, targetFile, name, revision, root string) error {
-// 	return indexGeneric(ctx, reposDir, targetFile, name, revision, func(repoCopyDir string) error {
-// 		if err := run.Bash(ctx, "go", "mod", "tidy").Dir(repoCopyDir).Run().Wait(); err != nil {
-// 			return err
-// 		}
-// 		if err := run.Bash(ctx, "go", "mod", "vendor").Dir(repoCopyDir).Run().Wait(); err != nil {
-// 			return err
-// 		}
-// 		// --repository-root=. is necessary here as the temp dir might be within a strange
-// 		// nest of symlinks on MacOS, which confuses the repository root detection in lsif-go.
-// 		if err := run.Bash(ctx, "lsif-go", "--repository-root=.", "-o", targetFile).Dir(repoCopyDir).Run().Wait(); err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
 
 func indexGoWithSCIP(ctx context.Context, reposDir, targetFile, name, revision, root string) error {
 	return indexGeneric(ctx, reposDir, targetFile, name, revision, func(repoCopyDir string) error {
@@ -191,19 +171,6 @@ func indexGoWithSCIP(ctx context.Context, reposDir, targetFile, name, revision, 
 		return nil
 	})
 }
-
-// func indexTypeScriptWithSCIP(ctx context.Context, reposDir, targetFile, name, revision, root string) error {
-// 	return indexGeneric(ctx, reposDir, targetFile, name, revision, func(repoCopyDir string) error {
-// 		if err := run.Bash(ctx, "yarn").Dir(repoCopyDir).Run().Wait(); err != nil {
-// 			return err
-// 		}
-// 		if err := run.Bash(ctx, "scip-typescript", "index", "--output", targetFile).Dir(repoCopyDir).Run().Wait(); err != nil {
-// 			return err
-// 		}
-
-// 		return nil
-// 	})
-// }
 
 func indexGeneric(ctx context.Context, reposDir, targetFile, name, revision string, index func(repoCopyDir string) error) error {
 	if ok, err := internal.FileExists(targetFile); err != nil {
