@@ -62,7 +62,7 @@ interface UsePaginatedConnectionConfig<TResult> {
 interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TNode> {
     query: string
     variables: Omit<TVariables, 'first' | 'last' | 'before' | 'after'>
-    errorPolicy: 'none' | 'ignore' | 'all'
+    errorPolicy?: 'none' | 'ignore' | 'all'
     getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TNode> | undefined
     options?: UsePaginatedConnectionConfig<TResult>
 }
@@ -113,7 +113,7 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
         pollInterval: options?.pollInterval,
-        errorPolicy: errorPolicy || 'none',
+        errorPolicy,
     })
 
     const data = currentData ?? previousData
