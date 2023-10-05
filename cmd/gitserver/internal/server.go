@@ -307,6 +307,12 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-perforce-path-cloneable", trace.WithRouteName("is-perforce-path-cloneable", s.handleIsPerforcePathCloneable))
 	mux.HandleFunc("/check-perforce-credentials", trace.WithRouteName("check-perforce-credentials", s.handleCheckPerforceCredentials))
 	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", s.handleGetObject))
+	mux.HandleFunc("/perforce-users", trace.WithRouteName("perforce-users", s.handlePerforceUsers))
+	mux.HandleFunc("/perforce-protects-for-user", trace.WithRouteName("perforce-protects-for-user", s.handlePerforceProtectsForUser))
+	mux.HandleFunc("/perforce-protects-for-depot", trace.WithRouteName("perforce-protects-for-depot", s.handlePerforceProtectsForDepot))
+	mux.HandleFunc("/perforce-group-members", trace.WithRouteName("perforce-group-members", s.handlePerforceGroupMembers))
+	mux.HandleFunc("/is-perforce-super-user", trace.WithRouteName("is-perforce-super-user", s.handleIsPerforceSuperUser))
+	mux.HandleFunc("/perforce-get-changelist", trace.WithRouteName("perforce-get-changelist", s.handlePerforceGetChangelist))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -2065,6 +2071,300 @@ func (s *Server) handleGetObject(w http.ResponseWriter, r *http.Request) {
 
 	resp := protocol.GetObjectResponse{
 		Object: *obj,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceUsers(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceUsersRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	users, err := perforce.P4Users(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.PerforceUsersResponse{
+		Users: make([]protocol.PerforceUser, 0, len(users)),
+	}
+
+	for _, user := range users {
+		resp.Users = append(resp.Users, protocol.PerforceUser{
+			Username: user.Username,
+			Email:    user.Email,
+		})
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceProtectsForUser(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceProtectsForUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	protects, err := perforce.P4ProtectsForUser(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonProtects := make([]protocol.PerforceProtect, len(protects))
+	for i, p := range protects {
+		jsonProtects[i] = protocol.PerforceProtect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	resp := &protocol.PerforceProtectsForUserResponse{
+		Protects: jsonProtects,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceProtectsForDepot(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceProtectsForDepotRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	protects, err := perforce.P4ProtectsForDepot(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Depot)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonProtects := make([]protocol.PerforceProtect, len(protects))
+	for i, p := range protects {
+		jsonProtects[i] = protocol.PerforceProtect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	resp := &protocol.PerforceProtectsForDepotResponse{
+		Protects: jsonProtects,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func (s *Server) handlePerforceGroupMembers(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceGroupMembersRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	members, err := perforce.P4GroupMembers(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Group)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.PerforceGroupMembersResponse{
+		Usernames: members,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleIsPerforceSuperUser(w http.ResponseWriter, r *http.Request) {
+	var req protocol.IsPerforceSuperUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	err = perforce.P4UserIsSuperUser(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		if err == perforce.ErrIsNotSuperUser {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.IsPerforceSuperUserResponse{}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceGetChangelist(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceGetChangelistRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	changelist, err := perforce.GetChangelistByID(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.ChangelistID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.PerforceGetChangelistResponse{
+		Changelist: protocol.PerforceChangelist{
+			ID:           changelist.ID,
+			CreationDate: changelist.CreationDate,
+			State:        string(changelist.State),
+			Author:       changelist.Author,
+			Title:        changelist.Title,
+			Message:      changelist.Message,
+		},
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

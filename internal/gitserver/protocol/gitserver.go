@@ -875,3 +875,89 @@ type SystemInfo struct {
 	TotalSpace  uint64
 	PercentUsed float32
 }
+
+type PerforceUsersRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+type PerforceUsersResponse struct {
+	Users []PerforceUser `json:"users"`
+}
+
+type PerforceUser struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+type PerforceProtectsForUserRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Username string `json:"username"`
+}
+
+type PerforceProtectsForUserResponse struct {
+	Protects []PerforceProtect `json:"protects"`
+}
+
+type PerforceProtect struct {
+	Level       string `json:"level"`
+	EntityType  string `json:"entityType"`
+	EntityName  string `json:"entityName"`
+	Match       string `json:"match"`
+	IsExclusion bool   `json:"isExclusion"`
+	Host        string `json:"host"`
+}
+
+type PerforceProtectsForDepotRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Depot    string `json:"depot"`
+}
+
+type PerforceProtectsForDepotResponse struct {
+	Protects []PerforceProtect `json:"protects"`
+}
+
+type PerforceGroupMembersRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Group    string `json:"group"`
+}
+
+type PerforceGroupMembersResponse struct {
+	Usernames []string `json:"usernames"`
+}
+
+type IsPerforceSuperUserRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+type IsPerforceSuperUserResponse struct {
+}
+
+type PerforceGetChangelistRequest struct {
+	P4Port       string `json:"p4port"`
+	P4User       string `json:"p4user"`
+	P4Passwd     string `json:"p4passwd"`
+	ChangelistID string `json:"changelistID"`
+}
+
+type PerforceGetChangelistResponse struct {
+	Changelist PerforceChangelist `json:"changelist"`
+}
+
+type PerforceChangelist struct {
+	ID           string    `json:"id"`
+	CreationDate time.Time `json:"creationDate"`
+	State        string    `json:"state"`
+	Author       string    `json:"author"`
+	Title        string    `json:"title"`
+	Message      string    `json:"message"`
+}

@@ -557,6 +557,15 @@ func (gs *GRPCServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerf
 	}
 
 	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	err = perforce.P4UserIsSuperUser(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {

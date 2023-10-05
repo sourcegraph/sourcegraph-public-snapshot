@@ -1616,9 +1616,45 @@ func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.Per
 		return users, nil
 	}
 
-	// TODO: Implement HTTP.
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceUsersRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	uri := "http://" + addr + "/perforce-users"
+	resp, err := c.do(ctx, "perforce-users", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceUsers",
+			Err: errors.Errorf("PerforceUsers: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceUsersResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	users := make([]*perforce.User, len(payload.Users))
+	for i, u := range payload.Users {
+		users[i] = &perforce.User{
+			Username: u.Username,
+			Email:    u.Email,
+		}
+	}
+
+	return users, nil
 }
 
 func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn protocol.PerforceConnectionDetails, username string) ([]*perforce.Protect, error) {
@@ -1645,9 +1681,50 @@ func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn pr
 		return protects, nil
 	}
 
-	// TODO: Implement HTTP.
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceProtectsForUserRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+		Username: username,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	uri := "http://" + addr + "/perforce-protects-for-user"
+	resp, err := c.do(ctx, "perforce-protects-for-user", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceProtectsForUser",
+			Err: errors.Errorf("PerforceProtectsForUser: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceProtectsForUserResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	protects := make([]*perforce.Protect, len(payload.Protects))
+	for i, p := range payload.Protects {
+		protects[i] = &perforce.Protect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	return protects, nil
 }
 
 func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn protocol.PerforceConnectionDetails, depot string) ([]*perforce.Protect, error) {
@@ -1674,9 +1751,50 @@ func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn p
 		return protects, nil
 	}
 
-	// TODO: Implement HTTP.
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceProtectsForDepotRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+		Depot:    depot,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	uri := "http://" + addr + "/perforce-protects-for-depot"
+	resp, err := c.do(ctx, "perforce-protects-for-depot", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceProtectsForDepot",
+			Err: errors.Errorf("PerforceProtectsForDepot: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceProtectsForDepotResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	protects := make([]*perforce.Protect, len(payload.Protects))
+	for i, p := range payload.Protects {
+		protects[i] = &perforce.Protect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	return protects, nil
 }
 
 func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error) {
@@ -1699,9 +1817,38 @@ func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn proto
 		return resp.GetUsernames(), nil
 	}
 
-	// TODO: Implement HTTP.
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceGroupMembersRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+		Group:    group,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	uri := "http://" + addr + "/perforce-group-members"
+	resp, err := c.do(ctx, "perforce-group-members", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceGroupMembers",
+			Err: errors.Errorf("PerforceGroupMembers: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceGroupMembersResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	return payload.Usernames, nil
 }
 
 func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) error {
@@ -1719,7 +1866,30 @@ func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protoc
 		return err
 	}
 
-	// TODO: Implement HTTP.
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.IsPerforceSuperUserRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + addr + "/is-perforce-super-user"
+	resp, err := c.do(ctx, "is-perforce-super-user", uri, b)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "IsPerforceSuperUser",
+			Err: errors.Errorf("IsPerforceSuperUser: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
 
 	return nil
 }
@@ -1744,9 +1914,47 @@ func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn prot
 		return perforce.ChangelistFromProto(resp.GetChangelist()), nil
 	}
 
-	// TODO: Implement HTTP.
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceGetChangelistRequest{
+		P4Port:       conn.P4Port,
+		P4User:       conn.P4User,
+		P4Passwd:     conn.P4Passwd,
+		ChangelistID: changelist,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	uri := "http://" + addr + "/perforce-get-changelist"
+	resp, err := c.do(ctx, "perforce-get-changelist", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceGetChangelist",
+			Err: errors.Errorf("PerforceGetChangelist: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceGetChangelistResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	cl := &perforce.Changelist{
+		ID:           payload.Changelist.ID,
+		CreationDate: payload.Changelist.CreationDate,
+		State:        perforce.ChangelistState(payload.Changelist.State),
+		Author:       payload.Changelist.Author,
+		Title:        payload.Changelist.Title,
+		Message:      payload.Changelist.Message,
+	}
+
+	return cl, nil
 }
 
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance

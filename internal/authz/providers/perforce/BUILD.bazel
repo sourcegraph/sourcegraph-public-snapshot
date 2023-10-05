@@ -5,6 +5,7 @@ go_library(
     name = "perforce",
     srcs = [
         "authz.go",
+        "debug.go",
         "perforce.go",
         "protects.go",
     ],
@@ -13,6 +14,7 @@ go_library(
     deps = [
         "//internal/authz",
         "//internal/authz/types",
+        "//internal/byteutils",
         "//internal/extsvc",
         "//internal/extsvc/perforce",
         "//internal/gitserver",
