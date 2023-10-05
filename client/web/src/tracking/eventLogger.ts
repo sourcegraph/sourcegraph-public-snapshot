@@ -12,7 +12,7 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
+import { getPreviousMonday, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -226,11 +226,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
-
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
-        cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+        cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
 
         this.firstSourceURL = firstSourceURL
         return firstSourceURL
@@ -241,11 +239,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
-        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
-
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
-        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+        cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
 
         this.lastSourceURL = lastSourceURL
         return lastSourceURL
@@ -304,12 +300,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getSessionFirstURL(): string {
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
 
-        const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
-
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
-        cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
-        this.sessionFirstURL = redactedURL
+        cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
+        this.sessionFirstURL = sessionFirstURL
         return this.sessionFirstURL
     }
 
