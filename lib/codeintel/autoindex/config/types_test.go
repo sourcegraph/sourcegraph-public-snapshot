@@ -10,23 +10,23 @@ func TestExtractIndexerName(t *testing.T) {
 	}{
 		{
 			explanation: "no prefix",
-			input:       "lsif-go",
-			expected:    "lsif-go",
+			input:       "scip-go",
+			expected:    "scip-go",
 		},
 		{
 			explanation: "prefix",
-			input:       "sourcegraph/lsif-go",
-			expected:    "lsif-go",
+			input:       "sourcegraph/scip-go",
+			expected:    "scip-go",
 		},
 		{
 			explanation: "prefix and suffix",
-			input:       "sourcegraph/lsif-go@sha256:...",
-			expected:    "lsif-go",
+			input:       "sourcegraph/scip-go@sha256:...",
+			expected:    "scip-go",
 		},
 		{
 			explanation: "different name",
-			input:       "myownlsif-go",
-			expected:    "myownlsif-go",
+			input:       "myownscip-go",
+			expected:    "myownscip-go",
 		},
 	}
 

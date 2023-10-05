@@ -37,7 +37,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 						"commands": ["go mod vendor"],
 					}
 				],
-				"indexer": "lsif-go",
+				"indexer": "scip-go",
 				"indexer_args": ["--no-animation"],
 			},
 			{
@@ -102,7 +102,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 					Commands: []string{"go mod vendor"},
 				},
 			},
-			Indexer:     "lsif-go",
+			Indexer:     "scip-go",
 			IndexerArgs: []string{"--no-animation"},
 		},
 		{
@@ -135,7 +135,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 							"commands": ["go mod vendor"],
 						}
 					],
-					"indexer": "lsif-go",
+					"indexer": "scip-go",
 					"indexer_args": ["--no-animation"],
 				},
 				{
@@ -215,7 +215,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 					Commands: []string{"go mod vendor"},
 				},
 			},
-			Indexer:     "lsif-go",
+			Indexer:     "scip-go",
 			IndexerArgs: []string{"--no-animation"},
 		},
 		{
@@ -241,7 +241,7 @@ index_jobs:
       - image: go:latest
         commands:
           - go mod vendor
-    indexer: lsif-go
+    indexer: scip-go
     indexer_args:
       - --no-animation
   -
@@ -308,7 +308,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 					Commands: []string{"go mod vendor"},
 				},
 			},
-			Indexer:     "lsif-go",
+			Indexer:     "scip-go",
 			IndexerArgs: []string{"--no-animation"},
 		},
 		{
@@ -430,12 +430,12 @@ func TestQueueIndexesForPackage(t *testing.T) {
 					Root: "",
 					Steps: []config.DockerStep{
 						{
-							Image:    "sourcegraph/lsif-go:latest",
+							Image:    "sourcegraph/scip-go:latest",
 							Commands: []string{"go mod download"},
 						},
 					},
-					Indexer:     "sourcegraph/lsif-go:latest",
-					IndexerArgs: []string{"lsif-go", "--no-animation"},
+					Indexer:     "sourcegraph/scip-go:latest",
+					IndexerArgs: []string{"scip-go", "--no-animation"},
 				},
 			},
 		}, nil
@@ -485,12 +485,12 @@ func TestQueueIndexesForPackage(t *testing.T) {
 				State:        "queued",
 				DockerSteps: []uploadsshared.DockerStep{
 					{
-						Image:    "sourcegraph/lsif-go:latest",
+						Image:    "sourcegraph/scip-go:latest",
 						Commands: []string{"go mod download"},
 					},
 				},
-				Indexer:     "sourcegraph/lsif-go:latest",
-				IndexerArgs: []string{"lsif-go", "--no-animation"},
+				Indexer:     "sourcegraph/scip-go:latest",
+				IndexerArgs: []string{"scip-go", "--no-animation"},
 			},
 		}
 		if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {

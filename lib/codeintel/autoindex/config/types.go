@@ -23,7 +23,7 @@ func (j IndexJob) GetRoot() string {
 // GetIndexerName removes the prefix "sourcegraph/"" and the suffix "@sha256:..."
 // from the indexer name.
 // Example:
-// sourcegraph/lsif-go@sha256:... => lsif-go
+// sourcegraph/scip-go@sha256:... => sci-go
 func (j IndexJob) GetIndexerName() string {
 	return extractIndexerName(j.Indexer)
 }
@@ -37,7 +37,7 @@ type DockerStep struct {
 // extractIndexerName Name removes the prefix "sourcegraph/"" and the suffix "@sha256:..."
 // from the indexer name.
 // Example:
-// sourcegraph/lsif-go@sha256:... => lsif-go
+// sourcegraph/scip-go@sha256:... => scip-go
 func extractIndexerName(name string) string {
 	start := 0
 	if strings.HasPrefix(name, "sourcegraph/") {

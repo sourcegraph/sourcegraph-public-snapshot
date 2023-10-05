@@ -376,7 +376,7 @@ type CodeIntelIndexer {
     name: String!
 
     """
-    URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
+    URL to the source of the indexer e.g. https://github.com/sourcegraph/scip-go
     """
     url: String!
 

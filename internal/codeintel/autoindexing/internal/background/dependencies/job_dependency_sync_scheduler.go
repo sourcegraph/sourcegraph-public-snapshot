@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -267,24 +269,28 @@ func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Contex
 	return len(insertedRepos) != 0, len(insertedVersions) != 0, nil
 }
 
+var supportedIndexersForPackages = []string{
+	"lsif-go",
+	"scip-go",
+	"scip-java",
+	"lsif-java",
+	"lsif-tsc",
+	"scip-typescript",
+	"scip-python",
+	"scip-ruby",
+	"rust-analyzer",
+}
+
 // shouldIndexDependencies returns true if the given upload should undergo dependency
-// indexing. Currently, we're only enabling dependency indexing for a repositories that
-// were indexed via lsif-go, scip-java, lsif-tsc and scip-typescript.
+// indexing. Currently, we're only enabling dependency indexing for Sourcegraph's indexers
+// where the ecosystem has package support.
 func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store UploadService, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")
 	}
 
-	return upload.Indexer == "lsif-go" ||
-		upload.Indexer == "scip-java" ||
-		upload.Indexer == "lsif-java" ||
-		upload.Indexer == "lsif-tsc" ||
-		upload.Indexer == "scip-typescript" ||
-		upload.Indexer == "lsif-typescript" ||
-		upload.Indexer == "scip-python" ||
-		upload.Indexer == "scip-ruby" ||
-		upload.Indexer == "rust-analyzer", nil
+	return slices.Contains(supportedIndexersForPackages, upload.Indexer), nil
 }
 
 func kindsToArray(k map[string]struct{}) (s []string) {

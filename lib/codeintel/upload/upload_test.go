@@ -66,7 +66,7 @@ func TestUploadIndex(t *testing.T) {
 			Repo:    "foo/bar",
 			Commit:  "deadbeef",
 			Root:    "proj/",
-			Indexer: "lsif-go",
+			Indexer: "scip-go",
 		},
 		SourcegraphInstanceOptions: SourcegraphInstanceOptions{
 			SourcegraphURL:      ts.URL,
@@ -130,7 +130,7 @@ func TestUploadIndexMultipart(t *testing.T) {
 			Repo:    "foo/bar",
 			Commit:  "deadbeef",
 			Root:    "proj/",
-			Indexer: "lsif-go",
+			Indexer: "scip-go",
 		},
 		SourcegraphInstanceOptions: SourcegraphInstanceOptions{
 			SourcegraphURL:      ts.URL,

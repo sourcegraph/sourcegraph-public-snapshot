@@ -52,7 +52,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		"commit":      []string{testCommit},
 		"root":        []string{"proj/"},
 		"repository":  []string{"github.com/test/test"},
-		"indexerName": []string{"lsif-go"},
+		"indexerName": []string{"scip-go"},
 	}).Encode()
 
 	var expectedContents []byte
@@ -89,8 +89,8 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		if call.Arg1.Metadata.RepositoryID != 50 {
 			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.RepositoryID)
 		}
-		if call.Arg1.Metadata.Indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.Indexer)
+		if call.Arg1.Metadata.Indexer != "scip-go" {
+			t.Errorf("unexpected indexer name. want=%q have=%q", "scip-go", call.Arg1.Metadata.Indexer)
 		}
 		if *call.Arg1.UncompressedSize != 21 {
 			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
@@ -136,7 +136,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}).Encode()
 
 	var lines []string
-	lines = append(lines, `{"label": "metaData", "toolInfo": {"name": "lsif-go"}}`)
+	lines = append(lines, `{"label": "metaData", "toolInfo": {"name": "scip-go"}}`)
 	for i := 0; i < 20000; i++ {
 		lines = append(lines, `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`)
 	}
@@ -195,7 +195,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		"commit":      []string{testCommit},
 		"root":        []string{"proj/"},
 		"repository":  []string{"github.com/test/test"},
-		"indexerName": []string{"lsif-go"},
+		"indexerName": []string{"scip-go"},
 		"multiPart":   []string{"true"},
 		"numParts":    []string{"3"},
 	}).Encode()
@@ -229,8 +229,8 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		if call.Arg1.Metadata.RepositoryID != 50 {
 			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.RepositoryID)
 		}
-		if call.Arg1.Metadata.Indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.Indexer)
+		if call.Arg1.Metadata.Indexer != "scip-go" {
+			t.Errorf("unexpected indexer name. want=%q have=%q", "scip-go", call.Arg1.Metadata.Indexer)
 		}
 		if *call.Arg1.UncompressedSize != 50 {
 			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)

@@ -109,8 +109,8 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.In
 		outfile = defaultOutfile
 	}
 
-	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
-	fetchTags := strings.HasPrefix(index.Indexer, conf.ExecutorsLsifGoImage())
+	// TODO: Temporary workaround. scip-go needs tags, but they make git fetching slower.
+	fetchTags := strings.HasPrefix(index.Indexer, conf.ExecutorsScipGoImage())
 
 	dockerSteps = append(dockerSteps, apiclient.DockerStep{
 		Key:   "upload",

@@ -500,26 +500,26 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	//
 	// | UploadID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
-	// | 1        | 1      | root3/  | lsif-go |
+	// | 1        | 1      | root3/  | scip-go |
 	// | 2        | 1      | root4/  | scip-python |
-	// | 3        | 2      | root1/  | lsif-go |
-	// | 4        | 2      | root2/  | lsif-go |
+	// | 3        | 2      | root1/  | scip-go |
+	// | 4        | 2      | root2/  | scip-go |
 	// | 5        | 2      |         | scip-python | (overwrites root4/ at commit 1)
-	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+	// | 6        | 3      | root1/  | scip-go | (overwrites root1/ at commit 2)
 	// | 7        | 4      |         | scip-python | (overwrites (root) at commit 2)
-	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
-	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+	// | 8        | 5      | root2/  | scip-go | (overwrites root2/ at commit 2)
+	// | 9        | 6      | root1/  | scip-go | (overwrites root1/ at commit 2)
 
 	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
+		{ID: 1, Commit: makeCommit(1), Indexer: "scip-go", Root: "root3/"},
 		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
-		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 4, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 3, Commit: makeCommit(2), Indexer: "scip-go", Root: "root1/"},
+		{ID: 4, Commit: makeCommit(2), Indexer: "scip-go", Root: "root2/"},
 		{ID: 5, Commit: makeCommit(2), Indexer: "scip-python", Root: ""},
-		{ID: 6, Commit: makeCommit(3), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 6, Commit: makeCommit(3), Indexer: "scip-go", Root: "root1/"},
 		{ID: 7, Commit: makeCommit(4), Indexer: "scip-python", Root: ""},
-		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 8, Commit: makeCommit(5), Indexer: "scip-go", Root: "root2/"},
+		{ID: 9, Commit: makeCommit(6), Indexer: "scip-go", Root: "root1/"},
 	}
 	insertUploads(t, db, uploads...)
 
@@ -927,26 +927,26 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	//
 	// | UploadID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
-	// | 1        | 1      | root3/  | lsif-go |
+	// | 1        | 1      | root3/  | scip-go |
 	// | 2        | 1      | root4/  | scip-python |
-	// | 3        | 2      | root1/  | lsif-go |
-	// | 4        | 2      | root2/  | lsif-go |
+	// | 3        | 2      | root1/  | scip-go |
+	// | 4        | 2      | root2/  | scip-go |
 	// | 5        | 2      |         | scip-python | (overwrites root4/ at commit 1)
-	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+	// | 6        | 3      | root1/  | scip-go | (overwrites root1/ at commit 2)
 	// | 7        | 4      |         | scip-python | (overwrites (root) at commit 2)
-	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
-	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+	// | 8        | 5      | root2/  | scip-go | (overwrites root2/ at commit 2)
+	// | 9        | 6      | root1/  | scip-go | (overwrites root1/ at commit 2)
 
 	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
+		{ID: 1, Commit: makeCommit(1), Indexer: "scip-go", Root: "root3/"},
 		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
-		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 4, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 3, Commit: makeCommit(2), Indexer: "scip-go", Root: "root1/"},
+		{ID: 4, Commit: makeCommit(2), Indexer: "scip-go", Root: "root2/"},
 		{ID: 5, Commit: makeCommit(2), Indexer: "scip-python", Root: ""},
-		{ID: 6, Commit: makeCommit(3), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 6, Commit: makeCommit(3), Indexer: "scip-go", Root: "root1/"},
 		{ID: 7, Commit: makeCommit(4), Indexer: "scip-python", Root: ""},
-		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 8, Commit: makeCommit(5), Indexer: "scip-go", Root: "root2/"},
+		{ID: 9, Commit: makeCommit(6), Indexer: "scip-go", Root: "root1/"},
 	}
 	insertUploads(t, db, uploads...)
 
