@@ -24,8 +24,8 @@ jest.mock(
 jest.mock(
     'webpack.manifest.json',
     () => ({
-        'app.js': '/.assets/scripts/app.bundle.js',
-        'app.css': '/.assets/styles/app.123.bundle.css',
+        'main.js': '/.assets/scripts/main.js',
+        'main.css': '/.assets/styles/main.css',
     }),
     { virtual: true }
 )
@@ -39,7 +39,7 @@ describe('getBundleSizeStats', () => {
         })
 
         expect(stats).toEqual({
-            'scripts/app.bundle.js': {
+            'scripts/main.js': {
                 raw: 15,
                 gzip: 6,
                 brotli: 4,
@@ -59,7 +59,7 @@ describe('getBundleSizeStats', () => {
                 isJs: true,
                 raw: 15,
             },
-            'styles/app.123.bundle.css': {
+            'styles/main.css': {
                 raw: 25,
                 gzip: 6,
                 brotli: 4,

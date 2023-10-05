@@ -10,16 +10,14 @@ import { type WebpackManifest, WEBPACK_MANIFEST_PATH } from '../utils'
 export const assetPathPrefix = '/.assets'
 
 export const getManifest = (jsEntrypoint?: string, cssEntrypoint?: string): WebpackManifest => ({
-    'app.js': path.join(assetPathPrefix, jsEntrypoint ?? 'scripts/app.js'),
-    'app.css': path.join(assetPathPrefix, cssEntrypoint ?? 'scripts/app.css'),
+    'main.js': path.join(assetPathPrefix, jsEntrypoint ?? 'scripts/main.js'),
+    'main.css': path.join(assetPathPrefix, cssEntrypoint ?? 'scripts/main.css'),
     isModule: true,
 })
 
 const writeManifest = async (manifest: WebpackManifest): Promise<void> => {
     await fs.promises.writeFile(WEBPACK_MANIFEST_PATH, JSON.stringify(manifest, null, 2))
 }
-
-const ENTRYPOINT_NAME = 'scripts/app'
 
 /**
  * An esbuild plugin to write a webpack.manifest.json file (just as Webpack does), for compatibility
@@ -39,12 +37,12 @@ export const manifestPlugin: esbuild.Plugin = {
                 console.error('[manifestPlugin] No entrypoints found')
                 return
             }
-            const absoluteEntrypoint: string | undefined = (entryPoints as any)[ENTRYPOINT_NAME]
-            if (!absoluteEntrypoint) {
-                console.error('[manifestPlugin] No entrypoint found with the name scripts/app')
+            if (!Array.isArray(entryPoints) || typeof entryPoints[0] !== 'string' || entryPoints.length === 0) {
+                console.error('[manifestPlugin] Unexpected entryPoints format')
                 return
             }
-            const relativeEntrypoint = path.relative(process.cwd(), absoluteEntrypoint)
+            const entryPoint = entryPoints[0]
+            const relativeEntrypoint = path.relative(process.cwd(), entryPoint)
 
             if (!outputs) {
                 return
