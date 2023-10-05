@@ -28,8 +28,7 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	logger.Info("redirecting to docs", sglog.String("page", page), sglog.String("versionStr", versionStr))
 
 	// For App, help links are handled in the frontend. We should never get here.
-	sourcegraphAppMode := deploy.IsApp()
-	if sourcegraphAppMode {
+	if deploy.IsApp() {
 		// This should never happen, but if it does, we want to know about it.
 		logger.Error("help link was clicked in App and handled in the backend, this should never happer")
 

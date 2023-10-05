@@ -1652,6 +1652,28 @@ type ExtensionUsageStatistics struct {
 	ExtensionID        *string
 }
 
+type SearchJobsUsageStatistics struct {
+	WeeklySearchJobsPageViews            *int32
+	WeeklySearchJobsCreateClick          *int32
+	WeeklySearchJobsDownloadClicks       *int32
+	WeeklySearchJobsViewLogsClicks       *int32
+	WeeklySearchJobsUniquePageViews      *int32
+	WeeklySearchJobsUniqueDownloadClicks *int32
+	WeeklySearchJobsUniqueViewLogsClicks *int32
+	WeeklySearchJobsSearchFormShown      []SearchJobsSearchFormShownPing
+	WeeklySearchJobsValidationErrors     []SearchJobsValidationErrorPing
+}
+
+type SearchJobsSearchFormShownPing struct {
+	ValidState string
+	TotalCount int
+}
+
+type SearchJobsValidationErrorPing struct {
+	Errors     []string
+	TotalCount int
+}
+
 type CodeInsightsUsageStatistics struct {
 	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
 	WeeklyInsightsPageViews                        *int32

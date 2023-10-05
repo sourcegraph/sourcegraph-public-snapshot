@@ -11,7 +11,7 @@ import (
 //
 // See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func IsValidUpgrade(previous, latest *semver.Version) bool {
-	// NOTE: Sourcegraph App does not need downgrade support and can't have the
+	// NOTE: Cody App does not need downgrade support and can't have the
 	// guarantee of one minor version upgrade at a time. The duration between `brew
 	// install sourcegraph` and `brew upgrade sourcegraph` could be months apart.
 	if deploy.IsApp() {

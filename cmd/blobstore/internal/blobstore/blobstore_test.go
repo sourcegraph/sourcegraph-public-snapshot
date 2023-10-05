@@ -11,6 +11,7 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -122,24 +123,46 @@ func TestList(t *testing.T) {
 	uploaded, err := store.Upload(ctx, "foobar1", strings.NewReader("Hello 1! "))
 	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 
-	uploaded, err = store.Upload(ctx, "foobar3", strings.NewReader("Hello 3!"))
+	uploaded, err = store.Upload(ctx, "foobar2", strings.NewReader("Hello 3!"))
 	autogold.Expect([]interface{}{8, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 
-	uploaded, err = store.Upload(ctx, "foobar2", strings.NewReader("Hello 2! "))
+	uploaded, err = store.Upload(ctx, "banana", strings.NewReader("Hello 2! "))
 	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 
-	// List the keys
-	iter, err := store.List(ctx)
-	if err != nil {
-		t.Fatal(err)
+	tc := []struct {
+		prefix string
+		keys   []string
+	}{
+		{
+			prefix: "foobar",
+			keys:   []string{"foobar1", "foobar2"},
+		},
+		{
+			prefix: "banana",
+			keys:   []string{"banana"},
+		},
+		{
+			prefix: "",
+			keys:   []string{"banana", "foobar1", "foobar2"},
+		},
 	}
 
-	var keys []string
-	for iter.Next() {
-		keys = append(keys, iter.Current())
-	}
+	for _, c := range tc {
+		t.Run(c.prefix, func(t *testing.T) {
+			iter, err := store.List(ctx, c.prefix)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	autogold.Expect([]interface{}{[]string{"foobar1", "foobar2", "foobar3"}}).Equal(t, []any{keys})
+			var keys []string
+			for iter.Next() {
+				keys = append(keys, iter.Current())
+			}
+
+			require.Equal(t, c.keys, keys)
+		},
+		)
+	}
 }
 
 func TestListEmpty(t *testing.T) {
@@ -147,7 +170,7 @@ func TestListEmpty(t *testing.T) {
 	store, server, _ := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	iter, err := store.List(ctx)
+	iter, err := store.List(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}

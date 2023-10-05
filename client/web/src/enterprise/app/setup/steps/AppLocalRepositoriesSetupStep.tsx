@@ -3,6 +3,7 @@ import { type FC, useContext, useState } from 'react'
 import type { MutationTuple } from '@apollo/client'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Button, H1, Icon, Text, Tooltip, Link, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -36,16 +37,25 @@ export function useScheduleRepoEmbeddingJobs(): MutationTuple<
     )
 }
 
-export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ className }) => {
+export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ className, setStepId }) => {
     const { onNextStep } = useContext(SetupStepsContext)
     const [scheduleEmbeddings, { loading }] = useScheduleRepoEmbeddingJobs()
     const [repositories, setRepositories] = useState<LocalRepository[]>([])
+    const [searchParams] = useSearchParams()
+    const navigate = useNavigate()
 
     const handleNext = (): void => {
         scheduleEmbeddings({
             variables: { repoNames: repositories.map(repo => repo.name) },
         }).catch(() => {})
-        onNextStep()
+
+        // skip install-extensions step if we are coming from vscode
+        if (searchParams.get('from') === 'vscode') {
+            setStepId?.('all-set')
+            navigate('/app-setup/all-set?from=vscode')
+        } else {
+            onNextStep()
+        }
     }
 
     return (

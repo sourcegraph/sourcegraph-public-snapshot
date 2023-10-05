@@ -3,9 +3,9 @@ package com.sourcegraph.cody.ui
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.ui.BrowserHyperlinkListener
 import com.intellij.ui.ColorUtil
+import com.intellij.util.ui.HTMLEditorKitBuilder
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.SwingHelper
-import com.intellij.util.ui.UIUtil.JBWordWrapHtmlEditorKit
 import com.sourcegraph.cody.chat.ChatUIConstants
 import java.awt.Color
 import java.awt.Insets
@@ -16,7 +16,7 @@ object HtmlViewer {
   @JvmStatic
   fun createHtmlViewer(backgroundColor: Color): JEditorPane {
     val jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null)
-    jEditorPane.editorKit = JBWordWrapHtmlEditorKit()
+    jEditorPane.editorKit = HTMLEditorKitBuilder().withWordWrapViewFactory().build()
     val htmlEditorKit = jEditorPane.editorKit as HTMLEditorKit
     val fontFamilyAndSize = createFontFamilyAndSizeCssRule()
     val backgroundColorCss = createBackgroundColorCssRule(backgroundColor)

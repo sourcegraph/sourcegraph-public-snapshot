@@ -1,9 +1,11 @@
 package com.sourcegraph.cody.config.notification
 
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.CodyAgentProjectListener
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.config.CodyApplicationSettings.Companion.getInstance
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.GraphQlLogger
 
@@ -27,10 +29,10 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
 
             if (ConfigUtil.isCodyEnabled()) {
               // Starting the agent is idempotent, so it's OK if we call startAgent multiple times.
-              CodyAgentProjectListener.startAgent(project)
+              CodyAgentManager.startAgent(project)
             } else {
               // Stopping the agent is idempotent, so it's OK if we call stopAgent multiple times.
-              CodyAgentProjectListener.stopAgent(project)
+              CodyAgentManager.stopAgent(project)
             }
 
             // Notify Cody Agent about config changes.
@@ -38,6 +40,14 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             if (ConfigUtil.isCodyEnabled() && agentServer != null) {
               agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
             }
+
+            // Refresh onboarding panels
+            if (ConfigUtil.isCodyEnabled()) {
+              val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
+              codyToolWindowContent.refreshPanelsVisibility()
+            }
+
+            CodyAutocompleteStatusService.resetApplication(project)
 
             // Log install events
             if (context.serverUrlChanged) {

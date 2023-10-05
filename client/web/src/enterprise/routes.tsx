@@ -1,13 +1,11 @@
 import { Navigate, type RouteObject } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
-
-import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
+import { isSearchJobsEnabled } from '../search-jobs/utility'
 
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
@@ -23,7 +21,6 @@ const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
 )
-const SentinelRouter = lazyComponent(() => import('./sentinel/SentinelRouter'), 'SentinelRouter')
 const CreateSearchContextPage = lazyComponent(
     () => import('./searchContexts/CreateSearchContextPage'),
     'CreateSearchContextPage'
@@ -47,7 +44,7 @@ export const enterpriseRoutes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <AppSetup telemetryService={props.telemetryService} />}
-                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+                condition={({ isCodyApp }) => isCodyApp}
             />
         ),
     },
@@ -80,23 +77,13 @@ export const enterpriseRoutes: RouteObject[] = [
         path: EnterprisePageRoutes.SearchJobs,
         element: (
             <LegacyRoute
-                render={props => <SearchJob />}
-                condition={({ settingsCascade }) => {
-                    if (isErrorLike(settingsCascade.final)) {
-                        return false
-                    }
-
-                    return settingsCascade.final?.experimentalFeatures?.searchJobs ?? false
-                }}
-            />
-        ),
-    },
-    {
-        path: EnterprisePageRoutes.Sentinel,
-        element: (
-            <LegacyRoute
-                render={props => <SentinelRouter {...props} />}
-                condition={props => isSentinelEnabled(props)}
+                render={props => (
+                    <SearchJob
+                        isAdmin={props.authenticatedUser?.siteAdmin ?? false}
+                        telemetryService={props.telemetryService}
+                    />
+                )}
+                condition={isSearchJobsEnabled}
             />
         ),
     },
@@ -138,12 +125,7 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.AppAuthCallback,
-        element: (
-            <LegacyRoute
-                render={() => <AppAuthCallbackPage />}
-                condition={({ isSourcegraphApp }) => isSourcegraphApp}
-            />
-        ),
+        element: <LegacyRoute render={() => <AppAuthCallbackPage />} condition={({ isCodyApp }) => isCodyApp} />,
     },
     ...routes,
 ]

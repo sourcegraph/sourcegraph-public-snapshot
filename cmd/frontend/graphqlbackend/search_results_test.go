@@ -24,9 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -322,7 +324,11 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
-	cli := client.MockedZoekt(logtest.Scoped(t), db, z)
+	cli := client.Mocked(job.RuntimeClients{
+		Logger: logtest.Scoped(t),
+		DB:     db,
+		Zoekt:  z,
+	})
 	searchInputs, err := cli.Plan(
 		ctx,
 		"V2",
@@ -558,7 +564,11 @@ func TestEvaluateAnd(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			literalPatternType := "literal"
-			cli := client.MockedZoekt(logtest.Scoped(t), db, z)
+			cli := client.Mocked(job.RuntimeClients{
+				Logger: logtest.Scoped(t),
+				DB:     db,
+				Zoekt:  z,
+			})
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",
@@ -666,9 +676,15 @@ func TestSubRepoFiltering(t *testing.T) {
 			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
 				return dbmocks.NewMockEventLogStore()
 			})
+			db.TelemetryEventsExportQueueFunc.SetDefaultReturn(
+				telemetrytest.NewMockEventsExportQueueStore())
 
 			literalPatternType := "literal"
-			cli := client.MockedZoekt(logtest.Scoped(t), db, mockZoekt)
+			cli := client.Mocked(job.RuntimeClients{
+				Logger: logtest.Scoped(t),
+				DB:     db,
+				Zoekt:  mockZoekt,
+			})
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",

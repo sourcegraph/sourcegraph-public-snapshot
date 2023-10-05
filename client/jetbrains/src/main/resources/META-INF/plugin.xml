@@ -10,8 +10,10 @@
             -> https://plugins.jetbrains.com/docs/intellij/jcef.html
         - Version 2020.2 and 2020.3 have issues with adding custom HTTP headers to requests from within the JCEF view
              -> https://github.com/sourcegraph/sourcegraph/issues/37475#issuecomment-1171355831
+        - Version 2022.1 is the version introducing the Kotlin UI DSL API we are using at the moment
+          - if the need arises, we may try to implement backwards compatibility to 2021.3
     -->
-    <idea-version since-build="212.0"/>
+    <idea-version since-build="221.5080.210"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
@@ -25,19 +27,20 @@
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
+        <httpRequestHandler implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
 
         <projectConfigurable
             parentId="tools"
             instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
             id="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            displayName="Sourcegraph"
+            displayName="Sourcegraph &amp; Cody"
             nonDefaultProject="false"
         />
         <projectConfigurable
             parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
             instance="com.sourcegraph.cody.config.ui.CodyConfigurable"
             id="com.sourcegraph.cody.config.ui.CodyConfigurable"
-            displayName="Cody AI"
+            displayName="Cody"
             nonDefaultProject="false"
         />
         <projectConfigurable
@@ -48,7 +51,7 @@
             nonDefaultProject="false"
         />
 
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersisentAccounts"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.api.SourcegraphApiRequestExecutor$Factory"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingCodyUserAvatarLoader"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectActiveAccountHolder"/>
@@ -57,16 +60,13 @@
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph Cody + Code Search plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
-        <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
-        <postStartupActivity implementation="com.sourcegraph.config.CodyAuthNotificationActivity"/>
-        <postStartupActivity implementation="com.sourcegraph.cody.config.SettingsMigration"/>
-        <postStartupActivity implementation="com.sourcegraph.cody.config.NotifyAboutNoActiveAccount"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.initialization.PostStartupActivity"/>
 
         <!-- Cody -->
         <toolWindow
             id="Cody"
-            icon="/icons/codyLogoSm.svg"
-            anchor="left"
+            icon="/icons/codyLogoMonochromatic.svg"
+            anchor="right"
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
@@ -76,8 +76,6 @@
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
-
-        <projectService serviceImplementation="com.sourcegraph.cody.ui.SelectOptionManager"/>
 
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
@@ -174,11 +172,6 @@
                 class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
         </action>
 
-        <action id="cody.refreshCodyAppDetection" icon="AllIcons.Actions.Refresh"
-                text="Refresh"
-                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection">
-        </action>
-
         <action
             id="cody.downloadAndInstallCodyAction"
             class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
@@ -192,7 +185,6 @@
             icon="/icons/codyLogoSm.svg"/>
 
 
-
         <action
             id="cody.enableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
@@ -203,9 +195,26 @@
             class="com.sourcegraph.cody.statusbar.CodyDisableAutocompleteAction"
             text="Disable Cody Autocomplete"/>
 
+        <action
+            id="cody.enableLanguageForCodyAutocomplete"
+            class="com.sourcegraph.cody.statusbar.CodyEnableLanguageForAutocompleteAction"/>
+
+        <action
+            id="cody.disableLanguageForCodyAutocomplete"
+            class="com.sourcegraph.cody.statusbar.CodyDisableLanguageForAutocompleteAction"/>
+
+        <action
+            id="cody.statusBar.manageAccounts"
+            class="com.sourcegraph.cody.statusbar.CodyManageAccountsAction"
+            text="Manage Accounts"/>
+
+        <action
+            id="cody.statusBar.openSettings"
+            class="com.sourcegraph.cody.statusbar.CodyOpenSettingsAction"
+            text="Open Settings"/>
+
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
-            <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
         <group id="CodyEditorActions" popup="true" text="Cody"
@@ -229,11 +238,15 @@
                class="com.sourcegraph.cody.statusbar.CodyStatusBarActionGroup">
             <reference ref="cody.enableCodyAutocomplete"/>
             <reference ref="cody.disableCodyAutocomplete"/>
+            <reference ref="cody.enableLanguageForCodyAutocomplete"/>
+            <reference ref="cody.disableLanguageForCodyAutocomplete"/>
+            <reference ref="cody.statusBar.manageAccounts"/>
+            <reference ref="cody.statusBar.openSettings"/>
         </group>
 
         <group id="Cody.Accounts.AddAccount">
-            <action id="Cody.Accounts.AddCodyAccountWithToken" text="Log In with Token to Sourcegraph"
-                    class="com.sourcegraph.cody.config.AddCodyAccountWithTokenAction"/>
+            <action id="Cody.Accounts.LogInToSourcegraphAction" text="Log In to Sourcegraph"
+                    class="com.sourcegraph.cody.config.LogInToSourcegraphAction"/>
             <action id="Cody.Accounts.AddCodyEnterpriseAccount"
                     text="Log In with Token to Sourcegraph Enterprise"
                     class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"/>
@@ -243,7 +256,7 @@
     </actions>
 
     <projectListeners>
-    <listener topic="com.intellij.openapi.command.CommandListener"
-              class="com.sourcegraph.cody.editor.CodyCommandListener"/>
+        <listener topic="com.intellij.openapi.command.CommandListener"
+                  class="com.sourcegraph.cody.editor.CodyCommandListener"/>
     </projectListeners>
 </idea-plugin>

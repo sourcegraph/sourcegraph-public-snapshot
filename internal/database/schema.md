@@ -4064,6 +4064,19 @@ Referenced by:
 
 ```
 
+# Table "public.telemetry_events_export_queue"
+```
+   Column    |           Type           | Collation | Nullable | Default 
+-------------+--------------------------+-----------+----------+---------
+ id          | text                     |           | not null | 
+ timestamp   | timestamp with time zone |           | not null | 
+ payload_pb  | bytea                    |           | not null | 
+ exported_at | timestamp with time zone |           |          | 
+Indexes:
+    "telemetry_events_export_queue_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.temporary_settings"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                     

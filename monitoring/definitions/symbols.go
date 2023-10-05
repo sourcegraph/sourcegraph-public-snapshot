@@ -13,7 +13,7 @@ func Symbols() *monitoring.Dashboard {
 		grpcServiceName = "symbols.v1.SymbolsService"
 	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("symbols", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "symbols",
@@ -44,8 +44,9 @@ func Symbols() *monitoring.Dashboard {
 					HumanServiceName:   containerName,
 					RawGRPCServiceName: grpcServiceName,
 
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${instance:regex}`,
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${instance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerCodeIntel),
 
 			shared.NewGRPCInternalErrorMetricsGroup(

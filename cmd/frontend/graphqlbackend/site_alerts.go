@@ -220,8 +220,6 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
-	// TODO(app): App Update Messaging
-	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
 	if deploy.IsApp() {
 		return nil
 	}
@@ -290,8 +288,6 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
-	// TODO(app): App Update Messaging
-	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
 	if deploy.IsApp() {
 		return nil
 	}

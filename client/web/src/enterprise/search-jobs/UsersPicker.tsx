@@ -11,6 +11,7 @@ import {
     MultiComboboxOption,
     MultiComboboxPopover,
     MultiComboboxOptionText,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import { GetUsersListResult, GetUsersListVariables } from '../../graphql-operations'
@@ -62,6 +63,8 @@ export const UsersPicker: FC<UsersPickerProps> = props => {
     const { value, onChange } = props
 
     const [searchTerm, setSearchTerm] = useState('')
+    const debouncedSearchTerm = useDebounce(searchTerm, 500)
+
     const {
         data: currentData,
         previousData,
@@ -69,7 +72,7 @@ export const UsersPicker: FC<UsersPickerProps> = props => {
         error,
     } = useQuery<GetUsersListResult, GetUsersListVariables>(GET_USERS_QUERY, {
         variables: {
-            query: searchTerm,
+            query: debouncedSearchTerm,
         },
         fetchPolicy: 'cache-and-network',
     })

@@ -1,0 +1,11 @@
+- steps: []
+  local_steps:
+    - pip install . || true
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: ""
+  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer_args:
+    - scip-python
+    - index
+  outfile: index.scip
+  requestedEnvVars: []
