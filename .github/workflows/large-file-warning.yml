@@ -7,14 +7,16 @@ on:
 jobs:
   check-size:
     runs-on: ubuntu-latest
-    if: "${{ !contains(github.event.head_commit.message, 'skip filesize check') }}"
     steps:
     - name: Check out code
       uses: actions/checkout@v2
 
     - name: Check for large files
       run: |
-        if [ "$(git log -1 --pretty=%B | grep -q "skip filesize check")" ]
+        if git log -1 --pretty=%B | grep -q "skip filesize check" ; then
+          exit 0
+        fi
+
         # Fetch the target branch to compare
         git fetch --depth=1 origin ${{ github.base_ref }}:${{ github.base_ref }}
 
