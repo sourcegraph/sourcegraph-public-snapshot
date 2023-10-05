@@ -804,7 +804,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 }
 
 // BlameFile returns Git blame information about a file.
-func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
+func (c *clientImplementor) BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
 	ctx, _, endObservation := c.operations.blameFile.With(ctx, &err, observation.Args{
 		Attrs: append([]attribute.KeyValue{
 			repo.Attr(),
@@ -813,7 +813,7 @@ func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepo
 	})
 	defer endObservation(1, observation.Args{})
 
-	return blameFileCmd(ctx, checker, c.gitserverGitCommandFunc(repo), path, opt, repo)
+	return blameFileCmd(ctx, c.subRepoPermsChecker, c.gitserverGitCommandFunc(repo), path, opt, repo)
 }
 
 func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName) ([]*Hunk, error) {

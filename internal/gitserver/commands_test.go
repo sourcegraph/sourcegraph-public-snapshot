@@ -496,7 +496,7 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
 ) {
 	t.Helper()
-	hunks, err := NewClient().BlameFile(ctx, checker, repo, path, opt)
+	hunks, err := NewClient().BlameFile(ctx, repo, path, opt)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return

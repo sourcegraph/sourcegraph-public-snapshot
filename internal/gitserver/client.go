@@ -250,7 +250,7 @@ type Client interface {
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
 	// BlameFile returns Git blame information about a file.
-	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
+	BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
 
 	StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error)
 
