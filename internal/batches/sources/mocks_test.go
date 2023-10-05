@@ -10931,7 +10931,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (r0 []*gitserver.Hunk, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (r0 []*gitserver.Hunk, r1 error) {
 				return
 			},
 		},
@@ -11186,7 +11186,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		StreamBlameFileFunc: &GitserverClientStreamBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (r0 gitserver.HunkReader, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (r0 gitserver.HunkReader, r1 error) {
 				return
 			},
 		},
@@ -11228,7 +11228,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
+			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
 				panic("unexpected invocation of MockGitserverClient.BlameFile")
 			},
 		},
@@ -11483,7 +11483,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		StreamBlameFileFunc: &GitserverClientStreamBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
+			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
 				panic("unexpected invocation of MockGitserverClient.StreamBlameFile")
 			},
 		},
@@ -12109,24 +12109,24 @@ func (c GitserverClientBatchLogFuncCall) Results() []interface{} {
 // GitserverClientBlameFileFunc describes the behavior when the BlameFile
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientBlameFileFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
+	defaultHook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
+	hooks       []func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
 	history     []GitserverClientBlameFileFuncCall
 	mutex       sync.Mutex
 }
 
 // BlameFile delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) BlameFile(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 string, v4 *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.BlameFileFunc.appendCall(GitserverClientBlameFileFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) BlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
+	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3)
+	m.BlameFileFunc.appendCall(GitserverClientBlameFileFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the BlameFile method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientBlameFileFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
+func (f *GitserverClientBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
 	f.defaultHook = hook
 }
 
@@ -12134,7 +12134,7 @@ func (f *GitserverClientBlameFileFunc) SetDefaultHook(hook func(context.Context,
 // BlameFile method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientBlameFileFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
+func (f *GitserverClientBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12143,19 +12143,19 @@ func (f *GitserverClientBlameFileFunc) PushHook(hook func(context.Context, authz
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientBlameFileFunc) SetDefaultReturn(r0 []*gitserver.Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientBlameFileFunc) PushReturn(r0 []*gitserver.Hunk, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientBlameFileFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
+func (f *GitserverClientBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12193,16 +12193,13 @@ type GitserverClientBlameFileFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 authz.SubRepoPermissionChecker
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 *gitserver.BlameOptions
+	Arg3 *gitserver.BlameOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*gitserver.Hunk
@@ -12214,7 +12211,7 @@ type GitserverClientBlameFileFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientBlameFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -17955,24 +17952,24 @@ func (c GitserverClientStatFuncCall) Results() []interface{} {
 // StreamBlameFile method of the parent MockGitserverClient instance is
 // invoked.
 type GitserverClientStreamBlameFileFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)
+	defaultHook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)
+	hooks       []func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)
 	history     []GitserverClientStreamBlameFileFuncCall
 	mutex       sync.Mutex
 }
 
 // StreamBlameFile delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) StreamBlameFile(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 string, v4 *gitserver.BlameOptions) (gitserver.HunkReader, error) {
-	r0, r1 := m.StreamBlameFileFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.StreamBlameFileFunc.appendCall(GitserverClientStreamBlameFileFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) StreamBlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *gitserver.BlameOptions) (gitserver.HunkReader, error) {
+	r0, r1 := m.StreamBlameFileFunc.nextHook()(v0, v1, v2, v3)
+	m.StreamBlameFileFunc.appendCall(GitserverClientStreamBlameFileFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the StreamBlameFile
 // method of the parent MockGitserverClient instance is invoked and the hook
 // queue is empty.
-func (f *GitserverClientStreamBlameFileFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)) {
+func (f *GitserverClientStreamBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)) {
 	f.defaultHook = hook
 }
 
@@ -17980,7 +17977,7 @@ func (f *GitserverClientStreamBlameFileFunc) SetDefaultHook(hook func(context.Co
 // StreamBlameFile method of the parent MockGitserverClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *GitserverClientStreamBlameFileFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)) {
+func (f *GitserverClientStreamBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17989,19 +17986,19 @@ func (f *GitserverClientStreamBlameFileFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientStreamBlameFileFunc) SetDefaultReturn(r0 gitserver.HunkReader, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientStreamBlameFileFunc) PushReturn(r0 gitserver.HunkReader, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientStreamBlameFileFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
+func (f *GitserverClientStreamBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (gitserver.HunkReader, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -18040,16 +18037,13 @@ type GitserverClientStreamBlameFileFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 authz.SubRepoPermissionChecker
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 *gitserver.BlameOptions
+	Arg3 *gitserver.BlameOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 gitserver.HunkReader
@@ -18061,7 +18055,7 @@ type GitserverClientStreamBlameFileFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientStreamBlameFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

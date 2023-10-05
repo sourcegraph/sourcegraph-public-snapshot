@@ -749,7 +749,7 @@ type Hunk struct {
 }
 
 // StreamBlameFile returns Git blame information about a file.
-func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
+func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
 	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{
 		Attrs: append([]attribute.KeyValue{
 			repo.Attr(),
@@ -758,7 +758,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.S
 	})
 	defer endObservation(1, observation.Args{})
 
-	return streamBlameFileCmd(ctx, checker, repo, path, opt, c.gitserverGitCommandFunc(repo))
+	return streamBlameFileCmd(ctx, c.subRepoPermsChecker, repo, path, opt, c.gitserverGitCommandFunc(repo))
 }
 
 type errUnauthorizedStreamBlame struct {

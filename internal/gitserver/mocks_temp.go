@@ -226,7 +226,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		BlameFileFunc: &ClientBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (r0 []*Hunk, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions) (r0 []*Hunk, r1 error) {
 				return
 			},
 		},
@@ -481,7 +481,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		StreamBlameFileFunc: &ClientStreamBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (r0 HunkReader, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions) (r0 HunkReader, r1 error) {
 				return
 			},
 		},
@@ -523,7 +523,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		BlameFileFunc: &ClientBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
+			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
 				panic("unexpected invocation of MockClient.BlameFile")
 			},
 		},
@@ -778,7 +778,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		StreamBlameFileFunc: &ClientStreamBlameFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error) {
+			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error) {
 				panic("unexpected invocation of MockClient.StreamBlameFile")
 			},
 		},
@@ -1398,23 +1398,23 @@ func (c ClientBatchLogFuncCall) Results() []interface{} {
 // ClientBlameFileFunc describes the behavior when the BlameFile method of
 // the parent MockClient instance is invoked.
 type ClientBlameFileFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error)
+	defaultHook func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)
+	hooks       []func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)
 	history     []ClientBlameFileFuncCall
 	mutex       sync.Mutex
 }
 
 // BlameFile delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) BlameFile(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 string, v4 *BlameOptions) ([]*Hunk, error) {
-	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.BlameFileFunc.appendCall(ClientBlameFileFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockClient) BlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *BlameOptions) ([]*Hunk, error) {
+	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3)
+	m.BlameFileFunc.appendCall(ClientBlameFileFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the BlameFile method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientBlameFileFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error)) {
+func (f *ClientBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)) {
 	f.defaultHook = hook
 }
 
@@ -1422,7 +1422,7 @@ func (f *ClientBlameFileFunc) SetDefaultHook(hook func(context.Context, authz.Su
 // BlameFile method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientBlameFileFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error)) {
+func (f *ClientBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1431,19 +1431,19 @@ func (f *ClientBlameFileFunc) PushHook(hook func(context.Context, authz.SubRepoP
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientBlameFileFunc) SetDefaultReturn(r0 []*Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientBlameFileFunc) PushReturn(r0 []*Hunk, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientBlameFileFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
+func (f *ClientBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *BlameOptions) ([]*Hunk, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1481,16 +1481,13 @@ type ClientBlameFileFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 authz.SubRepoPermissionChecker
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 *BlameOptions
+	Arg3 *BlameOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*Hunk
@@ -1502,7 +1499,7 @@ type ClientBlameFileFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientBlameFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -7150,24 +7147,24 @@ func (c ClientStatFuncCall) Results() []interface{} {
 // ClientStreamBlameFileFunc describes the behavior when the StreamBlameFile
 // method of the parent MockClient instance is invoked.
 type ClientStreamBlameFileFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error)
+	defaultHook func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error)
+	hooks       []func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error)
 	history     []ClientStreamBlameFileFuncCall
 	mutex       sync.Mutex
 }
 
 // StreamBlameFile delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) StreamBlameFile(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 string, v4 *BlameOptions) (HunkReader, error) {
-	r0, r1 := m.StreamBlameFileFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.StreamBlameFileFunc.appendCall(ClientStreamBlameFileFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockClient) StreamBlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *BlameOptions) (HunkReader, error) {
+	r0, r1 := m.StreamBlameFileFunc.nextHook()(v0, v1, v2, v3)
+	m.StreamBlameFileFunc.appendCall(ClientStreamBlameFileFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the StreamBlameFile
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientStreamBlameFileFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error)) {
+func (f *ClientStreamBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error)) {
 	f.defaultHook = hook
 }
 
@@ -7175,7 +7172,7 @@ func (f *ClientStreamBlameFileFunc) SetDefaultHook(hook func(context.Context, au
 // StreamBlameFile method of the parent MockClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientStreamBlameFileFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error)) {
+func (f *ClientStreamBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7184,19 +7181,19 @@ func (f *ClientStreamBlameFileFunc) PushHook(hook func(context.Context, authz.Su
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientStreamBlameFileFunc) SetDefaultReturn(r0 HunkReader, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientStreamBlameFileFunc) PushReturn(r0 HunkReader, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientStreamBlameFileFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *BlameOptions) (HunkReader, error) {
+func (f *ClientStreamBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *BlameOptions) (HunkReader, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7234,16 +7231,13 @@ type ClientStreamBlameFileFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 authz.SubRepoPermissionChecker
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 *BlameOptions
+	Arg3 *BlameOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 HunkReader
@@ -7255,7 +7249,7 @@ type ClientStreamBlameFileFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientStreamBlameFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
