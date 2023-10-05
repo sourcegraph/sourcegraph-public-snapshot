@@ -1,0 +1,21 @@
+productName: sourcegraph
+repository: "github.com/sourcegraph/sourcegraph"
+owners:
+  - "@sourcegraph/search"
+  - "Bob"
+requirements:
+  - name: "Bazel"
+    cmd: bazel version
+    fixInstructions: Run `sg setup` and try again.
+  - name: "Github CLI"
+    cmd: gh version
+    fixInstructions: brew install gh
+  - name: "my env var"
+    env: FOO
+    fixInstructions: set FOO=123
+steps:
+  patch:
+    - name: "bazel"
+      cmd: |
+        ab=123
+        echo $ab

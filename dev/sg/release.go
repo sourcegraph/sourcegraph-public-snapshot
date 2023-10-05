@@ -20,17 +20,48 @@ var releaseCommand = &cli.Command{
 	Name:     "release",
 	Usage:    "Sourcegraph release utilities",
 	Category: category.Util,
-	Subcommands: []*cli.Command{{
-		Name:     "cve-check",
-		Usage:    "Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release",
-		Category: category.Util,
-		Action:   cveCheck,
-		Flags: []cli.Flag{
-			&buildNumberFlag,
-			&referenceUriFlag,
+	Subcommands: []*cli.Command{
+		{
+			Name:     "cve-check",
+			Usage:    "Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release",
+			Category: category.Util,
+			Action:   cveCheck,
+			Flags: []cli.Flag{
+				&buildNumberFlag,
+				&referenceUriFlag,
+			},
+			UsageText: `sg release cve-check -u https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/ -b 184191`,
 		},
-		UsageText: `sg release cve-check -u https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/ -b 184191`,
-	}},
+		{
+			Name:      "create",
+			Usage:     "Create a release for a given product",
+			UsageText: "sg release create --workdir [path] --type patch",
+			Category:  category.Util,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "workdir",
+					Value: ".",
+					Usage: "Set the working directory to load release scripts from",
+				},
+				&cli.StringFlag{
+					Name:  "type",
+					Value: "patch",
+					Usage: "Select release type: major, minor, patch",
+				},
+				&cli.BoolFlag{
+					Name:  "pretend",
+					Value: false,
+					Usage: "Preview all the commands that would be performed",
+				},
+				&cli.StringFlag{
+					Name:  "version",
+					Value: "v6.6.666",
+					Usage: "Force version",
+				},
+			},
+			Action: createReleaseCommand,
+		},
+	},
 }
 
 var buildNumberFlag = cli.StringFlag{
