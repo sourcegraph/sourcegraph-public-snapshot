@@ -14,7 +14,7 @@ jobs:
 
     - name: Check for large files
       run: |
-        echo "${{ github.event.head_commit }}"
+        echo "${{ toJSON(github.event.head_commit) }}"
         echo "${{ !contains(github.event.head_commit.message, 'skip filesize check') }}"
         # Fetch the target branch to compare
         git fetch --depth=1 origin ${{ github.base_ref }}:${{ github.base_ref }}
