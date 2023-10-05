@@ -61,6 +61,8 @@ result = myObject.method1();
 addTwoNumbers = @(x, y) x + y;
 
 % TODO handle clear
+% See https://github.com/sourcegraph/sourcegraph/issues/57399
+
 slay = 12 % definition is here
 clear slay
 slay = 10 % and now it's here!

@@ -112,6 +112,8 @@ expression: dumped
 //                            ^ reference local 36
   
   % TODO handle clear
+  % See https://github.com/sourcegraph/sourcegraph/issues/57399
+  
   slay = 12 % definition is here
 //^^^^ definition local 8
   clear slay

@@ -96,8 +96,9 @@ impl<'a> Scope<'a> {
                 if child.range.end_line == reference.range.end_line
                     && child.range.end_col == reference.range.end_col
                 {
-                    // We're generally safe to ignore this, I believe; I'll take the safe route and return here
-                    eprintln!("TODO: I'm not sure what to do yet, think more now (is a scope with the same range being recorded twice?)");
+                    eprintln!(
+                        "Two or more scopes with identical ranges ({:#?}) detected while performing heuristic local code navigation indexing. This is likely an issue with a tree-sitter query. This will be ignored.", reference.range
+                    );
                     return;
                 }
 
@@ -206,7 +207,6 @@ impl<'a> Scope<'a> {
                         occurrences.push(scip::types::Occurrence {
                             range: definition.node.to_scip_range(),
                             symbol: symbol.clone(),
-                            // syntax_kind: todo!(),
                             ..Default::default()
                         });
 
@@ -220,7 +220,6 @@ impl<'a> Scope<'a> {
                             range: definition.node.to_scip_range(),
                             symbol: symbol.clone(),
                             symbol_roles,
-                            // syntax_kind: todo!(),
                             ..Default::default()
                         });
 
@@ -357,7 +356,6 @@ pub fn parse_tree<'a>(
 
     let mut scopes = vec![];
     let mut definitions = vec![];
-    // let mut weak_definitions = vec![];
     let mut references = vec![];
 
     for m in cursor.matches(&config.query, root_node, source_bytes) {
@@ -389,9 +387,7 @@ pub fn parse_tree<'a>(
                             Some("global") => scope_modifier = Some(ScopeModifier::Global),
                             Some("parent") => scope_modifier = Some(ScopeModifier::Parent),
                             Some("local") => scope_modifier = Some(ScopeModifier::Local),
-                            // TODO: Should probably error instead
-                            Some(other) => panic!("unknown scope-testing: {}", other),
-                            None => {}
+                            Some(_) | None => unreachable!(),
                         }
                     } else if &(*prop.key) == "strength" {
                         match prop.value.as_deref() {
@@ -399,9 +395,7 @@ pub fn parse_tree<'a>(
                                 definition_strength = Some(DefinitionStrength::Strong)
                             }
                             Some("weak") => definition_strength = Some(DefinitionStrength::Weak),
-                            // TODO: Should probably error instead
-                            Some(other) => panic!("unknown definition strength: {}", other),
-                            None => {}
+                            Some(_) | None => unreachable!(),
                         }
                     }
                 }
