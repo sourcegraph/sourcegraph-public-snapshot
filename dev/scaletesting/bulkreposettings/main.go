@@ -70,7 +70,7 @@ var app = &cli.App{
 							return err
 						}
 						baseURL.Path = "/api/v3"
-						gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+						gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 						if err != nil {
 							logger.Fatal("failed to sign-in to GitHub", log.Error(err))
 						}

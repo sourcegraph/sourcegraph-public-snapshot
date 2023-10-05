@@ -27,7 +27,7 @@ func newGHEClient(ctx context.Context, baseURL, uploadURL, token string) (*githu
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	return github.NewEnterpriseClient(baseURL, uploadURL, tc)
+	return github.NewClient(tc).WithEnterpriseURLs(baseURL, uploadURL)
 }
 
 func init() {

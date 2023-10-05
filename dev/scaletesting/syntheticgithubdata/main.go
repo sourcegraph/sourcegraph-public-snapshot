@@ -70,7 +70,7 @@ func main() {
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: cfg.githubToken},
 	))
-	gh, err = github.NewEnterpriseClient(cfg.githubURL, cfg.githubURL, tc)
+	gh, err = github.NewClient(tc).WithEnterpriseURLs(cfg.githubURL, cfg.githubURL)
 	if err != nil {
 		writeFailure(out, "Failed to sign-in to GHE")
 		log.Fatal(err)

@@ -42,7 +42,7 @@ func NewGitHubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitHubCod
 	}
 	baseURL.Path = "/api/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create GitHub client")
 	}
