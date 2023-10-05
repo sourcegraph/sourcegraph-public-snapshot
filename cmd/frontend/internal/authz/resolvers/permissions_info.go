@@ -45,8 +45,12 @@ func (r *permissionsInfoResolver) UpdatedAt() *gqlutil.DateTime {
 	return gqlutil.FromTime(r.updatedAt)
 }
 
-func (r *permissionsInfoResolver) Source() *string {
-	return r.source
+func (r *permissionsInfoResolver) Source() string {
+	if r.source == nil || *r.source == "" {
+		return "NOT_SYNCED"
+	}
+
+	return *r.source
 }
 
 func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {

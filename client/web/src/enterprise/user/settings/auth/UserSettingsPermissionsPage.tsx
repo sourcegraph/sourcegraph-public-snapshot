@@ -116,7 +116,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                                     </span>
                                 </>
                             ) : (
-                                'Never'
+                                <span className="flex-grow-1 pl-2">Never</span>
                             )}
                         </span>
                     </div>
@@ -251,6 +251,7 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
 }
 
 const permsSourceMap = {
+    NOT_SYNCED: 'no permissions have been synced',
     USER_SYNC: 'user-centric permission sync',
     REPO_SYNC: 'repo-centric permission sync',
     API: 'explicit permissions API',
