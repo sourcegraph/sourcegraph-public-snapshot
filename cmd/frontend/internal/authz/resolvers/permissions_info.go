@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -61,7 +62,7 @@ func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
 var permissionsInfoRepositoryConnectionMaxPageSize = 100
 
 var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
-	OrderBy:     database.OrderBy{{Field: "repo.name"}},
+	OrderBy:     database.OrderBy{{Field: "repo.id"}},
 	Ascending:   true,
 	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
 }
@@ -98,7 +99,12 @@ func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.Per
 }
 
 func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	cursorSQL := fmt.Sprintf("'%s'", cursor)
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cursor))
+	if err != nil {
+		return nil, err
+	}
+
+	cursorSQL := strconv.Itoa(int(repoID))
 
 	return &cursorSQL, nil
 }

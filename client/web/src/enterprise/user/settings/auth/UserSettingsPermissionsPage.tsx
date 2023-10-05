@@ -65,7 +65,6 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
             userID: user.id,
             query: debouncedQuery,
         },
-        errorPolicy: 'all',
         getConnection: ({ data }) => {
             if (data?.node?.__typename === 'User') {
                 const node = data.node as IUser
