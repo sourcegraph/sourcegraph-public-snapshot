@@ -95,9 +95,10 @@ func NewClient() Client {
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:    filepath.Base(os.Args[0]),
-		operations:   getOperations(),
-		clientSource: conns,
+		userAgent:           filepath.Base(os.Args[0]),
+		operations:          getOperations(),
+		clientSource:        conns,
+		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	}
 }
 
@@ -113,9 +114,10 @@ func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:    filepath.Base(os.Args[0]),
-		operations:   newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
-		clientSource: clientSource,
+		userAgent:           filepath.Base(os.Args[0]),
+		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		clientSource:        clientSource,
+		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	}
 }
 
@@ -210,6 +212,10 @@ type clientImplementor struct {
 
 	// clientSource is used to get the corresponding gprc client or address for a given repository
 	clientSource ClientSource
+
+	// subRepoPermsChecker is sub-repository permissions checker. This will
+	// usually be authz.DefaultSubRepoPermsChecker, at least until that global is removed.
+	subRepoPermsChecker authz.SubRepoPermissionChecker
 }
 
 type RawBatchLogResult struct {
