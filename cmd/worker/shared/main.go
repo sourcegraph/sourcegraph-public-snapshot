@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
@@ -149,17 +148,20 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 }
 
 // Start runs the worker.
-func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
+func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	if err := keyring.Init(ctx); err != nil {
 		return errors.Wrap(err, "initializing keyring")
 	}
 
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
-		return errors.Wrap(err, "Failed to create database connection")
+		return errors.Wrap(err, "failed to create database connection")
 	}
 
-	enterpriseInit(db)
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
+	if err != nil {
+		return errors.Wrap(err, "failed to create sub-repo client")
+	}
 
 	// Emit metrics to help site admins detect instances that accidentally
 	// omit a job from from the instance's deployment configuration.
@@ -395,15 +397,5 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 	for range time.NewTicker(providers.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
-	}
-}
-
-func getEnterpriseInit(logger log.Logger) func(database.DB) {
-	return func(db database.DB) {
-		var err error
-		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
-		if err != nil {
-			logger.Fatal("Failed to create sub-repo client", log.Error(err))
-		}
 	}
 }
