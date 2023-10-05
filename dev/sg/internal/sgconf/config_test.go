@@ -88,7 +88,6 @@ commands:
       - lib
       - internal
       - cmd/frontend
-      - enterprise/internal
 `
 	config, err := parseConfig([]byte(a))
 	if err != nil {
@@ -124,7 +123,6 @@ commands:
 			"lib",
 			"internal",
 			"cmd/frontend",
-			"enterprise/internal",
 		},
 	}
 

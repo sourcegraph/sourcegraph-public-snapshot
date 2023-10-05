@@ -36,7 +36,7 @@ allowed=$(printf "^(%s)" "${allowed:1}")
 # shellcheck disable=SC2016
 template='{{with $pkg := .}}{{ range $pkg.Deps }}{{ printf "%s imports %s\n" $pkg.ImportPath .}}{{end}}{{end}}'
 
-if go list ./cmd/... ./enterprise/cmd/... |
+if go list ./cmd/... |
   grep -Ev "$allowed" |
   xargs go list -f "$template" |
   grep "github.com/sourcegraph/sourcegraph/internal/database/dbconn"; then

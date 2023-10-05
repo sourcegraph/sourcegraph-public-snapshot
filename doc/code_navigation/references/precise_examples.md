@@ -3,7 +3,7 @@
 The following repositories have precise code navigation enabled:
 
 ## Go
-- [sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@1757b34fab070301db5cd221eaf7d6bf039d16d3/-/blob/enterprise/cmd/executor/internal/apiclient/client.go?L230:18&popover=pinned)
+- [sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@1757b34fab070301db5cd221eaf7d6bf039d16d3/-/blob/cmd/executor/internal/apiclient/client.go?L230:18&popover=pinned)
 - [kubernetes/kubernetes](https://sourcegraph.com/github.com/kubernetes/kubernetes@f4abde9e57cc30efcc8f79c9ebd791d15f4164c4/-/blob/cmd/cloud-controller-manager/main.go?L45:2&popover=pinned)
 - [gohugoio/hugo](https://sourcegraph.com/github.com/gohugoio/hugo@d1278f696aa062950471587bf3dc4a1604cf5d5b/-/blob/common/hugo/hugo.go?L63:15&popover=pinned)
 - [gin-gonic/gin](https://sourcegraph.com/github.com/gin-gonic/gin@6de2245e6265a077326d13cb249378b2d27ad781/-/blob/routergroup.go?L33:6&popover=pinned)

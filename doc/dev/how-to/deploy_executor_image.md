@@ -15,7 +15,7 @@ This guide documents how to deploy a new image of [executors](../../../admin/exe
 
 ## Steps
 
-1. Make a change to the `executor` code so that the buildkite build results in new `executor` AWS/GCP images being built & published. Or push to a branch with the [`executor-patch-notest/`](https://github.com/sourcegraph/sourcegraph/blob/882ed49014bc470a3be17ce74764a856f82bee4e/enterprise/dev/ci/internal/ci/runtype.go#L65-L67) prefix to trigger the build.
+1. Make a change to the `executor` code so that the buildkite build results in new `executor` AWS/GCP images being built & published. Or push to a branch with the [`executor-patch-notest/`](https://github.com/sourcegraph/sourcegraph/blob/882ed49014bc470a3be17ce74764a856f82bee4e/dev/ci/internal/ci/runtype.go#L65-L67) prefix to trigger the build.
 1. Look at the buildkite build. Example: https://buildkite.com/sourcegraph/sourcegraph/builds/116966
 
     There are two steps with `executor-image` in here. The first one builds and uploads image. Second step releases it.

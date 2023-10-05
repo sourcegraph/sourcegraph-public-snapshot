@@ -78,24 +78,24 @@
 
 /cmd/worker/internal/executorqueue/**/* @eseliger
 
-/enterprise/dev/ci/**/* @bobheadxi
+/dev/ci/**/* @bobheadxi
 
-/enterprise/internal/authz/**/* @unknwon
+/internal/authz/**/* @unknwon
 
 /internal/batches/**/* @eseliger
 
-/enterprise/internal/cloud/**/* @unknwon @michaellzc
+/internal/cloud/**/* @unknwon @michaellzc
 
 /internal/codeintel/**/* @Strum355
 
-/enterprise/internal/database/external_services* @unknwon
-/enterprise/internal/database/perms_store* @unknwon
+/internal/database/external_services* @unknwon
+/internal/database/perms_store* @unknwon
 
-/enterprise/internal/insights/**/* @sourcegraph/code-insights-backend
+/internal/insights/**/* @sourcegraph/code-insights-backend
 
-/enterprise/internal/license/**/* @unknwon
+/internal/license/**/* @unknwon
 
-/enterprise/internal/licensing/**/* @unknwon
+/internal/licensing/**/* @unknwon
 
 /internal/authz/**/* @unknwon
 
@@ -161,8 +161,8 @@
 /monitoring/**/* @bobheadxi @slimsag
 /monitoring/precise_code_intel_* @sourcegraph/code-intelligence
 
-/enterprise/internal/own/ @sourcegraph/own
-/enterprise/internal/database/codeowners* @sourcegraph/own
+/internal/own/ @sourcegraph/own
+/internal/database/codeowners* @sourcegraph/own
 /cmd/frontend/internal/own/ @sourcegraph/own
 /client/web/src/**/own/ @sourcegraph/own
 /cmd/frontend/graphqlbackend/own* @sourcegraph/own
