@@ -460,7 +460,7 @@ const EMPTY_USER_PERMISSIONS_RESPONSE: { data: UserPermissionsInfoResult } = {
             __typename: 'User',
             permissionsInfo: {
                 updatedAt: null,
-                source: PermissionSource.NOT_SYNCED,
+                source: null,
                 repositories: {
                     totalCount: 0,
                     nodes: [],

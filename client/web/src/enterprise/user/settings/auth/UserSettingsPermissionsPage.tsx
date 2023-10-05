@@ -251,7 +251,6 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
 }
 
 const permsSourceMap = {
-    NOT_SYNCED: 'no permissions have been synced',
     USER_SYNC: 'user-centric permission sync',
     REPO_SYNC: 'repo-centric permission sync',
     API: 'explicit permissions API',

@@ -646,7 +646,7 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		userID:    userID,
 		perms:     authz.Read,
 		updatedAt: updatedAt,
-		source:    &source,
+		source:    source,
 	}, nil
 }
 

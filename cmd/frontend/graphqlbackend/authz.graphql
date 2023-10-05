@@ -347,13 +347,11 @@ enum RepositoryPermission {
 """
 PermissionSource indicates where a permission originated from.
 
-NOT_SYNCED: Permissions have not been synced yet.
 REPO_SYNC: The permission was synced from the code host, via repo-centric permission sync.
 USER_SYNC: The permission was synced from the code host using user-centric permission sync.
 API: The permission was set explicitly via the GraphQL API.
 """
 enum PermissionSource {
-    NOT_SYNCED
     REPO_SYNC
     USER_SYNC
     API
@@ -380,7 +378,7 @@ type PermissionsInfo {
     """
     What was the source of the last permission update. The value is updated whenever different source last touched the database row (i.e. permission sync or explicit permissions update)
     """
-    source: PermissionSource!
+    source: PermissionSource
     """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.
