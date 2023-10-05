@@ -1,17 +1,18 @@
 package perforce
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,6 +20,8 @@ import (
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -229,11 +232,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/",
 		"//depot/training/",
@@ -244,7 +243,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
+	if err := scanProtects(logger, parseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -314,18 +313,14 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
+	if err := scanProtects(logger, parseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -614,17 +609,15 @@ read    group   Dev1    *   //depot/main/.../*.go
 					t.Fatal(err)
 				}
 			})
-			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-				return rc, nil, nil
-			})
-			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+
+			p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 			p.depots = []extsvc.RepoID{
 				extsvc.RepoID(tc.depot),
 			}
 			perms := &authz.ExternalUserPermissions{
 				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 			}
-			if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), true); err != nil {
+			if err := scanProtects(logger, parseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), true); err != nil {
 				t.Fatal(err)
 			}
 			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(tc.depot)]
@@ -680,18 +673,14 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/654/deploy/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
+	if err := scanProtects(logger, parseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -829,12 +818,9 @@ func TestScanAllUsers(t *testing.T) {
 	}
 
 	rc := io.NopCloser(bytes.NewReader(data))
-
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	gc := gitserver.NewStrictMockClient()
+	gc.PerforceGroupMembersFunc.SetDefaultReturn(nil, nil)
+	p := NewProvider(logger, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.cachedGroupMembers = map[string][]string{
 		"dev": {"user1", "user2"},
 	}
@@ -844,7 +830,7 @@ func TestScanAllUsers(t *testing.T) {
 	}
 
 	users := make(map[string]struct{})
-	if err := scanProtects(logger, rc, allUsersScanner(ctx, p, users), false); err != nil {
+	if err := scanProtects(logger, parseP4ProtectsRaw(t, rc), allUsersScanner(ctx, p, users), false); err != nil {
 		t.Fatal(err)
 	}
 	want := map[string]struct{}{
@@ -854,4 +840,54 @@ func TestScanAllUsers(t *testing.T) {
 	if diff := cmp.Diff(want, users); diff != "" {
 		t.Fatal(diff)
 	}
+}
+
+func parseP4ProtectsRaw(t *testing.T, rc io.Reader) []*p4types.Protect {
+	protects := make([]*p4types.Protect, 0)
+
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Trim whitespace
+		line = strings.TrimSpace(line)
+
+		// Skip comments and blank lines
+		if strings.HasPrefix(line, "##") || line == "" {
+			continue
+		}
+
+		// Trim trailing comments
+		if i := strings.Index(line, "##"); i > -1 {
+			line = line[:i]
+		}
+
+		// Split into fields
+		fields := strings.Fields(line)
+		if len(fields) < 5 {
+			continue
+		}
+
+		parsedLine := p4ProtectLine{
+			level:      fields[0],
+			entityType: fields[1],
+			name:       fields[2],
+			match:      fields[4],
+		}
+		if strings.HasPrefix(parsedLine.match, "-") {
+			parsedLine.isExclusion = true                                // is an exclusion
+			parsedLine.match = strings.TrimPrefix(parsedLine.match, "-") // trim leading -
+		}
+
+		protects = append(protects, &p4types.Protect{
+			Level:       parsedLine.level,
+			EntityType:  parsedLine.entityType,
+			EntityName:  parsedLine.name,
+			Host:        fields[3],
+			Match:       parsedLine.match,
+			IsExclusion: parsedLine.isExclusion,
+		})
+	}
+	require.NoError(t, scanner.Err())
+	return protects
 }

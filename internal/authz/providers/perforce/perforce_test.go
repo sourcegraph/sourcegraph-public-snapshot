@@ -3,8 +3,6 @@ package perforce
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"testing"
 
@@ -89,7 +87,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("nil account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", nil, false)
+		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -149,12 +147,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		response  string
+		protects  []*p4types.Protect
 		wantPerms *authz.ExternalUserPermissions
 	}{
 		{
 			name: "include only",
-			response: `
+			protects: parseP4ProtectsRaw(t, strings.NewReader(`
 list user alice * //Sourcegraph/Security/... ## "list" can't grant read access
 read user alice * //Sourcegraph/Engineering/...
 owner user alice * //Sourcegraph/Engineering/Backend/...
@@ -162,7 +160,7 @@ open user alice * //Sourcegraph/Engineering/Frontend/...
 review user alice * //Sourcegraph/Handbook/...
 review user alice * //Sourcegraph/*/Handbook/...
 review user alice * //Sourcegraph/.../Handbook/...
-`,
+`)),
 			wantPerms: &authz.ExternalUserPermissions{
 				IncludeContains: []extsvc.RepoID{
 					"//Sourcegraph/Engineering/%",
@@ -176,7 +174,7 @@ review user alice * //Sourcegraph/.../Handbook/...
 		},
 		{
 			name: "exclude only",
-			response: `
+			protects: parseP4ProtectsRaw(t, strings.NewReader(`
 list user alice * -//Sourcegraph/Security/...
 read user alice * -//Sourcegraph/Engineering/...
 owner user alice * -//Sourcegraph/Engineering/Backend/...
@@ -184,8 +182,7 @@ open user alice * -//Sourcegraph/Engineering/Frontend/...
 review user alice * -//Sourcegraph/Handbook/...
 review user alice * -//Sourcegraph/*/Handbook/...
 review user alice * -//Sourcegraph/.../Handbook/...
-`,
-			wantPerms: &authz.ExternalUserPermissions{
+`)), wantPerms: &authz.ExternalUserPermissions{
 				ExcludeContains: []extsvc.RepoID{
 					"//Sourcegraph/[^/]+/Handbook/%",
 					"//Sourcegraph/%/Handbook/%",
@@ -194,7 +191,7 @@ review user alice * -//Sourcegraph/.../Handbook/...
 		},
 		{
 			name: "include and exclude",
-			response: `
+			protects: parseP4ProtectsRaw(t, strings.NewReader(`
 read user alice * //Sourcegraph/Security/...
 read user alice * //Sourcegraph/Engineering/...
 owner user alice * //Sourcegraph/Engineering/Backend/...
@@ -208,7 +205,7 @@ list user alice * -//Sourcegraph/Security/...                        ## "list" c
 open user alice * -//Sourcegraph/Engineering/Backend/Credentials/... ## sub-match of a previous include
 open user alice * -//Sourcegraph/Engineering/*/Frontend/Folder/...   ## sub-match of a previous include
 open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-match of wildcard A include
-`,
+`)),
 			wantPerms: &authz.ExternalUserPermissions{
 				IncludeContains: []extsvc.RepoID{
 					"//Sourcegraph/Engineering/%",
@@ -228,7 +225,7 @@ open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-matc
 		},
 		{
 			name: "include and exclude, then include again",
-			response: `
+			protects: parseP4ProtectsRaw(t, strings.NewReader(`
 read user alice * //Sourcegraph/Security/...
 read user alice * //Sourcegraph/Engineering/...
 owner user alice * //Sourcegraph/Engineering/Backend/...
@@ -244,7 +241,7 @@ open user alice * -//Sourcegraph/Engineering/*/Frontend/Folder/...   ## sub-matc
 open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-match of wildcard A include
 
 read user alice * //Sourcegraph/Security/... 						 ## give access to alice again after revoking
-`,
+`)),
 			wantPerms: &authz.ExternalUserPermissions{
 				IncludeContains: []extsvc.RepoID{
 					"//Sourcegraph/Engineering/%",
@@ -267,11 +264,10 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
-			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-				return io.NopCloser(strings.NewReader(test.response)), nil, nil
-			})
+			gc := gitserver.NewStrictMockClient()
+			gc.PerforceProtectsForUserFunc.SetDefaultReturn(test.protects, nil)
 
-			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+			p := NewProvider(logger, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 			got, err := p.FetchUserPerms(ctx,
 				&extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
@@ -299,10 +295,12 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 		logger := logtest.Scoped(t)
 
 		gitserverClient := gitserver.NewStrictMockClient()
-		gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*p4types.Protect{
+		ps := []*p4types.Protect{
 			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Engineering/..."},
 			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Security/...", IsExclusion: true},
-		}, nil)
+		}
+		gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn(ps, nil)
+		gitserverClient.PerforceProtectsForUserFunc.SetDefaultReturn(ps, nil)
 
 		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		p.depots = append(p.depots, "//Sourcegraph/")
