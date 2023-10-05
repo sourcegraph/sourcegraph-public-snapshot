@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 )
 
 func TestParseP4Protects(t *testing.T) {
@@ -21,7 +21,7 @@ func TestParseP4Protects(t *testing.T) {
 	protects, err := parseP4Protects(protectsOut)
 	require.NoError(t, err)
 
-	want := []*v1.PerforceProtect{
+	want := []*perforce.Protect{
 		{
 			Level:       "list",
 			EntityType:  "user",

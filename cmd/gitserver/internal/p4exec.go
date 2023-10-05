@@ -31,7 +31,7 @@ import (
 )
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
-	arguments := byteSlicesToStrings(req.GetArgs())
+	arguments := byteSlicesToStrings(req.GetArgs()) //nolint:staticcheck
 
 	if len(arguments) < 1 {
 		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
@@ -62,13 +62,13 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	// p4-exec is currently only used for fetching user based permissions information
 	// so, we don't have a repo name.
 	accesslog.Record(ss.Context(), "<no-repo>",
-		log.String("p4user", req.GetP4User()),
-		log.String("p4port", req.GetP4Port()),
+		log.String("p4user", req.GetP4User()), //nolint:staticcheck
+		log.String("p4port", req.GetP4Port()), //nolint:staticcheck
 		log.Strings("args", arguments),
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err = perforce.P4TestWithTrust(ss.Context(), p4home, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ss.Context(), p4home, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd()) //nolint:staticcheck
 	if err != nil {
 		if ctxErr := ss.Context().Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
@@ -330,10 +330,10 @@ func (r *p4ExecRequest) ToProto() *proto.P4ExecRequest {
 
 func (r *p4ExecRequest) FromProto(p *proto.P4ExecRequest) {
 	*r = p4ExecRequest{
-		P4Port:   p.GetP4Port(),
-		P4User:   p.GetP4User(),
-		P4Passwd: p.GetP4Passwd(),
-		Args:     byteSlicesToStrings(p.GetArgs()),
+		P4Port:   p.GetP4Port(),                    //nolint:staticcheck
+		P4User:   p.GetP4User(),                    //nolint:staticcheck
+		P4Passwd: p.GetP4Passwd(),                  //nolint:staticcheck
+		Args:     byteSlicesToStrings(p.GetArgs()), //nolint:staticcheck
 	}
 }
 
