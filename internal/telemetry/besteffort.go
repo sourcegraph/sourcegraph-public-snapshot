@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -27,7 +26,7 @@ func NewBestEffortEventRecorder(logger log.Logger, recorder *EventRecorder) *Bes
 // actor, logging any recording errors it encounters. Parameters are optional.
 func (r *BestEffortEventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters *EventParameters) {
 	if err := r.recorder.Record(ctx, feature, action, parameters); err != nil {
-		fields := []zapcore.Field{
+		fields := []log.Field{
 			log.String("feature", string(feature)),
 			log.String("action", string(action)),
 			log.Error(err),
