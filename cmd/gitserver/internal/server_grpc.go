@@ -435,10 +435,7 @@ func (gs *GRPCServer) PerforceUsers(ctx context.Context, req *proto.PerforceUser
 	}
 
 	for _, user := range users {
-		resp.Users = append(resp.Users, &proto.PerforceUser{
-			Username: user.User,
-			Email:    user.Email,
-		})
+		resp.Users = append(resp.Users, user.ToProto())
 	}
 
 	return resp, nil

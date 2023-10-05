@@ -3,7 +3,6 @@ package perforce
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/gobwas/glob"
@@ -183,18 +182,6 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 	return false
 }
 
-// PerformDebugScan will scan protections rules from r and log detailed
-// information about how each line was parsed.
-func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID, ignoreRulesWithHost bool) (*authz.ExternalUserPermissions, error) {
-	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
-	}
-	scanner := fullRepoPermsScanner(logger, perms, []extsvc.RepoID{depot})
-	// TODO: Fixup.
-	err := scanProtects(logger, nil, scanner, ignoreRulesWithHost)
-	return perms, err
-}
-
 // protectsScanner provides callbacks for scanning the output of `p4 protects`.
 type protectsScanner struct {
 	// Called on the parsed contents of each `p4 protects` line.
@@ -216,6 +203,7 @@ func scanProtects(logger log.Logger, protects []*perforce.Protect, s *protectsSc
 		// Subsequent approaches will need to add more sophisticated handling of hosts
 		// perhaps even capturing the browser IP address and comparing it to the host field.
 		if ignoreRulesWithHost && protect.Host != "*" {
+			logger.Debug("Skipping host-specific rule", log.String("protect", fmt.Sprintf("%#v", protect)))
 			continue
 		}
 
@@ -230,6 +218,7 @@ func scanProtects(logger log.Logger, protects []*perforce.Protect, s *protectsSc
 		// We only care about read access. If the permission doesn't change read access,
 		// then we exit early.
 		if !parsedLine.affectsReadAccess() {
+			logger.Debug("Line does not affect read access, discarding")
 			continue
 		}
 
@@ -239,12 +228,12 @@ func scanProtects(logger log.Logger, protects []*perforce.Protect, s *protectsSc
 			return err
 		}
 	}
-	var finalizeErr error
+
 	if s.finalize != nil {
-		finalizeErr = s.finalize()
+		return s.finalize()
 	}
 
-	return finalizeErr
+	return nil
 }
 
 // scanRepoIncludesExcludes converts `p4 protects` to Postgres SIMILAR TO-compatible
