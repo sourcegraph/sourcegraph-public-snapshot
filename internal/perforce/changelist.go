@@ -50,13 +50,13 @@ type ChangelistState string
 func (s ChangelistState) ToProto() v1.PerforceChangelist_PerforceChangelistState {
 	switch s {
 	case ChangelistStateSubmitted:
-		return v1.PerforceChangelist_SUBMITTED
+		return v1.PerforceChangelist_PERFORCE_CHANGELIST_STATE_SUBMITTED
 	case ChangelistStatePending:
-		return v1.PerforceChangelist_PENDING
+		return v1.PerforceChangelist_PERFORCE_CHANGELIST_STATE_PENDING
 	case ChangelistStateShelved:
-		return v1.PerforceChangelist_SHELVED
+		return v1.PerforceChangelist_PERFORCE_CHANGELIST_STATE_SHELVED
 	case ChangelistStateClosed:
-		return v1.PerforceChangelist_CLOSED
+		return v1.PerforceChangelist_PERFORCE_CHANGELIST_STATE_CLOSED
 	default:
 		return -1
 	}
