@@ -44,7 +44,7 @@ func createReleaseCommand(cctx *cli.Context) error {
 	}
 
 	workdir := cctx.String("workdir")
-	announce("setup", "Finding release manifest in %q", workdir)
+	announce2("setup", "Finding release manifest in %q", workdir)
 	if err := os.Chdir(cctx.String("workdir")); err != nil {
 		return err
 	}
@@ -64,9 +64,9 @@ func createReleaseCommand(cctx *cli.Context) error {
 
 	saySuccess("setup", "Found manifest for %q (%s)", m.ProductName, m.Repository)
 	say("meta", "Owners: %s", strings.Join(m.Owners, ", "))
-	say("meta", "Will create a patch release %q", "v6.6.666")
+	say("meta", "Will create a patch release %q", version)
 
-	announce("reqs", "Checking requirements...")
+	announce2("reqs", "Checking requirements...")
 	var failed bool
 	for _, req := range m.Requirements {
 		if req.Env != "" && req.Cmd != "" {
@@ -95,7 +95,7 @@ func createReleaseCommand(cctx *cli.Context) error {
 		}
 	}
 	if failed {
-		announce("reqs", "Requirement checks failed, aborting.")
+		announce2("reqs", "Requirement checks failed, aborting.")
 		return errors.New("failed requirements")
 	}
 
@@ -112,13 +112,13 @@ func createReleaseCommand(cctx *cli.Context) error {
 	for _, step := range steps {
 		cmd := interpolate(step.Cmd, vars)
 		if pretend {
-			announce("step", "Pretending to run step %q", step.Name)
+			announce2("step", "Pretending to run step %q", step.Name)
 			for _, line := range strings.Split(cmd, "\n") {
 				say(step.Name, line)
 			}
 			continue
 		}
-		announce("step", "Running step %q", step.Name)
+		announce2("step", "Running step %q", step.Name)
 		err := run.Bash(cctx.Context, cmd).Run().StreamLines(func(line string) {
 			say(step.Name, line)
 		})
@@ -139,8 +139,8 @@ func interpolate(s string, m map[string]string) string {
 	return s
 }
 
-func announce(section string, format string, a ...any) {
-	std.Out.WriteLine(output.Linef("👉", output.StyleBold, fmt.Sprintf("[%s] %s", section, format), a...))
+func announce2(section string, format string, a ...any) {
+	std.Out.WriteLine(output.Linef("👉", output.StyleBold, fmt.Sprintf("[%10s] %s", section, format), a...))
 }
 
 func say(section string, format string, a ...any) {
@@ -160,5 +160,5 @@ func saySuccess(section string, format string, a ...any) {
 }
 
 func sayKind(style output.Style, section string, format string, a ...any) {
-	std.Out.WriteLine(output.Linef("  ", style, fmt.Sprintf("[%s] %s", section, format), a...))
+	std.Out.WriteLine(output.Linef("  ", style, fmt.Sprintf("[%10s] %s", section, format), a...))
 }
