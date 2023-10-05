@@ -472,8 +472,13 @@ func (gs *GRPCServer) PerforceProtectsForUser(ctx context.Context, req *proto.Pe
 		return nil, err
 	}
 
+	protoProtects := make([]*proto.PerforceProtect, len(protects))
+	for i, p := range protects {
+		protoProtects[i] = p.ToProto()
+	}
+
 	return &proto.PerforceProtectsForUserResponse{
-		Protects: protects,
+		Protects: protoProtects,
 	}, nil
 }
 
@@ -505,8 +510,13 @@ func (gs *GRPCServer) PerforceProtectsForDepot(ctx context.Context, req *proto.P
 		return nil, err
 	}
 
+	protoProtects := make([]*proto.PerforceProtect, len(protects))
+	for i, p := range protects {
+		protoProtects[i] = p.ToProto()
+	}
+
 	return &proto.PerforceProtectsForDepotResponse{
-		Protects: protects,
+		Protects: protoProtects,
 	}, nil
 }
 

@@ -11,13 +11,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // P4ProtectsForUser returns all protect definitions that apply to the given username.
-func P4ProtectsForUser(ctx context.Context, p4home, p4port, p4user, p4passwd, username string) ([]*v1.PerforceProtect, error) {
+func P4ProtectsForUser(ctx context.Context, p4home, p4port, p4user, p4passwd, username string) ([]*p4types.Protect, error) {
 	// -u User : Displays protection lines that apply to the named user. This option
 	// requires super access.
 	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "protects", "-u", username)
@@ -50,7 +50,7 @@ func P4ProtectsForUser(ctx context.Context, p4home, p4port, p4user, p4passwd, us
 }
 
 // P4ProtectsForUser returns all protect definitions that apply to the given depot.
-func P4ProtectsForDepot(ctx context.Context, p4home, p4port, p4user, p4passwd, depot string) ([]*v1.PerforceProtect, error) {
+func P4ProtectsForDepot(ctx context.Context, p4home, p4port, p4user, p4passwd, depot string) ([]*p4types.Protect, error) {
 	// -a : Displays protection lines for all users. This option requires super
 	// access.
 	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "protects", "-a", depot)
@@ -92,8 +92,8 @@ type perforceJSONProtect struct {
 	User      string  `json:"user"`
 }
 
-func parseP4Protects(out []byte) ([]*v1.PerforceProtect, error) {
-	protects := make([]*v1.PerforceProtect, 0)
+func parseP4Protects(out []byte) ([]*p4types.Protect, error) {
+	protects := make([]*p4types.Protect, 0)
 
 	lr := byteutils.NewLineReader(out)
 	for lr.Scan() {
@@ -112,8 +112,7 @@ func parseP4Protects(out []byte) ([]*v1.PerforceProtect, error) {
 			entityType = "group"
 		}
 
-		// TODO: Reconcile names?
-		protects = append(protects, &v1.PerforceProtect{
+		protects = append(protects, &p4types.Protect{
 			Host:        parsedLine.Host,
 			EntityType:  entityType,
 			EntityName:  parsedLine.User,
