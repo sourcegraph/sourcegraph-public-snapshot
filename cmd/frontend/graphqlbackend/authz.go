@@ -133,7 +133,7 @@ type PermissionsInfoResolver interface {
 
 type PermissionsInfoRepositoryResolver interface {
 	ID() graphql.ID
-	Repository() *RepositoryResolver
+	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Reason() string
 	UpdatedAt() *gqlutil.DateTime
 }
