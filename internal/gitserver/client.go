@@ -104,7 +104,7 @@ func NewClient() Client {
 
 // NewTestClient returns a test client that will use the given list of
 // addresses provided by the clientSource.
-func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
+func NewTestClient(cli httpcli.Doer, clientSource ClientSource) TestClient {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 
 	return &clientImplementor{
@@ -121,12 +121,17 @@ func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
 	}
 }
 
+type TestClient interface {
+	Client
+	SetChecker(authz.SubRepoPermissionChecker)
+}
+
 // NewMockClientWithExecReader return new MockClient with provided mocked
 // behaviour of ExecReader function.
-func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
+func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
 	client := NewMockClient()
 	// NOTE: This hook is the same as DiffFunc, but with `execReader` used above
-	client.DiffFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error) {
+	client.DiffFunc.SetDefaultHook(func(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 		if opts.Base == DevNullSHA {
 			opts.RangeType = ".."
 		} else if opts.RangeType != ".." {
@@ -160,7 +165,7 @@ func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, 
 	})
 
 	// NOTE: This hook is the same as DiffPath, but with `execReader` used above
-	client.DiffPathFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+	client.DiffPathFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
 		a := actor.FromContext(ctx)
 		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
 			return nil, err
@@ -271,7 +276,7 @@ type Client interface {
 
 	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 	// contains a commit past a specified date.
-	HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (bool, error)
+	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error)
 
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
@@ -321,27 +326,27 @@ type Client interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 
 	// Stat returns a FileInfo describing the named file at commit.
-	Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
+	Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
 
 	// DiffPath returns a position-ordered slice of changes (additions or deletions)
 	// of the given path between the given source and target commits.
-	DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
+	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
 
 	// ReadDir reads the contents of the named directory at commit.
-	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
-	NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
+	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
 
 	// Commits returns all commits matching the options.
-	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
+	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 
 	// FirstEverCommit returns the first commit ever made to the repository.
-	FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*gitdomain.Commit, error)
+	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)
 
 	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
@@ -349,43 +354,43 @@ type Client interface {
 	// ListDirectoryChildren fetches the list of children under the given directory
 	// names. The result is a map keyed by the directory names with the list of files
 	// under each.
-	ListDirectoryChildren(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error)
+	ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error)
 
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
-	Diff(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error)
+	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
 
 	// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 	// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-	ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error)
+	ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error)
 
 	// BranchesContaining returns a map from branch names to branch tip hashes for
 	// each branch containing the given commit.
-	BranchesContaining(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error)
+	BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error)
 
 	// RefDescriptions returns a map from commits to descriptions of the tip of each
 	// branch and tag of the given repository.
-	RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
+	RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
 
 	// CommitExists determines if the given commit exists in the given repository.
-	CommitExists(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID) (bool, error)
+	CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error)
 
 	// CommitsExist determines if the given commits exists in the given repositories. This function returns
 	// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
 	// exists.
-	CommitsExist(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit) ([]bool, error)
+	CommitsExist(ctx context.Context, repoCommits []api.RepoCommit) ([]bool, error)
 
 	// Head determines the tip commit of the default branch for the given repository.
 	// If no HEAD revision exists for the given repository (which occurs with empty
 	// repositories), a false-valued flag is returned along with a nil error and
 	// empty revision.
-	Head(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (string, bool, error)
+	Head(ctx context.Context, repo api.RepoName) (string, bool, error)
 
 	// CommitDate returns the time that the given commit was committed. If the given
 	// revision does not exist, a false-valued flag is returned along with a nil
 	// error and zero-valued time.
-	CommitDate(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error)
+	CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error)
 
 	// CommitGraph returns the commit graph for the given repository as a mapping
 	// from a commit to its parents. If a commit is supplied, the returned graph will
@@ -401,10 +406,10 @@ type Client interface {
 	// commits on {branchName} not also on the tip of the default branch. If the
 	// supplied branch name is the default branch, then this method instead returns
 	// all commits reachable from HEAD.
-	CommitsUniqueToBranch(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
+	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 
 	// LsFiles returns the output of `git ls-files`
-	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
+	LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
@@ -412,7 +417,7 @@ type Client interface {
 	//
 	// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 	// resulting commit to be nil, but not fail the entire operation.
-	GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)
+	GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)
 
 	// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 	// exists.
@@ -420,7 +425,7 @@ type Client interface {
 	// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 	// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 	// the repository or if the commit must be fetched from the remote.
-	GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error)
+	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error)
 
 	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
@@ -2240,4 +2245,8 @@ func stringsToByteSlices(in []string) [][]byte {
 		res[i] = []byte(s)
 	}
 	return res
+}
+
+func (c *clientImplementor) SetChecker(checker authz.SubRepoPermissionChecker) {
+	c.subRepoPermsChecker = checker
 }

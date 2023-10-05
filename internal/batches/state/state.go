@@ -21,7 +21,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -794,7 +793,7 @@ func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Cha
 	if c.SyncState.BaseRefOid == c.SyncState.HeadRefOid {
 		return c.DiffStat(), nil
 	}
-	iter, err := client.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
+	iter, err := client.Diff(ctx, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,

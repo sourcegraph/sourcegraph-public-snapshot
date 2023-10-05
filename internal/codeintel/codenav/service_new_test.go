@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -113,7 +112,7 @@ func TestGetDefinitions(t *testing.T) {
 		mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(dumps, nil)
 
 		// upload #150's commit no longer exists; all others do
-		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
+		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []api.RepoCommit) (exists []bool, _ error) {
 			for _, rc := range rcs {
 				exists = append(exists, rc.CommitID != "deadbeef1")
 			}
@@ -312,7 +311,7 @@ func TestGetReferences(t *testing.T) {
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{252, 253}, 0, 2, nil)
 
 		// upload #150/#250's commits no longer exists; all others do
-		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
+		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []api.RepoCommit) (exists []bool, _ error) {
 			for _, rc := range rcs {
 				exists = append(exists, rc.CommitID != "deadbeef1")
 			}

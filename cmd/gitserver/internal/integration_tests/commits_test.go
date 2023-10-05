@@ -80,7 +80,7 @@ func TestGetCommits(t *testing.T) {
 		}
 
 		source := gitserver.NewTestClientSource(t, GitserverAddresses)
-		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, nil, repoCommits, true)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -119,7 +119,9 @@ func TestGetCommits(t *testing.T) {
 		}
 		source := gitserver.NewTestClientSource(t, GitserverAddresses)
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
+		client := gitserver.NewTestClient(http.DefaultClient, source)
+		client.SetChecker(getTestSubRepoPermsChecker("file1", "file3"))
+		commits, err := client.GetCommits(ctx, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -159,7 +161,7 @@ func TestHead(t *testing.T) {
 		repo := MakeGitRepository(t, gitCommands...)
 		ctx := context.Background()
 
-		head, exists, err := client.Head(ctx, nil, repo)
+		head, exists, err := client.Head(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -183,8 +185,9 @@ func TestHead(t *testing.T) {
 			UID: 1,
 		})
 		checker := getTestSubRepoPermsChecker("file")
+		client.SetChecker(checker)
 		// call Head() when user doesn't have access to view the commit
-		_, exists, err := client.Head(ctx, checker, repo)
+		_, exists, err := client.Head(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -192,8 +195,9 @@ func TestHead(t *testing.T) {
 			t.Fatalf("exists should be false since the user doesn't have access to view the commit")
 		}
 		readAllChecker := getTestSubRepoPermsChecker()
+		client.SetChecker(readAllChecker)
 		// call Head() when user has access to view the commit; should return expected commit
-		head, exists, err := client.Head(ctx, readAllChecker, repo)
+		head, exists, err := client.Head(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}

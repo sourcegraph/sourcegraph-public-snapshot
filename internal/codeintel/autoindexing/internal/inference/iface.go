@@ -37,7 +37,7 @@ func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
 }
 
 func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	return s.client.LsFiles(ctx, s.checker, repo, api.CommitID(commit), pathspecs...)
+	return s.client.LsFiles(ctx, repo, api.CommitID(commit), pathspecs...)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {

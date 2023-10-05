@@ -119,7 +119,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
 	}
 
-	allFilesStr, err := j.gitClient.LsFiles(ctx, nil, repoName, "HEAD")
+	allFilesStr, err := j.gitClient.LsFiles(ctx, repoName, "HEAD")
 	if err != nil {
 		return err
 	}

@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
@@ -247,7 +246,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			}
 
 			var iter *gitserver.DiffFileIterator
-			iter, err = cmp.gitserverClient.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
+			iter, err = cmp.gitserverClient.Diff(ctx, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
 				Head:      string(cmp.head.OID()),
