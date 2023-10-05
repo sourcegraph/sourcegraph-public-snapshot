@@ -162,13 +162,22 @@ func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int
 
 func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
 	config := conf.Get().SiteConfig()
+
+	var isDevInstance bool
 	licenseInfo, err := licensing.GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return 0, "", err
 	}
-	// TODO: What if licenseInfo is nil?
+	if licenseInfo == nil {
+		isDevInstance = true
+	} else {
+		isDevInstance = licenseInfo.HasTag("dev")
+	}
 
-	token, b, err := accesstoken.GeneratePersonalAccessToken(config.LicenseKey, licenseInfo.HasTag("dev"))
+	token, b, err := accesstoken.GeneratePersonalAccessToken(config.LicenseKey, isDevInstance)
+	if err != nil {
+		return 0, "", err
+	}
 
 	if len(scopes) == 0 {
 		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
