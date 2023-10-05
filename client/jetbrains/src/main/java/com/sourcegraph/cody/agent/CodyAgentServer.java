@@ -36,13 +36,13 @@ public interface CodyAgentServer {
   CompletableFuture<Void> logEvent(Event event);
 
   @JsonRequest("graphql/currentUserId")
-  CompletableFuture<String> currentUserId();
+  CompletableFuture<@Nullable String> currentUserId();
 
   @JsonRequest("graphql/getRepoIdIfEmbeddingExists")
   CompletableFuture<@Nullable String> getRepoIdIfEmbeddingExists(GetRepoID repoName);
 
   @JsonRequest("graphql/getRepoId")
-  CompletableFuture<String> getRepoId(GetRepoID repoName);
+  CompletableFuture<@Nullable String> getRepoId(GetRepoID repoName);
 
   // Notifications
   @JsonNotification("initialized")
