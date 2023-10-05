@@ -59,9 +59,9 @@ ts_project(
 jest_test(
     name = "test",
     data = [
-        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js",
-        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js.br",
-        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js.gz",
+        "src/webBundleSize/__mocks__/assets/scripts/main.js",
+        "src/webBundleSize/__mocks__/assets/scripts/main.js.br",
+        "src/webBundleSize/__mocks__/assets/scripts/main.js.gz",
         "src/webBundleSize/__mocks__/assets/scripts/sg_home.js",
         "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.br",
         "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.gz",
