@@ -16,8 +16,8 @@ jobs:
         # Fetch the target branch to compare
         git fetch --depth=1 origin ${{ github.base_ref }}:${{ github.base_ref }}
 
-        git log --pretty=%B HEAD...main --
-        if git log --pretty=%B HEAD...${{ github.base_ref }} -- | grep -q "skip filesize check" ; then
+        git log --pretty=%B ${{ github.base_ref }}...HEAD --
+        if git log --pretty=%B ${{ github.base_ref }}...HEAD -- | grep -q "skip filesize check" ; then
           exit 0
         fi
 
