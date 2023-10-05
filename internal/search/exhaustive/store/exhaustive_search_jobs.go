@@ -175,7 +175,8 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 
 	job, err := scanExhaustiveSearchJob(s.Store.QueryRow(ctx, q))
 	if err != nil {
-		return nil, err
+		// don't leak db error types to caller
+		return nil, errors.Wrapf(ErrNoResults, "failed to scan job with id %d: %s", id, err.Error())
 	}
 	if job.ID == 0 {
 		return nil, ErrNoResults
@@ -190,6 +191,41 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 	}
 
 	return job, nil
+}
+
+func (s *Store) UserHasAccess(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservation := s.operations.userHasAccess.With(ctx, &err, opAttrs(
+		attribute.Int64("ID", id),
+	))
+	defer endObservation(1, observation.Args{})
+
+	where := sqlf.Sprintf("id = %d", id)
+	q := sqlf.Sprintf(
+		getExhaustiveSearchJobQueryFmtStr,
+		sqlf.Sprintf("initiator_id"),
+		where,
+	)
+
+	var initiatorID int32
+	err = s.Store.QueryRow(ctx, q).Scan(&initiatorID)
+	if err != nil {
+		// don't leak db error types to caller
+		return errors.Wrapf(ErrNoResults, "failed to scan job with id %d: %s", id, err.Error())
+	}
+
+	if initiatorID == 0 {
+		return ErrNoResults
+	}
+
+	// 🚨 SECURITY: only the initiator, internal or site admins may view a job
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, initiatorID); err != nil {
+		// job id is just an incrementing integer that on any new job is
+		// returned. So this information is not private so we can just return
+		// err to indicate the reason for not returning the job.
+		return err
+	}
+
+	return nil
 }
 
 // aggStateSubQuery takes the results from getAggregateStateTable and computes a
