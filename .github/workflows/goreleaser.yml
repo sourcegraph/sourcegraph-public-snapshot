@@ -2,7 +2,7 @@ name: Build and Release
 
 on:
   push:
-    tags:	
+    tags:
       - '*'
 
 # There are two cases where this GitHub action will run:
@@ -177,7 +177,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19
+          go-version: 1.20
       - run: go test -i ./...
       - run: go test -race -v ./...
       - run: echo "${DOCKER_PASSWORD}" | docker login -u=$DOCKER_USERNAME --password-stdin
