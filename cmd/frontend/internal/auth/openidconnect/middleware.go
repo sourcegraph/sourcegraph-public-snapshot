@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -125,6 +126,18 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
+			isConnect := r.URL.Query().Get("connect") == "true"
+
+			// If this is not an account connection attempt, and the user is already signed in,
+			// sign the user out first.
+			if !isConnect && actor.FromContext(r.Context()).IsAuthenticated() {
+				err := session.SetActor(w, r, nil, 0, time.Time{})
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+
 			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
 			if err != nil {
 				log15.Error("Failed to get provider.", "error", err)

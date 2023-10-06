@@ -37,9 +37,9 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
         setIsLoading(true)
 
         if (authProvider.serviceType === 'saml') {
-            window.location.assign(authProvider.authenticationURL)
+            window.location.assign(authProvider.authenticationURL + '&connect=true')
         } else {
-            window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
+            window.location.assign(`${authProvider.authenticationURL}&connect=true&redirect=${window.location.href}`)
         }
     }, [authProvider.serviceType, authProvider.authenticationURL])
 

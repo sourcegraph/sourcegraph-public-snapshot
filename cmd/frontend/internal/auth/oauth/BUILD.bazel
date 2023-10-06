@@ -28,6 +28,7 @@ go_library(
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/httpcli",
+        "//internal/session",
         "//internal/trace",
         "//lib/errors",
         "//schema",
