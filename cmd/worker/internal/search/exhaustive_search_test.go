@@ -64,7 +64,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	job, err := svc.CreateSearchJob(userCtx, query)
 	require.NoError(err)
 
-	// Do some assertations on the job before it runs
+	// Do some assertions on the job before it runs
 	{
 		require.Equal(userID, job.InitiatorID)
 		require.Equal(query, job.Query)
@@ -81,14 +81,6 @@ func TestExhaustiveSearch(t *testing.T) {
 	{
 		jobs, err := svc.ListSearchJobs(userCtx, store.ListArgs{})
 		require.NoError(err)
-
-		// HACK: Don't test agg state. Here we compare a result from GetSearchJob and
-		// ListSearchJobs. However, AggState is only set in ListSearchJobs.
-		//
-		// We don't want to set AggState in GetSearchJob because it is fairly expensive,
-		// and we call GetSearchJob a lot as part of the security checks, so we want to
-		// keep it as lean as possible.
-		jobs[0].AggState = job.AggState
 
 		require.Equal([]*types.ExhaustiveSearchJob{job}, jobs)
 	}
@@ -140,6 +132,8 @@ func TestExhaustiveSearch(t *testing.T) {
 		// only assert on State since the rest are non-deterministic.
 		require.Equal(types.JobStateCompleted, job2.State)
 		job2.WorkerJob = job.WorkerJob
+		// ignore AggState. We fetched the job at different stages of its lifecycle so
+		// the states differ.
 		job2.AggState = job.AggState
 		require.Equal(job, job2)
 	}
