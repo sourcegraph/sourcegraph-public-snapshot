@@ -416,6 +416,6 @@ The log output of the `migrator` should include `INFO`-level logs and successful
 
 ### Local development
 
-To run the migrator locally, simply run `go run ./cmd/migrator` or `go run ./enterprise/cmd/migrator`.
+To run the migrator locally, simply run `go run ./cmd/migrator`.
 
 Many of the commands detailed above are also available via `sg`. Replace `migrator` with `sg migration ...`. There are a few command registered on the `migrator` but not on `sg` (e.g., `upgrade` and `downgrade`), as local environments are a bit of a different beast than environments performing upgrades only along tagged releases.

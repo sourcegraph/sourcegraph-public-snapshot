@@ -4,7 +4,7 @@ This document covers information about contributing to [Sourcegraph's continuous
 
 ## Pipeline generator
 
-The source code of [Sourcegraph's Buildkite pipelines](./index.md#buildkite-pipelines) generator is in [`/enterprise/dev/ci`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
+The source code of [Sourcegraph's Buildkite pipelines](./index.md#buildkite-pipelines) generator is in [`/dev/ci`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/dev/ci).
 Internally, the pipeline generator determines what gets run over contributions based on:
 
 1. [Run types](#run-types), determined by branch naming conventions, tags, and environment variables
@@ -51,14 +51,14 @@ If you are looking to modify the pipeline, some good rules of thumbs for which c
 
 To create a new check that can run on pull requests on relevant files, refer to how [diff types](#diff-types) work to get started.
 
-Then, you can add a new check to [`CoreTestOperations`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci+CoreTestOperations+type:symbol+&patternType=literal).
+Then, you can add a new check to [`CoreTestOperations`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edev/ci/internal/ci+CoreTestOperations+type:symbol+&patternType=literal).
 Make sure to follow the best practices outlined in docstring.
 
 For more advanced pipelines, see [Run types](#run-types).
 
 ### Step options
 
-Each [operation](#operations) is composed of steps that are built via step options, defined as [implementations of the `StepOpt` interface](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/buildkite/buildkite.go?L229:6#tab=implementations_go). The core step option is `Cmd`, which defines a command to run when added to a pipeline via `AddStep`:
+Each [operation](#operations) is composed of steps that are built via step options, defined as [implementations of the `StepOpt` interface](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/ci/internal/buildkite/buildkite.go?L229:6#tab=implementations_go). The core step option is `Cmd`, which defines a command to run when added to a pipeline via `AddStep`:
 
 ```go
 func addGoBuild(pipeline *bk.Pipeline) {
@@ -105,7 +105,7 @@ An annotation can be rendered as Markdown instead by using the `.md` extension, 
 echo -e "$OUT" >./annotations/docsite.md
 ```
 
-For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
+For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
 #### Caching build artefacts
 
@@ -119,7 +119,7 @@ Cached artefacts are *automatically expired after 30 days* (by an object lifecyc
 
 #### Failure logs
 
-Every failure in the `sourcegraph/sourcegraph` CI pipeline for `main` also [uploads logs using `sg` to Loki](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/upload-build-logs.sh).
+Every failure in the `sourcegraph/sourcegraph` CI pipeline for `main` also [uploads logs using `sg` to Loki](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/upload-build-logs.sh).
 We do not publish data for successful builds or branch builds (for those, you can refer to our [build traces](https://docs.sourcegraph.com/dev/background-information/ci/development#pipeline-command-tracing)).
 
 For a brief overview, check out the [CI dashboard](https://sourcegraph.grafana.net/d/iBBWbxFnk/ci?orgId=1), which is a set of graphs based on the contents of uploaded logs.
@@ -175,7 +175,7 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
 4. That's it!
 
-For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
+For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
 > WARNING: The Buildkite API is not finalized and neither are the configuration options for `TestReportOpts`.
 > To get started with Buildkite Analytics please reach out to the `#dev-experience` channel for assistance.
@@ -196,7 +196,7 @@ Also see [Flaky infrastructure](#flaky-infrastructure), [Continous integration i
 To set up Buildkite to use the rendered pipeline, add the following step in the [pipeline settings](https://buildkite.com/sourcegraph/sourcegraph/settings):
 
 ```shell
-go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
+go run ./dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 ```
 
 #### Managing secrets

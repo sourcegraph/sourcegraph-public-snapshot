@@ -29,7 +29,7 @@ func CheckSourcegraphVersion(version, constraint, minDate string) (bool, error) 
 	// Since we don't actually care about the abbreviated commit hash at the end of the
 	// version string, we match on 7 or more characters. Currently, the Sourcegraph version
 	// is expected to return 12:
-	// https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/config.go?L96.
+	// https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/ci/internal/ci/config.go?L96.
 	matches := BuildDateRegex.FindStringSubmatch(version)
 	if len(matches) > 1 {
 		return matches[1] >= minDate, nil

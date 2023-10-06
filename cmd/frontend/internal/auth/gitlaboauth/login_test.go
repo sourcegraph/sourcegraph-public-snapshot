@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"testing"
 
-	oauth2Login "github.com/dghubble/gologin/oauth2"
-	"github.com/dghubble/gologin/testutils"
+	oauth2Login "github.com/dghubble/gologin/v2/oauth2"
+	"github.com/dghubble/gologin/v2/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"

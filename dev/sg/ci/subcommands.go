@@ -68,7 +68,7 @@ var previewCommand = &cli.Command{
 		}
 		switch cmd.String("format") {
 		case "markdown":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go -preview").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -76,7 +76,7 @@ var previewCommand = &cli.Command{
 			}
 			return std.Out.WriteMarkdown(out)
 		case "json":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
+			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -84,7 +84,7 @@ var previewCommand = &cli.Command{
 			}
 			return std.Out.WriteCode("json", out)
 		case "yaml":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
+			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go -yaml").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -615,7 +615,7 @@ var docsCommand = &cli.Command{
 	Usage:       "Render reference documentation for build pipeline types",
 	Description: "An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
 	Action: func(ctx *cli.Context) error {
-		cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+		cmd := exec.Command("go", "run", "./dev/ci/gen-pipeline.go", "-docs")
 		out, err := run.InRoot(cmd)
 		if err != nil {
 			return err

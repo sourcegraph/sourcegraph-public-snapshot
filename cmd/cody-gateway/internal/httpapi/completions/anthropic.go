@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -26,40 +25,52 @@ import (
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
 const (
-	flaggedPromptLogMessage = "flagged prompt"
-
 	logPromptPrefixLength = 250
 
 	promptTokenLimit   = 18000
 	responseTokenLimit = 1000
 )
 
-func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (bool, string, error) {
+func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
 	// Only usage of chat models us currently flagged, so if the request
 	// is using another model, we skip other checks.
 	if ar.Model != "claude-2" && ar.Model != "claude-v1" {
-		return false, "", nil
+		return nil, nil
 	}
+	reasons := []string{}
 
 	if len(promptRegexps) > 0 && !matchesAny(ar.Prompt, promptRegexps) {
-		return true, "unknown_prompt", nil
+		reasons = append(reasons, "unknown_prompt")
 	}
 
 	// If this request has a very high token count for responses, then flag it.
 	if ar.MaxTokensToSample > responseTokenLimit {
-		return true, fmt.Sprintf("high_max_tokens_to_sample_%d", ar.MaxTokensToSample), nil
+		reasons = append(reasons, "high_max_tokens_to_sample")
 	}
 
 	// If this prompt consists of a very large number of tokens, then flag it.
 	tokenCount, err := ar.GetPromptTokenCount(tk)
 	if err != nil {
-		return true, "", errors.Wrap(err, "tokenize prompt")
+		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
 	}
 	if tokenCount > promptTokenLimit {
-		return true, fmt.Sprintf("high_prompt_token_count_%d", tokenCount), nil
+		reasons = append(reasons, "high_prompt_token_count")
 	}
 
-	return false, "", nil
+	if len(reasons) > 0 {
+		promptPrefix := ar.Prompt
+		if len(promptPrefix) > logPromptPrefixLength {
+			promptPrefix = promptPrefix[0:logPromptPrefixLength]
+		}
+		return &flaggingResult{
+			reasons:           reasons,
+			maxTokensToSample: int(ar.MaxTokensToSample),
+			promptPrefix:      promptPrefix,
+			promptTokenCount:  tokenCount,
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func matchesAny(prompt string, promptRegexps []*regexp.Regexp) bool {
@@ -108,36 +119,23 @@ func NewAnthropicHandler(
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
-			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, bool, error) {
+			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
 				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return http.StatusBadRequest, false, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+					return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
 				}
 
-				if flagged, reason, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
+				if result, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
 					logger.Error("error checking anthropic request - treating as non-flagged",
 						log.Error(err))
-				} else if flagged {
-					// For now, just log the error, don't modify the request / response
-					promptPrefix := ar.Prompt
-					if len(promptPrefix) > logPromptPrefixLength {
-						promptPrefix = promptPrefix[0:logPromptPrefixLength]
-					}
-					logger.Info(flaggedPromptLogMessage,
-						log.String("reason", reason),
-						log.Int("promptLength", len(ar.Prompt)),
-						log.String("promptPrefix", promptPrefix),
-						log.String("model", ar.Model),
-						log.Int32("maxTokensToSample", ar.MaxTokensToSample),
-						log.Float32("temperature", ar.Temperature))
-
+				} else if result.IsFlagged() {
 					// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
 					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
 						logger.Warn("failed to record flagged prompt", log.Error(err))
 					}
-					return 0, true, nil
+					return 0, result, nil
 				}
 
-				return 0, false, nil
+				return 0, nil, nil
 			},
 			transformBody: func(body *anthropicRequest, identifier string) {
 				// Overwrite the metadata field, we don't want to allow users to specify it:
@@ -277,4 +275,16 @@ type anthropicRequestMetadata struct {
 type anthropicResponse struct {
 	Completion string `json:"completion,omitempty"`
 	StopReason string `json:"stop_reason,omitempty"`
+}
+
+type flaggingResult struct {
+	blocked           bool
+	reasons           []string
+	promptPrefix      string
+	maxTokensToSample int
+	promptTokenCount  int
+}
+
+func (f *flaggingResult) IsFlagged() bool {
+	return f != nil
 }

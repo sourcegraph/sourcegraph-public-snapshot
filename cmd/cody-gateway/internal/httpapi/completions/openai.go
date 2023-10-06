@@ -41,13 +41,13 @@ func NewOpenAIHandler(
 		openAIURL,
 		allowedModels,
 		upstreamHandlerMethods[openaiRequest]{
-			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, bool, error) {
+			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, *flaggingResult, error) {
 				if feature == codygateway.FeatureCodeCompletions {
-					return http.StatusNotImplemented, false,
+					return http.StatusNotImplemented, nil,
 						errors.Newf("feature %q is currently not supported for OpenAI",
 							feature)
 				}
-				return 0, false, nil
+				return 0, nil, nil
 			},
 			transformBody: func(body *openaiRequest, identifier string) {
 				// We don't want to let users generate multiple responses, as this would

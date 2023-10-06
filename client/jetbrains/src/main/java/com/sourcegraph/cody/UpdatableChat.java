@@ -8,8 +8,6 @@ import org.jetbrains.annotations.NotNull;
 public interface UpdatableChat {
   void addMessageToChat(@NotNull ChatMessage message);
 
-  void respondToErrorFromServer(@NotNull String errorMessage);
-
   void updateLastMessage(@NotNull ChatMessage message);
 
   void displayUsedContext(@NotNull List<ContextMessage> contextMessages);
