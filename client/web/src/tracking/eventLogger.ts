@@ -283,6 +283,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getSessionReferrer(): string {
         // Gets the session referrer from the cookie
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
+
         if (isSourcegraphDotComMode) {
             cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
             return sessionReferrer
@@ -299,15 +300,12 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
         if (isSourcegraphDotComMode) {
             cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
-            this.sessionFirstURL = sessionFirstURL
+            return sessionFirstURL
         } else {
             const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
             cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
-            this.sessionFirstURL = redactedURL
+            return redactedURL
         }
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        this.sessionFirstURL = sessionFirstURL
-        return this.sessionFirstURL
     }
 
     public getDeviceSessionID(): string {
