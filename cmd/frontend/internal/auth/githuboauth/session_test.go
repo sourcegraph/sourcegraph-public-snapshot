@@ -10,7 +10,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	githublogin "github.com/dghubble/gologin/v2/github"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-github/v48/github" // v48 is used for dghubble/golgin compatibility
+	"github.com/google/go-github/v48/github" //nolint:depguard
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
