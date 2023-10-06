@@ -1,5 +1,3 @@
-[(for_statement) (if_statement) (switch_statement) (while_statement) (block)] @scope
-
 (assignment left: (identifier) @definition.var (#set! "reassignment_behavior" "oldest_is_definition"))
 (global_operator (identifier) @definition.var (#set! "reassignment_behavior" "oldest_is_definition"))
 (persistent_operator (identifier) @definition.var (#set! "reassignment_behavior" "oldest_is_definition"))

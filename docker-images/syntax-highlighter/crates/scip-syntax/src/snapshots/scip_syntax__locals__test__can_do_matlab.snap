@@ -6,22 +6,22 @@ expression: dumped
 //^ definition local 1
   
   function myFunc()
-//         ^^^^^^ definition local 9
+//         ^^^^^^ definition local 10
       e = 5;
-//    ^ definition local 10
-      f = 6;
 //    ^ definition local 11
+      f = 6;
+//    ^ definition local 12
   end
   
   function myNestedFunc()
-//         ^^^^^^^^^^^^ definition local 12
+//         ^^^^^^^^^^^^ definition local 13
       g = 7;
-//    ^ definition local 13
+//    ^ definition local 14
       
       function nestedChildFunc()
-//             ^^^^^^^^^^^^^^^ definition local 14
+//             ^^^^^^^^^^^^^^^ definition local 15
           h = 8;
-//        ^ definition local 15
+//        ^ definition local 16
       end
   end
   
@@ -34,13 +34,13 @@ expression: dumped
 //^ reference local 3
   
   function myPersistFunc()
-//         ^^^^^^^^^^^^^ definition local 16
+//         ^^^^^^^^^^^^^ definition local 17
       persistent k 
-//               ^ definition local 17
+//               ^ definition local 18
       if isempty(k)
-//               ^ reference local 17
+//               ^ reference local 18
           k = 11;
-//        ^ reference local 17
+//        ^ reference local 18
       end
   end
   
@@ -78,21 +78,21 @@ expression: dumped
       
       methods
           function obj = MyClass(prop1)
-//                 ^^^ definition local 28
-//                       ^^^^^^^ definition local 29
-//                               ^^^^^ definition local 30
+//                 ^^^ definition local 26
+//                       ^^^^^^^ definition local 27
+//                               ^^^^^ definition local 28
               obj.Prop1 = prop1;
-//            ^^^ reference local 28
-//                        ^^^^^ reference local 30
+//            ^^^ reference local 26
+//                        ^^^^^ reference local 28
           end
           
           function result = method1(obj)
-//                 ^^^^^^ definition local 31
-//                          ^^^^^^^ definition local 32
-//                                  ^^^ definition local 33
+//                 ^^^^^^ definition local 29
+//                          ^^^^^^^ definition local 30
+//                                  ^^^ definition local 31
               result = obj.Prop1;
-//            ^^^^^^ reference local 31
-//                     ^^^ reference local 33
+//            ^^^^^^ reference local 29
+//                     ^^^ reference local 31
           end
       end
   end
@@ -106,10 +106,10 @@ expression: dumped
   
   addTwoNumbers = @(x, y) x + y;
 //^^^^^^^^^^^^^ definition local 7
-//                  ^ definition local 35
-//                     ^ definition local 36
-//                        ^ reference local 35
-//                            ^ reference local 36
+//                  ^ definition local 32
+//                     ^ definition local 33
+//                        ^ reference local 32
+//                            ^ reference local 33
   
   % TODO handle clear
   % See https://github.com/sourcegraph/sourcegraph/issues/57399
@@ -119,4 +119,23 @@ expression: dumped
   clear slay
   slay = 10 % and now it's here!
 //^^^^ reference local 8
+  
+  pog1 = 10
+//^^^^ definition local 9
+  pog1 = 20
+//^^^^ reference local 9
+  
+  function f()
+//         ^ definition local 34
+    if false
+      pog2 = 1;
+//    ^^^^ definition local 35
+    else
+      % TODO: this should also be marked as a definition
+      pog2 = 2;
+//    ^^^^ reference local 35
+    end
+    disp(pog2);
+//       ^^^^ reference local 35
+  end
 

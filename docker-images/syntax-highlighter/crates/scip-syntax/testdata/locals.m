@@ -66,3 +66,16 @@ addTwoNumbers = @(x, y) x + y;
 slay = 12 % definition is here
 clear slay
 slay = 10 % and now it's here!
+
+pog1 = 10
+pog1 = 20
+
+function f()
+  if false
+    pog2 = 1;
+  else
+    % TODO: this should also be marked as a definition
+    pog2 = 2;
+  end
+  disp(pog2);
+end

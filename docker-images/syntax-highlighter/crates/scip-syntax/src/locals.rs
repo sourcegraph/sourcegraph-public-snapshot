@@ -312,8 +312,16 @@ pub enum ScopeModifier {
 /// the same syntax for defining a variable and setting it, like Python.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum ReassignmentBehavior {
+    /// a = 10
+    /// ^ local 1
+    /// a = 10
+    /// ^ local 2
     #[default]
     NewestIsDefinition,
+    /// a = 10
+    /// ^ local 1
+    /// a = 10
+    /// ^ local 1 (reference)
     OldestIsDefinition,
 }
 
