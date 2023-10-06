@@ -25,11 +25,11 @@ import javax.swing.JTextField
 
 internal class CodyTokenCredentialsUi(
     private val serverTextField: ExtendableTextField,
-    private val customRequestHeadersField: ExtendableTextField,
     val factory: SourcegraphApiRequestExecutor.Factory,
     val isAccountUnique: UniqueLoginPredicate
 ) : CodyCredentialsUi() {
 
+  lateinit var customRequestHeadersField: ExtendableTextField
   private val tokenTextField = JBTextField()
   private var fixedLogin: String? = null
 
@@ -48,8 +48,9 @@ internal class CodyTokenCredentialsUi(
                 it.isNotEmpty() && isServerPathValid(it)
               })
     }
-    group("Advanced settings", indent = false) {
+    collapsibleGroup("Advanced settings", indent = false) {
       row("Custom request headers: ") {
+        customRequestHeadersField = ExtendableTextField("", 0)
         cell(customRequestHeadersField)
             .horizontalAlign(HorizontalAlign.FILL)
             .comment(

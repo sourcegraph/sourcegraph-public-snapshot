@@ -25,13 +25,10 @@ class CodyLoginPanel(
 ) : Wrapper() {
 
   private val serverTextField = ExtendableTextField(SourcegraphServerPath.DEFAULT_HOST, 0)
-  private val customRequestHeadersField = ExtendableTextField("", 0)
   private var tokenAcquisitionError: ValidationInfo? = null
 
   private lateinit var currentUi: CodyCredentialsUi
-  private var tokenUi =
-      CodyTokenCredentialsUi(
-          serverTextField, customRequestHeadersField, executorFactory, isAccountUnique)
+  private var tokenUi = CodyTokenCredentialsUi(serverTextField, executorFactory, isAccountUnique)
 
   private var authUI = CodyAuthCredentialsUi(executorFactory, isAccountUnique)
 
@@ -62,7 +59,8 @@ class CodyLoginPanel(
 
   fun doValidateAll(): List<ValidationInfo> {
     val uiError =
-        validateCustomRequestHeaders(customRequestHeadersField) ?: currentUi.getValidator().invoke()
+        validateCustomRequestHeaders(tokenUi.customRequestHeadersField)
+            ?: currentUi.getValidator().invoke()
 
     return listOfNotNull(uiError, tokenAcquisitionError)
   }
@@ -112,14 +110,15 @@ class CodyLoginPanel(
   }
 
   fun getServer(): SourcegraphServerPath =
-      SourcegraphServerPath.from(serverTextField.text.trim(), customRequestHeadersField.text.trim())
+      SourcegraphServerPath.from(
+          serverTextField.text.trim(), tokenUi.customRequestHeadersField.text.trim())
 
   fun setServer(path: String) {
     serverTextField.text = path
   }
 
   fun setCustomRequestHeaders(customRequestHeaders: String) {
-    customRequestHeadersField.text = customRequestHeaders
+    tokenUi.customRequestHeadersField.text = customRequestHeaders
   }
 
   fun setLogin(login: String?, editable: Boolean) {
