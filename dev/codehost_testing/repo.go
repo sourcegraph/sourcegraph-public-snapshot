@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -13,7 +13,7 @@ import (
 // Repo represents a GitHub repository in the scenario
 type Repo struct {
 	// s is the GithubScenario instance this repo is part of. Actions it creates will be added to this scenario
-	s *GithubScenario
+	s *GitHubScenario
 	// team is the team this repo belongs to
 	team *Team
 	// org is the Org that owns this repo
@@ -30,7 +30,8 @@ func (r *Repo) Get(ctx context.Context) (*github.Repository, error) {
 	if r.s.IsApplied() {
 		return r.get(ctx)
 	}
-	panic("cannot retrieve repo before scenario is applied")
+	r.s.t.Fatal("cannot retrieve repo before scenario is applied")
+	return nil, nil
 }
 
 // get retrieves the GitHub repository without panicking if not applied. It is meant as an

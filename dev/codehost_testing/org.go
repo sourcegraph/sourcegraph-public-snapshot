@@ -3,6 +3,7 @@ package codehost_testing
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-github/v55/github"
 
@@ -180,7 +181,6 @@ func (o *Org) CreateRepoFork(target string) *Repo {
 			}
 
 			// Wait till fork has synced
-			time.Sleep(1 * time.Second)
 			baseRepo.name = repoName
 			return nil
 		},
