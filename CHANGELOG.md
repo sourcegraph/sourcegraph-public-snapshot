@@ -30,7 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The experimental GraphQL query `User.invitableCollaborators`.
 
 ## 5.2.0
 
