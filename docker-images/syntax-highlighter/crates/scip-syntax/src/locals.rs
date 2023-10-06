@@ -14,7 +14,7 @@ use crate::languages::LocalConfiguration;
 pub struct Scope<'a> {
     pub scope: Node<'a>,
     pub range: PackedRange,
-    pub definitions: HashMap<&'a str, Definition<'a>>,
+    pub lvalues: HashMap<&'a str, LValue<'a>>,
     pub references: HashMap<&'a str, Vec<Reference<'a>>>,
     pub children: Vec<Scope<'a>>,
 }
@@ -44,7 +44,7 @@ impl<'a> Scope<'a> {
         Self {
             scope,
             range: scope.into(),
-            definitions: HashMap::default(),
+            lvalues: HashMap::default(),
             references: HashMap::default(),
             children: vec![],
         }
@@ -62,27 +62,27 @@ impl<'a> Scope<'a> {
         }
     }
 
-    pub fn insert_definition(&mut self, definition: Definition<'a>) {
+    pub fn insert_lvalue(&mut self, lvalue: LValue<'a>) {
         // TODO: Probably should assert that this the root node?
-        if definition.scope_modifier == ScopeModifier::Global {
-            self.definitions.insert(definition.identifier, definition);
+        if lvalue.scope_modifier == ScopeModifier::Global {
+            self.lvalues.insert(lvalue.identifier, lvalue);
             return;
         }
 
         if let Some(child) = self
             .children
             .iter_mut()
-            .find(|child| child.range.contains(&definition.range))
+            .find(|child| child.range.contains(&lvalue.range))
         {
-            child.insert_definition(definition)
+            child.insert_lvalue(lvalue)
         } else {
-            self.definitions.insert(definition.identifier, definition);
+            self.lvalues.insert(lvalue.identifier, lvalue);
         }
     }
 
     pub fn insert_reference(&mut self, reference: Reference<'a>) {
-        if let Some(definition) = self.definitions.get(&reference.identifier) {
-            if definition.node.id() == reference.node.id() {
+        if let Some(lvalue) = self.lvalues.get(&reference.identifier) {
+            if lvalue.node.id() == reference.node.id() {
                 return;
             }
         }
@@ -134,7 +134,7 @@ impl<'a> Scope<'a> {
 
         let mut empty_children = vec![];
         for (idx, child) in self.children.iter().enumerate() {
-            if child.definitions.is_empty() {
+            if child.lvalues.is_empty() {
                 empty_children.push(idx);
             }
         }
@@ -172,20 +172,20 @@ impl<'a> Scope<'a> {
         // TODO: I'm a little sad about this.
         //  We could probably make this a runtime option, where `self` has a `sorted` value
         //  that decides whether we need to or not. But on a huge file, this made no difference.
-        let mut values = self.definitions.values().collect::<Vec<_>>();
+        let mut values = self.lvalues.values().collect::<Vec<_>>();
         values.sort_by_key(|d| &d.range);
 
-        for definition in values {
+        for lvalue in values {
             *id += 1;
 
-            let symbol = match definition.definition_strength {
-                DefinitionStrength::Strong => {
+            let symbol = match lvalue.reassignment_behavior {
+                ReassignmentBehavior::NewestIsDefinition => {
                     let symbol = format_symbol(Symbol::new_local(*id));
-                    our_declarations_above.insert(definition.identifier, *id);
+                    our_declarations_above.insert(lvalue.identifier, *id);
                     let symbol_roles = scip::types::SymbolRole::Definition.value();
 
                     occurrences.push(scip::types::Occurrence {
-                        range: definition.node.to_scip_range(),
+                        range: lvalue.node.to_scip_range(),
                         symbol: symbol.clone(),
                         symbol_roles,
                         // syntax_kind: todo!(),
@@ -194,18 +194,18 @@ impl<'a> Scope<'a> {
 
                     symbol
                 }
-                DefinitionStrength::Weak => {
+                ReassignmentBehavior::OldestIsDefinition => {
                     if let Some(above) = declarations_above
                         .into_iter()
                         .rev()
-                        .find(|x| x.contains_key(definition.identifier))
+                        .find(|x| x.contains_key(lvalue.identifier))
                     {
                         let symbol = format_symbol(Symbol::new_local(
-                            *above.get(definition.identifier).unwrap(),
+                            *above.get(lvalue.identifier).unwrap(),
                         ));
 
                         occurrences.push(scip::types::Occurrence {
-                            range: definition.node.to_scip_range(),
+                            range: lvalue.node.to_scip_range(),
                             symbol: symbol.clone(),
                             ..Default::default()
                         });
@@ -213,11 +213,11 @@ impl<'a> Scope<'a> {
                         continue;
                     } else {
                         let symbol = format_symbol(Symbol::new_local(*id));
-                        our_declarations_above.insert(definition.identifier, *id);
+                        our_declarations_above.insert(lvalue.identifier, *id);
                         let symbol_roles = scip::types::SymbolRole::Definition.value();
 
                         occurrences.push(scip::types::Occurrence {
-                            range: definition.node.to_scip_range(),
+                            range: lvalue.node.to_scip_range(),
                             symbol: symbol.clone(),
                             symbol_roles,
                             ..Default::default()
@@ -228,7 +228,7 @@ impl<'a> Scope<'a> {
                 }
             };
 
-            if let Some(references) = self.references.get(definition.identifier) {
+            if let Some(references) = self.references.get(lvalue.identifier) {
                 for reference in references {
                     occurrences.push(scip::types::Occurrence {
                         range: reference.node.to_scip_range(),
@@ -240,7 +240,7 @@ impl<'a> Scope<'a> {
 
             self.children
                 .iter()
-                .for_each(|c| c.occurrences_for_children(definition, symbol.as_str(), occurrences));
+                .for_each(|c| c.occurrences_for_children(lvalue, symbol.as_str(), occurrences));
         }
 
         declarations_above.push(our_declarations_above);
@@ -252,14 +252,14 @@ impl<'a> Scope<'a> {
 
     fn occurrences_for_children(
         self: &Scope<'a>,
-        def: &Definition<'a>,
+        def: &LValue<'a>,
         symbol: &str,
         occurrences: &mut Vec<Occurrence>,
     ) {
-        if let Some(def) = self.definitions.get(def.identifier) {
-            match def.definition_strength {
-                DefinitionStrength::Strong => return,
-                DefinitionStrength::Weak => {}
+        if let Some(def) = self.lvalues.get(def.identifier) {
+            match def.reassignment_behavior {
+                ReassignmentBehavior::NewestIsDefinition => return,
+                ReassignmentBehavior::OldestIsDefinition => {}
             }
         }
 
@@ -284,7 +284,7 @@ impl<'a> Scope<'a> {
         scopes: &mut Vec<&Scope<'a>>,
         // predicate: impl Fn(&Scope<'a>) -> bool,
     ) {
-        if self.definitions.is_empty() {
+        if self.lvalues.is_empty() {
             scopes.push(self);
         }
 
@@ -316,24 +316,20 @@ pub enum ScopeModifier {
 /// Define how strong a definition is, useful for languages that use
 /// the same syntax for defining a variable and setting it, like Python.
 #[derive(Debug, Default, PartialEq, Eq)]
-pub enum DefinitionStrength {
-    /// A "strong" definition will record the latest definition
-    /// in scope as the definition site.
+pub enum ReassignmentBehavior {
     #[default]
-    Strong,
-    /// A "weak" definition will record the first definition
-    /// in scope as the definition site.
-    Weak,
+    NewestIsDefinition,
+    OldestIsDefinition,
 }
 
 #[derive(Debug)]
-pub struct Definition<'a> {
+pub struct LValue<'a> {
     pub group: &'a str,
     pub identifier: &'a str,
     pub node: Node<'a>,
     pub range: PackedRange,
     pub scope_modifier: ScopeModifier,
-    pub definition_strength: DefinitionStrength,
+    pub reassignment_behavior: ReassignmentBehavior,
 }
 
 #[derive(Debug)]
@@ -355,17 +351,17 @@ pub fn parse_tree<'a>(
     let capture_names = config.query.capture_names();
 
     let mut scopes = vec![];
-    let mut definitions = vec![];
+    let mut lvalues = vec![];
     let mut references = vec![];
 
     for m in cursor.matches(&config.query, root_node, source_bytes) {
         let mut node = None;
 
         let mut scope = None;
-        let mut definition = None;
+        let mut lvalue = None;
         let mut reference = None;
         let mut scope_modifier = None;
-        let mut definition_strength = None;
+        let mut reassignment_behavior = None;
 
         for capture in m.captures {
             let capture_name = match capture_names.get(capture.index as usize) {
@@ -375,9 +371,13 @@ pub fn parse_tree<'a>(
 
             node = Some(capture.node);
 
+            // TODO: Change all captures to lvalue in later PR
+            // I don't want to do this now as @definition.[...]
+            // is the standard capture we use throughout our codebase
+            // beyond just locals, so I want to keep things consistent
             if capture_name.starts_with("definition") {
-                assert!(definition.is_none(), "only one definition per match");
-                definition = Some(capture_name);
+                assert!(lvalue.is_none(), "only one definition per match");
+                lvalue = Some(capture_name);
 
                 // Handle modifiers
                 let properties = config.query.property_settings(m.pattern_index);
@@ -389,12 +389,16 @@ pub fn parse_tree<'a>(
                             Some("local") => scope_modifier = Some(ScopeModifier::Local),
                             Some(_) | None => unreachable!(),
                         }
-                    } else if &(*prop.key) == "strength" {
+                    } else if &(*prop.key) == "reassignment_behavior" {
                         match prop.value.as_deref() {
-                            Some("strong") => {
-                                definition_strength = Some(DefinitionStrength::Strong)
+                            Some("newest_is_definition") => {
+                                reassignment_behavior =
+                                    Some(ReassignmentBehavior::NewestIsDefinition)
                             }
-                            Some("weak") => definition_strength = Some(DefinitionStrength::Weak),
+                            Some("oldest_is_definition") => {
+                                reassignment_behavior =
+                                    Some(ReassignmentBehavior::OldestIsDefinition)
+                            }
                             Some(_) | None => unreachable!(),
                         }
                     }
@@ -417,22 +421,22 @@ pub fn parse_tree<'a>(
             None => continue,
         };
 
-        if let Some(group) = definition {
+        if let Some(group) = lvalue {
             let identifier = match node.utf8_text(source_bytes) {
                 Ok(identifier) => identifier,
                 Err(_) => continue,
             };
 
             let scope_modifier = scope_modifier.unwrap_or_default();
-            let definition_strength = definition_strength.unwrap_or_default();
+            let reassignment_behavior = reassignment_behavior.unwrap_or_default();
 
-            definitions.push(Definition {
+            lvalues.push(LValue {
                 range: node.into(),
                 group,
                 identifier,
                 node,
                 scope_modifier,
-                definition_strength,
+                reassignment_behavior,
             });
         } else if let Some(group) = reference {
             let identifier = match node.utf8_text(source_bytes) {
@@ -467,15 +471,15 @@ pub fn parse_tree<'a>(
         )
     });
 
-    let capacity = definitions.len() + references.len();
+    let capacity = lvalues.len() + references.len();
 
     // Add all the scopes to our tree
     while let Some(m) = scopes.pop() {
         root.insert_scope(m);
     }
 
-    while let Some(m) = definitions.pop() {
-        root.insert_definition(m);
+    while let Some(m) = lvalues.pop() {
+        root.insert_lvalue(m);
     }
 
     root.clean_empty_scopes();
