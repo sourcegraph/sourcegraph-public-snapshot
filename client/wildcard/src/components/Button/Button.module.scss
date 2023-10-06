@@ -79,7 +79,7 @@ input.btn {
     }
 
     &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
-        &:hover:not(:global(.focus-visible)):not(:focus-visible),
+        &:hover:not(:global(.focus)):not(:focus-visible),
         &:active,
         &:global(.active) {
             text-decoration: underline;
@@ -87,7 +87,7 @@ input.btn {
         }
 
         &:focus-visible,
-        &:global(.focus-visible) {
+        &:global(.focus) {
             text-decoration: underline;
 
             :global(.theme-light) & {
@@ -137,7 +137,7 @@ input.btn {
     border: none;
     cursor: pointer;
 
-    &.focus-visible:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
+    &.focus:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         box-shadow: 0 0 0 2px var(--primary-2);
     }
 
@@ -192,7 +192,7 @@ input.btn {
     }
 
     &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
-        &:hover:not(:global(.focus-visible)):not(:focus-visible),
+        &:hover:not(:global(.focus)):not(:focus-visible),
         &:active,
         &:global(.active) {
             color: var(--btn-text-color);
@@ -200,7 +200,7 @@ input.btn {
         }
 
         &:focus-visible,
-        &:global(.focus-visible) {
+        &:global(.focus) {
             color: var(--btn-text-color);
             background-color: var(--btn-base-color);
             border-color: var(--body-bg);
@@ -247,7 +247,7 @@ input.btn {
             fill: var(--btn-base-color);
         }
 
-        &:hover:not(:global(.focus-visible)):not(:focus-visible),
+        &:hover:not(:global(.focus)):not(:focus-visible),
         &:active,
         &:global(.active) {
             background-color: var(--color-bg-1);
@@ -268,7 +268,7 @@ input.btn {
         }
 
         &:focus-visible,
-        &:global(.focus-visible) {
+        &:global(.focus) {
             color: var(--body-color);
             background-color: var(--body-bg);
             border-color: var(--body-bg);
@@ -358,7 +358,7 @@ input.btn {
         }
 
         &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
-            &:hover:not(:global(.focus-visible)):not(:focus-visible),
+            &:hover:not(:global(.focus)):not(:focus-visible),
             &:active,
             &:global(.active) {
                 text-decoration: none;
@@ -371,7 +371,7 @@ input.btn {
             }
 
             &:focus-visible,
-            &:global(.focus-visible) {
+            &:global(.focus) {
                 box-shadow: 0 0 0 2px var(--primary-2);
             }
 
