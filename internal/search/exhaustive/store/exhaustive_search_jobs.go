@@ -217,12 +217,7 @@ func (s *Store) UserHasAccess(ctx context.Context, id int64) (err error) {
 	))
 	defer endObservation(1, observation.Args{})
 
-	where := sqlf.Sprintf("id = %d", id)
-	q := sqlf.Sprintf(
-		getExhaustiveSearchJobQueryFmtStr,
-		sqlf.Sprintf("initiator_id"),
-		where,
-	)
+	q := sqlf.Sprintf("SELECT initiator_id FROM exhaustive_search_jobs WHERE id = %s", id)
 
 	var initiatorID int32
 	err = s.Store.QueryRow(ctx, q).Scan(&initiatorID)
@@ -286,12 +281,6 @@ const aggStateSubQuery = `
 			FROM (
 				-- getAggregateStateTable
 				%s) AS state_histogram) AS transposed_state_histogram
-`
-
-const getExhaustiveSearchJobQueryFmtStr = `
-SELECT %s FROM exhaustive_search_jobs
-WHERE (%s)
-LIMIT 1
 `
 
 type ListArgs struct {
