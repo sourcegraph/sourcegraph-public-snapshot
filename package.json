@@ -117,6 +117,7 @@
     "@pollyjs/persister-fs": "^5.0.0",
     "@remix-run/server-runtime": "^1.17.0",
     "@sentry/cli": "^1.74.4",
+    "@sentry/esbuild-plugin": "^2.7.1",
     "@sentry/webpack-plugin": "^1.20.0",
     "@slack/web-api": "^5.15.0",
     "@sourcegraph/eslint-config": "0.32.0",
