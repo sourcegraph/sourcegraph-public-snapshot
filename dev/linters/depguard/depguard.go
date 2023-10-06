@@ -21,11 +21,6 @@ var Deny map[string]string = map[string]string{
 	"github.com/hashicorp/go-multierror$": "Use github.com/sourcegraph/sourcegraph/lib/errors instead",
 	"rexexp$":                             "Use github.com/grafana/regexp instead",
 	"github.com/hexops/autogold$":         "Use github.com/hexops/autogold/v2 instead",
-	"github.com/google/go-github/**$":     "Use github.com/google/go-github/v55 instead",
-}
-
-var Allow []string = []string{
-	"github.com/google/go-github/v55/**$",
 }
 
 func createAnalyzer() *analysis.Analyzer {
@@ -43,8 +38,7 @@ func createAnalyzer() *analysis.Analyzer {
 	// The rest will be denied
 	settings := &depguard.LinterSettings{
 		"Main": &depguard.List{
-			Deny:  Deny,
-			Allow: Allow,
+			Deny: Deny,
 		},
 	}
 	analyzer, err := depguard.NewAnalyzer(settings)
