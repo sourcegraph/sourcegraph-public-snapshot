@@ -909,9 +909,6 @@ importers:
       babel-plugin-lodash:
         specifier: ^3.3.4
         version: 3.3.4
-      babel-plugin-webpack-chunkname:
-        specifier: ^1.2.0
-        version: 1.2.0
       browserslist:
         specifier: ^4.21.3
         version: 4.21.4
@@ -14842,10 +14839,6 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
     dev: false
-
-  /babel-plugin-webpack-chunkname@1.2.0:
-    resolution: {integrity: sha512-czjhg9fOG8Abf8A1xeSgKdPW9jMnWhAtzU0cx3F7Uaml+UZAHMLi1xaSWdvgexkeF9aTXuspx0Wufy5Ur4MkLw==}
-    dev: true
 
   /babel-preset-current-node-syntax@1.0.1(@babel/core@7.21.0):
     resolution: {integrity: sha512-M7LQ0bxarkxQoN+vz5aJPsLBn77n8QgTFmo8WK0/44auK2xlCXrYcUxHFxgU7qW5Yzw/CjmLRK2uJzaCd7LvqQ==}

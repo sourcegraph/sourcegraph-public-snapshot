@@ -66,23 +66,6 @@ module.exports = api => {
       '@babel/plugin-transform-runtime',
       ['@babel/plugin-transform-typescript', { isTSX: true }],
       'babel-plugin-lodash',
-      [
-        'webpack-chunkname',
-        {
-          /**
-           * Autogenerate `webpackChunkName` for dynamic imports.
-           *
-           * import('./pages/Home') -> import(/* webpackChunkName: 'sg_pages_Home' *\/'./pages/Home')
-           */
-          getChunkName: (/** @type string */ importPath) => {
-            const chunkName = importPath
-              .replace(/[./]+/g, '_') // replace "." and "/" with "_".
-              .replace(/(^_+)/g, '') // remove all leading "_".
-
-            return `sg_${chunkName}`
-          },
-        },
-      ],
     ],
   }
 }
