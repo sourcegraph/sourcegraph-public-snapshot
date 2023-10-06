@@ -134,6 +134,9 @@ env:
 
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
 
+  # By default, allow temporary edits to external services.
+  EXTSVC_CONFIG_ALLOW_EDITS: true
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
