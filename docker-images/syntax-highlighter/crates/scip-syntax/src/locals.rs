@@ -188,7 +188,6 @@ impl<'a> Scope<'a> {
                         range: lvalue.node.to_scip_range(),
                         symbol: symbol.clone(),
                         symbol_roles,
-                        // syntax_kind: todo!(),
                         ..Default::default()
                     });
 
@@ -279,11 +278,7 @@ impl<'a> Scope<'a> {
     }
 
     #[allow(dead_code)]
-    fn find_scopes_with(
-        &'a self,
-        scopes: &mut Vec<&Scope<'a>>,
-        // predicate: impl Fn(&Scope<'a>) -> bool,
-    ) {
+    fn find_scopes_with(&'a self, scopes: &mut Vec<&Scope<'a>>) {
         if self.lvalues.is_empty() {
             scopes.push(self);
         }
