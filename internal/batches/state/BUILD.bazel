@@ -14,7 +14,6 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
-        "//internal/authz",
         "//internal/batches/sources/azuredevops",
         "//internal/batches/sources/bitbucketcloud",
         "//internal/batches/sources/gerrit",

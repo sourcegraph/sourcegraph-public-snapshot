@@ -93,7 +93,6 @@ go_test(
         "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
-        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
