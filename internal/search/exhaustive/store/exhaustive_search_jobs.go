@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -188,8 +189,10 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 
 	job, err := scanExhaustiveSearchJobList(s.Store.QueryRow(ctx, q))
 	if err != nil {
-		// don't leak db error types to caller
-		return nil, errors.Wrapf(ErrNoResults, "failed to scan job with id %d: %s", id, err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.Wrapf(ErrNoResults, "failed to scan job with id %d: %s", id, err.Error())
+		}
+		return nil, err
 	}
 	if job.ID == 0 {
 		return nil, ErrNoResults
@@ -222,8 +225,10 @@ func (s *Store) UserHasAccess(ctx context.Context, id int64) (err error) {
 	var initiatorID int32
 	err = s.Store.QueryRow(ctx, q).Scan(&initiatorID)
 	if err != nil {
-		// don't leak db error types to caller
-		return errors.Wrapf(ErrNoResults, "failed to scan job with id %d: %s", id, err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.Wrapf(ErrNoResults, "failed to scan job with id %d: %s", id, err.Error())
+		}
+		return err
 	}
 	if initiatorID == 0 {
 		return ErrNoResults
