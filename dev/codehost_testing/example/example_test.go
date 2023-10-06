@@ -21,15 +21,13 @@ func TestGithubScenario(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error loading scenario config: %v\n", err)
 	}
-	scenario, err := scenario.NewGithubScenario(context.Background(), t, *cfg)
+	scenario, err := scenario.NewGitHubScenario(t, *cfg)
 	if err != nil {
 		t.Fatalf("error creating scenario: %v\n", err)
 	}
 	org := scenario.CreateOrg("tst-org")
 	user := scenario.CreateUser("tst-user")
 	admin := scenario.GetAdmin()
-
-	//ctx := context.Background()
 
 	org.AllowPrivateForks()
 	team := org.CreateTeam("team-1")
@@ -44,7 +42,7 @@ func TestGithubScenario(t *testing.T) {
 
 	fmt.Println(scenario.Plan())
 
-	scenario.Verbose()
+	scenario.SetVerbose()
 	if err := scenario.Apply(context.Background()); err != nil {
 		t.Fatalf("error applying scenario: %v", err)
 	}
