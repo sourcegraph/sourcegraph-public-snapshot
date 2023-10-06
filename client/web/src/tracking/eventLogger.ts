@@ -228,29 +228,36 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
+        if (isSourcegraphDotComMode) {
+            cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
+            return firstSourceURL
+        }
+        {
+            const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
 
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        // Always set to renew expiry and migrate from localStorage
-        cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-
-        this.firstSourceURL = firstSourceURL
-        return firstSourceURL
+            // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+            // Always set to renew expiry and migrate from localStorage
+            cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+            return redactedURL
+        }
     }
-
     public getLastSourceURL(): string {
         // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
         // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
-        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
+        if (isSourcegraphDotComMode) {
+            cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
+            return lastSourceURL
+        }
+        {
+            const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
 
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        // Always set to renew expiry and migrate from localStorage
-        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-
-        this.lastSourceURL = lastSourceURL
-        return lastSourceURL
+            // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+            // Always set to renew expiry and migrate from localStorage
+            cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+            return redactedURL
+        }
     }
 
     public getOriginalReferrer(): string {
@@ -260,20 +267,12 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.get(ORIGINAL_REFERRER_KEY) ||
             cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
             document.referrer
-        try {
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            const url = new URL(originalReferrer)
-            const regexp = new RegExp('.sourcegraph.com')
-            if (url.hostname === 'sourcegraph.com' || regexp.test(url.hostname)) {
-                this.originalReferrer = ''
-                cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
-                return this.originalReferrer
-            }
+
+        if (isSourcegraphDotComMode) {
             cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
             return originalReferrer
-        } catch {
+        }
+        {
             this.originalReferrer = ''
             cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
             return this.originalReferrer
@@ -345,16 +344,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getReferrer(): string {
         const referrer = document.referrer
-        try {
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            const url = new URL(referrer)
-            if (url.hostname === 'sourcegraph.com') {
-                return 'sourcegraph.com'
-            }
+        if (isSourcegraphDotComMode) {
             return referrer
-        } catch {
+        }
+        {
             return ''
         }
     }
