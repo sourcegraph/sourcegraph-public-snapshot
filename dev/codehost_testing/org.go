@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v55/github"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Org represents a GitHub organization and provides actions that operate on the org.
@@ -13,7 +15,7 @@ import (
 // org was was created from.
 type Org struct {
 	// s is the GithubScenario instance this org was created from
-	s *GithubScenario
+	s *GitHubScenario
 	// name is the name of the GitHub organization
 	name string
 }
@@ -26,7 +28,7 @@ func (o *Org) Get(ctx context.Context) (*github.Organization, error) {
 	if o.s.IsApplied() {
 		return o.s.client.GetOrg(ctx, o.name)
 	}
-	panic("cannot retrieve org before scenario is applied")
+	return nil, errors.New("cannot retrieve org before scenario is applied")
 }
 
 // get retrieves the GitHub organization without panicking if not applied. It is meant as an
@@ -40,13 +42,12 @@ func (o *Org) AllowPrivateForks() {
 	updateOrgPermissions := &action{
 		name: "org:permissions:update:" + o.name,
 		apply: func(ctx context.Context) error {
-
 			org, err := o.get(ctx)
 			if err != nil {
 				return err
 			}
-			org.MembersCanCreatePrivateRepos = boolp(true)
-			org.MembersCanForkPrivateRepos = boolp(true)
+			org.MembersCanCreatePrivateRepos = github.Bool(true)
+			org.MembersCanForkPrivateRepos = github.Bool(true)
 
 			_, err = o.s.client.UpdateOrg(ctx, org)
 			if err != nil {

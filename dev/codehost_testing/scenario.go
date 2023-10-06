@@ -224,7 +224,7 @@ func (s *GitHubScenario) Teardown(ctx context.Context) error {
 	return errs
 }
 
-func (s *GithubScenario) CreateOrg(name string) *Org {
+func (s *GitHubScenario) CreateOrg(name string) *Org {
 	baseOrg := &Org{
 		s:    s,
 		name: name,
