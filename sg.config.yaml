@@ -168,7 +168,7 @@ commands:
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - lib
       - internal
@@ -938,7 +938,7 @@ commands:
     env:
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - cmd
       - enterprise
@@ -990,7 +990,7 @@ bazelCommands:
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
   worker:
     target: //cmd/worker
     precmd: |
