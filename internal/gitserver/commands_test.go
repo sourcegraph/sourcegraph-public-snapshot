@@ -150,8 +150,8 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
 			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
-			c := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-			c.SetChecker(checker)
+			c := NewClient().(*clientImplementor)
+			c.subRepoPermsChecker = checker
 			commits, err := c.Commits(ctx, repo, CommitsOptions{})
 			if err != nil {
 				t.Fatalf("err fetching commits: %s", err)
@@ -1114,7 +1114,8 @@ func TestStat(t *testing.T) {
 		return false
 	})
 	authz.DefaultSubRepoPermsChecker = checker
-	client := NewClient()
+	client := NewClient().(*clientImplementor)
+	client.subRepoPermsChecker = checker
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1133,6 +1134,17 @@ func TestStat(t *testing.T) {
 		UID: 1,
 	})
 
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.HasPrefix(content.Path, "dir2") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	usePermissionsForFilePermissionsFunc(checker)
 	_, err = client.Stat(ctx, repo, commitID, "dir1/file1")
 	if err == nil {
 		t.Fatal(err)
@@ -1875,7 +1887,9 @@ func TestRepository_Commits_options(t *testing.T) {
 			repo := MakeGitRepository(t)
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
-			_, err := NewClient().Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			client := NewClient().(*clientImplementor)
+			client.subRepoPermsChecker = checker
+			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -2464,7 +2478,8 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient()
+	client := NewClient().(*clientImplementor)
+	client.subRepoPermsChecker = checker
 	if _, err := client.ArchiveReader(context.Background(), repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
@@ -2572,7 +2587,6 @@ func TestRead(t *testing.T) {
 		},
 	}
 
-	client := NewClient()
 	ClientMocks.LocalGitserver = true
 	t.Cleanup(func() {
 		ResetClientMocks()
@@ -2603,6 +2617,8 @@ func TestRead(t *testing.T) {
 		}
 
 		t.Run(name+"-ReadFile", func(t *testing.T) {
+			client := NewClient().(*clientImplementor)
+			client.subRepoPermsChecker = checker
 			data, err := client.ReadFile(ctx, repo, commitID, test.file)
 			checkFn(t, err, data)
 		})
@@ -2616,9 +2632,9 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			client2 := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-			client2.SetChecker(checker)
-			data, err := client2.ReadFile(ctx, repo, commitID, test.file)
+			client := NewClient().(*clientImplementor)
+			client.subRepoPermsChecker = checker
+			data, err := client.ReadFile(ctx, repo, commitID, test.file)
 			checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -2628,9 +2644,9 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			client2 := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-			client2.SetChecker(checker)
-			data, err := client2.ReadFile(ctx, repo, commitID, test.file)
+			client := NewClient().(*clientImplementor)
+			client.subRepoPermsChecker = checker
+			data, err := client.ReadFile(ctx, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
 			}
@@ -2651,6 +2667,8 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
+			client := NewClient().(*clientImplementor)
+			client.subRepoPermsChecker = checker
 			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, checkFn)
 		})
 		t.Run(name+"-GetFileReader-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -2660,6 +2678,8 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
+			client := NewClient().(*clientImplementor)
+			client.subRepoPermsChecker = checker
 			rc, err := client.NewFileReader(ctx, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Fatalf("unexpected error: %s", err)
