@@ -12,7 +12,7 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, stripURLParameters } from './util'
+import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -26,6 +26,8 @@ export const SESSION_REFERRER_KEY = 'sessionReferrer'
 export const SESSION_FIRST_URL_KEY = 'sessionFirstUrl'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
+
+const isSourcegraphDotComMode = window.context?.sourcegraphDotComMode || false
 
 /**
  * Indicates if the webapp ever receives a message from the user's Sourcegraph browser extension,
@@ -226,9 +228,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
+        const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
-        cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
+        cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
 
         this.firstSourceURL = firstSourceURL
         return firstSourceURL
@@ -239,11 +242,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
+        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
+
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
-        cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
-
+        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
         this.lastSourceURL = lastSourceURL
+
         return lastSourceURL
     }
 
@@ -277,20 +282,11 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getSessionReferrer(): string {
         // Gets the session referrer from the cookie
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
-        const regexp = new RegExp('.sourcegraph.com')
-        try {
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            const url = new URL(sessionReferrer)
-            if (url.hostname === 'sourcegraph.com' || regexp.test(url.hostname)) {
-                this.sessionReferrer = ''
-                cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
-                return this.sessionReferrer
-            }
+        if (isSourcegraphDotComMode) {
             cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
             return sessionReferrer
-        } catch {
+        }
+        {
             this.sessionReferrer = ''
             cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
             return this.sessionReferrer
@@ -300,9 +296,15 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getSessionFirstURL(): string {
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
 
+        if (isSourcegraphDotComMode) {
+            cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
+            this.sessionFirstURL = sessionFirstURL
+        } else {
+            const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
+            cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
+            this.sessionFirstURL = redactedURL
+        }
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        // Always set to renew expiry and migrate from localStorage
-        cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
         this.sessionFirstURL = sessionFirstURL
         return this.sessionFirstURL
     }
