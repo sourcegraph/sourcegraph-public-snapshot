@@ -49,4 +49,4 @@ If you hit the rate limit, please wait a bit and try again later. You can also c
 
 ### Log in with VS Code forks
 
-To access VS Code forks such as Cursor or IDX, choose "Sign in with URL and access token" and then generate an access token. Once you have the token, paste it in the designated field, using `https://sourcegraph.com` as the URL.
+To access VS Code forks such as Cursor or IDX, choose "Sign in with URL and access token" and generate an access token. Paste it in the designated field, using `https://sourcegraph.com` as the URL.
