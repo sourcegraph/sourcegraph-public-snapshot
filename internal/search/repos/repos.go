@@ -283,8 +283,6 @@ func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.Repo
 	// a query, which replaces the context:foo term at query parsing time.
 	if searchContext.Query == "" {
 		options.SearchContextID = searchContext.ID
-		options.UserID = searchContext.NamespaceUserID
-		options.OrgID = searchContext.NamespaceOrgID
 	}
 
 	tr.AddEvent("Repos.ListMinimalRepos - start")
@@ -912,8 +910,6 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		NoPrivate:       op.Visibility == query.Public,
 		OnlyPrivate:     op.Visibility == query.Private,
 		SearchContextID: searchContext.ID,
-		UserID:          searchContext.NamespaceUserID,
-		OrgID:           searchContext.NamespaceOrgID,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
