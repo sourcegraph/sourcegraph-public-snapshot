@@ -42,7 +42,7 @@ var (
 )
 
 func InitGitserver() {
-	var t testing.T
+	var t testing.TB
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
@@ -104,8 +104,8 @@ func InitGitserver() {
 	}()
 
 	serverAddress := l.Addr().String()
-	source := gitserver.NewTestClientSource(&t, []string{serverAddress})
-	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, source)
+	source := gitserver.NewTestClientSource(t, []string{serverAddress})
+	testGitserverClient = gitserver.NewTestClient(t).WithDoer(httpcli.InternalDoer).WithClientSource(source)
 	GitserverAddresses = []string{serverAddress}
 }
 

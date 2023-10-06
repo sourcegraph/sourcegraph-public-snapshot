@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -223,7 +222,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					}
 				})
 
-				return gitserver.NewTestClient(&http.Client{}, source)
+				return gitserver.NewTestClient(t).WithClientSource(source)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)
@@ -266,7 +265,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					}
 				})
 
-				return gitserver.NewTestClient(&http.Client{}, source)
+				return gitserver.NewTestClient(t).WithClientSource(source)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)

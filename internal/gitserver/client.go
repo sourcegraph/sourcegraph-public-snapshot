@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -102,28 +104,44 @@ func NewClient() Client {
 	}
 }
 
-// NewTestClient returns a test client that will use the given list of
-// addresses provided by the clientSource.
-func NewTestClient(cli httpcli.Doer, clientSource ClientSource) TestClient {
-	logger := sglog.Scoped("NewTestClient", "Test New client")
+// NewTestClient returns a test client that will us
+func NewTestClient(t testing.TB) TestClient {
+	logger := logtest.Scoped(t)
 
 	return &clientImplementor{
 		logger:      logger,
-		httpClient:  cli,
+		httpClient:  http.DefaultClient,
 		HTTPLimiter: limiter.New(500),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
 		userAgent:           filepath.Base(os.Args[0]),
 		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
-		clientSource:        clientSource,
+		clientSource:        NewTestClientSource(t, nil),
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	}
 }
 
 type TestClient interface {
 	Client
-	SetChecker(authz.SubRepoPermissionChecker)
+	WithChecker(authz.SubRepoPermissionChecker) TestClient
+	WithDoer(httpcli.Doer) TestClient
+	WithClientSource(ClientSource) TestClient
+}
+
+func (c *clientImplementor) WithChecker(checker authz.SubRepoPermissionChecker) TestClient {
+	c.subRepoPermsChecker = checker
+	return c
+}
+
+func (c *clientImplementor) WithDoer(doer httpcli.Doer) TestClient {
+	c.httpClient = doer
+	return c
+}
+
+func (c *clientImplementor) WithClientSource(cs ClientSource) TestClient {
+	c.clientSource = cs
+	return c
 }
 
 // NewMockClientWithExecReader return new MockClient with provided mocked
@@ -2245,8 +2263,4 @@ func stringsToByteSlices(in []string) [][]byte {
 		res[i] = []byte(s)
 	}
 	return res
-}
-
-func (c *clientImplementor) SetChecker(checker authz.SubRepoPermissionChecker) {
-	c.subRepoPermsChecker = checker
 }

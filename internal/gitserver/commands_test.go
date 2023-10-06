@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -499,9 +498,7 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
 ) {
 	t.Helper()
-	client := NewClient().(*clientImplementor)
-	client.subRepoPermsChecker = checker
-
+	client := NewTestClient(t).WithChecker(checker)
 	hunks, err := client.BlameFile(ctx, repo, path, opt)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
@@ -645,8 +642,7 @@ func TestLsFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
-		client := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-		client.SetChecker(checker)
+		client := NewTestClient(t).WithChecker(checker)
 		return client.LsFiles(ctx, repo, api.CommitID(commit))
 	})
 }
@@ -809,8 +805,7 @@ func TestListDirectoryChildren(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return false
 	})
-	client1 := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-	client1.SetChecker(checker)
+	client1 := NewTestClient(t).WithChecker(checker)
 
 	dirnames := []string{"dir1/", "dir2/", "dir3/"}
 	children, err := client1.ListDirectoryChildren(ctx, repo, "HEAD", dirnames)
@@ -837,8 +832,7 @@ func TestListDirectoryChildren(t *testing.T) {
 		return authz.None, nil
 	})
 	usePermissionsForFilePermissionsFunc(checker)
-	client2 := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-	client2.SetChecker(checker)
+	client2 := NewTestClient(t).WithChecker(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -1117,8 +1111,7 @@ func TestStat(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return false
 	})
-	client := NewClient().(*clientImplementor)
-	client.subRepoPermsChecker = checker
+	client := NewTestClient(t).WithChecker(checker)
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1195,8 +1188,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
-				client := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-				client.SetChecker(checker)
+				client := NewTestClient(t).WithChecker(checker)
 
 				testRepo := MakeGitRepository(t, test.gitCmds...)
 				var noEnsureRevision bool
@@ -1391,8 +1383,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				}
 				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
 				checker := getTestSubRepoPermsChecker("file2")
-				client := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-				client.SetChecker(checker)
+				client := NewTestClient(t).WithChecker(checker)
 				repo := MakeGitRepository(t, gitCommands...)
 				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
 				if err != nil {
@@ -1404,7 +1395,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 
 				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
-				client.SetChecker(checker)
+				client = NewTestClient(t).WithChecker(checker)
 				got, err = client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
 				if err != nil {
 					t.Errorf("got error: %s", err)
@@ -1476,10 +1467,8 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	})
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
-		clientWithoutAccessFirstCommit := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-		clientWithoutAccessFirstCommit.SetChecker(getTestSubRepoPermsChecker("file0"))
-		clientWithAccessFirstCommit := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-		clientWithAccessFirstCommit.SetChecker(getTestSubRepoPermsChecker("file1"))
+		clientWithoutAccessFirstCommit := NewTestClient(t).WithChecker(getTestSubRepoPermsChecker("file0"))
+		clientWithAccessFirstCommit := NewTestClient(t).WithChecker(getTestSubRepoPermsChecker("file1"))
 		for _, tc := range testCases {
 			gitCommands := make([]string, 0, len(tc.commitDates))
 			for i, date := range tc.commitDates {
@@ -1530,8 +1519,7 @@ func TestCommitExists(t *testing.T) {
 	})
 	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
 		t.Run(label, func(t *testing.T) {
-			client := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-			client.SetChecker(checker)
+			client := NewTestClient(t).WithChecker(checker)
 			repo := MakeGitRepository(t, gitCommands...)
 
 			exists, err := client.CommitExists(ctx, repo, commitID)
@@ -1698,8 +1686,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			client := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-			client.SetChecker(checker)
+			client := NewTestClient(t).WithChecker(checker)
 			commits, err := client.Commits(ctx, repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
@@ -1795,8 +1782,7 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			client := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-			client.SetChecker(checker)
+			client := NewTestClient(t).WithChecker(checker)
 			commits, err := client.Commits(ctx, test.repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
@@ -1890,8 +1876,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			repo := MakeGitRepository(t)
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
-			client := NewClient().(*clientImplementor)
-			client.subRepoPermsChecker = checker
+			client := NewTestClient(t).WithChecker(checker)
 			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
@@ -2194,8 +2179,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	client := NewClient().(*clientImplementor)
-	client.subRepoPermsChecker = checker
+	client := NewTestClient(t).WithChecker(checker).(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
@@ -2241,8 +2225,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		client2 := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-		client2.SetChecker(checker)
+		client2 := NewTestClient(t).WithChecker(checker)
 		refDescriptions, err := client2.RefDescriptions(ctx, repo)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
@@ -2286,8 +2269,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		client := NewTestClient(&http.Client{}, NewTestClientSource(t, nil))
-		client.SetChecker(checker)
+		client := NewTestClient(t).WithChecker(checker)
 		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
@@ -2328,9 +2310,7 @@ func TestCommitDate(t *testing.T) {
 
 	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file1")
-		source := NewTestClientSource(t, nil)
-		client := NewTestClient(&http.Client{}, source)
-		client.SetChecker(checker)
+		client := NewTestClient(t).WithChecker(checker)
 		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
@@ -2346,8 +2326,7 @@ func TestCommitDate(t *testing.T) {
 
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
-	client := NewClient().(*clientImplementor)
-	client.subRepoPermsChecker = checker
+	client := NewTestClient(t).WithChecker(checker)
 	commits, err := client.Commits(ctx, repo, opt)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)
@@ -2481,8 +2460,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient().(*clientImplementor)
-	client.subRepoPermsChecker = checker
+	client := NewTestClient(t).WithChecker(checker)
 	if _, err := client.ArchiveReader(context.Background(), repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
@@ -2620,8 +2598,7 @@ func TestRead(t *testing.T) {
 		}
 
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			client := NewClient().(*clientImplementor)
-			client.subRepoPermsChecker = checker
+			client := NewTestClient(t).WithChecker(checker)
 			data, err := client.ReadFile(ctx, repo, commitID, test.file)
 			checkFn(t, err, data)
 		})
@@ -2635,8 +2612,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			client := NewClient().(*clientImplementor)
-			client.subRepoPermsChecker = checker
+			client := NewTestClient(t).WithChecker(checker)
 			data, err := client.ReadFile(ctx, repo, commitID, test.file)
 			checkFn(t, err, data)
 		})
@@ -2647,8 +2623,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			client := NewClient().(*clientImplementor)
-			client.subRepoPermsChecker = checker
+			client := NewTestClient(t).WithChecker(checker)
 			data, err := client.ReadFile(ctx, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
@@ -2670,8 +2645,6 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			client := NewClient().(*clientImplementor)
-			client.subRepoPermsChecker = checker
 			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, checkFn)
 		})
 		t.Run(name+"-GetFileReader-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -2681,8 +2654,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			client := NewClient().(*clientImplementor)
-			client.subRepoPermsChecker = checker
+			client := NewTestClient(t).WithChecker(checker)
 			rc, err := client.NewFileReader(ctx, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Fatalf("unexpected error: %s", err)

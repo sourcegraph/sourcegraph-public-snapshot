@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -63,7 +62,7 @@ func TestRepository_FileSystem(t *testing.T) {
 	}
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(t).WithClientSource(source)
 	for label, test := range tests {
 		// notafile should not exist.
 		if _, err := client.Stat(ctx, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
@@ -90,7 +89,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
 		source := gitserver.NewTestClientSource(t, GitserverAddresses)
-		client := gitserver.NewTestClient(http.DefaultClient, source)
+		client := gitserver.NewTestClient(t).WithClientSource(source)
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := client.ReadDir(ctx, test.repo, test.first, "dir1", false)
@@ -257,7 +256,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	}
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(t).WithClientSource(source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -318,7 +317,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(t).WithClientSource(source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -417,7 +416,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	authz.DefaultSubRepoPermsChecker = checker
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(t).WithClientSource(source)
 	files, err := client.ReadDir(ctx, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
