@@ -151,7 +151,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 		t.Run(tc.label, func(t *testing.T) {
 			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
 			c := NewClient().(*clientImplementor)
-			c.subRepoPermsChecker = checker
+			c.subRepoPermsChecker = nil
 			commits, err := c.Commits(ctx, repo, CommitsOptions{})
 			if err != nil {
 				t.Fatalf("err fetching commits: %s", err)
@@ -162,6 +162,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				baseCommit = commits[len(commits)-1]
 			}
 
+			c.subRepoPermsChecker = checker
 			iter, err := c.Diff(ctx, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo})
 			if err != nil {
 				t.Fatalf("error fetching diff: %s", err)
@@ -498,7 +499,10 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
 ) {
 	t.Helper()
-	hunks, err := NewClient().BlameFile(ctx, repo, path, opt)
+	client := NewClient().(*clientImplementor)
+	client.subRepoPermsChecker = checker
+
+	hunks, err := client.BlameFile(ctx, repo, path, opt)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return
@@ -1113,7 +1117,6 @@ func TestStat(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return false
 	})
-	authz.DefaultSubRepoPermsChecker = checker
 	client := NewClient().(*clientImplementor)
 	client.subRepoPermsChecker = checker
 
