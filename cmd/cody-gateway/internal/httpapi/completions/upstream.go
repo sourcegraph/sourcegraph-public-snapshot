@@ -237,7 +237,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					}
 					// only record prompt prefixes for .com actors
 					if act.IsDotComActor() {
-						flaggingMetadata["promptPrefix"] = flaggingResult.promptPrefix
+						flaggingMetadata["prompt_prefix"] = flaggingResult.promptPrefix
 					}
 					requestMetadata["flagging_result"] = flaggingMetadata
 				}
