@@ -45,7 +45,7 @@ type UserExternalAccountsStore interface {
 	//
 	// - the same user: it updates the data and returns a nil error; or
 	// - a different user: it performs no update and returns a non-nil error
-	AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error)
+	AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (acct *extsvc.Account, err error)
 
 	Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error)
 
@@ -68,7 +68,7 @@ type UserExternalAccountsStore interface {
 	Get(ctx context.Context, id int32) (*extsvc.Account, error)
 
 	// Insert creates the external account record in the database
-	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
+	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (*extsvc.Account, error)
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
 
@@ -198,7 +198,8 @@ AND deleted_at IS NULL
 	}
 
 	if rowsAffected == 0 {
-		return s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
+		_, err := s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
+		return err
 	}
 
 	// This logs an audit event for account changes but only if they are initiated via SCIM
@@ -207,13 +208,13 @@ AND deleted_at IS NULL
 	return
 }
 
-func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
+func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (_ *extsvc.Account, err error) {
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -231,14 +232,14 @@ AND account_id = %s
 AND deleted_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID)).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
-		return err
+		return nil, err
 	}
 	exists = err != sql.ErrNoRows
 	err = nil
 
 	if exists && associatedUserID != userID {
 		// The account already exists and is associated with another user.
-		return errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", associatedUserID, userID)
+		return nil, errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", associatedUserID, userID)
 	}
 
 	if !exists {
@@ -250,18 +251,18 @@ AND deleted_at IS NULL
 	if data.AuthData != nil {
 		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	if data.Data != nil {
 		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	// Update the external account (it exists).
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
+	res := tx.QueryRow(ctx, sqlf.Sprintf(`
 UPDATE user_external_accounts
 SET
 	auth_data = %s,
@@ -276,18 +277,17 @@ AND client_id = %s
 AND account_id = %s
 AND user_id = %s
 AND deleted_at IS NULL
+RETURNING
+	id
 `, encryptedAuthData, encryptedAccountData, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
-	if err != nil {
-		return err
+	if res.Err() != nil {
+		return nil, res.Err()
 	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
+	var id int32
+	if err := res.Scan(&id); err != nil {
+		return nil, err
 	}
-	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]any{existingID}}
-	}
-	return nil
+	return s.Get(ctx, id)
 }
 
 func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
@@ -302,23 +302,35 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return nil, err
 	}
 
-	err = tx.Insert(ctx, createdUser.ID, spec, data)
+	_, err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
 		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
 	}
 	return createdUser, err
 }
 
-func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
+func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (_ *extsvc.Account, err error) {
 	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
 	if err != nil {
 		return
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(`
+	res := s.QueryRow(ctx, sqlf.Sprintf(`
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING id
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
+
+	err = res.Err()
+	if err != nil {
+		return nil, err
+	}
+	var id int32
+	if err := res.Scan(&id); err != nil {
+		return nil, err
+	}
+
+	return s.Get(ctx, id)
 }
 
 // encryptData encrypts the given account data and returns the encrypted data and key ID.
