@@ -28,6 +28,7 @@ export const SESSION_FIRST_URL_KEY = 'sessionFirstUrl'
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
 const isSourcegraphDotComMode = window.context?.sourcegraphDotComMode || false
+const subdomainRegex = /\.sourcegraph\.com$/
 
 /**
  * Indicates if the webapp ever receives a message from the user's Sourcegraph browser extension,
@@ -228,7 +229,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        if (isSourcegraphDotComMode) {
+        if (isSourcegraphDotComMode && !subdomainRegex.test(firstSourceURL)) {
             cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
             return firstSourceURL
         }
@@ -246,7 +247,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
-        if (isSourcegraphDotComMode) {
+        if (isSourcegraphDotComMode && !subdomainRegex.test(lastSourceURL)) {
             cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
             return lastSourceURL
         }
@@ -268,7 +269,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
             document.referrer
 
-        if (isSourcegraphDotComMode) {
+        if (isSourcegraphDotComMode && !subdomainRegex.test(originalReferrer)) {
             cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
             return originalReferrer
         }
@@ -283,7 +284,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // Gets the session referrer from the cookie
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
 
-        if (isSourcegraphDotComMode) {
+        if (isSourcegraphDotComMode && !subdomainRegex.test(sessionReferrer)) {
             cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
             return sessionReferrer
         }
@@ -297,7 +298,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getSessionFirstURL(): string {
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
 
-        if (isSourcegraphDotComMode) {
+        if (isSourcegraphDotComMode && !subdomainRegex.test(sessionFirstURL)) {
             cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
             return sessionFirstURL
         }
