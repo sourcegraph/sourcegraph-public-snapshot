@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/google/go-github/v48/github" //nolint:depguard
+	"github.com/google/go-github/v55/github"
 	"github.com/segmentio/fasthash/fnv1"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
