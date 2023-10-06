@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v55/github"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Team represents a GitHub team and provdes actions that operate on a GitHub team.
@@ -13,7 +15,7 @@ import (
 // team belongs to.
 type Team struct {
 	// s is the GithubScenario instance this team was created from
-	s *GithubScenario
+	s *GitHubScenario
 	// org is the Org this team belongs to, and is ultimately the one who created this team
 	org *Org
 	// name is the name of the team
@@ -28,7 +30,7 @@ func (team *Team) Get(ctx context.Context) (*github.Team, error) {
 	if team.s.IsApplied() {
 		return team.get(ctx)
 	}
-	panic("cannot retrieve org before scenario is applied")
+	return nil, errors.New("cannot retrieve org before scenario is applied")
 }
 
 // get retrieves the GitHub team without panicking if not applied. It is meant as an
