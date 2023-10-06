@@ -19,9 +19,7 @@ describe('SiteInitPage', () => {
                 needsSiteInit={false}
                 authenticatedUser={null}
                 context={{
-                    authProviders: [],
-                    sourcegraphDotComMode: false,
-                    experimentalFeatures: {},
+                    authPasswordPolicy: {},
                     authMinPasswordLength: 12,
                 }}
             />,
@@ -38,9 +36,7 @@ describe('SiteInitPage', () => {
                     needsSiteInit={true}
                     authenticatedUser={{ username: 'alice' }}
                     context={{
-                        authProviders: [],
-                        sourcegraphDotComMode: false,
-                        experimentalFeatures: {},
+                        authPasswordPolicy: {},
                         authMinPasswordLength: 12,
                     }}
                 />
@@ -54,9 +50,7 @@ describe('SiteInitPage', () => {
                     needsSiteInit={true}
                     authenticatedUser={null}
                     context={{
-                        authProviders: [],
-                        sourcegraphDotComMode: false,
-                        experimentalFeatures: {},
+                        authPasswordPolicy: {},
                         authMinPasswordLength: 12,
                     }}
                 />

@@ -6,7 +6,7 @@ import { WebStory } from '../components/WebStory'
 import { PostSignUpPage } from './PostSignUpPage'
 
 const config: Meta = {
-    title: 'web/src/auth/PostSignUpPage',
+    title: 'web/auth/PostSignUpPage',
 }
 
 export default config
