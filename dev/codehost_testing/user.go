@@ -3,12 +3,14 @@ package codehost_testing
 import (
 	"context"
 
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v55/github"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // User represents a GitHub user in the scenario.
 type User struct {
-	s    *GithubScenario
+	s    *GitHubScenario
 	name string
 }
 
@@ -20,7 +22,7 @@ func (u *User) Get(ctx context.Context) (*github.User, error) {
 	if u.s.IsApplied() {
 		return u.get(ctx)
 	}
-	panic("cannot retrieve user before scenario is applied")
+	return nil, errors.New("cannot retrieve user before scenario is applied")
 }
 
 // get retrieves the GitHub user without panicking if not applied. It is meant as an
