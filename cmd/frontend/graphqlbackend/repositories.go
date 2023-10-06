@@ -238,12 +238,6 @@ func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *da
 	return resolvers, nil
 }
 
-// NOTE(naman): The old resolver `RepositoryConnectionResolver` defined below is
-// deprecated and replaced by `graphqlutil.ConnectionResolver` above which implements
-// proper cursor-based pagination and do not support `precise` argument for totalCount.
-// The old resolver is still being used by `AuthorizedUserRepositories` API, therefore
-// the code is not removed yet.
-
 type TotalCountArgs struct {
 	Precise bool
 }
