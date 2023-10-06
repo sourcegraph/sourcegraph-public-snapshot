@@ -229,6 +229,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
         const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
+
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
         cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
@@ -247,8 +248,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
         cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-        this.lastSourceURL = lastSourceURL
 
+        this.lastSourceURL = lastSourceURL
         return lastSourceURL
     }
 
