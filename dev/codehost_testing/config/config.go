@@ -31,6 +31,8 @@ func FromFile(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer fd.Close()
+
 	if err := json.NewDecoder(fd).Decode(&c); err != nil {
 		return nil, err
 	}
