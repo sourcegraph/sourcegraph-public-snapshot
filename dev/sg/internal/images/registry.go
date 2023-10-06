@@ -21,6 +21,7 @@ type Registry interface {
 	GetLatest(repo string, latest func(tags []string) (string, error)) (*Repository, error)
 	Host() string
 	Org() string
+	Public() bool
 }
 
 type Repository struct {
