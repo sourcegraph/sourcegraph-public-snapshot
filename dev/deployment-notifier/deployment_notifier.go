@@ -10,7 +10,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,9 +23,7 @@ var (
 	maxCommitsPageCount = 5
 )
 
-var (
-	ErrNoRelevantChanges = errors.New("no services changed, nothing to notify")
-)
+var ErrNoRelevantChanges = errors.New("no services changed, nothing to notify")
 
 type DeploymentNotifier struct {
 	dd               DeploymentDiffer
@@ -101,7 +99,7 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*DeploymentReport, er
 
 	// Sort the PRs so the tests are stable.
 	sort.Slice(prs, func(i, j int) bool {
-		return prs[i].GetMergedAt().After(prs[j].GetMergedAt())
+		return prs[i].GetMergedAt().After(prs[j].GetMergedAt().Time)
 	})
 
 	var deployedServices []string
@@ -143,7 +141,7 @@ func makeServicesPerPullRequest(prServicesSet map[int]map[string]struct{}) map[i
 
 // getNewCommits returns a slice of commits starting from the target commit up to the currently deployed commit.
 func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, oldCommit string, newCommit string) ([]*github.RepositoryCommit, error) {
-	var page = 1
+	page := 1
 	var commits []*github.RepositoryCommit
 	for page != 0 && page != maxCommitsPageCount {
 		cs, resp, err := dn.ghc.Repositories.ListCommits(ctx, repoOwner, repoName, &github.CommitsListOptions{

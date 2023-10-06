@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/log"
 
@@ -123,7 +123,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 			),
 		urn:                 urn,
 		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		githubDotCom:        URLIsGitHubDotCom(apiURL),
 		auth:                a,
 		httpClient:          cli,
 		internalRateLimiter: rl,
