@@ -413,10 +413,9 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
 	}
-	authz.DefaultSubRepoPermsChecker = checker
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
-	client := gitserver.NewTestClient(t).WithClientSource(source)
+	client := gitserver.NewTestClient(t).WithClientSource(source).WithChecker(checker)
 	files, err := client.ReadDir(ctx, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
