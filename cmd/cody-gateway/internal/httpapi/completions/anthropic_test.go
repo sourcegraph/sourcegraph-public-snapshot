@@ -120,7 +120,7 @@ func TestActor_IsDotComActor(t *testing.T) {
 		require.False(t, isDotCom)
 	})
 
-	t.Run("with dotcom actor", func(t *testing.T) {
+	t.Run("with nil actor", func(t *testing.T) {
 		var actor *actor.Actor = nil
 
 		isDotCom := actor.IsDotComActor()
