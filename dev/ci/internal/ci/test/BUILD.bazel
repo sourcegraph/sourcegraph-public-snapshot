@@ -1,0 +1,5 @@
+filegroup(
+    name = "test-image-configs",
+    srcs = glob(["wolfi-images/*"]),
+    visibility = ["//dev/ci/internal/ci:__pkg__"],
+)

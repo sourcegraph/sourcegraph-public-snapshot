@@ -1,6 +1,7 @@
 import { writeFileSync } from 'fs'
 import path from 'path'
 
+import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin'
 import * as esbuild from 'esbuild'
 
 import {
@@ -12,7 +13,6 @@ import {
     monacoPlugin,
     RXJS_RESOLUTIONS,
     buildMonaco,
-    experimentalNoticePlugin,
     buildTimerPlugin,
 } from '@sourcegraph/build-config'
 import { isDefined } from '@sourcegraph/common'
@@ -21,19 +21,14 @@ import { ENVIRONMENT_CONFIG, IS_DEVELOPMENT, IS_PRODUCTION } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
 
-const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
 const isCodyApp = ENVIRONMENT_CONFIG.CODY_APP
 const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: {
-        // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
-        // strict superset of the OSS entrypoint.
         'scripts/app': isCodyApp
             ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-main.tsx')
-            : isEnterpriseBuild
-            ? path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx')
-            : path.join(ROOT_PATH, 'client/web/src/main.tsx'),
+            : path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
     },
     bundle: true,
     minify: IS_PRODUCTION,
@@ -72,7 +67,16 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         }),
         omitSlowDeps ? null : monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         buildTimerPlugin,
-        experimentalNoticePlugin,
+        ENVIRONMENT_CONFIG.SENTRY_UPLOAD_SOURCE_MAPS
+            ? sentryEsbuildPlugin({
+                  org: ENVIRONMENT_CONFIG.SENTRY_ORGANIZATION,
+                  project: ENVIRONMENT_CONFIG.SENTRY_PROJECT,
+                  authToken: ENVIRONMENT_CONFIG.SENTRY_DOT_COM_AUTH_TOKEN,
+                  silent: true,
+                  release: { name: `frontend@${ENVIRONMENT_CONFIG.VERSION}` },
+                  sourcemaps: { assets: path.join(ENVIRONMENT_CONFIG.STATIC_ASSETS_PATH, 'scripts', '*.map') },
+              })
+            : null,
     ].filter(isDefined),
     define: {
         ...Object.fromEntries(

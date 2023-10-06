@@ -11,6 +11,7 @@ import com.sourcegraph.cody.auth.ui.EditCodebaseContextAction
 import com.sourcegraph.cody.chat.ChatUIConstants
 import java.awt.Dimension
 import java.awt.FlowLayout
+import java.util.concurrent.CompletableFuture
 import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -57,16 +58,24 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
     if (repoName == null) {
       setEmbeddingStatus(NoGitRepositoryEmbeddingStatus())
     } else {
-      setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
-      CodyAgent.getInitializedServer(project)
-          .thenCompose { server: CodyAgentServer? ->
-            server?.getRepoIdIfEmbeddingExists(GetRepoID(repoName))
-          }
-          .thenAccept { id: String? ->
-            if (id != null) {
+      CodyAgent.getInitializedServer(project).thenCompose { server: CodyAgentServer? ->
+        server?.getRepoIdIfEmbeddingExists(GetRepoID(repoName))?.thenCompose { repoIdWithEmbeddings
+          ->
+          if (repoIdWithEmbeddings != null) {
+            CompletableFuture.runAsync {
               setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
             }
+          } else {
+            server.getRepoId(GetRepoID(repoName))?.thenAccept { repoId ->
+              if (repoId != null) {
+                setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
+              } else {
+                setEmbeddingStatus(RepositoryNotFoundOnSourcegraphInstance(repoName))
+              }
+            }
           }
+        }
+      }
     }
   }
 

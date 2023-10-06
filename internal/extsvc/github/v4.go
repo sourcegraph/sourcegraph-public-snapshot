@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -101,7 +100,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 		log:                 log.Scoped("github.v4", "github v4 client"),
 		urn:                 urn,
 		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		githubDotCom:        URLIsGitHubDotCom(apiURL),
 		auth:                a,
 		httpClient:          cli,
 		internalRateLimiter: rl,
@@ -617,7 +616,7 @@ fragment RepositoryFields on Repository {
 		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
 	}
 
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
+	if ghe330PlusOrDotComSemver.Check(version) {
 		conditionalGHEFields = append(conditionalGHEFields, "visibility")
 	}
 

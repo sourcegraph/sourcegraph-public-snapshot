@@ -35,7 +35,7 @@ const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, ...props }) => {
     return (
         <GatedTour
             {...props}
-            id="TourAuthenticated"
+            id="GettingStarted"
             userInfo={config?.userinfo}
             defaultSnippets={data.defaultSnippets}
             tasks={data.tasks}

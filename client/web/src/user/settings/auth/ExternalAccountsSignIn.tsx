@@ -8,13 +8,14 @@ import type { ErrorLike } from '@sourcegraph/common'
 import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
 import { ExternalAccount } from './ExternalAccount'
-import type { AccountsByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
+import type { UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
 
 export interface NormalizedExternalAccount {
     name: string
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
+    authProvider: AuthProvider
     // some data may be missing if account is not setup
     external?: UserExternalAccount['publicAccountData'] & {
         id: string
@@ -22,43 +23,59 @@ export interface NormalizedExternalAccount {
 }
 
 interface Props {
-    accounts: AccountsByServiceID
+    accounts: UserExternalAccount[]
     authProviders: AuthProvider[]
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
     onDidAdd: () => void
 }
 
-const getNormalizedAccount = (
-    accounts: Partial<Record<string, UserExternalAccount[]>>,
+const getNormalizedAccounts = (
+    accounts: UserExternalAccount[],
     authProvider: AuthProvider
-): NormalizedExternalAccount | null => {
+): NormalizedExternalAccount[] => {
     if (
         authProvider.serviceType === 'builtin' ||
         authProvider.serviceType === 'http-header' ||
         authProvider.serviceType === 'sourcegraph-operator'
     ) {
-        return null
+        return []
     }
 
     const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 
-    const normalizedAccount: NormalizedExternalAccount = {
-        icon,
-        name,
-    }
-
-    const providerAccounts = accounts[authProvider.serviceID]
-
-    const providerAccount = providerAccounts?.find(acc => acc.clientID === authProvider.clientID)
-    if (providerAccount?.publicAccountData) {
-        normalizedAccount.external = {
-            id: providerAccount.id,
-            ...providerAccount.publicAccountData,
+    const normalizedAccounts: NormalizedExternalAccount[] = []
+    const providerAccounts = accounts.filter(
+        acc => acc.clientID === authProvider.clientID && acc.serviceID === authProvider.serviceID
+    )
+    for (const providerAccount of providerAccounts || []) {
+        const normalizedAccount: NormalizedExternalAccount = {
+            icon,
+            name,
+            authProvider,
         }
+
+        if (providerAccount?.publicAccountData) {
+            normalizedAccount.external = {
+                id: providerAccount.id,
+                ...providerAccount.publicAccountData,
+            }
+        }
+
+        normalizedAccounts.push(normalizedAccount)
     }
 
-    return normalizedAccount
+    if (normalizedAccounts.length === 0) {
+        return [
+            {
+                icon,
+                name,
+                authProvider,
+            },
+        ]
+    }
+
+    return normalizedAccounts
 }
 
 export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -67,34 +84,26 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
     onDidRemove,
     onDidError,
     onDidAdd,
-}) => (
-    <>
-        {authProviders && (
-            <ul className="list-group">
-                {authProviders.map(authProvider => {
-                    // if auth provider for this account doesn't exist -
-                    // don't display the account as an option
-                    const normAccount = getNormalizedAccount(accounts, authProvider)
-                    if (normAccount) {
-                        return (
-                            <li
-                                key={normAccount.external ? normAccount.external.id : authProvider.serviceID}
-                                className={classNames('list-group-item', styles.externalAccount)}
-                            >
-                                <ExternalAccount
-                                    account={normAccount}
-                                    authProvider={authProvider}
-                                    onDidRemove={onDidRemove}
-                                    onDidError={onDidError}
-                                    onDidAdd={onDidAdd}
-                                />
-                            </li>
-                        )
-                    }
-
-                    return null
-                })}
-            </ul>
-        )}
-    </>
-)
+}) => {
+    const accountGroups = authProviders.map(authProvider => ({
+        authProvider,
+        accounts: getNormalizedAccounts(accounts, authProvider),
+    }))
+    const accountsList = accountGroups
+        .flatMap(group => group.accounts)
+        .map(account => (
+            <li
+                key={account.external ? account.external.id : account.authProvider.serviceID}
+                className={classNames('list-group-item', styles.externalAccount)}
+            >
+                <ExternalAccount
+                    account={account}
+                    authProvider={account.authProvider}
+                    onDidRemove={onDidRemove}
+                    onDidError={onDidError}
+                    onDidAdd={onDidAdd}
+                />
+            </li>
+        ))
+    return <>{authProviders && <ul className="list-group">{accountsList}</ul>}</>
+}

@@ -31,17 +31,17 @@ type sessionIssuerHelper struct {
 	allowSignup *bool
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, _, _, _ string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, _, _, _ string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	user, err := userFromContext(ctx)
 	if err != nil {
-		return nil, "failed to read Azure DevOps Profile from oauth2 callback request", errors.Wrap(err, "azureoauth.GetOrCreateUser: failed to read user from context of callback request")
+		return false, nil, "failed to read Azure DevOps Profile from oauth2 callback request", errors.Wrap(err, "azureoauth.GetOrCreateUser: failed to read user from context of callback request")
 	}
 
 	if allow, err := s.verifyAllowOrgs(ctx, user, token); err != nil {
-		return nil, "error in verifying authorized user organizations", err
+		return false, nil, "error in verifying authorized user organizations", err
 	} else if !allow {
 		msg := "User does not belong to any org from the allowed list of organizations. Please contact your site admin."
-		return nil, msg, errors.Newf("%s Must be in one of %v", msg, s.allowOrgs)
+		return false, nil, msg, errors.Newf("%s Must be in one of %v", msg, s.allowOrgs)
 	}
 
 	// allowSignup is true by default in the config schema. If it's not set in the provider config,
@@ -50,7 +50,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	var data extsvc.AccountData
 	if err := azuredevops.SetExternalAccountData(&data, user, token); err != nil {
-		return nil, "", errors.Wrapf(err, "failed to set external account data for azure devops user with email %q", user.EmailAddress)
+		return false, nil, "", errors.Wrapf(err, "failed to set external account data for azure devops user with email %q", user.EmailAddress)
 	}
 
 	// The API returned an email address with the first character capitalized during development.
@@ -58,10 +58,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	email := strings.ToLower(user.EmailAddress)
 	username, err := auth.NormalizeUsername(email)
 	if err != nil {
-		return nil, "failed to normalize username from email of azure dev ops account", errors.Wrapf(err, "failed to normalize username from email: %q", email)
+		return false, nil, "failed to normalize username from email of azure dev ops account", errors.Wrapf(err, "failed to normalize username from email: %q", email)
 	}
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        username,
 			Email:           email,
@@ -78,10 +78,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		CreateIfNotExist:    signupAllowed,
 	})
 	if err != nil {
-		return nil, safeErrMsg, err
+		return false, nil, safeErrMsg, err
 	}
 
-	return actor.FromUser(userID), "", nil
+	return newUserCreated, actor.FromUser(userID), "", nil
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

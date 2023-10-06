@@ -69,6 +69,10 @@ func TestFromSearchClient(t *testing.T) {
 			"HEAD": "commitbar0",
 			"dev1": "commitbar1",
 		},
+	}, {
+		ID:       3,
+		Name:     "empty3",
+		Branches: map[string]string{},
 	}}
 
 	ctx := featureflag.WithFlags(context.Background(), featureflag.NewMemoryStore(nil, nil, nil))
@@ -88,8 +92,8 @@ func TestFromSearchClient(t *testing.T) {
 
 	do("global", newSearcherTestCase{
 		Query:        "content",
-		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD}",
-		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD}",
+		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD} RepositoryRevSpec{3@HEAD}",
+		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD} RepositoryRevision{3@HEAD}",
 		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
 bar2,commitbar0,,1,/bar2@commitbar0/-/blob/?L2
@@ -121,6 +125,17 @@ foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
+`),
+	})
+
+	do("globall", newSearcherTestCase{
+		Query:        "repo:. rev:*refs/heads/dev* content",
+		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*} RepositoryRevSpec{2@*refs/heads/dev*} RepositoryRevSpec{3@*refs/heads/dev*}",
+		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2} RepositoryRevision{2@dev1}",
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
+foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
+foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
+bar2,commitbar1,,1,/bar2@commitbar1/-/blob/?L2
 `),
 	})
 
@@ -233,7 +248,7 @@ func mockRepoStore(repoMocks []repoMock) *dbmocks.MockRepoStore {
 		for _, repo := range repoMocks {
 			keep := true
 			for _, pat := range opts.IncludePatterns {
-				keep = keep && strings.Contains(repo.Name, pat)
+				keep = keep && (strings.Contains(repo.Name, pat) || pat == ".")
 			}
 			if !keep {
 				continue
@@ -278,13 +293,20 @@ func mockSearcher(t *testing.T, repoMocks []repoMock) *endpoint.Map {
 		fetchTimeout time.Duration,
 		stream streaming.Sender,
 	) (limitHit bool, err error) {
+		found := false
 		for _, r := range repoMocks {
 			if api.RepoID(r.ID) == repo.ID {
+				found = true
+				commit, ok := r.Branches[rev]
+				if !ok {
+					return false, &gitdomain.RevisionNotFoundError{Spec: rev}
+				}
+
 				stream.Send(streaming.SearchEvent{
 					Results: result.Matches{&result.FileMatch{
 						File: result.File{
 							Repo:     repo,
-							CommitID: api.CommitID(r.Branches[rev]),
+							CommitID: api.CommitID(commit),
 						},
 						ChunkMatches: result.ChunkMatches{{
 							Content:      "line1",
@@ -296,6 +318,9 @@ func mockSearcher(t *testing.T, repoMocks []repoMock) *endpoint.Map {
 						}},
 					}}})
 			}
+		}
+		if !found {
+			return false, &gitdomain.RepoNotExistError{}
 		}
 		return false, nil
 	}

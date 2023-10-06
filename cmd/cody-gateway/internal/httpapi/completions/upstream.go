@@ -49,10 +49,13 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// Second return value is a boolean indicating whether the request was flagged during validation.
 	//
 	// The provided logger already contains actor context.
-	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (httpStatus int, flagged bool, _ error)
+	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (int, *flaggingResult, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
-	transformBody func(*ReqT, *actor.Actor)
+	//
+	// If the upstream supports it, the given identifier string should be
+	// provided to assist in abuse detection.
+	transformBody func(_ *ReqT, identifier string)
 	// transformRequest can be used to modify the HTTP request before it is sent
 	// upstream. To manipulate the body, use transformBody.
 	transformRequest func(*http.Request)
@@ -159,7 +162,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 				return
 			}
-			status, flagged, err := methods.validateRequest(r.Context(), logger, feature, body)
+			status, flaggingResult, err := methods.validateRequest(r.Context(), logger, feature, body)
 			if err != nil {
 				if status == 0 {
 					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
@@ -168,7 +171,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 
-			methods.transformBody(&body, act)
+			// identifier that can be provided to upstream for abuse detection
+			// has the format '$ACTOR_ID:$SG_ACTOR_ID'. The latter is anonymized
+			// (specific per-instance)
+			identifier := fmt.Sprintf("%s:%s", act.ID, sgActorID)
+			methods.transformBody(&body, identifier)
 
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
@@ -220,8 +227,18 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						attribute.Int("upstreamStatusCode", upstreamStatusCode),
 						attribute.Int("resolvedStatusCode", resolvedStatusCode))
 				}
-				if flagged {
+				if flaggingResult.IsFlagged() {
+					// keep this for backwards-compatibility of abuse data
 					requestMetadata["flagged"] = true
+					flaggingMetadata := map[string]any{
+						"reason":  flaggingResult.reasons,
+						"blocked": flaggingResult.blocked,
+					}
+					// only record prompt prefixes for .com actors
+					if act.IsDotComActor() {
+						flaggingMetadata["promptPrefix"] = flaggingResult.promptPrefix
+					}
+					requestMetadata["flagging_result"] = flaggingMetadata
 				}
 				usageData := map[string]any{
 					"prompt_character_count":     promptUsage.characters,

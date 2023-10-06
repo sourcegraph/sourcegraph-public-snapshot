@@ -119,11 +119,21 @@ export function copyInlineExtensions(toDirectory: string): void {
 export function copyIntegrationAssets(): void {
     shelljs.mkdir('-p', 'build/integration/scripts')
     shelljs.mkdir('-p', 'build/integration/css')
-    shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/integration/scripts')
-    shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
+
+    // The destination filename is hardcoded in
+    // https://sourcegraph.com/github.com/sourcegraph/phabricator-extension@master/-/blob/src/application/SourcegraphApplication.php?L33.
+    shelljs.cp(
+        'build/dist/js/phabricatorNativeIntegration.main.bundle.js',
+        'build/integration/scripts/phabricator.bundle.js'
+    )
+
+    // The destination filename is hardcoded in
+    // https://sourcegraph.com/github.com/sourcegraph/bitbucket-server-plugin@master/-/blob/src/main/resources/js/sourcegraph-bitbucket.js?L23:52.
+    shelljs.cp('build/dist/js/nativeIntegration.main.bundle.js', 'build/integration/scripts/integration.bundle.js')
+
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
-    shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
-    shelljs.cp('build/dist/css/inject.bundle.css', 'build/integration/css')
+    shelljs.cp('build/dist/css/app.bundle.css', 'build/integration/css')
+    shelljs.cp('build/dist/css/contentPage.main.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
     copyInlineExtensions('build/integration')
     // Copy to the ui/assets directory so that these files can be served by

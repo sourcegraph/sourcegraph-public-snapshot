@@ -10,15 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 
 	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
+	embeddings_shared "github.com/sourcegraph/sourcegraph/cmd/embeddings/shared"
 	executor_singlebinary "github.com/sourcegraph/sourcegraph/cmd/executor/singlebinary"
 	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	gitserver_shared "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
 	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared"
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
-	embeddings_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/shared"
-	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
-	worker_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
+	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
+	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
@@ -42,7 +42,7 @@ var services = []service.Service{
 
 func main() {
 	sanitycheck.Pass()
-	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
+	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
 	osscmd.MainOSS(services, os.Args)

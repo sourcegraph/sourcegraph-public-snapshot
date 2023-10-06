@@ -35,14 +35,14 @@
     border-bottom-left-radius: 0;
 
     &:hover,
-    &:focus {
+    &:focus-visible {
         color: var(--danger);
         background-color: var(--danger-4);
     }
 
     :global(.theme-dark) & {
         &:hover,
-        &:focus {
+        &:focus-visible {
             color: var(--light-text);
             background-color: var(--danger-2);
         }
@@ -86,7 +86,7 @@
             color: var(--light-text);
 
             &:hover,
-            &:focus {
+            &:focus-visible {
                 color: var(--light-text) !important;
                 background-color: var(--primary-3) !important;
             }
@@ -128,14 +128,14 @@
     border-radius: var(--border-radius);
 
     &:hover,
-    &:focus {
+    &:focus-visible {
         color: var(--danger);
         background-color: var(--danger-4);
     }
 
     :global(.theme-dark) & {
         &:hover,
-        &:focus {
+        &:focus-visible {
             color: var(--light-text);
             background-color: var(--danger-2);
         }

@@ -955,24 +955,6 @@ func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitComman
 // gitCommandFunc is a func that creates a new executable Git command.
 type gitCommandFunc func(args []string) GitCommand
 
-// IsAbsoluteRevision checks if the revision is a git OID SHA string.
-//
-// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
-// isn't a ref. Git allows 40-char hexadecimal strings to be references.
-func IsAbsoluteRevision(s string) bool {
-	if len(s) != 40 {
-		return false
-	}
-	for _, r := range s {
-		if !(('0' <= r && r <= '9') ||
-			('a' <= r && r <= 'f') ||
-			('A' <= r && r <= 'F')) {
-			return false
-		}
-	}
-	return true
-}
-
 // ResolveRevisionOptions configure how we resolve revisions.
 // The zero value should contain appropriate default values.
 type ResolveRevisionOptions struct {
@@ -1047,7 +1029,7 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
 	commit := api.CommitID(bytes.TrimSpace(stdout))
-	if !IsAbsoluteRevision(string(commit)) {
+	if !gitdomain.IsAbsoluteRevision(string(commit)) {
 		if commit == "HEAD" {
 			// We don't verify the existence of HEAD (see above comments), but
 			// if HEAD doesn't point to anything git just returns `HEAD` as the

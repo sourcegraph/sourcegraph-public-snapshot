@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 

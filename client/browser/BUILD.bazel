@@ -149,9 +149,14 @@ ts_project(
         "src/browser-extension/web-extension-api/runtime.ts",
         "src/browser-extension/web-extension-api/storage.ts",
         "src/browser-extension/web-extension-api/types.ts",
+        "src/config/background.entry.ts",
+        "src/config/content.entry.ts",
+        "src/config/extension.entry.ts",
+        "src/config/options.entry.ts",
+        "src/config/page.entry.ts",
         "src/globals.d.ts",
-        "src/native-integration/integration.main.ts",
-        "src/native-integration/phabricator/integration.main.ts",
+        "src/native-integration/nativeIntegration.main.ts",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.ts",
         "src/native-integration/phabricator/util.ts",
         "src/shared/backend/diffs.tsx",
         "src/shared/backend/extension-api-conversion.tsx",
@@ -361,18 +366,15 @@ webpack_bundle(
         # STATIC ASSSETS
         "//client/browser/assets",
     ],
-    # HACK: these entry-points are duplicated in the webpack config
-    # because rule_webpack does not support multi-main entry-points (defined by arrays)
-    # but it mirror ouptut files list defined in the webpack config.
     entry_points = {
-        "src/browser-extension/scripts/backgroundPage.main.js": "background",
-        "src/browser-extension/scripts/contentPage.main.js": "inject",
-        "src/browser-extension/scripts/optionsPage.main.js": "options",
-        "src/browser-extension/scripts/afterInstallPage.main.js": "after-install",
-        "src/native-integration/integration.main.js": "integration",
-        "src/native-integration/phabricator/integration.main.js": "phabricator",
-        "src/app.css": "style",
-        "src/branded.css": "branded-style",
+        "src/browser-extension/scripts/backgroundPage.main.js": "backgroundPage.main",
+        "src/browser-extension/scripts/contentPage.main.js": "contentPage.main",
+        "src/browser-extension/scripts/optionsPage.main.js": "optionsPage.main",
+        "src/browser-extension/scripts/afterInstallPage.main.js": "afterInstallPage.main",
+        "src/native-integration/nativeIntegration.main.js": "nativeIntegration.main",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.js": "phabricatorNativeIntegration.main",
+        "src/app.css": "app",
+        "src/branded.css": "branded",
     },
     env = {
         "NODE_ENV": "production",

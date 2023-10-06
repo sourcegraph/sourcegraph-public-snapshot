@@ -1,8 +1,10 @@
 package com.sourcegraph.cody.agent.protocol;
 
+import org.jetbrains.annotations.Nullable;
+
 public class RecipeInfo {
-  public String id;
-  public String title;
+  @Nullable public String id;
+  @Nullable public String title;
 
   @Override
   public String toString() {

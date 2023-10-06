@@ -48,7 +48,7 @@ func (dataAnalytics) NewTelemetryJobOperationsGroup(containerName string) monito
 			},
 			Namespace:       usageDataExporterNamespace,
 			DescriptionRoot: "Job operations",
-			Hidden:          false,
+			Hidden:          true,
 		},
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
 			Total:     NoAlertsOption("none"),
@@ -68,7 +68,7 @@ func (dataAnalytics) NewTelemetryJobOperationsGroup(containerName string) monito
 func (dataAnalytics) TelemetryJobThroughputGroup(containerName string) monitoring.Group {
 	return monitoring.Group{
 		Title:  "Usage data exporter: Utilization",
-		Hidden: false,
+		Hidden: true,
 		Rows: []monitoring.Row{
 			{
 				{

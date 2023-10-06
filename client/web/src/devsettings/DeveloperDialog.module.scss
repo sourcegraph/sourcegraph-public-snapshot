@@ -1,0 +1,72 @@
+.dialog {
+    top: 3rem;
+    transform: translate(-50%, 0);
+    max-height: calc(100vh - 6rem);
+    overflow: hidden;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+
+    table {
+        overflow-y: auto;
+        width: 100%;
+
+        thead {
+            th {
+                padding: 0.25rem;
+                position: sticky;
+                top: 0;
+                background-color: var(--body-bg);
+            }
+        }
+
+        tbody > tr {
+            border-bottom: 1px solid var(--border-color);
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+
+        td {
+            padding: 0.25rem 0;
+            color: var(--text-muted);
+        }
+
+        tr.override > td {
+            font-weight: 600;
+            color: var(--body-color);
+        }
+
+        td,
+        th {
+            white-space: nowrap;
+        }
+
+        td:nth-child(2) > button {
+            text-decoration: underline;
+            color: inherit;
+            font-style: inherit;
+            font-weight: inherit;
+        }
+    }
+}
+
+.clear-button {
+    position: absolute;
+    right: 0.5rem;
+}
+
+.settings-list {
+    margin: 1rem 0;
+    padding: 0;
+    list-style: none;
+}

@@ -208,3 +208,10 @@ result-*
 # For locally building and testing shared packages from the sourcegraph/cody repository on
 # the web client.
 /cody
+
+/playwright
+
+# JUnit execution reports
+junit.xml
+
+/enterprise/

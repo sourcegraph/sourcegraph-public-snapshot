@@ -16,7 +16,7 @@ import (
 
 func main() {
 	sanitycheck.Pass()
-	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
+	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
 	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.Config{}, svcmain.OutOfBandConfiguration{

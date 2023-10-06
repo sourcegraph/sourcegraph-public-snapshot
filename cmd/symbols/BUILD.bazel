@@ -1,7 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "symbols_lib",
@@ -9,9 +10,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/sourcegraph/osscmd",
         "//cmd/symbols/shared",
         "//internal/sanitycheck",
+        "//internal/service/svcmain",
     ],
 )
 
@@ -69,4 +70,10 @@ container_structure_test(
         "exclusive",
         "requires-network",
     ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("symbols"),
 )

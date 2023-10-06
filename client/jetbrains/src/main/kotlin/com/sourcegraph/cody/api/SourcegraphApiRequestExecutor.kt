@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.api
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.EmptyProgressIndicator
@@ -161,6 +162,7 @@ sealed class SourcegraphApiRequestExecutor {
     }
   }
 
+  @Service
   class Factory {
     @CalledInAny
     fun create(token: String): WithTokenAuth {
@@ -173,7 +175,9 @@ sealed class SourcegraphApiRequestExecutor {
     }
 
     companion object {
-      @JvmStatic fun getInstance(): Factory = service()
+      @JvmStatic
+      val instance: Factory
+        get() = service()
     }
   }
 

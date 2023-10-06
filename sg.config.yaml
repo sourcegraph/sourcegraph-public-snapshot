@@ -134,6 +134,9 @@ env:
 
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
 
+  # By default, allow temporary edits to external services.
+  EXTSVC_CONFIG_ALLOW_EDITS: true
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -162,11 +165,10 @@ commands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      ENTERPRISE: 1
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - lib
       - internal
@@ -220,8 +222,6 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
-    env:
-      ENTERPRISE: 1
     watch:
       - lib
       - internal
@@ -234,7 +234,7 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
@@ -245,7 +245,7 @@ commands:
       - lib
       - internal
       - cmd/symbols
-      - enterprise/cmd/symbols
+      - cmd/symbols
       - internal/rockskip
 
   embeddings:
@@ -257,12 +257,12 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
+      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/cmd/embeddings
     checkBinary: .bin/embeddings
     watch:
       - lib
       - internal
-      - enterprise/cmd/embeddings
+      - cmd/embeddings
       - internal/embeddings
   qdrant:
     cmd: |
@@ -283,12 +283,11 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
       - internal
       - cmd/worker
-      - enterprise/cmd/worker
 
   cody-gateway:
     cmd: |
@@ -389,7 +388,6 @@ commands:
     cmd: ./node_modules/.bin/gulp --color dev
     install: pnpm install
     env:
-      ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
@@ -415,14 +413,12 @@ commands:
     description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
-      ENTERPRISE: 1
       INTEGRATION_TESTS: true
 
   web-integration-build-prod:
     description: Build production web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
-      ENTERPRISE: 1
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
@@ -720,10 +716,8 @@ commands:
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
         grafana:candidate >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
-      echo foobar
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-      export CACHE=true
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       bazel build //docker-images/grafana:image_tarball
       docker load --input $(bazel cquery //docker-images/grafana:image_tarball --output=files)
@@ -924,8 +918,8 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
-  sourcegraph:
-    description: Single program (Go static binary) distribution
+  sourcegraph: &sourcegraph_command
+    description: Single-program distribution
     cmd: |
       unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
 
@@ -939,19 +933,27 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
-      ENTERPRISE: 1
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - cmd
       - enterprise
       - internal
       - lib
       - schema
+
+  cody-app:
+    <<: *sourcegraph_command
+    description: Cody App
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
 
   tauri:
     description: App shell (Tauri)
@@ -985,23 +987,20 @@ bazelCommands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      ENTERPRISE: 1
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
   worker:
-    target: //enterprise/cmd/worker
+    target: //cmd/worker
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   repo-updater:
     target: //cmd/repo-updater
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    env:
-      ENTERPRISE: 1
   symbols:
-    target: //enterprise/cmd/symbols
+    target: //cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
@@ -1459,15 +1458,11 @@ commandsets:
     commands:
       - web-standalone-http
       - caddy
-    env:
-      ENTERPRISE: 1
 
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
       - caddy
-    env:
-      ENTERPRISE: 1
 
   # For testing our OpenTelemetry stack
   otel:
@@ -1477,12 +1472,26 @@ commandsets:
       - otel-collector
       - jaeger
 
-  app:
+  single-program:
     requiresDevPrivate: true
     checks:
       - git
     commands:
       - sourcegraph
+      - web
+      - caddy
+    env:
+      DISABLE_CODE_INSIGHTS: false
+      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      USE_EMBEDDED_POSTGRESQL: false
+
+  app:
+    requiresDevPrivate: true
+    checks:
+      - git
+    commands:
+      - cody-app
       - docsite
       - web
       - caddy

@@ -17,10 +17,6 @@ const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
-const InstallGitHubAppSuccessPage = lazyComponent(
-    () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
-    'InstallGitHubAppSuccessPage'
-)
 const RedirectToUserSettings = lazyComponent(
     () => import('./user/settings/RedirectToUserSettings'),
     'RedirectToUserSettings'
@@ -84,10 +80,6 @@ export const routes: RouteObject[] = [
         path: PageRoutes.Welcome,
         // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
         element: <Navigate replace={true} to={PageRoutes.Search} />,
-    },
-    {
-        path: PageRoutes.InstallGitHubAppSuccess,
-        element: <InstallGitHubAppSuccessPage />,
     },
     {
         path: PageRoutes.Settings,

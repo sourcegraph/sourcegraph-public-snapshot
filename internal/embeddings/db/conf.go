@@ -53,6 +53,9 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 
 	return func() (VectorDB, error) {
 		curr := ptr.Load()
+		if curr == nil {
+			return def, nil
+		}
 		if curr.err != nil {
 			return nil, curr.err
 		}

@@ -32,7 +32,7 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
 ## Buildkite pipelines
 
 [Tests](../../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes (i.e. when you run `git push`) to the `sourcegraph/sourcegraph` GitHub repository.
-Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci) - a complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md). To keep the repository tidy, consider deleting the branch after the pipeline has completed. The build results will be available even after the branch is deleted.
+Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/dev/ci) - a complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md). To keep the repository tidy, consider deleting the branch after the pipeline has completed. The build results will be available even after the branch is deleted.
 You can also see these docs locally with `sg ci docs`.
 
 To see what checks will get run against your current branch, use [`sg`](../../setup/quickstart.md):
@@ -64,7 +64,7 @@ In the Buildkite UI, soft failures currently look like the following, with a _tr
 We use soft failures for the following reasons only:
 
 - Steps that determine whether a subsequent step should run, where soft failures are the only technical way to communicate that a later step should be skipped in this manner using Buildkite.
-  - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
+  - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
 - Regular analysis tasks, where soft failures serve as an monitoring indicator to warn the team responsible for fixing issues.
   - Examples: [image vulnerability scanning](#image-vulnerability-scanning), linting tasks for catching deprecation warnings
 - Temporary exceptions to accommodate experimental or in-progress work.
@@ -144,8 +144,8 @@ If a step is flaky we need to get the build back to reliable as soon as possible
 An example use of `Skip`:
 
 ```diff
---- a/enterprise/dev/ci/internal/ci/operations.go
-+++ b/enterprise/dev/ci/internal/ci/operations.go
+--- a/dev/ci/internal/ci/operations.go
++++ b/dev/ci/internal/ci/operations.go
 @@ -260,7 +260,9 @@ func addGoBuild(pipeline *bk.Pipeline) {
  func addDockerfileLint(pipeline *bk.Pipeline) {
         pipeline.AddStep(":docker: Lint",

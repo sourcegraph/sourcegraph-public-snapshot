@@ -104,9 +104,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 		map[string]string{"repo1": "gitserver2"},
 	)
 
-	atomicConns := getAtomicGitserverConns()
-
-	atomicConns.update(cfg)
+	conns.update(cfg)
 
 	ctx := context.Background()
 	addr := client.AddrForRepo(ctx, "repo1")
@@ -117,7 +115,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver1"},
 	)
-	atomicConns.update(cfg)
+	conns.update(cfg)
 
 	require.Equal(t, "gitserver1", client.AddrForRepo(ctx, "repo1"))
 }

@@ -37,11 +37,14 @@ type PublishEventResult struct {
 	PublishError error
 }
 
+// Publish emits all events concurrently, up to 100 at a time for each call.
 func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Event) []PublishEventResult {
 	wg := pool.NewWithResults[PublishEventResult]().
 		WithMaxGoroutines(100) // limit each batch to some degree
 
 	for _, event := range events {
+		event := event // capture range variable :(
+
 		doPublish := func(event *telemetrygatewayv1.Event) error {
 			eventJSON, err := protojson.Marshal(event)
 			if err != nil {

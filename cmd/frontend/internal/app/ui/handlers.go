@@ -91,7 +91,7 @@ type Common struct {
 
 	Manifest *assets.WebpackManifest
 
-	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
+	WebpackDevServer bool // whether the Webpack dev server is running (WEB_BUILDER_DEV_SERVER env var)
 
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
@@ -99,7 +99,7 @@ type Common struct {
 	api.CommitID        // resolved SHA1 revision
 }
 
-var webpackDevServer, _ = strconv.ParseBool(os.Getenv("WEBPACK_DEV_SERVER"))
+var webpackDevServer, _ = strconv.ParseBool(os.Getenv("WEB_BUILDER_DEV_SERVER"))
 
 // repoShortName trims the first path element of the given repo name if it has
 // at least two path components.

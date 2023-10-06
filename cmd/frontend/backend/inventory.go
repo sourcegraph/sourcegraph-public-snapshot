@@ -29,7 +29,7 @@ var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLan
 // InventoryContext returns the inventory context for computing the inventory for the repository at
 // the given commit.
 func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.Client, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
-	if !gitserver.IsAbsoluteRevision(string(commitID)) {
+	if !gitdomain.IsAbsoluteRevision(string(commitID)) {
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
 
