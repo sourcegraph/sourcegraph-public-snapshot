@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v55/github"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/dev/codehost_testing/config"
@@ -16,7 +16,7 @@ import (
 )
 
 // GitHubClient provides methods for creating and retrieving resources with the configured GitHub codehost.
-// It is recommended that the configered token passed to the client has the following scopes:
+// The configured token is required to have the following scopes:
 // - admin:enterprise
 // - delete_repo
 // - repo
@@ -38,8 +38,8 @@ func (gh *GitHubClient) GetOrg(ctx context.Context, name string) (*github.Organi
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to find org: %s - %s", name, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to find org: %s - %s", name, respErrMsg)
 	}
 	return org, err
 }
@@ -56,8 +56,8 @@ func (gh *GitHubClient) CreateOrg(ctx context.Context, name string) (*github.Org
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to create org %q - %s", name, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to create org %q - %s", name, respErrMsg)
 	}
 	return org, err
 }
@@ -70,8 +70,8 @@ func (gh *GitHubClient) UpdateOrg(ctx context.Context, org *github.Organization)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to update actions permissions for org %q - %s", org.GetLogin(), respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to update actions permissions for org %q - %s", org.GetLogin(), respErrMsg)
 	}
 	return org, err
 }
@@ -84,8 +84,8 @@ func (gh *GitHubClient) CreateUser(ctx context.Context, name, email string) (*gi
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to create user %q - %s", name, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to create user %q - %s", name, respErrMsg)
 	}
 	return user, nil
 }
@@ -98,8 +98,8 @@ func (gh *GitHubClient) GetUser(ctx context.Context, name string) (*github.User,
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to get user %q - %s", name, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to get user %q - %s", name, respErrMsg)
 	}
 	return user, nil
 }
@@ -112,8 +112,8 @@ func (gh *GitHubClient) DeleteUser(ctx context.Context, username string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return errors.Newf("failed to delete user %q - %s", username, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return errors.Newf("failed to delete user %q - %s", username, respErrMsg)
 	}
 
 	return nil
@@ -127,8 +127,8 @@ func (gh *GitHubClient) GetTeam(ctx context.Context, org string, name string) (*
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to get team %q - %s", name, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to get team %q - %s", name, respErrMsg)
 	}
 
 	return team, err
@@ -138,8 +138,8 @@ func (gh *GitHubClient) GetTeam(ctx context.Context, org string, name string) (*
 func (gh *GitHubClient) CreateTeam(ctx context.Context, org *github.Organization, name string) (*github.Team, error) {
 	newTeam := github.NewTeam{
 		Name:        name,
-		Description: strp("auto created team"),
-		Privacy:     strp("closed"),
+		Description: github.String("auto created team"),
+		Privacy:     github.String("closed"),
 	}
 	team, resp, err := gh.c.Teams.CreateTeam(ctx, org.GetLogin(), newTeam)
 	if err != nil {
@@ -147,8 +147,8 @@ func (gh *GitHubClient) CreateTeam(ctx context.Context, org *github.Organization
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to create team %q - %s", name, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to create team %q - %s", name, respErrMsg)
 	}
 	return team, err
 }
@@ -157,8 +157,8 @@ func (gh *GitHubClient) CreateTeam(ctx context.Context, org *github.Organization
 func (gh *GitHubClient) DeleteTeam(ctx context.Context, org *github.Organization, name string) error {
 	resp, err := gh.c.Teams.DeleteTeamBySlug(ctx, org.GetLogin(), name)
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return errors.Newf("failed to delete team %q - %s", name, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return errors.Newf("failed to delete team %q - %s", name, respErrMsg)
 	}
 	return err
 }
@@ -183,8 +183,8 @@ func (gh *GitHubClient) GetRepo(ctx context.Context, owner, repoName string) (*g
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to get repo %q - %s", repoName, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to get repo %q - %s", repoName, respErrMsg)
 	}
 
 	return repo, nil
@@ -202,8 +202,8 @@ func (gh *GitHubClient) CreateRepo(ctx context.Context, org *github.Organization
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to create repo %q - %s", repoName, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to create repo %q - %s", repoName, respErrMsg)
 	}
 
 	return repo, err
@@ -222,8 +222,8 @@ func (gh *GitHubClient) ForkRepo(ctx context.Context, org *github.Organization, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return errors.Newf("failed to fork repo %q - %s", repoName, respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return errors.Newf("failed to fork repo %q - %s", repoName, respErrMsg)
 	}
 	return nil
 }
@@ -237,8 +237,8 @@ func (gh *GitHubClient) UpdateRepo(ctx context.Context, org *github.Organization
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return nil, errors.Newf("failed to edit repository %q - %s", repo.GetName(), respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return nil, errors.Newf("failed to edit repository %q - %s", repo.GetName(), respErrMsg)
 	}
 
 	return result, nil
@@ -253,8 +253,8 @@ func (gh *GitHubClient) DeleteRepo(ctx context.Context, org *github.Organization
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respErr := githubResponseError(gh.t, resp)
-		return errors.Newf("failed to edit repository %q - %s", repo.GetName(), respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return errors.Newf("failed to edit repository %q - %s", repo.GetName(), respErrMsg)
 	}
 
 	if err != nil {
@@ -272,13 +272,13 @@ func (gh *GitHubClient) UpdateTeamRepoPermissions(ctx context.Context, org *gith
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 204 {
-		respErr := githubResponseError(gh.t, resp)
-		return errors.Newf("failed to update repo %q permissions for team %q: %v", repo.GetName(), team.GetSlug(), respErr)
+		respErrMsg := formatResponseErrMsg(gh.t, resp)
+		return errors.Newf("failed to update repo %q permissions for team %q: %v", repo.GetName(), team.GetSlug(), respErrMsg)
 	}
 	return nil
 }
 
-func githubResponseError(t *testing.T, resp *github.Response) string {
+func formatResponseErrMsg(t *testing.T, resp *github.Response) string {
 	code := resp.StatusCode
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -290,16 +290,15 @@ func githubResponseError(t *testing.T, resp *github.Response) string {
 }
 
 // NewGitHubClient returns a new GitHub client from the given config. Note that the client sets InsecureSkipVerify to true
-func NewGitHubClient(ctx context.Context, t *testing.T, cfg config.GitHub) (*GitHubClient, error) {
+func NewGitHubClient(t *testing.T, cfg config.GitHub) (*GitHubClient, error) {
 	t.Helper()
-	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: cfg.Token},
-	))
+	httpClient := &http.Client{}
 
-	tc.Transport.(*oauth2.Transport).Base = http.DefaultTransport
-	tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	httpClient.Transport.(*oauth2.Transport).Base = http.DefaultTransport
+	httpClient.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	gh, err := github.NewEnterpriseClient(cfg.URL, cfg.URL, tc)
+	gh, err := github.NewClient(httpClient).WithAuthToken(cfg.Token).WithEnterpriseURLs(cfg.URL, cfg.URL)
+
 	if err != nil {
 		return nil, err
 	}

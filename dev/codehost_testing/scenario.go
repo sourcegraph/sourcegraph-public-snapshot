@@ -34,7 +34,7 @@ type Scenario interface {
 	Teardown(ctx context.Context) error
 }
 
-// GithubScenario implements the Scenario interface for testing GitHub functionality. At its base GithubScenario
+// GitHubScenario implements the Scenario interface for testing GitHub functionality. At its base GitHubScenario
 // provides two top level methods to create GitHub resources namely:
 // * create GitHub Organization, which returns a codehost_scenario Org
 // * create a GitHub User, which returns a codehost_scenario User
@@ -58,21 +58,21 @@ type GitHubScenario struct {
 	appliedActionIdx int
 }
 
-var _ Scenario = (*GithubScenario)(nil)
+var _ Scenario = (*GitHubScenario)(nil)
 
-// NewGithubScenario creates a new GithubScenario instance. A base64 ID will be generated to identify this scenario.
+// NewGitHubScenario creates a new GitHubScenario instance. A base64 ID will be generated to identify this scenario.
 // This ID will also be used to uniquely identify any resources created as part of this scenario.
 //
-// By default a GithubScenario is created with a NoopReporter. To have more verbose output, call Verbose() on the scenario,
-// and to reduce the output, call Quiet().
-func NewGithubScenario(ctx context.Context, t *testing.T, cfg config.Config) (*GithubScenario, error) {
-	client, err := NewGitHubClient(ctx, t, cfg.GitHub)
+// By default a GitHubScenario is created with a NoopReporter. To have more verbose output, call SetVerbose() on the scenario,
+// and to reduce the output, call SetQuiet().
+func NewGitHubScenario(t *testing.T, cfg config.Config) (*GitHubScenario, error) {
+	client, err := NewGitHubClient(t, cfg.GitHub)
 	if err != nil {
 		return nil, err
 	}
 	uid := []byte(uuid.NewString())
 	id := base64.RawStdEncoding.EncodeToString(uid[:])[:10]
-	return &GithubScenario{
+	return &GitHubScenario{
 		id:       id,
 		t:        t,
 		client:   client,
@@ -82,21 +82,21 @@ func NewGithubScenario(ctx context.Context, t *testing.T, cfg config.Config) (*G
 }
 
 // Verbose sets the reporter to ConsoleReporter to enable verbose output
-func (s *GithubScenario) SetVerbose() {
+func (s *GitHubScenario) SetVerbose() {
 	s.reporter = &ConsoleReporter{}
 }
 
 // Quiet sets the reporter to a no-op reporter to reduce output
-func (s *GithubScenario) SetQuiet() {
+func (s *GitHubScenario) SetQuiet() {
 	s.reporter = NoopReporter{}
 }
 
-func (s *GithubScenario) append(actions ...*action) {
+func (s *GitHubScenario) append(actions ...*action) {
 	s.actions = append(s.actions, actions...)
 }
 
 // Plan returns a string describing the actions that will be performed
-func (s *GithubScenario) Plan() string {
+func (s *GitHubScenario) Plan() string {
 	sb := &strings.Builder{}
 	fmt.Fprintf(sb, "Scenario %q\n", s.id)
 	sb.WriteString("== Setup ==\n")
@@ -115,7 +115,7 @@ func (s *GithubScenario) Plan() string {
 
 // IsApplied returns whether Apply has already been called on this scenario. If more actions
 // have been added since the last Apply(), it will return false.
-func (s *GithubScenario) IsApplied() bool {
+func (s *GitHubScenario) IsApplied() bool {
 	return s.appliedActionIdx >= len(s.actions)
 }
 
@@ -127,7 +127,7 @@ func (s *GithubScenario) IsApplied() bool {
 // is done since duplicate resources cannot be created.
 //
 // Finally, if any action fails, no further actions will be executed and this method will return with the error
-func (s *GithubScenario) Apply(ctx context.Context) error {
+func (s *GitHubScenario) Apply(ctx context.Context) error {
 	s.t.Helper()
 	s.t.Cleanup(func() { s.Teardown(ctx) })
 	var errs errors.MultiError
@@ -176,7 +176,7 @@ func (s *GithubScenario) Apply(ctx context.Context) error {
 // instead the error is accumulated and the next teardown action is executed.
 //
 // Note that Teardown is not idempotent. Multiple calls will result in failures.
-func (s *GithubScenario) Teardown(ctx context.Context) error {
+func (s *GitHubScenario) Teardown(ctx context.Context) error {
 	s.t.Helper()
 	var errs errors.MultiError
 	teardown := reverse(s.actions)
