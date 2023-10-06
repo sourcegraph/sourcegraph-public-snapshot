@@ -301,7 +301,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         if (isSourcegraphDotComMode) {
             cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
             return sessionFirstURL
-        } else {
+        }
+        {
             const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
             cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
             return redactedURL
