@@ -70,7 +70,6 @@ js_library(
     deps = [
         "//:node_modules/autoprefixer",
         "//:node_modules/postcss-custom-media",
-        "//:node_modules/postcss-focus-visible",
         "//:node_modules/postcss-inset",
     ],
 )
