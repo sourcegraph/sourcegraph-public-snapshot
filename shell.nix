@@ -82,7 +82,7 @@ mkShell {
     universal-ctags
 
     # Build our backend. Sometimes newer :^)
-    go_1_20
+    go_1_21
 
     # Lots of our tooling and go tests rely on git et al.
     comby
