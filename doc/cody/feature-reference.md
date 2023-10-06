@@ -37,7 +37,7 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 |-------------------------|---------|-----------|--------|
 | Talk to Cody     |    ✓    |     ✓     |   ✓    |
 | Chat history     |    ✓    |     x     |   x    |
-| Stop chat generating     |    ✓    |     x     |   x    |
+| Stop chat generating     |    ✓    |     ✓     |   x    |
 | Edit sent messages     |    ✓    |     x     |   x    |
 | Slash (`/`) commands     |    ✓    |     x     |   x   |
 | Chat predictions     |    ✓    |     x     |   x   |
@@ -55,7 +55,7 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Multi-line, inline autocompletion     |    ✓    |     ✓     |   ✓    |
 | Enable/Disable by language     |    x    |     ✓     |   ✓    |
 | Customize autocomplete colors     |    x    |     ✓     |   ✓    |
-| Cycle through multiple completion suggestions     |    x    |     ✓     |   ✓    |
+| Cycle through multiple completion suggestions     |    ✓    |     ✓     |   ✓    |
 
 ## Code Context
 
@@ -83,7 +83,7 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Generate unit test     |    ✓    |     ✓     |   ✓    |
 | Explain code     |    ✓    |     ✓     |   ✓    |
 | Smell code     |    ✓    |     ✓     |   ✓    |
-| Ask a question     |    ✓    |     ✓     |   ✓    |
+| Ask a question     |    ✓    |     x     |   ✓    |
 | Reset chat     |    ✓    |     x     |   x    |
 | Task instruction     |    x    |     x     |   ✓    |
 | Restart Cody/Sourcegraph     |    x    |     x     |   ✓    |

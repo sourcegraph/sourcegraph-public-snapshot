@@ -204,7 +204,6 @@ func perms(logger log.Logger, db DB, clock func() time.Time) *permsStore {
 	store := basestore.NewWithHandle(db.Handle())
 
 	return &permsStore{logger: logger, Store: store, clock: clock, db: NewDBWith(logger, store)}
-
 }
 
 func PermsWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) PermsStore {
@@ -1301,7 +1300,6 @@ var ScanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (authz.Pe
 })
 
 func (s *permsStore) loadUserRepoPermissions(ctx context.Context, userID, userExternalAccountID, repoID int32) ([]authz.Permission, error) {
-
 	clauses := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 
 	if userID != 0 {
@@ -1886,7 +1884,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	}
 
 	conds := []*sqlf.Query{authzParams.ToAuthzQuery()}
-	order := sqlf.Sprintf("es.id, repo.name ASC")
+	order := sqlf.Sprintf("repo.name ASC")
 	limit := sqlf.Sprintf("")
 
 	if args != nil {
@@ -1928,7 +1926,7 @@ WITH accessible_repos AS (
 		repo.id,
 		repo.name,
 		repo.private,
-		es.unrestricted,
+		BOOL_OR(es.unrestricted) as unrestricted,
 		-- We need row_id to preserve the order, because ORDER BY is done in this subquery
 		row_number() OVER() as row_id
 	FROM repo
@@ -1937,6 +1935,7 @@ WITH accessible_repos AS (
 	WHERE
 		repo.deleted_at IS NULL
 		AND %s -- Authz Conds, Pagination Conds, Search
+	GROUP BY repo.id
 	ORDER BY %s
 	%s -- Limit
 )

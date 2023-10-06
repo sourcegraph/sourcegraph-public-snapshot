@@ -26,7 +26,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 	// so we init the built-in auth provider just in case.
 	userpasswd.Init()
 
-	return Start(ctx, observationCtx, ready, config.(*Config), getEnterpriseInit(observationCtx.Logger))
+	return Start(ctx, observationCtx, ready, config.(*Config))
 }
 
 var Service service.Service = svc{}

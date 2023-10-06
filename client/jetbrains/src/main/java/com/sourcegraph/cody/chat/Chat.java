@@ -39,7 +39,7 @@ public class Chat {
                   Speaker.ASSISTANT, agentChatMessage.text, agentChatMessage.displayText);
           if (isFirstMessage.compareAndSet(false, true)) {
             List<ContextMessage> contextMessages =
-                agentChatMessage.contextFiles.stream()
+                agentChatMessage.actualContextFiles().stream()
                     .map(
                         contextFile ->
                             new ContextMessage(
@@ -65,7 +65,7 @@ public class Chat {
                     server.recipesExecute(
                         new ExecuteRecipeParams()
                             .setId(recipeId)
-                            .setHumanChatInput(humanMessage.getText()));
+                            .setHumanChatInput(humanMessage.actualMessage()));
                 token.onCancellationRequested(() -> recipesExecuteFuture.cancel(true));
               } catch (Exception ignored) {
                 // Ignore bugs in the agent when executing recipes

@@ -210,3 +210,8 @@ result-*
 /cody
 
 /playwright
+
+# JUnit execution reports
+junit.xml
+
+/enterprise/

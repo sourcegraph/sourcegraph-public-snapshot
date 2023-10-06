@@ -3,10 +3,8 @@ package internal
 import (
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -15,26 +13,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func repoDirFromName(reposDir string, name api.RepoName) common.GitDir {
-	p := string(protocol.NormalizeRepo(name))
-	return common.GitDir(filepath.Join(reposDir, filepath.FromSlash(p), ".git"))
-}
-
-func repoNameFromDir(reposDir string, dir common.GitDir) api.RepoName {
-	// dir == ${s.ReposDir}/${name}/.git
-	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"
-	name := strings.TrimPrefix(parent, reposDir)          // remove prefix "${s.ReposDir}"
-	name = strings.Trim(name, string(filepath.Separator)) // remove /
-	name = filepath.ToSlash(name)                         // filepath -> path
-	return protocol.NormalizeRepo(api.RepoName(name))
-}
 
 func cloneStatus(cloned, cloning bool) types.CloneStatus {
 	switch {
@@ -48,20 +31,6 @@ func cloneStatus(cloned, cloning bool) types.CloneStatus {
 
 func isAlwaysCloningTest(name api.RepoName) bool {
 	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
-}
-
-func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
-	return strings.EqualFold(remoteURL.Host, "github.com") &&
-		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest")
-}
-
-// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
-func checkSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
-	}
-	return nil
 }
 
 // repoLastFetched returns the mtime of the repo's FETCH_HEAD, which is the date of the last successful `git remote
@@ -255,24 +224,6 @@ func mapToLoggerField(m map[string]any) []log.Field {
 	return LogFields
 }
 
-// bestEffortWalk is a filepath.WalkDir which ignores errors that can be passed
-// to walkFn. This is a common pattern used in gitserver for best effort work.
-//
-// Note: We still respect errors returned by walkFn.
-//
-// filepath.Walk can return errors if we run into permission errors or a file
-// disappears between readdir and the stat of the file. In either case this
-// error can be ignored for best effort code.
-func bestEffortWalk(root string, walkFn func(path string, entry fs.DirEntry) error) error {
-	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return nil
-		}
-
-		return walkFn(path, d)
-	})
-}
-
 // hostnameMatch checks whether the hostname matches the given address.
 // If we don't find an exact match, we look at the initial prefix.
 func hostnameMatch(shardID, addr string) bool {
@@ -286,4 +237,44 @@ func hostnameMatch(shardID, addr string) bool {
 	// char
 	next := addr[len(shardID)]
 	return next == '.' || next == ':'
+}
+
+// Send 1 in 16 events to honeycomb. This is hardcoded since we only use this
+// for Sourcegraph.com.
+//
+// 2020-05-29 1 in 4. We are currently at the top tier for honeycomb (before
+// enterprise) and using double our quota. This gives us room to grow. If you
+// find we keep bumping this / missing data we care about we can look into
+// more dynamic ways to sample in our application code.
+//
+// 2020-07-20 1 in 16. Again hitting very high usage. Likely due to recent
+// scaling up of the indexed search cluster. Will require more investigation,
+// but we should probably segment user request path traffic vs internal batch
+// traffic.
+//
+// 2020-11-02 Dynamically sample. Again hitting very high usage. Same root
+// cause as before, scaling out indexed search cluster. We update our sampling
+// to instead be dynamic, since "rev-parse" is 12 times more likely than the
+// next most common command.
+//
+// 2021-08-20 over two hours we did 128 * 128 * 1e6 rev-parse requests
+// internally. So we update our sampling to heavily downsample internal
+// rev-parse, while upping our sampling for non-internal.
+// https://ui.honeycomb.io/sourcegraph/datasets/gitserver-exec/result/67e4bLvUddg
+func honeySampleRate(cmd string, actor *actor.Actor) uint {
+	// HACK(keegan) 2022-11-02 IsInternal on sourcegraph.com is always
+	// returning false. For now I am also marking it internal if UID is not
+	// set to work around us hammering honeycomb.
+	internal := actor.IsInternal() || actor.UID == 0
+	switch {
+	case cmd == "rev-parse" && internal:
+		return 1 << 14 // 16384
+
+	case internal:
+		// we care more about user requests, so downsample internal more.
+		return 16
+
+	default:
+		return 8
+	}
 }

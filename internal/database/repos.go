@@ -612,10 +612,16 @@ type ReposListOptions struct {
 	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
 	IDs []api.RepoID
 
+	// NOTE: UserID is a deprecated field from cloud v1. There is still code
+	// using it, but you can treat it as a noop.
+	//
 	// UserID, if non zero, will limit the set of results to repositories added by the user
 	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	UserID int32
 
+	// NOTE: OrgID is a deprecated field from cloud v1. There is still code
+	// using it, but you can treat it as a noop.
+	//
 	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
 	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	OrgID int32

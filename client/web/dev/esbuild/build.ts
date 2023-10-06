@@ -12,7 +12,6 @@ import {
     monacoPlugin,
     RXJS_RESOLUTIONS,
     buildMonaco,
-    experimentalNoticePlugin,
     buildTimerPlugin,
 } from '@sourcegraph/build-config'
 import { isDefined } from '@sourcegraph/common'
@@ -67,7 +66,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         }),
         omitSlowDeps ? null : monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         buildTimerPlugin,
-        experimentalNoticePlugin,
     ].filter(isDefined),
     define: {
         ...Object.fromEntries(

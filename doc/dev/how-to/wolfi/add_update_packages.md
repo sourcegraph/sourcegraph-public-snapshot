@@ -97,7 +97,7 @@ It is not necessary to change the package version in `wolfi-packages/<package>.y
 
 We maintain our own package repository for custom dependencies that aren't in the Wolfi repository.
 
-This is implemented as a GCP bucket. Buildkite is used to build and upload packages, as well as to [build and sign](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/scripts/wolfi/build-repo-index.sh) the repository index.
+This is implemented as a GCP bucket. Buildkite is used to build and upload packages, as well as to [build and sign](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/ci/scripts/wolfi/build-repo-index.sh) the repository index.
 
 The package repository is segmented by production and development:
 
