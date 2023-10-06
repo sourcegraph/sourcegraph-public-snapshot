@@ -470,19 +470,6 @@ If, for whatever reason, we have to ignore some elements from an accessibility a
 
 **Tip:** Don't forget you'll need to rebuild the code if you want to see the tests pass locally after making this change.
 
-### Lighthouse tests
-
-We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
-
-#### Running the tests locally
-
-1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true pnpm --filter @sourcegraph/web build`
-2. Run the Lighthouse CI tests. `pnpm test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
-
-#### Running the tests in CI
-
-The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
-
 ### Bundlesize
 
 We measure our generated production build through [Bundlesize](https://github.com/siddharthkp/bundlesize2). This is a tool which takes a series of code bundles and measures their size against a specified baseline. It will also compare against the `main` baseline and report the difference.
