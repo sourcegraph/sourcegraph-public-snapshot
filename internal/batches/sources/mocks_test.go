@@ -12231,9 +12231,9 @@ type GitserverClientBranchesContainingFunc struct {
 
 // BranchesContaining delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) BranchesContaining(v0 context.Context, v2 api.RepoName, v3 api.CommitID) ([]string, error) {
-	r0, r1 := m.BranchesContainingFunc.nextHook()(v0, v2, v3)
-	m.BranchesContainingFunc.appendCall(GitserverClientBranchesContainingFuncCall{v0, v2, v3, r0, r1})
+func (m *MockGitserverClient) BranchesContaining(v0 context.Context, v1 api.RepoName, v2 api.CommitID) ([]string, error) {
+	r0, r1 := m.BranchesContainingFunc.nextHook()(v0, v1, v2)
+	m.BranchesContainingFunc.appendCall(GitserverClientBranchesContainingFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
@@ -12307,12 +12307,12 @@ type GitserverClientBranchesContainingFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 api.CommitID
+	Arg2 api.CommitID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string
@@ -12324,7 +12324,7 @@ type GitserverClientBranchesContainingFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientBranchesContainingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -12453,9 +12453,9 @@ type GitserverClientCommitDateFunc struct {
 
 // CommitDate delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitDate(v0 context.Context, v2 api.RepoName, v3 api.CommitID) (string, time.Time, bool, error) {
-	r0, r1, r2, r3 := m.CommitDateFunc.nextHook()(v0, v2, v3)
-	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v2, v3, r0, r1, r2, r3})
+func (m *MockGitserverClient) CommitDate(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (string, time.Time, bool, error) {
+	r0, r1, r2, r3 := m.CommitDateFunc.nextHook()(v0, v1, v2)
+	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v1, v2, r0, r1, r2, r3})
 	return r0, r1, r2, r3
 }
 
@@ -12527,12 +12527,12 @@ type GitserverClientCommitDateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 api.CommitID
+	Arg2 api.CommitID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -12550,7 +12550,7 @@ type GitserverClientCommitDateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientCommitDateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -12571,9 +12571,9 @@ type GitserverClientCommitExistsFunc struct {
 
 // CommitExists delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitExists(v0 context.Context, v2 api.RepoName, v3 api.CommitID) (bool, error) {
-	r0, r1 := m.CommitExistsFunc.nextHook()(v0, v2, v3)
-	m.CommitExistsFunc.appendCall(GitserverClientCommitExistsFuncCall{v0, v2, v3, r0, r1})
+func (m *MockGitserverClient) CommitExists(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (bool, error) {
+	r0, r1 := m.CommitExistsFunc.nextHook()(v0, v1, v2)
+	m.CommitExistsFunc.appendCall(GitserverClientCommitExistsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
@@ -12645,12 +12645,12 @@ type GitserverClientCommitExistsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 api.CommitID
+	Arg2 api.CommitID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -12662,7 +12662,7 @@ type GitserverClientCommitExistsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientCommitExistsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -12904,9 +12904,9 @@ type GitserverClientCommitsFunc struct {
 
 // Commits delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) Commits(v0 context.Context, v2 api.RepoName, v3 gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
-	r0, r1 := m.CommitsFunc.nextHook()(v0, v2, v3)
-	m.CommitsFunc.appendCall(GitserverClientCommitsFuncCall{v0, v2, v3, r0, r1})
+func (m *MockGitserverClient) Commits(v0 context.Context, v1 api.RepoName, v2 gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+	r0, r1 := m.CommitsFunc.nextHook()(v0, v1, v2)
+	m.CommitsFunc.appendCall(GitserverClientCommitsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
@@ -12978,12 +12978,12 @@ type GitserverClientCommitsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 gitserver.CommitsOptions
+	Arg2 gitserver.CommitsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*gitdomain.Commit
@@ -12995,7 +12995,7 @@ type GitserverClientCommitsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientCommitsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -13016,9 +13016,9 @@ type GitserverClientCommitsExistFunc struct {
 
 // CommitsExist delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitsExist(v0 context.Context, v2 []api.RepoCommit) ([]bool, error) {
-	r0, r1 := m.CommitsExistFunc.nextHook()(v0, v2)
-	m.CommitsExistFunc.appendCall(GitserverClientCommitsExistFuncCall{v0, v2, r0, r1})
+func (m *MockGitserverClient) CommitsExist(v0 context.Context, v1 []api.RepoCommit) ([]bool, error) {
+	r0, r1 := m.CommitsExistFunc.nextHook()(v0, v1)
+	m.CommitsExistFunc.appendCall(GitserverClientCommitsExistFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
@@ -13090,9 +13090,9 @@ type GitserverClientCommitsExistFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg2 is the value of the 3rd argument passed to this method
+	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg2 []api.RepoCommit
+	Arg1 []api.RepoCommit
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []bool
@@ -13104,7 +13104,7 @@ type GitserverClientCommitsExistFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientCommitsExistFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -13125,9 +13125,9 @@ type GitserverClientCommitsUniqueToBranchFunc struct {
 
 // CommitsUniqueToBranch delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitsUniqueToBranch(v0 context.Context, v2 api.RepoName, v3 string, v4 bool, v5 *time.Time) (map[string]time.Time, error) {
-	r0, r1 := m.CommitsUniqueToBranchFunc.nextHook()(v0, v2, v3, v4, v5)
-	m.CommitsUniqueToBranchFunc.appendCall(GitserverClientCommitsUniqueToBranchFuncCall{v0, v2, v3, v4, v5, r0, r1})
+func (m *MockGitserverClient) CommitsUniqueToBranch(v0 context.Context, v1 api.RepoName, v2 string, v3 bool, v4 *time.Time) (map[string]time.Time, error) {
+	r0, r1 := m.CommitsUniqueToBranchFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.CommitsUniqueToBranchFunc.appendCall(GitserverClientCommitsUniqueToBranchFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
@@ -13202,18 +13202,18 @@ type GitserverClientCommitsUniqueToBranchFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
+	Arg3 bool
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 bool
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 *time.Time
+	Arg4 *time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string]time.Time
@@ -13225,7 +13225,7 @@ type GitserverClientCommitsUniqueToBranchFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientCommitsUniqueToBranchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -13471,9 +13471,9 @@ type GitserverClientDiffFunc struct {
 
 // Diff delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) Diff(v0 context.Context, v2 gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
-	r0, r1 := m.DiffFunc.nextHook()(v0, v2)
-	m.DiffFunc.appendCall(GitserverClientDiffFuncCall{v0, v2, r0, r1})
+func (m *MockGitserverClient) Diff(v0 context.Context, v1 gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+	r0, r1 := m.DiffFunc.nextHook()(v0, v1)
+	m.DiffFunc.appendCall(GitserverClientDiffFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
@@ -13545,9 +13545,9 @@ type GitserverClientDiffFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg2 is the value of the 3rd argument passed to this method
+	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg2 gitserver.DiffOptions
+	Arg1 gitserver.DiffOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitserver.DiffFileIterator
@@ -13559,7 +13559,7 @@ type GitserverClientDiffFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientDiffFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -13579,9 +13579,9 @@ type GitserverClientDiffPathFunc struct {
 
 // DiffPath delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) DiffPath(v0 context.Context, v2 api.RepoName, v3 string, v4 string, v5 string) ([]*diff.Hunk, error) {
-	r0, r1 := m.DiffPathFunc.nextHook()(v0, v2, v3, v4, v5)
-	m.DiffPathFunc.appendCall(GitserverClientDiffPathFuncCall{v0, v2, v3, v4, v5, r0, r1})
+func (m *MockGitserverClient) DiffPath(v0 context.Context, v1 api.RepoName, v2 string, v3 string, v4 string) ([]*diff.Hunk, error) {
+	r0, r1 := m.DiffPathFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DiffPathFunc.appendCall(GitserverClientDiffPathFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
@@ -13653,18 +13653,18 @@ type GitserverClientDiffPathFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 string
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*diff.Hunk
@@ -13676,7 +13676,7 @@ type GitserverClientDiffPathFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientDiffPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -13811,9 +13811,9 @@ type GitserverClientFirstEverCommitFunc struct {
 
 // FirstEverCommit delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) FirstEverCommit(v0 context.Context, v2 api.RepoName) (*gitdomain.Commit, error) {
-	r0, r1 := m.FirstEverCommitFunc.nextHook()(v0, v2)
-	m.FirstEverCommitFunc.appendCall(GitserverClientFirstEverCommitFuncCall{v0, v2, r0, r1})
+func (m *MockGitserverClient) FirstEverCommit(v0 context.Context, v1 api.RepoName) (*gitdomain.Commit, error) {
+	r0, r1 := m.FirstEverCommitFunc.nextHook()(v0, v1)
+	m.FirstEverCommitFunc.appendCall(GitserverClientFirstEverCommitFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
@@ -13886,9 +13886,9 @@ type GitserverClientFirstEverCommitFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg2 is the value of the 3rd argument passed to this method
+	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitdomain.Commit
@@ -13900,7 +13900,7 @@ type GitserverClientFirstEverCommitFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientFirstEverCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -14036,9 +14036,9 @@ type GitserverClientGetCommitFunc struct {
 
 // GetCommit delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) GetCommit(v0 context.Context, v2 api.RepoName, v3 api.CommitID, v4 gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitFunc.nextHook()(v0, v2, v3, v4)
-	m.GetCommitFunc.appendCall(GitserverClientGetCommitFuncCall{v0, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) GetCommit(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2, v3)
+	m.GetCommitFunc.appendCall(GitserverClientGetCommitFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
@@ -14110,15 +14110,15 @@ type GitserverClientGetCommitFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 gitserver.ResolveRevisionOptions
+	Arg3 gitserver.ResolveRevisionOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitdomain.Commit
@@ -14130,7 +14130,7 @@ type GitserverClientGetCommitFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientGetCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -14150,9 +14150,9 @@ type GitserverClientGetCommitsFunc struct {
 
 // GetCommits delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) GetCommits(v0 context.Context, v2 []api.RepoCommit, v3 bool) ([]*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitsFunc.nextHook()(v0, v2, v3)
-	m.GetCommitsFunc.appendCall(GitserverClientGetCommitsFuncCall{v0, v2, v3, r0, r1})
+func (m *MockGitserverClient) GetCommits(v0 context.Context, v1 []api.RepoCommit, v2 bool) ([]*gitdomain.Commit, error) {
+	r0, r1 := m.GetCommitsFunc.nextHook()(v0, v1, v2)
+	m.GetCommitsFunc.appendCall(GitserverClientGetCommitsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
@@ -14224,12 +14224,12 @@ type GitserverClientGetCommitsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []api.RepoCommit
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 []api.RepoCommit
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 bool
+	Arg2 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*gitdomain.Commit
@@ -14241,7 +14241,7 @@ type GitserverClientGetCommitsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientGetCommitsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -14490,9 +14490,9 @@ type GitserverClientHasCommitAfterFunc struct {
 
 // HasCommitAfter delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) HasCommitAfter(v0 context.Context, v2 api.RepoName, v3 string, v4 string) (bool, error) {
-	r0, r1 := m.HasCommitAfterFunc.nextHook()(v0, v2, v3, v4)
-	m.HasCommitAfterFunc.appendCall(GitserverClientHasCommitAfterFuncCall{v0, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) HasCommitAfter(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (bool, error) {
+	r0, r1 := m.HasCommitAfterFunc.nextHook()(v0, v1, v2, v3)
+	m.HasCommitAfterFunc.appendCall(GitserverClientHasCommitAfterFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
@@ -14565,15 +14565,15 @@ type GitserverClientHasCommitAfterFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -14585,7 +14585,7 @@ type GitserverClientHasCommitAfterFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientHasCommitAfterFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -14605,9 +14605,9 @@ type GitserverClientHeadFunc struct {
 
 // Head delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) Head(v0 context.Context, v2 api.RepoName) (string, bool, error) {
-	r0, r1, r2 := m.HeadFunc.nextHook()(v0, v2)
-	m.HeadFunc.appendCall(GitserverClientHeadFuncCall{v0, v2, r0, r1, r2})
+func (m *MockGitserverClient) Head(v0 context.Context, v1 api.RepoName) (string, bool, error) {
+	r0, r1, r2 := m.HeadFunc.nextHook()(v0, v1)
+	m.HeadFunc.appendCall(GitserverClientHeadFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
@@ -14679,9 +14679,9 @@ type GitserverClientHeadFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg2 is the value of the 3rd argument passed to this method
+	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -14696,7 +14696,7 @@ type GitserverClientHeadFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientHeadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -15156,9 +15156,9 @@ type GitserverClientListDirectoryChildrenFunc struct {
 
 // ListDirectoryChildren delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) ListDirectoryChildren(v0 context.Context, v2 api.RepoName, v3 api.CommitID, v4 []string) (map[string][]string, error) {
-	r0, r1 := m.ListDirectoryChildrenFunc.nextHook()(v0, v2, v3, v4)
-	m.ListDirectoryChildrenFunc.appendCall(GitserverClientListDirectoryChildrenFuncCall{v0, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) ListDirectoryChildren(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 []string) (map[string][]string, error) {
+	r0, r1 := m.ListDirectoryChildrenFunc.nextHook()(v0, v1, v2, v3)
+	m.ListDirectoryChildrenFunc.appendCall(GitserverClientListDirectoryChildrenFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
@@ -15233,15 +15233,15 @@ type GitserverClientListDirectoryChildrenFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 []string
+	Arg3 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string][]string
@@ -15253,7 +15253,7 @@ type GitserverClientListDirectoryChildrenFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientListDirectoryChildrenFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -15615,9 +15615,9 @@ type GitserverClientLsFilesFunc struct {
 
 // LsFiles delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) LsFiles(v0 context.Context, v2 api.RepoName, v3 api.CommitID, v4 ...gitdomain.Pathspec) ([]string, error) {
-	r0, r1 := m.LsFilesFunc.nextHook()(v0, v2, v3, v4...)
-	m.LsFilesFunc.appendCall(GitserverClientLsFilesFuncCall{v0, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) LsFiles(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 ...gitdomain.Pathspec) ([]string, error) {
+	r0, r1 := m.LsFilesFunc.nextHook()(v0, v1, v2, v3...)
+	m.LsFilesFunc.appendCall(GitserverClientLsFilesFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
@@ -15689,15 +15689,15 @@ type GitserverClientLsFilesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 api.CommitID
-	// Arg4 is a slice containing the values of the variadic arguments
+	Arg2 api.CommitID
+	// Arg3 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg4 []gitdomain.Pathspec
+	Arg3 []gitdomain.Pathspec
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string
@@ -15712,11 +15712,11 @@ type GitserverClientLsFilesFuncCall struct {
 // a slice of four, not two.
 func (c GitserverClientLsFilesFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
-	for _, val := range c.Arg4 {
+	for _, val := range c.Arg3 {
 		trailing = append(trailing, val)
 	}
 
-	return append([]interface{}{c.Arg0, c.Arg2, c.Arg3}, trailing...)
+	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
@@ -15851,9 +15851,9 @@ type GitserverClientNewFileReaderFunc struct {
 
 // NewFileReader delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) NewFileReader(v0 context.Context, v2 api.RepoName, v3 api.CommitID, v4 string) (io.ReadCloser, error) {
-	r0, r1 := m.NewFileReaderFunc.nextHook()(v0, v2, v3, v4)
-	m.NewFileReaderFunc.appendCall(GitserverClientNewFileReaderFuncCall{v0, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) NewFileReader(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string) (io.ReadCloser, error) {
+	r0, r1 := m.NewFileReaderFunc.nextHook()(v0, v1, v2, v3)
+	m.NewFileReaderFunc.appendCall(GitserverClientNewFileReaderFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
@@ -15925,15 +15925,15 @@ type GitserverClientNewFileReaderFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 io.ReadCloser
@@ -15945,7 +15945,7 @@ type GitserverClientNewFileReaderFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientNewFileReaderFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -16533,9 +16533,9 @@ type GitserverClientReadDirFunc struct {
 
 // ReadDir delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) ReadDir(v0 context.Context, v2 api.RepoName, v3 api.CommitID, v4 string, v5 bool) ([]fs.FileInfo, error) {
-	r0, r1 := m.ReadDirFunc.nextHook()(v0, v2, v3, v4, v5)
-	m.ReadDirFunc.appendCall(GitserverClientReadDirFuncCall{v0, v2, v3, v4, v5, r0, r1})
+func (m *MockGitserverClient) ReadDir(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string, v4 bool) ([]fs.FileInfo, error) {
+	r0, r1 := m.ReadDirFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.ReadDirFunc.appendCall(GitserverClientReadDirFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
@@ -16607,18 +16607,18 @@ type GitserverClientReadDirFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
+	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 string
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 bool
+	Arg4 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []fs.FileInfo
@@ -16630,7 +16630,7 @@ type GitserverClientReadDirFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientReadDirFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -16650,9 +16650,9 @@ type GitserverClientReadFileFunc struct {
 
 // ReadFile delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) ReadFile(v0 context.Context, v2 api.RepoName, v3 api.CommitID, v4 string) ([]byte, error) {
-	r0, r1 := m.ReadFileFunc.nextHook()(v0, v2, v3, v4)
-	m.ReadFileFunc.appendCall(GitserverClientReadFileFuncCall{v0, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) ReadFile(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string) ([]byte, error) {
+	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2, v3)
+	m.ReadFileFunc.appendCall(GitserverClientReadFileFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
@@ -16724,15 +16724,15 @@ type GitserverClientReadFileFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []byte
@@ -16744,7 +16744,7 @@ type GitserverClientReadFileFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientReadFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -16765,9 +16765,9 @@ type GitserverClientRefDescriptionsFunc struct {
 
 // RefDescriptions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) RefDescriptions(v0 context.Context, v2 api.RepoName, v3 ...string) (map[string][]gitdomain.RefDescription, error) {
-	r0, r1 := m.RefDescriptionsFunc.nextHook()(v0, v2, v3...)
-	m.RefDescriptionsFunc.appendCall(GitserverClientRefDescriptionsFuncCall{v0, v2, v3, r0, r1})
+func (m *MockGitserverClient) RefDescriptions(v0 context.Context, v1 api.RepoName, v2 ...string) (map[string][]gitdomain.RefDescription, error) {
+	r0, r1 := m.RefDescriptionsFunc.nextHook()(v0, v1, v2...)
+	m.RefDescriptionsFunc.appendCall(GitserverClientRefDescriptionsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
@@ -16840,12 +16840,12 @@ type GitserverClientRefDescriptionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg2 is the value of the 3rd argument passed to this method
+	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is a slice containing the values of the variadic arguments
+	Arg1 api.RepoName
+	// Arg2 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg3 []string
+	Arg2 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string][]gitdomain.RefDescription
@@ -16860,11 +16860,11 @@ type GitserverClientRefDescriptionsFuncCall struct {
 // a slice of four, not two.
 func (c GitserverClientRefDescriptionsFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
-	for _, val := range c.Arg3 {
+	for _, val := range c.Arg2 {
 		trailing = append(trailing, val)
 	}
 
-	return append([]interface{}{c.Arg0, c.Arg2}, trailing...)
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
@@ -17784,9 +17784,9 @@ type GitserverClientStatFunc struct {
 
 // Stat delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) Stat(v0 context.Context, v2 api.RepoName, v3 api.CommitID, v4 string) (fs.FileInfo, error) {
-	r0, r1 := m.StatFunc.nextHook()(v0, v2, v3, v4)
-	m.StatFunc.appendCall(GitserverClientStatFuncCall{v0, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) Stat(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string) (fs.FileInfo, error) {
+	r0, r1 := m.StatFunc.nextHook()(v0, v1, v2, v3)
+	m.StatFunc.appendCall(GitserverClientStatFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
@@ -17858,15 +17858,15 @@ type GitserverClientStatFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 api.CommitID
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 fs.FileInfo
@@ -17878,7 +17878,7 @@ type GitserverClientStatFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientStatFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
