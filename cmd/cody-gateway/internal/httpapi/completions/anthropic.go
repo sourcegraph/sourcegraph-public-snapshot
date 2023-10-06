@@ -144,7 +144,7 @@ func NewAnthropicHandler(
 					}
 					if requestBlockingEnabled && result.shouldBeBlocked {
 						result.wasBlocked = true
-						return http.StatusBadRequest, result, errors.Errorf("request blocked")
+						return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
 					}
 					return 0, result, nil
 				}
