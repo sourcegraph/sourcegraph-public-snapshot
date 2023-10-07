@@ -46,23 +46,25 @@ Simple.argTypes = {
     variant: {
         name: 'Variant',
         control: { type: 'select', options: BUTTON_VARIANTS },
-        defaultValue: 'primary',
     },
     size: {
         name: 'Name',
         control: { type: 'select', options: BUTTON_SIZES },
-        defaultValue: 'sm',
     },
     disabled: {
         name: 'Disabled',
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     outline: {
         name: 'Outline',
         control: { type: 'boolean' },
-        defaultValue: false,
     },
+}
+Simple.args = {
+    variant: 'primary',
+    size: 'sm',
+    disabled: false,
+    outline: false,
 }
 
 export const AllButtons: Story = () => (

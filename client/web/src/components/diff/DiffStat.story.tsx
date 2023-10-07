@@ -12,12 +12,14 @@ const config: Meta = {
     argTypes: {
         added: {
             type: 'number',
-            defaultValue: 10,
         },
         deleted: {
             type: 'number',
-            defaultValue: 8,
         },
+    },
+    args: {
+        added: 10,
+        deleted: 8,
     },
 }
 

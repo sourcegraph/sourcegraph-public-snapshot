@@ -13,28 +13,30 @@ const config: Meta = {
         actions: {
             name: 'Actions',
             control: { type: 'text' },
-            defaultValue: '',
         },
         execute: {
             name: 'Execute',
             control: { type: 'text' },
-            defaultValue: '',
         },
         preview: {
             name: 'Preview',
             control: { type: 'text' },
-            defaultValue: '',
         },
         codeUpdate: {
             name: 'Code Update',
             control: { type: 'text' },
-            defaultValue: '',
         },
         codeValidation: {
             name: 'codeValidation',
             control: { type: 'text' },
-            defaultValue: 'The entered spec is invalid:\n  * name must match pattern "^my-batch-change$"',
         },
+    },
+    args: {
+        actions: '',
+        execute: '',
+        preview: '',
+        codeUpdate: '',
+        codeValidation: 'The entered spec is invalid:\n  * name must match pattern "^my-batch-change$"',
     },
 }
 

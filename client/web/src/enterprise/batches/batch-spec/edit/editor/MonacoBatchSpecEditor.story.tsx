@@ -15,13 +15,15 @@ const config: Meta = {
         readOnly: {
             name: 'Read Only',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
         autoFocus: {
             name: 'Auto Focus',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        readOnly: false,
+        autoFocus: false,
     },
 }
 

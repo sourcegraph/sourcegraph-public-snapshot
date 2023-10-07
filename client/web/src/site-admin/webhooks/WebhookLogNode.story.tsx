@@ -35,13 +35,15 @@ const config: Meta = {
         receivedAt: {
             name: 'received at',
             control: { type: 'text' },
-            defaultValue: 'Sun Nov 07 2021 14:31:00 GMT-0500 (Eastern Standard Time)',
         },
         statusCode: {
             name: 'status code',
             control: { type: 'number', min: 100, max: 599 },
-            defaultValue: 204,
         },
+    },
+    args: {
+        receivedAt: 'Sun Nov 07 2021 14:31:00 GMT-0500 (Eastern Standard Time)',
+        statusCode: 204,
     },
 }
 
