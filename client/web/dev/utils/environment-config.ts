@@ -8,8 +8,6 @@ import { getEnvironmentBoolean, STATIC_ASSETS_PATH } from '@sourcegraph/build-co
 
 import { DEFAULT_SITE_CONFIG_PATH } from './constants'
 
-type WEB_BUILDER = 'esbuild' | 'webpack'
-
 const NODE_ENV = process.env.NODE_ENV || 'development'
 
 const NODE_DEBUG = process.env.NODE_DEBUG

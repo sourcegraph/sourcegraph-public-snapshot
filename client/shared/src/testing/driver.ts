@@ -179,10 +179,7 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
 
 // Console logs with these keywords will be removed from the console output.
 const MUTE_CONSOLE_KEYWORDS = [
-    '[webpack-dev-server]',
     'Download the React DevTools',
-    '[HMR]',
-    '[WDS]',
     'Warning: componentWillReceiveProps has been renamed',
     'Download the Apollo DevTools',
     'Compiled in DEBUG mode',

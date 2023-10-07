@@ -38,9 +38,9 @@ export function getBundleSizeStats(options: GetBundleSizeStatsOptions): BundleSi
     const webBuildManifest = require(webBuildManifestPath) as Record<string, string>
 
     const initialResources = new Set(
-        Object.values(webBuildManifest).map(resourcePath =>
-            path.join(staticAssetsPath, resourcePath.replace('/.assets/', ''))
-        )
+        Object.values(webBuildManifest)
+            .filter(value => typeof value === 'string')
+            .map(resourcePath => path.join(staticAssetsPath, resourcePath.replace('/.assets/', '')))
     )
 
     return bundleSizeConfig.files.reduce<BundleSizeStats>((result, file) => {

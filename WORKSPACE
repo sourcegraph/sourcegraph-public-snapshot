@@ -226,27 +226,6 @@ esbuild_register_toolchains(
     esbuild_version = LATEST_VERSION,
 )
 
-# rules_webpack setup ===========================
-# Commit to include unreleased https://github.com/aspect-build/rules_webpack/commit/4a5f04a4bc504f71d32825124c7872ff721aa1b0
-http_archive(
-    name = "aspect_rules_webpack",
-    sha256 = "8d81f8d018127c72270ea4b7287be5c4ff63d9656a34334c305d52f14e0c922f",
-    strip_prefix = "rules_webpack-4a5f04a4bc504f71d32825124c7872ff721aa1b0",
-    url = "https://github.com/aspect-build/rules_webpack/archive/4a5f04a4bc504f71d32825124c7872ff721aa1b0.tar.gz",
-)
-
-load("@aspect_rules_webpack//webpack:dependencies.bzl", "rules_webpack_dependencies")
-
-rules_webpack_dependencies()
-
-load("@aspect_rules_webpack//webpack:repositories.bzl", "webpack_repositories")
-
-webpack_repositories(name = "webpack")
-
-load("@webpack//:npm_repositories.bzl", webpack_npm_repositories = "npm_repositories")
-
-webpack_npm_repositories()
-
 # Go toolchain setup
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
 
