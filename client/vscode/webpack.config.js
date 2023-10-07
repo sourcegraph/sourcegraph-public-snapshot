@@ -5,14 +5,7 @@ const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 
-const {
-  getMonacoWebpackPlugin,
-  getCSSModulesLoader,
-  getBasicCSSLoader,
-  getBabelLoader,
-  getMonacoCSSRule,
-  getCSSLoaders,
-} = require('@sourcegraph/build-config')
+const { getCSSModulesLoader, getBasicCSSLoader, getBabelLoader, getCSSLoaders } = require('@sourcegraph/build-config')
 
 /**
  * The VS Code extension core needs to be built for two targets:
@@ -159,7 +152,6 @@ const webviewConfig = {
   },
   plugins: [
     new MiniCssExtractPlugin(),
-    getMonacoWebpackPlugin(),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
       process: 'process/browser', // provide a shim for the global `process` variable
@@ -215,9 +207,6 @@ const webviewConfig = {
         exclude: /\.module\.(sass|scss)$/,
         use: getCSSLoaders(MiniCssExtractPlugin.loader, getBasicCSSLoader()),
       },
-      getMonacoCSSRule(),
-      // Don't use shared getMonacoTFFRule(); we want to retain its name
-      // to reference path in the extension when we load the font ourselves.
       {
         test: /\.ttf$/,
         type: 'asset/resource',
