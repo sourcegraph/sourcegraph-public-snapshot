@@ -54,7 +54,50 @@ exports[`ErrorBoundary renders error page if error 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ErrorBoundary renders reload page if chunk error 1`] = `
+exports[`ErrorBoundary renders reload page if dynamic import error 1`] = `
+<DocumentFragment>
+  <div
+    class="heroPage defaultPadding"
+  >
+    <div
+      class="iconWrapper"
+    >
+      <reloadicon
+        aria-hidden="true"
+        class="mdi-icon iconInline icon"
+        role="img"
+      />
+    </div>
+    <h1
+      class="h1 title"
+    >
+      Reload required
+    </h1>
+    <div
+      class="subtitle"
+      data-testid="hero-page-subtitle"
+    >
+      <div
+        class="container"
+      >
+        <p
+          class=""
+        >
+          A new version of Sourcegraph is available.
+        </p>
+        <button
+          class="btn btnPrimary"
+          type="button"
+        >
+          Reload to update
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ErrorBoundary renders reload page if webpack chunk error 1`] = `
 <DocumentFragment>
   <div
     class="heroPage defaultPadding"
