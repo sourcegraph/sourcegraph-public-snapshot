@@ -47,8 +47,10 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
     // Take a screenshot when a test fails.
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
+    // gitlab.com/sourcegraph now redirects to gitlab.com/SourcegraphCody, so that's
+    // the URL that will be generated on hover.
     const url = new URL(
-        '/sourcegraph/jsonrpc2/blob/dbf20885e7ff39b0d5b64878148113e8433571f1/call_opt.go',
+        '/SourcegraphCody/jsonrpc2/blob/dbf20885e7ff39b0d5b64878148113e8433571f1/call_opt.go',
         GITLAB_BASE_URL
     )
     testSingleFilePage({
