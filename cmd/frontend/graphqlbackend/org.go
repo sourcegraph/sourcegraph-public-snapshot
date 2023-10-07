@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -388,7 +387,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	}
 
 	// Enqueue a sync job. Internally this will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
 
 	return nil, nil
 }
@@ -435,7 +434,7 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// Schedule permission sync for newly added user. Internally it will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
 
 	return &EmptyResponse{}, nil
 }

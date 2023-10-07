@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -427,7 +426,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -475,7 +474,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -530,7 +529,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -585,7 +584,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
