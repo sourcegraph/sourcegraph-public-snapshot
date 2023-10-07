@@ -10,7 +10,7 @@ import {
     ENVIRONMENT_CONFIG,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
-    getWebpackManifest,
+    getWebBuildManifest,
     STATIC_INDEX_PATH,
     getIndexHTML,
 } from '../utils'
@@ -43,7 +43,7 @@ function startProductionServer(): void {
         apiURL: SOURCEGRAPH_API_URL,
         ...(ENVIRONMENT_CONFIG.WEBPACK_SERVE_INDEX && {
             getLocalIndexHTML(jsContextScript) {
-                const manifestFile = getWebpackManifest()
+                const manifestFile = getWebBuildManifest()
                 return getIndexHTML({ manifestFile, jsContextScript })
             },
         }),
