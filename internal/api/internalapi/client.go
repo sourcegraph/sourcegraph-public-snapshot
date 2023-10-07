@@ -82,7 +82,7 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 		if err != nil {
 			return conftypes.RawUnified{}, err
 		}
-		resp, err := cc.GetConfig(ctx, &proto.GetConfigRequest{})
+		resp, err := cc.GetConfig(actor.WithInternalActor(ctx), &proto.GetConfigRequest{})
 		if err != nil {
 			return conftypes.RawUnified{}, err
 		}

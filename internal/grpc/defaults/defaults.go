@@ -96,7 +96,17 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			internalerrs.LoggingUnaryClientInterceptor(logger),
 			contextconv.UnaryClientInterceptor,
 		),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultGRPCMessageReceiveSizeBytes)),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(defaultGRPCMessageReceiveSizeBytes),
+			// By default, we enable wait for ready. gRPC services that we talk
+			// to are internal, and we expect them all to come up eventually.
+			// This makes the client wait for the conn to enter READY state.
+			// This includes:
+			// - The server has not yet started at the given port
+			// - The DNS resolution for the server has not yet returned a result
+			// - The connection is dropped or disconnected before the handshake is complete, during shutdown
+			grpc.WaitForReady(true),
+		),
 	}
 
 	out = append(out, additionalOptions...)

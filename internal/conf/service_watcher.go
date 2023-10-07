@@ -16,7 +16,7 @@ func GetServiceConnectionValueAndRestartOnChange(f func(serviceConnections conft
 	value := f(Get().ServiceConnections())
 	Watch(func() {
 		if newValue := f(Get().ServiceConnections()); value != newValue {
-			log.Fatalf("Detected settings change change, restarting to take effect: %s", newValue)
+			log.Fatalf("Detected settings change, restarting to take effect: %s", newValue)
 		}
 	})
 
