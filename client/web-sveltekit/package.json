@@ -14,8 +14,8 @@
     "lint": "eslint .",
     "format": "prettier --config ./prettier.config.cjs --write . --plugin prettier-plugin-svelte",
     "generate": "pnpm -w generate",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook": "sb dev -p 6006",
+    "build-storybook": "sb build"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",
