@@ -8,7 +8,8 @@
     width: 100%;
     display: flex;
     align-items: center;
-    margin-top: 20vh;
+    /* stylelint-disable declaration-property-unit-allowed-list */
+    margin-top: min(20vh, 20rem);
     flex-direction: column;
     flex: 1 1 auto;
 }
