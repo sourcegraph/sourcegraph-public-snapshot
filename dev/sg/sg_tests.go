@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -10,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -71,6 +74,11 @@ func testExec(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 
+	if err := SetEnvVariables(); err != nil {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: %s", err.Error()))
+		return flag.ErrHelp
+	}
+
 	return run.Test(ctx.Context, cmd, args[1:], config.Env)
 }
 
@@ -101,4 +109,35 @@ func constructTestCmdLongHelp() string {
 	fmt.Fprint(&out, "* "+strings.Join(names, "\n* "))
 
 	return out.String()
+}
+
+func getCredentials(ctx context.Context, key string) (string, error) {
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "sourcegraph-local-dev",
+		// sg Google client credentials
+		Name: key,
+	})
+	if err != nil {
+		return "", err
+	}
+	return clientCredentials, nil
+}
+
+func SetEnvVariables() (err error) {
+	envVars := []string{"LOCAL_GHE_GITHUB_TOKEN", "LOCAL_GH_TOKEN", "LOCAL_SOURCEGRAPH_LICENSE_KEY", "LOCAL_SOURCEGRAPH_LICENSE_GENERATION_KEY"}
+
+	for _, key := range envVars {
+		clientCredentials, err := getCredentials(context.Background(), key)
+		if err != nil {
+			return err
+		}
+
+		os.Setenv(key, clientCredentials)
+	}
+
+	return nil
 }

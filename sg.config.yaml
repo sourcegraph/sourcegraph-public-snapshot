@@ -1539,6 +1539,21 @@ tests:
     cmd: go test
     defaultArgs: ./...
 
+  bazel-e2e:
+    cmd: bazel test //testing:*integration_test //testing:e2e_test --config darwin-docker --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN
+    env:
+      # These are defaults. They can be overwritten by setting the env vars when
+      # running the command.
+      BASE_URL: "http://localhost:3080"
+      EMAIL: "joe@sourcegraph.com"
+      PASSWORD: "12345"
+    external_secrets:
+      GH_TOKEN:
+        project: "sourcegraph-ci"
+        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
+
+
+
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
     env:
