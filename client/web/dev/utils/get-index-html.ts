@@ -4,12 +4,13 @@ import path from 'path'
 import type { WebpackPluginFunction } from 'webpack'
 
 import type { SourcegraphContext } from '../../src/jscontext'
+import { WEB_BUILD_MANIFEST_FILENAME } from '../esbuild/manifestPlugin'
 
 import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, STATIC_INDEX_PATH } from '.'
 
 const { NODE_ENV, STATIC_ASSETS_PATH } = ENVIRONMENT_CONFIG
 
-export const WEB_BUILD_MANIFEST_PATH = path.resolve(STATIC_ASSETS_PATH, 'web.manifest.json')
+const WEB_BUILD_MANIFEST_PATH = path.resolve(STATIC_ASSETS_PATH, WEB_BUILD_MANIFEST_FILENAME)
 export const HTML_INDEX_PATH = path.resolve(STATIC_ASSETS_PATH, 'index.html')
 
 export const getWebBuildManifest = (): WebBuildManifest =>
@@ -19,13 +20,7 @@ export interface WebBuildManifest {
     /** Main JS bundle */
     'main.js': string
     /** Main CSS bundle, only used in production mode */
-    'main.css'?: string
-    /** Runtime bundle, only used in development mode */
-    'runtime.js'?: string
-    /** React entry bundle, only used in production mode */
-    'react.js'?: string
-    /** Opentelemetry entry bundle, only used in production mode */
-    'opentelemetry.js'?: string
+    'main.css': string
     /** Embed entry bundle */
     'embed.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
@@ -56,14 +51,7 @@ interface GetHTMLPageOptions {
 export function getIndexHTML(options: GetHTMLPageOptions): string {
     const { manifestFile, jsContext, jsContextScript } = options
 
-    const {
-        'main.js': mainBundle,
-        'main.css': mainBundleCSS,
-        'runtime.js': runtimeBundle,
-        'react.js': reactBundle,
-        'opentelemetry.js': oTelBundle,
-        isModule,
-    } = manifestFile
+    const { 'main.js': mainBundle, 'main.css': mainBundleCSS, isModule } = manifestFile
 
     return `
 <!DOCTYPE html>
@@ -98,9 +86,6 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
             }
         </script>
 
-        ${runtimeBundle ? `<script src="${runtimeBundle}"></script>` : ''}
-        ${reactBundle ? `<script src="${reactBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
-        ${oTelBundle ? `<script src="${oTelBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
         <script src="${mainBundle}" ${isModule ? 'type="module"' : ''}></script>
     </body>
 </html>

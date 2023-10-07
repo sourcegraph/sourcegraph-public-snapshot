@@ -1,19 +1,11 @@
-load("@aspect_rules_webpack//webpack:defs.bzl", _webpack_bundle = "webpack_bundle")
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 
-def webpack_bundle(name, **kwargs):
-    _webpack_bundle(
-        name = name,
-        webpack = "//dev:webpack",
-        **kwargs
-    )
-
-def webpack_web_app(name, **kwargs):
+def esbuild_web_app(name, **kwargs):
     bundle_name = "%s_bundle" % name
 
-    _webpack_bundle(
+    esbuild(
         name = bundle_name,
-        webpack = "//dev:webpack",
         **kwargs
     )
 

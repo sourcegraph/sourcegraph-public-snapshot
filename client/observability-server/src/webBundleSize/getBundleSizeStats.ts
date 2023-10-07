@@ -18,7 +18,6 @@ interface BundleSizeStats {
         brotli: number
         isInitial: boolean
         isDynamicImport: boolean
-        isDefaultVendors: boolean
         isCss: boolean
         isJs: boolean
     }
@@ -59,8 +58,7 @@ export function getBundleSizeStats(options: GetBundleSizeStatsOptions): BundleSi
                     gzip: statSync(gzipFilePath).size,
                     brotli: statSync(brotliFilePath).size,
                     isInitial: initialResources.has(noCompressionFilePath),
-                    isDynamicImport: name.startsWith('sg_'),
-                    isDefaultVendors: /\d+.chunk.js/.test(name),
+                    isDynamicImport: name.startsWith('chunk-'),
                     isCss: path.parse(name).ext === '.css',
                     isJs: path.parse(name).ext === '.js',
                 },
