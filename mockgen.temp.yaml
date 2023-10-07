@@ -114,6 +114,7 @@
   interfaces:
     - UserEmailsService
     - ReposService
+    - ExternalServicesService
 - filename: internal/executor/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/executor/store
   interfaces:
