@@ -58,7 +58,6 @@ sass(
     ),
     deps = [
         "//:node_modules/@reach/tabs",
-        "//:node_modules/@vscode/codicons",
         "//client/wildcard:global-styles",
     ],
 )
