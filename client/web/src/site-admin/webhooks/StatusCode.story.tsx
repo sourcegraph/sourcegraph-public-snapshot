@@ -22,14 +22,18 @@ export const Success: Story = args => <WebStory>{() => <StatusCode code={args.co
 Success.argTypes = {
     code: {
         control: { type: 'number', min: 100, max: 399 },
-        defaultValue: 204,
     },
+}
+Success.args = {
+    code: 204,
 }
 
 export const Failure: Story = args => <WebStory>{() => <StatusCode code={args.code} />}</WebStory>
 Failure.argTypes = {
     code: {
         control: { type: 'number', min: 400, max: 599 },
-        defaultValue: 418,
     },
+}
+Failure.args = {
+    code: 418,
 }

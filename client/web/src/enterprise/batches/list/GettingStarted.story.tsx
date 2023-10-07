@@ -17,12 +17,14 @@ const config: Meta = {
     argTypes: {
         isSourcegraphDotCom: {
             control: { type: 'boolean' },
-            defaultValue: false,
         },
         canCreateBatchChanges: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        isSourcegraphDotCom: false,
+        canCreateBatchChanges: true,
     },
 }
 

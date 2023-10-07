@@ -200,12 +200,14 @@ const config: Meta = {
     argTypes: {
         persistLines: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         lineNumbers: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        persistLines: true,
+        lineNumbers: true,
     },
 }
 
