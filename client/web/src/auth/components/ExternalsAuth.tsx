@@ -15,6 +15,7 @@ interface ExternalsAuthProps {
     googleLabel: string
     onClick: (type: AuthProvider['serviceType']) => void
     withCenteredText?: boolean
+    ctaClassName?: string
     iconClassName?: string
     redirect?: string
 }
@@ -128,6 +129,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
     googleLabel,
     onClick,
     withCenteredText,
+    ctaClassName,
     iconClassName,
     redirect,
 }) => {
@@ -160,7 +162,8 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
                         styles.signUpButton,
-                        styles.githubButton
+                        styles.githubButton,
+                        ctaClassName
                     )}
                     onClick={() => onClick('github')}
                 >
@@ -181,7 +184,8 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
                         styles.signUpButton,
-                        styles.gitlabButton
+                        styles.gitlabButton,
+                        ctaClassName
                     )}
                     onClick={() => onClick('gitlab')}
                 >
@@ -201,7 +205,8 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
                         styles.signUpButton,
-                        styles.googleButton
+                        styles.googleButton,
+                        ctaClassName
                     )}
                     onClick={() => onClick('openidconnect')}
                 >
