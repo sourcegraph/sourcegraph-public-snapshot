@@ -30,27 +30,30 @@ type GRPCServer struct {
 	proto.UnimplementedGitserverServiceServer
 }
 
-func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
+func (gs *GRPCServer) BatchLog(req *proto.BatchLogRequest, ss proto.GitserverService_BatchLogServer) error {
 	gs.Server.operations = gs.Server.ensureOperations()
 
 	// Validate request parameters
 	if len(req.GetRepoCommits()) == 0 {
-		return &proto.BatchLogResponse{}, nil
+		return nil
 	}
+
 	if !strings.HasPrefix(req.GetFormat(), "--format=") {
-		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
+		return status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
 	}
 
 	var r protocol.BatchLogRequest
 	r.FromProto(req)
 
 	// Handle unexpected error conditions
-	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, r)
+	err := gs.Server.batchGitLogInstrumentedHandler(ss.Context(), r, func(res protocol.BatchLogResult) error {
+		return ss.Send(&proto.BatchLogResponse{Results: []*proto.BatchLogResult{res.ToProto()}})
+	})
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, err.Error())
 	}
 
-	return resp.ToProto(), nil
+	return nil
 }
 
 func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {

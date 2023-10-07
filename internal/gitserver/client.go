@@ -1119,12 +1119,14 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			})
 		}()
 
+		// Make sure we cancel the request when we stop consuming events.
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
 		request := protocol.BatchLogRequest{
 			RepoCommits: repoCommits,
 			Format:      opts.Format,
 		}
-
-		var response protocol.BatchLogResponse
 
 		if conf.IsGRPCEnabled(ctx) {
 			client, err := grpcClient.client, grpcClient.dialErr
@@ -1137,32 +1139,63 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 				return err
 			}
 
-			response.FromProto(resp)
-			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-		} else {
-			var buf bytes.Buffer
-			if err := json.NewEncoder(&buf).Encode(request); err != nil {
-				return err
+			for {
+				resp, err := resp.Recv()
+				if err != nil {
+					// All events received!
+					if err == io.EOF {
+						break
+					}
+					return err
+				}
+
+				for _, res := range resp.Results {
+					var blr protocol.BatchLogResult
+					blr.FromProto(res)
+
+					if blr.CommandError != "" {
+						err = errors.New(blr.CommandError)
+					}
+
+					rawResult := RawBatchLogResult{
+						Stdout: blr.CommandOutput,
+						Error:  err,
+					}
+					if err := callback(blr.RepoCommit, rawResult); err != nil {
+						return errors.Wrap(err, "commitLogCallback")
+					}
+
+					numProcessed++
+				}
 			}
 
-			uri := "http://" + addr + "/batch-log"
-			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), uri, buf.Bytes())
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
-			logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
+			logger.AddEvent("read response", attribute.Int("numResults", numProcessed))
 
-			if resp.StatusCode != http.StatusOK {
-				return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
-			}
-
-			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-				return err
-			}
-			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
+			return nil
 		}
 
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(request); err != nil {
+			return err
+		}
+
+		uri := "http://" + addr + "/batch-log"
+		resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), uri, buf.Bytes())
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
+
+		if resp.StatusCode != http.StatusOK {
+			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
+		}
+
+		var response protocol.BatchLogResponse
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return err
+		}
+		logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
 		for _, result := range response.Results {
 			var err error
 			if result.CommandError != "" {
@@ -1474,7 +1507,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 			req := req
 			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
 				return client.RepoCloneProgress(ctx, req)
-
 			})
 		}
 
@@ -1487,85 +1519,81 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 			Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
 		}
 		for _, r := range res {
-
 			for repo, info := range r.Results {
 				var rp protocol.RepoCloneProgress
 				rp.FromProto(info)
 				result.Results[api.RepoName(repo)] = &rp
 			}
-
 		}
 
 		return result, nil
-
-	} else {
-
-		shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
-
-		for _, r := range repos {
-			addr := c.AddrForRepo(ctx, r)
-			shard := shards[addr]
-
-			if shard == nil {
-				shard = new(protocol.RepoCloneProgressRequest)
-				shards[addr] = shard
-			}
-
-			shard.Repos = append(shard.Repos, r)
-		}
-
-		type op struct {
-			req *protocol.RepoCloneProgressRequest
-			res *protocol.RepoCloneProgressResponse
-			err error
-		}
-
-		ch := make(chan op, len(shards))
-		for _, req := range shards {
-			go func(o op) {
-				var resp *http.Response
-				resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
-				if o.err != nil {
-					ch <- o
-					return
-				}
-
-				defer resp.Body.Close()
-				if resp.StatusCode != http.StatusOK {
-					o.err = &url.Error{
-						URL: resp.Request.URL.String(),
-						Op:  "RepoCloneProgress",
-						Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
-					}
-					ch <- o
-					return // we never get an error status code AND result
-				}
-
-				o.res = new(protocol.RepoCloneProgressResponse)
-				o.err = json.NewDecoder(resp.Body).Decode(o.res)
-				ch <- o
-			}(op{req: req})
-		}
-
-		var err error
-		res := protocol.RepoCloneProgressResponse{
-			Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-		}
-
-		for i := 0; i < cap(ch); i++ {
-			o := <-ch
-
-			if o.err != nil {
-				err = errors.Append(err, o.err)
-				continue
-			}
-
-			for repo, info := range o.res.Results {
-				res.Results[repo] = info
-			}
-		}
-		return &res, err
 	}
+
+	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+
+	for _, r := range repos {
+		addr := c.AddrForRepo(ctx, r)
+		shard := shards[addr]
+
+		if shard == nil {
+			shard = new(protocol.RepoCloneProgressRequest)
+			shards[addr] = shard
+		}
+
+		shard.Repos = append(shard.Repos, r)
+	}
+
+	type op struct {
+		req *protocol.RepoCloneProgressRequest
+		res *protocol.RepoCloneProgressResponse
+		err error
+	}
+
+	ch := make(chan op, len(shards))
+	for _, req := range shards {
+		go func(o op) {
+			var resp *http.Response
+			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
+			if o.err != nil {
+				ch <- o
+				return
+			}
+
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				o.err = &url.Error{
+					URL: resp.Request.URL.String(),
+					Op:  "RepoCloneProgress",
+					Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
+				}
+				ch <- o
+				return // we never get an error status code AND result
+			}
+
+			o.res = new(protocol.RepoCloneProgressResponse)
+			o.err = json.NewDecoder(resp.Body).Decode(o.res)
+			ch <- o
+		}(op{req: req})
+	}
+
+	var err error
+	res := protocol.RepoCloneProgressResponse{
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
+	}
+
+	for i := 0; i < cap(ch); i++ {
+		o := <-ch
+
+		if o.err != nil {
+			err = errors.Append(err, o.err)
+			continue
+		}
+
+		for repo, info := range o.res.Results {
+			res.Results[repo] = info
+		}
+	}
+	return &res, err
 }
 
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
@@ -1585,19 +1613,16 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 	}
 
 	addr := c.AddrForRepo(ctx, undeletedName)
-	return c.removeFrom(ctx, undeletedName, addr)
-}
 
-func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, from string) error {
 	b, err := json.Marshal(&protocol.RepoDeleteRequest{
-		Repo: repo,
+		Repo: undeletedName,
 	})
 	if err != nil {
 		return err
 	}
 
-	uri := "http://" + from + "/delete"
-	resp, err := c.do(ctx, repo, uri, b)
+	uri := "http://" + addr + "/delete"
+	resp, err := c.do(ctx, undeletedName, uri, b)
 	if err != nil {
 		return err
 	}
@@ -1895,34 +1920,33 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		res.FromProto(grpcResp)
 
 		return &res.Object, nil
-
-	} else {
-		resp, err := c.httpPost(ctx, req.Repo, "commands/get-object", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "GetObject",
-				Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
-			}
-		}
-		var res protocol.GetObjectResponse
-		if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-			c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "GetObject",
-				Err: errors.Errorf("GetObject: http status %d, failed to decode response body: %v", resp.StatusCode, err),
-			}
-		}
-
-		return &res.Object, nil
 	}
+
+	resp, err := c.httpPost(ctx, req.Repo, "commands/get-object", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "GetObject",
+			Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
+		}
+	}
+	var res protocol.GetObjectResponse
+	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "GetObject",
+			Err: errors.Errorf("GetObject: http status %d, failed to decode response body: %v", resp.StatusCode, err),
+		}
+	}
+
+	return &res.Object, nil
 }
 
 var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)

@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
-  rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
+  rpc BatchLog(BatchLogRequest) returns (stream BatchLogResponse) {}
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
   rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}

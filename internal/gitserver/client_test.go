@@ -664,6 +664,35 @@ func TestClient_P4Exec(t *testing.T) {
 	})
 }
 
+type mockBatchLogClient struct {
+	err     error
+	results []*proto.BatchLogResult
+	grpc.ClientStream
+}
+
+func (m *mockBatchLogClient) Recv() (*proto.BatchLogResponse, error) {
+	if len(m.results) == 0 {
+		return nil, io.EOF
+	}
+
+	if m.err != nil {
+		s, _ := status.FromError(m.err)
+		return nil, s.Err()
+	}
+
+	response := &proto.BatchLogResponse{
+		Results: m.results[:1],
+	}
+
+	if len(m.results) > 1 {
+		m.results = m.results[1:]
+	} else {
+		m.results = m.results[0:0]
+	}
+
+	return response, nil
+}
+
 func TestClient_BatchLogGRPC(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -682,25 +711,22 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 
 	source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
+			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (proto.GitserverService_BatchLogClient, error) {
 				called = true
 
 				var req protocol.BatchLogRequest
 				req.FromProto(in)
 
-				var results []protocol.BatchLogResult
+				var results []*proto.BatchLogResult
 				for _, repoCommit := range req.RepoCommits {
-					results = append(results, protocol.BatchLogResult{
-						RepoCommit:    repoCommit,
+					results = append(results, &proto.BatchLogResult{
+						RepoCommit:    repoCommit.ToProto(),
 						CommandOutput: fmt.Sprintf("out<%s: %s@%s>", addrs[0], repoCommit.Repo, repoCommit.CommitID),
-						CommandError:  "",
+						CommandError:  nil,
 					})
-
 				}
 
-				var resp protocol.BatchLogResponse
-				resp.Results = results
-				return resp.ToProto(), nil
+				return &mockBatchLogClient{results: results}, nil
 			}
 
 			return &gitserver.MockGRPCClient{MockBatchLog: mockBatchLog}
@@ -768,7 +794,7 @@ func TestClient_BatchLog(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
 	source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
-			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
+			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (proto.GitserverService_BatchLogClient, error) {
 				var out []*proto.BatchLogResult
 
 				for _, repoCommit := range in.GetRepoCommits() {
@@ -779,9 +805,7 @@ func TestClient_BatchLog(t *testing.T) {
 					})
 				}
 
-				return &proto.BatchLogResponse{
-					Results: out,
-				}, nil
+				return &mockBatchLogClient{results: out}, nil
 			}
 
 			return &gitserver.MockGRPCClient{

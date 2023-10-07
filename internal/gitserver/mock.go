@@ -9,7 +9,7 @@ import (
 )
 
 type MockGRPCClient struct {
-	MockBatchLog                    func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error)
+	MockBatchLog                    func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (proto.GitserverService_BatchLogClient, error)
 	MockCreateCommitFromPatchBinary func(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error)
 	MockDiskInfo                    func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error)
 	MockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
@@ -28,7 +28,7 @@ type MockGRPCClient struct {
 }
 
 // BatchLog implements v1.GitserverServiceClient.
-func (mc *MockGRPCClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
+func (mc *MockGRPCClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (proto.GitserverService_BatchLogClient, error) {
 	return mc.MockBatchLog(ctx, in, opts...)
 }
 

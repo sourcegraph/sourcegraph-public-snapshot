@@ -41,7 +41,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
-	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
+	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (GitserverService_BatchLogClient, error)
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
@@ -67,17 +67,40 @@ func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClie
 	return &gitserverServiceClient{cc}
 }
 
-func (c *gitserverServiceClient) BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error) {
-	out := new(BatchLogResponse)
-	err := c.cc.Invoke(ctx, GitserverService_BatchLog_FullMethodName, in, out, opts...)
+func (c *gitserverServiceClient) BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (GitserverService_BatchLogClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[0], GitserverService_BatchLog_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &gitserverServiceBatchLogClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_BatchLogClient interface {
+	Recv() (*BatchLogResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceBatchLogClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceBatchLogClient) Recv() (*BatchLogResponse, error) {
+	m := new(BatchLogResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[0], GitserverService_CreateCommitFromPatchBinary_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_CreateCommitFromPatchBinary_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +143,7 @@ func (c *gitserverServiceClient) DiskInfo(ctx context.Context, in *DiskInfoReque
 }
 
 func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_Exec_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Exec_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +202,7 @@ func (c *gitserverServiceClient) ListGitolite(ctx context.Context, in *ListGitol
 }
 
 func (c *gitserverServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Search_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_Search_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +234,7 @@ func (x *gitserverServiceSearchClient) Recv() (*SearchResponse, error) {
 }
 
 func (c *gitserverServiceClient) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_Archive_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_Archive_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +266,7 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 }
 
 func (c *gitserverServiceClient) P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_P4Exec_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_P4Exec_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +355,7 @@ func (c *gitserverServiceClient) CheckPerforceCredentials(ctx context.Context, i
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
-	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
+	BatchLog(*BatchLogRequest, GitserverService_BatchLogServer) error
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
@@ -355,8 +378,8 @@ type GitserverServiceServer interface {
 type UnimplementedGitserverServiceServer struct {
 }
 
-func (UnimplementedGitserverServiceServer) BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BatchLog not implemented")
+func (UnimplementedGitserverServiceServer) BatchLog(*BatchLogRequest, GitserverService_BatchLogServer) error {
+	return status.Errorf(codes.Unimplemented, "method BatchLog not implemented")
 }
 func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error {
 	return status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
@@ -416,22 +439,25 @@ func RegisterGitserverServiceServer(s grpc.ServiceRegistrar, srv GitserverServic
 	s.RegisterService(&GitserverService_ServiceDesc, srv)
 }
 
-func _GitserverService_BatchLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BatchLogRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _GitserverService_BatchLog_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(BatchLogRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(GitserverServiceServer).BatchLog(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GitserverService_BatchLog_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).BatchLog(ctx, req.(*BatchLogRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(GitserverServiceServer).BatchLog(m, &gitserverServiceBatchLogServer{stream})
+}
+
+type GitserverService_BatchLogServer interface {
+	Send(*BatchLogResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceBatchLogServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceBatchLogServer) Send(m *BatchLogResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -732,10 +758,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "BatchLog",
-			Handler:    _GitserverService_BatchLog_Handler,
-		},
-		{
 			MethodName: "DiskInfo",
 			Handler:    _GitserverService_DiskInfo_Handler,
 		},
@@ -777,6 +799,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "BatchLog",
+			Handler:       _GitserverService_BatchLog_Handler,
+			ServerStreams: true,
+		},
 		{
 			StreamName:    "CreateCommitFromPatchBinary",
 			Handler:       _GitserverService_CreateCommitFromPatchBinary_Handler,

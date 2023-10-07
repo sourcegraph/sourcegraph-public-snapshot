@@ -834,12 +834,10 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 	return buf.String(), true, nil
 }
 
-func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req protocol.BatchLogRequest) (resp protocol.BatchLogResponse, err error) {
+func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req protocol.BatchLogRequest, onEvent func(protocol.BatchLogResult) error) (err error) {
 	ctx, _, endObservation := s.operations.batchLog.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.String("results", fmt.Sprintf("%+v", resp.Results)),
-		}})
+		endObservation(1, observation.Args{})
 	}()
 
 	// Perform requests in each repository in the input batch. We perform these commands
@@ -847,27 +845,38 @@ func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req protoco
 	// we don't overwhelm a shard with either a large request or too many concurrent batch
 	// requests.
 
-	g, ctx := errgroup.WithContext(ctx)
-	results := make([]protocol.BatchLogResult, len(req.RepoCommits))
+	results := make(chan protocol.BatchLogResult)
+
+	g, groupCtx := errgroup.WithContext(ctx)
 
 	if s.GlobalBatchLogSemaphore == nil {
-		return protocol.BatchLogResponse{}, errors.New("s.GlobalBatchLogSemaphore not initialized")
+		return errors.New("s.GlobalBatchLogSemaphore not initialized")
 	}
 
-	for i, repoCommit := range req.RepoCommits {
+	resG, _ := errgroup.WithContext(ctx)
+	resG.Go(func() error {
+		for result := range results {
+			if err := onEvent(result); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	for _, repoCommit := range req.RepoCommits {
 		// Avoid capture of loop variables
-		i, repoCommit := i, repoCommit
+		repoCommit := repoCommit
 
 		start := time.Now()
-		if err := s.GlobalBatchLogSemaphore.Acquire(ctx, 1); err != nil {
-			return resp, err
+		if err := s.GlobalBatchLogSemaphore.Acquire(groupCtx, 1); err != nil {
+			return err
 		}
 		s.operations.batchLogSemaphoreWait.Observe(time.Since(start).Seconds())
 
 		g.Go(func() error {
 			defer s.GlobalBatchLogSemaphore.Release(1)
 
-			output, isRepoCloned, gitLogErr := s.performGitLogCommand(ctx, repoCommit, req.Format)
+			output, isRepoCloned, gitLogErr := s.performGitLogCommand(groupCtx, repoCommit, req.Format)
 			if gitLogErr == nil && !isRepoCloned {
 				gitLogErr = errors.Newf("repo not found")
 			}
@@ -876,23 +885,27 @@ func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req protoco
 				errMessage = gitLogErr.Error()
 			}
 
-			// Concurrently write results to shared slice. This slice is already properly
-			// sized, and each goroutine writes to a unique index exactly once. There should
-			// be no data race conditions possible here.
-
-			results[i] = protocol.BatchLogResult{
+			results <- protocol.BatchLogResult{
 				RepoCommit:    repoCommit,
 				CommandOutput: output,
 				CommandError:  errMessage,
 			}
+
 			return nil
 		})
 	}
 
 	if err = g.Wait(); err != nil {
-		return
+		return err
 	}
-	return protocol.BatchLogResponse{Results: results}, nil
+
+	close(results)
+
+	if err = resG.Wait(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
@@ -923,7 +936,16 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle unexpected error conditions
-	resp, err := s.batchGitLogInstrumentedHandler(r.Context(), req)
+	resp := &protocol.BatchLogResponse{
+		Results: make([]protocol.BatchLogResult, 0, len(req.RepoCommits)),
+	}
+	var mu sync.Mutex
+	err := s.batchGitLogInstrumentedHandler(r.Context(), req, func(blr protocol.BatchLogResult) error {
+		mu.Lock()
+		resp.Results = append(resp.Results, blr)
+		mu.Unlock()
+		return nil
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
