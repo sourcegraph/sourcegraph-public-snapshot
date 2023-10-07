@@ -114,7 +114,6 @@ client/vscode
 ├── package.json                  // Extension manifest
 ├── README.md                     // General information about the extension
 ├── tsconfig.json                 // TypeScript configuration
-├── webpackconfig.js              // Webpack configuration
 ```
 
 ## Development
@@ -124,20 +123,16 @@ client/vscode
 #### Desktop and Web Version
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
-2. Install dependencies via `pnpm install` for the Sourcegraph repository
-3. Run `pnpm generate` at the root directory to generate the required schemas
-4. Make your changes to the files within the `client/vscode` directory with VS Code
-5. Run `pnpm build-vsce` to build or `pnpm watch-vsce` to build and watch the tasks from the `root` directory
-6. To see your changes, open the `Run and Debug` sidebar view in VS Code, and
-   select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu.
+1. Install dependencies via `pnpm install` for the Sourcegraph repository
+1. Edit files in the `client/vscode` directory
+1. To see your changes, open the `Run and Debug` sidebar view in VS Code, and
+   select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu. (Or, in the `client/vscode` directory, run `pnpm run build`.)
 
 ### Integration Tests
 
-To perform integration tests:
+To run integration tests:
 
-1. In the Sourcegraph repository:
-   1. `pnpm install`
-   2. `pnpm generate`
+1. In the Sourcegraph repository root, run `pnpm install`
 2. In the `client/vscode` directory:
    1. `pnpm build:test` or `pnpm watch:test`
    2. `pnpm test-integration`
@@ -160,7 +155,7 @@ To run and test the web extension on GitPod Web (as well as VS Code and GitHub f
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
 1. Run `pnpm install && pnpm generate` at the root directory to install dependencies and generate the required schemas
-1. Run `pnpm build-vsce` at root to build the Sourcegraph VS Code extension for Web
+1. Run `pnpm -C client/vscode build` at root to build the Sourcegraph VS Code extension for Web
 1. Once the build has been completed, move to the extension’s directory: `cd client/vscode`
 1. Start an HTTP server inside the extension’s path to host the extension locally: `pnpx serve --cors -l 8988`
 1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel tool: `pnpx localtunnel -p 8988`
