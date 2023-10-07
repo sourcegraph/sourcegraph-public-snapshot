@@ -38,7 +38,7 @@ const {
   SOURCEGRAPH_API_URL,
   WEBPACK_BUNDLE_ANALYZER,
   WEBPACK_EXPORT_STATS,
-  WEBPACK_SERVE_INDEX,
+  WEB_BUILDER_SERVE_INDEX,
   WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
   WEBPACK_DEVELOPMENT_DEVTOOL,
@@ -60,7 +60,7 @@ const RUNTIME_ENV_VARIABLES = {
   ENABLE_OPEN_TELEMETRY,
   INTEGRATION_TESTS,
   COMMIT_SHA,
-  ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
+  ...(WEB_BUILDER_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
 
 const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace =>
@@ -86,7 +86,7 @@ const config = {
   stats: {
     // Minimize logging in case if Webpack is used along with multiple other services.
     // Use `normal` output preset in case of running standalone web server.
-    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors',
+    preset: WEB_BUILDER_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors',
     errorDetails: true,
     timings: true,
   },
@@ -173,7 +173,7 @@ const config = {
       filter: ({ isInitial, name }) =>
         isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
     }),
-    ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
+    ...(WEB_BUILDER_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
