@@ -31,10 +31,6 @@ export function stripURLParameters(url: string, parametersToRemove: string[] = [
 export function redactSensitiveInfoFromAppURL(url: string): string {
     const sourceURL = new URL(url)
 
-    if (sourceURL.hostname !== 'sourcegraph.com') {
-        return url
-    }
-
     // Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
     if (sourceURL.pathname.startsWith('/github.com')) {
         sourceURL.pathname = '/github.com/redacted'
@@ -42,8 +38,11 @@ export function redactSensitiveInfoFromAppURL(url: string): string {
         sourceURL.pathname = '/gitlab.com/redacted'
     } else if (sourceURL.pathname.startsWith('/search')) {
         sourceURL.pathname = '/search/redacted'
+    } else if (sourceURL.pathname.startsWith('/sign-in')) {
+        sourceURL.pathname = '/sign-in/redacted'
     } else {
-        return url
+        sourceURL.pathname = '/redacted'
+        return sourceURL.href
     }
 
     const marketingQueryParameters = new Set([
