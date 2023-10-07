@@ -198,7 +198,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                         )}`}
                                     </H3>
                                 )}
-
+                                CI TEST
                                 <BatchChangeListFilters
                                     filters={availableFilters}
                                     selectedFilters={selectedFilters}
