@@ -170,9 +170,6 @@ importers:
       '@visx/voronoi':
         specifier: ^2.10.0
         version: 2.10.0(react@18.1.0)
-      '@vscode/codicons':
-        specifier: ^0.0.29
-        version: 0.0.29
       '@vscode/webview-ui-toolkit':
         specifier: ^1.2.2
         version: 1.2.2(react@18.1.0)
@@ -13996,10 +13993,6 @@ packages:
       loupe: 2.3.6
       pretty-format: 29.5.0
     dev: true
-
-  /@vscode/codicons@0.0.29:
-    resolution: {integrity: sha512-AXhTv1nl3r4W5DqAfXXKiawQNW+tLBNlXn/GcsnFCL0j17sQ2AY+az9oB9K6wjkibq1fndNJvmT8RYN712Fdww==}
-    dev: false
 
   /@vscode/test-electron@2.3.2:
     resolution: {integrity: sha512-CRfQIs5Wi5Ok5SUCC3PTvRRXa74LD43cSXHC8EuNlmHHEPaJa/AGrv76brcA1hVSxrdja9tiYwp95Lq8kwY0tw==}

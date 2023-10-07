@@ -397,7 +397,6 @@
     "@visx/shape": "^2.11.1",
     "@visx/text": "2.10.0",
     "@visx/voronoi": "^2.10.0",
-    "@vscode/codicons": "^0.0.29",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "agent-base": "6.0.2",
     "ajv": "^8.6.3",

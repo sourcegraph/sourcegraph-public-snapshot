@@ -5,9 +5,6 @@ import * as esbuild from 'esbuild'
 import { rm } from 'shelljs'
 
 import {
-    buildMonaco,
-    monacoPlugin,
-    MONACO_LANGUAGES_AND_FEATURES,
     packageResolutionPlugin,
     stylePlugin,
     workerPlugin,
@@ -107,26 +104,7 @@ export async function build(): Promise<void> {
                     './RepoFileLink': require.resolve('../src/webview/search-panel/alias/RepoFileLink'),
                     '../documentation/ModalVideo': require.resolve('../src/webview/search-panel/alias/ModalVideo'),
                 }),
-                // Note: leads to "file has no exports" warnings
-                monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
                 buildTimerPlugin,
-                {
-                    name: 'codiconsDeduplicator',
-                    setup(build): void {
-                        build.onLoad({ filter: /\.ttf$/ }, args => {
-                            // Both `@vscode/codicons` and `monaco-editor`
-                            // node modules include a `codicons.ttf` file,
-                            // so null one out.
-                            if (!args.path.includes('@vscode/codicons')) {
-                                return {
-                                    contents: '',
-                                    loader: 'text',
-                                }
-                            }
-                            return null
-                        })
-                    },
-                },
             ],
             loader: {
                 '.ttf': 'file',
@@ -136,8 +114,6 @@ export async function build(): Promise<void> {
             outdir: path.join(SHARED_CONFIG.outdir, 'webview'),
         })
     )
-
-    buildPromises.push(buildMonaco(outdir))
 
     const ctxs = await Promise.all(buildPromises)
 
