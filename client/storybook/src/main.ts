@@ -1,6 +1,7 @@
 import path from 'path'
 
-import type { Options, StorybookConfig } from '@storybook/core-common'
+import type { StorybookConfig as ReactWebpack5StorybookConfig } from '@storybook/react-webpack5'
+import type { Options, StorybookConfig } from '@storybook/types'
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
@@ -63,20 +64,29 @@ const getDllScriptTag = (): string => {
     `
 }
 
-const isStoryshotsEnvironment = globalThis.navigator?.userAgent?.match?.('jsdom')
-
 interface Config extends StorybookConfig {
     // Custom extension until `StorybookConfig` is fixed by adding this field.
     previewHead: (head: string) => string
 }
 
-const config: Config = {
-    framework: '@storybook/react',
+const config: Config & ReactWebpack5StorybookConfig = {
+    framework: {
+        name: '@storybook/react-webpack5',
+
+        options: {
+            builder: {
+                fsCache: true,
+                lazyCompilation: false,
+            },
+        },
+    },
+
     staticDirs: [path.resolve(__dirname, '../assets'), STATIC_ASSETS_PATH],
     stories: getStoriesGlob(),
+
     addons: [
         '@storybook/addon-actions',
-        'storybook-addon-designs',
+        '@storybook/addon-designs',
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
@@ -98,24 +108,6 @@ const config: Config = {
 
     core: {
         disableTelemetry: true,
-        builder: {
-            name: 'webpack5',
-            options: {
-                fsCache: true,
-                // Disabled because fast clicking through stories causes unexpected errors.
-                lazyCompilation: false,
-            },
-        },
-    },
-
-    features: {
-        // Explicitly disable the deprecated, not used postCSS support,
-        // so no warning is rendered on each start of storybook.
-        postcss: false,
-        // Storyshots is not currently compatible with the v7 store.
-        // https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storyshots-compatibility-in-the-v7-store
-        storyStoreV7: !isStoryshotsEnvironment,
-        babelModeV7: !isStoryshotsEnvironment,
     },
 
     typescript: {
@@ -269,6 +261,10 @@ const config: Config = {
         }
 
         return config
+    },
+
+    docs: {
+        autodocs: true,
     },
 }
 

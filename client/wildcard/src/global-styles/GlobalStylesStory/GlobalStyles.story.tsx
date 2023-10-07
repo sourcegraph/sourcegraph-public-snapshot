@@ -5,7 +5,7 @@
 import { action } from '@storybook/addon-actions'
 import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
 

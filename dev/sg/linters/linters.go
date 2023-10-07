@@ -161,7 +161,6 @@ func bazelTest(name, target string) *linter {
 //	warning " > @storybook/react@6.5.9" has unmet peer dependency "require-from-string@^2.0.2".
 //	warning "@storybook/react > react-element-to-jsx-string@14.3.4" has incorrect peer dependency "react@^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1".
 //	warning " > @testing-library/react-hooks@8.0.0" has incorrect peer dependency "react@^16.9.0 || ^17.0.0".
-//	warning "storybook-addon-designs > @figspec/react@1.0.0" has incorrect peer dependency "react@^16.14.0 || ^17.0.0".
 //	warning Workspaces can only be enabled in private projects.
 //	warning Workspaces can only be enabled in private projects.
 func pnpmInstallFilter() pipeline.Pipeline {

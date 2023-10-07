@@ -5,7 +5,10 @@ export const THEME_DARK_CLASS = 'theme-dark'
 export const THEME_LIGHT_CLASS = 'theme-light'
 
 // Themes use the colors from our webapp.
-const common: Omit<ThemeVars, 'base'> = {
+const common: Pick<
+    ThemeVars,
+    'colorPrimary' | 'colorSecondary' | 'brandTitle' | 'brandUrl' | 'brandImage' | 'fontBase' | 'fontCode'
+> = {
     colorPrimary: openColor.blue[6],
     colorSecondary: openColor.blue[6],
     brandTitle: 'Sourcegraph Wildcard design system',
