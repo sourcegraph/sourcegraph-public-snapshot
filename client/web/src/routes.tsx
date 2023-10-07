@@ -119,7 +119,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.PasswordReset,
-        element: <LegacyRoute render={props => <ResetPasswordPage {...props} />} />,
+        element: <LegacyRoute render={props => <ResetPasswordPage {...props} context={window.context} />} />,
     },
     {
         path: PageRoutes.ApiConsole,
