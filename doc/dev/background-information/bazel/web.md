@@ -7,9 +7,8 @@ See [Overview of the Bazel configuration for client](./web_overview.md) for in-d
 
 The sourcegraph client projects are setup to compile, bundle and test with Bazel. The tools used within Bazel include:
 * Babel for ts\[x\] transpilation
-* Webpack for bundling
+* Esbuild for bundling
 * Jest, Mocha for testing
-* esbuild for experimental bundling as well as internal tooling
 * Node tools such as graphql-codegen for generating graphql schema types
 
 The Bazel rulesets used to support these include:

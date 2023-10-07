@@ -16,13 +16,6 @@ const ThrowDynamicImportError: React.FunctionComponent<React.PropsWithChildren<u
     throw new TypeError('Failed to fetch dynamically imported module: https://example.com/x.js')
 }
 
-/** Throws an error that resembles the Webpack error when chunk loading fails.  */
-const ThrowChunkError: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
-    const ChunkError = new Error('Loading chunk 123 failed.')
-    ChunkError.name = 'ChunkLoadError'
-    throw ChunkError
-}
-
 describe('ErrorBoundary', () => {
     test('passes through if non-error', () =>
         expect(
@@ -47,15 +40,6 @@ describe('ErrorBoundary', () => {
             renderWithBrandedContext(
                 <ErrorBoundary location={null}>
                     <ThrowDynamicImportError />
-                </ErrorBoundary>
-            ).asFragment()
-        ).toMatchSnapshot())
-
-    test('renders reload page if webpack chunk error', () =>
-        expect(
-            renderWithBrandedContext(
-                <ErrorBoundary location={null}>
-                    <ThrowChunkError />
                 </ErrorBoundary>
             ).asFragment()
         ).toMatchSnapshot())

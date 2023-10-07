@@ -5,11 +5,9 @@ import path from 'path'
 // TODO(bazel): drop when non-bazel removed.
 const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
 
-// NOTE: use fs.realpathSync() in addition to path.resolve() to resolve
-// symlinks to the real path. This is required for webpack plugins using
-// `include: [...file path...]` when the file path contains symlinks such
-// as when using pnpm.
-export function resolveWithSymlink(...args: string[]): string {
+// NOTE: use fs.realpathSync() in addition to path.resolve() to resolve symlinks to the real path.
+// This canonicalizes the path, which avoids potential bugs in the frontend bundler step.
+function resolveWithSymlink(...args: string[]): string {
     const resolvedPath = path.resolve(...args)
 
     try {
@@ -19,7 +17,7 @@ export function resolveWithSymlink(...args: string[]): string {
     }
 }
 
-export function resolveAssetsPath(root: string): string {
+function resolveAssetsPath(root: string): string {
     if (IS_BAZEL && process.env.WEB_BUNDLE_PATH) {
         return resolveWithSymlink(root, process.env.WEB_BUNDLE_PATH)
     }

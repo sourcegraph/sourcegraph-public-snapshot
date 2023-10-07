@@ -5,7 +5,8 @@ import express from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
-import { STATIC_ASSETS_PATH, buildMonaco } from '@sourcegraph/build-config'
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+import { buildMonaco } from '@sourcegraph/build-config/src/esbuild/monacoPlugin'
 
 import { ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, printSuccessBanner } from '../utils'
 
