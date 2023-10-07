@@ -361,9 +361,8 @@ declare global {
     }
 }
 
-// When using esbuild, we need to manually configure the MonacoEnvironment for the Monaco editor.
-// This is not needed when using Webpack because the monaco-editor-webpack-plugin does this for us.
-if (process.env.DEV_WEB_BUILDER === 'esbuild' && !window.MonacoEnvironment) {
+// Manually configure the MonacoEnvironment for the Monaco editor.
+if (!window.MonacoEnvironment) {
     window.MonacoEnvironment = {
         getWorkerUrl(_moduleId: string, label: string): string {
             if (label === 'json') {

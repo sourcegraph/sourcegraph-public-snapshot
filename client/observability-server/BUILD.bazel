@@ -70,6 +70,6 @@ jest_test(
         "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css.gz",
         ":observability-server_tests",
     ],
-    # TODO(bazel): requires webpack setup for testing
+    # TODO(bazel): requires dev server setup for testing
     tags = ["manual"],
 )
