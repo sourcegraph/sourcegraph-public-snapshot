@@ -14,8 +14,6 @@ interface BundleSizeConfig {
 interface BundleSizeStats {
     [baseFilePath: string]: {
         raw: number
-        gzip: number
-        brotli: number
         isInitial: boolean
         isDynamicImport: boolean
         isCss: boolean
@@ -45,18 +43,12 @@ export function getBundleSizeStats(options: GetBundleSizeStatsOptions): BundleSi
 
     return bundleSizeConfig.files.reduce<BundleSizeStats>((result, file) => {
         const filePaths = glob.sync(file.path)
-
-        const fileStats = filePaths.reduce((fileStats, brotliFilePath) => {
-            const { dir, name } = path.parse(brotliFilePath)
-            const noCompressionFilePath = path.join(dir, name)
-            const gzipFilePath = `${noCompressionFilePath}.gz`
-
+        const fileStats = filePaths.reduce((fileStats, noCompressionFilePath) => {
+            const name = path.basename(noCompressionFilePath)
             return {
                 ...fileStats,
                 [noCompressionFilePath.replace(`${staticAssetsPath}/`, '')]: {
                     raw: statSync(noCompressionFilePath).size,
-                    gzip: statSync(gzipFilePath).size,
-                    brotli: statSync(brotliFilePath).size,
                     isInitial: initialResources.has(noCompressionFilePath),
                     isDynamicImport: name.startsWith('chunk-'),
                     isCss: path.parse(name).ext === '.css',
