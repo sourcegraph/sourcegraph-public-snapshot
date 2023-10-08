@@ -149,8 +149,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
 			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
-			c := NewClient().(*clientImplementor)
-			c.subRepoPermsChecker = nil
+			c := NewTestClient(t)
 			commits, err := c.Commits(ctx, repo, CommitsOptions{})
 			if err != nil {
 				t.Fatalf("err fetching commits: %s", err)
@@ -161,7 +160,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				baseCommit = commits[len(commits)-1]
 			}
 
-			c.subRepoPermsChecker = checker
+			c = c.WithChecker(checker)
 			iter, err := c.Diff(ctx, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo})
 			if err != nil {
 				t.Fatalf("error fetching diff: %s", err)
