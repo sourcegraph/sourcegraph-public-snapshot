@@ -41,11 +41,25 @@ func TestGithubScenario(t *testing.T) {
 	privateRepo.AddTeam(adminTeam)
 
 	fmt.Println(scenario.Plan())
+	ctx := context.Background()
+	// Get the Organization WILL FAIL since the scenario has not been applied yet
+	_, err = org.Get(ctx)
+	if err != nil {
+		t.Logf("failed to get github.Organization since it hasn't been applied yet: %v", err)
+	}
 
 	scenario.SetVerbose()
-	if err := scenario.Apply(context.Background()); err != nil {
+	if err := scenario.Apply(ctx); err != nil {
 		t.Fatalf("error applying scenario: %v", err)
 	}
+
+	// Get the Organization
+	ghOrg, err := org.Get(ctx)
+	if err != nil {
+		t.Fatalf("failed to get github.Organization: %v", err)
+	}
+
+	t.Logf("GitHub Organization: %s", ghOrg.GetLogin())
 }
 
 func TestMain(m *testing.M) {
