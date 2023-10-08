@@ -165,7 +165,7 @@ const config = {
     getMonacoWebpackPlugin(),
     new WebpackManifestPlugin({
       writeToFileEmit: true,
-      fileName: 'webpack.manifest.json',
+      fileName: 'web.manifest.json',
       seed: {
         environment: NODE_ENV,
       },
