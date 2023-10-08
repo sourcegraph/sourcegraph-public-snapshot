@@ -50,12 +50,12 @@ type Scenario interface {
 // Once Apply() is called, all the corresponding resources should be realized on GitHub. To fetch the corresponding
 // GitHub resources once can call Get() on the resources.
 type GitHubScenario struct {
-	id               string
-	t                *testing.T
-	client           *GitHubClient
-	actions          []*action
-	reporter         Reporter
-	appliedActionIdx int
+	id            string
+	t             *testing.T
+	client        *GitHubClient
+	actions       []*action
+	reporter      Reporter
+	nextActionIdx int
 }
 
 var _ Scenario = (*GitHubScenario)(nil)
@@ -116,7 +116,7 @@ func (s *GitHubScenario) Plan() string {
 // IsApplied returns whether Apply has already been called on this scenario. If more actions
 // have been added since the last Apply(), it will return false.
 func (s *GitHubScenario) IsApplied() bool {
-	return s.appliedActionIdx >= len(s.actions)
+	return s.nextActionIdx >= len(s.actions)
 }
 
 // Apply performs all the actions that have been added to this scenario sequentially in the order they were added.
@@ -126,6 +126,9 @@ func (s *GitHubScenario) IsApplied() bool {
 // Note that calling Apply more than once and with no new actions added, will result in an error be returned. This
 // is done since duplicate resources cannot be created.
 //
+// If a scenario is applied and fails midway and Apply is called again, it will continue where it left off. The only
+// way to reset this behaviour is to call teardown.
+//
 // Finally, if any action fails, no further actions will be executed and this method will return with the error
 func (s *GitHubScenario) Apply(ctx context.Context) error {
 	s.t.Helper()
@@ -134,32 +137,30 @@ func (s *GitHubScenario) Apply(ctx context.Context) error {
 	setup := s.actions
 	failFast := true
 
-	if s.appliedActionIdx >= len(s.actions) {
+	if s.nextActionIdx >= len(s.actions) {
 		return errors.New("all actions already applied")
 	}
 
 	start := time.Now()
-	for i, action := range setup {
+	for currActionIdx, action := range setup {
 		now := time.Now().UTC()
 
-		var err error
-		if s.appliedActionIdx <= i {
-			s.reporter.Writef("(Setup) Applying [%-50s] ", action.name)
-			err = action.apply(ctx)
-			s.appliedActionIdx++
-		} else {
+		if s.nextActionIdx > currActionIdx {
 			s.reporter.Writef("(Setup) Skipping [%-50s]\n", action.name)
 			continue
 		}
-
+		s.reporter.Writef("(Setup) Applying [%-50s] ", action.name)
+		err := action.apply(ctx)
 		duration := time.Now().UTC().Sub(now)
+
 		if err != nil {
 			s.reporter.Writef("FAILED (%s)\n", duration.String())
 			if failFast {
-				return err
+				break
 			}
 			errs = errors.Append(errs, err)
 		} else {
+			s.nextActionIdx++
 			s.reporter.Writef("SUCCESS (%s)\n", duration.String())
 		}
 	}
@@ -168,7 +169,7 @@ func (s *GitHubScenario) Apply(ctx context.Context) error {
 	return errs
 }
 
-// Teardown cleans up any resources created by Apply. This method is automatically registerd with *testing.Cleanup to
+// Teardown cleans up any resources created by Apply. This method is automatically registered with *testing.Cleanup to
 // cleanup resources, so generally it would not have to be called explicitly.
 //
 // Teardown iterates through the scenario actions in reverse order, calling teardown on each action. If a action
@@ -184,7 +185,7 @@ func (s *GitHubScenario) Teardown(ctx context.Context) error {
 
 	start := time.Now()
 	for _, action := range teardown {
-		s.appliedActionIdx--
+		// Nil means this action has no means of being torn down
 		if action.teardown == nil {
 			continue
 		}
@@ -197,17 +198,16 @@ func (s *GitHubScenario) Teardown(ctx context.Context) error {
 		if err != nil {
 			s.reporter.Writef("FAILED (%s)\n", duration.String())
 			if failFast {
-				return err
+				break
 			}
 			errs = errors.Append(errs, err)
 		} else {
 			s.reporter.Writef("SUCCESS (%s)\n", duration.String())
 		}
 	}
-	if s.appliedActionIdx < 0 {
-		s.t.Logf("scenario applied action Idx went negative. This is almost certainly a bug")
-		s.appliedActionIdx = 0
-	}
+	// Actions create new resources, therefore we can safely set the nextActionIdx to 0 here
+	// so that new resources be created
+	s.nextActionIdx = 0
 	s.reporter.Writef("Teardown complete in %s\n", time.Now().UTC().Sub(start))
 	return errs
 }
