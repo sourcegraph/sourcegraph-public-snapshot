@@ -1,13 +1,11 @@
-import '../../polyfills'
+import '@sourcegraph/shared/src/polyfills'
 
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 
 import { hasProperty, logger } from '@sourcegraph/common'
-
-import { isEndpointPair } from '../../platform/context'
-
-import { startExtensionHost } from './extensionHost'
+import { startExtensionHost } from '@sourcegraph/shared/src/api/extension/extensionHost'
+import { isEndpointPair } from '@sourcegraph/shared/src/platform/context'
 
 interface InitMessage {
     endpoints: {

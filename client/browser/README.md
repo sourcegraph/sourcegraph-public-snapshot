@@ -51,7 +51,7 @@ It works as follows:
       - `shared/`
         Code shared between multiple code hosts.
   - `config/`
-    Configuration code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
+    Configuration code that adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
   - `end-to-end/`
     E2E test suite.
 - `scripts/`
@@ -59,7 +59,7 @@ It works as follows:
 - `config/`
   Build configs.
 - `build/`
-  Generated directory containing the output from webpack and the generated bundles for each browser.
+  Generated directory containing the build output and the generated bundles for each browser.
 
 ## Requirements
 

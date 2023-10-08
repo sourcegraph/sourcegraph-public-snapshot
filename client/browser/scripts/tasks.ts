@@ -6,7 +6,6 @@ import { omit, cloneDeep, curry } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
-import type { Configuration } from 'webpack'
 
 import manifestSpec from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'
@@ -20,7 +19,7 @@ const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
     process.env.EXTENSION_PERMISSIONS_ALL_URLS && JSON.parse(process.env.EXTENSION_PERMISSIONS_ALL_URLS)
 )
 
-export type BuildEnvironment = 'dev' | 'prod'
+type BuildEnvironment = 'dev' | 'prod'
 
 type Browser = 'firefox' | 'chrome' | 'safari' | 'edge'
 
@@ -36,14 +35,6 @@ const BUILDS_DIR = 'build'
  * `manifest.spec.json`.
  */
 const useUtcVersion = true
-
-export const WEBPACK_STATS_OPTIONS: Configuration['stats'] = {
-    all: false,
-    timings: true,
-    errors: true,
-    warnings: true,
-    colors: true,
-}
 
 function ensurePaths(browser?: Browser): void {
     shelljs.mkdir('-p', 'build/dist')
