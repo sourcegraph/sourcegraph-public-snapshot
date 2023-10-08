@@ -122,7 +122,7 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<GlobalNavbarProps>> = ({
     showSearchBox,
-    branding,
+    branding = window.context?.branding,
     isSourcegraphDotCom,
     isCodyApp,
     isRepositoryRelatedPage,
@@ -134,9 +134,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showFeedbackModal,
     ...props
 }) => {
-    // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
-    branding = branding ?? window.context?.branding
-
     const location = useLocation()
 
     const routeMatch = useRoutesMatch(props.routes)
