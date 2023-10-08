@@ -46,7 +46,6 @@ class PlaceholderWidget extends WidgetType {
         super()
     }
 
-    /* eslint-disable-next-line id-length */
     public eq(other: PlaceholderWidget): boolean {
         return this.placeholder === other.placeholder
     }

@@ -216,7 +216,6 @@ const steps: Step[] = [
             ]
 
             if (next.patches) {
-                // eslint-disable-next-line id-length
                 for (let i = 0; i < next.patches.length; i++) {
                     events.push({
                         title: `Scheduled Patch #${i + 1} Sourcegraph ${name}`,

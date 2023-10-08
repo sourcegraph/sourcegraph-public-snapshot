@@ -41,6 +41,7 @@ const config = {
     // This rule doesn't understand type imports and we already have
     // import/no-duplicates enabled as well, which does understand type imports
     'no-duplicate-imports': 'off',
+    'id-length': 'off',
     '@typescript-eslint/consistent-type-exports': 'warn',
     '@typescript-eslint/consistent-type-imports': [
       'warn',
