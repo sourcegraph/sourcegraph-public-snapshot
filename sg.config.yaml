@@ -397,7 +397,7 @@ commands:
       pnpm install
       pnpm generate
     env:
-      WEBPACK_SERVE_INDEX: true
+      WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
@@ -406,7 +406,7 @@ commands:
     install: pnpm --filter @sourcegraph/web run build
     env:
       NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
+      WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:

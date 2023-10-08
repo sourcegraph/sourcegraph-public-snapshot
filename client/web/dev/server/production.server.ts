@@ -41,7 +41,7 @@ function startProductionServer(): void {
 
     const { proxyRoutes, ...proxyConfig } = getAPIProxySettings({
         apiURL: SOURCEGRAPH_API_URL,
-        ...(ENVIRONMENT_CONFIG.WEBPACK_SERVE_INDEX && {
+        ...(ENVIRONMENT_CONFIG.WEB_BUILDER_SERVE_INDEX && {
             getLocalIndexHTML(jsContextScript) {
                 const manifestFile = getWebBuildManifest()
                 return getIndexHTML({ manifestFile, jsContextScript })
