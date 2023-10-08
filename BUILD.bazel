@@ -138,7 +138,6 @@ js_library(
         "//:node_modules/@babel/preset-react",
         "//:node_modules/@babel/preset-typescript",
         "//:node_modules/@babel/runtime",
-        "//:node_modules/babel-plugin-lodash",
         "//:node_modules/semver",
         "//:node_modules/signale",
     ],
