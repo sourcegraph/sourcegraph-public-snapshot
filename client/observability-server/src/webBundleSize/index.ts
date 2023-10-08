@@ -48,11 +48,8 @@ for (const [baseFilePath, fileInfo] of Object.entries(bundleSizeStats)) {
 
         'bundle.file.name': baseFilePath,
         'bundle.file.size.raw': fileInfo.raw,
-        'bundle.file.size.gzip': fileInfo.gzip,
-        'bundle.file.size.brotli': fileInfo.brotli,
         'bundle.file.isInitial': fileInfo.isInitial,
         'bundle.file.isDynamicImport': fileInfo.isDynamicImport,
-        'bundle.file.isDefaultVendors': fileInfo.isDefaultVendors,
         'bundle.file.isCss': fileInfo.isCss,
         'bundle.file.isJs': fileInfo.isJs,
         'bundle.env': environment.NODE_ENV,

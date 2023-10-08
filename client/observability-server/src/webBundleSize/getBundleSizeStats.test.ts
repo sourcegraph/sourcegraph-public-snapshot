@@ -9,11 +9,11 @@ jest.mock(
     () => ({
         files: [
             {
-                path: MOCK_ASSETS_PATH + '/scripts/*.br',
+                path: MOCK_ASSETS_PATH + '/scripts/*.js',
                 maxSize: '10kb',
             },
             {
-                path: MOCK_ASSETS_PATH + '/styles/*.br',
+                path: MOCK_ASSETS_PATH + '/styles/*.css',
                 maxSize: '10kb',
             },
         ],
@@ -41,31 +41,15 @@ describe('getBundleSizeStats', () => {
         expect(stats).toEqual({
             'scripts/main.js': {
                 raw: 15,
-                gzip: 6,
-                brotli: 4,
                 isInitial: true,
                 isDynamicImport: false,
-                isDefaultVendors: false,
                 isCss: false,
                 isJs: true,
-            },
-            'scripts/sg_home.js': {
-                brotli: 4,
-                gzip: 6,
-                isCss: false,
-                isDefaultVendors: false,
-                isDynamicImport: true,
-                isInitial: false,
-                isJs: true,
-                raw: 15,
             },
             'styles/main.css': {
                 raw: 25,
-                gzip: 6,
-                brotli: 4,
                 isInitial: true,
                 isDynamicImport: false,
-                isDefaultVendors: false,
                 isCss: true,
                 isJs: false,
             },
