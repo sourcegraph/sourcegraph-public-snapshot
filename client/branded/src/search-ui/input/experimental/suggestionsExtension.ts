@@ -274,7 +274,6 @@ class Result {
         return new Result(result.result, result.valid)
     }
 
-    // eslint-disable-next-line id-length
     public at(index: number): Option | undefined {
         return this.allOptions[index]
     }
