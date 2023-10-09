@@ -487,6 +487,7 @@ var allowedBazelFlags = map[string]struct{}{
 	"--nocache_test_results": {},
 	"--test_tag_filters":     {},
 	"--test_timeout":         {},
+	"--config":               {},
 }
 
 var bazelFlagsRe = regexp.MustCompile(`--\w+`)
