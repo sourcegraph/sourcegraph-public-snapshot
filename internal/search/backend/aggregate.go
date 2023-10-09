@@ -91,6 +91,23 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, _ []*zoekt.SearchResult, 
 	return agg, overflow, true
 }
 
+type FlushCollector interface {
+	Flush()
+	Send(endpoint string, event *zoekt.SearchResult)
+	SendDone(endpoint string)
+}
+
+type nopFlushCollector struct {
+	sender zoekt.Sender
+}
+
+func (n *nopFlushCollector) Send(_ string, event *zoekt.SearchResult) {
+	n.sender.Send(event)
+}
+
+func (n *nopFlushCollector) SendDone(_ string) {}
+func (n *nopFlushCollector) Flush()            {}
+
 type flushCollectSender struct {
 	mu            sync.Mutex
 	collectSender *collectSender
