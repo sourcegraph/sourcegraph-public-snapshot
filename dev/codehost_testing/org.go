@@ -105,9 +105,9 @@ func (o *Org) CreateRepo(name string, public bool) *Repo {
 		org:  o,
 		name: name,
 	}
-	action := &action{
-		name: fmt.Sprintf("repo:create:%s", name),
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: fmt.Sprintf("repo:create:%s", name),
+		Apply: func(ctx context.Context) error {
 			org, err := o.get(ctx)
 			if err != nil {
 				return err
@@ -129,7 +129,7 @@ func (o *Org) CreateRepo(name string, public bool) *Repo {
 			baseRepo.name = repo.GetFullName()
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			org, err := o.get(ctx)
 			if err != nil {
 				return err
@@ -158,9 +158,9 @@ func (o *Org) CreateRepoFork(target string) *Repo {
 		org:  o,
 		name: target,
 	}
-	action := &action{
-		name: fmt.Sprintf("repo:fork:%s", target),
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: fmt.Sprintf("repo:fork:%s", target),
+		Apply: func(ctx context.Context) error {
 			org, err := o.get(ctx)
 			if err != nil {
 				return err
@@ -184,7 +184,7 @@ func (o *Org) CreateRepoFork(target string) *Repo {
 			baseRepo.name = repoName
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			org, err := o.get(ctx)
 			if err != nil {
 				return err
@@ -198,7 +198,7 @@ func (o *Org) CreateRepoFork(target string) *Repo {
 			return o.s.client.DeleteRepo(ctx, org, repo)
 		},
 	}
-	o.s.append(action)
+	o.s.Append(action)
 	baseRepo.WaitTillExists()
 
 	return baseRepo
