@@ -39,9 +39,9 @@ func (o *Org) get(ctx context.Context) (*github.Organization, error) {
 
 // AllowPrivateForks adds an action to the scenario to enable private forks and repos for the org
 func (o *Org) AllowPrivateForks() {
-	updateOrgPermissions := &action{
-		name: "org:permissions:update:" + o.name,
-		apply: func(ctx context.Context) error {
+	updateOrgPermissions := &Action{
+		Name: "org:permissions:update:" + o.name,
+		Apply: func(ctx context.Context) error {
 			org, err := o.get(ctx)
 			if err != nil {
 				return err
@@ -55,57 +55,57 @@ func (o *Org) AllowPrivateForks() {
 			}
 			return nil
 		},
-		teardown: nil,
+		Teardown: nil,
 	}
-	o.s.append(updateOrgPermissions)
+	o.s.Append(updateOrgPermissions)
 }
 
 // CreateTeam adds an action to the scenario to create a team with the given name for the org.
 // The Scenario ID will be added as a suffix to the given name.
 func (o *Org) CreateTeam(name string) any {
-	createTeam := &action{
-		name: "org:team:create:" + name,
-		apply: func(ctx context.Context) error {
+	createTeam := &Action{
+		Name: "org:team:create:" + name,
+		Apply: func(ctx context.Context) error {
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			return nil
 		},
 	}
 
-	o.s.append(createTeam)
+	o.s.Append(createTeam)
 
 	return nil
 }
 
 // CreateRepo adds an action to the scenario to create a repo with the given name and visibility for the org.
 func (o *Org) CreateRepo(name string, public bool) any {
-	action := &action{
-		name: fmt.Sprintf("repo:create:%s", name),
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: fmt.Sprintf("repo:create:%s", name),
+		Apply: func(ctx context.Context) error {
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			return nil
 		},
 	}
-	o.s.append(action)
+	o.s.Append(action)
 
 	return nil
 }
 
 // CreateRepoFork adds an action to the scenario to fork a target repo into the org.
 func (o *Org) CreateRepoFork(target string) any {
-	action := &action{
-		name: fmt.Sprintf("repo:fork:%s", target),
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: fmt.Sprintf("repo:fork:%s", target),
+		Apply: func(ctx context.Context) error {
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			return nil
 		},
 	}
-	o.s.append(action)
+	o.s.Append(action)
 
 	return nil
 }

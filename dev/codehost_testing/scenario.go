@@ -230,9 +230,9 @@ func (s *GitHubScenario) CreateOrg(name string) *Org {
 		name: name,
 	}
 
-	createOrg := &action{
-		name: "org:create:" + name,
-		apply: func(ctx context.Context) error {
+	createOrg := &Action{
+		Name: "org:create:" + name,
+		Apply: func(ctx context.Context) error {
 			orgName := fmt.Sprintf("org-%s-%s", name, s.id)
 			org, err := s.client.CreateOrg(ctx, orgName)
 			if err != nil {
@@ -241,7 +241,7 @@ func (s *GitHubScenario) CreateOrg(name string) *Org {
 			baseOrg.name = org.GetLogin()
 			return nil
 		},
-		teardown: func(context.Context) error {
+		Teardown: func(context.Context) error {
 			host := baseOrg.s.client.cfg.URL
 			deleteURL := fmt.Sprintf("%s/organizations/%s/settings/profile", host, baseOrg.name)
 			fmt.Printf("Visit %q to delete the org\n", deleteURL)
@@ -249,6 +249,6 @@ func (s *GitHubScenario) CreateOrg(name string) *Org {
 		},
 	}
 
-	s.append(createOrg)
+	s.Append(createOrg)
 	return baseOrg
 }
