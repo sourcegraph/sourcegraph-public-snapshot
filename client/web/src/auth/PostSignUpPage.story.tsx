@@ -7,9 +7,6 @@ import { PostSignUpPage } from './PostSignUpPage'
 
 const config: Meta = {
     title: 'web/auth/PostSignUpPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
 }
 
 export default config
