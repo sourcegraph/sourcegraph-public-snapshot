@@ -68,6 +68,9 @@ func createReleaseCommand(cctx *cli.Context) error {
 	pretend := cctx.Bool("pretend")
 	version := cctx.String("version")
 	inputs, err := parseInputs(cctx.String("inputs"))
+	if err != nil {
+		return err
+	}
 
 	vars := map[string]string{
 		"version": version,

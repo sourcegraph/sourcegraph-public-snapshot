@@ -3,8 +3,6 @@ meta:
   repository: "github.com/sourcegraph/sourcegraph"
   owners:
     - "@sourcegraph/search"
-  README: |
-    wfpwfpwf pwfp
   artifacts:
 
 requirements:
@@ -18,6 +16,13 @@ requirements:
 create:
   steps:
     patch:
+      - name: "schemas"
+        cmd: |
+          bazel run \
+            //internal/database:write_frontend_schema_json \
+            //internal/database:write_codeinsights_schema_json \
+            //internal/database:write_codeintel_schema_json
+
       - name: "bazel"
         cmd: |
           bazel run //tools/release:create_patch --run_under="cd $PWD &&" -- {{version}}
