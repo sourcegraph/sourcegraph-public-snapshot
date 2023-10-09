@@ -63,6 +63,20 @@ const config: StorybookConfig & StorybookConfigVite & ReactViteStorybookConfig =
 
     viteFinal: config => {
         config.define = { ...config.define, 'process.env.CHROMATIC': getEnvironmentBoolean('CHROMATIC') }
+
+        config.build = {
+            ...config.build,
+            minify: false,
+
+            // HACK(sqs): cssCodeSplit is needed to avoid `Failed to fetch dynamically imported
+            // module: ...` errors where SourcegraphWebApp.scss's JavaScript stub file with the CSS
+            // module class names is not emitted in the Storybook build. (It works in the dev
+            // server.) This is not a perfect workaround as there are some incorrect global styles
+            // being applied, but it's mostly fine (and any discrepancies are likely due to our
+            // misuse of global CSS anyway).
+            cssCodeSplit: false,
+        }
+
         config.css = {
             ...config.css,
             modules: {
