@@ -19,9 +19,6 @@ fi
 
 release_branch="wip_${NEW_VERSION}"
 
-echo "$PWD"
-echo "DEBUG: exiting early"
-exit 0
 echo "Checking out a new branch named $release_branch"
 git checkout -b "$release_branch"
 
@@ -35,4 +32,4 @@ git add cmd/migrator/BUILD.bazel cmd/migrator/wip_git_versions.txt
 git commit -m "release_patch: build ${NEW_VERSION}"
 
 git push origin "$release_branch"
-gh pr create -f -t "PRETEND RELEASE WIP: release_patch: build ${NEW_VERSION}" -l "wip_release"
+gh pr create -f -t "PRETEND RELEASE WIP: release_patch: build ${NEW_VERSION}" # -l "wip_release"
