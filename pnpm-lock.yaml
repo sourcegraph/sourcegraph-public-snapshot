@@ -603,9 +603,6 @@ importers:
       '@storybook/addon-designs':
         specifier: ^7.0.5
         version: 7.0.5(@storybook/addon-docs@7.4.6)(@storybook/addons@7.4.6)(@storybook/components@7.4.6)(@storybook/manager-api@7.4.6)(@storybook/preview-api@7.4.6)(@storybook/theming@7.4.6)(react-dom@18.1.0)(react@18.1.0)
-      '@storybook/addon-docs':
-        specifier: ^7.4.6
-        version: 7.4.6(@types/react-dom@18.0.2)(@types/react@18.0.8)(react-dom@18.1.0)(react@18.1.0)
       '@storybook/addon-links':
         specifier: ^7.4.6
         version: 7.4.6(react-dom@18.1.0)(react@18.1.0)

@@ -135,7 +135,6 @@
     "@storybook/addon-console": "^2.0.0",
     "@storybook/addon-controls": "^7.4.6",
     "@storybook/addon-designs": "^7.0.5",
-    "@storybook/addon-docs": "^7.4.6",
     "@storybook/addon-links": "^7.4.6",
     "@storybook/addon-storyshots": "^7.4.6",
     "@storybook/addon-storyshots-puppeteer": "^7.4.6",

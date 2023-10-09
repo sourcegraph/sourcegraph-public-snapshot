@@ -41,7 +41,6 @@ const config: StorybookConfig & StorybookConfigVite & ReactViteStorybookConfig =
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
-        '@storybook/addon-docs',
         '@storybook/addon-controls',
         '@storybook/addon-storysource',
     ],
@@ -112,10 +111,6 @@ const config: StorybookConfig & StorybookConfigVite & ReactViteStorybookConfig =
         }
 
         return config
-    },
-
-    docs: {
-        autodocs: true,
     },
 }
 
