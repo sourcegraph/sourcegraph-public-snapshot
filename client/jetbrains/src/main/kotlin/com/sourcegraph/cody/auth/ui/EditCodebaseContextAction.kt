@@ -28,7 +28,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
 
   private inner class EditCodebaseDialog : DialogWrapper(null, true) {
     val gitURL =
-        ExtendableTextField(CodyAgent.getClient(project).codebase?.currentCodebase() ?: "", 40)
+        ExtendableTextField(CodyAgent.getClient(project).codebase?.getUrl() ?: "", 40)
     val loadingLayerUI = LoadingLayerUI()
     val layeredGitURL = JLayer(gitURL, loadingLayerUI)
 
@@ -93,7 +93,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
     }
 
     override fun doOKAction() {
-      CodyAgent.getClient(project).codebase?.onNewExplicitCodebase(gitURL.text)
+      CodyAgent.getClient(project).codebase?.setUrl(gitURL.text)
       super.doOKAction()
     }
 
@@ -105,10 +105,6 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
             }
             .rowComment("Example: github.com/sourcegraph/cody")
         row { text("The URL will be used to retrieve the code context from the Cody API.") }
-        row {
-          text(
-              "If left empty, Cody will automatically infer the URL from your project's Git metadata.")
-        }
       }
     }
   }

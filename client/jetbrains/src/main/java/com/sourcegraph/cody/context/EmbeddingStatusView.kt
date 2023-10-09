@@ -54,7 +54,7 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
 
   fun updateEmbeddingStatus() {
     val client = CodyAgent.getClient(project)
-    val repoName = client.codebase?.currentCodebase()
+    val repoName = client.codebase?.getUrl()
     if (repoName == null) {
       setEmbeddingStatus(NoGitRepositoryEmbeddingStatus())
     } else {
