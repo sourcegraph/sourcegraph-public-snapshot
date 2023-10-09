@@ -52,6 +52,9 @@ type input struct {
 }
 
 func parseInputs(str string) (map[string]string, error) {
+	if str == "" {
+		return nil, nil
+	}
 	m := map[string]string{}
 	parts := strings.Split(str, ",")
 	for _, part := range parts {
