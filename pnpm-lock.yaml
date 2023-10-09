@@ -1203,6 +1203,9 @@ importers:
       vite:
         specifier: ^4.1.4
         version: 4.4.7(@types/node@18.17.15)(sass@1.32.4)
+      vite-plugin-turbosnap:
+        specifier: ^1.0.3
+        version: 1.0.3
       vsce:
         specifier: ^2.7.0
         version: 2.7.0
@@ -31179,6 +31182,10 @@ packages:
     transitivePeerDependencies:
       - rollup
       - supports-color
+    dev: true
+
+  /vite-plugin-turbosnap@1.0.3:
+    resolution: {integrity: sha512-p4D8CFVhZS412SyQX125qxyzOgIFouwOcvjZWk6bQbNPR1wtaEzFT6jZxAjf1dejlGqa6fqHcuCvQea6EWUkUA==}
     dev: true
 
   /vite@4.4.7(@types/node@18.17.15)(sass@1.32.4):

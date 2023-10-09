@@ -53,7 +53,9 @@
     "release": "cd dev/release && pnpm run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
-    "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\""
+    "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
+    "chromatic": "CHROMATIC=true pnpm run _chromatic --storybook-config-dir client/storybook/src --build-script-name=storybook:build",
+    "_chromatic": "chromatic"
   },
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
@@ -109,6 +111,7 @@
     "@octokit/rest": "^16.36.0",
     "@percy/cli": "^1.24.0",
     "@percy/puppeteer": "^2.0.2",
+    "vite-plugin-turbosnap": "^1.0.3",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.10",
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
