@@ -60,6 +60,7 @@ const config: StorybookConfig & StorybookConfigVite & ReactViteStorybookConfig =
         const isChromatic = getEnvironmentBoolean('CHROMATIC')
         config.define = { ...config.define, 'process.env.CHROMATIC': isChromatic }
         if (isChromatic && configType === 'PRODUCTION') {
+            // eslint-disable-next-line no-console
             console.log('Using TurboSnap plugin!')
             config.plugins = config.plugins ?? []
             config.plugins.push(turbosnap({ rootDir: config.root ?? ROOT_PATH }))
