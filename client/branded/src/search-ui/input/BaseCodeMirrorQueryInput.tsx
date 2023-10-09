@@ -242,7 +242,7 @@ function useEventHandlers(editorRef: RefObject<EditorView>, handlers: QueryInput
         } else {
             shouldUpdate.current = true
         }
-    }, [shouldUpdate, editorRef, handlers])
+    }, [editorRef, handlers])
 
     // We only need to compute this extension on first render. In subsequent renders
     // the above effect updates the handlers.

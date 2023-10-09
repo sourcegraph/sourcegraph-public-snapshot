@@ -254,7 +254,7 @@ const staticExtension: Extension = [
  * and active filter highlight.
  */
 export const CodeMirrorQueryInput = forwardRef<EditorView, CodeMirrorQueryInputProps>(function CodeMirrorQueryInput(
-    { extension = [], className, ...props },
+    { extension, className, ...props },
     ref
 ) {
     return (
@@ -262,7 +262,7 @@ export const CodeMirrorQueryInput = forwardRef<EditorView, CodeMirrorQueryInputP
             ref={ref}
             {...props}
             className={classNames(className, styles.root)}
-            extension={useMemo(() => [extension, staticExtension], [extension])}
+            extension={useMemo(() => [extension ?? [], staticExtension], [extension])}
         />
     )
 })
