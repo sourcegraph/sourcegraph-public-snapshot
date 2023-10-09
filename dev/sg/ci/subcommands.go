@@ -17,7 +17,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bazel"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
@@ -637,35 +636,5 @@ var openCommand = &cli.Command{
 			buildkiteURL += fmt.Sprintf("/%s", pipeline)
 		}
 		return open.URL(buildkiteURL)
-	},
-}
-
-var buildReleaseCommand = &cli.Command{
-	Name:      "wip-build-release",
-	ArgsUsage: "[version_number] (starts with 'v')",
-	Usage:     "",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "type",
-			Usage: "Release type, patch, minor or major",
-			Value: "patch",
-		},
-	},
-	Action: func(ctx *cli.Context) error {
-		typ := ctx.String("type")
-		switch typ {
-		case "patch":
-		case "minor", "major":
-			return errors.New("not implemented")
-		default:
-			return errors.Newf("invalid type %q, must be 'patch', 'minor' or 'major'", typ)
-		}
-
-		version := ctx.Args().First()
-		if !strings.HasPrefix(version, "v") {
-			return errors.Newf("invalid version %q, has to start with 'v'. Ex: v6.2.238", version)
-		}
-
-		return bazel.Run(ctx.Context, "//tools/release:patch", `--run_under="cd $PWD &&"`, "--", version)
 	},
 }
