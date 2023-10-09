@@ -118,7 +118,7 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
                     onEditorCreated={onEditorCreatedLocal}
                     patternType={SearchPatternType.standard}
                     interpretComments={true}
-                    extensions={useMemo(
+                    extension={useMemo(
                         () => [blockKeymap({ runBlock }), changeListener(setQueryInput), singleLine, extension ?? []],
                         [setQueryInput, runBlock, extension]
                     )}
