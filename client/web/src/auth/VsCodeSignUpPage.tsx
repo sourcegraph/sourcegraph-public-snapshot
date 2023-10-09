@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -16,13 +17,13 @@ import { type SignUpArguments, SignUpForm } from './SignUpForm'
 import styles from './VsCodeSignUpPage.module.scss'
 
 export const ShowEmailFormQueryParameter = 'showEmail'
-interface Props extends TelemetryProps {
+
+export interface VsCodeSignUpPageProps extends TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
     context: Pick<SourcegraphContext, 'authProviders' | 'authMinPasswordLength'>
-    isLightTheme: boolean
 }
 
 const VSCodeIcon: React.FC = () => (
@@ -37,13 +38,13 @@ const VSCodeIcon: React.FC = () => (
 /**
  * Sign up page specifically from users via our VS Code integration
  */
-export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    isLightTheme,
+export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<VsCodeSignUpPageProps>> = ({
     showEmailForm,
     onSignUp,
     context,
     telemetryService,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const location = useLocation()
 
     const queryWithUseEmailToggled = new URLSearchParams(location.search)

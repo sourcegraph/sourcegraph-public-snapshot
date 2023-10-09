@@ -8,8 +8,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/authz",
-        "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/awscodecommit",
         "//internal/extsvc/bitbucketcloud",
