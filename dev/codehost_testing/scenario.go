@@ -63,6 +63,7 @@ type GitHubScenario struct {
 	actions       []*Action
 	reporter      Reporter
 	nextActionIdx int
+	adminUser     *User
 }
 
 var _ Scenario = (*GitHubScenario)(nil)
@@ -79,13 +80,19 @@ func NewGitHubScenario(t *testing.T, cfg config.Config) (*GitHubScenario, error)
 	}
 	uid := []byte(uuid.NewString())
 	id := base64.RawStdEncoding.EncodeToString(uid[:])[:10]
-	return &GitHubScenario{
+	scenario := &GitHubScenario{
 		id:       id,
 		t:        t,
 		client:   client,
 		actions:  make([]*Action, 0),
 		reporter: NoopReporter{},
-	}, nil
+	}
+	scenario.adminUser = &User{
+		s:    scenario,
+		name: cfg.GitHub.AdminUser,
+	}
+
+	return scenario, err
 }
 
 // Verbose sets the reporter to ConsoleReporter to enable verbose output
@@ -289,10 +296,5 @@ func (s *GitHubScenario) CreateUser(name string) *User {
 // require that the scenario has been applied before the admin user can be retrieved - even though
 // it is not strictly required as the Admin already exists.
 func (s *GitHubScenario) GetAdmin() *User {
-	baseUser := &User{
-		s:    s,
-		name: s.client.cfg.AdminUser,
-	}
-
-	return baseUser
+	return s.adminUser
 }
