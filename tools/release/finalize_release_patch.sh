@@ -6,15 +6,14 @@ echo "PRETENDING TO FINALIZE RELEASE"
 VERSION=$1
 TITLE="WIP Release patch v${VERSION}"
 echo "Querying for release PR with title '$TITLE'"
-PR_NUMBER=$(gh pr list --state open --json title,url,number | jq --arg pr_title_regex "^$TITLE$" '.[] | select(.title | test($pr_title_regex)) | .number')
 
-if [[ -z "$PR_NUMBER" ]]; then
+if [[ -z "$BUILDKITE_PULL_REQUEST" ]]; then
   echo "No PR found with title: $TITLE"
   exit 1
 fi
 
-echo "Approving release PR $PR_NUMBER"
-echo ">>> gh pr review --approve \"$PR_NUMBER\""
+echo "Approving release PR $BUILDKITE_PULL_REQUEST"
+echo ">>> gh pr review --approve \"$BUILDKITE_PULL_REQUEST\""
 
-echo "Merging release PR $PR_NUMBER"
-echo ">>> gh pr merge \"$PR_NUMBER\""
+echo "Merging release PR $BUILDKITE_PULL_REQUEST"
+echo ">>> gh pr merge \"$BUILDKITE_PULL_REQUEST\""

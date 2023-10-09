@@ -5,13 +5,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func finalizeReleasePatch(c Config) operations.Operation {
+func finalizeReleasePatch(_ Config) operations.Operation {
 	cmds := []bk.StepOpt{}
 	cmds = append(cmds, bk.Agent("queue", "bazel"))
 
 	cmds = append(cmds,
-		bazelAnnouncef("bazel run //:finalize_release_patch"),
-		bk.Cmd(bazelCmd("run //:finalize_release_patch")),
+		bazelAnnouncef("bazel run //tools/release:finalize_release_patch"),
+		bk.Cmd(bazelCmd("run //tools/release:finalize_release_patch")),
 	)
 
 	return func(pipeline *bk.Pipeline) {
