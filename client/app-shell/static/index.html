@@ -22,6 +22,8 @@
                 --bg-purple: rgb(161, 18, 255, 0.075);
                 --red: rgb(255, 85, 67);
                 --blue: rgb(0, 203, 236);
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                text-align: center;
             }
 
             :root,
@@ -36,6 +38,25 @@
                 align-items: center;
                 justify-content: center;
                 background: var(--bg-purple);
+            }
+
+            body > div {
+                width: 100%;
+            }
+
+            .loading-animation {
+                transform: translateY(0px);
+                /* Cody autocompleted both the timing function and keyframes! */
+                animation: 250ms shove-face-up 5s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
+            }
+
+            @keyframes shove-face-up {
+                from {
+                    transform: translateY(0px);
+                }
+                to {
+                    transform: translateY(-10px);
+                }
             }
 
             svg path {
@@ -114,15 +135,63 @@
                 --translate-y-to: -6.8px;
                 --pulse-delay-offset: 0.222s;
             }
+
+            .messages {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translateY(-50%) translateX(-50%);
+                font-size: 13px;
+                font-weight: 500;
+                opacity: 0.8;
+                width: 100%;
+                --final-opacity: 0;
+                --duration: 4s;
+                --initial-delay: 5s;
+            }
+
+            .messages__message {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                opacity: 0;
+                animation: var(--duration) ease-in-out 0s forwards message-appear;
+                margin: 0;
+            }
+            .messages__message:nth-child(1) { animation-delay: var(--initial-delay); }
+            .messages__message:nth-child(2) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 1)); }
+            .messages__message:nth-child(3) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 2)); }
+            .messages__message:nth-child(4) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 3)); }
+            .messages__message:nth-child(5) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 4)); }
+            .messages__message:last-child { --final-opacity: 1; }
+            
+            @keyframes message-appear {
+                from { opacity: 0; }
+                4% { opacity: 1; }
+                96% { opacity: 1; }
+                to { opacity: var(--final-opacity); }
+            }
         </style>
     </head>
     <body>
-        <svg viewbox="0 0 24 24" width="32" height="32" aria-label="Starting up Cody...">
-            <path class="mouth" d="M5.2,14.8c0,0,1.6,3.6,6.9,3.6s6.9-3.6,6.9-3.6" pathLength="1" />
-            <path class="left-eye" d="M6.2,8.3h2h2" pathLength="1" />
-            <path class="right-eye" d="M16.4,5.7v2v2" pathLength="1" />
-        </svg>
+        <div>
+            <div class="loading-animation">
+                <svg viewbox="0 0 24 24" width="32" height="32" aria-label="Starting up Cody...">
+                    <path class="mouth" d="M5.2,14.8c0,0,1.6,3.6,6.9,3.6s6.9-3.6,6.9-3.6" pathLength="1" />
+                    <path class="left-eye" d="M6.2,8.3h2h2" pathLength="1" />
+                    <path class="right-eye" d="M16.4,5.7v2v2" pathLength="1" />
+                </svg>
+            </div>
 
+            <div class="messages">
+                <p class="messages__message">Initializing</p>
+                <p class="messages__message">Starting Embeddings Service</p>
+                <p class="messages__message">Starting Chat Service</p>
+                <p class="messages__message">Starting Git Service</p>
+                <p class="messages__message">Initializing</p>
+            </div>
+            </div>
         <script type="module" src="/scripts/app-shell.js"></script>
     </body>
 </html>
