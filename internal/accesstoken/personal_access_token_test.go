@@ -1,6 +1,8 @@
 package accesstoken
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestParsePersonalAccessToken(t *testing.T) {
 	type args struct {
@@ -33,7 +35,7 @@ func TestParsePersonalAccessToken(t *testing.T) {
 		},
 		{
 			name:    "sgph_ prefix and instance-identifier",
-			args:    args{token: "sgph_012345678_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			args:    args{token: "sgph_0123456789abcdef_abcdef1234abcdef1234abcdef1234abcdef1234"},
 			want:    "abcdef1234abcdef1234abcdef1234abcdef1234",
 			wantErr: false,
 		},
@@ -78,6 +80,57 @@ func TestParsePersonalAccessToken(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("ParsePersonalAccessToken() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGeneratePersonalAccessToken(t *testing.T) {
+	type args struct {
+		licenseKey    string
+		isDevInstance bool
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantToken string
+		wantBytes []byte
+		wantErr   bool
+	}{
+		{
+			name:      "valid token generation 1",
+			args:      args{licenseKey: "abcdef1234abcdef1234abcdef1234abcdef1234", isDevInstance: false},
+			wantToken: "sgph_5e37db464e9301ea_",
+			wantErr:   false,
+		},
+		{
+			name:      "valid token generation 2",
+			args:      args{licenseKey: "foobar", isDevInstance: false},
+			wantToken: "sgph_8844b0e0e754ec66_",
+			wantErr:   false,
+		},
+		{
+			name:      "valid token generation, dev instance",
+			args:      args{licenseKey: "abcdef1234abcdef1234abcdef1234abcdef1234", isDevInstance: true},
+			wantToken: "sgph_local_",
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			token, _, err := GeneratePersonalAccessToken(tt.args.licenseKey, tt.args.isDevInstance)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GeneratePersonalAccessToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if len(tt.wantToken) == 0 {
+				t.Error("GeneratePersonalAccessToken() len(wantToken) is 0")
+			}
+
+			// Take the first characters to compare just the prefix
+			if token[:len(tt.wantToken)] != tt.wantToken {
+				t.Errorf("GeneratePersonalAccessToken() got = %v, want %v", token[:len(tt.wantToken)], tt.wantToken)
 			}
 		})
 	}
