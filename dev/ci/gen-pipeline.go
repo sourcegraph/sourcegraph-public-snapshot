@@ -33,8 +33,6 @@ func init() {
 	flag.BoolVar(&docs, "docs", false, "Render generated documentation")
 }
 
-//go:generate sh -c "cd ../../ && echo '<!-- DO NOT EDIT: generated via: go generate ./dev/ci -->\n' > doc/dev/background-information/ci/reference.md"
-//go:generate sh -c "cd ../../ && go run ./dev/ci/gen-pipeline.go -docs >> doc/dev/background-information/ci/reference.md"
 func main() {
 	flag.Parse()
 

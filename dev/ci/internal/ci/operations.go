@@ -113,13 +113,6 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	}
 }
 
-// Adds the terraform scanner step.  This executes very quickly ~6s
-// func addTerraformScan(pipeline *bk.Pipeline) {
-//	pipeline.AddStep(":lock: Checkov Terraform scanning",
-//		bk.Cmd("dev/ci/ci-checkov.sh"),
-//		bk.SoftFail(222))
-// }
-
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
