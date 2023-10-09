@@ -267,6 +267,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- Finalize patch release
 
 ### Main branch
 
