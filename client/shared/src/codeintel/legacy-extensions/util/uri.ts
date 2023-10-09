@@ -3,7 +3,8 @@
  *
  * @param url The text document URL.
  */
-export function parseGitURI({ hostname, pathname, search, hash }: URL): { repo: string; commit: string; path: string } {
+export function parseGitURI(url: string): { repo: string; commit: string; path: string } {
+    const { hostname, pathname, search, hash } = new URL(url.replace(/^git:/, 'http:'))
     return {
         repo: hostname + decodeURIComponent(pathname),
         commit: decodeURIComponent(search.slice(1)),

@@ -264,7 +264,7 @@ export class API {
             return
         }
 
-        const { repo, commit, path } = parseGitURI(new URL(document.uri))
+        const { repo, commit, path } = parseGitURI(document.uri)
 
         const payload = await this.fetchLocalCodeIntelPayload({ repo, commit, path })
         if (!payload) {
@@ -299,7 +299,7 @@ export class API {
             ? symbolInfoDefinitionQueryWithRange
             : symbolInfoDefinitionQueryWithoutRange
 
-        const { repo, commit, path } = parseGitURI(new URL(document.uri))
+        const { repo, commit, path } = parseGitURI(document.uri)
 
         const vars = { repository: repo, commit, path, line: position.line, character: position.character }
         const response = await (async (): Promise<SymbolInfoResponse> => {
