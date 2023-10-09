@@ -94,7 +94,7 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
                     <Container>
                         <SignUpForm
                             className="w-100"
-                            buttonLabel="Create admin account and continue"
+                            buttonLabel="Create admin account and continue your work!"
                             onSignUp={initSite}
                             // This page is never shown on dotcom, to keep the API surface
                             // of this component clean, we don't expose this option.

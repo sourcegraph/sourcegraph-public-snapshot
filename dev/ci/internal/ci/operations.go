@@ -315,6 +315,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
+			chromaticCommand += " --only-changed"
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
 			stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
