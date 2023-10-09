@@ -44,9 +44,9 @@ func (r *Repo) get(ctx context.Context) (*github.Repository, error) {
 // has access to this repo.
 func (r *Repo) AddTeam(team *Team) {
 	r.team = team
-	action := &action{
-		name: fmt.Sprintf("repo:team:%s:membership:%s", team.name, r.name),
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: fmt.Sprintf("repo:team:%s:membership:%s", team.name, r.name),
+		Apply: func(ctx context.Context) error {
 			org, err := r.org.get(ctx)
 			if err != nil {
 				return err
@@ -68,10 +68,10 @@ func (r *Repo) AddTeam(team *Team) {
 			}
 			return nil
 		},
-		teardown: nil,
+		Teardown: nil,
 	}
 
-	r.s.append(action)
+	r.s.Append(action)
 }
 
 // SetPermissions adds an action that will set the permissions (public or private) for the repository
@@ -80,9 +80,9 @@ func (r *Repo) SetPermissions(private bool) {
 	if !private {
 		permissionKey = "public"
 	}
-	action := &action{
-		name: fmt.Sprintf("repo:permissions:%s:%s", r.name, permissionKey),
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: fmt.Sprintf("repo:permissions:%s:%s", r.name, permissionKey),
+		Apply: func(ctx context.Context) error {
 			repo, err := r.get(ctx)
 			if err != nil {
 				return err
@@ -102,15 +102,15 @@ func (r *Repo) SetPermissions(private bool) {
 		},
 	}
 
-	r.s.append(action)
+	r.s.Append(action)
 }
 
 // WaitTillExists creates an action that waits for the repository to exist on GitHub. This action is especially
 // useful for when a repo is forked since a forked repo doesn't immediately exist when requested on GitHub.
 func (r *Repo) WaitTillExists() {
-	action := &action{
-		name: fmt.Sprintf("repo:exists:%s", r.name),
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: fmt.Sprintf("repo:exists:%s", r.name),
+		Apply: func(ctx context.Context) error {
 			var err error
 			for i := 0; i < 5; i++ {
 				time.Sleep(1 * time.Second)
@@ -123,5 +123,5 @@ func (r *Repo) WaitTillExists() {
 		},
 	}
 
-	r.s.append(action)
+	r.s.Append(action)
 }
