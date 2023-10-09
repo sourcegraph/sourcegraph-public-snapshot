@@ -392,34 +392,6 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
-// Release a snapshot of App.
-func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
-	// The version scheme we use for App is one of:
-	//
-	// * yyyy.mm.dd+$BUILDNUM.$COMMIT
-	// * yyyy.mm.dd-insiders+$BUILDNUM.$COMMIT
-	//
-	// We do not follow the Sourcegraph enterprise versioning scheme, because Cody App is
-	// released much more frequently than the enterprise versions by nature of being a desktop
-	// app.
-	//
-	// Also note that goreleaser requires the version is semver-compatible.
-	insidersStr := ""
-	if insiders {
-		insidersStr = "-insiders"
-	}
-	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.02"), insidersStr, c.BuildNumber, c.Commit)
-
-	return func(pipeline *bk.Pipeline) {
-		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
-		pipeline.AddStep(":desktop_computer: App release",
-			withPnpmCache(),
-			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-			bk.Env("VERSION", version),
-			bk.Cmd("dev/ci/scripts/release-app.sh"))
-	}
-}
-
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
