@@ -21,11 +21,11 @@ import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import type { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
 import { formatSearchParameters, type LineOrPositionOrRange } from '@sourcegraph/common/src'
-import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { type Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
+import { getCodeIntelAPI } from '../codeintel'
 import { blobPropsFacet } from '../index'
 import {
     isInteractiveOccurrence,
@@ -220,7 +220,7 @@ async function hoverRequest(
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<HoverResult> {
-    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+    const api = getCodeIntelAPI(view.state)
     const hover = await api.getHover(params)
 
     let markdownContents: string =

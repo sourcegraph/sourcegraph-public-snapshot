@@ -1,12 +1,11 @@
-import { type Extension, type SelectionRange, StateField } from '@codemirror/state'
-import { type EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
+import { type SelectionRange, StateField } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
 import { memoize } from 'lodash'
 import { type Location, createPath } from 'react-router-dom'
 
 import { type Occurrence, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
-import { blobPropsFacet } from '..'
 import { cmSelectionToRange, occurrenceAtPosition, rangeToCmSelection } from '../occurrence-utils'
 import { isSelectionInsideDocument } from '../utils'
 
@@ -17,25 +16,19 @@ export const fallbackOccurrences = StateField.define<Map<number, Occurrence>>({
     update: value => value,
 })
 
-// View plugin that listens to location changes and updates editor selection accordingly.
-export const syncOccurrenceWithURL: Extension = ViewPlugin.define(view => ({
-    update(update: ViewUpdate): void {
-        const { location } = update.state.facet(blobPropsFacet)
-
-        // Update occurences only on location change.
-        this.updateFocusedOccurences(createPath(location), location)
-    },
-    // The first argument of the memoized function is used as a cache key.
-    updateFocusedOccurences: memoize((pathCacheKey: string, location: Location) => {
+// Helper function to update editor selection from URL information.
+export const syncOccurrencesWithURL = memoize(
+    (location: Location, view: EditorView) => {
         const { selection } = selectionFromLocation(view, location)
 
         if (selection && isSelectionInsideDocument(selection, view.state.doc)) {
             const occurrence = occurrenceAtPosition(view.state, cmSelectionToRange(view.state, selection).start)
 
-            window.requestAnimationFrame(() => view.dispatch({ effects: setFocusedOccurrence.of(occurrence ?? null) }))
+            view.dispatch({ effects: setFocusedOccurrence.of(occurrence ?? null) })
         }
-    }),
-}))
+    },
+    location => createPath(location)
+)
 
 export function selectionFromLocation(
     view: EditorView,

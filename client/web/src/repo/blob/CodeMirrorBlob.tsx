@@ -1,8 +1,8 @@
 /**
- * An experimental implementation of the Blob view using CodeMirror
+ * An implementation of the Blob view using CodeMirror
  */
 
-import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { EditorState, type Extension } from '@codemirror/state'
@@ -17,10 +17,11 @@ import {
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import { getOrCreateCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext, PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -40,7 +41,9 @@ import { blobPropsFacet } from './codemirror'
 import { blameData, showBlame } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { hideEmptyLastLine } from './codemirror/eof'
+import { codeIntelAPI } from './codemirror/codeintel'
 import { syntaxHighlight } from './codemirror/highlight'
+import { hoverCardConstructor } from './codemirror/hovercard'
 import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { linkify } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
@@ -52,8 +55,9 @@ import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
-import { selectionFromLocation } from './codemirror/token-selection/selections'
+import { selectionFromLocation, syncOccurrencesWithURL } from './codemirror/token-selection/selections'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
+import { HovercardView } from './codemirror/tooltips/HovercardView'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -168,6 +172,7 @@ const staticExtensions: Extension = [
     }),
     hideEmptyLastLine,
     linkify,
+    hoverCardConstructor.of(HovercardView),
 ]
 
 export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
@@ -215,10 +220,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
     // reconfigure the editor extensions
-    const navigateRef = useRef(navigate)
-    navigateRef.current = navigate
-    const locationRef = useRef(location)
-    locationRef.current = location
+    const navigateRef = useMutableValue(navigate)
+    const locationRef = useMutableValue(location)
 
     const customHistoryAction = props.nav
     const onSelection = useCallback(
@@ -276,6 +279,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         editorRef,
         useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
     )
+    const codeIntelExtension = useCodeIntelExtension(props.platformContext)
 
     const extensions = useMemo(
         () => [
@@ -300,7 +304,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                           : undefined
                   )
                 : [],
-            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : codeIntelExtension,
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
@@ -335,6 +339,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             blameDecorations,
             wrapCodeSettings,
             blobProps,
+            codeIntelExtension,
         ]
     )
 
@@ -392,6 +397,13 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             updatePin(editor, hasPin ? position : null)
         }
     }, [position, hasPin])
+
+    // Listens to location changes and update editor selection accordingly.
+    useEffect(() => {
+        if (editorRef.current) {
+            syncOccurrencesWithURL(location, editorRef.current)
+        }
+    }, [location])
 
     useCodeMirror(
         editorRef,
@@ -467,6 +479,24 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 }
 
+function useCodeIntelExtension(context: PlatformContext): Extension {
+    const [api, setApi] = useState<CodeIntelAPI | null>(null)
+
+    useEffect(() => {
+        let ignore = false
+        getOrCreateCodeIntelAPI(context).then(api => {
+            if (!ignore) {
+                setApi(api)
+            }
+        })
+        return () => {
+            ignore = true
+        }
+    }, [context])
+
+    return api ? [codeIntelAPI.of(api), tokenSelectionExtension()] : []
+}
+
 /**
  * Create and update blame decorations.
  */
@@ -537,6 +567,16 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
         }
         return blobRef.current
     }, [blobInfo])
+}
+
+function useMutableValue<T>(value: T): Readonly<MutableRefObject<T>> {
+    const valueRef = useRef(value)
+
+    useEffect(() => {
+        valueRef.current = value
+    }, [value])
+
+    return valueRef
 }
 
 /**

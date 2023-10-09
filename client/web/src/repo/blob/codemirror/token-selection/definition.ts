@@ -4,11 +4,11 @@ import { createPath } from 'react-router-dom'
 
 import type { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import type { Location } from '@sourcegraph/extension-api-types'
-import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { type Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { type BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
+import { getCodeIntelAPI } from '../codeintel'
 import { syntaxHighlight } from '../highlight'
 import {
     isInteractiveOccurrence,
@@ -146,7 +146,7 @@ async function goToDefinition(
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
-    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+    const api = getCodeIntelAPI(view.state)
     const definition = await api.getDefinition(params, {
         referenceOccurrence: occurrence,
         documentOccurrences: view.state.facet(syntaxHighlight).occurrences,

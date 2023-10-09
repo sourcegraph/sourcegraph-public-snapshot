@@ -5,21 +5,13 @@ import { combineLatest, type Observable, Subject, type Subscription } from 'rxjs
 import { startWith } from 'rxjs/operators'
 
 import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
-import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../CodeMirrorBlob'
-
-import { blobPropsFacet } from './index'
-import { CodeMirrorContainer } from './react-interop'
-import { zeroToOneBasedPosition } from './utils'
-
-type UIRange = UIRangeSpec['range']
-
-/**
- * Hover information received from a hover source.
- */
-export type HoverData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
+import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
+import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../../CodeMirrorBlob'
+import type { HoverData, UIRange } from '../hovercard'
+import { blobPropsFacet } from '../index'
+import { CodeMirrorContainer } from '../react-interop'
+import { zeroToOneBasedPosition } from '../utils'
 
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.

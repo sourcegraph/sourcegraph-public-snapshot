@@ -12,7 +12,7 @@ import type { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { type BlobViewState, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
-import { HovercardView, type HoverData } from '../hovercard'
+import { type HoverData, createHovercard } from '../hovercard'
 import { rangeToCmSelection } from '../occurrence-utils'
 import { type DefinitionResult, goToDefinitionAtOccurrence } from '../token-selection/definition'
 import { modifierClickDescription } from '../token-selection/modifier-click'
@@ -54,7 +54,7 @@ export class CodeIntelTooltip implements Tooltip {
             // To prevent the "Go to definition" from delaying the loading of
             // the popover, we provide an instant result that doesn't handle the
             // "No definition found" or "You are at the definition" cases. This
-            // instant result gets dynamically replaced the actual result once
+            // instant result gets dynamically replaced by the actual result once
             // it finishes loading.
             const instantDefinitionResult: AsyncDefinitionResult = {
                 locations: [{ uri: '' }],
@@ -80,7 +80,8 @@ export class CodeIntelTooltip implements Tooltip {
             const hovercardData: Observable<HoverData> = definitionResults.pipe(
                 map(result => this.hovercardData(result))
             )
-            return new HovercardView(view, occurrence.range.withIncrementedValues(), pinned, hovercardData)
+
+            return createHovercard(view, occurrence.range.withIncrementedValues(), pinned, hovercardData)
         }
     }
     private hovercardData(definition: AsyncDefinitionResult): HoverData {
