@@ -29,7 +29,7 @@ The default run type.
   - Tests
   - Async BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+  - **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
   - **Security Scanning**: Sonarcloud Scan
   - **Pipeline setup**: Trigger async
 
@@ -37,7 +37,7 @@ The default run type.
   - Perform bazel prechecks
   - Tests
   - Async BackCompat Tests
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+  - **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `DatabaseSchema` changes:
@@ -141,7 +141,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - Async BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
@@ -203,7 +203,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - Async BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
@@ -221,7 +221,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - Async BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
@@ -262,7 +262,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - Async BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
@@ -285,7 +285,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - Async BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
@@ -361,7 +361,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - Async BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Client checks**: Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E

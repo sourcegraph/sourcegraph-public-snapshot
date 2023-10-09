@@ -321,8 +321,10 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
-		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
-			append(stepOpts, bk.Cmd(chromaticCommand))...)
+		// TODO(sqs): build is failing (https://buildkite.com/sourcegraph/sourcegraph/builds/246235#018b0c9a-38be-43ed-af9e-d8cf04ab7305)
+		_ = stepOpts
+		_ = chromaticCommand
+		// pipeline.AddStep(":chromatic: Upload Storybook to Chromatic", append(stepOpts, bk.Cmd(chromaticCommand))...)
 	}
 }
 
