@@ -16,10 +16,10 @@ import (
 // Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
 const PersonalAccessTokenPrefix = "sgph_"
 const LocalInstanceIdentifier = "local"
-const InstanceIdentifierLength = 10
+const InstanceIdentifierLength = 16
 const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public, as we are not relying on HMAC for authentication
 
-var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{8,16}_)?([a-fA-F0-9]{40})$")
+var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{16}_)?([a-fA-F0-9]{40})$")
 
 // ParseAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
 // Personal access tokens can take several forms:
@@ -51,7 +51,6 @@ func GeneratePersonalAccessToken(licenseKey string, isDevInstance bool) (string,
 	if isDevInstance || licenseKey == "" {
 		instanceIdentifier = LocalInstanceIdentifier
 	} else {
-		// TODO: Change to an hmac
 		h := hmac.New(sha256.New, []byte(InstanceIdentifierHmacKey))
 		h.Write([]byte(licenseKey))
 
