@@ -1,8 +1,12 @@
-productName: sourcegraph
-repository: "github.com/sourcegraph/sourcegraph"
-owners:
-  - "@sourcegraph/search"
-  - "Bob"
+meta:
+  productName: sourcegraph
+  repository: "github.com/sourcegraph/sourcegraph"
+  owners:
+    - "@sourcegraph/search"
+  README: |
+    wfpwfpwf pwfp
+  artifacts:
+
 requirements:
   - name: "Bazel"
     cmd: bazel version
@@ -10,12 +14,10 @@ requirements:
   - name: "Github CLI"
     cmd: gh version
     fixInstructions: brew install gh
-  - name: "my env var"
-    env: FOO
-    fixInstructions: set FOO=123
-steps:
-  patch:
-    - name: "bazel"
-      cmd: |
-        ab=123
-        echo $ab
+
+create:
+  steps:
+    patch:
+      - name: "bazel"
+        cmd: |
+          bazel run //tools/release:create_patch --run_under="cd $PWD &&" -- {{version}}

@@ -13,21 +13,33 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// TODO sg release scaffold ...
+// TODO add PR body
 type createReleaseManifest struct {
-	ProductName  string   `yaml:"productName"`
-	Owners       []string `yaml:"owners"`
-	Repository   string   `yaml:"repository"`
+	Meta struct {
+		ProductName string   `yaml:"productName"`
+		Owners      []string `yaml:"owners"`
+		Repository  string   `yaml:"repository"`
+		Artifacts   []string `yaml:"artifacts"`
+		README      string   `yaml:"README"`
+	} `yaml:"meta"`
 	Requirements []struct {
 		Name            string `yaml:"name"`
 		Cmd             string `yaml:"cmd"`
 		Env             string `yaml:"env"`
 		FixInstructions string `yaml:"fixInstructions"`
 	} `yaml:"requirements"`
-	Steps struct {
-		Patch []cmdManifest `yaml:"patch"`
-		Minor []cmdManifest `yaml:"minor"`
-		Major []cmdManifest `yaml:"major"`
-	} `yaml:"steps"`
+	Inputs []input `yaml:"inputs"`
+	Create struct {
+		Steps struct {
+			Patch []cmdManifest `yaml:"patch"`
+			Minor []cmdManifest `yaml:"minor"`
+			Major []cmdManifest `yaml:"major"`
+		} `yaml:"steps"`
+	} `yaml:"create"`
+	PromoteToPublic struct {
+		Steps []cmdManifest `yaml:"steps"`
+	} `yaml:"promoteToPublic"`
 }
 
 type cmdManifest struct {
@@ -35,12 +47,36 @@ type cmdManifest struct {
 	Cmd  string `yaml:"cmd"`
 }
 
+type input struct {
+	ReleaseID string `yaml:"releaseId"`
+}
+
+func parseInputs(str string) (map[string]string, error) {
+	m := map[string]string{}
+	parts := strings.Split(str, ",")
+	for _, part := range parts {
+		subparts := strings.Split(part, "=")
+		if len(subparts) != 2 {
+			return nil, errors.New("invalid inputs")
+		}
+		m[subparts[0]] = subparts[1]
+	}
+	return m, nil
+}
+
 func createReleaseCommand(cctx *cli.Context) error {
 	pretend := cctx.Bool("pretend")
 	version := cctx.String("version")
+	inputs, err := parseInputs(cctx.String("inputs"))
+
 	vars := map[string]string{
 		"version": version,
 		"tag":     strings.TrimPrefix(version, "v"),
+	}
+	for k, v := range inputs {
+		// TODO sanitize input format
+		vars[fmt.Sprintf("inputs.%s.version", k)] = v
+		vars[fmt.Sprintf("inputs.%s.tag", k)] = strings.TrimPrefix(v, "v")
 	}
 
 	workdir := cctx.String("workdir")
@@ -61,10 +97,29 @@ func createReleaseCommand(cctx *cli.Context) error {
 	if err := dec.Decode(&m); err != nil {
 		say("setup", "failed to decode manifest")
 	}
+	saySuccess("setup", "Found manifest for %q (%s)", m.Meta.ProductName, m.Meta.Repository)
 
-	saySuccess("setup", "Found manifest for %q (%s)", m.ProductName, m.Repository)
-	say("meta", "Owners: %s", strings.Join(m.Owners, ", "))
-	say("meta", "Will create a patch release %q", version)
+	announce2("meta", "Will create a patch release %q", version)
+	say("meta", "Owners: %s", strings.Join(m.Meta.Owners, ", "))
+	say("meta", "Repository: %s", m.Meta.Repository)
+
+	for _, in := range m.Inputs {
+		var found bool
+		for k := range inputs {
+			if k == in.ReleaseID {
+				found = true
+			}
+		}
+		if !found {
+			sayFail("inputs", "Couldn't find input %q, required by manifest, but --inputs=%s=... flag is missing", in.ReleaseID, in.ReleaseID)
+			return errors.New("missing input")
+		}
+	}
+
+	announce2("vars", "Variables")
+	for k, v := range vars {
+		say("vars", "%s=%q", k, v)
+	}
 
 	announce2("reqs", "Checking requirements...")
 	var failed bool
@@ -102,11 +157,11 @@ func createReleaseCommand(cctx *cli.Context) error {
 	var steps []cmdManifest
 	switch cctx.String("type") {
 	case "patch":
-		steps = m.Steps.Patch
+		steps = m.Create.Steps.Patch
 	case "minor":
-		steps = m.Steps.Minor
+		steps = m.Create.Steps.Minor
 	case "major":
-		steps = m.Steps.Major
+		steps = m.Create.Steps.Major
 	}
 
 	for _, step := range steps {

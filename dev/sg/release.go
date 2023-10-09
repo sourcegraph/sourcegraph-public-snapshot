@@ -58,6 +58,10 @@ var releaseCommand = &cli.Command{
 					Value: "v6.6.666",
 					Usage: "Force version",
 				},
+				&cli.StringFlag{
+					Name:  "inputs",
+					Usage: "Set inputs to use for a given release, ex: --input=server=v5.2.404040,foobar=ffefe",
+				},
 			},
 			Action: createReleaseCommand,
 		},
