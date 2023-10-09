@@ -29,8 +29,11 @@ buildozer "add outs schema-descriptions/${NEW_VERSION}-internal_database_schema.
 # ultimately, we will be creating a tag for internal releases.
 # Update the shell script powering that target
 echo "${NEW_VERSION}" >> cmd/migrator/wip_git_versions.txt
-
 git add cmd/migrator/BUILD.bazel cmd/migrator/wip_git_versions.txt
+
+# Add the newly generated schemas
+git add internal/database/*.json
+
 git commit -m "release_patch: build ${NEW_VERSION}"
 
 git push origin "$release_branch"
