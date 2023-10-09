@@ -58,7 +58,6 @@ func ProvidersFromConfig(
 
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
-			extsvc.VariantAWSCodeCommit.AsKind(),
 			extsvc.VariantAzureDevOps.AsKind(),
 			extsvc.VariantBitbucketCloud.AsKind(),
 			extsvc.VariantBitbucketServer.AsKind(),
