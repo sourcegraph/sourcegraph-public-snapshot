@@ -25,6 +25,8 @@ git checkout -b "$release_branch"
 # Update the buildfile for schema_descriptions so it has our new schema.
 buildozer "add outs schema-descriptions/${NEW_VERSION}-internal_database_schema.codeinsights.json schema-descriptions/${NEW_VERSION}-internal_database_schema.codeintel.json schema-descriptions/${NEW_VERSION}-internal_database_schema.json" //cmd/migrator:schema_descriptions
 
+# TODO: this is merely for being able to iterate while it's still WIP
+# ultimately, we will be creating a tag for internal releases.
 # Update the shell script powering that target
 echo "${NEW_VERSION}" >> cmd/migrator/wip_git_versions.txt
 
