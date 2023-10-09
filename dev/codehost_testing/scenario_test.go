@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-func testAction(name string) *action {
-	return &action{
-		name: name,
-		apply: func(ctx context.Context) error {
+func testAction(name string) *Action {
+	return &Action{
+		Name: name,
+		Apply: func(ctx context.Context) error {
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			return nil
 		},
 	}
@@ -24,12 +24,12 @@ func TestScenarioApplyAndTeardown(t *testing.T) {
 			id:            "testing-id",
 			t:             t,
 			client:        nil,
-			actions:       []*action{},
+			actions:       []*Action{},
 			reporter:      NoopReporter{},
 			nextActionIdx: 0,
 		}
 
-		scenario.append(testAction("t1"), testAction("t2"))
+		scenario.Append(testAction("t1"), testAction("t2"))
 
 		if len(scenario.actions) != 2 {
 			t.Errorf("actions not appended - got %d wanted %d", len(scenario.actions), 2)
@@ -53,17 +53,17 @@ func TestScenarioApplyAndTeardown(t *testing.T) {
 			id:            "testing-id",
 			t:             t,
 			client:        nil,
-			actions:       []*action{},
+			actions:       []*Action{},
 			reporter:      NoopReporter{},
 			nextActionIdx: 0,
 		}
 
 		errAction := testAction("err1")
 		fakeErr := errors.New("fake error")
-		errAction.apply = func(ctx context.Context) error {
+		errAction.Apply = func(ctx context.Context) error {
 			return fakeErr
 		}
-		scenario.append(testAction("t1"), errAction)
+		scenario.Append(testAction("t1"), errAction)
 
 		if len(scenario.actions) != 2 {
 			t.Errorf("actions not appended - got %d wanted %d", len(scenario.actions), 2)
@@ -98,14 +98,14 @@ func TestScenarioApplyAndTeardown(t *testing.T) {
 			id:            "testing-id",
 			t:             t,
 			client:        nil,
-			actions:       []*action{},
+			actions:       []*Action{},
 			reporter:      NoopReporter{},
 			nextActionIdx: 0,
 		}
 
 		skipAction := testAction("s2")
-		skipAction.teardown = nil
-		scenario.append(testAction("t1"), skipAction, testAction("t3"))
+		skipAction.Teardown = nil
+		scenario.Append(testAction("t1"), skipAction, testAction("t3"))
 
 		if len(scenario.actions) != 3 {
 			t.Errorf("actions not appended - got %d wanted %d", len(scenario.actions), 2)
@@ -137,19 +137,19 @@ func TestScenarioApplyAndTeardown(t *testing.T) {
 			id:            "testing-id",
 			t:             t,
 			client:        nil,
-			actions:       []*action{},
+			actions:       []*Action{},
 			reporter:      NoopReporter{},
 			nextActionIdx: 0,
 		}
 
 		errTeardown := func(_ context.Context) error { return errors.New("fake") }
 		errAction := testAction("e2")
-		errAction.teardown = errTeardown
-		scenario.append(testAction("t1"), errAction, testAction("t3"))
+		errAction.Teardown = errTeardown
+		scenario.Append(testAction("t1"), errAction, testAction("t3"))
 		errTeardown = func(_ context.Context) error { return errors.New("fake") }
 		errAction = testAction("e4")
-		errAction.teardown = errTeardown
-		scenario.append(errAction)
+		errAction.Teardown = errTeardown
+		scenario.Append(errAction)
 
 		if len(scenario.actions) != 4 {
 			t.Errorf("actions not appended - got %d wanted %d", len(scenario.actions), 2)

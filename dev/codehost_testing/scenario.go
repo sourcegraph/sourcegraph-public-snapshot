@@ -14,10 +14,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type action struct {
-	name     string
-	apply    func(context.Context) error
-	teardown func(context.Context) error
+type ActionFn func(context.Context) error
+
+// Action represents a task that is performed that cosists of task which creates or alters some resource with Apply
+// and a corresponding Teardown task that destroys the resource created with Apply or undos any alterations. Effectively,
+// Teardown should do the inverse of Apply.
+//
+// A Nil Teardown means there is no teardown to be performed, whereas Apply should never be nil
+type Action struct {
+	Name     string
+	Apply    ActionFn
+	Teardown ActionFn
 }
 
 // Scenario is an interface for executing a sequence of actions in a test scenario. Actions can be added
@@ -28,7 +35,7 @@ type action struct {
 // Teardown: should remove or undo the actions applied by Apply
 // Plan: should return a human-readable string describing the actions that will be performed
 type Scenario interface {
-	append(a ...*action)
+	Append(a ...*Action)
 	Plan() string
 	Apply(ctx context.Context) error
 	Teardown(ctx context.Context) error
@@ -36,8 +43,8 @@ type Scenario interface {
 
 // GitHubScenario implements the Scenario interface for testing GitHub functionality. At its base GitHubScenario
 // provides two top level methods to create GitHub resources namely:
-// * create GitHub Organization, which returns a codehost_scenario Org
-// * create a GitHub User, which returns a codehost_scenario User
+// * create GitHub Organization, which returns a codehost_testing Org
+// * create a GitHub User, which returns a codehost_testing User
 //
 // Further resources can be created by calling methods on the returned Org or User. For instance, since a repository
 // is tied to an organization, one can call org.CreateRepo, which will add an action for a repo to be created in the
@@ -53,7 +60,7 @@ type GitHubScenario struct {
 	id            string
 	t             *testing.T
 	client        *GitHubClient
-	actions       []*action
+	actions       []*Action
 	reporter      Reporter
 	nextActionIdx int
 }
@@ -76,7 +83,7 @@ func NewGitHubScenario(t *testing.T, cfg config.Config) (*GitHubScenario, error)
 		id:       id,
 		t:        t,
 		client:   client,
-		actions:  make([]*action, 0),
+		actions:  make([]*Action, 0),
 		reporter: NoopReporter{},
 	}, nil
 }
@@ -91,7 +98,7 @@ func (s *GitHubScenario) SetQuiet() {
 	s.reporter = NoopReporter{}
 }
 
-func (s *GitHubScenario) append(actions ...*action) {
+func (s *GitHubScenario) Append(actions ...*Action) {
 	s.actions = append(s.actions, actions...)
 }
 
@@ -101,14 +108,14 @@ func (s *GitHubScenario) Plan() string {
 	fmt.Fprintf(sb, "Scenario %q\n", s.id)
 	sb.WriteString("== Setup ==\n")
 	for _, action := range s.actions {
-		fmt.Fprintf(sb, "- %s\n", action.name)
+		fmt.Fprintf(sb, "- %s\n", action.Name)
 	}
 	sb.WriteString("== Teardown ==\n")
 	for _, action := range reverse(s.actions) {
-		if action.teardown == nil {
+		if action.Teardown == nil {
 			continue
 		}
-		fmt.Fprintf(sb, "- %s\n", action.name)
+		fmt.Fprintf(sb, "- %s\n", action.Name)
 	}
 	return sb.String()
 }
@@ -146,11 +153,16 @@ func (s *GitHubScenario) Apply(ctx context.Context) error {
 		now := time.Now().UTC()
 
 		if s.nextActionIdx > currActionIdx {
-			s.reporter.Writef("(Setup) Skipping [%-50s]\n", action.name)
+			s.reporter.Writef("(Setup) Skipping [%-50s]\n", action.Name)
 			continue
 		}
-		s.reporter.Writef("(Setup) Applying [%-50s] ", action.name)
-		err := action.apply(ctx)
+
+		if action.Apply == nil {
+			return errors.Newf("action %q has nil Apply", action.Name)
+		}
+
+		s.reporter.Writef("(Setup) Applying [%-50s] ", action.Name)
+		err := action.Apply(ctx)
 		duration := time.Now().UTC().Sub(now)
 
 		if err != nil {
@@ -186,13 +198,13 @@ func (s *GitHubScenario) Teardown(ctx context.Context) error {
 	start := time.Now()
 	for _, action := range teardown {
 		// Nil means this action has no means of being torn down
-		if action.teardown == nil {
+		if action.Teardown == nil {
 			continue
 		}
 		now := time.Now().UTC()
 
-		s.reporter.Writef("(Teardown) Applying [%-50s] ", action.name)
-		err := action.teardown(ctx)
+		s.reporter.Writef("(Teardown) Applying [%-50s] ", action.Name)
+		err := action.Teardown(ctx)
 		duration := time.Now().UTC().Sub(now)
 
 		if err != nil {

@@ -210,7 +210,7 @@ func (gh *GitHubClient) CreateRepo(ctx context.Context, org *github.Organization
 }
 
 // ForkRepo forks a repository into an Organization. The repostiry will have the same name but the owner will be the given
-// organization. Note that only teh default branch is forked.
+// organization. Note that only the default branch is forked.
 func (gh *GitHubClient) ForkRepo(ctx context.Context, org *github.Organization, owner, repoName string) error {
 	_, resp, err := gh.c.Repositories.CreateFork(ctx, owner, repoName, &github.RepositoryCreateForkOptions{
 		Organization:      org.GetLogin(),
