@@ -6,6 +6,8 @@ export { createSuggestionsSource } from '@sourcegraph/web/src/search/input/sugge
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
+export { buildLinks } from '@sourcegraph/web/src/repo/blob/codemirror/links'
+export { codeIntelAPI } from '@sourcegraph/web/src/repo/blob/codemirror/token-selection/extension'
 export {
     selectableLineNumbers,
     type SelectedLineRange,

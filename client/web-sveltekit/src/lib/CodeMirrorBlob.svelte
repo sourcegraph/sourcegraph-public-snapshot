@@ -1,4 +1,13 @@
 <script lang="ts" context="module">
+    import type { BlobFileFields } from '$lib/repo/api/blob'
+
+    export interface BlobInfo extends BlobFileFields {
+        commitID: string
+        filePath: string
+        repoName: string
+        revision: string
+    }
+
     const shCompartment = new Compartment()
     const miscSettingsCompartment = new Compartment()
 
@@ -57,6 +66,7 @@
             role: 'generic',
         }),
         defaultTheme,
+        buildLinks.of(true),
     ]
 
     function configureSyntaxHighlighting(content: string, lsif: string): Extension {
@@ -73,7 +83,7 @@
 
     import { Compartment, EditorState, StateEffect, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, onMount } from 'svelte'
 
     import { browser } from '$app/environment'
     import {
@@ -83,13 +93,16 @@
         type SelectedLineRange,
         setSelectedLines,
         isValidLineRange,
+        codeIntelAPI as codeIntelAPIFacet,
+        buildLinks,
     } from '$lib/web'
-    import type { BlobFileFields } from '$lib/repo/api/blob'
+    import type { CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 
-    export let blob: BlobFileFields
+    export let blobInfo: BlobInfo
     export let highlights: string
     export let wrapLines: boolean = false
     export let selectedLines: SelectedLineRange | null = null
+    export let codeIntelAPI: CodeIntelAPI
 
     const dispatch = createEventDispatcher<{ selectline: SelectedLineRange }>()
 
@@ -99,7 +112,10 @@
     function createEditor(container: HTMLDivElement): EditorView {
         const extensions = [
             // @ts-ignore - ugly (temporary?) hack to avoid issues with existing extension (selectableLineNumbers)
-            blobPropsFacet.of({}),
+            blobPropsFacet.of({
+                blobInfo,
+            }),
+            codeIntelAPIFacet.of(codeIntelAPI),
             staticExtensions,
             selectableLineNumbers({
                 onSelection(range) {
@@ -109,11 +125,11 @@
                 navigateToLineOnAnyClick: false,
             }),
             miscSettingsCompartment.of(configureMiscSettings({ wrapLines })),
-            shCompartment.of(configureSyntaxHighlighting(blob.content, highlights)),
+            shCompartment.of(configureSyntaxHighlighting(blobInfo.content, highlights)),
         ]
 
         const view = new EditorView({
-            state: EditorState.create({ doc: blob.content, extensions }),
+            state: EditorState.create({ doc: blobInfo.content, extensions }),
             parent: container,
         })
         return view
@@ -132,28 +148,30 @@
     }
 
     // Update blob content and highlights
-    $: updateExtensions(shCompartment.reconfigure(configureSyntaxHighlighting(blob.content, highlights)))
+    $: updateExtensions(shCompartment.reconfigure(configureSyntaxHighlighting(blobInfo.content, highlights)))
     // Update line wrapping
     $: updateExtensions(miscSettingsCompartment.reconfigure(configureMiscSettings({ wrapLines })))
     // Update selected line
     $: updateSelectedLines(selectedLines)
 
-    $: if (editor && editor?.state.sliceDoc() !== blob.content) {
+    $: if (editor && editor?.state.sliceDoc() !== blobInfo.content) {
         editor.dispatch({
-            changes: { from: 0, to: editor.state.doc.length, insert: blob.content },
+            changes: { from: 0, to: editor.state.doc.length, insert: blobInfo.content },
         })
     }
 
-    $: if (container && !editor) {
-        editor = createEditor(container)
-    }
+    onMount(() => {
+        if (container) {
+            editor = createEditor(container)
+        }
+    })
 </script>
 
 {#if browser}
     <div bind:this={container} class="root test-editor" data-editor="codemirror6" />
 {:else}
     <div class="root">
-        <pre>{blob.content}</pre>
+        <pre>{blobInfo.content}</pre>
     </div>
 {/if}
 

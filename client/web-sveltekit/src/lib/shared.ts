@@ -1,5 +1,7 @@
 // We want to limit the number of imported modules as much as possible
 
+export { createCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+
 export type { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 
 export {

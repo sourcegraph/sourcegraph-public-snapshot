@@ -8,6 +8,7 @@ export const load: PageLoad = async ({ parent, params, url }) => {
     const { resolvedRevision } = await parent()
 
     return {
+        filePath: params.path,
         deferred: {
             blob: fetchBlobPlaintext({
                 filePath: params.path,
