@@ -261,9 +261,9 @@ func (s *GitHubScenario) CreateUser(name string) *User {
 		name: name,
 	}
 
-	createUser := &action{
-		name: "user:create:" + name,
-		apply: func(ctx context.Context) error {
+	createUser := &Action{
+		Name: "user:create:" + name,
+		Apply: func(ctx context.Context) error {
 			name := fmt.Sprintf("user-%s-%s", name, s.id)
 			email := "test-user-e2e@sourcegraph.com"
 			user, err := s.client.CreateUser(ctx, name, email)
@@ -274,12 +274,12 @@ func (s *GitHubScenario) CreateUser(name string) *User {
 			baseUser.name = user.GetLogin()
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			return s.client.DeleteUser(ctx, baseUser.name)
 		},
 	}
 
-	s.append(createUser)
+	s.Append(createUser)
 	return baseUser
 }
 
