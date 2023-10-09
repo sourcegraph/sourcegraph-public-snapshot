@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -133,7 +132,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 				}
 			}
 
-			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.revision, Format: gitserver.ArchiveFormatZip})
+			rc, err := cli.ArchiveReader(ctx, name, gitserver.ArchiveOptions{Treeish: test.revision, Format: gitserver.ArchiveFormatZip})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.clientErr); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
@@ -223,7 +222,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					}
 				})
 
-				return gitserver.NewTestClient(&http.Client{}, source)
+				return gitserver.NewTestClient(t).WithClientSource(source)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)
@@ -266,7 +265,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					}
 				})
 
-				return gitserver.NewTestClient(&http.Client{}, source)
+				return gitserver.NewTestClient(t).WithClientSource(source)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)

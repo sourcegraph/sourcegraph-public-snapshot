@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -120,7 +119,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			return "", "", &gitdomain.RepoNotExistError{Repo: repo}
 		})
 
-		gitserverClient.StatFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, s string) (fs.FileInfo, error) {
+		gitserverClient.StatFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, s string) (fs.FileInfo, error) {
 			hasBatchIgnore, ok := commitMap[commit]
 			if !ok {
 				return nil, errors.Newf("unknown commit: %s", commit)
