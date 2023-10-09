@@ -41,9 +41,9 @@ func (team *Team) get(ctx context.Context) (*github.Team, error) {
 
 // AddUser adds an action that will add the given user to this team
 func (tm *Team) AddUser(u *User) {
-	assignTeamMembership := &action{
-		name: fmt.Sprintf("team:membership:%s:%s", tm.name, u.name),
-		apply: func(ctx context.Context) error {
+	assignTeamMembership := &Action{
+		Name: fmt.Sprintf("team:membership:%s:%s", tm.name, u.name),
+		Apply: func(ctx context.Context) error {
 			org, err := tm.org.get(ctx)
 			if err != nil {
 				return err
@@ -59,8 +59,8 @@ func (tm *Team) AddUser(u *User) {
 			_, err = tm.s.client.AssignTeamMembership(ctx, org, team, user)
 			return err
 		},
-		teardown: nil,
+		Teardown: nil,
 	}
 
-	tm.s.append(assignTeamMembership)
+	tm.s.Append(assignTeamMembership)
 }

@@ -69,9 +69,9 @@ func (o *Org) CreateTeam(name string) *Team {
 		name: name,
 	}
 
-	action := &action{
-		name: "org:team:create:" + name,
-		apply: func(ctx context.Context) error {
+	action := &Action{
+		Name: "org:team:create:" + name,
+		Apply: func(ctx context.Context) error {
 			name := fmt.Sprintf("team-%s-%s", name, o.s.id)
 			org, err := o.get(ctx)
 			if err != nil {
@@ -84,7 +84,7 @@ func (o *Org) CreateTeam(name string) *Team {
 			baseTeam.name = team.GetName()
 			return nil
 		},
-		teardown: func(ctx context.Context) error {
+		Teardown: func(ctx context.Context) error {
 			org, err := o.get(ctx)
 			if err != nil {
 				return err
@@ -92,7 +92,7 @@ func (o *Org) CreateTeam(name string) *Team {
 			return o.s.client.DeleteTeam(ctx, org, baseTeam.name)
 		},
 	}
-	o.s.append(action)
+	o.s.Append(action)
 
 	return baseTeam
 }
