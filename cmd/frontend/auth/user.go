@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -138,7 +137,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		act.UID = user.ID
 
 		// Schedule a permission sync, since this is new user
-		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+		permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 			UserIDs:           []int32{user.ID},
 			Reason:            database.ReasonUserAdded,
 			TriggeredByUserID: user.ID,
@@ -238,7 +237,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 
 		// Schedule a permission sync, since this is probably a new external account for the user
-		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+		permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 			UserIDs:           []int32{userID},
 			Reason:            database.ReasonExternalAccountAdded,
 			TriggeredByUserID: userID,
