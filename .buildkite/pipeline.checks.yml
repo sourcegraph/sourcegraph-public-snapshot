@@ -1,0 +1,13 @@
+template:
+  - &checks_plugin
+    https://github.com/sourcegraph/checks-reporter-buildkite-plugin.git#main:
+steps:
+  group: "Checks"
+  key: checks
+  steps:
+    - label: that my plugin works
+      key: plugin-test
+      agents: { queue: "standard" }
+      command: dev/ci/checks/plugin-test.sh
+      plugins:
+        - *checks_plugin
