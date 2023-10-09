@@ -107,7 +107,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                             patternType={patternType}
                             interpretComments={true}
                             value={searchQuery.value}
-                            extensions={extensions}
+                            extension={extensions}
                         />
                     </div>
                     <Button className="mt-2" onClick={triggerSearch} variant="primary">

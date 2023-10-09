@@ -154,7 +154,6 @@ ts_project(
         "src/api/extension/extensionHost.ts",
         "src/api/extension/extensionHostApi.ts",
         "src/api/extension/extensionHostState.ts",
-        "src/api/extension/main.worker.ts",
         "src/api/extension/test/test-helpers.ts",
         "src/api/extension/util.ts",
         "src/api/extension/utils/ReferenceCounter.ts",

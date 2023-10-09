@@ -36,7 +36,7 @@ if (process.env.INTEGRATION_TESTS) {
 
 const defaultTheme = EditorView.baseTheme({
     // Overwrites the default cursor color, which has too low contrast in dark mode
-    '&dark .cm-cursor': {
+    '.theme-dark & .cm-cursor': {
         borderLeftColor: 'var(--grey-07)',
     },
 })
@@ -159,42 +159,33 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
  * With this hook the extension is isolated in a compartment so it can be
  * updated without reconfiguring the whole editor.
  *
- * Use `useMemo` to compute the extension from some input and `useEffect` to
- * update it:
+ * Use `useMemo` to compute the extension from some input:
  *
- * const extension = useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
- * const [compartment, updateCompartment] = useCompartment(extension)
- * const editor = useCodeMirror(..., ..., compartment)
+ * const extension = useCompartment(
+ *   editorRef,
+ *   useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
+ * )
+ * const editor = useCodeMirror(..., ..., extension)
  *
- * useEffect(() => {
- *   if (editor) {
- *     updateCompartment(extension)
- *  }
- *}, [editor, extension])
+ * @param editorRef - Ref object to the editor instance
+ * @param extension - the dynamic extension(s) to add to the editor
  *
- * @param initialExtension - the extension to use when creating the editor
- *
- * @returns A compartmentalized extension and a function to update the
- * compartment
+ * @returns a compartmentalized extension
  */
-export function useCompartment(
-    initialExtension: Extension
-): [Extension, (editor: EditorView, extension: Extension) => void] {
-    return useMemo(() => {
-        const compartment = new Compartment()
-        return [
-            compartment.of(initialExtension),
-            (editor, extension: Extension) => {
-                // This check avoids an unnecessary update when the editor is
-                // first created
-                if (initialExtension !== extension) {
-                    editor.dispatch({ effects: compartment.reconfigure(extension) })
-                }
-            },
-        ]
-        // initialExtension is intentionally ignored in subsequent renders
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+export function useCompartment(editorRef: RefObject<EditorView>, extension: Extension): Extension {
+    const compartment = useMemo(() => new Compartment(), [])
+
+    useEffect(() => {
+        editorRef.current?.dispatch({ effects: compartment.reconfigure(extension) })
+    }, [compartment, editorRef, extension])
+
+    // The compartment is initialized only in the first render.
+    // In subsequent renders we dispatch effects to update the compartment (
+    // see below).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const initialExtension = useMemo(() => compartment.of(extension), [compartment])
+
+    return initialExtension
 }
 
 /**

@@ -6,15 +6,13 @@ import {
     useCallback,
     useEffect,
     useId,
-    useImperativeHandle,
     useMemo,
     useRef,
     useState,
 } from 'react'
 
-import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
-import { Compartment, EditorSelection, EditorState, type Extension, Prec } from '@codemirror/state'
-import { EditorView, keymap, drawSelection } from '@codemirror/view'
+import { EditorSelection, EditorState, type Extension, Prec } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 import inRange from 'lodash/inRange'
@@ -22,18 +20,17 @@ import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
 import type { HistoryOrNavigate } from '@sourcegraph/common'
-import { type Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { type Editor, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { BaseCodeMirrorQueryInput } from '../BaseCodeMirrorQueryInput'
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
-import { filterPlaceholder } from '../codemirror/active-filter'
 import { queryDiagnostic } from '../codemirror/diagnostics'
-import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
-import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+import { tokens } from '../codemirror/parsedQuery'
 import { tokenInfo } from '../codemirror/token-info'
 import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
@@ -46,7 +43,6 @@ import styles from './CodeMirrorQueryInputWrapper.module.scss'
 
 interface ExtensionConfig {
     popoverID: string
-    isLightTheme: boolean
     placeholder: string
     onChange: (querySate: QueryState) => void
     onSubmit?: () => void
@@ -87,15 +83,10 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
     )
 }
 
-// For simplicity, we will recompute all extensions when input changes using
-// this compartment
-const extensionsCompartment = new Compartment()
-
 // Helper function to update extensions dependent on props. Used when
 // creating the editor and to update it when the props change.
 function configureExtensions({
     popoverID,
-    isLightTheme,
     placeholder,
     onChange,
     onSubmit,
@@ -104,7 +95,6 @@ function configureExtensions({
     historyOrNavigate,
 }: ExtensionConfig): Extension {
     const extensions = [
-        EditorView.darkTheme.of(!isLightTheme),
         EditorView.updateListener.of(update => {
             if (update.docChanged) {
                 onChange({
@@ -156,22 +146,6 @@ function configureExtensions({
     return extensions
 }
 
-// Holds extensions that somehow depend on the query or query parameters. They
-// are stored in a separate compartment to avoid re-creating other extensions.
-// (if we didn't do this the suggestions list would flicker because it gets
-// recreated)
-const querySettingsCompartment = new Compartment()
-
-function configureQueryExtensions({
-    patternType,
-    interpretComments,
-}: {
-    patternType: SearchPatternType
-    interpretComments: boolean
-}): Extension {
-    return parseInputAsQuery({ patternType, interpretComments })
-}
-
 // Creates extensions that don't depend on props
 const position0 = EditorSelection.single(0)
 const staticExtensions: Extension = [
@@ -202,13 +176,8 @@ const staticExtensions: Extension = [
         return transaction
     }),
     singleLine,
-    drawSelection(),
-    keymap.of(historyKeymap),
-    keymap.of(defaultKeymap),
-    codemirrorHistory(),
-    filterPlaceholder,
     modeScope([queryDiagnostic(), overrideContextOnPaste], [null]),
-    Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
+    Prec.low([modeScope([tokenInfo(), filterDecoration], [null])]),
     EditorView.theme({
         '&': {
             flex: 1,
@@ -226,24 +195,10 @@ const staticExtensions: Extension = [
             overflowX: 'hidden',
         },
         '.cm-content': {
-            caretColor: 'var(--search-query-text-color)',
-            color: 'var(--search-query-text-color)',
-            fontFamily: 'var(--code-font-family)',
-            fontSize: 'var(--code-font-size)',
-            padding: 0,
             paddingLeft: '0.25rem',
         },
         '.cm-content.focus-visible': {
             boxShadow: 'none',
-        },
-        '.cm-line': {
-            padding: 0,
-        },
-        '&.cm-focused .cm-selectionLayer .cm-selectionBackground': {
-            backgroundColor: 'var(--code-selection-bg-2)',
-        },
-        '.cm-selectionLayer .cm-selectionBackground': {
-            backgroundColor: 'var(--code-selection-bg)',
         },
         '.sg-decorated-token-hover': {
             borderRadius: '3px',
@@ -254,18 +209,6 @@ const staticExtensions: Extension = [
         },
     }),
 ]
-
-function updateExtensions(editor: EditorView | null, extensions: Extension): void {
-    if (editor) {
-        editor.dispatch({ effects: extensionsCompartment.reconfigure(extensions) })
-    }
-}
-
-function updateQueryExtensions(editor: EditorView | null, extensions: Extension): void {
-    if (editor) {
-        editor.dispatch({ effects: querySettingsCompartment.reconfigure(extensions) })
-    }
-}
 
 const empty: any[] = []
 
@@ -278,7 +221,6 @@ export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
     onChange: (queryState: QueryState) => void
     onSubmit: () => void
-    isLightTheme: boolean
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
@@ -294,7 +236,6 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             queryState,
             onChange,
             onSubmit,
-            isLightTheme,
             interpretComments,
             patternType,
             placeholder,
@@ -312,7 +253,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
 
         // References
         const editorRef = useRef<EditorView | null>(null)
-        const editorContainerRef = useRef<HTMLDivElement | null>(null)
+        const setEditorRef = useCallback((view: EditorView) => (editorRef.current = view), [editorRef])
 
         // Local state
         const [mode, setMode, modeNotifierExtension] = useInputMode()
@@ -325,94 +266,62 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         const hasSubmitHandler = !!onSubmit
 
         // Update extensions whenever any of these props change
-        const dynamicExtensions = useMemo(
-            () => [
-                configureExtensions({
-                    popoverID,
-                    isLightTheme,
-                    placeholder,
-                    onChange: (...args) => onChangeRef.current(...args),
-                    onSubmit: hasSubmitHandler
-                        ? (): void => {
-                              if (onSubmitRef.current) {
-                                  onSubmitRef.current()
-                                  editorRef.current?.contentDOM.blur()
+        const dynamicExtensions = useCompartment(
+            editorRef,
+            useMemo(
+                () => [
+                    configureExtensions({
+                        popoverID,
+                        placeholder,
+                        onChange: (...args) => onChangeRef.current(...args),
+                        onSubmit: hasSubmitHandler
+                            ? (): void => {
+                                  if (onSubmitRef.current) {
+                                      onSubmitRef.current()
+                                      editorRef.current?.contentDOM.blur()
+                                  }
                               }
-                          }
-                        : undefined,
+                            : undefined,
+                        suggestionsContainer,
+                        suggestionSource,
+                        historyOrNavigate: navigate,
+                    }),
+                    externalExtensions,
+                    modeNotifierExtension,
+                ],
+                [
+                    popoverID,
+                    placeholder,
+                    hasSubmitHandler,
                     suggestionsContainer,
                     suggestionSource,
-                    historyOrNavigate: navigate,
-                }),
-                externalExtensions,
-                modeNotifierExtension,
-            ],
-            [
-                popoverID,
-                isLightTheme,
-                placeholder,
-                hasSubmitHandler,
-                suggestionsContainer,
-                suggestionSource,
-                navigate,
-                externalExtensions,
-                modeNotifierExtension,
-                onChangeRef,
-                onSubmitRef,
-            ]
-        )
-
-        // Update query extensions whenever any of these props change
-        const queryExtensions = useMemo(
-            () => configureQueryExtensions({ patternType, interpretComments }),
-            [patternType, interpretComments]
+                    navigate,
+                    externalExtensions,
+                    modeNotifierExtension,
+                    onChangeRef,
+                    onSubmitRef,
+                ]
+            )
         )
 
         // Update editor state whenever query state changes
         useUpdateEditorFromQueryState(editorRef, queryState, startCompletion)
 
-        // Update editor configuration whenever extensions change
-        useEffect(() => updateExtensions(editorRef.current, dynamicExtensions), [dynamicExtensions])
-        useEffect(() => updateQueryExtensions(editorRef.current, queryExtensions), [queryExtensions])
-
-        // Create editor
-        useCodeMirror(
-            editorRef,
-            editorContainerRef,
-            queryState.query,
-            useMemo(
-                () => [
-                    EditorView.contentAttributes.of({
-                        role: 'combobox',
-                        // CodeMirror sets aria-multiline: true by default but it seems
-                        // comboboxes are not allowed to be multiline
-                        'aria-multiline': 'false',
-                        'aria-controls': popoverID,
-                        'aria-haspopup': 'grid',
-                        'aria-label': 'Search query',
-                    }),
-                    staticExtensions,
-                    extensionsCompartment.of(dynamicExtensions),
-                    querySettingsCompartment.of(queryExtensions),
-                ],
-                // Only set extensions during initialization. dynamicExtensions and queryExtensions
-                // are updated separately.
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-                [popoverID]
-            )
-        )
-
-        useImperativeHandle(
-            ref,
-            () => ({
-                focus() {
-                    editorRef.current?.focus()
-                },
-                blur() {
-                    editorRef.current?.contentDOM.blur()
-                },
-            }),
-            []
+        const allExtensions = useMemo(
+            () => [
+                EditorView.contentAttributes.of({
+                    role: 'combobox',
+                    // CodeMirror sets aria-multiline: true by default but it seems
+                    // comboboxes are not allowed to be multiline
+                    'aria-multiline': 'false',
+                    'aria-controls': popoverID,
+                    'aria-haspopup': 'grid',
+                    'aria-label': 'Search query',
+                }),
+                staticExtensions,
+                dynamicExtensions,
+            ],
+            [popoverID, dynamicExtensions]
         )
 
         // Position cursor at the end of the input when it is initialized
@@ -448,10 +357,14 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             >
                 <div className={styles.focusContainer}>
                     <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
-                    <div
-                        ref={editorContainerRef}
-                        className={classNames(styles.input, 'test-query-input', 'test-editor')}
-                        data-editor="codemirror6"
+                    <BaseCodeMirrorQueryInput
+                        ref={ref}
+                        className={styles.input}
+                        value={queryState.query}
+                        patternType={patternType}
+                        interpretComments={interpretComments}
+                        extension={allExtensions}
+                        onEditorCreated={setEditorRef}
                     />
                     {!mode && children}
                 </div>
@@ -466,6 +379,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         )
     }
 )
+CodeMirrorQueryInputWrapper.displayName = 'CodeMirrorInputWrapper'
 
 interface SearchModeSwitcherProps {
     mode: string | null

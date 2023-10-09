@@ -508,7 +508,6 @@ go_test(
         "//internal/rbac/types",
         "//internal/rcache",
         "//internal/repos",
-        "//internal/repoupdater/protocol",
         "//internal/search",
         "//internal/search/backend",
         "//internal/search/client",

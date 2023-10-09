@@ -5,7 +5,6 @@ import type { ReactElement } from 'react'
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
 import type { DecoratorFn, Parameters } from '@storybook/react'
-import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 import { isChromatic } from '@sourcegraph/wildcard/src/stories'
@@ -15,7 +14,7 @@ import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './th
 
 const withConsoleDecorator: DecoratorFn = (storyFunc, context): ReactElement => withConsole()(storyFunc)(context)
 
-export const decorators = [withDesign, withConsoleDecorator, isChromatic() && withChromaticThemes].filter(Boolean)
+export const decorators = [withConsoleDecorator, isChromatic() && withChromaticThemes].filter(Boolean)
 
 export const parameters: Parameters = {
     layout: 'fullscreen',

@@ -40,7 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	p4tools "github.com/sourcegraph/sourcegraph/internal/perforce"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -279,12 +279,6 @@ type Client interface {
 	// MergeBase returns the merge base commit for the specified commits.
 	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
 
-	// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
-	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
-
-	// P4GetChangelist gets the changelist specified by changelistID.
-	P4GetChangelist(_ context.Context, changelistID string, creds PerforceCredentials) (*protocol.PerforceChangelist, error)
-
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
@@ -440,39 +434,50 @@ type Client interface {
 	Addrs() []string
 
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
-	SystemsInfo(ctx context.Context) ([]SystemInfo, error)
+	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
 
 	// SystemInfo returns information about the gitserver instance at the given address.
-	SystemInfo(ctx context.Context, addr string) (SystemInfo, error)
+	SystemInfo(ctx context.Context, addr string) (protocol.SystemInfo, error)
 
 	// IsPerforcePathCloneable checks if the given Perforce depot path is cloneable by
 	// checking if it is a valid depot and the given user has permission to access it.
-	IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error
+	IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) error
 
 	// CheckPerforceCredentials checks if the given Perforce credentials are valid
-	CheckPerforceCredentials(ctx context.Context, p4port, p4user, p4passwd string) error
+	CheckPerforceCredentials(ctx context.Context, conn protocol.PerforceConnectionDetails) error
+
+	// PerforceUsers lists all the users known to the given Perforce server.
+	PerforceUsers(ctx context.Context, conn protocol.PerforceConnectionDetails) ([]*perforce.User, error)
+
+	// PerforceProtectsForUser returns all protects that apply to the given Perforce user.
+	PerforceProtectsForUser(ctx context.Context, conn protocol.PerforceConnectionDetails, username string) ([]*perforce.Protect, error)
+
+	// PerforceProtectsForDepot returns all protects that apply to the given Perforce depot.
+	PerforceProtectsForDepot(ctx context.Context, conn protocol.PerforceConnectionDetails, depot string) ([]*perforce.Protect, error)
+
+	// PerforceGroupMembers returns the members of the given Perforce group.
+	PerforceGroupMembers(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error)
+
+	// IsPerforceSuperUser checks if the given Perforce user is a super user, and otherwise returns an error.
+	IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) error
+
+	// PerforceGetChangelist gets the perforce changelist details for the given changelist ID.
+	PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (*perforce.Changelist, error)
 }
 
-type SystemInfo struct {
-	Address     string
-	FreeSpace   uint64
-	TotalSpace  uint64
-	PercentUsed float32
-}
-
-func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, error) {
+func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error) {
 	addresses := c.clientSource.Addresses()
 
-	wg := pool.NewWithResults[SystemInfo]().WithErrors().WithContext(ctx)
+	wg := pool.NewWithResults[protocol.SystemInfo]().WithErrors().WithContext(ctx)
 
 	for _, addr := range addresses {
 		addr := addr // capture addr
-		wg.Go(func(ctx context.Context) (SystemInfo, error) {
+		wg.Go(func(ctx context.Context) (protocol.SystemInfo, error) {
 			response, err := c.getDiskInfo(ctx, addr)
 			if err != nil {
-				return SystemInfo{}, err
+				return protocol.SystemInfo{}, err
 			}
-			return SystemInfo{
+			return protocol.SystemInfo{
 				Address:     addr.Address(),
 				FreeSpace:   response.GetFreeSpace(),
 				TotalSpace:  response.GetTotalSpace(),
@@ -484,18 +489,18 @@ func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, erro
 	return wg.Wait()
 }
 
-func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (SystemInfo, error) {
+func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (protocol.SystemInfo, error) {
 	ac := c.clientSource.GetAddressWithClient(addr)
 	if ac == nil {
-		return SystemInfo{}, errors.Newf("no client for address: %s", addr)
+		return protocol.SystemInfo{}, errors.Newf("no client for address: %s", addr)
 	}
 
 	response, err := c.getDiskInfo(ctx, ac)
 	if err != nil {
-		return SystemInfo{}, nil
+		return protocol.SystemInfo{}, err
 	}
 
-	return SystemInfo{
+	return protocol.SystemInfo{
 		Address:    ac.Address(),
 		FreeSpace:  response.FreeSpace,
 		TotalSpace: response.TotalSpace,
@@ -951,139 +956,10 @@ func convertGitserverError(err error) error {
 	return err
 }
 
-func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, err error) {
-	ctx, _, endObservation := c.operations.p4Exec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("host", host),
-		attribute.StringSlice("args", args),
-	}})
-	defer endObservation(1, observation.Args{})
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
-		return nil, nil, err
-	}
-
-	req := &protocol.P4ExecRequest{
-		P4Port:   host,
-		P4User:   user,
-		P4Passwd: password,
-		Args:     args,
-	}
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, "")
-		if err != nil {
-			return nil, nil, err
-		}
-
-		ctx, cancel := context.WithCancel(ctx)
-
-		stream, err := client.P4Exec(ctx, req.ToProto())
-		if err != nil {
-			cancel()
-			return nil, nil, err
-		}
-
-		// We need to check the first message from the gRPC errors to see if we get an argument or permisison related
-		// error before continuing to read the rest of the stream. If the first message is an error, we cancel the stream and
-		// forward the error.
-		//
-		// This is necessary to provide parity between the REST and gRPC implementations of
-		// P4Exec. Users of cli.P4Exec may assume error handling occurs immediately,
-		// as is the case with the HTTP implementation where these kinds of errors are returned as soon as the
-		// function returns. gRPC is asynchronous, so we have to start consuming messages from
-		// the stream to see any errors from the server. Reading the first message ensures we
-		// handle any errors synchronously, similar to the HTTP implementation.
-
-		firstMessage, firstError := stream.Recv()
-		switch status.Code(firstError) {
-		case codes.InvalidArgument, codes.PermissionDenied:
-			cancel()
-			return nil, nil, convertGitserverError(firstError)
-		}
-
-		firstMessageRead := false
-		r := streamio.NewReader(func() ([]byte, error) {
-			// Check if we've read the first message yet. If not, read it and return.
-			if !firstMessageRead {
-				firstMessageRead = true
-
-				if firstError != nil {
-					return nil, firstError
-				}
-
-				return firstMessage.GetData(), nil
-			}
-
-			msg, err := stream.Recv()
-			if err != nil {
-				if status.Code(err) == codes.Canceled {
-					return nil, context.Canceled
-				}
-
-				if status.Code(err) == codes.DeadlineExceeded {
-					return nil, context.DeadlineExceeded
-				}
-
-				return nil, err
-			}
-			return msg.GetData(), nil
-		})
-
-		return &readCloseWrapper{r: r, closeFn: cancel}, nil, nil
-	} else {
-		resp, err := c.httpPost(ctx, "", "p4-exec", req)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			defer resp.Body.Close()
-			return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp.Body))
-		}
-
-		return resp.Body, resp.Trailer, nil
-
-	}
-
-}
-
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_client_deadline_exceeded",
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
-
-func (c *clientImplementor) P4GetChangelist(ctx context.Context, changelistID string, creds PerforceCredentials) (*protocol.PerforceChangelist, error) {
-	reader, _, err := c.P4Exec(ctx, creds.Host, creds.Username, creds.Password,
-		"changes",
-		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
-		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
-		"-l",               // use a long listing, which includes the whole commit message
-		"-e", changelistID, // start from this changelist and go up
-	)
-	if err != nil {
-		return nil, err
-	}
-	body, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read the output of p4 changes")
-	}
-	output := strings.TrimSpace(string(body))
-	if output == "" {
-		return nil, errors.New("invalid changelist " + changelistID)
-	}
-
-	pcl, err := p4tools.ParseChangelistOutput(output)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse change output")
-	}
-	return pcl, nil
-}
-
-type PerforceCredentials struct {
-	Host     string
-	Username string
-	Password string
-}
 
 // BatchLog invokes the given callback with the `git log` output for a batch of repository
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
@@ -1613,7 +1489,7 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 	return nil
 }
 
-func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port, p4user, p4passwd, depotPath string) error {
+func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) error {
 	if conf.IsGRPCEnabled(ctx) {
 		// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1623,10 +1499,8 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port,
 			return err
 		}
 		_, err = client.IsPerforcePathCloneable(ctx, &proto.IsPerforcePathCloneableRequest{
-			P4Port:    p4port,
-			P4User:    p4user,
-			P4Passwd:  p4passwd,
-			DepotPath: depotPath,
+			ConnectionDetails: conn.ToProto(),
+			DepotPath:         depotPath,
 		})
 		if err != nil {
 			// Unwrap proto errors for nicer error messages.
@@ -1641,9 +1515,9 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port,
 
 	addr := c.AddrForRepo(ctx, api.RepoName(depotPath))
 	b, err := json.Marshal(&protocol.IsPerforcePathCloneableRequest{
-		P4Port:    p4port,
-		P4User:    p4user,
-		P4Passwd:  p4passwd,
+		P4Port:    conn.P4Port,
+		P4User:    conn.P4User,
+		P4Passwd:  conn.P4Passwd,
 		DepotPath: depotPath,
 	})
 	if err != nil {
@@ -1668,19 +1542,17 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, p4port,
 	return nil
 }
 
-func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, p4port, p4user, p4passwd string) error {
+func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn protocol.PerforceConnectionDetails) error {
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
 		// key here.
-		client, err := c.ClientForRepo(ctx, api.RepoName(p4port))
+		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
 		if err != nil {
 			return err
 		}
 		_, err = client.CheckPerforceCredentials(ctx, &proto.CheckPerforceCredentialsRequest{
-			P4Port:   p4port,
-			P4User:   p4user,
-			P4Passwd: p4passwd,
+			ConnectionDetails: conn.ToProto(),
 		})
 		if err != nil {
 			// Unwrap proto errors for nicer error messages.
@@ -1693,11 +1565,11 @@ func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, p4port
 		return nil
 	}
 
-	addr := c.AddrForRepo(ctx, api.RepoName(p4port))
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
 	b, err := json.Marshal(&protocol.CheckPerforceCredentialsRequest{
-		P4Port:   p4port,
-		P4User:   p4user,
-		P4Passwd: p4passwd,
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
 	})
 	if err != nil {
 		return err
@@ -1719,6 +1591,370 @@ func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, p4port
 	}
 
 	return nil
+}
+
+func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.PerforceUsers(ctx, &proto.PerforceUsersRequest{
+			ConnectionDetails: conn.ToProto(),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		users := make([]*perforce.User, len(resp.GetUsers()))
+		for i, u := range resp.GetUsers() {
+			users[i] = perforce.UserFromProto(u)
+		}
+		return users, nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceUsersRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	uri := "http://" + addr + "/perforce-users"
+	resp, err := c.do(ctx, "perforce-users", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceUsers",
+			Err: errors.Errorf("PerforceUsers: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceUsersResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	users := make([]*perforce.User, len(payload.Users))
+	for i, u := range payload.Users {
+		users[i] = &perforce.User{
+			Username: u.Username,
+			Email:    u.Email,
+		}
+	}
+
+	return users, nil
+}
+
+func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn protocol.PerforceConnectionDetails, username string) ([]*perforce.Protect, error) {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.PerforceProtectsForUser(ctx, &proto.PerforceProtectsForUserRequest{
+			ConnectionDetails: conn.ToProto(),
+			Username:          username,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		protects := make([]*perforce.Protect, len(resp.GetProtects()))
+		for i, p := range resp.GetProtects() {
+			protects[i] = perforce.ProtectFromProto(p)
+		}
+		return protects, nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceProtectsForUserRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+		Username: username,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	uri := "http://" + addr + "/perforce-protects-for-user"
+	resp, err := c.do(ctx, "perforce-protects-for-user", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceProtectsForUser",
+			Err: errors.Errorf("PerforceProtectsForUser: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceProtectsForUserResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	protects := make([]*perforce.Protect, len(payload.Protects))
+	for i, p := range payload.Protects {
+		protects[i] = &perforce.Protect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	return protects, nil
+}
+
+func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn protocol.PerforceConnectionDetails, depot string) ([]*perforce.Protect, error) {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.PerforceProtectsForDepot(ctx, &proto.PerforceProtectsForDepotRequest{
+			ConnectionDetails: conn.ToProto(),
+			Depot:             depot,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		protects := make([]*perforce.Protect, len(resp.GetProtects()))
+		for i, p := range resp.GetProtects() {
+			protects[i] = perforce.ProtectFromProto(p)
+		}
+		return protects, nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceProtectsForDepotRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+		Depot:    depot,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	uri := "http://" + addr + "/perforce-protects-for-depot"
+	resp, err := c.do(ctx, "perforce-protects-for-depot", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceProtectsForDepot",
+			Err: errors.Errorf("PerforceProtectsForDepot: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceProtectsForDepotResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	protects := make([]*perforce.Protect, len(payload.Protects))
+	for i, p := range payload.Protects {
+		protects[i] = &perforce.Protect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	return protects, nil
+}
+
+func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error) {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.PerforceGroupMembers(ctx, &proto.PerforceGroupMembersRequest{
+			ConnectionDetails: conn.ToProto(),
+			Group:             group,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return resp.GetUsernames(), nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceGroupMembersRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+		Group:    group,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	uri := "http://" + addr + "/perforce-group-members"
+	resp, err := c.do(ctx, "perforce-group-members", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceGroupMembers",
+			Err: errors.Errorf("PerforceGroupMembers: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceGroupMembersResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	return payload.Usernames, nil
+}
+
+func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) error {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+		if err != nil {
+			return err
+		}
+		_, err = client.IsPerforceSuperUser(ctx, &proto.IsPerforceSuperUserRequest{
+			ConnectionDetails: conn.ToProto(),
+		})
+		return err
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.IsPerforceSuperUserRequest{
+		P4Port:   conn.P4Port,
+		P4User:   conn.P4User,
+		P4Passwd: conn.P4Passwd,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + addr + "/is-perforce-super-user"
+	resp, err := c.do(ctx, "is-perforce-super-user", uri, b)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "IsPerforceSuperUser",
+			Err: errors.Errorf("IsPerforceSuperUser: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	return nil
+}
+
+func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (*perforce.Changelist, error) {
+	if conf.IsGRPCEnabled(ctx) {
+		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
+		// a bit over the different gitserver instances. It's really just used as a consistent hashing
+		// key here.
+		client, err := c.ClientForRepo(ctx, api.RepoName(conn.P4Port))
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.PerforceGetChangelist(ctx, &proto.PerforceGetChangelistRequest{
+			ConnectionDetails: conn.ToProto(),
+			ChangelistId:      changelist,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return perforce.ChangelistFromProto(resp.GetChangelist()), nil
+	}
+
+	addr := c.AddrForRepo(ctx, api.RepoName(conn.P4Port))
+	b, err := json.Marshal(&protocol.PerforceGetChangelistRequest{
+		P4Port:       conn.P4Port,
+		P4User:       conn.P4User,
+		P4Passwd:     conn.P4Passwd,
+		ChangelistID: changelist,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	uri := "http://" + addr + "/perforce-get-changelist"
+	resp, err := c.do(ctx, "perforce-get-changelist", uri, b)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "PerforceGetChangelist",
+			Err: errors.Errorf("PerforceGetChangelist: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var payload protocol.PerforceGetChangelistResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	cl := &perforce.Changelist{
+		ID:           payload.Changelist.ID,
+		CreationDate: payload.Changelist.CreationDate,
+		State:        perforce.ChangelistState(payload.Changelist.State),
+		Author:       payload.Changelist.Author,
+		Title:        payload.Changelist.Title,
+		Message:      payload.Changelist.Message,
+	}
+
+	return cl, nil
 }
 
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance

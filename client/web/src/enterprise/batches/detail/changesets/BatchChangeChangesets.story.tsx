@@ -21,8 +21,10 @@ const config: Meta = {
     argTypes: {
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        viewerCanAdminister: true,
     },
 }
 
@@ -137,17 +139,19 @@ export const DraftWithoutChangesets: Story = args => {
 DraftWithoutChangesets.argTypes = {
     batchChangeState: {
         control: { type: 'select', options: Object.keys(BatchChangeState) },
-        defaultValue: BatchChangeState.DRAFT,
     },
     isExecutionEnabled: {
         control: { type: 'boolean' },
-        defaultValue: true,
     },
     viewerCanAdminister: {
         table: {
             disable: true,
         },
     },
+}
+DraftWithoutChangesets.args = {
+    batchChangeState: BatchChangeState.DRAFT,
+    isExecutionEnabled: true,
 }
 
 DraftWithoutChangesets.storyName = 'Draft without changesets'

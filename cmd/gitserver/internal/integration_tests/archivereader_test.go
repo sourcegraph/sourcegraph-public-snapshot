@@ -216,10 +216,10 @@ func TestClient_ArchiveReader(t *testing.T) {
 							base := proto.NewGitserverServiceClient(cc)
 							return base.RepoUpdate(ctx, in, opts...)
 						}
-						return &gitserver.MockGRPCClient{
-							MockArchive:    mockArchive,
-							MockRepoUpdate: mockRepoUpdate,
-						}
+						cli := gitserver.NewMockGitserverServiceClient()
+						cli.ArchiveFunc.SetDefaultHook(mockArchive)
+						cli.RepoUpdateFunc.SetDefaultHook(mockRepoUpdate)
+						return cli
 					}
 				})
 
@@ -260,7 +260,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 							base := proto.NewGitserverServiceClient(cc)
 							return base.Archive(ctx, in, opts...)
 						}
-						return &gitserver.MockGRPCClient{MockArchive: mockArchive}
+						cli := gitserver.NewMockGitserverServiceClient()
+						cli.ArchiveFunc.SetDefaultHook(mockArchive)
+						return cli
 					}
 				})
 

@@ -294,8 +294,10 @@ export const Overview: Story = args => {
 Overview.argTypes = {
     viewerCanAdminister: {
         control: { type: 'boolean' },
-        defaultValue: true,
     },
+}
+Overview.args = {
+    viewerCanAdminister: true,
 }
 
 export const NoOpenChangesets: Story = () => {

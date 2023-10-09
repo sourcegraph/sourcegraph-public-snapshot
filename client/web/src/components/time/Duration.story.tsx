@@ -17,8 +17,10 @@ const config: Meta = {
     argTypes: {
         start: {
             control: { type: 'date' },
-            defaultValue: subDays(now, 1),
         },
+    },
+    args: {
+        start: subDays(now, 1),
     },
 }
 
@@ -30,8 +32,11 @@ export const Fixed: Story = args => (
 Fixed.argTypes = {
     end: {
         control: { type: 'date' },
-        defaultValue: now,
     },
+}
+Fixed.args = {
+    start: now,
+    end: now,
 }
 
 export const Active: Story = args => (

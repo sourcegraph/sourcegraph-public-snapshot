@@ -105,6 +105,7 @@ ts_project(
         "src/search-ui/documentation/ModalVideo.tsx",
         "src/search-ui/experimental.ts",
         "src/search-ui/index.ts",
+        "src/search-ui/input/BaseCodeMirrorQueryInput.tsx",
         "src/search-ui/input/CodeMirrorQueryInput.tsx",
         "src/search-ui/input/LazyQueryInput.tsx",
         "src/search-ui/input/QueryInput.ts",

@@ -13,7 +13,7 @@ import {
     ENVIRONMENT_CONFIG,
     getAPIProxySettings,
     getIndexHTML,
-    getWebpackManifest,
+    getWebBuildManifest,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
     printSuccessBanner,
@@ -59,7 +59,7 @@ async function startWebpackDevelopmentServer({ apiURL }: DevelopmentServerInit):
     const { proxyRoutes, ...proxyConfig } = getAPIProxySettings({
         apiURL,
         getLocalIndexHTML(jsContextScript) {
-            const manifestFile = getWebpackManifest()
+            const manifestFile = getWebBuildManifest()
             return getIndexHTML({ manifestFile, jsContextScript })
         },
     })

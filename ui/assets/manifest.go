@@ -1,6 +1,6 @@
 package assets
 
-type WebpackManifest struct {
+type WebBuildManifest struct {
 	// ReactJSBundlePath contains the file name of the ReactJS
 	// dependency bundle, that is required by our main app bundle.
 	ReactJSBundlePath string `json:"react.js"`
@@ -8,11 +8,11 @@ type WebpackManifest struct {
 	// dependency bundle, that is required by our main app bundle.
 	OpenTelemetryJSBundlePath string `json:"opentelemetry.js"`
 	// AppJSBundlePath contains the file name of the main
-	// Webpack bundle that serves as the entrypoint
+	// bundle that serves as the entrypoint
 	// for the webapp code.
 	AppJSBundlePath string `json:"app.js"`
 	// EmbedJSBundlePath contains the file name of the
-	// Webpack bundle that serves as the entrypoint
+	// bundle that serves as the entrypoint
 	// for the embeddable webapp code.
 	EmbedJSBundlePath string `json:"embed.js"`
 	// AppJSRuntimeBundlePath contains the file name of the
