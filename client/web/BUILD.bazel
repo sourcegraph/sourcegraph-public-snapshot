@@ -172,6 +172,7 @@ ts_project(
         "src/app/TauriLink.tsx",
         "src/app/tauriIcpUtils.ts",
         "src/auth.ts",
+        "src/auth/AuthPageWrapper.tsx",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
         "src/auth/PostSignUpPage.tsx",
