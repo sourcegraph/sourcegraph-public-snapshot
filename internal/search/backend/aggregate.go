@@ -91,7 +91,7 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, _ []*zoekt.SearchResult, 
 	return agg, overflow, true
 }
 
-type FlushCollector interface {
+type FlushSender interface {
 	Flush()
 	Send(endpoint string, event *zoekt.SearchResult)
 	SendDone(endpoint string)
@@ -124,7 +124,11 @@ type flushCollectSender struct {
 //
 // If it has not heard back from every endpoint by a certain timeout, then it will
 // flush as a 'fallback plan' to avoid delaying the search too much.
-func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) *flushCollectSender {
+func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) FlushSender {
+	if opts == nil {
+		return &nopFlushCollector{sender}
+	}
+
 	firstResults := map[string]bool{}
 	for _, endpoint := range endpoints {
 		firstResults[endpoint] = true

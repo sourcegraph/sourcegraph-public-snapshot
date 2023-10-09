@@ -74,12 +74,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		endpoints = append(endpoints, endpoint) //nolint:staticcheck
 	}
 
-	var flushSender FlushCollector
-	if opts == nil {
-		flushSender = &nopFlushCollector{streamer}
-	} else {
-		flushSender = newFlushCollectSender(opts, endpoints, conf.RankingMaxQueueSizeBytes(), streamer)
-	}
+	flushSender := newFlushCollectSender(opts, endpoints, conf.RankingMaxQueueSizeBytes(), streamer)
 	defer flushSender.Flush()
 
 	// During re-balancing a repository can appear on more than one replica.
