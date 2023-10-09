@@ -9,6 +9,9 @@ import { SignUpPage } from './SignUpPage'
 
 const config: Meta = {
     title: 'web/auth/SignUpPage',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 
 export default config

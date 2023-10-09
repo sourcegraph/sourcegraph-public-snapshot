@@ -10,6 +10,9 @@ import { CloudSignUpPage } from './CloudSignUpPage'
 
 const config: Meta = {
     title: 'web/auth/CloudSignUpPage',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 
 export default config
