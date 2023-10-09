@@ -189,12 +189,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addVsceTests,
 		)
 
-	case runtype.AppRelease:
-		ops = operations.NewSet(addAppReleaseSteps(c, false))
-
-	case runtype.AppInsiders:
-		ops = operations.NewSet(addAppReleaseSteps(c, true))
-
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
