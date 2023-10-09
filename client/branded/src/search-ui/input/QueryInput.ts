@@ -21,7 +21,6 @@ export interface QueryInputProps<E extends BaseEditor = BaseEditor>
     onSubmit?: () => void
     onFocus?: () => void
     onBlur?: () => void
-    onCompletionItemSelected?: () => void
     onEditorCreated?: (editor: E) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean

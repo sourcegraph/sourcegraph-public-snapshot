@@ -5,12 +5,7 @@ import { mdiPlayCircleOutline, mdiOpenInNew, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { type Observable, of } from 'rxjs'
 
-import {
-    StreamingSearchResultsList,
-    CodeMirrorQueryInput,
-    changeListener,
-    createDefaultSuggestions,
-} from '@sourcegraph/branded'
+import { StreamingSearchResultsList, CodeMirrorQueryInput, createDefaultSuggestions } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -74,7 +69,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         ownEnabled,
         ...props
     }) => {
-        const [editor, setEditor] = useState<EditorView>()
+        const [editor, setEditor] = useState<EditorView | null>(null)
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
 
@@ -167,20 +162,20 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         />
                         <div className={styles.codeMirrorWrapper}>
                             <CodeMirrorQueryInput
+                                ref={setEditor}
                                 value={input.query}
                                 patternType={SearchPatternType.standard}
                                 interpretComments={true}
-                                onEditorCreated={setEditor}
+                                onChange={onInputChange}
+                                multiLine={true}
                                 extension={useMemo(
                                     () => [
-                                        EditorView.lineWrapping,
                                         queryCompletion,
-                                        changeListener(onInputChange),
                                         blockKeymap({ runBlock }),
                                         maxEditorHeight,
                                         editorAttributes,
                                     ],
-                                    [queryCompletion, runBlock, onInputChange]
+                                    [queryCompletion, runBlock]
                                 )}
                             />
                         </div>

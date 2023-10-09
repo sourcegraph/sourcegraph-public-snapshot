@@ -151,7 +151,7 @@ export function tokenInfo(): Extension {
         EditorView.domEventHandlers({
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
-                let effects: StateEffect<any> | null = null
+                let effects: StateEffect<unknown> | null = null
 
                 // event.buttons === 0 means no button is pressed
                 if (event.buttons > 0) {

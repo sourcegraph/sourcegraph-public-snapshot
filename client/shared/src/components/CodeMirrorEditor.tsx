@@ -100,9 +100,35 @@ export function useCodeMirror(
     )
 }
 
+/**
+ * Generic interface for interaction with the editor.
+ */
 export interface Editor {
     focus(): void
     blur(): void
+}
+
+/**
+ * Helper function for creating an {@link Editor} from a {@link EditorView}.
+ * When calling `.focus` the input will only be focused if it doesn't have
+ * focus and it will move the cursor to the end of the input.
+ */
+export function viewToEditor(viewRef: RefObject<EditorView>): Editor {
+    return {
+        focus() {
+            const view = viewRef.current
+            if (view && !view.hasFocus) {
+                view.focus()
+                view.dispatch({
+                    selection: { anchor: view.state.doc.length },
+                    scrollIntoView: true,
+                })
+            }
+        },
+        blur() {
+            viewRef.current?.contentDOM.blur()
+        },
+    }
 }
 
 /**
@@ -116,25 +142,7 @@ export const CodeMirrorEditor = React.memo(
             const editorRef = useRef<EditorView | null>(null)
             useCodeMirror(editorRef, containerRef, value, extensions)
 
-            useImperativeHandle(
-                ref,
-                () => ({
-                    focus() {
-                        const editor = editorRef.current
-                        if (editor && !editor.hasFocus) {
-                            editor.focus()
-                            editor.dispatch({
-                                selection: { anchor: editor.state.doc.length },
-                                scrollIntoView: true,
-                            })
-                        }
-                    },
-                    blur() {
-                        editorRef.current?.contentDOM.blur()
-                    },
-                }),
-                []
-            )
+            useImperativeHandle(ref, () => viewToEditor(editorRef), [])
 
             return <div ref={containerRef} className={className} />
         }
@@ -174,10 +182,17 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
  */
 export function useCompartment(editorRef: RefObject<EditorView>, extension: Extension): Extension {
     const compartment = useMemo(() => new Compartment(), [])
+    // We only want to trigger CodeMirror transactions when the component updates,
+    // not on the first render.
+    const shouldUpdate = useRef(false)
 
     useEffect(() => {
-        editorRef.current?.dispatch({ effects: compartment.reconfigure(extension) })
-    }, [compartment, editorRef, extension])
+        if (shouldUpdate.current) {
+            editorRef.current?.dispatch({ effects: compartment.reconfigure(extension) })
+        } else {
+            shouldUpdate.current = true
+        }
+    }, [shouldUpdate, compartment, editorRef, extension])
 
     // The compartment is initialized only in the first render.
     // In subsequent renders we dispatch effects to update the compartment (
