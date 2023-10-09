@@ -4,17 +4,16 @@ import path from 'path'
 import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin'
 import * as esbuild from 'esbuild'
 
+import { ROOT_PATH, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import {
-    MONACO_LANGUAGES_AND_FEATURES,
-    ROOT_PATH,
-    STATIC_ASSETS_PATH,
     stylePlugin,
     packageResolutionPlugin,
     monacoPlugin,
     RXJS_RESOLUTIONS,
     buildMonaco,
     buildTimerPlugin,
-} from '@sourcegraph/build-config'
+} from '@sourcegraph/build-config/src/esbuild/plugins'
+import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config/src/monaco-editor'
 
 import { ENVIRONMENT_CONFIG, IS_DEVELOPMENT, IS_PRODUCTION } from '../utils'
 

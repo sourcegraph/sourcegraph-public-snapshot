@@ -2,7 +2,8 @@ import path from 'path'
 
 import type * as esbuild from 'esbuild'
 
-import { ROOT_PATH, stylePlugin } from '@sourcegraph/build-config'
+import { ROOT_PATH } from '@sourcegraph/build-config'
+import { stylePlugin } from '@sourcegraph/build-config/src/esbuild/plugins'
 
 import { generateBundleUID } from './utils'
 
