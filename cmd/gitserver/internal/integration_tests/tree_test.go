@@ -409,10 +409,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 		},
 	}
 	srpGetter.GetByUserFunc.SetDefaultReturn(testSubRepoPerms, nil)
-	checker, err := srp.NewSubRepoPermsClient(srpGetter)
-	if err != nil {
-		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
-	}
+	checker := srp.NewSubRepoPermsClient(srpGetter)
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
 	client := gitserver.NewTestClient(t).WithClientSource(source).WithChecker(checker)

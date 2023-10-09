@@ -628,10 +628,8 @@ read    group   Dev1    *   //depot/main/.../*.go
 			} else if ok && tc.noRules {
 				t.Fatal("expected no rules")
 			}
-			checker, err := srp.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
-			if err != nil {
-				t.Fatal(err)
-			}
+			checker := srp.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
+
 			if len(tc.canReadAll) > 0 {
 				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(tc.depot), tc.canReadAll)
 				if err != nil {
