@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -124,7 +124,7 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeAzureDevOpsBuildState(m)
 	case *gerritbatches.AnnotatedChange:
 		return computeGerritBuildState(m)
-	case *protocol.PerforceChangelistState:
+	case *perforce.ChangelistState:
 		// Perforce doesn't have builds built-in, its better to be explicit by still
 		// including this case for clarity.
 		return btypes.ChangesetCheckStateUnknown
@@ -639,13 +639,13 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Change.Status)
 		}
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		switch m.State {
-		case protocol.PerforceChangelistStateClosed:
+		case perforce.ChangelistStateClosed:
 			s = btypes.ChangesetExternalStateClosed
-		case protocol.PerforceChangelistStateSubmitted:
+		case perforce.ChangelistStateSubmitted:
 			s = btypes.ChangesetExternalStateMerged
-		case protocol.PerforceChangelistStatePending, protocol.PerforceChangelistStateShelved:
+		case perforce.ChangelistStatePending, perforce.ChangelistStateShelved:
 			s = btypes.ChangesetExternalStateOpen
 		default:
 			return "", errors.Errorf("unknown Perforce Change state: %s", m.State)
@@ -758,7 +758,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			}
 
 		}
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		states[btypes.ChangesetReviewStatePending] = true
 	default:
 		return "", errors.New("unknown changeset type")

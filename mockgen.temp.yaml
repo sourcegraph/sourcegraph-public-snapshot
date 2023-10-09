@@ -130,3 +130,7 @@
   path: github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo
   interfaces:
     - RepoEmbeddingJobsStore
+- filename: internal/gitserver/mock.go
+  path: github.com/sourcegraph/sourcegraph/internal/gitserver/v1
+  interfaces:
+    - GitserverServiceClient

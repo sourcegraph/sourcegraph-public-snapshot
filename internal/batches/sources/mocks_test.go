@@ -10,7 +10,6 @@ import (
 	"context"
 	"io"
 	"io/fs"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -29,6 +28,7 @@ import (
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	perforce "github.com/sourcegraph/sourcegraph/internal/perforce"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -10814,6 +10814,9 @@ type MockGitserverClient struct {
 	// IsPerforcePathCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsPerforcePathCloneable.
 	IsPerforcePathCloneableFunc *GitserverClientIsPerforcePathCloneableFunc
+	// IsPerforceSuperUserFunc is an instance of a mock function object
+	// controlling the behavior of the method IsPerforceSuperUser.
+	IsPerforceSuperUserFunc *GitserverClientIsPerforceSuperUserFunc
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *GitserverClientIsRepoCloneableFunc
@@ -10841,12 +10844,21 @@ type MockGitserverClient struct {
 	// NewFileReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method NewFileReader.
 	NewFileReaderFunc *GitserverClientNewFileReaderFunc
-	// P4ExecFunc is an instance of a mock function object controlling the
-	// behavior of the method P4Exec.
-	P4ExecFunc *GitserverClientP4ExecFunc
-	// P4GetChangelistFunc is an instance of a mock function object
-	// controlling the behavior of the method P4GetChangelist.
-	P4GetChangelistFunc *GitserverClientP4GetChangelistFunc
+	// PerforceGetChangelistFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceGetChangelist.
+	PerforceGetChangelistFunc *GitserverClientPerforceGetChangelistFunc
+	// PerforceGroupMembersFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceGroupMembers.
+	PerforceGroupMembersFunc *GitserverClientPerforceGroupMembersFunc
+	// PerforceProtectsForDepotFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceProtectsForDepot.
+	PerforceProtectsForDepotFunc *GitserverClientPerforceProtectsForDepotFunc
+	// PerforceProtectsForUserFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceProtectsForUser.
+	PerforceProtectsForUserFunc *GitserverClientPerforceProtectsForUserFunc
+	// PerforceUsersFunc is an instance of a mock function object
+	// controlling the behavior of the method PerforceUsers.
+	PerforceUsersFunc *GitserverClientPerforceUsersFunc
 	// ReadDirFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadDir.
 	ReadDirFunc *GitserverClientReadDirFunc
@@ -10929,7 +10941,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		CheckPerforceCredentialsFunc: &GitserverClientCheckPerforceCredentialsFunc{
-			defaultHook: func(context.Context, string, string, string) (r0 error) {
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) (r0 error) {
 				return
 			},
 		},
@@ -11034,7 +11046,12 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
-			defaultHook: func(context.Context, string, string, string, string) (r0 error) {
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) (r0 error) {
+				return
+			},
+		},
+		IsPerforceSuperUserFunc: &GitserverClientIsPerforceSuperUserFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) (r0 error) {
 				return
 			},
 		},
@@ -11083,13 +11100,28 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		P4ExecFunc: &GitserverClientP4ExecFunc{
-			defaultHook: func(context.Context, string, string, string, ...string) (r0 io.ReadCloser, r1 http.Header, r2 error) {
+		PerforceGetChangelistFunc: &GitserverClientPerforceGetChangelistFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) (r0 *perforce.Changelist, r1 error) {
 				return
 			},
 		},
-		P4GetChangelistFunc: &GitserverClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, gitserver.PerforceCredentials) (r0 *protocol.PerforceChangelist, r1 error) {
+		PerforceGroupMembersFunc: &GitserverClientPerforceGroupMembersFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) (r0 []string, r1 error) {
+				return
+			},
+		},
+		PerforceProtectsForDepotFunc: &GitserverClientPerforceProtectsForDepotFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) (r0 []*perforce.Protect, r1 error) {
+				return
+			},
+		},
+		PerforceProtectsForUserFunc: &GitserverClientPerforceProtectsForUserFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) (r0 []*perforce.Protect, r1 error) {
+				return
+			},
+		},
+		PerforceUsersFunc: &GitserverClientPerforceUsersFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) (r0 []*perforce.User, r1 error) {
 				return
 			},
 		},
@@ -11159,12 +11191,12 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		SystemInfoFunc: &GitserverClientSystemInfoFunc{
-			defaultHook: func(context.Context, string) (r0 gitserver.SystemInfo, r1 error) {
+			defaultHook: func(context.Context, string) (r0 protocol.SystemInfo, r1 error) {
 				return
 			},
 		},
 		SystemsInfoFunc: &GitserverClientSystemsInfoFunc{
-			defaultHook: func(context.Context) (r0 []gitserver.SystemInfo, r1 error) {
+			defaultHook: func(context.Context) (r0 []protocol.SystemInfo, r1 error) {
 				return
 			},
 		},
@@ -11206,7 +11238,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		CheckPerforceCredentialsFunc: &GitserverClientCheckPerforceCredentialsFunc{
-			defaultHook: func(context.Context, string, string, string) error {
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) error {
 				panic("unexpected invocation of MockGitserverClient.CheckPerforceCredentials")
 			},
 		},
@@ -11311,8 +11343,13 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
-			defaultHook: func(context.Context, string, string, string, string) error {
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) error {
 				panic("unexpected invocation of MockGitserverClient.IsPerforcePathCloneable")
+			},
+		},
+		IsPerforceSuperUserFunc: &GitserverClientIsPerforceSuperUserFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) error {
+				panic("unexpected invocation of MockGitserverClient.IsPerforceSuperUser")
 			},
 		},
 		IsRepoCloneableFunc: &GitserverClientIsRepoCloneableFunc{
@@ -11360,14 +11397,29 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.NewFileReader")
 			},
 		},
-		P4ExecFunc: &GitserverClientP4ExecFunc{
-			defaultHook: func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-				panic("unexpected invocation of MockGitserverClient.P4Exec")
+		PerforceGetChangelistFunc: &GitserverClientPerforceGetChangelistFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
+				panic("unexpected invocation of MockGitserverClient.PerforceGetChangelist")
 			},
 		},
-		P4GetChangelistFunc: &GitserverClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-				panic("unexpected invocation of MockGitserverClient.P4GetChangelist")
+		PerforceGroupMembersFunc: &GitserverClientPerforceGroupMembersFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error) {
+				panic("unexpected invocation of MockGitserverClient.PerforceGroupMembers")
+			},
+		},
+		PerforceProtectsForDepotFunc: &GitserverClientPerforceProtectsForDepotFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+				panic("unexpected invocation of MockGitserverClient.PerforceProtectsForDepot")
+			},
+		},
+		PerforceProtectsForUserFunc: &GitserverClientPerforceProtectsForUserFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+				panic("unexpected invocation of MockGitserverClient.PerforceProtectsForUser")
+			},
+		},
+		PerforceUsersFunc: &GitserverClientPerforceUsersFunc{
+			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
+				panic("unexpected invocation of MockGitserverClient.PerforceUsers")
 			},
 		},
 		ReadDirFunc: &GitserverClientReadDirFunc{
@@ -11436,12 +11488,12 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		SystemInfoFunc: &GitserverClientSystemInfoFunc{
-			defaultHook: func(context.Context, string) (gitserver.SystemInfo, error) {
+			defaultHook: func(context.Context, string) (protocol.SystemInfo, error) {
 				panic("unexpected invocation of MockGitserverClient.SystemInfo")
 			},
 		},
 		SystemsInfoFunc: &GitserverClientSystemsInfoFunc{
-			defaultHook: func(context.Context) ([]gitserver.SystemInfo, error) {
+			defaultHook: func(context.Context) ([]protocol.SystemInfo, error) {
 				panic("unexpected invocation of MockGitserverClient.SystemsInfo")
 			},
 		},
@@ -11537,6 +11589,9 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
 			defaultHook: i.IsPerforcePathCloneable,
 		},
+		IsPerforceSuperUserFunc: &GitserverClientIsPerforceSuperUserFunc{
+			defaultHook: i.IsPerforceSuperUser,
+		},
 		IsRepoCloneableFunc: &GitserverClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
 		},
@@ -11564,11 +11619,20 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		NewFileReaderFunc: &GitserverClientNewFileReaderFunc{
 			defaultHook: i.NewFileReader,
 		},
-		P4ExecFunc: &GitserverClientP4ExecFunc{
-			defaultHook: i.P4Exec,
+		PerforceGetChangelistFunc: &GitserverClientPerforceGetChangelistFunc{
+			defaultHook: i.PerforceGetChangelist,
 		},
-		P4GetChangelistFunc: &GitserverClientP4GetChangelistFunc{
-			defaultHook: i.P4GetChangelist,
+		PerforceGroupMembersFunc: &GitserverClientPerforceGroupMembersFunc{
+			defaultHook: i.PerforceGroupMembers,
+		},
+		PerforceProtectsForDepotFunc: &GitserverClientPerforceProtectsForDepotFunc{
+			defaultHook: i.PerforceProtectsForDepot,
+		},
+		PerforceProtectsForUserFunc: &GitserverClientPerforceProtectsForUserFunc{
+			defaultHook: i.PerforceProtectsForUser,
+		},
+		PerforceUsersFunc: &GitserverClientPerforceUsersFunc{
+			defaultHook: i.PerforceUsers,
 		},
 		ReadDirFunc: &GitserverClientReadDirFunc{
 			defaultHook: i.ReadDir,
@@ -12283,24 +12347,24 @@ func (c GitserverClientBranchesContainingFuncCall) Results() []interface{} {
 // the CheckPerforceCredentials method of the parent MockGitserverClient
 // instance is invoked.
 type GitserverClientCheckPerforceCredentialsFunc struct {
-	defaultHook func(context.Context, string, string, string) error
-	hooks       []func(context.Context, string, string, string) error
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails) error
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails) error
 	history     []GitserverClientCheckPerforceCredentialsFuncCall
 	mutex       sync.Mutex
 }
 
 // CheckPerforceCredentials delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) CheckPerforceCredentials(v0 context.Context, v1 string, v2 string, v3 string) error {
-	r0 := m.CheckPerforceCredentialsFunc.nextHook()(v0, v1, v2, v3)
-	m.CheckPerforceCredentialsFunc.appendCall(GitserverClientCheckPerforceCredentialsFuncCall{v0, v1, v2, v3, r0})
+func (m *MockGitserverClient) CheckPerforceCredentials(v0 context.Context, v1 protocol.PerforceConnectionDetails) error {
+	r0 := m.CheckPerforceCredentialsFunc.nextHook()(v0, v1)
+	m.CheckPerforceCredentialsFunc.appendCall(GitserverClientCheckPerforceCredentialsFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // CheckPerforceCredentials method of the parent MockGitserverClient
 // instance is invoked and the hook queue is empty.
-func (f *GitserverClientCheckPerforceCredentialsFunc) SetDefaultHook(hook func(context.Context, string, string, string) error) {
+func (f *GitserverClientCheckPerforceCredentialsFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails) error) {
 	f.defaultHook = hook
 }
 
@@ -12309,7 +12373,7 @@ func (f *GitserverClientCheckPerforceCredentialsFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *GitserverClientCheckPerforceCredentialsFunc) PushHook(hook func(context.Context, string, string, string) error) {
+func (f *GitserverClientCheckPerforceCredentialsFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12318,19 +12382,19 @@ func (f *GitserverClientCheckPerforceCredentialsFunc) PushHook(hook func(context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientCheckPerforceCredentialsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string) error {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientCheckPerforceCredentialsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, string) error {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails) error {
 		return r0
 	})
 }
 
-func (f *GitserverClientCheckPerforceCredentialsFunc) nextHook() func(context.Context, string, string, string) error {
+func (f *GitserverClientCheckPerforceCredentialsFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12370,13 +12434,7 @@ type GitserverClientCheckPerforceCredentialsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
+	Arg1 protocol.PerforceConnectionDetails
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -12385,7 +12443,7 @@ type GitserverClientCheckPerforceCredentialsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientCheckPerforceCredentialsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -14697,24 +14755,24 @@ func (c GitserverClientHeadFuncCall) Results() []interface{} {
 // the IsPerforcePathCloneable method of the parent MockGitserverClient
 // instance is invoked.
 type GitserverClientIsPerforcePathCloneableFunc struct {
-	defaultHook func(context.Context, string, string, string, string) error
-	hooks       []func(context.Context, string, string, string, string) error
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails, string) error
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails, string) error
 	history     []GitserverClientIsPerforcePathCloneableFuncCall
 	mutex       sync.Mutex
 }
 
 // IsPerforcePathCloneable delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) IsPerforcePathCloneable(v0 context.Context, v1 string, v2 string, v3 string, v4 string) error {
-	r0 := m.IsPerforcePathCloneableFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.IsPerforcePathCloneableFunc.appendCall(GitserverClientIsPerforcePathCloneableFuncCall{v0, v1, v2, v3, v4, r0})
+func (m *MockGitserverClient) IsPerforcePathCloneable(v0 context.Context, v1 protocol.PerforceConnectionDetails, v2 string) error {
+	r0 := m.IsPerforcePathCloneableFunc.nextHook()(v0, v1, v2)
+	m.IsPerforcePathCloneableFunc.appendCall(GitserverClientIsPerforcePathCloneableFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // IsPerforcePathCloneable method of the parent MockGitserverClient instance
 // is invoked and the hook queue is empty.
-func (f *GitserverClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(context.Context, string, string, string, string) error) {
+func (f *GitserverClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) error) {
 	f.defaultHook = hook
 }
 
@@ -14723,7 +14781,7 @@ func (f *GitserverClientIsPerforcePathCloneableFunc) SetDefaultHook(hook func(co
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverClientIsPerforcePathCloneableFunc) PushHook(hook func(context.Context, string, string, string, string) error) {
+func (f *GitserverClientIsPerforcePathCloneableFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -14732,19 +14790,19 @@ func (f *GitserverClientIsPerforcePathCloneableFunc) PushHook(hook func(context.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientIsPerforcePathCloneableFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string, string) error {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientIsPerforcePathCloneableFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, string, string) error {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverClientIsPerforcePathCloneableFunc) nextHook() func(context.Context, string, string, string, string) error {
+func (f *GitserverClientIsPerforcePathCloneableFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -14784,16 +14842,10 @@ type GitserverClientIsPerforcePathCloneableFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 protocol.PerforceConnectionDetails
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -14802,12 +14854,120 @@ type GitserverClientIsPerforcePathCloneableFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientIsPerforcePathCloneableFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientIsPerforcePathCloneableFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverClientIsPerforceSuperUserFunc describes the behavior when the
+// IsPerforceSuperUser method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientIsPerforceSuperUserFunc struct {
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails) error
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails) error
+	history     []GitserverClientIsPerforceSuperUserFuncCall
+	mutex       sync.Mutex
+}
+
+// IsPerforceSuperUser delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) IsPerforceSuperUser(v0 context.Context, v1 protocol.PerforceConnectionDetails) error {
+	r0 := m.IsPerforceSuperUserFunc.nextHook()(v0, v1)
+	m.IsPerforceSuperUserFunc.appendCall(GitserverClientIsPerforceSuperUserFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the IsPerforceSuperUser
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientIsPerforceSuperUserFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsPerforceSuperUser method of the parent MockGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverClientIsPerforceSuperUserFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientIsPerforceSuperUserFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientIsPerforceSuperUserFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails) error {
+		return r0
+	})
+}
+
+func (f *GitserverClientIsPerforceSuperUserFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientIsPerforceSuperUserFunc) appendCall(r0 GitserverClientIsPerforceSuperUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientIsPerforceSuperUserFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientIsPerforceSuperUserFunc) History() []GitserverClientIsPerforceSuperUserFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientIsPerforceSuperUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientIsPerforceSuperUserFuncCall is an object that describes an
+// invocation of method IsPerforceSuperUser on an instance of
+// MockGitserverClient.
+type GitserverClientIsPerforceSuperUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 protocol.PerforceConnectionDetails
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientIsPerforceSuperUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientIsPerforceSuperUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -15849,163 +16009,37 @@ func (c GitserverClientNewFileReaderFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientP4ExecFunc describes the behavior when the P4Exec method
-// of the parent MockGitserverClient instance is invoked.
-type GitserverClientP4ExecFunc struct {
-	defaultHook func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)
-	hooks       []func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)
-	history     []GitserverClientP4ExecFuncCall
+// GitserverClientPerforceGetChangelistFunc describes the behavior when the
+// PerforceGetChangelist method of the parent MockGitserverClient instance
+// is invoked.
+type GitserverClientPerforceGetChangelistFunc struct {
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error)
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error)
+	history     []GitserverClientPerforceGetChangelistFuncCall
 	mutex       sync.Mutex
 }
 
-// P4Exec delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) P4Exec(v0 context.Context, v1 string, v2 string, v3 string, v4 ...string) (io.ReadCloser, http.Header, error) {
-	r0, r1, r2 := m.P4ExecFunc.nextHook()(v0, v1, v2, v3, v4...)
-	m.P4ExecFunc.appendCall(GitserverClientP4ExecFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the P4Exec method of the
-// parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientP4ExecFunc) SetDefaultHook(hook func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// P4Exec method of the parent MockGitserverClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GitserverClientP4ExecFunc) PushHook(hook func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientP4ExecFunc) SetDefaultReturn(r0 io.ReadCloser, r1 http.Header, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientP4ExecFunc) PushReturn(r0 io.ReadCloser, r1 http.Header, r2 error) {
-	f.PushHook(func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *GitserverClientP4ExecFunc) nextHook() func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientP4ExecFunc) appendCall(r0 GitserverClientP4ExecFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientP4ExecFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientP4ExecFunc) History() []GitserverClientP4ExecFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientP4ExecFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientP4ExecFuncCall is an object that describes an invocation
-// of method P4Exec on an instance of MockGitserverClient.
-type GitserverClientP4ExecFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg4 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 io.ReadCloser
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 http.Header
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverClientP4ExecFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg4 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientP4ExecFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// GitserverClientP4GetChangelistFunc describes the behavior when the
-// P4GetChangelist method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientP4GetChangelistFunc struct {
-	defaultHook func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)
-	hooks       []func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)
-	history     []GitserverClientP4GetChangelistFuncCall
-	mutex       sync.Mutex
-}
-
-// P4GetChangelist delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) P4GetChangelist(v0 context.Context, v1 string, v2 gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-	r0, r1 := m.P4GetChangelistFunc.nextHook()(v0, v1, v2)
-	m.P4GetChangelistFunc.appendCall(GitserverClientP4GetChangelistFuncCall{v0, v1, v2, r0, r1})
+// PerforceGetChangelist delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) PerforceGetChangelist(v0 context.Context, v1 protocol.PerforceConnectionDetails, v2 string) (*perforce.Changelist, error) {
+	r0, r1 := m.PerforceGetChangelistFunc.nextHook()(v0, v1, v2)
+	m.PerforceGetChangelistFunc.appendCall(GitserverClientPerforceGetChangelistFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the P4GetChangelist
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)) {
+// SetDefaultHook sets function that is called when the
+// PerforceGetChangelist method of the parent MockGitserverClient instance
+// is invoked and the hook queue is empty.
+func (f *GitserverClientPerforceGetChangelistFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// P4GetChangelist method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)) {
+// PerforceGetChangelist method of the parent MockGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverClientPerforceGetChangelistFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -16013,20 +16047,20 @@ func (f *GitserverClientP4GetChangelistFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientP4GetChangelistFunc) SetDefaultReturn(r0 *protocol.PerforceChangelist, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
+func (f *GitserverClientPerforceGetChangelistFunc) SetDefaultReturn(r0 *perforce.Changelist, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientP4GetChangelistFunc) PushReturn(r0 *protocol.PerforceChangelist, r1 error) {
-	f.PushHook(func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
+func (f *GitserverClientPerforceGetChangelistFunc) PushReturn(r0 *perforce.Changelist, r1 error) {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientP4GetChangelistFunc) nextHook() func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
+func (f *GitserverClientPerforceGetChangelistFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails, string) (*perforce.Changelist, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -16039,39 +16073,40 @@ func (f *GitserverClientP4GetChangelistFunc) nextHook() func(context.Context, st
 	return hook
 }
 
-func (f *GitserverClientP4GetChangelistFunc) appendCall(r0 GitserverClientP4GetChangelistFuncCall) {
+func (f *GitserverClientPerforceGetChangelistFunc) appendCall(r0 GitserverClientPerforceGetChangelistFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitserverClientP4GetChangelistFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientP4GetChangelistFunc) History() []GitserverClientP4GetChangelistFuncCall {
+// History returns a sequence of
+// GitserverClientPerforceGetChangelistFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverClientPerforceGetChangelistFunc) History() []GitserverClientPerforceGetChangelistFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverClientP4GetChangelistFuncCall, len(f.history))
+	history := make([]GitserverClientPerforceGetChangelistFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverClientP4GetChangelistFuncCall is an object that describes an
-// invocation of method P4GetChangelist on an instance of
+// GitserverClientPerforceGetChangelistFuncCall is an object that describes
+// an invocation of method PerforceGetChangelist on an instance of
 // MockGitserverClient.
-type GitserverClientP4GetChangelistFuncCall struct {
+type GitserverClientPerforceGetChangelistFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 protocol.PerforceConnectionDetails
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 gitserver.PerforceCredentials
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol.PerforceChangelist
+	Result0 *perforce.Changelist
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -16079,13 +16114,466 @@ type GitserverClientP4GetChangelistFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverClientP4GetChangelistFuncCall) Args() []interface{} {
+func (c GitserverClientPerforceGetChangelistFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverClientP4GetChangelistFuncCall) Results() []interface{} {
+func (c GitserverClientPerforceGetChangelistFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientPerforceGroupMembersFunc describes the behavior when the
+// PerforceGroupMembers method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientPerforceGroupMembersFunc struct {
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error)
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error)
+	history     []GitserverClientPerforceGroupMembersFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceGroupMembers delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) PerforceGroupMembers(v0 context.Context, v1 protocol.PerforceConnectionDetails, v2 string) ([]string, error) {
+	r0, r1 := m.PerforceGroupMembersFunc.nextHook()(v0, v1, v2)
+	m.PerforceGroupMembersFunc.appendCall(GitserverClientPerforceGroupMembersFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PerforceGroupMembers
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientPerforceGroupMembersFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceGroupMembers method of the parent MockGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverClientPerforceGroupMembersFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientPerforceGroupMembersFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientPerforceGroupMembersFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientPerforceGroupMembersFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails, string) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientPerforceGroupMembersFunc) appendCall(r0 GitserverClientPerforceGroupMembersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientPerforceGroupMembersFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientPerforceGroupMembersFunc) History() []GitserverClientPerforceGroupMembersFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientPerforceGroupMembersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientPerforceGroupMembersFuncCall is an object that describes
+// an invocation of method PerforceGroupMembers on an instance of
+// MockGitserverClient.
+type GitserverClientPerforceGroupMembersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 protocol.PerforceConnectionDetails
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientPerforceGroupMembersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientPerforceGroupMembersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientPerforceProtectsForDepotFunc describes the behavior when
+// the PerforceProtectsForDepot method of the parent MockGitserverClient
+// instance is invoked.
+type GitserverClientPerforceProtectsForDepotFunc struct {
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)
+	history     []GitserverClientPerforceProtectsForDepotFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceProtectsForDepot delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) PerforceProtectsForDepot(v0 context.Context, v1 protocol.PerforceConnectionDetails, v2 string) ([]*perforce.Protect, error) {
+	r0, r1 := m.PerforceProtectsForDepotFunc.nextHook()(v0, v1, v2)
+	m.PerforceProtectsForDepotFunc.appendCall(GitserverClientPerforceProtectsForDepotFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// PerforceProtectsForDepot method of the parent MockGitserverClient
+// instance is invoked and the hook queue is empty.
+func (f *GitserverClientPerforceProtectsForDepotFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceProtectsForDepot method of the parent MockGitserverClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverClientPerforceProtectsForDepotFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientPerforceProtectsForDepotFunc) SetDefaultReturn(r0 []*perforce.Protect, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientPerforceProtectsForDepotFunc) PushReturn(r0 []*perforce.Protect, r1 error) {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientPerforceProtectsForDepotFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientPerforceProtectsForDepotFunc) appendCall(r0 GitserverClientPerforceProtectsForDepotFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverClientPerforceProtectsForDepotFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverClientPerforceProtectsForDepotFunc) History() []GitserverClientPerforceProtectsForDepotFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientPerforceProtectsForDepotFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientPerforceProtectsForDepotFuncCall is an object that
+// describes an invocation of method PerforceProtectsForDepot on an instance
+// of MockGitserverClient.
+type GitserverClientPerforceProtectsForDepotFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 protocol.PerforceConnectionDetails
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*perforce.Protect
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientPerforceProtectsForDepotFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientPerforceProtectsForDepotFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientPerforceProtectsForUserFunc describes the behavior when
+// the PerforceProtectsForUser method of the parent MockGitserverClient
+// instance is invoked.
+type GitserverClientPerforceProtectsForUserFunc struct {
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)
+	history     []GitserverClientPerforceProtectsForUserFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceProtectsForUser delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) PerforceProtectsForUser(v0 context.Context, v1 protocol.PerforceConnectionDetails, v2 string) ([]*perforce.Protect, error) {
+	r0, r1 := m.PerforceProtectsForUserFunc.nextHook()(v0, v1, v2)
+	m.PerforceProtectsForUserFunc.appendCall(GitserverClientPerforceProtectsForUserFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// PerforceProtectsForUser method of the parent MockGitserverClient instance
+// is invoked and the hook queue is empty.
+func (f *GitserverClientPerforceProtectsForUserFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceProtectsForUser method of the parent MockGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverClientPerforceProtectsForUserFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientPerforceProtectsForUserFunc) SetDefaultReturn(r0 []*perforce.Protect, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientPerforceProtectsForUserFunc) PushReturn(r0 []*perforce.Protect, r1 error) {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientPerforceProtectsForUserFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails, string) ([]*perforce.Protect, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientPerforceProtectsForUserFunc) appendCall(r0 GitserverClientPerforceProtectsForUserFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverClientPerforceProtectsForUserFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverClientPerforceProtectsForUserFunc) History() []GitserverClientPerforceProtectsForUserFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientPerforceProtectsForUserFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientPerforceProtectsForUserFuncCall is an object that
+// describes an invocation of method PerforceProtectsForUser on an instance
+// of MockGitserverClient.
+type GitserverClientPerforceProtectsForUserFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 protocol.PerforceConnectionDetails
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*perforce.Protect
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientPerforceProtectsForUserFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientPerforceProtectsForUserFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientPerforceUsersFunc describes the behavior when the
+// PerforceUsers method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientPerforceUsersFunc struct {
+	defaultHook func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error)
+	hooks       []func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error)
+	history     []GitserverClientPerforceUsersFuncCall
+	mutex       sync.Mutex
+}
+
+// PerforceUsers delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) PerforceUsers(v0 context.Context, v1 protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
+	r0, r1 := m.PerforceUsersFunc.nextHook()(v0, v1)
+	m.PerforceUsersFunc.appendCall(GitserverClientPerforceUsersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PerforceUsers method
+// of the parent MockGitserverClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverClientPerforceUsersFunc) SetDefaultHook(hook func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PerforceUsers method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientPerforceUsersFunc) PushHook(hook func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientPerforceUsersFunc) SetDefaultReturn(r0 []*perforce.User, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientPerforceUsersFunc) PushReturn(r0 []*perforce.User, r1 error) {
+	f.PushHook(func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientPerforceUsersFunc) nextHook() func(context.Context, protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientPerforceUsersFunc) appendCall(r0 GitserverClientPerforceUsersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientPerforceUsersFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientPerforceUsersFunc) History() []GitserverClientPerforceUsersFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientPerforceUsersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientPerforceUsersFuncCall is an object that describes an
+// invocation of method PerforceUsers on an instance of MockGitserverClient.
+type GitserverClientPerforceUsersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 protocol.PerforceConnectionDetails
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*perforce.User
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientPerforceUsersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientPerforceUsersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -17588,15 +18076,15 @@ func (c GitserverClientStreamBlameFileFuncCall) Results() []interface{} {
 // GitserverClientSystemInfoFunc describes the behavior when the SystemInfo
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientSystemInfoFunc struct {
-	defaultHook func(context.Context, string) (gitserver.SystemInfo, error)
-	hooks       []func(context.Context, string) (gitserver.SystemInfo, error)
+	defaultHook func(context.Context, string) (protocol.SystemInfo, error)
+	hooks       []func(context.Context, string) (protocol.SystemInfo, error)
 	history     []GitserverClientSystemInfoFuncCall
 	mutex       sync.Mutex
 }
 
 // SystemInfo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) SystemInfo(v0 context.Context, v1 string) (gitserver.SystemInfo, error) {
+func (m *MockGitserverClient) SystemInfo(v0 context.Context, v1 string) (protocol.SystemInfo, error) {
 	r0, r1 := m.SystemInfoFunc.nextHook()(v0, v1)
 	m.SystemInfoFunc.appendCall(GitserverClientSystemInfoFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -17605,7 +18093,7 @@ func (m *MockGitserverClient) SystemInfo(v0 context.Context, v1 string) (gitserv
 // SetDefaultHook sets function that is called when the SystemInfo method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientSystemInfoFunc) SetDefaultHook(hook func(context.Context, string) (gitserver.SystemInfo, error)) {
+func (f *GitserverClientSystemInfoFunc) SetDefaultHook(hook func(context.Context, string) (protocol.SystemInfo, error)) {
 	f.defaultHook = hook
 }
 
@@ -17613,7 +18101,7 @@ func (f *GitserverClientSystemInfoFunc) SetDefaultHook(hook func(context.Context
 // SystemInfo method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientSystemInfoFunc) PushHook(hook func(context.Context, string) (gitserver.SystemInfo, error)) {
+func (f *GitserverClientSystemInfoFunc) PushHook(hook func(context.Context, string) (protocol.SystemInfo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17621,20 +18109,20 @@ func (f *GitserverClientSystemInfoFunc) PushHook(hook func(context.Context, stri
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientSystemInfoFunc) SetDefaultReturn(r0 gitserver.SystemInfo, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) (gitserver.SystemInfo, error) {
+func (f *GitserverClientSystemInfoFunc) SetDefaultReturn(r0 protocol.SystemInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (protocol.SystemInfo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientSystemInfoFunc) PushReturn(r0 gitserver.SystemInfo, r1 error) {
-	f.PushHook(func(context.Context, string) (gitserver.SystemInfo, error) {
+func (f *GitserverClientSystemInfoFunc) PushReturn(r0 protocol.SystemInfo, r1 error) {
+	f.PushHook(func(context.Context, string) (protocol.SystemInfo, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientSystemInfoFunc) nextHook() func(context.Context, string) (gitserver.SystemInfo, error) {
+func (f *GitserverClientSystemInfoFunc) nextHook() func(context.Context, string) (protocol.SystemInfo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17675,7 +18163,7 @@ type GitserverClientSystemInfoFuncCall struct {
 	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 gitserver.SystemInfo
+	Result0 protocol.SystemInfo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -17696,15 +18184,15 @@ func (c GitserverClientSystemInfoFuncCall) Results() []interface{} {
 // GitserverClientSystemsInfoFunc describes the behavior when the
 // SystemsInfo method of the parent MockGitserverClient instance is invoked.
 type GitserverClientSystemsInfoFunc struct {
-	defaultHook func(context.Context) ([]gitserver.SystemInfo, error)
-	hooks       []func(context.Context) ([]gitserver.SystemInfo, error)
+	defaultHook func(context.Context) ([]protocol.SystemInfo, error)
+	hooks       []func(context.Context) ([]protocol.SystemInfo, error)
 	history     []GitserverClientSystemsInfoFuncCall
 	mutex       sync.Mutex
 }
 
 // SystemsInfo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) SystemsInfo(v0 context.Context) ([]gitserver.SystemInfo, error) {
+func (m *MockGitserverClient) SystemsInfo(v0 context.Context) ([]protocol.SystemInfo, error) {
 	r0, r1 := m.SystemsInfoFunc.nextHook()(v0)
 	m.SystemsInfoFunc.appendCall(GitserverClientSystemsInfoFuncCall{v0, r0, r1})
 	return r0, r1
@@ -17713,7 +18201,7 @@ func (m *MockGitserverClient) SystemsInfo(v0 context.Context) ([]gitserver.Syste
 // SetDefaultHook sets function that is called when the SystemsInfo method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientSystemsInfoFunc) SetDefaultHook(hook func(context.Context) ([]gitserver.SystemInfo, error)) {
+func (f *GitserverClientSystemsInfoFunc) SetDefaultHook(hook func(context.Context) ([]protocol.SystemInfo, error)) {
 	f.defaultHook = hook
 }
 
@@ -17721,7 +18209,7 @@ func (f *GitserverClientSystemsInfoFunc) SetDefaultHook(hook func(context.Contex
 // SystemsInfo method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientSystemsInfoFunc) PushHook(hook func(context.Context) ([]gitserver.SystemInfo, error)) {
+func (f *GitserverClientSystemsInfoFunc) PushHook(hook func(context.Context) ([]protocol.SystemInfo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17729,20 +18217,20 @@ func (f *GitserverClientSystemsInfoFunc) PushHook(hook func(context.Context) ([]
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientSystemsInfoFunc) SetDefaultReturn(r0 []gitserver.SystemInfo, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]gitserver.SystemInfo, error) {
+func (f *GitserverClientSystemsInfoFunc) SetDefaultReturn(r0 []protocol.SystemInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]protocol.SystemInfo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientSystemsInfoFunc) PushReturn(r0 []gitserver.SystemInfo, r1 error) {
-	f.PushHook(func(context.Context) ([]gitserver.SystemInfo, error) {
+func (f *GitserverClientSystemsInfoFunc) PushReturn(r0 []protocol.SystemInfo, r1 error) {
+	f.PushHook(func(context.Context) ([]protocol.SystemInfo, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientSystemsInfoFunc) nextHook() func(context.Context) ([]gitserver.SystemInfo, error) {
+func (f *GitserverClientSystemsInfoFunc) nextHook() func(context.Context) ([]protocol.SystemInfo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17780,7 +18268,7 @@ type GitserverClientSystemsInfoFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []gitserver.SystemInfo
+	Result0 []protocol.SystemInfo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
