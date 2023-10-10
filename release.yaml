@@ -16,12 +16,9 @@ requirements:
 create:
   steps:
     patch:
-      - name: "schemas"
+      - name: "generate"
         cmd: |
-          bazel run \
-            //internal/database:write_frontend_schema_json \
-            //internal/database:write_codeinsights_schema_json \
-            //internal/database:write_codeintel_schema_json
+          bazel run //dev:write_all_generated
 
       - name: "bazel"
         cmd: |
