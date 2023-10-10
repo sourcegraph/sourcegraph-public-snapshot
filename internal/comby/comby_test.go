@@ -13,6 +13,7 @@ import (
 
 	"github.com/hexops/autogold/v2"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -54,7 +55,7 @@ func main() {
 	}
 
 	for _, test := range cases {
-		m, err := Matches(ctx, test.args)
+		m, err := Matches(ctx, logtest.Scoped(t), test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -188,7 +189,7 @@ func TestReplacements(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		r, err := Replacements(ctx, test.args)
+		r, err := Replacements(ctx, logtest.Scoped(t), test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
