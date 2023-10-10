@@ -20,7 +20,6 @@ go_library(
         "//lib/errors",
         "@com_github_google_go_github_v55//github",
         "@com_github_google_uuid//:uuid",
-        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 
