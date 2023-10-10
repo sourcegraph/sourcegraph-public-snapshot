@@ -75,9 +75,12 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 
 		// Second, check if the user account already exists. If so, return that user.
-		uid, lookupByExternalErr := externalAccountsStore.LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
+		acct, lookupByExternalErr := externalAccountsStore.Update(ctx, &extsvc.Account{
+			AccountSpec: op.ExternalAccount,
+			AccountData: op.ExternalAccountData,
+		})
 		if lookupByExternalErr == nil {
-			return uid, false, true, "", nil
+			return acct.UserID, false, true, "", nil
 		}
 		if !errcode.IsNotFound(lookupByExternalErr) {
 			return 0, false, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", lookupByExternalErr

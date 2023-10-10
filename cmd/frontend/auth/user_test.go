@@ -463,7 +463,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		usersStore := dbmocks.NewMockUserStore()
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
 		externalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
-		externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
+		externalAccountsStore.UpdateFunc.SetDefaultReturn(nil, errNotFound)
 		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return &types.User{ID: 1}, nil
@@ -565,7 +565,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 	})
 
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.LookupUserAndSaveFunc.SetDefaultReturn(user.ID, nil)
+	externalAccounts.UpdateFunc.SetDefaultReturn(&extsvc.Account{UserID: user.ID}, nil)
 
 	db := dbmocks.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
@@ -660,7 +660,7 @@ func (m *mocks) DB() database.DB {
 	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
+	externalAccounts.UpdateFunc.SetDefaultHook(m.ExternalAccountUpdate)
 	externalAccounts.UpsertFunc.SetDefaultHook(m.Upsert)
 	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
 
@@ -686,21 +686,22 @@ func (m *mocks) DB() database.DB {
 	return db
 }
 
-// LookupUserAndSave mocks database.ExternalAccounts.LookupUserAndSave
-func (m *mocks) LookupUserAndSave(_ context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
+// ExternalAccountUpdate mocks database.ExternalAccounts.Update
+func (m *mocks) ExternalAccountUpdate(_ context.Context, acct *extsvc.Account) (*extsvc.Account, error) {
 	if m.lookupUserAndSaveErr != nil {
-		return 0, m.lookupUserAndSaveErr
+		return nil, m.lookupUserAndSaveErr
 	}
 
 	for _, u := range m.userInfos {
 		for _, a := range u.extAccts {
-			if a == spec {
-				m.savedExtAccts[u.user.ID] = append(m.savedExtAccts[u.user.ID], spec)
-				return u.user.ID, nil
+			if a == acct.AccountSpec {
+				m.savedExtAccts[u.user.ID] = append(m.savedExtAccts[u.user.ID], acct.AccountSpec)
+				acct.UserID = u.user.ID
+				return acct, nil
 			}
 		}
 	}
-	return 0, &errcode.Mock{IsNotFound: true}
+	return nil, &errcode.Mock{IsNotFound: true}
 }
 
 // CreateUserAndSave mocks database.ExternalAccounts.CreateUserAndSave

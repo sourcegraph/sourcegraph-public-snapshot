@@ -39,12 +39,15 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lookedUpUserID, err := db.UserExternalAccounts().LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+	acct, err := db.UserExternalAccounts().Update(ctx,
+		&extsvc.Account{
+			AccountSpec: spec,
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lookedUpUserID != user.ID {
-		t.Errorf("got %d, want %d", lookedUpUserID, user.ID)
+	if acct.UserID != user.ID {
+		t.Errorf("got %d, want %d", acct.UserID, user.ID)
 	}
 }
 
@@ -487,7 +490,9 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 
 	// LookupUserAndSave should encrypt the accountData correctly
-	userID, err := store.LookupUserAndSave(ctx, spec, accountData)
+	account.AccountSpec = spec
+	account.AccountData = accountData
+	acct, err := store.Update(ctx, &account)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -499,7 +504,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	// AssociateUserAndSave should encrypt the accountData correctly
 	_, err = store.Upsert(ctx,
 		&extsvc.Account{
-			UserID:      userID,
+			UserID:      acct.UserID,
 			AccountSpec: spec,
 			AccountData: accountData,
 		})
@@ -589,7 +594,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = db.UserExternalAccounts().LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Update(ctx, &extsvc.Account{AccountSpec: spec})
 		if err != nil {
 			t.Fatal(err)
 		}
