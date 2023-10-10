@@ -1,10 +1,10 @@
 # Table "public.archived_insight_series_recording_times"
 ```
-      Column       |           Type           | Collation | Nullable | Default
+      Column       |           Type           | Collation | Nullable | Default 
 -------------------+--------------------------+-----------+----------+---------
- insight_series_id | integer                  |           | not null |
- recording_time    | timestamp with time zone |           | not null |
- snapshot          | boolean                  |           | not null |
+ insight_series_id | integer                  |           | not null | 
+ recording_time    | timestamp with time zone |           | not null | 
+ snapshot          | boolean                  |           | not null | 
 Indexes:
     "archived_insight_series_recor_insight_series_id_recording_t_key" UNIQUE CONSTRAINT, btree (insight_series_id, recording_time)
 Foreign-key constraints:
@@ -14,15 +14,15 @@ Foreign-key constraints:
 
 # Table "public.archived_series_points"
 ```
-        Column         |           Type           | Collation | Nullable | Default
+        Column         |           Type           | Collation | Nullable | Default 
 -----------------------+--------------------------+-----------+----------+---------
- series_id             | text                     |           | not null |
- time                  | timestamp with time zone |           | not null |
- value                 | double precision         |           | not null |
- repo_id               | integer                  |           |          |
- repo_name_id          | integer                  |           |          |
- original_repo_name_id | integer                  |           |          |
- capture               | text                     |           |          |
+ series_id             | text                     |           | not null | 
+ time                  | timestamp with time zone |           | not null | 
+ value                 | double precision         |           | not null | 
+ repo_id               | integer                  |           |          | 
+ repo_name_id          | integer                  |           |          | 
+ original_repo_name_id | integer                  |           |          | 
+ capture               | text                     |           |          | 
 Check constraints:
     "check_repo_fields_specifity" CHECK (repo_id IS NULL AND repo_name_id IS NULL AND original_repo_name_id IS NULL OR repo_id IS NOT NULL AND repo_name_id IS NOT NULL AND original_repo_name_id IS NOT NULL)
 Foreign-key constraints:
@@ -32,14 +32,14 @@ Foreign-key constraints:
 
 # Table "public.dashboard"
 ```
-       Column       |            Type             | Collation | Nullable |                Default
+       Column       |            Type             | Collation | Nullable |                Default                
 --------------------+-----------------------------+-----------+----------+---------------------------------------
  id                 | integer                     |           | not null | nextval('dashboard_id_seq'::regclass)
- title              | text                        |           |          |
+ title              | text                        |           |          | 
  created_at         | timestamp without time zone |           | not null | now()
- created_by_user_id | integer                     |           |          |
+ created_by_user_id | integer                     |           |          | 
  last_updated_at    | timestamp without time zone |           | not null | now()
- deleted_at         | timestamp without time zone |           |          |
+ deleted_at         | timestamp without time zone |           |          | 
  save               | boolean                     |           | not null | false
  type               | text                        |           | not null | 'standard'::text
 Indexes:
@@ -66,13 +66,13 @@ Metadata for dashboards of insights
 
 # Table "public.dashboard_grants"
 ```
-    Column    |  Type   | Collation | Nullable |                   Default
+    Column    |  Type   | Collation | Nullable |                   Default                    
 --------------+---------+-----------+----------+----------------------------------------------
  id           | integer |           | not null | nextval('dashboard_grants_id_seq'::regclass)
- dashboard_id | integer |           | not null |
- user_id      | integer |           |          |
- org_id       | integer |           |          |
- global       | boolean |           |          |
+ dashboard_id | integer |           | not null | 
+ user_id      | integer |           |          | 
+ org_id       | integer |           |          | 
+ global       | boolean |           |          | 
 Indexes:
     "dashboard_grants_pk" PRIMARY KEY, btree (id)
     "dashboard_grants_dashboard_id_index" btree (dashboard_id)
@@ -94,11 +94,11 @@ Permission grants for dashboards. Each row should represent a unique principal (
 
 # Table "public.dashboard_insight_view"
 ```
-     Column      |  Type   | Collation | Nullable |                      Default
+     Column      |  Type   | Collation | Nullable |                      Default                       
 -----------------+---------+-----------+----------+----------------------------------------------------
  id              | integer |           | not null | nextval('dashboard_insight_view_id_seq'::regclass)
- dashboard_id    | integer |           | not null |
- insight_view_id | integer |           | not null |
+ dashboard_id    | integer |           | not null | 
+ insight_view_id | integer |           | not null | 
 Indexes:
     "dashboard_insight_view_pk" PRIMARY KEY, btree (id)
     "unique_dashboard_id_insight_view_id" UNIQUE CONSTRAINT, btree (dashboard_id, insight_view_id)
@@ -112,31 +112,31 @@ Foreign-key constraints:
 
 # Table "public.insight_series"
 ```
-            Column             |            Type             | Collation | Nullable |                  Default
+            Column             |            Type             | Collation | Nullable |                  Default                   
 -------------------------------+-----------------------------+-----------+----------+--------------------------------------------
  id                            | integer                     |           | not null | nextval('insight_series_id_seq'::regclass)
- series_id                     | text                        |           | not null |
- query                         | text                        |           | not null |
+ series_id                     | text                        |           | not null | 
+ query                         | text                        |           | not null | 
  created_at                    | timestamp without time zone |           | not null | CURRENT_TIMESTAMP
  oldest_historical_at          | timestamp without time zone |           | not null | (CURRENT_TIMESTAMP - '1 year'::interval)
  last_recorded_at              | timestamp without time zone |           | not null | (CURRENT_TIMESTAMP - '10 years'::interval)
  next_recording_after          | timestamp without time zone |           | not null | CURRENT_TIMESTAMP
- deleted_at                    | timestamp without time zone |           |          |
- backfill_queued_at            | timestamp without time zone |           |          |
+ deleted_at                    | timestamp without time zone |           |          | 
+ backfill_queued_at            | timestamp without time zone |           |          | 
  last_snapshot_at              | timestamp without time zone |           |          | (CURRENT_TIMESTAMP - '10 years'::interval)
  next_snapshot_after           | timestamp without time zone |           |          | CURRENT_TIMESTAMP
- repositories                  | text[]                      |           |          |
+ repositories                  | text[]                      |           |          | 
  sample_interval_unit          | time_unit                   |           | not null | 'MONTH'::time_unit
  sample_interval_value         | integer                     |           | not null | 1
  generated_from_capture_groups | boolean                     |           | not null | false
- generation_method             | text                        |           | not null |
+ generation_method             | text                        |           | not null | 
  just_in_time                  | boolean                     |           | not null | false
- group_by                      | text                        |           |          |
+ group_by                      | text                        |           |          | 
  backfill_attempts             | integer                     |           | not null | 0
- needs_migration               | boolean                     |           |          |
- backfill_completed_at         | timestamp without time zone |           |          |
+ needs_migration               | boolean                     |           |          | 
+ backfill_completed_at         | timestamp without time zone |           |          | 
  supports_augmentation         | boolean                     |           | not null | true
- repository_criteria           | text                        |           |          |
+ repository_criteria           | text                        |           |          | 
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)
@@ -178,12 +178,12 @@ Data series that comprise code insights.
 
 # Table "public.insight_series_backfill"
 ```
-      Column      |       Type       | Collation | Nullable |                       Default
+      Column      |       Type       | Collation | Nullable |                       Default                       
 ------------------+------------------+-----------+----------+-----------------------------------------------------
  id               | integer          |           | not null | nextval('insight_series_backfill_id_seq'::regclass)
- series_id        | integer          |           | not null |
- repo_iterator_id | integer          |           |          |
- estimated_cost   | double precision |           |          |
+ series_id        | integer          |           | not null | 
+ repo_iterator_id | integer          |           |          | 
+ estimated_cost   | double precision |           |          | 
  state            | text             |           | not null | 'new'::text
 Indexes:
     "insight_series_backfill_pk" PRIMARY KEY, btree (id)
@@ -196,13 +196,13 @@ Referenced by:
 
 # Table "public.insight_series_incomplete_points"
 ```
-  Column   |            Type             | Collation | Nullable |                           Default
+  Column   |            Type             | Collation | Nullable |                           Default                            
 -----------+-----------------------------+-----------+----------+--------------------------------------------------------------
  id        | integer                     |           | not null | nextval('insight_series_incomplete_points_id_seq'::regclass)
- series_id | integer                     |           | not null |
- reason    | text                        |           | not null |
- time      | timestamp without time zone |           | not null |
- repo_id   | integer                     |           |          |
+ series_id | integer                     |           | not null | 
+ reason    | text                        |           | not null | 
+ time      | timestamp without time zone |           | not null | 
+ repo_id   | integer                     |           |          | 
 Indexes:
     "insight_series_incomplete_points_pk" PRIMARY KEY, btree (id)
     "insight_series_incomplete_points_unique_idx" UNIQUE, btree (series_id, reason, "time", repo_id)
@@ -213,11 +213,11 @@ Foreign-key constraints:
 
 # Table "public.insight_series_recording_times"
 ```
-      Column       |           Type           | Collation | Nullable | Default
+      Column       |           Type           | Collation | Nullable | Default 
 -------------------+--------------------------+-----------+----------+---------
- insight_series_id | integer                  |           |          |
- recording_time    | timestamp with time zone |           |          |
- snapshot          | boolean                  |           |          |
+ insight_series_id | integer                  |           |          | 
+ recording_time    | timestamp with time zone |           |          | 
+ snapshot          | boolean                  |           |          | 
 Indexes:
     "insight_series_recording_time_insight_series_id_recording_t_key" UNIQUE CONSTRAINT, btree (insight_series_id, recording_time)
 Foreign-key constraints:
@@ -227,22 +227,22 @@ Foreign-key constraints:
 
 # Table "public.insight_view"
 ```
-              Column               |            Type            | Collation | Nullable |                 Default
+              Column               |            Type            | Collation | Nullable |                 Default                  
 -----------------------------------+----------------------------+-----------+----------+------------------------------------------
  id                                | integer                    |           | not null | nextval('insight_view_id_seq'::regclass)
- title                             | text                       |           |          |
- description                       | text                       |           |          |
- unique_id                         | text                       |           | not null |
- default_filter_include_repo_regex | text                       |           |          |
- default_filter_exclude_repo_regex | text                       |           |          |
- other_threshold                   | double precision           |           |          |
+ title                             | text                       |           |          | 
+ description                       | text                       |           |          | 
+ unique_id                         | text                       |           | not null | 
+ default_filter_include_repo_regex | text                       |           |          | 
+ default_filter_exclude_repo_regex | text                       |           |          | 
+ other_threshold                   | double precision           |           |          | 
  presentation_type                 | presentation_type_enum     |           | not null | 'LINE'::presentation_type_enum
  is_frozen                         | boolean                    |           | not null | false
- default_filter_search_contexts    | text[]                     |           |          |
- series_sort_mode                  | series_sort_mode_enum      |           |          |
- series_sort_direction             | series_sort_direction_enum |           |          |
- series_limit                      | integer                    |           |          |
- series_num_samples                | integer                    |           |          |
+ default_filter_search_contexts    | text[]                     |           |          | 
+ series_sort_mode                  | series_sort_mode_enum      |           |          | 
+ series_sort_direction             | series_sort_direction_enum |           |          | 
+ series_limit                      | integer                    |           |          | 
+ series_num_samples                | integer                    |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)
@@ -269,13 +269,13 @@ Views for insight data series. An insight view is an abstraction on top of an in
 
 # Table "public.insight_view_grants"
 ```
-     Column      |  Type   | Collation | Nullable |                     Default
+     Column      |  Type   | Collation | Nullable |                     Default                     
 -----------------+---------+-----------+----------+-------------------------------------------------
  id              | integer |           | not null | nextval('insight_view_grants_id_seq'::regclass)
- insight_view_id | integer |           | not null |
- user_id         | integer |           |          |
- org_id          | integer |           |          |
- global          | boolean |           |          |
+ insight_view_id | integer |           | not null | 
+ user_id         | integer |           |          | 
+ org_id          | integer |           |          | 
+ global          | boolean |           |          | 
 Indexes:
     "insight_view_grants_pk" PRIMARY KEY, btree (id)
     "insight_view_grants_global_idx" btree (global) WHERE global IS TRUE
@@ -297,12 +297,12 @@ Permission grants for insight views. Each row should represent a unique principa
 
 # Table "public.insight_view_series"
 ```
-      Column       |  Type   | Collation | Nullable | Default
+      Column       |  Type   | Collation | Nullable | Default 
 -------------------+---------+-----------+----------+---------
- insight_view_id   | integer |           | not null |
- insight_series_id | integer |           | not null |
- label             | text    |           |          |
- stroke            | text    |           |          |
+ insight_view_id   | integer |           | not null | 
+ insight_series_id | integer |           | not null | 
+ label             | text    |           |          | 
+ stroke            | text    |           |          | 
 Indexes:
     "insight_view_series_pkey" PRIMARY KEY, btree (insight_view_id, insight_series_id)
 Foreign-key constraints:
@@ -323,22 +323,22 @@ Join table to correlate data series with insight views
 
 # Table "public.insights_background_jobs"
 ```
-      Column       |           Type           | Collation | Nullable |                       Default
+      Column       |           Type           | Collation | Nullable |                       Default                        
 -------------------+--------------------------+-----------+----------+------------------------------------------------------
  id                | integer                  |           | not null | nextval('insights_background_jobs_id_seq'::regclass)
  state             | text                     |           |          | 'queued'::text
- failure_message   | text                     |           |          |
+ failure_message   | text                     |           |          | 
  queued_at         | timestamp with time zone |           |          | now()
- started_at        | timestamp with time zone |           |          |
- finished_at       | timestamp with time zone |           |          |
- process_after     | timestamp with time zone |           |          |
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
  num_resets        | integer                  |           | not null | 0
  num_failures      | integer                  |           | not null | 0
- last_heartbeat_at | timestamp with time zone |           |          |
- execution_logs    | json[]                   |           |          |
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  cancel            | boolean                  |           | not null | false
- backfill_id       | integer                  |           |          |
+ backfill_id       | integer                  |           |          | 
 Indexes:
     "insights_background_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_jobs_state_idx" btree (state)
@@ -349,22 +349,22 @@ Foreign-key constraints:
 
 # Table "public.insights_data_retention_jobs"
 ```
-      Column       |           Type           | Collation | Nullable |                         Default
+      Column       |           Type           | Collation | Nullable |                         Default                          
 -------------------+--------------------------+-----------+----------+----------------------------------------------------------
  id                | integer                  |           | not null | nextval('insights_data_retention_jobs_id_seq'::regclass)
  state             | text                     |           |          | 'queued'::text
- failure_message   | text                     |           |          |
+ failure_message   | text                     |           |          | 
  queued_at         | timestamp with time zone |           |          | now()
- started_at        | timestamp with time zone |           |          |
- finished_at       | timestamp with time zone |           |          |
- process_after     | timestamp with time zone |           |          |
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
  num_resets        | integer                  |           | not null | 0
  num_failures      | integer                  |           | not null | 0
- last_heartbeat_at | timestamp with time zone |           |          |
- execution_logs    | json[]                   |           |          |
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  cancel            | boolean                  |           | not null | false
- series_id         | integer                  |           | not null |
+ series_id         | integer                  |           | not null | 
  series_id_string  | text                     |           | not null | ''::text
 Indexes:
     "insights_data_retention_jobs_pkey" PRIMARY KEY, btree (id)
@@ -373,10 +373,10 @@ Indexes:
 
 # Table "public.metadata"
 ```
-  Column  |  Type  | Collation | Nullable |               Default
+  Column  |  Type  | Collation | Nullable |               Default                
 ----------+--------+-----------+----------+--------------------------------------
  id       | bigint |           | not null | nextval('metadata_id_seq'::regclass)
- metadata | jsonb  |           | not null |
+ metadata | jsonb  |           | not null | 
 Indexes:
     "metadata_pkey" PRIMARY KEY, btree (id)
     "metadata_metadata_unique_idx" UNIQUE, btree (metadata)
@@ -394,17 +394,17 @@ Records arbitrary metadata about events. Stored in a separate table as it is oft
 
 # Table "public.migration_logs"
 ```
-            Column             |           Type           | Collation | Nullable |                  Default
+            Column             |           Type           | Collation | Nullable |                  Default                   
 -------------------------------+--------------------------+-----------+----------+--------------------------------------------
  id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
- migration_logs_schema_version | integer                  |           | not null |
- schema                        | text                     |           | not null |
- version                       | integer                  |           | not null |
- up                            | boolean                  |           | not null |
- started_at                    | timestamp with time zone |           | not null |
- finished_at                   | timestamp with time zone |           |          |
- success                       | boolean                  |           |          |
- error_message                 | text                     |           |          |
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
  backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
@@ -413,18 +413,18 @@ Indexes:
 
 # Table "public.repo_iterator"
 ```
-      Column      |            Type             | Collation | Nullable |                  Default
+      Column      |            Type             | Collation | Nullable |                  Default                  
 ------------------+-----------------------------+-----------+----------+-------------------------------------------
  id               | integer                     |           | not null | nextval('repo_iterator_id_seq'::regclass)
  created_at       | timestamp without time zone |           |          | now()
- started_at       | timestamp without time zone |           |          |
- completed_at     | timestamp without time zone |           |          |
+ started_at       | timestamp without time zone |           |          | 
+ completed_at     | timestamp without time zone |           |          | 
  last_updated_at  | timestamp without time zone |           | not null | now()
  runtime_duration | bigint                      |           | not null | 0
  percent_complete | double precision            |           | not null | 0
  total_count      | integer                     |           | not null | 0
  success_count    | integer                     |           | not null | 0
- repos            | integer[]                   |           |          |
+ repos            | integer[]                   |           |          | 
  repo_cursor      | integer                     |           |          | 0
 Indexes:
     "repo_iterator_pk" PRIMARY KEY, btree (id)
@@ -435,12 +435,12 @@ Referenced by:
 
 # Table "public.repo_iterator_errors"
 ```
-      Column      |  Type   | Collation | Nullable |                     Default
+      Column      |  Type   | Collation | Nullable |                     Default                      
 ------------------+---------+-----------+----------+--------------------------------------------------
  id               | integer |           | not null | nextval('repo_iterator_errors_id_seq'::regclass)
- repo_iterator_id | integer |           | not null |
- repo_id          | integer |           | not null |
- error_message    | text[]  |           | not null |
+ repo_iterator_id | integer |           | not null | 
+ repo_id          | integer |           | not null | 
+ error_message    | text[]  |           | not null | 
  failure_count    | integer |           |          | 1
 Indexes:
     "repo_iterator_errors_pk" PRIMARY KEY, btree (id)
@@ -452,10 +452,10 @@ Foreign-key constraints:
 
 # Table "public.repo_names"
 ```
- Column |  Type  | Collation | Nullable |                Default
+ Column |  Type  | Collation | Nullable |                Default                 
 --------+--------+-----------+----------+----------------------------------------
  id     | bigint |           | not null | nextval('repo_names_id_seq'::regclass)
- name   | citext |           | not null |
+ name   | citext |           | not null | 
 Indexes:
     "repo_names_pkey" PRIMARY KEY, btree (id)
     "repo_names_name_unique_idx" UNIQUE, btree (name)
@@ -476,16 +476,16 @@ Records repository names, both historical and present, using a unique repository
 
 # Table "public.series_points"
 ```
-        Column         |           Type           | Collation | Nullable | Default
+        Column         |           Type           | Collation | Nullable | Default 
 -----------------------+--------------------------+-----------+----------+---------
- series_id             | text                     |           | not null |
- time                  | timestamp with time zone |           | not null |
- value                 | double precision         |           | not null |
- metadata_id           | integer                  |           |          |
- repo_id               | integer                  |           |          |
- repo_name_id          | integer                  |           |          |
- original_repo_name_id | integer                  |           |          |
- capture               | text                     |           |          |
+ series_id             | text                     |           | not null | 
+ time                  | timestamp with time zone |           | not null | 
+ value                 | double precision         |           | not null | 
+ metadata_id           | integer                  |           |          | 
+ repo_id               | integer                  |           |          | 
+ repo_name_id          | integer                  |           |          | 
+ original_repo_name_id | integer                  |           |          | 
+ capture               | text                     |           |          | 
 Indexes:
     "series_points_original_repo_name_id_btree" btree (original_repo_name_id)
     "series_points_repo_id_btree" btree (repo_id)
@@ -519,16 +519,16 @@ Records events over time associated with a repository (or none, i.e. globally) w
 
 # Table "public.series_points_snapshots"
 ```
-        Column         |           Type           | Collation | Nullable | Default
+        Column         |           Type           | Collation | Nullable | Default 
 -----------------------+--------------------------+-----------+----------+---------
- series_id             | text                     |           | not null |
- time                  | timestamp with time zone |           | not null |
- value                 | double precision         |           | not null |
- metadata_id           | integer                  |           |          |
- repo_id               | integer                  |           |          |
- repo_name_id          | integer                  |           |          |
- original_repo_name_id | integer                  |           |          |
- capture               | text                     |           |          |
+ series_id             | text                     |           | not null | 
+ time                  | timestamp with time zone |           | not null | 
+ value                 | double precision         |           | not null | 
+ metadata_id           | integer                  |           |          | 
+ repo_id               | integer                  |           |          | 
+ repo_name_id          | integer                  |           |          | 
+ original_repo_name_id | integer                  |           |          | 
+ capture               | text                     |           |          | 
 Indexes:
     "series_points_snapshots_original_repo_name_id_idx" btree (original_repo_name_id)
     "series_points_snapshots_repo_id_idx" btree (repo_id)
