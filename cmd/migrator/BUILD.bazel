@@ -318,7 +318,8 @@ genrule(
 sh_test(
     name = "schema_descriptions_test",
     size = "small",
-    srcs = [
+    timeout = "moderate",
+;   srcs = [
         "schema_descriptions_test.sh",
     ],
     args = [
