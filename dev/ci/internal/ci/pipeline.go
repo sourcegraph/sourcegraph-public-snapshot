@@ -138,6 +138,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CreateBundleSizeDiff:      true,
 		}))
 
+		if c.MessageFlags.RunBrowserExtensionTests {
+			bops := operations.NewNamedSet("Browser Extensions Tests")
+			bops.Append(
+				addBrowserExtensionUnitTests,
+				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+			)
+			ops.Merge(bops)
+		}
+
 		securityOps := operations.NewNamedSet("Security Scanning")
 		securityOps.Append(sonarcloudScan())
 		ops.Merge(securityOps)

@@ -231,14 +231,18 @@ type MessageFlags struct {
 
 	// NoBazel, if true prevents automatic replacement of job with their Bazel equivalents.
 	NoBazel bool
+
+	// RunBrowserExtensionTests
+	RunBrowserExtensionTests bool
 }
 
 // parseMessageFlags gets MessageFlags from the given commit message.
 func parseMessageFlags(msg string) MessageFlags {
 	return MessageFlags{
-		ProfilingEnabled:    strings.Contains(msg, "[buildkite-enable-profiling]"),
-		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
-		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
+		ProfilingEnabled:         strings.Contains(msg, "[buildkite-enable-profiling]"),
+		SkipHashCompare:          strings.Contains(msg, "[skip-hash-compare]"),
+		ForceReadyForReview:      strings.Contains(msg, "[review-ready]"),
+		RunBrowserExtensionTests: strings.Contains(msg, "[browser-extension-tests]"),
 	}
 }
 
