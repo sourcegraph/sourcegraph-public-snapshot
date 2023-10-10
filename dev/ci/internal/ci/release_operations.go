@@ -1,8 +1,8 @@
 package ci
 
 import (
-	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
+	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 )
 
 func finalizeReleasePatch(_ Config) operations.Operation {
