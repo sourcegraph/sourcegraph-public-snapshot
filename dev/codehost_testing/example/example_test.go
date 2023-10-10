@@ -42,6 +42,7 @@ func TestGithubScenario(t *testing.T) {
 	privateRepo := org.CreateRepoFork("sgtest/private")
 	privateRepo.AddTeam(adminTeam)
 
+	// See the plan of our scenario
 	fmt.Println(scenario.Plan())
 	ctx := context.Background()
 	// Get the Organization WILL FAIL since the scenario has not been applied yet
@@ -50,11 +51,13 @@ func TestGithubScenario(t *testing.T) {
 		t.Logf("failed to get github.Organization since it hasn't been applied yet: %v", err)
 	}
 
+	// Let's apply the scenario which will cause the actions to create and alter the resources on GitHub
 	scenario.SetVerbose()
 	if err := scenario.Apply(ctx); err != nil {
 		t.Fatalf("error applying scenario: %v", err)
 	}
 
+	// Since we have applied the scenario, we should get able to get the Organization
 	// Get the Organization
 	ghOrg, err := org.Get(ctx)
 	if err != nil {
