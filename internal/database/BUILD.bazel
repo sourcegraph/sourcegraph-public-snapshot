@@ -341,17 +341,17 @@ go_test(
 generate_schemas(
     name = "generate_schemas",
     srcs = [
-        "//migrations/frontend:sql",
+        "//migrations/codeinsights:sql",
         "//migrations/codeintel:sql",
-        "//migrations/codeinsights:sql"
+        "//migrations/frontend:sql",
     ],
-    out_frontend_squash = "_frontend_squashed.sql",
-    out_codeintel_squash = "_codeintel_squashed.sql",
-    out_codeinsights_squash = "_codeinsights_squashed.sql",
-    out_frontend_schema = "_schema.json",
-    out_codeintel_schema = "_schema.codeintel.json",
     out_codeinsights_schema = "_schema.codeinsights.json",
-    visibility = ["//visibility:public"]
+    out_codeinsights_squash = "_codeinsights_squashed.sql",
+    out_codeintel_schema = "_schema.codeintel.json",
+    out_codeintel_squash = "_codeintel_squashed.sql",
+    out_frontend_schema = "_schema.json",
+    out_frontend_squash = "_frontend_squashed.sql",
+    visibility = ["//visibility:public"],
 )
 
 write_generated_to_source_files(
