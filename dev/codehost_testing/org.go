@@ -3,6 +3,7 @@ package codehost_testing
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-github/v55/github"
 
@@ -62,50 +63,143 @@ func (o *Org) AllowPrivateForks() {
 
 // CreateTeam adds an action to the scenario to create a team with the given name for the org.
 // The Scenario ID will be added as a suffix to the given name.
-func (o *Org) CreateTeam(name string) any {
-	createTeam := &Action{
+func (o *Org) CreateTeam(name string) *Team {
+	baseTeam := &Team{
+		s:    o.s,
+		org:  o,
+		name: name,
+	}
+
+	action := &Action{
 		Name: "org:team:create:" + name,
 		Apply: func(ctx context.Context) error {
+			name := fmt.Sprintf("team-%s-%s", name, o.s.id)
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+			team, err := o.s.client.CreateTeam(ctx, org, name)
+			if err != nil {
+				return err
+			}
+			baseTeam.name = team.GetName()
 			return nil
 		},
 		Teardown: func(ctx context.Context) error {
-			return nil
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+			return o.s.client.DeleteTeam(ctx, org, baseTeam.name)
 		},
 	}
+	o.s.Append(action)
 
-	o.s.Append(createTeam)
-
-	return nil
+	return baseTeam
 }
 
 // CreateRepo adds an action to the scenario to create a repo with the given name and visibility for the org.
-func (o *Org) CreateRepo(name string, public bool) any {
+func (o *Org) CreateRepo(name string, public bool) *Repo {
+	baseRepo := &Repo{
+		s:    o.s,
+		org:  o,
+		name: name,
+	}
 	action := &Action{
 		Name: fmt.Sprintf("repo:create:%s", name),
 		Apply: func(ctx context.Context) error {
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+
+			var repoName string
+			parts := strings.Split(name, "/")
+			if len(parts) >= 2 {
+				repoName = parts[1]
+			} else {
+				return errors.Newf("incorrect repo format for %q - expecting {owner}/{name}")
+			}
+
+			repo, err := o.s.client.CreateRepo(ctx, org, repoName, public)
+			if err != nil {
+				return err
+			}
+
+			baseRepo.name = repo.GetFullName()
 			return nil
 		},
 		Teardown: func(ctx context.Context) error {
-			return nil
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+
+			repo, err := baseRepo.get(ctx)
+			if err != nil {
+				return err
+			}
+
+			return o.s.client.DeleteRepo(ctx, org, repo)
 		},
 	}
 	o.s.Append(action)
 
-	return nil
+	return baseRepo
 }
 
 // CreateRepoFork adds an action to the scenario to fork a target repo into the org.
-func (o *Org) CreateRepoFork(target string) any {
+//
+// NOTE: This method actually adds two actions to the scenario. One which performs the Fork and a subsequent
+// action which waits till the forked repo exists on GitHub.
+func (o *Org) CreateRepoFork(target string) *Repo {
+	baseRepo := &Repo{
+		s:    o.s,
+		org:  o,
+		name: target,
+	}
 	action := &Action{
 		Name: fmt.Sprintf("repo:fork:%s", target),
 		Apply: func(ctx context.Context) error {
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+
+			var owner, repoName string
+			parts := strings.Split(target, "/")
+			if len(parts) >= 2 {
+				owner = parts[0]
+				repoName = parts[1]
+			} else {
+				return errors.Newf("incorrect repo format for %q - expecting {owner}/{name}")
+			}
+
+			err = o.s.client.ForkRepo(ctx, org, owner, repoName)
+			if err != nil {
+				return err
+			}
+
+			// Wait till fork has synced
+			baseRepo.name = repoName
 			return nil
 		},
 		Teardown: func(ctx context.Context) error {
-			return nil
+			org, err := o.get(ctx)
+			if err != nil {
+				return err
+			}
+
+			repo, err := baseRepo.get(ctx)
+			if err != nil {
+				return err
+			}
+
+			return o.s.client.DeleteRepo(ctx, org, repo)
 		},
 	}
 	o.s.Append(action)
+	baseRepo.WaitTillExists()
 
-	return nil
+	return baseRepo
 }

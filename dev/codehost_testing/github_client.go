@@ -2,14 +2,12 @@ package codehost_testing
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
 	"testing"
 
 	"github.com/google/go-github/v55/github"
-	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/dev/codehost_testing/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -218,6 +216,10 @@ func (gh *GitHubClient) ForkRepo(ctx context.Context, org *github.Organization, 
 		DefaultBranchOnly: true,
 	})
 	if err != nil {
+		if resp.StatusCode == 202 {
+			// expected - forking schedules a job on github side and the repo isn't immediately available
+			return nil
+		}
 		return err
 	}
 	defer resp.Body.Close()
@@ -293,9 +295,6 @@ func formatResponseErrMsg(t *testing.T, resp *github.Response) string {
 func NewGitHubClient(t *testing.T, cfg config.GitHub) (*GitHubClient, error) {
 	t.Helper()
 	httpClient := &http.Client{}
-
-	httpClient.Transport.(*oauth2.Transport).Base = http.DefaultTransport
-	httpClient.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	gh, err := github.NewClient(httpClient).WithAuthToken(cfg.Token).WithEnterpriseURLs(cfg.URL, cfg.URL)
 
