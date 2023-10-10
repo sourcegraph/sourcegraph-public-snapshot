@@ -27,8 +27,10 @@ Simple.argTypes = {
     totalPages: {
         name: 'maxPages',
         control: { type: 'number' },
-        defaultValue: 5,
     },
+}
+Simple.args = {
+    totalPages: 5,
 }
 
 export const AllPageSelectors: Story = () => (

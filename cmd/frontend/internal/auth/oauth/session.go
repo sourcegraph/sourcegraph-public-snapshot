@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	goauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 

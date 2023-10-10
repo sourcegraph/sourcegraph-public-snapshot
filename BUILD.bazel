@@ -210,6 +210,7 @@ js_library(
         ":node_modules/eslint-plugin-react",
         ":node_modules/eslint-plugin-react-hooks",
         ":node_modules/eslint-plugin-rxjs",
+        ":node_modules/eslint-plugin-storybook",
         ":node_modules/eslint-plugin-unicorn",
         ":node_modules/eslint-plugin-unused-imports",
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react

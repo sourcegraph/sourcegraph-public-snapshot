@@ -172,6 +172,7 @@ ts_project(
         "src/app/TauriLink.tsx",
         "src/app/tauriIcpUtils.ts",
         "src/auth.ts",
+        "src/auth/AuthPageWrapper.tsx",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
         "src/auth/PostSignUpPage.tsx",
@@ -398,10 +399,10 @@ ts_project(
         "src/devsettings/settings/eventLoggingDebug.tsx",
         "src/devsettings/utils.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
+        "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/components/index.ts",
         "src/enterprise/app/components/zero-states/AppZeroStates.tsx",
-        "src/enterprise/app/main.tsx",
         "src/enterprise/app/routes.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/about/AboutPage.tsx",
@@ -1782,7 +1783,6 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@sourcegraph/extension-api-classes",
-        "//:node_modules/@storybook/client-api",
         "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
@@ -2101,6 +2101,7 @@ WEBPACK_CONFIG_DEPS = [
     "//:node_modules/react-refresh",
     "//client/web/dev",
     "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
+    "//:postcss_config_js",
 
     # HACKS: bundle-time css import
     "//:node_modules/open-color",
@@ -2126,7 +2127,7 @@ BUNDLE_DATA_DEPS = [
             "//:package_json",
         ],
         entry_points = {
-            "src/enterprise/main.js": "main",
+            "src/enterprise/main.js": "app",
             "src/enterprise/embed/main.js": "embed",
         },
         env = {
@@ -2156,7 +2157,7 @@ webpack_web_app(
         "//:package_json",
     ],
     entry_points = {
-        "src/enterprise/main.js": "main",
+        "src/enterprise/main.js": "app",
     },
     env = {
         "NODE_ENV": "production",

@@ -10,6 +10,9 @@ import { CloudSignUpPage } from './CloudSignUpPage'
 
 const config: Meta = {
     title: 'web/auth/CloudSignUpPage',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 
 export default config
@@ -30,6 +33,14 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
             displayName: 'GitLab.com',
             isBuiltin: false,
             authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
+            serviceID: 'https://gitlab.com',
+        },
+        {
+            clientID: '002',
+            serviceType: 'openidconnect',
+            displayName: 'Google',
+            isBuiltin: false,
+            authenticationURL: '/.auth/openidconnect/login?pc=google',
             serviceID: 'https://gitlab.com',
         },
     ],

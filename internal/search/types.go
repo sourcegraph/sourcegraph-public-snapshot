@@ -245,15 +245,13 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOpti
 		searchOpts.DebugScore = true
 	}
 
-	if o.Features.Ranking {
-		// This enables our stream based ranking, where we wait a certain amount
-		// of time to collect results before ranking.
-		searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
+	// This enables our stream based ranking, where we wait a certain amount
+	// of time to collect results before ranking.
+	searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
 
-		// This enables the use of document ranks in scoring, if they are available.
-		searchOpts.UseDocumentRanks = true
-		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
-	}
+	// This enables the use of document ranks in scoring, if they are available.
+	searchOpts.UseDocumentRanks = true
+	searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 
 	return searchOpts
 }
@@ -422,10 +420,6 @@ type Features struct {
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
-
-	// Ranking when true will use a our new #ranking signals and code paths
-	// for ranking results from Zoekt.
-	Ranking bool `json:"ranking"`
 
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.

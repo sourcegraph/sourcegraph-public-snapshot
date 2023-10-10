@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -83,7 +84,7 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 			}
 
 			gc := gitserver.NewMockClient()
-			gc.IsPerforcePathCloneableFunc.SetDefaultHook(func(ctx context.Context, _, _, _, depotPath string) error {
+			gc.IsPerforcePathCloneableFunc.SetDefaultHook(func(ctx context.Context, _ protocol.PerforceConnectionDetails, depotPath string) error {
 				if depotPath == "//Sourcegraph" || depotPath == "//Engineering/Cloud" {
 					return nil
 				}

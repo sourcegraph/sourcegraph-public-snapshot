@@ -8,8 +8,8 @@ coverage:
         informational: true
         paths:
           - cmd/symbols
-          - enterprise/cmd/precise-code-intel-*
-          - enterprise/internal/codeintel
+          - cmd/precise-code-intel-*
+          - internal/codeintel
       batches:
         informational: true
         paths:

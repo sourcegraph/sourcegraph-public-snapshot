@@ -2,7 +2,6 @@ package inttests
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -62,7 +61,7 @@ func TestGetObject(t *testing.T) {
 		})
 		for label, test := range tests {
 			source := gitserver.NewTestClientSource(t, GitserverAddresses)
-			cli := gitserver.NewTestClient(http.DefaultClient, source)
+			cli := gitserver.NewTestClient(t).WithClientSource(source)
 			runTest(t, label, test, cli)
 		}
 	})
@@ -77,7 +76,7 @@ func TestGetObject(t *testing.T) {
 		})
 		for label, test := range tests {
 			source := gitserver.NewTestClientSource(t, GitserverAddresses)
-			cli := gitserver.NewTestClient(http.DefaultClient, source)
+			cli := gitserver.NewTestClient(t).WithClientSource(source)
 			runTest(t, label, test, cli)
 		}
 	})

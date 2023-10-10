@@ -8,10 +8,10 @@
 //
 //	import _ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 //
-// And to support working with dev assets, with the webpack process handling them for you, you can use:
+// And to support working with dev assets, with the web builder process handling them for you, you can use:
 //
 //	 func main() {
-//		if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
+//		if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 //			assets.UseDevAssetsProvider()
 //		}
 //		// ...

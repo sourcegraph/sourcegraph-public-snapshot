@@ -5,9 +5,6 @@ import * as esbuild from 'esbuild'
 import { rm } from 'shelljs'
 
 import {
-    buildMonaco,
-    monacoPlugin,
-    MONACO_LANGUAGES_AND_FEATURES,
     packageResolutionPlugin,
     stylePlugin,
     workerPlugin,
@@ -48,6 +45,7 @@ export async function build(): Promise<void> {
                 },
                 ...SHARED_CONFIG,
                 outdir: path.join(SHARED_CONFIG.outdir, 'node'),
+                mainFields: ['module', 'main'], // for node-jsonc-parser; see https://github.com/microsoft/node-jsonc-parser/issues/57#issuecomment-1634726605
             })
         )
     }
@@ -75,6 +73,19 @@ export async function build(): Promise<void> {
                         events: require.resolve('events'),
                         buffer: require.resolve('buffer/'),
                         './browserActionsNode': path.resolve(__dirname, '../src', 'commands', 'browserActionsWeb'),
+                        'http-proxy-agent': path.resolve(
+                            __dirname,
+                            '../src',
+                            'backend',
+                            'proxy-agent-fake-for-browser.ts'
+                        ),
+                        'https-proxy-agent': path.resolve(
+                            __dirname,
+                            '../src',
+                            'backend',
+                            'proxy-agent-fake-for-browser.ts'
+                        ),
+                        'node-fetch': path.resolve(__dirname, '../src', 'backend', 'node-fetch-fake-for-browser.ts'),
                     }),
                 ],
                 ...SHARED_CONFIG,
@@ -100,36 +111,24 @@ export async function build(): Promise<void> {
                 workerPlugin,
                 packageResolutionPlugin({
                     path: require.resolve('path-browserify'),
+                    process: require.resolve('process/browser'),
+                    http: require.resolve('stream-http'), // for stream search - event source polyfills
+                    https: require.resolve('https-browserify'), // for stream search - event source polyfills
                     ...RXJS_RESOLUTIONS,
                     './RepoSearchResult': require.resolve('../src/webview/search-panel/alias/RepoSearchResult'),
                     './CommitSearchResult': require.resolve('../src/webview/search-panel/alias/CommitSearchResult'),
+                    './SymbolSearchResult': require.resolve('../src/webview/search-panel/alias/SymbolSearchResult'),
                     './FileMatchChildren': require.resolve('../src/webview/search-panel/alias/FileMatchChildren'),
                     './RepoFileLink': require.resolve('../src/webview/search-panel/alias/RepoFileLink'),
                     '../documentation/ModalVideo': require.resolve('../src/webview/search-panel/alias/ModalVideo'),
                 }),
-                // Note: leads to "file has no exports" warnings
-                monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
                 buildTimerPlugin,
-                {
-                    name: 'codiconsDeduplicator',
-                    setup(build): void {
-                        build.onLoad({ filter: /\.ttf$/ }, args => {
-                            // Both `@vscode/codicons` and `monaco-editor`
-                            // node modules include a `codicons.ttf` file,
-                            // so null one out.
-                            if (!args.path.includes('@vscode/codicons')) {
-                                return {
-                                    contents: '',
-                                    loader: 'text',
-                                }
-                            }
-                            return null
-                        })
-                    },
-                },
             ],
             loader: {
                 '.ttf': 'file',
+            },
+            define: {
+                'process.env.INTEGRATION_TESTS': isTest ? 'true' : 'false',
             },
             assetNames: '[name]',
             ...SHARED_CONFIG,
@@ -137,15 +136,21 @@ export async function build(): Promise<void> {
         })
     )
 
-    buildPromises.push(buildMonaco(outdir))
-
     const ctxs = await Promise.all(buildPromises)
 
     await Promise.all(ctxs.map(ctx => ctx.rebuild()))
 
     if (process.env.WATCH) {
         await Promise.all(ctxs.map(ctx => ctx.watch()))
+        await new Promise(() => {}) // wait forever
     }
 
     await Promise.all(ctxs.map(ctx => ctx.dispose()))
+}
+
+if (require.main === module) {
+    build().catch(error => {
+        console.error('Error:', error)
+        process.exit(1)
+    })
 }

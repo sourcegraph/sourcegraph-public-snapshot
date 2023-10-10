@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -82,7 +81,7 @@ func TestGitCommitResolver(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		client := gitserver.NewMockClient()
-		client.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
 			return commit, nil
 		})
 
@@ -364,7 +363,6 @@ func TestGitCommitAncestors(t *testing.T) {
 
 	client.CommitsFunc.SetDefaultHook(func(
 		ctx context.Context,
-		authz authz.SubRepoPermissionChecker,
 		repo api.RepoName,
 		opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 

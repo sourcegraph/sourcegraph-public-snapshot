@@ -218,15 +218,18 @@ class CodyAutocompleteManager {
       result: InlineAutocompleteList,
       cancellationToken: CancellationToken
   ) {
-    if (currentAutocompleteTelemetry != null) {
-      currentAutocompleteTelemetry!!.markCompletionEvent(result.completionEvent)
+    currentAutocompleteTelemetry?.markCompletionEvent(result.completionEvent)
+    val items = result.items
+    if (items == null || result.completionEvent == null) {
+      logger.warn("autocomplete returned null items")
+      return
     }
     if (Thread.interrupted() || cancellationToken.isCancelled) {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE) logger.warn("autocomplete canceled")
       return
     }
     val inlayModel = editor.inlayModel
-    if (result.items.isEmpty()) {
+    if (items.isEmpty()) {
       // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
       // We don't do anything now because it's unclear what would be the most idiomatic
       // IntelliJ API to use.
@@ -249,11 +252,11 @@ class CodyAutocompleteManager {
       if (LookupManager.getInstance(project).activeLookup != null) {
         if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
             UserLevelConfig.isVerboseLoggingEnabled()) {
-          logger.warn("Skipping autocomplete because lookup is active: ${result.items.first()}")
+          logger.warn("Skipping autocomplete because lookup is active: ${items.first()}")
         }
         return@invokeLater
       }
-      displayAgentAutocomplete(editor, offset, result.items, inlayModel, triggerKind)
+      displayAgentAutocomplete(editor, offset, items, inlayModel, triggerKind)
     }
   }
 
