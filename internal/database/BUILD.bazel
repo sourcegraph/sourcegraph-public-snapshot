@@ -402,7 +402,7 @@ describe(
         "//migrations/codeintel:sql",
         "//migrations/frontend:sql",
     ],
-    out = "schema.json",
+    out = "_schema.json",
     db = "frontend",
     format = "json",
 )
@@ -414,7 +414,7 @@ describe(
         "//migrations/codeintel:sql",
         "//migrations/frontend:sql",
     ],
-    out = "schema.codeinsights.json",
+    out = "_schema.codeinsights.json",
     db = "codeinsights",
     format = "json",
 )
@@ -426,7 +426,7 @@ describe(
         "//migrations/codeintel:sql",
         "//migrations/frontend:sql",
     ],
-    out = "schema.codeintel.json",
+    out = "_schema.codeintel.json",
     db = "codeintel",
     format = "json",
 )
