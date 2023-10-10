@@ -41,8 +41,6 @@ var (
 var (
 	// DebugOut is os.Stderr if LogLevel includes dbug
 	DebugOut io.Writer
-	// InfoOut is os.Stderr if LogLevel includes info
-	InfoOut io.Writer
 )
 
 // findName returns the name of the current process, that being the
@@ -83,7 +81,6 @@ func init() {
 		return os.Stderr
 	}
 	DebugOut = lvlFilterStderr(log15.LvlDebug)
-	InfoOut = lvlFilterStderr(log15.LvlInfo)
 }
 
 // Get returns the value of the given environment variable. It also registers the description for
