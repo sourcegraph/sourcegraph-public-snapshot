@@ -2,7 +2,9 @@ package codehost_testing
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"testing"
@@ -272,7 +274,8 @@ func (s *GitHubScenario) CreateUser(name string) *User {
 		Name: "user:create:" + name,
 		Apply: func(ctx context.Context) error {
 			name := fmt.Sprintf("user-%s-%s", name, s.id)
-			email := fmt.Sprintf("test-user-e2e+%s@sourcegraph.com", s.id)
+			emailID := md5.Sum([]byte(s.id + time.Now().String()))
+			email := fmt.Sprintf("test-user-e2e-%s@sourcegraph.com", hex.EncodeToString(emailID[:]))
 			user, err := s.client.CreateUser(ctx, name, email)
 			if err != nil {
 				return err
