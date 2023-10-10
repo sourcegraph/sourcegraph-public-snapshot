@@ -24,6 +24,8 @@ tasks:
             DISPLAY: ":99"
 
         collect_coverage: false
+        flags:
+            - --config=go-verbose-test
         targets:
             - //...
             - //client/web:test
