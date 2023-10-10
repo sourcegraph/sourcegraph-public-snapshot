@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/oauth2"
 
@@ -70,7 +70,7 @@ func main() {
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: cfg.githubToken},
 	))
-	gh, err = github.NewEnterpriseClient(cfg.githubURL, cfg.githubURL, tc)
+	gh, err = github.NewClient(tc).WithEnterpriseURLs(cfg.githubURL, cfg.githubURL)
 	if err != nil {
 		writeFailure(out, "Failed to sign-in to GHE")
 		log.Fatal(err)

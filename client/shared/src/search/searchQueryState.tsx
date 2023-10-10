@@ -68,8 +68,8 @@ export interface SearchQueryState {
 
     // DATA
     /**
-     * The current seach query and auxiliary information needed by the
-     * MonacoQueryInput component. You most likely don't have to read this value
+     * The current search query and auxiliary information needed by the
+     * query input component. You most likely don't have to read this value
      * directly.
      * See {@link QueryState} for more information.
      */

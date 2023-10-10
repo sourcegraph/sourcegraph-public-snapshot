@@ -25,8 +25,10 @@ const config: Meta = {
     argTypes: {
         isSourcegraphDotCom: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        isSourcegraphDotCom: true,
     },
 }
 

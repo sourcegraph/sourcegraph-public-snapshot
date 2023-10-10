@@ -33,12 +33,14 @@ const config: Meta = {
     argTypes: {
         authenticatedUser: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         productResearchEnabled: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        authenticatedUser: true,
+        productResearchEnabled: true,
     },
 }
 

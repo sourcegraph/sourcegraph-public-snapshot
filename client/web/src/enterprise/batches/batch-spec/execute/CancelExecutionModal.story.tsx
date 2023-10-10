@@ -17,8 +17,10 @@ const config: Meta = {
             control: {
                 type: 'boolean',
             },
-            defaultValue: false,
         },
+    },
+    args: {
+        isLoading: false,
     },
 }
 

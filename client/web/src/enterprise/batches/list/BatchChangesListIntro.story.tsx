@@ -49,17 +49,17 @@ const Template: Story = ({ state, ...args }) => (
 export const Licensed = Template.bind({})
 Licensed.args = { state: LicensingState.Licensed }
 Licensed.argTypes = {
-    licensed: { defaultValue: LicensingState.Licensed },
+    licensed: {},
 }
 
 export const Unlicensed = Template.bind({})
 Unlicensed.args = { state: LicensingState.Unlicensed }
 Unlicensed.argTypes = {
-    licensed: { defaultValue: LicensingState.Unlicensed },
+    licensed: {},
 }
 
 export const Loading = Template.bind({})
 Loading.args = { state: LicensingState.Loading }
 Loading.argTypes = {
-    licensed: { defaultValue: LicensingState.Loading },
+    licensed: {},
 }

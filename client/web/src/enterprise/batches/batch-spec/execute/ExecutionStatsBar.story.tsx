@@ -12,25 +12,27 @@ const config: Meta = {
     argTypes: {
         errored: {
             control: { type: 'number' },
-            defaultValue: 0,
         },
         completed: {
             control: { type: 'number' },
-            defaultValue: 7,
         },
         processing: {
             control: { type: 'number' },
-            defaultValue: 4,
         },
 
         queued: {
             control: { type: 'number' },
-            defaultValue: 14,
         },
         ignored: {
             control: { type: 'number' },
-            defaultValue: 0,
         },
+    },
+    args: {
+        errored: 0,
+        completed: 7,
+        processing: 4,
+        queued: 14,
+        ignored: 0,
     },
 }
 

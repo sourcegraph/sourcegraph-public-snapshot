@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -213,7 +213,7 @@ func (o *org) executeCreate(ctx context.Context, orgAdmin string, orgsDone *int6
 		log.Fatal(oErr)
 	}
 
-	//writeSuccess(out, "Created org with login %s", o.Login)
+	// writeSuccess(out, "Created org with login %s", o.Login)
 }
 
 // executeCreate checks whether the team already exists. If it does not, it is created.
@@ -290,7 +290,7 @@ func (u *user) executeCreate(ctx context.Context, usersDone *int64) {
 		if uErr = store.saveUser(u); uErr != nil {
 			log.Fatal(uErr)
 		}
-		//writeInfo(out, "user with login %s already exists", u.Login)
+		// writeInfo(out, "user with login %s already exists", u.Login)
 		atomic.AddInt64(usersDone, 1)
 		progress.SetValue(2, float64(*usersDone))
 		return
@@ -314,7 +314,7 @@ func (u *user) executeCreate(ctx context.Context, usersDone *int64) {
 		log.Fatal(uErr)
 	}
 
-	//writeSuccess(out, "Created user with login %s", u.Login)
+	// writeSuccess(out, "Created user with login %s", u.Login)
 }
 
 // executeCreateMemberships does the following per user:
@@ -415,7 +415,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 			currentRepo := r
 			p.Go(func() {
 				if currentOrg.Login == currentRepo.Owner {
-					//writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
+					// writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
 					// The repository is already transferred
 					atomic.AddInt64(reposDone, 1)
 					progress.SetValue(4, float64(*reposDone))
@@ -425,7 +425,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 			retryTransfer:
 				if _, res, err = gh.Repositories.Transfer(ctx, "blank200k", currentRepo.Name, github.TransferRequest{NewOwner: currentOrg.Login}); err != nil {
 					if _, ok := err.(*github.AcceptedError); ok {
-						//writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
+						// writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
 						// AcceptedError means the transfer is scheduled as a background job
 					} else {
 						log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentOrg.Login, err)
@@ -448,7 +448,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 					}
 				}
 
-				//writeInfo(out, "Repository %s transferred to %s", r.Name, r.Owner)
+				// writeInfo(out, "Repository %s transferred to %s", r.Name, r.Owner)
 				atomic.AddInt64(reposDone, 1)
 				progress.SetValue(4, float64(*reposDone))
 				currentRepo.Owner = currentOrg.Login
@@ -569,7 +569,7 @@ func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo,
 				currentRepo := r
 				if r.Owner == fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name) {
 					// team is already owner
-					//writeInfo(out, "Repository %s already owned by %s", r.Name, currentTeam.Name)
+					// writeInfo(out, "Repository %s already owned by %s", r.Name, currentTeam.Name)
 					atomic.AddInt64(reposDone, 1)
 					progress.SetValue(4, float64(*reposDone))
 					continue
@@ -602,7 +602,7 @@ func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo,
 				if err = store.saveRepo(r); err != nil {
 					log.Fatalf("Failed to save repository %s: %s", currentRepo.Name, err)
 				}
-				//writeInfo(out, "Repository %s transferred to %s", r.Name, currentTeam.Name)
+				// writeInfo(out, "Repository %s transferred to %s", r.Name, currentTeam.Name)
 			}
 		})
 	}
@@ -663,7 +663,7 @@ func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user,
 
 			atomic.AddInt64(reposDone, 1)
 			progress.SetValue(4, float64(*reposDone))
-			//writeInfo(out, "Repository %s transferred to users", r.Name)
+			// writeInfo(out, "Repository %s transferred to users", r.Name)
 		})
 	}
 }

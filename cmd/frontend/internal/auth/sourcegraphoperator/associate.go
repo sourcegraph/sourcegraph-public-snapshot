@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -80,7 +80,7 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal account data")
 		}
-		if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
+		if _, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
 			ServiceType: auth.SourcegraphOperatorProviderType,
 			ServiceID:   serviceID,
 			ClientID:    details.ClientID,

@@ -1827,14 +1827,14 @@ func TestRepos_ListMinimalRepos_queryAndPatternsMutuallyExclusive(t *testing.T) 
 	})
 }
 
-func TestRepos_ListMinimalRepos_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
+func TestRepos_ListMinimalRepos_SearchContextIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
+	wantErr := "options ExternalServiceIDs and SearchContextID are mutually exclusive"
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
+	_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{SearchContextID: 1, ExternalServiceIDs: []int64{2}})
 	if err == nil || !strings.Contains(err.Error(), wantErr) {
 		t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 	}

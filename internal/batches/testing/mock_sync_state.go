@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -45,7 +44,7 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 	}
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.DiffFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, opts gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+	gitserverClient.DiffFunc.SetDefaultHook(func(_ context.Context, opts gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
 		// This provides a diff that will resolve to 1 added line, 1 changed
 		// line, and 3 deleted lines.
 		const testGitHubDiff = `

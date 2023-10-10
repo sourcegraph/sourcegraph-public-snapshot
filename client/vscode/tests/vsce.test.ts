@@ -90,8 +90,8 @@ describe('VS Code extension', () => {
         const { searchPanelFrame, sidebarFrame } = await getVSCodeWebviewFrames(vsCodeDriver.page)
 
         // Focus search box
-        await searchPanelFrame.waitForSelector('.monaco-editor .view-lines')
-        await searchPanelFrame.click('.monaco-editor .view-lines')
+        await searchPanelFrame.waitForSelector('..cm-editor')
+        await searchPanelFrame.click('.cm-editor')
 
         await vsCodeDriver.page.keyboard.type('test', {
             delay: 50,

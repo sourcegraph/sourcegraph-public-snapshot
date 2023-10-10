@@ -55,10 +55,7 @@ import styles from './NotebookPage.module.scss'
 interface NotebookPageProps
     extends SearchStreamingProps,
         TelemetryProps,
-        Omit<
-            StreamingSearchResultsListProps,
-            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
-        >,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null

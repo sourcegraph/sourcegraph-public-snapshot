@@ -44,7 +44,7 @@ go_library(
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitlab/webhooks",
         "//internal/gitserver/gitdomain",
-        "//internal/gitserver/protocol",
+        "//internal/perforce",
         "//internal/timeutil",
         "//internal/types",
         "//lib/batches",

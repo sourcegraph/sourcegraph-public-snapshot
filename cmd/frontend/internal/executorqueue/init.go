@@ -24,7 +24,7 @@ func Init(
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
 
 	accessToken := func() string {
-		if deploy.IsApp() {
+		if deploy.IsSingleBinary() {
 			return confdefaults.AppInMemoryExecutorPassword
 		}
 		return conf.SiteConfig().ExecutorsAccessToken

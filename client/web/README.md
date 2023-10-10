@@ -10,7 +10,7 @@ Our local development server runs by starting both a [Caddy](https://caddyserver
 
 Environment variables important for the web server:
 
-1. `WEBPACK_SERVE_INDEX` should be set to `true` to enable `HTMLWebpackPlugin`.
+1. `WEB_BUILDER_SERVE_INDEX` should be set to `true` to enable `HTMLWebpackPlugin`.
 2. `SOURCEGRAPH_API_URL` is used as a proxied API url. By default it points to the [https://k8s.sgdev.org](https://k8s.sgdev.org).
 
 It's possible to overwrite these variables by creating `sg.config.overwrite.yaml` in the root folder and adjusting the `env` section of the relevant command.

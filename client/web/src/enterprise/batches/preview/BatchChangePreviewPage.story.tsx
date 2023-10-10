@@ -37,12 +37,14 @@ const config: Meta = {
     argTypes: {
         supersedingBatchSpec: {
             control: { type: 'boolean' },
-            defaultValue: false,
         },
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        supersedingBatchSpec: false,
+        viewerCanAdminister: true,
     },
 }
 

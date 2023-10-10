@@ -114,10 +114,8 @@ genrule(
         ["*.schema.json"],
         ["json-schema-draft*.json"],
     ),
-    outs = [
-        "schema.go",
-    ],
-    cmd = """
+    outs = ["_schema.go"],
+    cmd = """\
     $(location @com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler:go-jsonschema-compiler) -o $@ -pkg schema $(SRCS)
     """,
     tools = [
@@ -127,7 +125,7 @@ genrule(
 
 write_generated_to_source_files(
     name = "write_generated_schema",
-    src = ":generate",
-    files = ["schema.go"],
+    output_files = {"schema.go": "_schema.go"},
     tags = ["go_generate"],
+    target = ":generate",
 )

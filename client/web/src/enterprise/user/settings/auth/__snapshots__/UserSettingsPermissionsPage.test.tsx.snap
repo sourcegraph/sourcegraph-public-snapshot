@@ -52,7 +52,11 @@ exports[`UserSettingsPermissionsPage empty state 1`] = `
         <span
           class="d-flex flex-grow-1"
         >
-          Never
+          <span
+            class="flex-grow-1 pl-2"
+          >
+            Never
+          </span>
         </span>
       </div>
       <p

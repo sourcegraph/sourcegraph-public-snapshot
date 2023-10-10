@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -244,7 +243,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			userExternalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
 
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {}
 			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 			db := dbmocks.NewMockDB()

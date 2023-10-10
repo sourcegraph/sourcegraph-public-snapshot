@@ -37,8 +37,10 @@ Executing.argTypes = {
     state: {
         name: 'batch spec state',
         control: { type: 'select', options: [BatchSpecState.PROCESSING, BatchSpecState.QUEUED] },
-        defaultValue: BatchSpecState.PROCESSING,
     },
+}
+Executing.args = {
+    state: BatchSpecState.PROCESSING,
 }
 
 Executing.storyName = 'while executing'
@@ -70,8 +72,10 @@ ExecutionFinished.argTypes = {
                 BatchSpecState.PENDING,
             ],
         },
-        defaultValue: BatchSpecState.COMPLETED,
     },
+}
+ExecutionFinished.args = {
+    state: BatchSpecState.COMPLETED,
 }
 
 ExecutionFinished.storyName = 'after execution finishes'

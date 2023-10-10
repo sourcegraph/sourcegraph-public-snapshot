@@ -180,6 +180,14 @@ export const authenticatedExtraTask: TourTaskType = {
 
 export const defaultSnippets: Record<string, string[]> = {
     Go: ['stuct {', 'interface {', 'func ('],
-    C: ['switch(', 'static void', 'if(', 'etc', '){'],
-    '*': ['todo', 'fixme'],
+    Java: ['import static', 'synchronized (', 'content:"class "'],
+    Python: ['content:"with "', 'print(', 'content:"def "'],
+    'C++': ['content:"class "', 'using namespace', '#include'],
+    'C#': ['content:"class "', 'public void', '=>'],
+    JavaScript: ['content:"class "', 'async function', '=>'],
+    TypeScript: ['content:"class "', ': void', '=>'],
+    PHP: ['content:"class "', 'fn(', '(Exception'],
+    Ruby: ['undef', 'class <<', '.each do'],
+    C: ['switch(', 'static void', 'if(', '){'],
+    '*': ['todo OR fixme'],
 }

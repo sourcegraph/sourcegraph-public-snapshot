@@ -24,8 +24,8 @@ The tooltips include features like:
 
 It works as follows:
 
-- when visiting e.g. https://github.com/..., the extension injects a content script (inject.bundle.js)
-- there is a background script running to access certain chrome APIs, like storage (background.bundle.js)
+- when visiting e.g. https://github.com/..., the extension injects a content script (contentPage.main.bundle.js)
+- there is a background script running to access certain chrome APIs, like storage (backgroundPage.main.bundle.js)
 - a "code view" contains rendered (syntax highlighted) code (in an HTML table); the extension adds event listeners to the code view which control the tooltip
 - when the user mouses over a code table cell, the extension modifies the DOM node:
   - text nodes are wrapped in `<span>` (so hover/click events have appropriate specificity)
@@ -51,7 +51,7 @@ It works as follows:
       - `shared/`
         Code shared between multiple code hosts.
   - `config/`
-    Configuration code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
+    Configuration code that adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
   - `end-to-end/`
     E2E test suite.
 - `scripts/`
@@ -59,7 +59,7 @@ It works as follows:
 - `config/`
   Build configs.
 - `build/`
-  Generated directory containing the output from webpack and the generated bundles for each browser.
+  Generated directory containing the build output and the generated bundles for each browser.
 
 ## Requirements
 
@@ -85,34 +85,13 @@ Now, follow the steps below for the browser you intend to work with.
 - If you already have the Sourcegraph extension installed, disable it using the toggle.
 - Enable 'developer mode', click on [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked), save it in the `sourcegraph/client/browser/build/chrome` folder.
 - Browse to any public repository on GitHub to confirm it is working.
-- After making changes it is sometimes necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking the "Reload" icon.
+- After making changes, it is necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking the "Reload" icon.
 
 ![File-path](https://user-images.githubusercontent.com/20326070/96859153-75764300-1461-11eb-8b82-0febc9327723.png)
 
 #### Updating the bundle
 
 Click reload for Sourcegraph at `chrome://extensions`
-
-### Firefox (hot reloading)
-
-In a separate terminal session run:
-
-```bash
-pnpm global add web-ext
-pnpm run dev:firefox
-```
-
-A Firefox window will be spun up with the extension already installed.
-
-#### Updating the bundle
-
-Save a file and wait for webpack to finish rebuilding.
-
-#### Caveats
-
-The window that is spun up is completely separate from any existing sessions you have on Firefox.
-You'll have to sign into everything at the beginning of each development session(each time you run `pnpm run dev:firefox`).
-You should ensure you're signed into any Sourcegraph instance you point the extension at as well as GitHub.
 
 ### Firefox (manual)
 

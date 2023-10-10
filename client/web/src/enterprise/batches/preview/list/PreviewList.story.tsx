@@ -18,8 +18,10 @@ const config: Meta = {
         publicationStateSet: {
             name: 'publication state set by spec file',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        publicationStateSet: false,
     },
 }
 

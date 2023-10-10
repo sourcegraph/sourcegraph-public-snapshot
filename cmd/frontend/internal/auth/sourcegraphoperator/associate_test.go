@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -198,7 +198,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				require.NoError(t, err)
 				err = db.Users().SetIsSiteAdmin(ctx, u.ID, true)
 				require.NoError(t, err)
-				err = db.UserExternalAccounts().AssociateUserAndSave(ctx, u.ID, extsvc.AccountSpec{
+				_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, u.ID, extsvc.AccountSpec{
 					ServiceType: auth.SourcegraphOperatorProviderType,
 					ServiceID:   serviceID,
 					ClientID:    "soap_client",

@@ -248,12 +248,14 @@ export const Simple: Story = (args = {}) => (
 Simple.argTypes = {
     mode: {
         control: { type: 'select', options: TYPOGRAPHY_MODES },
-        defaultValue: 'default',
     },
     alignment: {
         control: { type: 'select', options: TYPOGRAPHY_ALIGNMENTS },
-        defaultValue: 'left',
     },
+}
+Simple.args = {
+    mode: 'default',
+    alignment: 'left',
 }
 
 export const CrossingStyles: Story = () => (

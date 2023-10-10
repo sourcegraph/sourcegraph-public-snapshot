@@ -149,16 +149,18 @@ export const AllOptionsPages: Story = (args = {}) => (
 AllOptionsPages.argTypes = {
     sourcegraphUrl: {
         control: { type: 'text' },
-        defaultValue: 'https://not-sourcegraph.com',
     },
     version: {
         control: { type: 'text' },
-        defaultValue: '0.0.0',
     },
     showSourcegraphComAlert: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
+}
+AllOptionsPages.args = {
+    sourcegraphUrl: 'https://not-sourcegraph.com',
+    version: '0.0.0',
+    showSourcegraphComAlert: false,
 }
 
 AllOptionsPages.parameters = {

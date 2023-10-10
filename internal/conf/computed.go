@@ -40,13 +40,15 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
 	case deploy.IsDeployTypeApp(deployType):
 		return confdefaults.App
+	case deploy.IsDeployTypeSingleProgram(deployType):
+		return confdefaults.SingleProgram
 	default:
-		panic("deploy type did not register default configuration")
+		panic("deploy type did not register default configuration: " + deployType)
 	}
 }
 
 func ExecutorsAccessToken() string {
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return confdefaults.AppInMemoryExecutorPassword
 	}
 	return Get().ExecutorsAccessToken
@@ -366,6 +368,14 @@ func SearchDocumentRanksWeight() float64 {
 	} else {
 		return 4500
 	}
+}
+
+func RankingMaxQueueSizeBytes() int {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking == nil || ranking.MaxQueueSizeBytes == nil {
+		return -1
+	}
+	return *ranking.MaxQueueSizeBytes
 }
 
 // SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For

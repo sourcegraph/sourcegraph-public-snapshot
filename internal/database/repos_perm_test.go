@@ -476,7 +476,7 @@ VALUES (%s, %s, '')
 
 	// Set up external accounts for alice and bob
 	for _, user := range []*types.User{alice, bob} {
-		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, extsvc.AccountSpec{ServiceType: extsvc.TypeGitHub, ServiceID: "https://github.com/", AccountID: user.Username}, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, extsvc.AccountSpec{ServiceType: extsvc.TypeGitHub, ServiceID: "https://github.com/", AccountID: user.Username}, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}

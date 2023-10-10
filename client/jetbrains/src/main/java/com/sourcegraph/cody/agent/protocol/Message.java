@@ -1,8 +1,10 @@
 package com.sourcegraph.cody.agent.protocol;
 
+import org.jetbrains.annotations.Nullable;
+
 public class Message {
-  public String speaker;
-  public String text;
+  @Nullable private String speaker;
+  @Nullable public String text;
 
   @Override
   public String toString() {
