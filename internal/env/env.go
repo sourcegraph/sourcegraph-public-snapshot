@@ -47,8 +47,6 @@ var (
 	WarnOut io.Writer
 	// ErrorOut is os.Stderr if LogLevel includes error
 	ErrorOut io.Writer
-	// CritOut is os.Stderr if LogLevel includes crit
-	CritOut io.Writer
 )
 
 // findName returns the name of the current process, that being the
@@ -92,7 +90,6 @@ func init() {
 	InfoOut = lvlFilterStderr(log15.LvlInfo)
 	WarnOut = lvlFilterStderr(log15.LvlWarn)
 	ErrorOut = lvlFilterStderr(log15.LvlError)
-	CritOut = lvlFilterStderr(log15.LvlCrit)
 }
 
 // Get returns the value of the given environment variable. It also registers the description for
