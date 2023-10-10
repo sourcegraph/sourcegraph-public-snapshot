@@ -15,6 +15,9 @@ import (
 )
 
 func main() {
+	liblog := log.Init(log.Resource{Name: "migration-generator"})
+	defer liblog.Sync()
+
 	if err := mainErr(); err != nil {
 		panic(fmt.Sprintf("error: %s", err))
 	}
@@ -24,8 +27,6 @@ var frozenMigrationsFlag = flag.Bool("write-frozen", true, "write frozen revisio
 
 func mainErr() error {
 	flag.Parse()
-	liblog := log.Init(log.Resource{Name: "migration-generator"})
-	defer liblog.Sync()
 
 	wd, err := os.Getwd()
 	if err != nil {

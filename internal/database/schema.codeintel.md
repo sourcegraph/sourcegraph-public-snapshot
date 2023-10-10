@@ -1,9 +1,9 @@
 # Table "public.codeintel_last_reconcile"
 ```
-      Column       |           Type           | Collation | Nullable | Default 
+      Column       |           Type           | Collation | Nullable | Default
 -------------------+--------------------------+-----------+----------+---------
- dump_id           | integer                  |           | not null | 
- last_reconcile_at | timestamp with time zone |           | not null | 
+ dump_id           | integer                  |           | not null |
+ last_reconcile_at | timestamp with time zone |           | not null |
 Indexes:
     "codeintel_last_reconcile_dump_id_key" UNIQUE CONSTRAINT, btree (dump_id)
     "codeintel_last_reconcile_last_reconcile_at_dump_id" btree (last_reconcile_at, dump_id)
@@ -14,12 +14,12 @@ Stores the last time processed LSIF data was reconciled with the other database.
 
 # Table "public.codeintel_scip_document_lookup"
 ```
-    Column     |  Type   | Collation | Nullable |                          Default                           
+    Column     |  Type   | Collation | Nullable |                          Default
 ---------------+---------+-----------+----------+------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_scip_document_lookup_id_seq'::regclass)
- upload_id     | integer |           | not null | 
- document_path | text    |           | not null | 
- document_id   | bigint  |           | not null | 
+ upload_id     | integer |           | not null |
+ document_path | text    |           | not null |
+ document_id   | bigint  |           | not null |
 Indexes:
     "codeintel_scip_document_lookup_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_document_lookup_upload_id_document_path_key" UNIQUE CONSTRAINT, btree (upload_id, document_path)
@@ -46,11 +46,11 @@ A mapping from file paths to document references within a particular SCIP index.
 
 # Table "public.codeintel_scip_document_lookup_schema_versions"
 ```
-       Column       |  Type   | Collation | Nullable | Default 
+       Column       |  Type   | Collation | Nullable | Default
 --------------------+---------+-----------+----------+---------
- upload_id          | integer |           | not null | 
- min_schema_version | integer |           |          | 
- max_schema_version | integer |           |          | 
+ upload_id          | integer |           | not null |
+ min_schema_version | integer |           |          |
+ max_schema_version | integer |           |          |
 Indexes:
     "codeintel_scip_document_lookup_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
@@ -66,12 +66,12 @@ Tracks the range of `schema_versions` values associated with each SCIP index in 
 
 # Table "public.codeintel_scip_documents"
 ```
-      Column      |  Type   | Collation | Nullable |                       Default                        
+      Column      |  Type   | Collation | Nullable |                       Default
 ------------------+---------+-----------+----------+------------------------------------------------------
  id               | bigint  |           | not null | nextval('codeintel_scip_documents_id_seq'::regclass)
- payload_hash     | bytea   |           | not null | 
- schema_version   | integer |           | not null | 
- raw_scip_payload | bytea   |           | not null | 
+ payload_hash     | bytea   |           | not null |
+ schema_version   | integer |           | not null |
+ raw_scip_payload | bytea   |           | not null |
 Indexes:
     "codeintel_scip_documents_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_documents_payload_hash_key" UNIQUE CONSTRAINT, btree (payload_hash)
@@ -92,10 +92,10 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
 
 # Table "public.codeintel_scip_documents_dereference_logs"
 ```
-      Column       |           Type           | Collation | Nullable |                                Default                                
+      Column       |           Type           | Collation | Nullable |                                Default
 -------------------+--------------------------+-----------+----------+-----------------------------------------------------------------------
  id                | bigint                   |           | not null | nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass)
- document_id       | bigint                   |           | not null | 
+ document_id       | bigint                   |           | not null |
  last_removal_time | timestamp with time zone |           | not null | now()
 Indexes:
     "codeintel_scip_documents_dereference_logs_pkey" PRIMARY KEY, btree (id)
@@ -111,15 +111,15 @@ A list of document rows that were recently dereferenced by the deletion of an in
 
 # Table "public.codeintel_scip_metadata"
 ```
-         Column         |  Type   | Collation | Nullable |                       Default                       
+         Column         |  Type   | Collation | Nullable |                       Default
 ------------------------+---------+-----------+----------+-----------------------------------------------------
  id                     | bigint  |           | not null | nextval('codeintel_scip_metadata_id_seq'::regclass)
- upload_id              | integer |           | not null | 
- tool_name              | text    |           | not null | 
- tool_version           | text    |           | not null | 
- tool_arguments         | text[]  |           | not null | 
- text_document_encoding | text    |           | not null | 
- protocol_version       | integer |           | not null | 
+ upload_id              | integer |           | not null |
+ tool_name              | text    |           | not null |
+ tool_version           | text    |           | not null |
+ tool_arguments         | text[]  |           | not null |
+ text_document_encoding | text    |           | not null |
+ protocol_version       | integer |           | not null |
 Indexes:
     "codeintel_scip_metadata_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_metadata_upload_id" btree (upload_id)
@@ -144,12 +144,12 @@ Global metadatadata about a single processed upload.
 
 # Table "public.codeintel_scip_symbol_names"
 ```
-    Column    |  Type   | Collation | Nullable | Default 
+    Column    |  Type   | Collation | Nullable | Default
 --------------+---------+-----------+----------+---------
- id           | integer |           | not null | 
- upload_id    | integer |           | not null | 
- name_segment | text    |           | not null | 
- prefix_id    | integer |           |          | 
+ id           | integer |           | not null |
+ upload_id    | integer |           | not null |
+ name_segment | text    |           | not null |
+ prefix_id    | integer |           |          |
 Indexes:
     "codeintel_scip_symbol_names_pkey" PRIMARY KEY, btree (upload_id, id)
     "codeintel_scip_symbol_names_upload_id_roots" btree (upload_id) WHERE prefix_id IS NULL
@@ -169,16 +169,16 @@ Stores a prefix tree of symbol names within a particular upload.
 
 # Table "public.codeintel_scip_symbols"
 ```
-         Column         |  Type   | Collation | Nullable | Default 
+         Column         |  Type   | Collation | Nullable | Default
 ------------------------+---------+-----------+----------+---------
- upload_id              | integer |           | not null | 
- document_lookup_id     | bigint  |           | not null | 
- schema_version         | integer |           | not null | 
- definition_ranges      | bytea   |           |          | 
- reference_ranges       | bytea   |           |          | 
- implementation_ranges  | bytea   |           |          | 
- type_definition_ranges | bytea   |           |          | 
- symbol_id              | integer |           | not null | 
+ upload_id              | integer |           | not null |
+ document_lookup_id     | bigint  |           | not null |
+ schema_version         | integer |           | not null |
+ definition_ranges      | bytea   |           |          |
+ reference_ranges       | bytea   |           |          |
+ implementation_ranges  | bytea   |           |          |
+ type_definition_ranges | bytea   |           |          |
+ symbol_id              | integer |           | not null |
 Indexes:
     "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
     "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
@@ -209,11 +209,11 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
 
 # Table "public.codeintel_scip_symbols_schema_versions"
 ```
-       Column       |  Type   | Collation | Nullable | Default 
+       Column       |  Type   | Collation | Nullable | Default
 --------------------+---------+-----------+----------+---------
- upload_id          | integer |           | not null | 
- min_schema_version | integer |           |          | 
- max_schema_version | integer |           |          | 
+ upload_id          | integer |           | not null |
+ min_schema_version | integer |           |          |
+ max_schema_version | integer |           |          |
 Indexes:
     "codeintel_scip_symbols_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
 
@@ -229,17 +229,17 @@ Tracks the range of `schema_versions` for each index in the [`codeintel_scip_sym
 
 # Table "public.migration_logs"
 ```
-            Column             |           Type           | Collation | Nullable |                  Default                   
+            Column             |           Type           | Collation | Nullable |                  Default
 -------------------------------+--------------------------+-----------+----------+--------------------------------------------
  id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
- migration_logs_schema_version | integer                  |           | not null | 
- schema                        | text                     |           | not null | 
- version                       | integer                  |           | not null | 
- up                            | boolean                  |           | not null | 
- started_at                    | timestamp with time zone |           | not null | 
- finished_at                   | timestamp with time zone |           |          | 
- success                       | boolean                  |           |          | 
- error_message                 | text                     |           |          | 
+ migration_logs_schema_version | integer                  |           | not null |
+ schema                        | text                     |           | not null |
+ version                       | integer                  |           | not null |
+ up                            | boolean                  |           | not null |
+ started_at                    | timestamp with time zone |           | not null |
+ finished_at                   | timestamp with time zone |           |          |
+ success                       | boolean                  |           |          |
+ error_message                 | text                     |           |          |
  backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
@@ -248,13 +248,13 @@ Indexes:
 
 # Table "public.rockskip_ancestry"
 ```
-  Column   |         Type          | Collation | Nullable |                    Default                    
+  Column   |         Type          | Collation | Nullable |                    Default
 -----------+-----------------------+-----------+----------+-----------------------------------------------
  id        | integer               |           | not null | nextval('rockskip_ancestry_id_seq'::regclass)
- repo_id   | integer               |           | not null | 
- commit_id | character varying(40) |           | not null | 
- height    | integer               |           | not null | 
- ancestor  | integer               |           | not null | 
+ repo_id   | integer               |           | not null |
+ commit_id | character varying(40) |           | not null |
+ height    | integer               |           | not null |
+ ancestor  | integer               |           | not null |
 Indexes:
     "rockskip_ancestry_pkey" PRIMARY KEY, btree (id)
     "rockskip_ancestry_repo_id_commit_id_key" UNIQUE CONSTRAINT, btree (repo_id, commit_id)
@@ -264,11 +264,11 @@ Indexes:
 
 # Table "public.rockskip_repos"
 ```
-      Column      |           Type           | Collation | Nullable |                  Default                   
+      Column      |           Type           | Collation | Nullable |                  Default
 ------------------+--------------------------+-----------+----------+--------------------------------------------
  id               | integer                  |           | not null | nextval('rockskip_repos_id_seq'::regclass)
- repo             | text                     |           | not null | 
- last_accessed_at | timestamp with time zone |           | not null | 
+ repo             | text                     |           | not null |
+ last_accessed_at | timestamp with time zone |           | not null |
 Indexes:
     "rockskip_repos_pkey" PRIMARY KEY, btree (id)
     "rockskip_repos_repo_key" UNIQUE CONSTRAINT, btree (repo)
@@ -279,14 +279,14 @@ Indexes:
 
 # Table "public.rockskip_symbols"
 ```
- Column  |   Type    | Collation | Nullable |                   Default                    
+ Column  |   Type    | Collation | Nullable |                   Default
 ---------+-----------+-----------+----------+----------------------------------------------
  id      | integer   |           | not null | nextval('rockskip_symbols_id_seq'::regclass)
- added   | integer[] |           | not null | 
- deleted | integer[] |           | not null | 
- repo_id | integer   |           | not null | 
- path    | text      |           | not null | 
- name    | text      |           | not null | 
+ added   | integer[] |           | not null |
+ deleted | integer[] |           | not null |
+ repo_id | integer   |           | not null |
+ path    | text      |           | not null |
+ name    | text      |           | not null |
 Indexes:
     "rockskip_symbols_pkey" PRIMARY KEY, btree (id)
     "rockskip_symbols_gin" gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, name gin_trgm_ops, singleton(name), singleton(lower(name)), path gin_trgm_ops, singleton(path), path_prefixes(path), singleton(lower(path)), path_prefixes(lower(path)), singleton(get_file_extension(path)), singleton(get_file_extension(lower(path))))
