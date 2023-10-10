@@ -24,9 +24,8 @@ tasks:
             DISPLAY: ":99"
 
         collect_coverage: false
-        # These flags are guaranteed to come after those added by Rosetta,
-        # so we are sure to override them.
-        # Most flags belong in your .bazelrc file.
+        flags:
+            - --config=go-verbose-test
         targets:
             - //...
             - //client/web:test
