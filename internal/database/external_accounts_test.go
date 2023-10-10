@@ -75,7 +75,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 		AuthData: extsvc.NewUnencryptedData(authData),
 		Data:     extsvc.NewUnencryptedData(data),
 	}
-	if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
+	if _, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
 		t.Fatal(err)
 	}
 
@@ -362,7 +362,7 @@ func TestExternalAccounts_ListForUsers(t *testing.T) {
 			userIDs = append(userIDs, user.ID)
 		} else {
 			// Last user gets all the accounts.
-			err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userIDs[2], spec, extsvc.AccountData{})
+			_, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userIDs[2], spec, extsvc.AccountData{})
 			require.NoError(t, err)
 		}
 	}
@@ -488,7 +488,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 
 	// AssociateUserAndSave should encrypt the accountData correctly
-	err = store.AssociateUserAndSave(ctx, userID, spec, accountData)
+	_, err = store.AssociateUserAndSave(ctx, userID, spec, accountData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,7 +599,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -660,10 +660,10 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	spec.ServiceID = "xb2"
 	require.NoError(t, err)
-	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 	require.NoError(t, err)
 	spec.ServiceID = "xb3"
-	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 	require.NoError(t, err)
 
 	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
@@ -703,10 +703,10 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 		spec.ServiceID = "xb2"
 		require.NoError(t, err)
-		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 		require.NoError(t, err)
 		spec.ServiceID = "xb3"
-		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 		require.NoError(t, err)
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})

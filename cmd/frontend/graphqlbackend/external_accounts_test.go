@@ -141,7 +141,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				},
 			}, nil)
 
-			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, uID int32, acctSpec extsvc.AccountSpec, acctData extsvc.AccountData) error {
+			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, uID int32, acctSpec extsvc.AccountSpec, acctData extsvc.AccountData) (*extsvc.Account, error) {
 				if uID != tc.user.ID {
 					t.Errorf("got userID %d, want %d", uID, tc.user.ID)
 				}
@@ -154,7 +154,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				if acctSpec.AccountID != "1234" {
 					t.Errorf("got account ID %q, want %q", acctSpec.AccountID, "alice")
 				}
-				return nil
+				return nil, nil
 			})
 			confGet := func() *conf.Unified {
 				return &conf.Unified{}

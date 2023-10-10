@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")"/../.. || exit 1
 
 BIN_DIR=".bin"
 DIST_DIR="dist"
