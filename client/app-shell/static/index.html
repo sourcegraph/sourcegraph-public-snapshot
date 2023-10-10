@@ -164,6 +164,7 @@
             .messages__message:nth-child(3) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 2)); }
             .messages__message:nth-child(4) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 3)); }
             .messages__message:nth-child(5) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 4)); }
+            .messages__message:nth-child(6) { animation-delay: calc(var(--initial-delay) + (var(--duration) * 5)); }
             .messages__message:last-child { --final-opacity: 1; }
             
             @keyframes message-appear {
@@ -184,7 +185,7 @@
                 font-size: 12px;
                 opacity: 0;
                 transform: scale(0);
-                animation: 5s show-log-link 30s forwards;
+                animation: 1s show-log-link 30s forwards;
             }
 
             @keyframes show-log-link {
@@ -234,6 +235,7 @@
                 <p class="messages__message">Starting Embeddings Service</p>
                 <p class="messages__message">Starting Chat Service</p>
                 <p class="messages__message">Starting Git Service</p>
+                <p class="messages__message">Reticulating Splines</p>
                 <p class="messages__message">Initializing</p>
             </div>
             <div class="show-logs">
