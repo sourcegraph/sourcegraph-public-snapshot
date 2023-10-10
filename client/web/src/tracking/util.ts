@@ -31,6 +31,19 @@ export function stripURLParameters(url: string, parametersToRemove: string[] = [
 export function redactSensitiveInfoFromAppURL(url: string): string {
     const sourceURL = new URL(url)
 
+    // if hostname is about.sourcegraph or docs.sourcegraph, etc do not redact
+    const approved_hosts = [
+        'sourcegraph.com',
+        'about.sourcegraph.com',
+        'docs.sourcegraph.com',
+        'info.sourcegraph.com',
+        'signup.sourcegraph.com',
+    ]
+
+    if (approved_hosts.includes(sourceURL.hostname)) {
+        return url
+    }
+
     // Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
     if (sourceURL.pathname.startsWith('/github.com')) {
         sourceURL.pathname = '/github.com/redacted'
