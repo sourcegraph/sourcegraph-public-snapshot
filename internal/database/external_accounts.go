@@ -37,7 +37,7 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 
 // UserExternalAccountsStore provides access to the `user_external_accounts` table.
 type UserExternalAccountsStore interface {
-	// AssociateUserAndSave is used for linking a new, additional external account with an existing
+	// Upsert is used for linking a new, additional external account with an existing
 	// Sourcegraph account.
 	//
 	// It creates a user external account and associates it with the specified user. If the external
@@ -45,7 +45,7 @@ type UserExternalAccountsStore interface {
 	//
 	// - the same user: it updates the data and returns the account and a nil error; or
 	// - a different user: it performs no update and returns no account and a non-nil error
-	AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (acct *extsvc.Account, err error)
+	Upsert(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error)
 
 	Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error)
 
@@ -208,7 +208,7 @@ AND deleted_at IS NULL
 	return
 }
 
-func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (_ *extsvc.Account, err error) {
+func (s *userExternalAccountsStore) Upsert(ctx context.Context, acct *extsvc.Account) (_ *extsvc.Account, err error) {
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
 
@@ -230,32 +230,32 @@ AND service_id = %s
 AND client_id = %s
 AND account_id = %s
 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID)).Scan(&existingID, &associatedUserID)
+`, acct.AccountSpec.ServiceType, acct.AccountSpec.ServiceID, acct.AccountSpec.ClientID, acct.AccountSpec.AccountID)).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	exists = err != sql.ErrNoRows
 	err = nil
 
-	if exists && associatedUserID != userID {
+	if exists && associatedUserID != acct.UserID {
 		// The account already exists and is associated with another user.
-		return nil, errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", associatedUserID, userID)
+		return nil, errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", associatedUserID, acct.UserID)
 	}
 
 	if !exists {
 		// Create the external account (it doesn't yet exist).
-		return tx.Insert(ctx, userID, spec, data)
+		return tx.Insert(ctx, acct.UserID, acct.AccountSpec, acct.AccountData)
 	}
 
 	var encryptedAuthData, encryptedAccountData, keyID string
-	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
+	if acct.AccountData.AuthData != nil {
+		encryptedAuthData, keyID, err = acct.AccountData.AuthData.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return nil, err
 		}
 	}
-	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
+	if acct.AccountData.Data != nil {
+		encryptedAccountData, keyID, err = acct.AccountData.Data.Encrypt(ctx, s.getEncryptionKey())
 		if err != nil {
 			return nil, err
 		}
@@ -279,15 +279,9 @@ AND user_id = %s
 AND deleted_at IS NULL
 RETURNING
 	id, updated_at, created_at
-`, encryptedAuthData, encryptedAccountData, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
+`, encryptedAuthData, encryptedAccountData, keyID, acct.AccountSpec.ServiceType, acct.AccountSpec.ServiceID, acct.AccountSpec.ClientID, acct.AccountSpec.AccountID, acct.UserID))
 	if res.Err() != nil {
 		return nil, res.Err()
-	}
-
-	acct := &extsvc.Account{
-		UserID:      userID,
-		AccountSpec: spec,
-		AccountData: data,
 	}
 
 	if err := res.Scan(&acct.ID, &acct.UpdatedAt, &acct.CreatedAt); err != nil {

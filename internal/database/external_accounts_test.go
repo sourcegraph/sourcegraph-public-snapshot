@@ -75,7 +75,12 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 		AuthData: extsvc.NewUnencryptedData(authData),
 		Data:     extsvc.NewUnencryptedData(data),
 	}
-	if _, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
+	if _, err := db.UserExternalAccounts().Upsert(ctx,
+		&extsvc.Account{
+			UserID:      user.ID,
+			AccountSpec: spec,
+			AccountData: accountData,
+		}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -362,7 +367,11 @@ func TestExternalAccounts_ListForUsers(t *testing.T) {
 			userIDs = append(userIDs, user.ID)
 		} else {
 			// Last user gets all the accounts.
-			_, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userIDs[2], spec, extsvc.AccountData{})
+			_, err := db.UserExternalAccounts().Upsert(ctx,
+				&extsvc.Account{
+					UserID:      userIDs[2],
+					AccountSpec: spec,
+				})
 			require.NoError(t, err)
 		}
 	}
@@ -488,7 +497,12 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 
 	// AssociateUserAndSave should encrypt the accountData correctly
-	_, err = store.AssociateUserAndSave(ctx, userID, spec, accountData)
+	_, err = store.Upsert(ctx,
+		&extsvc.Account{
+			UserID:      userID,
+			AccountSpec: spec,
+			AccountData: accountData,
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,7 +613,11 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Upsert(ctx,
+			&extsvc.Account{
+				UserID:      user.ID,
+				AccountSpec: spec,
+			})
 		if err != nil {
 			t.Fatal(err)
 		}

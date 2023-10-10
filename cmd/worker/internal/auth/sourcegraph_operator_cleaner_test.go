@@ -91,17 +91,17 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
 		time.Now().Add(-61*time.Minute), morgan.ID)
 	require.NoError(t, err)
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(
+	_, err = db.UserExternalAccounts().Upsert(
 		ctx,
-		morgan.ID,
-		extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com",
-			ClientID:    "github",
-			AccountID:   "morgan",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			UserID: morgan.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com",
+				ClientID:    "github",
+				AccountID:   "morgan",
+			},
+		})
 	require.NoError(t, err)
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, morgan.ID, true))
 
@@ -208,14 +208,16 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		UserID: alex.ID,
 	}))
 	// make another SOAP account, this one isn't expired
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, alex.ID,
-		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "alex2",
-		},
-		extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Upsert(ctx,
+		&extsvc.Account{
+			UserID: alex.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceID:   "https://sourcegraph.com",
+				ClientID:    "soap",
+				AccountID:   "alex2",
+			},
+		})
 	require.NoError(t, err)
 	// make alex and admin, alex shouldn't be changed
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, alex.ID, true))

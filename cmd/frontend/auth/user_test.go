@@ -320,7 +320,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		},
 		{
 			description: "associateUserAndSaveErr",
-			mock:        mockParams{associateUserAndSaveErr: unexpectedErr, userInfos: oneUser},
+			mock:        mockParams{upsertErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
@@ -619,14 +619,14 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 }
 
 type mockParams struct {
-	userInfos               []userInfo
-	lookupUserAndSaveErr    error
-	createUserAndSaveErr    error
-	associateUserAndSaveErr error
-	getByVerifiedEmailErr   error
-	getByUsernameErr        error //nolint:structcheck
-	getByIDErr              error
-	updateErr               error
+	userInfos             []userInfo
+	lookupUserAndSaveErr  error
+	createUserAndSaveErr  error
+	upsertErr             error
+	getByVerifiedEmailErr error
+	getByUsernameErr      error //nolint:structcheck
+	getByIDErr            error
+	updateErr             error
 }
 
 // mocks provide mocking. It should only be used for one call of auth.GetAndSaveUser, because saves
@@ -661,7 +661,7 @@ func (m *mocks) DB() database.DB {
 
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
-	externalAccounts.AssociateUserAndSaveFunc.SetDefaultHook(m.AssociateUserAndSave)
+	externalAccounts.UpsertFunc.SetDefaultHook(m.Upsert)
 	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
 
 	users := dbmocks.NewMockUserStore()
@@ -738,23 +738,23 @@ func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, s
 	return &types.User{ID: userID}, nil
 }
 
-// AssociateUserAndSave mocks database.ExternalAccounts.AssociateUserAndSave
-func (m *mocks) AssociateUserAndSave(_ context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (_ *extsvc.Account, err error) {
-	if m.associateUserAndSaveErr != nil {
-		return nil, m.associateUserAndSaveErr
+// Upsert mocks database.ExternalAccounts.Upsert
+func (m *mocks) Upsert(_ context.Context, acct *extsvc.Account) (_ *extsvc.Account, err error) {
+	if m.upsertErr != nil {
+		return nil, m.upsertErr
 	}
 
 	// Check if ext acct is associated with different user
 	for _, u := range m.userInfos {
 		for _, a := range u.extAccts {
-			if a == spec && u.user.ID != userID {
-				return nil, errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, userID)
+			if a == acct.AccountSpec && u.user.ID != acct.UserID {
+				return nil, errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, acct.UserID)
 			}
 		}
 	}
 
-	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
-	return nil, nil
+	m.savedExtAccts[acct.UserID] = append(m.savedExtAccts[acct.UserID], acct.AccountSpec)
+	return acct, nil
 }
 
 // GetByVerifiedEmail mocks database.Users.GetByVerifiedEmail

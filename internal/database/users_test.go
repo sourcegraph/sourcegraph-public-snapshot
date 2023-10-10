@@ -935,14 +935,15 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, otherUser.ID,
-		extsvc.AccountSpec{
-			ServiceType: "github",
-			ServiceID:   "https://github.com/",
-			AccountID:   "alice_github",
-		},
-		extsvc.AccountData{},
-	)
+	_, err = db.UserExternalAccounts().Upsert(ctx,
+		&extsvc.Account{
+			UserID: otherUser.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+				AccountID:   "alice_github",
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
