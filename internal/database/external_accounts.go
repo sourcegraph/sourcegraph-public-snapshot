@@ -43,8 +43,8 @@ type UserExternalAccountsStore interface {
 	// It creates a user external account and associates it with the specified user. If the external
 	// account already exists and is associated with:
 	//
-	// - the same user: it updates the data and returns a nil error; or
-	// - a different user: it performs no update and returns a non-nil error
+	// - the same user: it updates the data and returns the account and a nil error; or
+	// - a different user: it performs no update and returns no account and a non-nil error
 	AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (acct *extsvc.Account, err error)
 
 	Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error)
@@ -67,7 +67,7 @@ type UserExternalAccountsStore interface {
 	// Get gets information about the user external account.
 	Get(ctx context.Context, id int32) (*extsvc.Account, error)
 
-	// Insert creates the external account record in the database
+	// Insert creates the external account record in the database and returns it.
 	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (*extsvc.Account, error)
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
@@ -278,16 +278,22 @@ AND account_id = %s
 AND user_id = %s
 AND deleted_at IS NULL
 RETURNING
-	id
+	id, updated_at, created_at
 `, encryptedAuthData, encryptedAccountData, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
 	if res.Err() != nil {
 		return nil, res.Err()
 	}
-	var id int32
-	if err := res.Scan(&id); err != nil {
+
+	acct := &extsvc.Account{
+		UserID:      userID,
+		AccountSpec: spec,
+		AccountData: data,
+	}
+
+	if err := res.Scan(&acct.ID, &acct.UpdatedAt, &acct.CreatedAt); err != nil {
 		return nil, err
 	}
-	return s.Get(ctx, id)
+	return acct, nil
 }
 
 func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
@@ -318,19 +324,23 @@ func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, sp
 	res := s.QueryRow(ctx, sqlf.Sprintf(`
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING id
+RETURNING id, updated_at, created_at
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
 
 	err = res.Err()
 	if err != nil {
 		return nil, err
 	}
-	var id int32
-	if err := res.Scan(&id); err != nil {
+	acct := &extsvc.Account{
+		UserID:      userID,
+		AccountSpec: spec,
+		AccountData: data,
+	}
+	if err := res.Scan(&acct.ID, &acct.UpdatedAt, &acct.CreatedAt); err != nil {
 		return nil, err
 	}
 
-	return s.Get(ctx, id)
+	return acct, nil
 }
 
 // encryptData encrypts the given account data and returns the encrypted data and key ID.
