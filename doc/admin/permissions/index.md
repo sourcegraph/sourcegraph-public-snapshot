@@ -160,13 +160,32 @@ were not touched, leading to effective permissions of [`horsegraph/global`, `hor
 
 ## Troubleshooting
 
+This troubleshooting guide assumes you have access to a Sourcegraph admin account.
+
 ### Users can access repositories even though they don't have access to those repositories on the code host
 
-The two most common scenarios where users may be able to access repositories on Sourcegraph that they don't have access to on the code host are:
-1. The user is a site admin, and Sourcegraph has not been configured to enforce permissions for site admins. [Configure Sourcegraph to enforce permissions for site admins](#site-administrators).
-2. The code host connection is not configured to enforce repository permissions. [Enable authorization on the code host connection](#getting-started).
+To troubleshoot why a user has access to too many repositories:
 
-For additional insight into why a user can view specific repositories on Sourcegraph, visit their [permissions page](./syncing.md#verify-via-ui) as a site administrator.
+1. Visit `/site-admin/users`, search for the user in question, and click on their name.
+2. Navigate to their **Settings** page and select the **Permissions** section.
+![The Permissions section on a user's Settings page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/permissions/troubleshooting/user-settings-permissions.png)
+3. At the bottom of the page is an **Accessible Repositories** section, which displays all repositories the user currently has access to on Sourcegraph, and why.
+![The Accessible Repositories secion on a user's Permissions page](https://storage.cloud.google.com/sourcegraph-assets/docs/images/administration/config/permissions/troubleshooting/user-accessible-repos.png)
+The possible reasons for repository access are:
+    - **Unrestricted** - The repository is either public, or the code host connection is configured to treat all repositories as public.
+    - **Site Admin** - The user is a site admin, and permissions enforcement for site admins is not enabled.
+    - **Permissions Sync** - The user's access comes from permissions that were synced from the code host.
+    > NOTE: If the user has access to a repository that you don't, it will display as "Private repository".
+
+Depending on the reason for the user's access, you can then take the following actions:
+
+#### Unrestricted
+
+If the repository is marked as unrestricted:
+
+1. Check if the repository is marked as public on the code host.
+2. If the repository is indeed private, verify that the code host connection is configured to enforce authorization.
+    - A repository can belong to multiple code host connections. If any of them are configured without authorization, it will make the repository accessible to everyone on the Sourcegraph instance.
 
 ### Users cannot access repositories even though they do have access on the code host
 
