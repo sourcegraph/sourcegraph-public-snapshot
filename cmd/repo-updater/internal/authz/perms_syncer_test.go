@@ -814,8 +814,8 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := dbmocks.NewMockPermsStore()
-	perms.SetUserExternalAccountPermsFunc.PushHook(func(ctx context.Context, uieai authz.UserIDWithExternalAccountID, i []int32, ps authz.PermsSource) (*database.SetPermissionsResult, error) {
-		if uieai.ExternalAccountID == 0 {
+	perms.SetUserExternalAccountPermsFunc.PushHook(func(ctx context.Context, ids authz.UserIDWithExternalAccountID, i []int32, ps authz.PermsSource) (*database.SetPermissionsResult, error) {
+		if ids.ExternalAccountID == 0 {
 			t.Fatal("ExternalAccountID should not be 0")
 		}
 		return &database.SetPermissionsResult{}, nil
