@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"html/template"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -540,7 +539,6 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 			r.URL.Host = "search-badger"
 			r.URL.Path = "/"
 		},
-		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
 	}
 }
 

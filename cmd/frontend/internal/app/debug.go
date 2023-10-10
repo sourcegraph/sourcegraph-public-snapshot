@@ -132,7 +132,6 @@ func addGrafana(r *mux.Router, db database.DB) {
 						req.URL.Path = req.URL.Path[i+len(prefix):]
 					}
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "grafana"), log.LstdFlags),
 			}))
 		}
 	} else {
@@ -261,7 +260,6 @@ func addJaeger(r *mux.Router, db database.DB) {
 					req.URL.Scheme = "http"
 					req.URL.Host = jaegerURL.Host
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "jaeger"), log.LstdFlags),
 			}))
 		}
 
