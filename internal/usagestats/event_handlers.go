@@ -190,17 +190,17 @@ func publishSourcegraphDotComEvents(events []Event) error {
 func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 	pubsubEvents := make([][]byte, 0, len(events))
 	for _, event := range events {
-		firstSourceURL := ""
-		if event.FirstSourceURL != nil {
-			firstSourceURL = *event.FirstSourceURL
+		saferFirstSourceUrl, err := redactSensitiveInfoFromCloudURL(*event.FirstSourceURL)
+		if err != nil {
+			return nil, err
 		}
-		lastSourceURL := ""
-		if event.LastSourceURL != nil {
-			lastSourceURL = *event.LastSourceURL
+		saferLastSourceUrl, err := redactSensitiveInfoFromCloudURL(*event.LastSourceURL)
+		if err != nil {
+			return nil, err
 		}
-		referrer := ""
-		if event.Referrer != nil {
-			referrer = *event.Referrer
+		saferReferrer, err := redactSensitiveInfoFromCloudURL(*event.Referrer)
+		if err != nil {
+			return nil, err
 		}
 		originalReferrer := ""
 		if event.OriginalReferrer != nil {
@@ -218,7 +218,6 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
 		if err != nil {
 			return nil, err
@@ -229,9 +228,9 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			UserID:                 int(event.UserID),
 			AnonymousUserID:        event.UserCookieID,
 			URL:                    saferUrl,
-			FirstSourceURL:         firstSourceURL,
-			LastSourceURL:          lastSourceURL,
-			Referrer:               referrer,
+			FirstSourceURL:         saferFirstSourceUrl,
+			LastSourceURL:          saferLastSourceUrl,
+			Referrer:               saferReferrer,
 			OriginalReferrer:       originalReferrer,
 			SessionReferrer:        sessionReferrer,
 			SessionFirstURL:        sessionFirstURL,
@@ -321,12 +320,23 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // may contain sensitive info on Sourcegraph Cloud. We replace all paths,
 // and only maintain query parameters in a specified allowlist,
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
-//
-// Note that URL redaction also happens in web/src/tracking/util.ts.
+
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
+	}
+
+	// check if parsedURL is in approved hosts and if so return rawURL
+	 approvedHostsMap := map[string]bool{
+		"sourcegraph.com": true,
+		"about.sourcegraph.com": true,
+		"docs.sourcegraph.com": true,
+		"info.sourcegraph.com": true,
+		"signup.sourcegraph.com": true,
+	  }
+	if approvedHostsMap[parsedURL.Host] {
+		return rawURL, nil
 	}
 
 	if parsedURL.Host != "sourcegraph.com" {
@@ -343,6 +353,9 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	} else if strings.HasPrefix(parsedURL.Path, "/search") {
 		parsedURL.RawPath = "/search/redacted"
 		parsedURL.Path = "/search/redacted"
+	} else if strings.HasPrefix(parsedURL.Path, "/sign-in") {
+		parsedURL.RawPath = "/sign-in/redacted"
+		parsedURL.Path = "/sign-in/redacted"
 	} else {
 		return rawURL, nil
 	}

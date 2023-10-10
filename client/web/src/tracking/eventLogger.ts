@@ -12,7 +12,7 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
+import { getPreviousMonday, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -228,36 +228,17 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        if (isSourcegraphWebSiteId) {
-            cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
-            return firstSourceURL
-        }
-        {
-            const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
-
-            // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-            // Always set to renew expiry and migrate from localStorage
-            cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-            return redactedURL
-        }
+        cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
+        return firstSourceURL
     }
+
     public getLastSourceURL(): string {
         // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
         // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
-        if (isSourcegraphWebSiteId) {
-            cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
-            return lastSourceURL
-        }
-        {
-            const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
-
-            // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-            // Always set to renew expiry and migrate from localStorage
-            cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-            return redactedURL
-        }
+        cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
+        return lastSourceURL
     }
 
     public getOriginalReferrer(): string {
@@ -268,44 +249,22 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
             document.referrer
 
-        if (isSourcegraphWebSiteId) {
-            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
-            return originalReferrer
-        }
-        {
-            this.originalReferrer = ''
-            cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
-            return this.originalReferrer
-        }
+        cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+        return originalReferrer
     }
 
     public getSessionReferrer(): string {
         // Gets the session referrer from the cookie
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
 
-        if (isSourcegraphWebSiteId) {
-            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
-            return sessionReferrer
-        }
-        {
-            this.sessionReferrer = ''
-            cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
-            return this.sessionReferrer
-        }
+        cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
+        return sessionReferrer
     }
 
     public getSessionFirstURL(): string {
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
-
-        if (isSourcegraphWebSiteId) {
-            cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
-            return sessionFirstURL
-        }
-        {
-            const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
-            cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
-            return redactedURL
-        }
+        cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
+        return sessionFirstURL
     }
 
     public getDeviceSessionID(): string {
