@@ -22,31 +22,10 @@ import (
 )
 
 var (
-	metricReorderQueueSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_zoekt_reorder_queue_size",
-		Help:    "Maximum size of result reordering buffer for a request.",
-		Buckets: prometheus.ExponentialBuckets(4, 2, 10),
-	}, nil)
 	metricIgnoredError = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_zoekt_ignored_error_total",
 		Help: "Total number of errors ignored from Zoekt.",
 	}, []string{"reason"})
-	// temporary metric so we can check if we are encountering non-empty
-	// queues once streaming is complete.
-	metricFinalQueueSize = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_zoekt_final_queue_size",
-		Help: "the size of the results queue once streaming is done.",
-	})
-	metricMaxMatchCount = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_zoekt_queue_max_match_count",
-		Help:    "Maximum number of matches in the queue.",
-		Buckets: prometheus.ExponentialBuckets(4, 2, 20),
-	}, nil)
-	metricMaxSizeBytes = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_zoekt_queue_max_size_bytes",
-		Help:    "Maximum number of bytes in the queue.",
-		Buckets: prometheus.ExponentialBuckets(1000, 2, 20), // 1kb -> 500mb
-	}, nil)
 )
 
 // HorizontalSearcher is a Streamer which aggregates searches over
