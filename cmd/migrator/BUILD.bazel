@@ -319,7 +319,7 @@ sh_test(
     name = "schema_descriptions_test",
     size = "small",
     timeout = "moderate",
-;   srcs = [
+    srcs = [
         "schema_descriptions_test.sh",
     ],
     args = [
