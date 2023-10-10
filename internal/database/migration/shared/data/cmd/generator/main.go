@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
@@ -23,6 +24,8 @@ var frozenMigrationsFlag = flag.Bool("write-frozen", true, "write frozen revisio
 
 func mainErr() error {
 	flag.Parse()
+	liblog := log.Init(log.Resource{Name: "migration-generator"})
+	defer liblog.Sync()
 
 	wd, err := os.Getwd()
 	if err != nil {
