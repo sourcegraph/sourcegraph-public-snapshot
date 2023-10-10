@@ -70,7 +70,7 @@ func TestScenarioApplyAndTeardown(t *testing.T) {
 		}
 
 		err := scenario.Apply(context.TODO())
-		if err != nil && err != fakeErr {
+		if err != nil && !errors.Is(err, fakeErr) {
 			t.Fatalf("failed to apply test scenario with mock actions: %v", err)
 		}
 
