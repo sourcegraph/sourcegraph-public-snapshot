@@ -67,11 +67,14 @@ describe('tracking/util', () => {
         })
 
         it('does not redact url when request is from sourcegraph', () => {
-            expect(redactSensitiveInfoFromAppURL('https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/test?utm_source=test&utm_campaign=test')).toEqual(
+            expect(
+                redactSensitiveInfoFromAppURL(
+                    'https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/test?utm_source=test&utm_campaign=test'
+                )
+            ).toEqual(
                 'https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/test?utm_source=test&utm_campaign=test'
             )
         })
-
     })
 
     describe(`${getPreviousMonday.name}()`, () => {
