@@ -2,7 +2,7 @@
 
 set -eu
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")"/../.. || exit 1
 
 SUPPORTED_PLATFORMS=("aarch64-apple-darwin" "x86_64-apple-darwin" "x86_64-unknown-linux-gnu")
 
