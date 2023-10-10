@@ -125,6 +125,9 @@ type flushCollectSender struct {
 // If it has not heard back from every endpoint by a certain timeout, then it will
 // flush as a 'fallback plan' to avoid delaying the search too much.
 func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) FlushSender {
+	// Nil options are permitted by Zoekt's "Streamer" interface. There are a few
+	// callers within Sourcegraph that call search with nil options (tests,
+	// insights), so we have to handle this case.
 	if opts == nil {
 		return &nopFlushCollector{sender}
 	}
