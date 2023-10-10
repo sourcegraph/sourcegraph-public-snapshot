@@ -16,7 +16,6 @@ import {
 } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -143,8 +142,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
         props
     const navigate = useNavigate()
     const isLightTheme = useIsLightTheme()
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -441,7 +438,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                                 queryState={queryState}
                                 onChange={setQueryState}
                                 preventNewLine={false}
-                                applySuggestionsOnEnter={applySuggestionsOnEnter}
                             />
                         </div>
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>

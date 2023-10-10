@@ -44,7 +44,7 @@ The above stages are accomplished by utilizing hosts across two cloud providers 
 
 ### Building of Sourcegraph Backend
 
-The script that builds the backend is located at [`enterprise/dev/app/build-backend.sh`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@4cb14a729d2bcd86b47c6ee65f6fe7e34d2ff782/-/blob/enterprise/dev/app/build-backend.sh) and compiled binaries will be put under the directory `.bin` with the following naming convention `sourcegraph-backend-{platform}`. The script by default will use Bazel to compile the Sourcegraph backend and will automatically detect the platform by using the script [`enterprise/dev/app/detect_platform.sh`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@4cb14a729d2bcd86b47c6ee65f6fe7e34d2ff782/-/blob/enterprise/dev/app/detect-platform.sh). For cross compilation and especially for the `x86_64-darwin` platform, one has to provide the following environment variables to make the script do the cross compilation:
+The script that builds the backend is located at [`dev/app/build-backend.sh`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@4cb14a729d2bcd86b47c6ee65f6fe7e34d2ff782/-/blob/enterprise/dev/app/build-backend.sh) and compiled binaries will be put under the directory `.bin` with the following naming convention `sourcegraph-backend-{platform}`. The script by default will use Bazel to compile the Sourcegraph backend and will automatically detect the platform by using the script [`enterprise/dev/app/detect_platform.sh`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@4cb14a729d2bcd86b47c6ee65f6fe7e34d2ff782/-/blob/enterprise/dev/app/detect-platform.sh). For cross compilation and especially for the `x86_64-darwin` platform, one has to provide the following environment variables to make the script do the cross compilation:
 
 - `PLATFORM=x86_64-apple-darwin`
 - `CROSS_COMPILE_X86_64_MACOS=1`
@@ -110,7 +110,7 @@ __Note__: if you're wondering why the bucket names are different even though we 
 
 ### Automatically updating the manifest
 
-`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Sourcegraph App Release Bucket access` bundle in Entitle.
+`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Cody App Release Bucket access` bundle in Entitle.
 
 Below is an example command:
 

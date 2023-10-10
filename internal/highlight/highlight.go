@@ -419,17 +419,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
-	// Set the Filetype part of the command if:
-	//    1. We are overriding the config, because then we don't want syntect to try and
-	//       guess the filetype (but otherwise we want to maintain backwards compat with
-	//       whatever we were calculating before)
-	//    2. We are using treesitter. Always have syntect use the language provided in that
-	//       case to make sure that we have normalized the names of the language by then.
-	if filetypeQuery.LanguageOverride || filetypeQuery.Engine.isTreesitterBased() {
-		query.Filetype = filetypeQuery.Language
-	}
+	query.Filetype = filetypeQuery.Language
 
-	// Sourcegraph App: we do not use syntect_server/syntax-highlighter
+	// Single-program mode: we do not use syntect_server/syntax-highlighter
 	//
 	// 1. It makes cross-compilation harder (requires a full Rust toolchain for the target, plus
 	//    a full C/C++ toolchain for the target.) Complicates macOS code signing.
@@ -439,8 +431,8 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//    hack to workaround https://github.com/trishume/syntect/issues/202 - and by extension needs
 	//    two separate binaries, and separate processes, to function semi-reliably.
 	//
-	// Instead, in Sourcegraph App we defer to Chroma for syntax highlighting.
-	if deploy.IsApp() {
+	// Instead, in single-program mode we defer to Chroma for syntax highlighting.
+	if deploy.IsSingleBinary() {
 		document, err := highlightWithChroma(code, p.Filepath)
 		if err != nil {
 			return unhighlightedCode(err, code)

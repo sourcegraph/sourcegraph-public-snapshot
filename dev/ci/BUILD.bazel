@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "ci_lib",
+    srcs = ["gen-pipeline.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//dev/ci/internal/buildkite",
+        "//dev/ci/internal/ci",
+        "//dev/ci/internal/ci/changed",
+        "//dev/ci/runtype",
+        "//internal/hostname",
+        "@com_github_getsentry_sentry_go//:sentry-go",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_binary(
+    name = "ci",
+    embed = [":ci_lib"],
+    visibility = ["//visibility:public"],
+)

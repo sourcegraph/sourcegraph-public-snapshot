@@ -101,14 +101,14 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 		require.NoError(t, err)
 	})
 
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 		if op.ExternalAccount.ServiceType == internalauth.SourcegraphOperatorProviderType &&
 			op.ExternalAccount.ServiceID == providerConfig.Issuer &&
 			op.ExternalAccount.ClientID == testClientID &&
 			op.ExternalAccount.AccountID == testOIDCUser {
-			return 123, "", nil
+			return false, 123, "", nil
 		}
-		return 0, "safeErr", errors.Errorf("account %q not found in mock", op.ExternalAccount)
+		return false, 0, "safeErr", errors.Errorf("account %q not found in mock", op.ExternalAccount)
 	}
 	t.Cleanup(func() {
 		auth.MockGetAndSaveUser = nil
@@ -270,7 +270,8 @@ func TestMiddleware(t *testing.T) {
 		}
 		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, state.Redirect, resp.Header.Get("Location"))
+		wantRedirect := fmt.Sprintf(`%s?signin=`, state.Redirect)
+		assert.Equal(t, wantRedirect, resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
 	})
 

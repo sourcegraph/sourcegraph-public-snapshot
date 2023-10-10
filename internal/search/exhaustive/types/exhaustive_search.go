@@ -24,6 +24,12 @@ func (s RevisionSpecifiers) Get() []string {
 	return strings.Split(string(s), ":")
 }
 
+// RevisionSpecifierJoin is the inverse of RevisionSpecifiers.Get(). It can be
+// used to convert a []query.RevisionSpecifier into a RevisionSpecifiers.
+func RevisionSpecifierJoin(s []string) RevisionSpecifiers {
+	return RevisionSpecifiers(strings.Join(s, ":"))
+}
+
 // RepositoryRevSpecs represents zero or more revisions we need to search in a
 // repository for a revision specifier. This can be inferred relatively
 // cheaply from parsing a query and the repos table.

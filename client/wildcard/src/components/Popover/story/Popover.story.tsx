@@ -440,8 +440,10 @@ export const WithNestedScrollParents: Story = (args = {}) => {
 WithNestedScrollParents.argTypes = {
     constrainToScrollParents: {
         control: { type: 'boolean' },
-        defaultValue: true,
     },
+}
+WithNestedScrollParents.args = {
+    constrainToScrollParents: true,
 }
 
 export const WithVirtualTarget: Story = () => {
@@ -521,8 +523,10 @@ WithTail.argTypes = {
     size: {
         control: 'radio',
         options: ['sm', 'md', 'lg'],
-        defaultValue: 'sm',
     },
+}
+WithTail.args = {
+    size: 'sm',
 }
 
 interface ScrollCenterBoxProps extends React.HTMLAttributes<HTMLDivElement> {

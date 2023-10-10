@@ -105,7 +105,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	stdr.SetVerbosity(10)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		if !deploy.IsApp() {
+		if !deploy.IsSingleBinary() {
 			logger.Warn("Skipping out-of-band migrations check")
 		}
 	} else {
@@ -387,7 +387,7 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	if pool, ok := redispool.Cache.Pool(); ok {
 		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	} else {
-		// If redis is disabled we are in Sourcegraph App and can rely on an
+		// If redis is disabled we are in Cody App and can rely on an
 		// in-memory store.
 		store, err = memstore.NewCtx(0)
 	}

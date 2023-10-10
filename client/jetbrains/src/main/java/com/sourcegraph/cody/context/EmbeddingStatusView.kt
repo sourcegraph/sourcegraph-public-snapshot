@@ -11,13 +11,14 @@ import com.sourcegraph.cody.auth.ui.EditCodebaseContextAction
 import com.sourcegraph.cody.chat.ChatUIConstants
 import java.awt.Dimension
 import java.awt.FlowLayout
+import java.util.concurrent.CompletableFuture
 import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
 
 class EmbeddingStatusView(private val project: Project) : JPanel() {
-  private val embeddingStatusContent: JButton
+  private val embeddingStatusContent: JBLabel
   private val codebaseSelector: JButton
   private val openedFileContent: JBLabel
   private var embeddingStatus: EmbeddingStatus
@@ -25,7 +26,7 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
   init {
     setLayout(FlowLayout(FlowLayout.LEFT))
     val innerPanel = Box.createHorizontalBox()
-    embeddingStatusContent = JButton()
+    embeddingStatusContent = JBLabel()
     codebaseSelector = JButton(EditCodebaseContextAction(project))
 
     openedFileContent = JBLabel()
@@ -57,16 +58,24 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
     if (repoName == null) {
       setEmbeddingStatus(NoGitRepositoryEmbeddingStatus())
     } else {
-      setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
-      CodyAgent.getInitializedServer(project)
-          .thenCompose { server: CodyAgentServer ->
-            server.getRepoIdIfEmbeddingExists(GetRepoID(repoName))
-          }
-          .thenAccept { id: String? ->
-            if (id != null) {
+      CodyAgent.getInitializedServer(project).thenCompose { server: CodyAgentServer? ->
+        server?.getRepoIdIfEmbeddingExists(GetRepoID(repoName))?.thenCompose { repoIdWithEmbeddings
+          ->
+          if (repoIdWithEmbeddings != null) {
+            CompletableFuture.runAsync {
               setEmbeddingStatus(RepositoryIndexedEmbeddingStatus(repoName))
             }
+          } else {
+            server.getRepoId(GetRepoID(repoName))?.thenAccept { repoId ->
+              if (repoId != null) {
+                setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
+              } else {
+                setEmbeddingStatus(RepositoryNotFoundOnSourcegraphInstance(repoName))
+              }
+            }
           }
+        }
+      }
     }
   }
 

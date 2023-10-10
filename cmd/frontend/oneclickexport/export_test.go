@@ -185,16 +185,12 @@ const (
     "externalServiceID": 1,
     "repoID": 1,
     "cloneURL": "cloneUrl",
-    "userID": 1,
-    "orgID": 1,
     "createdAt": "0001-01-01T00:00:00Z"
   },
   {
     "externalServiceID": 1,
     "repoID": 2,
     "cloneURL": "cloneUrl",
-    "userID": 1,
-    "orgID": 1,
     "createdAt": "0001-01-01T00:00:00Z"
   }
 ]`
@@ -572,16 +568,12 @@ func TestExport_DB_ExternalServiceRepos(t *testing.T) {
 			ExternalServiceID: 1,
 			RepoID:            1,
 			CloneURL:          "cloneUrl",
-			UserID:            1,
-			OrgID:             1,
 			CreatedAt:         time.Time{},
 		},
 		{
 			ExternalServiceID: 1,
 			RepoID:            2,
 			CloneURL:          "cloneUrl",
-			UserID:            1,
-			OrgID:             1,
 			CreatedAt:         time.Time{},
 		},
 	},

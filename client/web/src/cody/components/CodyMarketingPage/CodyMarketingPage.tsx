@@ -113,7 +113,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
 
     return (
         <Page>
-            <PageTitle title="Cody AI" />
+            <PageTitle title="Cody" />
             <PageHeader
                 description={
                     <>
@@ -126,7 +126,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
                         <div className={classNames('d-inline-flex align-items-center', styles.pageHeaderBreadcrumb)}>
-                            Cody AI
+                            Cody
                         </div>
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
@@ -160,13 +160,13 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 context={context}
                                 githubLabel="GitHub"
                                 gitlabLabel="GitLab"
+                                googleLabel="Google"
                                 withCenteredText={true}
                                 onClick={onClickCTAButton}
                                 ctaClassName={styles.authButton}
                                 iconClassName={styles.buttonIcon}
                             />
                         </div>
-                        <Link to="https://sourcegraph.com/sign-up?showEmail=true">Or, continue with email</Link>
                         <Text className="mt-3 mb-0">
                             By registering, you agree to our{' '}
                             <Link

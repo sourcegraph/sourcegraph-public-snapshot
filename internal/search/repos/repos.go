@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -164,6 +163,23 @@ func (r *Resolver) IterateRepoRevs(ctx context.Context, opts search.RepoOptions)
 	})
 }
 
+// ResolveRevSpecs will resolve RepoRevSpecs returned by IterateRepoRevs. It
+// requires passing in the same options to work correctly.
+//
+// NOTE: This API is not idiomatic and can return non-nil error with a useful
+// Resolved. In particular the it may return a *MissingRepoRevsError.
+func (r *Resolver) ResolveRevSpecs(ctx context.Context, op search.RepoOptions, repoRevSpecs []RepoRevSpecs) (_ Resolved, err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.ResolveRevSpecs", attribute.Stringer("opts", &op))
+	defer tr.EndWithErr(&err)
+
+	result := dbResolved{
+		Associated: repoRevSpecs,
+	}
+
+	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
+	return resolved, err
+}
+
 // queryDB is a lightweight wrapper of doQueryDB which adds tracing.
 func (r *Resolver) queryDB(ctx context.Context, op search.RepoOptions) (_ dbResolved, _ types.MultiCursor, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.queryDB", attribute.Stringer("opts", &op))
@@ -266,8 +282,6 @@ func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.Repo
 	// a query, which replaces the context:foo term at query parsing time.
 	if searchContext.Query == "" {
 		options.SearchContextID = searchContext.ID
-		options.UserID = searchContext.NamespaceUserID
-		options.OrgID = searchContext.NamespaceOrgID
 	}
 
 	tr.AddEvent("Repos.ListMinimalRepos - start")
@@ -584,7 +598,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			p.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, authz.DefaultSubRepoPermsChecker, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
+				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -895,8 +909,6 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		NoPrivate:       op.Visibility == query.Public,
 		OnlyPrivate:     op.Visibility == query.Private,
 		SearchContextID: searchContext.ID,
-		UserID:          searchContext.NamespaceUserID,
-		OrgID:           searchContext.NamespaceOrgID,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)

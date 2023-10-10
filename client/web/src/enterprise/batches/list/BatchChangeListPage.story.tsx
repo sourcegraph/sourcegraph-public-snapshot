@@ -114,13 +114,15 @@ ListOfBatchChanges.argTypes = {
     canCreate: {
         name: 'can create batch changes',
         control: { type: 'boolean' },
-        defaultValue: true,
     },
     isDotCom: {
         name: 'is sourcegraph.com',
         control: { type: 'boolean' },
-        defaultValue: false,
     },
+}
+ListOfBatchChanges.args = {
+    canCreate: true,
+    isDotCom: false,
 }
 
 ListOfBatchChanges.storyName = 'List of batch changes'

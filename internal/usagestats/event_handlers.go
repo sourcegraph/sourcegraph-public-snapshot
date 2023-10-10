@@ -67,6 +67,8 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
+//
+// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
 func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
@@ -104,11 +106,15 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 }
 
 // LogEvent logs an event.
+//
+// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
 func LogEvent(ctx context.Context, db database.DB, args Event) error {
 	return LogEvents(ctx, db, []Event{args})
 }
 
 // LogEvents logs a batch of events.
+//
+// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
 func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil

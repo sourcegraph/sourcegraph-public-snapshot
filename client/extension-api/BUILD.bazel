@@ -37,7 +37,6 @@ npm_package(
     name = "extension-api_pkg",
     srcs = [
         "package.json",
-        "src/index.js",
         "src/sourcegraph.d.ts",
     ],
 )

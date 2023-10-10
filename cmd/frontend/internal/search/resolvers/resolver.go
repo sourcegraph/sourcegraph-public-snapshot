@@ -60,7 +60,7 @@ func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, r.svc.DeleteSearchJob(ctx, jobID)
 }
 
-func newSearchJobConnectionResolver(db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
 	var states []string
 	if args.States != nil {
 		states = *args.States
@@ -83,6 +83,7 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 	}
 
 	s := &searchJobsConnectionStore{
+		ctx:     ctx,
 		db:      db,
 		service: service,
 		states:  states,
@@ -94,11 +95,21 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			Ascending: !args.Descending,
-			OrderBy:   database.OrderBy{{Field: strings.ToLower(args.OrderBy)}, {Field: "id"}}},
+			OrderBy:   database.OrderBy{{Field: normalize(args.OrderBy)}, {Field: "id"}}},
 	)
 }
 
+func normalize(orderBy string) string {
+	switch orderBy {
+	case "STATE":
+		return "agg_state"
+	default:
+		return strings.ToLower(orderBy)
+	}
+}
+
 type searchJobsConnectionStore struct {
+	ctx     context.Context
 	db      database.DB
 	service *service.Service
 	states  []string
@@ -143,13 +154,13 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	var value string
 	switch column {
 	case "created_at":
-		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339))
-	case "state":
-		value = fmt.Sprintf("'%v'", strings.ToLower(node.State()))
+		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339Nano))
+	case "agg_state":
+		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
 	case "query":
 		value = fmt.Sprintf("'%v'", node.Query())
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected one of (created_at, state, query). Actual: %s", column))
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected one of (created_at, agg_state, query). Actual: %s", column))
 	}
 
 	id, err := UnmarshalSearchJobID(node.ID())
@@ -193,7 +204,7 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 	switch column {
 	case "created_at":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case "state":
+	case "agg_state":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
 	case "query":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
@@ -204,8 +215,8 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 	return &csv, nil
 }
 
-func (r *Resolver) SearchJobs(_ context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
-	return newSearchJobConnectionResolver(r.db, r.svc, args)
+func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+	return newSearchJobConnectionResolver(ctx, r.db, r.svc, args)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {

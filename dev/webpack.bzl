@@ -1,4 +1,4 @@
-load("@aspect_rules_webpack//webpack:defs.bzl", _webpack_bundle = "webpack_bundle", _webpack_devserver = "webpack_devserver")
+load("@aspect_rules_webpack//webpack:defs.bzl", _webpack_bundle = "webpack_bundle")
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 
 def webpack_bundle(name, **kwargs):
@@ -24,11 +24,4 @@ def webpack_web_app(name, **kwargs):
         root_paths = ["ui/assets", "client/web/%s" % bundle_name],
         srcs = ["//ui/assets/img:img", ":%s" % bundle_name],
         visibility = ["//visibility:public"],
-    )
-
-def webpack_devserver(name, **kwargs):
-    _webpack_devserver(
-        name = name,
-        webpack = "//dev:webpack",
-        **kwargs
     )

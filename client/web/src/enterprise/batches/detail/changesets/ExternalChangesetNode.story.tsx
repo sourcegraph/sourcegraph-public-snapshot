@@ -25,16 +25,18 @@ const config: Meta = {
     argTypes: {
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         labeled: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         commitsSigned: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        viewerCanAdminister: true,
+        labeled: true,
+        commitsSigned: true,
     },
 }
 

@@ -29,7 +29,7 @@ export const GettingStarted: React.FC<
         | 'toggleIncludeInferredFile'
         | 'fetchRepositoryNames'
     > & {
-        isSourcegraphApp?: boolean
+        isCodyApp?: boolean
         isCodyChatPage?: boolean
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
         authenticatedUser: AuthenticatedUser | null

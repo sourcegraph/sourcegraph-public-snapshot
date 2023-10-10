@@ -94,7 +94,7 @@ td:first-child {
 }
 </style>
 
-# <picture title="Cody"><img class="theme-dark-only" alt="Cody AI" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" alt="Cody AI" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
+# <picture title="Cody"><img class="theme-dark-only" alt="Cody" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" alt="Cody" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
 
 <aside class="beta">
 <p>
@@ -135,13 +135,13 @@ To start using Cody, pick one of the following:
   </li>
   <li>
      <a class="card text-left" target="_blank" href="https://sourcegraph.com/get-cody">
-      <h3><img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/cody-logomark-default.svg"/>Cody App</h3>
+      <h3><img alt="Cody App" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/cody-logomark-default.svg"/>Cody App</h3>
       <p>Free Cody desktop app to try Cody with your local codebase.</p>
       </a>
   </li>
   <li>
     <a class="card text-left" target="_blank" href="https://about.sourcegraph.com/cody/pricing">
-      <h3><img alt="JetBrains" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody Enterprise</h3>
+      <h3><img alt="Cody Enterprise" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody Enterprise</h3>
       <p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p>
     </a>
   </li>

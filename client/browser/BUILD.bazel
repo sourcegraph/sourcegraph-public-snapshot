@@ -2,7 +2,7 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "sass", "ts_project")
-load("//dev:webpack.bzl", "webpack_bundle")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:build_code_intel_extensions.bzl", "build_code_intel_extensions")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
@@ -149,9 +149,14 @@ ts_project(
         "src/browser-extension/web-extension-api/runtime.ts",
         "src/browser-extension/web-extension-api/storage.ts",
         "src/browser-extension/web-extension-api/types.ts",
+        "src/config/background.entry.ts",
+        "src/config/content.entry.ts",
+        "src/config/extension.entry.ts",
+        "src/config/options.entry.ts",
+        "src/config/page.entry.ts",
         "src/globals.d.ts",
-        "src/native-integration/integration.main.ts",
-        "src/native-integration/phabricator/integration.main.ts",
+        "src/native-integration/nativeIntegration.main.ts",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.ts",
         "src/native-integration/phabricator/util.ts",
         "src/shared/backend/diffs.tsx",
         "src/shared/backend/extension-api-conversion.tsx",
@@ -211,6 +216,7 @@ ts_project(
         "src/shared/components/TrackAnchorClick.tsx",
         "src/shared/components/WildcardThemeProvider.tsx",
         "src/shared/context.ts",
+        "src/shared/extensionHostWorker.ts",
         "src/shared/platform/context.ts",
         "src/shared/platform/extensionHost.ts",
         "src/shared/platform/inlineExtensionsService.ts",
@@ -336,20 +342,19 @@ jest_test(
 )
 
 filegroup(
-    name = "entry-conigs",
+    name = "entry-configs",
     srcs = glob(["src/config/*.js"]),
 )
 
-webpack_bundle(
+esbuild(
     name = "bundle",
     srcs = [
         # JSON imports
-        "src/browser-extension/manifest.spec.json",
         "code-intel-extensions.json",
 
         # SRCS
         ":browser",
-        ":entry-conigs",
+        ":entry-configs",
         ":module_styles",
         ":package_styles",
 
@@ -358,27 +363,21 @@ webpack_bundle(
         "//:browserslist",
         "//:package_json",
 
-        # STATIC ASSSETS
+        # STATIC ASSETS
         "//client/browser/assets",
     ],
-    # HACK: these entry-points are duplicated in the webpack config
-    # because rule_webpack does not support multi-main entry-points (defined by arrays)
-    # but it mirror ouptut files list defined in the webpack config.
-    entry_points = {
-        "src/browser-extension/scripts/backgroundPage.main.js": "background",
-        "src/browser-extension/scripts/contentPage.main.js": "inject",
-        "src/browser-extension/scripts/optionsPage.main.js": "options",
-        "src/browser-extension/scripts/afterInstallPage.main.js": "after-install",
-        "src/native-integration/integration.main.js": "integration",
-        "src/native-integration/phabricator/integration.main.js": "phabricator",
-        "src/app.css": "style",
-        "src/branded.css": "branded-style",
-    },
-    env = {
-        "NODE_ENV": "production",
-    },
-    output_dir = True,
-    webpack_config = "//client/browser/config:webpack-config",
+    config = "//client/browser/config:esbuild-config",
+    entry_points = [
+        "src/browser-extension/scripts/backgroundPage.main.js",
+        "src/browser-extension/scripts/contentPage.main.js",
+        "src/browser-extension/scripts/optionsPage.main.js",
+        "src/browser-extension/scripts/afterInstallPage.main.js",
+        "src/native-integration/nativeIntegration.main.js",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.js",
+        "src/app.css",
+        "src/branded.css",
+        "src/shared/extensionHostWorker.js",
+    ],
     deps = ["//client/browser/config"],
 )
 

@@ -2,7 +2,6 @@
 
 set -e
 
-echo "ENTERPRISE=$ENTERPRISE"
 echo "NODE_ENV=$NODE_ENV"
 echo "# Note: NODE_ENV only used for build command"
 

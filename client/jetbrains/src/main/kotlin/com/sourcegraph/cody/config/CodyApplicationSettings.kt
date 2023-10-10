@@ -12,11 +12,14 @@ data class CodyApplicationSettings(
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
     var isGetStartedNotificationDismissed: Boolean = false,
+    var isNotLoggedInNotificationDismissed: Boolean = false,
     var anonymousUserId: String? = null,
     var isInstallEventLogged: Boolean = false,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Int? = null,
     var blacklistedLanguageIds: List<String> = listOf(),
+    var isOnboardingGuidanceDismissed: Boolean = false,
+    var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 
@@ -26,17 +29,20 @@ data class CodyApplicationSettings(
     this.isCodyDebugEnabled = state.isCodyDebugEnabled
     this.isCodyVerboseDebugEnabled = state.isCodyVerboseDebugEnabled
     this.isGetStartedNotificationDismissed = state.isGetStartedNotificationDismissed
+    this.isNotLoggedInNotificationDismissed = state.isNotLoggedInNotificationDismissed
     this.anonymousUserId = state.anonymousUserId
     this.isInstallEventLogged = state.isInstallEventLogged
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled
     this.customAutocompleteColor = state.customAutocompleteColor
     this.blacklistedLanguageIds = state.blacklistedLanguageIds
+    this.isOnboardingGuidanceDismissed = state.isOnboardingGuidanceDismissed
+    this.shouldAcceptNonTrustedCertificatesAutomatically =
+        state.shouldAcceptNonTrustedCertificatesAutomatically
   }
 
   companion object {
     @JvmStatic
-    fun getInstance(): CodyApplicationSettings {
-      return service<CodyApplicationSettings>()
-    }
+    val instance: CodyApplicationSettings
+      get() = service<CodyApplicationSettings>()
   }
 }

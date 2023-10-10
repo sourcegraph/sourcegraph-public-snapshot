@@ -47,10 +47,17 @@ func (inputs Inputs) MaxResults() int {
 
 // DefaultLimit is the default limit to use if not specified in query.
 func (inputs Inputs) DefaultLimit() int {
-	if inputs.Protocol == Batch {
+	switch inputs.Protocol {
+	case Streaming:
+		return limits.DefaultMaxSearchResultsStreaming
+	case Batch:
 		return limits.DefaultMaxSearchResults
+	case Exhaustive:
+		return limits.DefaultMaxSearchResultsExhaustive
+	default:
+		// Default to our normal interactive path
+		return limits.DefaultMaxSearchResultsStreaming
 	}
-	return limits.DefaultMaxSearchResultsStreaming
 }
 
 type Mode int
@@ -60,11 +67,20 @@ const (
 	SmartSearch      = 1 << (iota - 1)
 )
 
+// Protocol encodes who the target client is and can be used to adjust default
+// limits (or other behaviour changes) in the search code.
 type Protocol int
 
 const (
+	// Streaming is our default interactive protocol. We use moderate default
+	// limits to avoid doing unnecessary work.
 	Streaming Protocol = iota
+	// Batch needs to finish searching in an interactive time, so has limits
+	// which are low.
 	Batch
+	// Exhaustive is run as a background job and as such has significantly
+	// higher default limits.
+	Exhaustive
 )
 
 func (p Protocol) String() string {
@@ -73,6 +89,8 @@ func (p Protocol) String() string {
 		return "Streaming"
 	case Batch:
 		return "Batch"
+	case Exhaustive:
+		return "Exhaustive"
 	default:
 		return fmt.Sprintf("unknown{%d}", p)
 	}
@@ -227,15 +245,13 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOpti
 		searchOpts.DebugScore = true
 	}
 
-	if o.Features.Ranking {
-		// This enables our stream based ranking, where we wait a certain amount
-		// of time to collect results before ranking.
-		searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
+	// This enables our stream based ranking, where we wait a certain amount
+	// of time to collect results before ranking.
+	searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
 
-		// This enables the use of document ranks in scoring, if they are available.
-		searchOpts.UseDocumentRanks = true
-		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
-	}
+	// This enables the use of document ranks in scoring, if they are available.
+	searchOpts.UseDocumentRanks = true
+	searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 
 	return searchOpts
 }
@@ -404,10 +420,6 @@ type Features struct {
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
-
-	// Ranking when true will use a our new #ranking signals and code paths
-	// for ranking results from Zoekt.
-	Ranking bool `json:"ranking"`
 
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.

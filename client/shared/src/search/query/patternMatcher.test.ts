@@ -2,8 +2,6 @@
 // verifier that patterns are properly typed against their input value.
 // Usage of the @ts-expect-error is intentional and should be kept in place
 
-/* eslint-disable id-length */
-
 import { every, matchesValue, some, oneOf, allOf, not, type PatternOfNoInfer } from './patternMatcher'
 
 declare global {

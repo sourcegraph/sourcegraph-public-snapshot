@@ -26,7 +26,7 @@ internal fun CodyLoginRequest.loginWithToken(
 
 private val CodyLoginRequest.isLoginUniqueChecker: UniqueLoginPredicate
   get() = { login, server ->
-    !isCheckLoginUnique || CodyAuthenticationManager.getInstance().isAccountUnique(login, server)
+    !isCheckLoginUnique || CodyAuthenticationManager.instance.isAccountUnique(login, server)
   }
 
 private fun CodyLoginRequest.configure(dialog: BaseLoginDialog) {
@@ -40,5 +40,6 @@ private fun CodyLoginRequest.configure(dialog: BaseLoginDialog) {
 
 private fun BaseLoginDialog.getAuthData(): CodyAuthData? {
   DialogManager.show(this)
-  return if (isOK) CodyAuthData(CodyAccount.create(login, server), login, token) else null
+  return if (isOK) CodyAuthData(CodyAccount.create(login, displayName, server), login, token)
+  else null
 }

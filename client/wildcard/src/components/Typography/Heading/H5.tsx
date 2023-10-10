@@ -6,7 +6,6 @@ import { Heading, type HeadingProps } from './Heading'
 
 type H5Props = HeadingProps
 
-// eslint-disable-next-line id-length
 export const H5 = React.forwardRef(({ children, as = 'h5', ...props }, reference) => (
     <Heading as={as} styleAs="h5" {...props} ref={reference}>
         {children}

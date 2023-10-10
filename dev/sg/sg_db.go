@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -411,7 +411,7 @@ func githubClient(ctx context.Context, baseurl string, token string) (*github.Cl
 	}
 	baseURL.Path = "/api/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 	if err != nil {
 		return nil, err
 	}

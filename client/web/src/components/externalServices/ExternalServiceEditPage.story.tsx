@@ -36,7 +36,7 @@ const config: Meta = {
 export default config
 
 const externalService = {
-    __typename: 'ExternalService' as const,
+    __typename: 'ExternalService',
     id: 'service123',
     kind: ExternalServiceKind.GITHUB,
     warning: null,
@@ -55,9 +55,18 @@ const externalService = {
         namespaceName: 'johndoe',
         url: '/users/johndoe',
     },
-}
+    rateLimiterState: {
+        __typename: 'RateLimiterState',
+        burst: 10,
+        currentCapacity: 10,
+        infinite: false,
+        interval: 3600,
+        lastReplenishment: new Date().toISOString(),
+        limit: 5,
+    },
+} as ExternalServiceFields
 
-function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceFields): WildcardMockLink {
+function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
     return new WildcardMockLink([
         {
             request: {

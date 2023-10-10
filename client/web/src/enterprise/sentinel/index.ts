@@ -1,1 +1,0 @@
-export { SentinelView } from './SentinelView'

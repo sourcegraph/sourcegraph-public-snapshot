@@ -10,6 +10,7 @@
   "IsLocked": false,
   "IsDisabled": false,
   "ViewerPermission": "WRITE",
+  "visibility": "public",
   "RepositoryTopics": {
    "Nodes": [
     {

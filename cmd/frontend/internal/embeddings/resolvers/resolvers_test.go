@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
@@ -42,7 +41,7 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
+	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
 		if fileName == "testfile" {
 			return []byte("test\nfirst\nfour\nlines\nplus\nsome\nmore"), nil
 		}

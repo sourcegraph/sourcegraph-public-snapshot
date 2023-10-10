@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = {
-  extends: '@sourcegraph/eslint-config',
+  extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
     browser: true,
     node: true,
@@ -31,7 +31,7 @@ const config = {
       },
     ],
   },
-  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard'],
+  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard', 'storybook'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
@@ -41,6 +41,7 @@ const config = {
     // This rule doesn't understand type imports and we already have
     // import/no-duplicates enabled as well, which does understand type imports
     'no-duplicate-imports': 'off',
+    'id-length': 'off',
     '@typescript-eslint/consistent-type-exports': 'warn',
     '@typescript-eslint/consistent-type-imports': [
       'warn',

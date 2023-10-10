@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
@@ -63,7 +65,15 @@ func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *ht
 		metricFailedLockRequestsGauge.Inc()
 		// Note that we do NOT fail the request here, this lock is considered best
 		// effort.
-		logger.Error("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
+		//
+		// We log a warning if the error is ErrTaken, since this can happen from time to time.
+		// Otherwise we log an error. It means that we didn't get the global lock in the permitted
+		// number of tries. Instead of blocking indefinitely, we let the request pass.
+		if errors.HasType(err, &redsync.ErrTaken{}) {
+			logger.Warn("could not acquire mutex to talk to GitHub.com in time, trying to make request concurrently")
+		} else {
+			logger.Error("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
+		}
 	} else {
 		didGetLock = true
 	}
@@ -77,7 +87,11 @@ func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *ht
 	if didGetLock {
 		if _, err := lock.UnlockContext(context.Background()); err != nil {
 			metricFailedUnlockRequestsGauge.Inc()
-			logger.Error("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+			if errors.HasType(err, &redsync.ErrTaken{}) {
+				logger.Warn("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+			} else {
+				logger.Error("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+			}
 		}
 	}
 
@@ -115,6 +129,17 @@ func (m *mockLock) UnlockContext(_ context.Context) (bool, error) {
 	return false, nil
 }
 
+// With a default number of retries of 32, this will average to 8 seconds.
+const (
+	minRetryDelayMilliSec = 200
+	maxRetryDelayMilliSec = 300
+)
+
+// From https://github.com/go-redsync/redsync/blob/master/redsync.go
+func retryDelay(tries int) time.Duration {
+	return time.Duration(rand.Intn(maxRetryDelayMilliSec-minRetryDelayMilliSec)+minRetryDelayMilliSec) * time.Millisecond
+}
+
 func lockForToken(logger log.Logger, token string) lock {
 	if testLock != nil {
 		return testLock
@@ -134,7 +159,7 @@ func lockForToken(logger log.Logger, token string) lock {
 	}
 
 	locker := redsync.New(redigo.NewPool(pool))
-	return locker.NewMutex(fmt.Sprintf("github-concurrency:%s", hashedToken))
+	return locker.NewMutex(fmt.Sprintf("github-concurrency:%s", hashedToken), redsync.WithRetryDelayFunc(retryDelay))
 }
 
 type inMemoryLock struct{ mu *sync.Mutex }

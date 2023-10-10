@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -58,7 +57,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		}{
 			ExternalAccount: graphql.ID(base64.URLEncoding.EncodeToString([]byte("ExternalAccount:1"))),
 		}
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 			if req.Reason != database.ReasonExternalAccountDeleted {
 				t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountDeleted)
 			}
@@ -184,7 +183,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				AccountDetails: tc.accountDetails,
 			}
 
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 				if req.UserIDs[0] != tc.user.ID {
 					t.Errorf("got userID %d, want %d", req.UserIDs[0], tc.user.ID)
 				}

@@ -1,9 +1,9 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "sass", "ts_project")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:defs.bzl", "sass", "ts_project")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # TODO(bazel): webpack workers?
@@ -58,7 +58,6 @@ sass(
     ),
     deps = [
         "//:node_modules/@reach/tabs",
-        "//:node_modules/@vscode/codicons",
         "//client/wildcard:global-styles",
     ],
 )
@@ -193,7 +192,6 @@ ts_project(
         "src/webview/sidebars/search/extension-host/main.worker.ts",
         "src/webview/sidebars/search/extension-host/worker.ts",
         "src/webview/sidebars/search/index.tsx",
-        "src/webview/theming/monacoTheme.ts",
         "src/webview/theming/sourcegraphTheme.ts",
     ],
     tsconfig = ":tsconfig",
@@ -232,7 +230,6 @@ ts_project(
         "//:node_modules/https-proxy-agent",
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
-        "//:node_modules/monaco-editor",
         "//:node_modules/node-fetch",
         "//:node_modules/react",
         "//:node_modules/react-dom",

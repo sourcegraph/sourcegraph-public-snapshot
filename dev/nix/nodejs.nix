@@ -1,5 +1,5 @@
 { pkgs, fetchurl }:
-pkgs.nodejs-16_x.overrideAttrs (oldAttrs: {
+pkgs.nodejs-18_x.overrideAttrs (oldAttrs: {
   # don't override version here, as it won't be in binary cache
   # and building is super expensive
   # version = "16.19.0";
@@ -13,12 +13,12 @@ pkgs.nodejs-16_x.overrideAttrs (oldAttrs: {
         sha512 = "sha512-wRS8ap/SPxBqbUMzcUNkoA0suLqk9BqMlvi8dM2FRuhwUDgqVGYLc5jQ6Ww3uqVc+84zJvN2GYmTWCubaoWPtQ==";
       };
     };
-    typescript = oldAttrs.passthru.pkgs.typescript.override rec {
-      version = "4.9.5";
+    typescript = oldAttrs.passthru.pkgs.typescript.overrideAttrs (oldAttrs: rec {
+      version = "5.2.2";
       src = fetchurl {
         url = "https://registry.npmjs.org/typescript/-/typescript-${version}.tgz";
-        sha512 = "sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==";
+        sha512 = "sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==";
       };
-    };
+    });
   };
 })

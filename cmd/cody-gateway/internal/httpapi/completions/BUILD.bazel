@@ -42,6 +42,7 @@ go_test(
     srcs = ["anthropic_test.go"],
     embed = [":completions"],
     deps = [
+        "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/tokenizer",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_hexops_autogold_v2//:autogold",

@@ -10,8 +10,9 @@ import (
 func Containers() *monitoring.Dashboard {
 	var (
 		// HACK:
+		// TODO: This is no longer true, we can clean this up.
 		// Image names are defined in enterprise package
-		// github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images
+		// github.com/sourcegraph/sourcegraph/dev/ci/images
 		// Hence we can't use the exported names in OSS here.
 		// Also, the exported names do not cover edge cases such as `pgsql`, `codeintel-db`, and `codeinsights-db`.
 		// We cannot use "wildcard" to cover all running containers:

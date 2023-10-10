@@ -27,6 +27,7 @@ import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import type { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../tour/hooks'
 
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
@@ -54,6 +55,10 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
+    const showOnboardingTour = useShowOnboardingTour({
+        authenticatedUser: props.authenticatedUser,
+        isSourcegraphDotCom: props.isSourcegraphDotCom,
+    })
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
@@ -98,12 +103,13 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                     ariaLabel="File sidebar"
                 >
                     <div className="d-flex flex-column h-100 w-100">
-                        <GettingStartedTour
-                            className="mr-3"
-                            telemetryService={props.telemetryService}
-                            isAuthenticated={!!props.authenticatedUser}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
+                        {showOnboardingTour && (
+                            <GettingStartedTour
+                                className="mr-3"
+                                telemetryService={props.telemetryService}
+                                authenticatedUser={props.authenticatedUser}
+                            />
+                        )}
                         <Tabs
                             className="w-100 test-repo-revision-sidebar h-25 d-flex flex-column flex-grow-1"
                             index={persistedTabIndex}
