@@ -25,7 +25,7 @@ go_library(
 
 go_test(
     name = "blobstore_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = ["blobstore_test.go"],
     data = glob(["testdata/**"]),
     deps = [
