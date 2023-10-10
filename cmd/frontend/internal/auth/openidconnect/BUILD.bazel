@@ -18,6 +18,7 @@ go_library(
         "//cmd/frontend/external/session",
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
+        "//cmd/frontend/internal/auth/authutil",
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/conf",

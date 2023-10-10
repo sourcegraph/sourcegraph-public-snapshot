@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,12 +17,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -82,17 +81,11 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		isConnect := r.URL.Query().Get("connect") == "true"
-
-		// If this is not an account connection attempt, and the user is already signed in,
-		// sign the user out first.
-		if !isConnect && actor.FromContext(r.Context()).IsAuthenticated() {
-			err := session.SetActor(w, r, nil, 0, time.Time{})
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+		if err := authutil.ConnectOrSignOut(w, r); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+
 		id := r.URL.Query().Get("pc")
 		p := GetProvider(serviceType, id)
 		if p == nil {

@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -108,16 +108,9 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 				return
 
 			case "/login":
-				isConnect := r.URL.Query().Get("connect") == "true"
-
-				// If this is not an account connection attempt, and the user is already signed in,
-				// sign the user out first.
-				if !isConnect && actor.FromContext(r.Context()).IsAuthenticated() {
-					err := session.SetActor(w, r, nil, 0, time.Time{})
-					if err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
+				if err := authutil.ConnectOrSignOut(w, r); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
 				}
 
 				// It is safe to use r.Referer() because the redirect-to URL will be checked later,
