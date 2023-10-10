@@ -5,7 +5,7 @@ import type { Story, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { H1, H4, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'

@@ -100,7 +100,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 		log:                 log.Scoped("github.v4", "github v4 client"),
 		urn:                 urn,
 		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		githubDotCom:        URLIsGitHubDotCom(apiURL),
 		auth:                a,
 		httpClient:          cli,
 		internalRateLimiter: rl,

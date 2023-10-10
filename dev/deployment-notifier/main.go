@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/honeycombio/libhoney-go"
 	"github.com/honeycombio/libhoney-go/transmission"
 	"github.com/slack-go/slack"

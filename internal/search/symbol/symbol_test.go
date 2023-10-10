@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
@@ -13,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSearchZoektDoesntPanicWithNilQuery(t *testing.T) {
@@ -48,10 +49,8 @@ func TestFilterZoektResults(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	checker, err := srp.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	checker := srp.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
+
 	results := []*result.SymbolMatch{
 		{
 			Symbol: result.Symbol{},

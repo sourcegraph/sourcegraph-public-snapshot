@@ -40,6 +40,46 @@ func P4TestWithTrust(ctx context.Context, p4home, p4port, p4user, p4passwd strin
 	return err
 }
 
+// P4UserIsSuperUser checks if the given credentials are for a super level user.
+// If the user is a super user, no error is returned. If not, ErrIsNotSuperUser
+// is returned.
+// Other errors may occur.
+func P4UserIsSuperUser(ctx context.Context, p4home, p4port, p4user, p4passwd string) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
+	cmd := exec.CommandContext(ctx, "p4", "protects", "-u", p4user)
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+p4port,
+		"P4USER="+p4user,
+		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
+	)
+
+	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
+
+		if strings.Contains(err.Error(), "You don't have permission for this operation.") {
+			return ErrIsNotSuperUser
+		}
+
+		if len(out) > 0 {
+			err = errors.Errorf("%s (output follows)\n\n%s", err, out)
+		}
+
+		return err
+	}
+
+	return nil
+
+}
+
+var ErrIsNotSuperUser = errors.New("the user does not have super access")
+
 // P4Trust blindly accepts fingerprint of the Perforce server.
 func P4Trust(ctx context.Context, p4home, host string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)

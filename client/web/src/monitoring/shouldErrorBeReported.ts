@@ -7,15 +7,27 @@ export function shouldErrorBeReported(error: unknown): boolean {
         return error.status < 500
     }
 
-    if (isWebpackChunkError(error) || isAbortError(error) || isNotAuthenticatedError(error) || isNetworkError(error)) {
+    if (isChunkLoadError(error) || isAbortError(error) || isNotAuthenticatedError(error) || isNetworkError(error)) {
         return false
     }
 
     return true
 }
 
-export function isWebpackChunkError(value: unknown): boolean {
+export function isChunkLoadError(value: unknown): boolean {
+    return isWebpackChunkError(value) || isDynamicImportError(value)
+}
+
+function isWebpackChunkError(value: unknown): boolean {
     return isErrorLike(value) && (value.name === 'ChunkLoadError' || /loading css chunk/gi.test(value.message))
+}
+
+function isDynamicImportError(value: unknown): boolean {
+    return (
+        isErrorLike(value) &&
+        value.name === 'TypeError' &&
+        value.message.startsWith('Failed to fetch dynamically imported module')
+    )
 }
 
 function isAbortError(value: unknown): boolean {

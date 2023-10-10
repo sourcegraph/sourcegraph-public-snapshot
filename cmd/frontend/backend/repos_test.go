@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -168,13 +167,13 @@ func TestReposGetInventory(t *testing.T) {
 		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
-	gitserverClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	gitserverClient.StatFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
 		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
 	})
-	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string, _ bool) ([]fs.FileInfo, error) {
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, _ bool) ([]fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -190,7 +189,7 @@ func TestReposGetInventory(t *testing.T) {
 			panic("unhandled mock ReadDir " + name)
 		}
 	})
-	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
+	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}

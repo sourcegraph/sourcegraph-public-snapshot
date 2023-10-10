@@ -22,7 +22,7 @@ type linter = check.Check[*repo.State]
 
 // Targets lists all available linter targets. Each target consists of multiple linters.
 //
-// These should align with the names in 'enterprise/dev/ci/internal/ci/changed'
+// These should align with the names in 'dev/ci/internal/ci/changed'
 var Targets = []Target{
 	{
 		Name:        "urls",
@@ -157,11 +157,9 @@ func bazelTest(name, target string) *linter {
 // emits that seem inconsequential, for example:
 //
 //	warning "@storybook/addon-storyshots > react-test-renderer@16.14.0" has incorrect peer dependency "react@^16.14.0".
-//	warning "@storybook/addon-storyshots > @storybook/core > @storybook/core-server > @storybook/builder-webpack4 > webpack-filter-warnings-plugin@1.2.1" has incorrect peer dependency "webpack@^2.0.0 || ^3.0.0 || ^4.0.0".
 //	warning " > @storybook/react@6.5.9" has unmet peer dependency "require-from-string@^2.0.2".
 //	warning "@storybook/react > react-element-to-jsx-string@14.3.4" has incorrect peer dependency "react@^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1".
 //	warning " > @testing-library/react-hooks@8.0.0" has incorrect peer dependency "react@^16.9.0 || ^17.0.0".
-//	warning "storybook-addon-designs > @figspec/react@1.0.0" has incorrect peer dependency "react@^16.14.0 || ^17.0.0".
 //	warning Workspaces can only be enabled in private projects.
 //	warning Workspaces can only be enabled in private projects.
 func pnpmInstallFilter() pipeline.Pipeline {

@@ -76,13 +76,15 @@ Simple.argTypes = {
     totalCount: {
         name: 'totalCount',
         control: { type: 'number' },
-        defaultValue: 5,
     },
     totalLabel: {
         name: 'totalLabel',
         control: { type: 'string' },
-        defaultValue: 'pages',
     },
+}
+Simple.args = {
+    totalCount: 5,
+    totalLabel: 'pages',
 }
 
 Simple.parameters = {

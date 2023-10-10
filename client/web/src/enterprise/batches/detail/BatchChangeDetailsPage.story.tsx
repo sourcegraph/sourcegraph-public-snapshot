@@ -50,12 +50,14 @@ const config: Meta = {
         },
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         isClosed: {
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        viewerCanAdminister: true,
+        isClosed: false,
     },
 }
 
@@ -161,63 +163,57 @@ const Template: Story<{
 }
 
 export const Overview = Template.bind({})
-Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change' }
+Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: false }
 Overview.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
 export const BurndownChart = Template.bind({})
-BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' }
+BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart', supersedingBatchSpec: false }
 BurndownChart.storyName = 'Burndown chart'
 BurndownChart.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
 export const SpecFile = Template.bind({})
-SpecFile.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' }
+SpecFile.args = {
+    url: '/users/alice/batch-changes/awesome-batch-change?tab=spec',
+    supersedingBatchSpec: false,
+    viewerCanAdminister: false,
+}
 SpecFile.storyName = 'Spec file'
 SpecFile.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
-    viewerCanAdminister: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
+    viewerCanAdminister: {},
 }
 
 export const Archived = Template.bind({})
-Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' }
+Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived', supersedingBatchSpec: false }
 Archived.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
 export const BulkOperations = Template.bind({})
-BulkOperations.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations' }
+BulkOperations.args = {
+    url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations',
+    supersedingBatchSpec: false,
+}
 BulkOperations.storyName = 'Bulk operations'
 BulkOperations.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
 export const SupersededBatchSpec = Template.bind({})
 SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: true }
 SupersededBatchSpec.storyName = 'Superseded batch-spec'
 SupersededBatchSpec.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: true,
-    },
+    supersedingBatchSpec: {},
 }
 
 export const UnpublishableBatchSpec = Template.bind({})
 UnpublishableBatchSpec.args = {
     url: '/users/alice/batch-changes/awesome-batch-change',
+    supersedingBatchSpec: true,
     currentBatchSpec: {
         ...MOCK_BATCH_CHANGE.currentSpec,
         viewerBatchChangesCodeHosts: {
@@ -234,9 +230,7 @@ UnpublishableBatchSpec.args = {
 }
 UnpublishableBatchSpec.storyName = 'Batch spec with unpublishable changesets'
 UnpublishableBatchSpec.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: true,
-    },
+    supersedingBatchSpec: {},
 }
 
 export const EmptyChangesets: Story = args => {

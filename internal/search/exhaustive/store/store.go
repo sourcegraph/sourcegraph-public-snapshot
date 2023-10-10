@@ -62,6 +62,7 @@ type operations struct {
 	createExhaustiveSearchJob *observation.Operation
 	cancelSearchJob           *observation.Operation
 	getExhaustiveSearchJob    *observation.Operation
+	userHasAccess             *observation.Operation
 	listExhaustiveSearchJobs  *observation.Operation
 	deleteExhaustiveSearchJob *observation.Operation
 
@@ -94,6 +95,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		createExhaustiveSearchJob: op("CreateExhaustiveSearchJob"),
 		cancelSearchJob:           op("CancelSearchJob"),
 		getExhaustiveSearchJob:    op("GetExhaustiveSearchJob"),
+		userHasAccess:             op("UserHasAccess"),
 		listExhaustiveSearchJobs:  op("ListExhaustiveSearchJobs"),
 		deleteExhaustiveSearchJob: op("DeleteExhaustiveSearchJob"),
 

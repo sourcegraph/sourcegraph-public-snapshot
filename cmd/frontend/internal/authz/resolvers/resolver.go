@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -181,7 +180,7 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: database.ReasonManualRepoSync, TriggeredByUserID: actor.FromContext(ctx).UID}
+	req := permssync.ScheduleSyncOpts{RepoIDs: []api.RepoID{repoID}, Reason: database.ReasonManualRepoSync, TriggeredByUserID: actor.FromContext(ctx).UID}
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
 
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -202,7 +201,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonManualUserSync, TriggeredByUserID: actor.FromContext(ctx).UID}
+	req := permssync.ScheduleSyncOpts{UserIDs: []int32{userID}, Reason: database.ReasonManualUserSync, TriggeredByUserID: actor.FromContext(ctx).UID}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}

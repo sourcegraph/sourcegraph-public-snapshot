@@ -198,7 +198,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				require.NoError(t, err)
 				err = db.Users().SetIsSiteAdmin(ctx, u.ID, true)
 				require.NoError(t, err)
-				err = db.UserExternalAccounts().AssociateUserAndSave(ctx, u.ID, extsvc.AccountSpec{
+				_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, u.ID, extsvc.AccountSpec{
 					ServiceType: auth.SourcegraphOperatorProviderType,
 					ServiceID:   serviceID,
 					ClientID:    "soap_client",

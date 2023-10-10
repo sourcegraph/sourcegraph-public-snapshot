@@ -94,24 +94,26 @@ export const FullCustomizable: Story = args => (
 FullCustomizable.argTypes = {
     compact: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     expandCommitMessageBody: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     showSHAAndParentsRow: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     hideExpandCommitMessageBody: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     preferAbsoluteTimestamps: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
+}
+FullCustomizable.args = {
+    compact: false,
+    expandCommitMessageBody: false,
+    showSHAAndParentsRow: false,
+    hideExpandCommitMessageBody: false,
+    preferAbsoluteTimestamps: false,
 }
 
 FullCustomizable.storyName = 'Full customizable'

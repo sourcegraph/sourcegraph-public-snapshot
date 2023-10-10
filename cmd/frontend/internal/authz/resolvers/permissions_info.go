@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -60,7 +62,7 @@ func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
 var permissionsInfoRepositoryConnectionMaxPageSize = 100
 
 var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
-	OrderBy:     database.OrderBy{{Field: "repo.name"}},
+	OrderBy:     database.OrderBy{{Field: "repo.id"}},
 	Ascending:   true,
 	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
 }
@@ -91,13 +93,18 @@ type permissionsInfoRepositoriesStore struct {
 }
 
 func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.PermissionsInfoRepositoryResolver, _ database.OrderBy) (*string, error) {
-	cursor := node.Repository().Name()
+	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
 func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	cursorSQL := fmt.Sprintf("'%s'", cursor)
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cursor))
+	if err != nil {
+		return nil, err
+	}
+
+	cursorSQL := strconv.Itoa(int(repoID))
 
 	return &cursorSQL, nil
 }
@@ -135,8 +142,14 @@ func (r permissionsInfoRepositoryResolver) ID() graphql.ID {
 	return graphqlbackend.MarshalRepositoryID(r.perm.Repo.ID)
 }
 
-func (r permissionsInfoRepositoryResolver) Repository() *graphqlbackend.RepositoryResolver {
-	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), r.perm.Repo)
+func (r permissionsInfoRepositoryResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	repo, err := r.db.Repos().Get(ctx, r.perm.Repo.ID)
+	// If the errcode is NotFound, we return nil, nil, as we know that the repo should exist at this point.
+	// So this should mean that this user simply cannot see the repository.
+	if err != nil && errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), repo), err
 }
 
 func (r permissionsInfoRepositoryResolver) Reason() string {

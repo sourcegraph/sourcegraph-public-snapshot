@@ -20,8 +20,10 @@ const config: Meta = {
     argTypes: {
         inline: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        inline: true,
     },
 }
 

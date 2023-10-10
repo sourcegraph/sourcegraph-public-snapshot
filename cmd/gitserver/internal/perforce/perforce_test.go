@@ -221,6 +221,7 @@ func TestServicePipeline(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.RepoCommitsChangelistsFunc.SetDefaultReturn(dbmocks.NewMockRepoCommitsChangelistsStore())
 
 	logger := logtest.NoOp(t)
 	svc := NewService(ctx, observation.NewContext(logger), logger, db, list.New())

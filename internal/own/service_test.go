@@ -15,7 +15,6 @@ import (
 	types2 "github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -44,7 +43,7 @@ type repoPath struct {
 // repoFiles is a fake git client mapping a file
 type repoFiles map[repoPath]string
 
-func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (fs repoFiles) ReadFile(_ context.Context, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
 	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
 	if !ok {
 		return nil, os.ErrNotExist

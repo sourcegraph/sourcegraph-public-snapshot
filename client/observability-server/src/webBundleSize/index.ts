@@ -29,7 +29,7 @@ const environment = cleanEnv(process.env, {
 const bundleSizeStats = getBundleSizeStats({
     staticAssetsPath: STATIC_ASSETS_PATH,
     bundlesizeConfigPath: path.join(WORKSPACES_PATH, 'web/bundlesize.config'),
-    webpackManifestPath: path.join(STATIC_ASSETS_PATH, 'webpack.manifest.json'),
+    webBuildManifestPath: path.join(STATIC_ASSETS_PATH, 'web.manifest.json'),
 })
 
 const commit = execSync('git rev-parse HEAD').toString().trim()

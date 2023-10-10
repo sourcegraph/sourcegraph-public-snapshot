@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -59,12 +58,12 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		"deadbeef09": testCommitDateFor("deadbeef09", now),
 	}
 
-	commitDate := func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commitID api.CommitID) (string, time.Time, bool, error) {
+	commitDate := func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (string, time.Time, bool, error) {
 		commitDate, ok := createdAt[string(commitID)]
 		return string(commitID), commitDate, ok, nil
 	}
 
-	refDescriptions := func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, _ ...string) (map[string][]gitdomain.RefDescription, error) {
+	refDescriptions := func(ctx context.Context, repo api.RepoName, _ ...string) (map[string][]gitdomain.RefDescription, error) {
 		refDescriptions := map[string][]gitdomain.RefDescription{}
 		for branch, commit := range branchHeads {
 			branchHeadCreateDate := createdAt[commit]
@@ -88,7 +87,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		return refDescriptions, nil
 	}
 
-	commitsUniqueToBranch := func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error) {
+	commitsUniqueToBranch := func(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error) {
 		branches := map[string]time.Time{}
 		for _, commit := range branchMembers[branchName] {
 			if maxAge == nil || !createdAt[commit].Before(*maxAge) {

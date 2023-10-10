@@ -9,7 +9,7 @@ import { OrDivider } from './OrDivider'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/OrDivider',
+    title: 'web/auth/OrDivider',
     decorators: [decorator],
 }
 

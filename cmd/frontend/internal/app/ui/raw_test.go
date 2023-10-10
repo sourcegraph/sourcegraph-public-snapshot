@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -283,7 +282,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 
 		gsClient := gitserver.NewMockClient()
 		gsClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: os.ModeDir}, nil)
-		gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+		gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
 				&fileutil.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
 				&fileutil.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
@@ -321,7 +320,7 @@ c.go`
 
 		gitserverClient := gitserver.NewMockClient()
 		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		})
 
@@ -354,7 +353,7 @@ c.go`
 
 		gitserverClient := gitserver.NewMockClient()
 		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		})
 

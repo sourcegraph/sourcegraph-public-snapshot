@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-github/v31/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
@@ -27,7 +27,7 @@ func newGHEClient(ctx context.Context, baseURL, uploadURL, token string) (*githu
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	return github.NewEnterpriseClient(baseURL, uploadURL, tc)
+	return github.NewClient(tc).WithEnterpriseURLs(baseURL, uploadURL)
 }
 
 func init() {
@@ -246,7 +246,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 		}()
 
 		ownerDir := filepath.Join(wkr.scratchDir, owner)
-		err := os.MkdirAll(ownerDir, 0777)
+		err := os.MkdirAll(ownerDir, 0o777)
 		if err != nil {
 			wkr.logger.Error("failed to create owner dir", "ownerDir", ownerDir, "error", err)
 			return err

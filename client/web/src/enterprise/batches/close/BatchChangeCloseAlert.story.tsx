@@ -18,8 +18,10 @@ const config: Meta = {
     argTypes: {
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        viewerCanAdminister: true,
     },
 }
 
@@ -47,8 +49,10 @@ export const HasOpenChangesets: Story = args => {
 HasOpenChangesets.argTypes = {
     totalCount: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
+}
+HasOpenChangesets.args = {
+    totalCount: 10,
 }
 
 HasOpenChangesets.storyName = 'Has open changesets'

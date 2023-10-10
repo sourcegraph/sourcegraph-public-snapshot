@@ -237,11 +237,11 @@ type revisionFetcher struct {
 }
 
 func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
-	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
+	return r.gitserver.ReadFile(ctx, r.repo, r.revision, fileName)
 }
 
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
-	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
+	fileInfos, err := r.gitserver.ReadDir(ctx, r.repo, r.revision, "", true)
 	if err != nil {
 		return nil, err
 	}

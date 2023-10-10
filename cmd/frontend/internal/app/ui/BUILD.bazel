@@ -89,7 +89,6 @@ go_test(
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/ui/router",
         "//internal/api",
-        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
