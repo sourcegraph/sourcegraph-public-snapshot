@@ -202,9 +202,9 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		originalReferrer := ""
-		if event.OriginalReferrer != nil {
-			originalReferrer = *event.OriginalReferrer
+		referrer := ""
+		if event.Referrer != nil {
+			referrer = *event.Referrer
 		}
 		sessionReferrer := ""
 		if event.SessionReferrer != nil {
@@ -231,7 +231,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			FirstSourceURL:         saferFirstSourceUrl,
 			LastSourceURL:          saferLastSourceUrl,
 			Referrer:               saferReferrer,
-			OriginalReferrer:       originalReferrer,
+			OriginalReferrer:       referrer,
 			SessionReferrer:        sessionReferrer,
 			SessionFirstURL:        sessionFirstURL,
 			Source:                 event.Source,
@@ -328,13 +328,13 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	}
 
 	// check if parsedURL is in approved hosts and if so return rawURL
-	 approvedHostsMap := map[string]bool{
-		"sourcegraph.com": true,
-		"about.sourcegraph.com": true,
-		"docs.sourcegraph.com": true,
-		"info.sourcegraph.com": true,
+	approvedHostsMap := map[string]bool{
+		"sourcegraph.com":        true,
+		"about.sourcegraph.com":  true,
+		"docs.sourcegraph.com":   true,
+		"info.sourcegraph.com":   true,
 		"signup.sourcegraph.com": true,
-	  }
+	}
 	if approvedHostsMap[parsedURL.Host] {
 		return rawURL, nil
 	}
