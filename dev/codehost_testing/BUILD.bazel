@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "github_client.go",
         "org.go",
+        "repo.go",
         "reporter.go",
         "scenario.go",
         "team.go",
