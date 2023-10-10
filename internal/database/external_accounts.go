@@ -37,14 +37,12 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 
 // UserExternalAccountsStore provides access to the `user_external_accounts` table.
 type UserExternalAccountsStore interface {
-	// Upsert is used for linking a new, additional external account with an existing
-	// Sourcegraph account.
+	// Upsert either creates or updates a user external account.
+	// acct.UserID should match an existing user ID.
 	//
-	// It creates a user external account and associates it with the specified user. If the external
-	// account already exists and is associated with:
-	//
-	// - the same user: it updates the data and returns the account and a nil error; or
-	// - a different user: it performs no update and returns no account and a non-nil error
+	// If an external account with the same AccountSpec already exists, the
+	// user ID associated with the existing account must match acct.UserID,
+	// otherwise no update will be performed and an error will be returned.
 	Upsert(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error)
 
 	Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error)
@@ -74,12 +72,9 @@ type UserExternalAccountsStore interface {
 
 	ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error)
 
-	// Update is used for authenticating a user (when both their Sourcegraph account and the
-	// association with the external account already exist).
-	//
-	// It looks up the existing user associated with the external account's extsvc.AccountSpec. If
-	// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
-	// CreateUserAndSave for that.
+	// Update updates an existing external account in the database that matches acct.AccountSpec.
+	// The updated external account is returned, and will contain fields from the database
+	// such as the corresponding user ID.
 	Update(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error)
 
 	// UpsertSCIMData updates the external account data for the given user's SCIM account.
