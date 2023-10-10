@@ -68,11 +68,15 @@ func TestGitHubWebhooks(t *testing.T) {
 	require.NoError(t, err)
 
 	accountID := int64(123)
-	_, err = db.UserExternalAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
-		ServiceType: extsvc.TypeGitHub,
-		ServiceID:   "https://github.com/",
-		AccountID:   strconv.Itoa(int(accountID)),
-	}, extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Insert(ctx,
+		&extsvc.Account{
+			UserID: u.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+				AccountID:   strconv.Itoa(int(accountID)),
+			},
+		})
 	require.NoError(t, err)
 
 	es := &types.ExternalService{

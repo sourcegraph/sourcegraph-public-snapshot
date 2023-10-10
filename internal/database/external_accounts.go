@@ -68,7 +68,7 @@ type UserExternalAccountsStore interface {
 	Get(ctx context.Context, id int32) (*extsvc.Account, error)
 
 	// Insert creates the external account record in the database and returns it.
-	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (*extsvc.Account, error)
+	Insert(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error)
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
 
@@ -198,7 +198,12 @@ AND deleted_at IS NULL
 	}
 
 	if rowsAffected == 0 {
-		_, err := s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
+		_, err := s.Insert(ctx,
+			&extsvc.Account{
+				UserID:      userID,
+				AccountSpec: extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID},
+				AccountData: data,
+			})
 		return err
 	}
 
@@ -244,7 +249,7 @@ AND deleted_at IS NULL
 
 	if !exists {
 		// Create the external account (it doesn't yet exist).
-		return tx.Insert(ctx, acct.UserID, acct.AccountSpec, acct.AccountData)
+		return tx.Insert(ctx, acct)
 	}
 
 	var encryptedAuthData, encryptedAccountData, keyID string
@@ -302,15 +307,19 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return nil, err
 	}
 
-	_, err = tx.Insert(ctx, createdUser.ID, spec, data)
+	_, err = tx.Insert(ctx, &extsvc.Account{
+		UserID:      createdUser.ID,
+		AccountSpec: spec,
+		AccountData: data,
+	})
 	if err == nil {
 		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
 	}
 	return createdUser, err
 }
 
-func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (_ *extsvc.Account, err error) {
-	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+func (s *userExternalAccountsStore) Insert(ctx context.Context, acct *extsvc.Account) (_ *extsvc.Account, err error) {
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, acct.AccountData)
 	if err != nil {
 		return
 	}
@@ -319,16 +328,11 @@ func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, sp
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id, updated_at, created_at
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
+`, acct.UserID, acct.AccountSpec.ServiceType, acct.AccountSpec.ServiceID, acct.AccountSpec.ClientID, acct.AccountSpec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
 
 	err = res.Err()
 	if err != nil {
 		return nil, err
-	}
-	acct := &extsvc.Account{
-		UserID:      userID,
-		AccountSpec: spec,
-		AccountData: data,
 	}
 	if err := res.Scan(&acct.ID, &acct.UpdatedAt, &acct.CreatedAt); err != nil {
 		return nil, err

@@ -678,10 +678,18 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	spec.ServiceID = "xb2"
 	require.NoError(t, err)
-	_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Insert(ctx,
+		&extsvc.Account{
+			UserID:      user.ID,
+			AccountSpec: spec,
+		})
 	require.NoError(t, err)
 	spec.ServiceID = "xb3"
-	_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Insert(ctx,
+		&extsvc.Account{
+			UserID:      user.ID,
+			AccountSpec: spec,
+		})
 	require.NoError(t, err)
 
 	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
@@ -721,10 +729,18 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 		spec.ServiceID = "xb2"
 		require.NoError(t, err)
-		_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Insert(ctx,
+			&extsvc.Account{
+				UserID:      user.ID,
+				AccountSpec: spec,
+			})
 		require.NoError(t, err)
 		spec.ServiceID = "xb3"
-		_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Insert(ctx,
+			&extsvc.Account{
+				UserID:      user.ID,
+				AccountSpec: spec,
+			})
 		require.NoError(t, err)
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
