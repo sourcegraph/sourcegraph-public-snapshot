@@ -175,11 +175,11 @@ func (s *GitHubScenario) Apply(ctx context.Context) error {
 		duration := time.Now().UTC().Sub(now)
 
 		if err != nil {
+			errs = errors.Append(errs, err)
 			s.reporter.Writef("FAILED (%s)\n", duration.String())
 			if failFast {
 				break
 			}
-			errs = errors.Append(errs, err)
 		} else {
 			s.nextActionIdx++
 			s.reporter.Writef("SUCCESS (%s)\n", duration.String())

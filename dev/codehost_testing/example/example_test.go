@@ -27,11 +27,13 @@ func TestGithubScenario(t *testing.T) {
 	}
 	org := scenario.CreateOrg("tst-org")
 	user := scenario.CreateUser("tst-user")
+	otherUser := scenario.CreateUser("other-user")
 	admin := scenario.GetAdmin()
 
 	org.AllowPrivateForks()
 	team := org.CreateTeam("team-1")
 	team.AddUser(user)
+	team.AddUser(otherUser)
 	adminTeam := org.CreateTeam("team-admin")
 	adminTeam.AddUser(admin)
 
