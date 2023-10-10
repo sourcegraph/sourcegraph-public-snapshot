@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//internal/hashutil",
         "//internal/lazyregexp",
+        "//lib/errors",
     ],
 )
 

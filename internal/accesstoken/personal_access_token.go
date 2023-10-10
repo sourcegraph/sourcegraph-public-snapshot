@@ -7,8 +7,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // personalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
