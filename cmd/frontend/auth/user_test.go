@@ -300,8 +300,8 @@ func TestGetAndSaveUser(t *testing.T) {
 	}
 	errorCases := []outerCase{
 		{
-			description: "lookupUserAndSaveErr",
-			mock:        mockParams{lookupUserAndSaveErr: unexpectedErr, userInfos: oneUser},
+			description: "externalAccountUpdateErr",
+			mock:        mockParams{externalAccountUpdateErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
 				op:                         getOneUserOp,
 				createIfNotExistIrrelevant: true,
@@ -319,7 +319,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			}},
 		},
 		{
-			description: "associateUserAndSaveErr",
+			description: "upsertErr",
 			mock:        mockParams{upsertErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
 				op: GetAndSaveUserOp{
@@ -619,14 +619,14 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 }
 
 type mockParams struct {
-	userInfos             []userInfo
-	lookupUserAndSaveErr  error
-	createUserAndSaveErr  error
-	upsertErr             error
-	getByVerifiedEmailErr error
-	getByUsernameErr      error //nolint:structcheck
-	getByIDErr            error
-	updateErr             error
+	userInfos                []userInfo
+	externalAccountUpdateErr error
+	createUserAndSaveErr     error
+	upsertErr                error
+	getByVerifiedEmailErr    error
+	getByUsernameErr         error //nolint:structcheck
+	getByIDErr               error
+	updateErr                error
 }
 
 // mocks provide mocking. It should only be used for one call of auth.GetAndSaveUser, because saves
@@ -688,8 +688,8 @@ func (m *mocks) DB() database.DB {
 
 // ExternalAccountUpdate mocks database.ExternalAccounts.Update
 func (m *mocks) ExternalAccountUpdate(_ context.Context, acct *extsvc.Account) (*extsvc.Account, error) {
-	if m.lookupUserAndSaveErr != nil {
-		return nil, m.lookupUserAndSaveErr
+	if m.externalAccountUpdateErr != nil {
+		return nil, m.externalAccountUpdateErr
 	}
 
 	for _, u := range m.userInfos {
