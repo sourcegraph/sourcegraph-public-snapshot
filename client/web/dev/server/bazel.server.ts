@@ -7,7 +7,7 @@ import {
     ENVIRONMENT_CONFIG,
     getAPIProxySettings,
     getIndexHTML,
-    getWebpackManifest,
+    getWebBuildManifest,
     shouldCompressResponse,
     STATIC_ASSETS_URL,
 } from '../utils'
@@ -25,7 +25,7 @@ export function createDevelopmentServerConfig(): WebpackDevServer.Configuration 
     const { proxyRoutes, ...proxyConfig } = getAPIProxySettings({
         apiURL,
         getLocalIndexHTML(jsContextScript) {
-            const manifestFile = getWebpackManifest()
+            const manifestFile = getWebBuildManifest()
             return getIndexHTML({ manifestFile, jsContextScript })
         },
     })

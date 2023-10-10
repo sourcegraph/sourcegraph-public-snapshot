@@ -30,29 +30,12 @@ func TestZoektParameters(t *testing.T) {
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
 			},
 			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 10000,
-				TotalMaxMatchCount: 100000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 500,
-				ChunkMatches:       true,
-			},
-		},
-		{
-			name:    "test defaults with ranking feature enabled",
-			context: context.Background(),
-			params: &ZoektParameters{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
 				ShardMaxMatchCount:  10000,
 				TotalMaxMatchCount:  100000,
 				MaxWallTime:         20000000000,
-				FlushWallTime:       500000000,
 				MaxDocDisplayCount:  500,
 				ChunkMatches:        true,
+				FlushWallTime:       500000000,
 				UseDocumentRanks:    true,
 				DocumentRanksWeight: 4500,
 			},
@@ -63,9 +46,6 @@ func TestZoektParameters(t *testing.T) {
 			params: &ZoektParameters{
 				Select:         []string{filter.Repository},
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
-				},
 			},
 			// Most important is ShardRepoMaxMatchCount=1. Otherwise we still
 			// want to set normal limits so we respect things like low file
@@ -85,9 +65,6 @@ func TestZoektParameters(t *testing.T) {
 			params: &ZoektParameters{
 				Select:         []string{filter.Repository},
 				FileMatchLimit: 5,
-				Features: Features{
-					Ranking: true,
-				},
 			},
 			// This is like the above test, but we are testing
 			// MaxDocDisplayCount is adjusted to 5.
@@ -107,11 +84,14 @@ func TestZoektParameters(t *testing.T) {
 				FileMatchLimit: 100_000,
 			},
 			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 100_000,
-				TotalMaxMatchCount: 100_000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 100_000,
-				ChunkMatches:       true,
+				ShardMaxMatchCount:  100_000,
+				TotalMaxMatchCount:  100_000,
+				MaxWallTime:         20000000000,
+				MaxDocDisplayCount:  100_000,
+				ChunkMatches:        true,
+				FlushWallTime:       500000000,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
 			},
 		},
 		{
@@ -122,9 +102,6 @@ func TestZoektParameters(t *testing.T) {
 			},
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
-				},
 			},
 			want: &zoekt.SearchOptions{
 				ShardMaxMatchCount:  10000,
@@ -145,9 +122,6 @@ func TestZoektParameters(t *testing.T) {
 			},
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
-				},
 			},
 			want: &zoekt.SearchOptions{
 				ShardMaxMatchCount:  10000,
@@ -165,9 +139,6 @@ func TestZoektParameters(t *testing.T) {
 			context: context.Background(),
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
-				},
 				KeywordScoring: true,
 			},
 			want: &zoekt.SearchOptions{

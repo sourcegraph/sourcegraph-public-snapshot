@@ -141,10 +141,11 @@ func newAuthzProvider(
 
 	ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
 	return NewProvider(c.GitHubConnection.URN, ProviderOptions{
-		GitHubURL:      baseURL,
-		BaseAuther:     auther,
-		GroupsCacheTTL: ttl,
-		DB:             db,
+		GitHubURL:                   baseURL,
+		BaseAuther:                  auther,
+		GroupsCacheTTL:              ttl,
+		DB:                          db,
+		SyncInternalRepoPermissions: (c.Authorization != nil) && c.Authorization.SyncInternalRepoPermissions,
 	}), nil
 }
 

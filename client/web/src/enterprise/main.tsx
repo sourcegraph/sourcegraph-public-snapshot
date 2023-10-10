@@ -1,4 +1,4 @@
-// This is the entry point for the enterprise web app
+// This is the entry point for the web app
 
 // Order is important here
 // Don't remove the empty lines between these imports

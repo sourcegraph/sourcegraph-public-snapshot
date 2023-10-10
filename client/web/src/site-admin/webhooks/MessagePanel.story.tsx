@@ -59,8 +59,10 @@ export const JSONResponse: Story = args => (
 JSONResponse.argTypes = {
     requestOrStatusCode: {
         control: { type: 'number', min: 100, max: 599 },
-        defaultValue: 200,
     },
+}
+JSONResponse.args = {
+    requestOrStatusCode: 200,
 }
 
 JSONResponse.storyName = 'JSON response'
@@ -101,8 +103,10 @@ export const PlainResponse: Story = args => (
 PlainResponse.argTypes = {
     requestOrStatusCode: {
         control: { type: 'number', min: 100, max: 599 },
-        defaultValue: 200,
     },
+}
+PlainResponse.args = {
+    requestOrStatusCode: 200,
 }
 
 PlainResponse.storyName = 'plain response'

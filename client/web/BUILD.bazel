@@ -5,10 +5,9 @@ load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
-load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
+load("//dev:webpack.bzl", "webpack_bundle", "webpack_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -163,7 +162,6 @@ ts_project(
         "src/LegacyLayout.tsx",
         "src/LegacyRouteContext.tsx",
         "src/LegacySourcegraphWebApp.tsx",
-        "src/OpenSourceWebApp.tsx",
         "src/PageError.tsx",
         "src/SearchQueryStateObserver.tsx",
         "src/SourcegraphWebApp.tsx",
@@ -174,6 +172,7 @@ ts_project(
         "src/app/TauriLink.tsx",
         "src/app/tauriIcpUtils.ts",
         "src/auth.ts",
+        "src/auth/AuthPageWrapper.tsx",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
         "src/auth/PostSignUpPage.tsx",
@@ -1125,7 +1124,6 @@ ts_project(
         "src/insights/types.ts",
         "src/insights/utils/use-series-toggle.ts",
         "src/jscontext.ts",
-        "src/main.tsx",
         "src/marketing/backend.ts",
         "src/marketing/components/SurveyRatingRadio.tsx",
         "src/marketing/components/SurveyUseCaseForm.tsx",
@@ -1232,7 +1230,6 @@ ts_project(
         "src/org/settings/DeleteOrgModal.tsx",
         "src/org/settings/OrgSettingsArea.tsx",
         "src/org/settings/OrgSettingsSidebar.tsx",
-        "src/org/settings/codeHosts/InstallGitHubAppSuccessPage.tsx",
         "src/org/settings/members/InviteForm.tsx",
         "src/org/settings/members/OrgSettingsMembersPage.tsx",
         "src/org/settings/profile/OrgSettingsProfilePage.tsx",
@@ -1786,7 +1783,6 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@sourcegraph/extension-api-classes",
-        "//:node_modules/@storybook/client-api",
         "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
@@ -1998,6 +1994,7 @@ ts_project(
         "src/tracking/util.test.ts",
         "src/user/index.test.ts",
         "src/user/settings/auth/ExternalAccount.test.tsx",
+        "src/user/settings/auth/ExternalAccountsSignIn.test.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.test.tsx",
         "src/user/settings/research/ProductResearch.test.tsx",
         "src/util/checkRequestAccessAllowed.test.ts",
@@ -2104,6 +2101,7 @@ WEBPACK_CONFIG_DEPS = [
     "//:node_modules/react-refresh",
     "//client/web/dev",
     "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
+    "//:postcss_config_js",
 
     # HACKS: bundle-time css import
     "//:node_modules/open-color",
@@ -2114,9 +2112,6 @@ BUNDLE_DATA_DEPS = [
     ":module_styles",
     ":package_styles",
     "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
-]
-
-ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
@@ -2132,10 +2127,14 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "//:package_json",
         ],
         entry_points = {
-            "src/main.js": "app",
+            "src/enterprise/main.js": "app",
+            "src/enterprise/embed/main.js": "embed",
         },
         env = {
             "NODE_ENV": "production" if prod else "development",
+            "INTEGRATION_TESTS": "false",
+            "WEBPACK_BUNDLE_ANALYZER": "false",
+            "WEBPACK_USE_NAMED_CHUNKS": "false",
         },
         output_dir = True,
         visibility = ["//ui/assets:__subpackages__"],
@@ -2148,35 +2147,11 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     ]
 ]
 
-webpack_bundle(
-    name = "bundle-enterprise",
-    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
-        "//:babel_config",
-        "//:browserslist",
-        "//:package_json",
-    ],
-    entry_points = {
-        "src/enterprise/main.js": "app",
-        "src/enterprise/embed/main.js": "embed",
-    },
-    env = {
-        "NODE_ENV": "production",
-        "ENTERPRISE": "true",
-        "INTEGRATION_TESTS": "false",
-        "WEBPACK_BUNDLE_ANALYZER": "false",
-        "WEBPACK_USE_NAMED_CHUNKS": "false",
-    },
-    output_dir = True,
-    visibility = ["//ui/assets:__subpackages__"],
-    webpack_config = "webpack.bazel.config.js",
-    deps = WEBPACK_CONFIG_DEPS,
-)
-
 # Used for integration tests and has bigger bundle size
 # because of the inlined source-maps.
 webpack_web_app(
-    name = "app-enterprise",
-    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
+    name = "app",
+    srcs = BUNDLE_DATA_DEPS + [
         "//:babel_config",
         "//:browserslist",
         "//:package_json",
@@ -2186,7 +2161,6 @@ webpack_web_app(
     },
     env = {
         "NODE_ENV": "production",
-        "ENTERPRISE": "true",
         "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
@@ -2195,43 +2169,11 @@ webpack_web_app(
     deps = WEBPACK_CONFIG_DEPS,
 )
 
-# ibazel run //client/web:devserver
-# should make the web application available under http://localhost:3080/ by default.
-webpack_devserver(
-    name = "devserver",
-    data = BUNDLE_DATA_DEPS + WEBPACK_CONFIG_DEPS + [
-        "//:babel_config",
-        "//:browserslist",
-        "//:package_json",
-
-        # references from the devserver config
-        "webpack.bazel.config.js",
-    ],
-    entry_points = {
-        "src/main.js": "app",
-    },
-    env = {
-        "NODE_ENV": "development",
-        # TODO(bazel): make it dynamic or make multiple targets.
-        "SOURCEGRAPH_API_URL": "https://sourcegraph.sourcegraph.com",
-    },
-    webpack_config = "webpack.bazel.devserver.config.js",
-)
-
 build_test(
     name = "webpack_test",
     size = "enormous",
-    tags = ["manual"],  # avoid building the oss bundle
     targets = [
         ":bundle",
-    ],
-)
-
-build_test(
-    name = "webpack_test_enterprise",
-    size = "enormous",
-    targets = [
-        ":bundle-enterprise",
     ],
 )
 
@@ -2244,10 +2186,10 @@ bundlesize_bin.bundlesize_test(
     ],
     data = [
         "bundlesize.config.js",
-        ":bundle-enterprise",
+        ":bundle",
     ],
     env = {
         "INTERNAL_SKIP_CACHE": "true",
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle)",
     },
 )

@@ -14,9 +14,9 @@ replace (
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
-	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
+	// We publish 'dev/ci/images' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+	github.com/sourcegraph/sourcegraph/dev/ci/images => ./dev/ci/images
 	// We publish 'lib' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/lib => ./lib
@@ -37,8 +37,6 @@ replace (
 	github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.9
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
-	// Pending upstream fixing CVE-2022-37315 https://github.com/graphql-go/graphql/issues/637
-	github.com/graphql-go/graphql => github.com/jamesdphillips/graphql-go v0.7.4-0.20220810211622-efd2a06de890
 	// Pending: https://github.com/pkoukk/tiktoken-go/pull/40
 	github.com/pkoukk/tiktoken-go => github.com/sourcegraph/tiktoken-go v0.0.0-20230905173153-caab340cf008
 	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
@@ -51,7 +49,6 @@ replace (
 // =================================
 // These entries indicate replace directives that are defined for unknown reasons.
 replace (
-	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
@@ -94,7 +91,6 @@ require (
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
 	github.com/derision-test/go-mockgen v1.3.7
-	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b
 	github.com/dnaeon/go-vcr v1.2.0
@@ -119,9 +115,6 @@ require (
 	github.com/gomodule/oauth1 v0.2.0
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/go-github/v31 v31.0.0
-	github.com/google/go-github/v43 v43.0.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/context v1.1.1
@@ -133,7 +126,7 @@ require (
 	github.com/goware/urlx v0.3.1
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/graph-gophers/graphql-go v1.5.0
-	github.com/graphql-go/graphql v0.8.0
+	github.com/graphql-go/graphql v0.8.1
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/golang-lru/v2 v2.0.2
 	github.com/hexops/valast v1.4.3
@@ -190,7 +183,7 @@ require (
 	github.com/sourcegraph/log v0.0.0-20230918165208-4a174e4ec4cf
 	github.com/sourcegraph/run v0.12.0
 	github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc
-	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
+	github.com/sourcegraph/sourcegraph/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230810200548-f8a32bcbd9e3
 	github.com/stretchr/testify v1.8.4
 	github.com/temoto/robotstxt v1.1.2
@@ -261,8 +254,11 @@ require (
 require (
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
 	github.com/aws/jsii-runtime-go v1.84.0
+	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-redsync/redsync/v4 v4.8.1
+	github.com/google/go-github/v48 v48.2.0
+	github.com/google/go-github/v55 v55.0.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
 	github.com/hashicorp/cronexpr v1.1.1
@@ -306,6 +302,7 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
+	github.com/creack/pty v1.1.17 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dghubble/sling v1.4.1 // indirect
 	github.com/di-wu/parser v0.2.2 // indirect
@@ -463,8 +460,6 @@ require (
 	github.com/golang/glog v1.1.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/go-github/v41 v41.0.0
-	github.com/google/go-github/v47 v47.1.0
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230602150820-91b7bce49751 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0
@@ -552,7 +547,7 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20230929125214-1065c6646489
+	github.com/sourcegraph/zoekt v0.0.0-20231005061020-cc1b5cda7073
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
@@ -561,8 +556,6 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	github.com/weaviate/weaviate v1.18.3
-	github.com/weaviate/weaviate-go-client/v4 v4.7.1
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.86.0
 	github.com/xanzy/ssh-agent v0.3.3 // indirect

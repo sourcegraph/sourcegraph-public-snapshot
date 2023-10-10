@@ -184,35 +184,6 @@
             text="Run Cody App"
             icon="/icons/codyLogoSm.svg"/>
 
-
-        <action
-            id="cody.enableCodyAutocomplete"
-            class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
-            text="Enable Cody Autocomplete"/>
-
-        <action
-            id="cody.disableCodyAutocomplete"
-            class="com.sourcegraph.cody.statusbar.CodyDisableAutocompleteAction"
-            text="Disable Cody Autocomplete"/>
-
-        <action
-            id="cody.enableLanguageForCodyAutocomplete"
-            class="com.sourcegraph.cody.statusbar.CodyEnableLanguageForAutocompleteAction"/>
-
-        <action
-            id="cody.disableLanguageForCodyAutocomplete"
-            class="com.sourcegraph.cody.statusbar.CodyDisableLanguageForAutocompleteAction"/>
-
-        <action
-            id="cody.statusBar.manageAccounts"
-            class="com.sourcegraph.cody.statusbar.CodyManageAccountsAction"
-            text="Manage Accounts"/>
-
-        <action
-            id="cody.statusBar.openSettings"
-            class="com.sourcegraph.cody.statusbar.CodyOpenSettingsAction"
-            text="Open Settings"/>
-
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
         </group>
@@ -236,12 +207,6 @@
 
         <group id="CodyStatusBarActions" popup="true" text="Cody" searchable="false"
                class="com.sourcegraph.cody.statusbar.CodyStatusBarActionGroup">
-            <reference ref="cody.enableCodyAutocomplete"/>
-            <reference ref="cody.disableCodyAutocomplete"/>
-            <reference ref="cody.enableLanguageForCodyAutocomplete"/>
-            <reference ref="cody.disableLanguageForCodyAutocomplete"/>
-            <reference ref="cody.statusBar.manageAccounts"/>
-            <reference ref="cody.statusBar.openSettings"/>
         </group>
 
         <group id="Cody.Accounts.AddAccount">

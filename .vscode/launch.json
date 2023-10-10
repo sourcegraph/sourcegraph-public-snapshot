@@ -30,7 +30,6 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
-        "--disable-extension=kandalatj.sourcegraph-preview",
         "--disable-extension=sourcegraph.sourcegraph"
       ],
       "stopOnEntry": false,
@@ -44,7 +43,6 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
-        "--disable-extension=kandalatj.sourcegraph-preview",
         "--disable-extension=sourcegraph.sourcegraph",
         "--extensionDevelopmentKind=web",
         "--disable-web-security"

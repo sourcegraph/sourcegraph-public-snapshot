@@ -41,6 +41,9 @@ var SelfHostedSiteInitEventID = "000010399089"
 // CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
 var CodyClientInstalledEventID = "000018021981"
 
+// NewCodyClientInstalledEventID is the HubSpot ID for the new event which support custom properties.
+var NewCodyClientInstalledEventID = "pe2762526_codyinstall"
+
 // AppDownloadButtonClickedEventID is the HubSpot Event ID for when a user clicks on a button to download Cody App.
 var AppDownloadButtonClickedEventID = "000019179879"
 

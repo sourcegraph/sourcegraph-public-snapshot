@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/segmentio/fasthash/fnv1"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
@@ -1585,7 +1585,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther, func(r *http.Request) (*http.Response, error) {
 		// For GitHub.com, to avoid running into rate limits we're limiting concurrency
 		// per auth token to 1 globally.
-		if urlIsGitHubDotCom(r.URL) {
+		if URLIsGitHubDotCom(r.URL) {
 			return restrictGitHubDotComConcurrency(logger, httpClient, r)
 		}
 
@@ -1634,7 +1634,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 }
 
 func canonicalizedURL(apiURL *url.URL) *url.URL {
-	if urlIsGitHubDotCom(apiURL) {
+	if URLIsGitHubDotCom(apiURL) {
 		return &url.URL{
 			Scheme: "https",
 			Host:   "api.github.com",
@@ -1643,7 +1643,7 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	return apiURL
 }
 
-func urlIsGitHubDotCom(apiURL *url.URL) bool {
+func URLIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
 	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
 }
@@ -1810,7 +1810,7 @@ type Repository struct {
 	// This is available for GitHub Enterprise Cloud and GitHub Enterprise Server 3.3.0+ and is used
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
-	Visibility Visibility `json:",omitempty"`
+	Visibility Visibility `json:"visibility,omitempty"`
 
 	// Parent is non-nil for forks and contains details of the parent repository.
 	Parent *ParentRepository `json:",omitempty"`
@@ -1903,6 +1903,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 		RepositoryTopics: RepositoryTopics{topics},
+		Visibility:       Visibility(restRepo.Visibility),
 	}
 
 	if restRepo.Parent != nil {
@@ -1910,10 +1911,6 @@ func convertRestRepo(restRepo restRepository) *Repository {
 			NameWithOwner: restRepo.Parent.FullName,
 			IsFork:        restRepo.Parent.Fork,
 		}
-	}
-
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
-		repo.Visibility = Visibility(restRepo.Visibility)
 	}
 
 	return &repo

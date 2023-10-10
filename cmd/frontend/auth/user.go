@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -138,7 +137,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		act.UID = user.ID
 
 		// Schedule a permission sync, since this is new user
-		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+		permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 			UserIDs:           []int32{user.ID},
 			Reason:            database.ReasonUserAdded,
 			TriggeredByUserID: user.ID,
@@ -232,13 +231,13 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 
 	// Create/update the external account and ensure it's associated with the user ID
 	if !extAcctSaved {
-		err := externalAccountsStore.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
+		_, err := externalAccountsStore.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
 		if err != nil {
 			return newUserSaved, 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}
 
 		// Schedule a permission sync, since this is probably a new external account for the user
-		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+		permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 			UserIDs:           []int32{userID},
 			Reason:            database.ReasonExternalAccountAdded,
 			TriggeredByUserID: userID,

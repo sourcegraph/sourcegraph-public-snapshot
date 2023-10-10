@@ -29,9 +29,29 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- The experimental GraphQL query `User.invitableCollaborators`.
+- The following experimental settings in site-configuration are now deprecated and will not be read anymore: `maxReorderQueueSize`, `maxQueueMatchCount`, `maxReorderDurationMS`. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
+- The feature-flag `search-ranking`, which allowed to disable the improved ranking introduced in 5.1, is now deprecated and will not be read anymore. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
+
+## Unreleased 5.2.1
+
+### Added
+
+- Added two new authorization configuration options to GitHub code host connections: "markInternalReposAsPublic" and "syncInternalRepoPermissions". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Setting "syncInternalRepoPermissions" to true adds an additional step to user permission syncs that explicitly checks for internal repositories. However, this could lead to longer user permission sync times. [#56677](https://github.com/sourcegraph/sourcegraph/pull/56677)
+
+### Changed
+
 -
 
-## Unreleased 5.2.0 (planned release date: October 4, 2023)
+### Fixed
+
+- Fixed a user's Permissions page being inaccessible if the user has had no permission syncs with an external account connected. [#57372](https://github.com/sourcegraph/sourcegraph/pull/57372)
+- Fixed a bug where site admins could not view a user's permissions if they didn't have access to all of the repositories the user has. Admins still won't be able to see repositories they don't have access to, but they will now be able to view the rest of the user's repository permissions. [#57375](https://github.com/sourcegraph/sourcegraph/pull/57375)
+- Fixed a bug where gitserver statistics would not be properly decoded / reported when using REST (i.e. `experimentalFeatures.enableGRPC = false` in site configuration). [#57318](https://github.com/sourcegraph/sourcegraph/pull/57318)
+
+### Removed
+
+## 5.2.0
 
 ### Added
 
@@ -39,6 +59,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Recorded command logs can now be viewed for Git operations performed by Sourcegraph. This provides auditing and debugging capabilities. [#54997](https://github.com/sourcegraph/sourcegraph/issues/54997)
 - Disk usage metrics for gitservers are now displayed on the site admin Git Servers page, showing free/total disk space. This helps site admins monitor storage capacity on GitServers. [#55958](https://github.com/sourcegraph/sourcegraph/issues/55958)
 - Overhauled Admin Onboarding UI for enhanced user experience, introducing a license key modal with validation, automated navigation to Site Configuration Page, an interactive onboarding checklist button, and direct documentation links for SMTP and user authentication setup. [56366](https://github.com/sourcegraph/sourcegraph/pull/56366)
+- New experimental feature "Search Jobs". Search Jobs allows you to run search queries across your organization's codebase (all repositories, branches, and revisions) at scale. It enhances the existing Sourcegraph's search capabilities, enabling you to run searches without query timeouts or incomplete results. Please refer to the [documentation](https://docs.sourcegraph.com/code_search/how-to/search-jobs) for more information.
 
 ### Changed
 

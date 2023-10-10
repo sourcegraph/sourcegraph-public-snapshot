@@ -239,8 +239,6 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     border-radius: 0.5rem;
     padding: 1.5rem 2.5rem;
-    margin-top: 3rem;
-    margin-bottom: 1rem;
     width: fit-content;
     @media (--xs-breakpoint-down) {
         flex-wrap: wrap;
@@ -270,10 +268,12 @@
 }
 
 .vscode-marketplace {
+    display: block;
     font-weight: 600;
     font-size: 1rem;
     line-height: 1.5rem;
     color: var(--white);
+    margin-top: 1rem;
 }
 
 .start-coding-with-me-img-wrapper {
@@ -482,14 +482,11 @@
 }
 
 .download-btn-wrapper {
-    @media (--md-breakpoint-up) {
-        display: flex;
-        gap: 2rem;
-    }
-
-    @media (--xs-breakpoint-down) {
-        display: block;
-    }
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2rem;
 }
 
 .badge {

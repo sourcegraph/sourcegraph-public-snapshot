@@ -16,7 +16,7 @@ import (
 	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -1527,7 +1527,7 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m.Change = &gerrit.Change{}
 		t.Metadata = m
 	case extsvc.TypePerforce:
-		t.Metadata = new(protocol.PerforceChangelist)
+		t.Metadata = new(perforce.Changelist)
 	case extsvc.TypeGerrit:
 		t.Metadata = new(gerrit.Change)
 	default:

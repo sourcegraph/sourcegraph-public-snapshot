@@ -57,12 +57,14 @@ export const RepoButton: Story = args => (
 RepoButton.argTypes = {
     open: {
         control: { type: 'number' },
-        defaultValue: 2,
     },
     merged: {
         control: { type: 'number' },
-        defaultValue: 47,
     },
+}
+RepoButton.args = {
+    open: 2,
+    merged: 47,
 }
 
 RepoButton.storyName = 'RepoButton'

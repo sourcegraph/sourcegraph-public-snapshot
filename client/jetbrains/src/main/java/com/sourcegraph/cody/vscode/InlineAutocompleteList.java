@@ -5,12 +5,8 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 public class InlineAutocompleteList {
-  public final List<InlineAutocompleteItem> items;
+  @Nullable public List<InlineAutocompleteItem> items;
   @Nullable public CompletionEvent completionEvent;
-
-  public InlineAutocompleteList(List<InlineAutocompleteItem> items) {
-    this.items = items;
-  }
 
   @Override
   public String toString() {

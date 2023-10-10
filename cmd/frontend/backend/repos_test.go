@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
@@ -18,13 +20,13 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -84,18 +86,13 @@ func TestRepos_AddRepoToSourcegraphDotCom(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	gsClient := gitserver.NewMockClient()
-	gsClient.IsRepoCloneableFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) error {
-		if name != repoName {
-			t.Errorf("got %q, want %q", name, repoName)
-		}
-		return nil
-	})
-
 	// The repoName could change if it has been renamed on the code host
 	s = repos{
-		logger:          logtest.Scoped(t),
-		gitserverClient: gsClient,
+		logger: logtest.Scoped(t),
+		cf: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			require.Equal(t, "https://github.com/my/repo.git/info/refs?service=git-upload-pack", r.URL.String())
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(""))}, nil
+		}),
 	}
 	addedName, err := s.addRepoToSourcegraphDotCom(ctx, repoName)
 	if err != nil {
@@ -107,6 +104,18 @@ func TestRepos_AddRepoToSourcegraphDotCom(t *testing.T) {
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")
 	}
+
+	// Verify that non 200 codes return the right error.
+	s = repos{
+		logger: logtest.Scoped(t),
+		cf: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			require.Equal(t, "https://github.com/my/repo.git/info/refs?service=git-upload-pack", r.URL.String())
+			return &http.Response{StatusCode: 401, Body: io.NopCloser(strings.NewReader(""))}, nil
+		}),
+	}
+	_, err = s.addRepoToSourcegraphDotCom(ctx, repoName)
+	require.Error(t, err)
+	require.IsType(t, &database.RepoNotFoundErr{}, err)
 }
 
 func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
@@ -158,13 +167,13 @@ func TestReposGetInventory(t *testing.T) {
 		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
-	gitserverClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	gitserverClient.StatFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
 		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
 	})
-	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string, _ bool) ([]fs.FileInfo, error) {
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, _ bool) ([]fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -180,7 +189,7 @@ func TestReposGetInventory(t *testing.T) {
 			panic("unhandled mock ReadDir " + name)
 		}
 	})
-	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
+	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}

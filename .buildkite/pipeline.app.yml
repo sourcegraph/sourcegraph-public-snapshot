@@ -8,14 +8,14 @@ steps:
         env:
           PLATFORM: x86_64-unknown-linux-gnu
         command:
-          - './enterprise/dev/app/build-backend.sh'
+          - './dev/app/build-backend.sh'
       - label: ':bazel::mac: Build for MacOS arm64'
         key: 'build-sourcegraph-app-macos-arm64'
         agents: { queue: macos }
         env:
           PLATFORM: aarch64-apple-darwin
         command:
-          - './enterprise/dev/app/build-backend.sh'
+          - './dev/app/build-backend.sh'
       - label: ':go::mac:Build for MacOS x86_64'
         key: 'build-sourcegraph-app-macos-x86_64'
         depends_on: 'build-sourcegraph-app-macos-arm64'
@@ -25,7 +25,7 @@ steps:
           CROSS_COMPILE_X86_64_MACOS: 1
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
-          - './enterprise/dev/app/build-backend.sh'
+          - './dev/app/build-backend.sh'
   - group: ":tauri: Bundle and sign using Tauri"
     key: "tauri-bundles"
     depends_on: "backend-builds"
@@ -35,7 +35,7 @@ steps:
         agents: { queue: stateless }
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
-          - './enterprise/dev/app/tauri-build.sh'
+          - './dev/app/tauri-build.sh'
         env:
           SRC_APP_UPDATER_BUILD: 1
           AWS_CONFIG_FILE: /buildkite/.aws/config
@@ -63,7 +63,7 @@ steps:
           SRC_APP_UPDATER_BUILD: 1
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
-          - './enterprise/dev/app/tauri-build.sh'
+          - './dev/app/tauri-build.sh'
       - label: ':macos::tauri: (intel x86_64) Bundle and sign with Tauri'
         depends_on: 'mac-build-arm64-tauri-sourcegraph-app'
         key: 'mac-build-x86_64-tauri-sourcegraph-app'
@@ -74,7 +74,7 @@ steps:
           SRC_APP_UPDATER_BUILD: 1
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
-          - './enterprise/dev/app/tauri-build.sh'
+          - './dev/app/tauri-build.sh'
   - group: ":github: Create release and update manifest"
     depends_on: "tauri-bundles"
     steps:
@@ -82,5 +82,5 @@ steps:
         agents: { queue: stateless }
         key: create-github-release
         command:
-          - './enterprise/dev/app/create-github-release.sh'
-          - './enterprise/dev/app/create-update-manifest.sh'
+          - './dev/app/create-github-release.sh'
+          - './dev/app/create-update-manifest.sh'

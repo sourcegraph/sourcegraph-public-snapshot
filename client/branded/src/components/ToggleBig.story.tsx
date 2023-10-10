@@ -34,7 +34,6 @@ Interactive.parameters = {
     },
 }
 
-// eslint-disable-next-line id-length
 export const On: Story = () => <ToggleBig value={true} onToggle={onToggle} />
 export const Off: Story = () => <ToggleBig value={false} onToggle={onToggle} />
 export const DisabledOn: Story = () => <ToggleBig value={true} disabled={true} onToggle={onToggle} />
