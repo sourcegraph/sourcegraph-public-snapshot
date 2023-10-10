@@ -9,6 +9,9 @@ requirements:
   - name: "Bazel"
     cmd: bazel version
     fixInstructions: Run `sg setup` and try again.
+  - name: "buildozer"
+    cmd: buildozer -version
+    fixInstructions: Run `go install github.com/bazelbuild/buildtools/buildozer@latest` and try again.
   - name: "Github CLI"
     cmd: gh version
     fixInstructions: brew install gh
