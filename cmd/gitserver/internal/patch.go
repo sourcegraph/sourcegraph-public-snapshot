@@ -469,9 +469,9 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	}
 
 	// check to see if there's a changelist for this target branch already
-	cid, err := p4Cmd.changeListIDFromClientSpecName(p4client)
-	if err == nil && cid != "" {
-		return cid, nil
+	cl, err := perforce.GetChangelistByClient(ctx, p4port, p4user, p4passwd, tmpClientDir, p4client)
+	if err == nil && cl.ID != "" {
+		return cl.ID, nil
 	}
 
 	// extract the base changelist id from the base commit
@@ -584,7 +584,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 
 	// feed the changelist form into `p4 shelve`
 	// capture the output to parse for a changelist id
-	cid, err = p4Cmd.shelveChangelist(changeForm)
+	cid, err := p4Cmd.shelveChangelist(changeForm)
 	if err != nil {
 		errorMessage := "failed shelving the changelist"
 		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
@@ -654,25 +654,6 @@ func (p p4Command) commandContext(args ...string) *exec.Cmd {
 	cmd.Dir = p.workingDir
 	cmd.Env = p.env
 	return cmd
-}
-
-// Uses `p4 changes` to see if there is a changelist already associated with the given client spec
-func (p p4Command) changeListIDFromClientSpecName(p4client string) (string, error) {
-	cmd := p.commandContext("changes",
-		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
-		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
-		"-l", // use a long listing, which includes the whole commit message
-		"-c", p4client,
-	)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", errors.Wrap(err, string(out))
-	}
-	pcl, err := internalperforce.ParseChangelistOutput(string(out))
-	if err != nil {
-		return "", errors.Wrap(err, string(out))
-	}
-	return pcl.ID, nil
 }
 
 const clientSpecForm = `Client:	%s

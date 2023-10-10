@@ -12,8 +12,6 @@
     "url": "https://github.com/sourcegraph/sourcegraph",
     "directory": "client/extension-api"
   },
-  "main": "src/index.js",
-  "module": "src/index.js",
   "types": "src/sourcegraph.d.ts",
   "files": [
     "src",

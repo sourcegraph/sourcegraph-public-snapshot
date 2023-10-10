@@ -370,6 +370,14 @@ func SearchDocumentRanksWeight() float64 {
 	}
 }
 
+func RankingMaxQueueSizeBytes() int {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking == nil || ranking.MaxQueueSizeBytes == nil {
+		return -1
+	}
+	return *ranking.MaxQueueSizeBytes
+}
+
 // SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
 // larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
 func SearchFlushWallTime(keywordScoring bool) time.Duration {

@@ -80,7 +80,7 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal account data")
 		}
-		if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
+		if _, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
 			ServiceType: auth.SourcegraphOperatorProviderType,
 			ServiceID:   serviceID,
 			ClientID:    details.ClientID,

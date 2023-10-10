@@ -68,7 +68,6 @@ class BlameDecorationWidget extends WidgetType {
         this.state = { navigate: blobProps.navigate }
     }
 
-    /* eslint-disable-next-line id-length*/
     public eq(other: BlameDecorationWidget): boolean {
         return isEqual(this.hunk, other.hunk)
     }

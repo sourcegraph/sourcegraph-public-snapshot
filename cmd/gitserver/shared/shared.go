@@ -76,10 +76,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "initializing keyring")
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
-	if err != nil {
-		return errors.Wrap(err, "failed to create sub-repo client")
-	}
+	authz.DefaultSubRepoPermsChecker = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)

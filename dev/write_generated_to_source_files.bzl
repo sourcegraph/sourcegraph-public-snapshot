@@ -7,10 +7,10 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 def write_generated_to_source_files(name, target, output_files, verbose_copy=False, **kwargs):
     for dest, orig in output_files.items():
         if dest == orig:
-            fail("{} and {} must differ so we can detect source files needing to be regenerated".format(dest,orig))
+            fail("{} and {} must differ so we can detect source files needing to be regenerated".format(dest, orig))
 
     # First we copy to a directory all outputs from the target, so we can refer to them
-    # individually.
+    # individually without circular deps.
     copy_to_directory(
         name = name + "_copy",
         srcs = [target],

@@ -54,7 +54,7 @@ const hoverStyle = [
         '.sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-02)',
         },
-        '&dark .sg-decorated-token-hover': {
+        '.theme-dark & .sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-08)',
         },
     }),
@@ -151,7 +151,7 @@ export function tokenInfo(): Extension {
         EditorView.domEventHandlers({
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
-                let effects: StateEffect<any> | null = null
+                let effects: StateEffect<unknown> | null = null
 
                 // event.buttons === 0 means no button is pressed
                 if (event.buttons > 0) {

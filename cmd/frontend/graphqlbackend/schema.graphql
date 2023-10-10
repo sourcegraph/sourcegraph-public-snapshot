@@ -6499,11 +6499,6 @@ type User implements Node & SettingsSubject & Namespace {
     scimControlled: Boolean!
 
     """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories this user has access to, and is derived from recent commit history of those.
-    """
-    invitableCollaborators: [Person!]!
-    """
     The list of all roles assigned to this user.
     """
     roles(

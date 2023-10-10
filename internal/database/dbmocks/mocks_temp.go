@@ -78893,7 +78893,7 @@ type MockUserExternalAccountsStore struct {
 func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 	return &MockUserExternalAccountsStore{
 		AssociateUserAndSaveFunc: &UserExternalAccountsStoreAssociateUserAndSaveFunc{
-			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (r0 error) {
+			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (r0 *extsvc.Account, r1 error) {
 				return
 			},
 		},
@@ -78933,7 +78933,7 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		InsertFunc: &UserExternalAccountsStoreInsertFunc{
-			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (r0 error) {
+			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (r0 *extsvc.Account, r1 error) {
 				return
 			},
 		},
@@ -78996,7 +78996,7 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 	return &MockUserExternalAccountsStore{
 		AssociateUserAndSaveFunc: &UserExternalAccountsStoreAssociateUserAndSaveFunc{
-			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
+			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
 				panic("unexpected invocation of MockUserExternalAccountsStore.AssociateUserAndSave")
 			},
 		},
@@ -79036,7 +79036,7 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		InsertFunc: &UserExternalAccountsStoreInsertFunc{
-			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
+			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Insert")
 			},
 		},
@@ -79162,24 +79162,24 @@ func NewMockUserExternalAccountsStoreFrom(i database.UserExternalAccountsStore) 
 // when the AssociateUserAndSave method of the parent
 // MockUserExternalAccountsStore instance is invoked.
 type UserExternalAccountsStoreAssociateUserAndSaveFunc struct {
-	defaultHook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error
-	hooks       []func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error
+	defaultHook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)
+	hooks       []func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)
 	history     []UserExternalAccountsStoreAssociateUserAndSaveFuncCall
 	mutex       sync.Mutex
 }
 
 // AssociateUserAndSave delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) AssociateUserAndSave(v0 context.Context, v1 int32, v2 extsvc.AccountSpec, v3 extsvc.AccountData) error {
-	r0 := m.AssociateUserAndSaveFunc.nextHook()(v0, v1, v2, v3)
-	m.AssociateUserAndSaveFunc.appendCall(UserExternalAccountsStoreAssociateUserAndSaveFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockUserExternalAccountsStore) AssociateUserAndSave(v0 context.Context, v1 int32, v2 extsvc.AccountSpec, v3 extsvc.AccountData) (*extsvc.Account, error) {
+	r0, r1 := m.AssociateUserAndSaveFunc.nextHook()(v0, v1, v2, v3)
+	m.AssociateUserAndSaveFunc.appendCall(UserExternalAccountsStoreAssociateUserAndSaveFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the AssociateUserAndSave
 // method of the parent MockUserExternalAccountsStore instance is invoked
 // and the hook queue is empty.
-func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) SetDefaultHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error) {
+func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) SetDefaultHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)) {
 	f.defaultHook = hook
 }
 
@@ -79188,7 +79188,7 @@ func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) SetDefaultHook(hook 
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) PushHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error) {
+func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) PushHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -79196,20 +79196,20 @@ func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) PushHook(hook func(c
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
-		return r0
+func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) SetDefaultReturn(r0 *extsvc.Account, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
-		return r0
+func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) PushReturn(r0 *extsvc.Account, r1 error) {
+	f.PushHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
+		return r0, r1
 	})
 }
 
-func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) nextHook() func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
+func (f *UserExternalAccountsStoreAssociateUserAndSaveFunc) nextHook() func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -79258,7 +79258,10 @@ type UserExternalAccountsStoreAssociateUserAndSaveFuncCall struct {
 	Arg3 extsvc.AccountData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *extsvc.Account
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -79270,7 +79273,7 @@ func (c UserExternalAccountsStoreAssociateUserAndSaveFuncCall) Args() []interfac
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserExternalAccountsStoreAssociateUserAndSaveFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserExternalAccountsStoreCountFunc describes the behavior when the Count
@@ -80036,24 +80039,24 @@ func (c UserExternalAccountsStoreHandleFuncCall) Results() []interface{} {
 // Insert method of the parent MockUserExternalAccountsStore instance is
 // invoked.
 type UserExternalAccountsStoreInsertFunc struct {
-	defaultHook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error
-	hooks       []func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error
+	defaultHook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)
+	hooks       []func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)
 	history     []UserExternalAccountsStoreInsertFuncCall
 	mutex       sync.Mutex
 }
 
 // Insert delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) Insert(v0 context.Context, v1 int32, v2 extsvc.AccountSpec, v3 extsvc.AccountData) error {
-	r0 := m.InsertFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertFunc.appendCall(UserExternalAccountsStoreInsertFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockUserExternalAccountsStore) Insert(v0 context.Context, v1 int32, v2 extsvc.AccountSpec, v3 extsvc.AccountData) (*extsvc.Account, error) {
+	r0, r1 := m.InsertFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertFunc.appendCall(UserExternalAccountsStoreInsertFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Insert method of the
 // parent MockUserExternalAccountsStore instance is invoked and the hook
 // queue is empty.
-func (f *UserExternalAccountsStoreInsertFunc) SetDefaultHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error) {
+func (f *UserExternalAccountsStoreInsertFunc) SetDefaultHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)) {
 	f.defaultHook = hook
 }
 
@@ -80062,7 +80065,7 @@ func (f *UserExternalAccountsStoreInsertFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UserExternalAccountsStoreInsertFunc) PushHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error) {
+func (f *UserExternalAccountsStoreInsertFunc) PushHook(hook func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -80070,20 +80073,20 @@ func (f *UserExternalAccountsStoreInsertFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UserExternalAccountsStoreInsertFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
-		return r0
+func (f *UserExternalAccountsStoreInsertFunc) SetDefaultReturn(r0 *extsvc.Account, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UserExternalAccountsStoreInsertFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
-		return r0
+func (f *UserExternalAccountsStoreInsertFunc) PushReturn(r0 *extsvc.Account, r1 error) {
+	f.PushHook(func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
+		return r0, r1
 	})
 }
 
-func (f *UserExternalAccountsStoreInsertFunc) nextHook() func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
+func (f *UserExternalAccountsStoreInsertFunc) nextHook() func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) (*extsvc.Account, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -80131,7 +80134,10 @@ type UserExternalAccountsStoreInsertFuncCall struct {
 	Arg3 extsvc.AccountData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *extsvc.Account
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -80143,7 +80149,7 @@ func (c UserExternalAccountsStoreInsertFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserExternalAccountsStoreInsertFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserExternalAccountsStoreListFunc describes the behavior when the List

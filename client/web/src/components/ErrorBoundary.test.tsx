@@ -11,6 +11,11 @@ const ThrowError: React.FunctionComponent<React.PropsWithChildren<unknown>> = ()
     throw new Error('x')
 }
 
+/** Throws an error that resembles the  error when a dynamic import(...) fails.  */
+const ThrowDynamicImportError: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
+    throw new TypeError('Failed to fetch dynamically imported module: https://example.com/x.js')
+}
+
 /** Throws an error that resembles the Webpack error when chunk loading fails.  */
 const ThrowChunkError: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const ChunkError = new Error('Loading chunk 123 failed.')
@@ -37,7 +42,16 @@ describe('ErrorBoundary', () => {
             ).asFragment()
         ).toMatchSnapshot())
 
-    test('renders reload page if chunk error', () =>
+    test('renders reload page if dynamic import error', () =>
+        expect(
+            renderWithBrandedContext(
+                <ErrorBoundary location={null}>
+                    <ThrowDynamicImportError />
+                </ErrorBoundary>
+            ).asFragment()
+        ).toMatchSnapshot())
+
+    test('renders reload page if webpack chunk error', () =>
         expect(
             renderWithBrandedContext(
                 <ErrorBoundary location={null}>

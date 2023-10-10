@@ -22,13 +22,15 @@ const config: Meta = {
         displayNamespace: {
             name: 'Display namespace',
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         node: {
             table: {
                 disable: true,
             },
         },
+    },
+    args: {
+        displayNamespace: true,
     },
 }
 

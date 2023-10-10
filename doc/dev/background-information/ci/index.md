@@ -15,12 +15,6 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
    An introduction to Sourcegraph's Buildkite pipelines.
   </a>
 
-  <a href="./reference" class="btn" alt="Pipeline references">
-   <span>Pipelines reference</span>
-   <br>
-   A complete Buildkite pipeline reference covering all the different pipeline types.
-  </a>
-
   <a href="./development" class="btn" alt="Development">
    <span>Development</span>
    <br>
@@ -28,12 +22,13 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
   </a>
 </div>
 
+Run `sg ci docs` to see documentation about the CI pipeline steps.
+
 
 ## Buildkite pipelines
 
 [Tests](../../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes (i.e. when you run `git push`) to the `sourcegraph/sourcegraph` GitHub repository.
-Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/dev/ci) - a complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md). To keep the repository tidy, consider deleting the branch after the pipeline has completed. The build results will be available even after the branch is deleted.
-You can also see these docs locally with `sg ci docs`.
+Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/dev/ci) - a complete reference of all available pipeline types and steps is available from `sg ci docs`. To keep the repository tidy, consider deleting the branch after the pipeline has completed. The build results will be available even after the branch is deleted.
 
 To see what checks will get run against your current branch, use [`sg`](../../setup/quickstart.md):
 
@@ -79,7 +74,7 @@ All other failures are hard failures.
 #### Image vulnerability scanning
 
 Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
-Refer to our [Pipeline reference](./reference.md) to see what pipelines Trivy checks run in.
+Refer to `sg ci docs` to see what pipelines Trivy checks run in.
 
 If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
 

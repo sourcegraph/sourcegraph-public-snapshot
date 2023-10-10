@@ -70,8 +70,6 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
-var errPermissionsUserMappingConflict = errors.New("The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when bitbucketServer authorization provider is in use. Blocking access to all repositories until the conflict is resolved.")
-
 func TestAuthzProvidersFromConfig(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
@@ -450,7 +448,9 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
+			db := dbmocks.NewMockDB()
 			externalServices := dbmocks.NewMockExternalServiceStore()
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				mustMarshalJSONString := func(v any) string {
 					str, err := jsoniter.MarshalToString(v)
@@ -485,8 +485,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
-				dbmocks.NewMockDB(),
+				db,
 			)
 			assert.Equal(t, test.expAuthzAllowAccessByDefault, allowAccessByDefault)
 			if test.expAuthzProviders != nil {
@@ -662,7 +661,9 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
+			db := dbmocks.NewMockDB()
 			externalServices := dbmocks.NewMockExternalServiceStore()
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				mustMarshalJSONString := func(v any) string {
 					str, err := jsoniter.MarshalToString(v)
@@ -730,8 +731,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
-				dbmocks.NewMockDB(),
+				db,
 			)
 
 			assert.Equal(t, test.expSeriousProblems, seriousProblems)

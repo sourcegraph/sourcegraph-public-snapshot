@@ -7,10 +7,15 @@ import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
 import sass from 'sass'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import postcssConfig from '../../../../postcss.config'
 import { NODE_MODULES_PATH, ROOT_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../paths'
+
+/* eslint-disable import/extensions */
+
+const postcssConfig = process.env.BAZEL_BINDIR
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('../../../../../../../../postcss.config')
+    : // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('../../../../postcss.config')
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).
@@ -18,6 +23,8 @@ import { NODE_MODULES_PATH, ROOT_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../p
 export const stylePlugin: esbuild.Plugin = {
     name: 'style',
     setup: build => {
+        const isBazel = process.env.BAZEL_BINDIR
+
         const modulesMap = new Map<string, string>()
         const modulesPlugin = postcssModules({
             generateScopedName: '[name]__[local]', // omit hash for local dev
@@ -105,13 +112,19 @@ export const stylePlugin: esbuild.Plugin = {
             unsafeCache: true,
         })
 
-        build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
+        build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async ({ path: argsPath, ...args }) => {
+            // If running in Bazel, assume that the SASS compiler has already been run and just
+            // import the `.css` file.
+            if (isBazel) {
+                argsPath = argsPath.replace(/\.scss$/, '.css')
+            }
+
             const inputPath = await new Promise<string>((resolve, reject) => {
-                resolver.resolve({}, args.resolveDir, args.path, {}, (error, filepath) => {
+                resolver.resolve({}, args.resolveDir, argsPath, {}, (error, filepath) => {
                     if (filepath) {
                         resolve(filepath)
                     } else {
-                        reject(error ?? new Error(`Could not resolve file path for ${args.path}`))
+                        reject(error ?? new Error(`Could not resolve file path for ${argsPath}`))
                     }
                 })
             })

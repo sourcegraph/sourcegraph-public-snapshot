@@ -23,7 +23,7 @@ If you are looking to modify the pipeline, some good rules of thumbs for which c
 
 ### Run types
 
-> NOTE: A full reference of what our existing run types do is available in the [Pipeline reference](reference.md).
+> NOTE: A full reference of what our existing run types do is available from `sg ci docs`.
 
 <div class="embed">
   <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTU5"

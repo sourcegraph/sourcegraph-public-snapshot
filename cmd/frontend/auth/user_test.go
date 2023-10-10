@@ -739,22 +739,22 @@ func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, s
 }
 
 // AssociateUserAndSave mocks database.ExternalAccounts.AssociateUserAndSave
-func (m *mocks) AssociateUserAndSave(_ context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
+func (m *mocks) AssociateUserAndSave(_ context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (_ *extsvc.Account, err error) {
 	if m.associateUserAndSaveErr != nil {
-		return m.associateUserAndSaveErr
+		return nil, m.associateUserAndSaveErr
 	}
 
 	// Check if ext acct is associated with different user
 	for _, u := range m.userInfos {
 		for _, a := range u.extAccts {
 			if a == spec && u.user.ID != userID {
-				return errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, userID)
+				return nil, errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, userID)
 			}
 		}
 	}
 
 	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
-	return nil
+	return nil, nil
 }
 
 // GetByVerifiedEmail mocks database.Users.GetByVerifiedEmail
