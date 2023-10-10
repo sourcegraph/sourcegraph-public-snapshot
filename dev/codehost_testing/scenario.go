@@ -2,7 +2,9 @@ package codehost_testing
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"testing"
@@ -63,6 +65,7 @@ type GitHubScenario struct {
 	actions       []*Action
 	reporter      Reporter
 	nextActionIdx int
+	adminUser     *User
 }
 
 var _ Scenario = (*GitHubScenario)(nil)
@@ -79,13 +82,19 @@ func NewGitHubScenario(t *testing.T, cfg config.Config) (*GitHubScenario, error)
 	}
 	uid := []byte(uuid.NewString())
 	id := base64.RawStdEncoding.EncodeToString(uid[:])[:10]
-	return &GitHubScenario{
+	scenario := &GitHubScenario{
 		id:       id,
 		t:        t,
 		client:   client,
 		actions:  make([]*Action, 0),
-		reporter: NoopReporter{},
-	}, nil
+		reporter: &NoopReporter{},
+	}
+	scenario.adminUser = &User{
+		s:    scenario,
+		name: cfg.GitHub.AdminUser,
+	}
+
+	return scenario, err
 }
 
 // Verbose sets the reporter to ConsoleReporter to enable verbose output
@@ -95,7 +104,7 @@ func (s *GitHubScenario) SetVerbose() {
 
 // Quiet sets the reporter to a no-op reporter to reduce output
 func (s *GitHubScenario) SetQuiet() {
-	s.reporter = NoopReporter{}
+	s.reporter = &NoopReporter{}
 }
 
 func (s *GitHubScenario) Append(actions ...*Action) {
@@ -166,11 +175,11 @@ func (s *GitHubScenario) Apply(ctx context.Context) error {
 		duration := time.Now().UTC().Sub(now)
 
 		if err != nil {
+			errs = errors.Append(errs, err)
 			s.reporter.Writef("FAILED (%s)\n", duration.String())
 			if failFast {
 				break
 			}
-			errs = errors.Append(errs, err)
 		} else {
 			s.nextActionIdx++
 			s.reporter.Writef("SUCCESS (%s)\n", duration.String())
@@ -222,4 +231,73 @@ func (s *GitHubScenario) Teardown(ctx context.Context) error {
 	s.nextActionIdx = 0
 	s.reporter.Writef("Teardown complete in %s\n", time.Now().UTC().Sub(start))
 	return errs
+}
+
+func (s *GitHubScenario) CreateOrg(name string) *Org {
+	baseOrg := &Org{
+		s:    s,
+		name: name,
+	}
+
+	createOrg := &Action{
+		Name: "org:create:" + name,
+		Apply: func(ctx context.Context) error {
+			orgName := fmt.Sprintf("org-%s-%s", name, s.id)
+			org, err := s.client.CreateOrg(ctx, orgName)
+			if err != nil {
+				return err
+			}
+			baseOrg.name = org.GetLogin()
+			return nil
+		},
+		Teardown: func(context.Context) error {
+			host := baseOrg.s.client.cfg.URL
+			deleteURL := fmt.Sprintf("%s/organizations/%s/settings/profile", host, baseOrg.name)
+			fmt.Printf("Visit %q to delete the org\n", deleteURL)
+			return nil
+		},
+	}
+
+	s.Append(createOrg)
+	return baseOrg
+}
+
+// CreateUser adds an action to the scenario that will create a GitHub user with the given name. The username of the
+// user will have the following format `user-{name}-{scenario id}` and email `test-user-e2e@sourcegraph.com`.
+func (s *GitHubScenario) CreateUser(name string) *User {
+	baseUser := &User{
+		s:    s,
+		name: name,
+	}
+
+	createUser := &Action{
+		Name: "user:create:" + name,
+		Apply: func(ctx context.Context) error {
+			name := fmt.Sprintf("user-%s-%s", name, s.id)
+			emailID := md5.Sum([]byte(s.id + time.Now().String()))
+			email := fmt.Sprintf("test-user-e2e-%s@sourcegraph.com", hex.EncodeToString(emailID[:]))
+			user, err := s.client.CreateUser(ctx, name, email)
+			if err != nil {
+				return err
+			}
+
+			baseUser.name = user.GetLogin()
+			return nil
+		},
+		Teardown: func(ctx context.Context) error {
+			return s.client.DeleteUser(ctx, baseUser.name)
+		},
+	}
+
+	s.Append(createUser)
+	return baseUser
+}
+
+// GetAdmin returns a User representing the GitHub admin user configured in the client.
+//
+// NOTE: this method does not actually add an explicit action to the scenario, but will still
+// require that the scenario has been applied before the admin user can be retrieved - even though
+// it is not strictly required as the Admin already exists.
+func (s *GitHubScenario) GetAdmin() *User {
+	return s.adminUser
 }

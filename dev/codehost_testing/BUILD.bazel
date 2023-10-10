@@ -5,8 +5,12 @@ go_library(
     name = "codehost_testing",
     srcs = [
         "github_client.go",
+        "org.go",
+        "repo.go",
         "reporter.go",
         "scenario.go",
+        "team.go",
+        "user.go",
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codehost_testing",
@@ -16,7 +20,6 @@ go_library(
         "//lib/errors",
         "@com_github_google_go_github_v55//github",
         "@com_github_google_uuid//:uuid",
-        "@org_golang_x_oauth2//:oauth2",
     ],
 )
 
