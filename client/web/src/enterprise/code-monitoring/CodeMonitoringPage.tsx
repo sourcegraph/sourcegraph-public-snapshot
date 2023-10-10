@@ -85,13 +85,13 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             () =>
                 authenticatedUser
                     ? fetchUserCodeMonitors({
-                        id: authenticatedUser.id,
-                        first: 1,
-                        after: null,
-                    }).pipe(
-                        map(monitors => monitors.nodes.length > 0),
-                        catchError(error => [asError(error)])
-                    )
+                          id: authenticatedUser.id,
+                          first: 1,
+                          after: null,
+                      }).pipe(
+                          map(monitors => monitors.nodes.length > 0),
+                          catchError(error => [asError(error)])
+                      )
                     : of(false),
             [authenticatedUser, fetchUserCodeMonitors]
         )
@@ -100,8 +100,8 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     const navigate = useNavigate()
     const location = useLocation()
 
-    const [currentTab, setCurrentTab] = useState<MonitorsTab>(
-        () => getSelectedTabFromLocation(location.search, userHasCodeMonitors)
+    const [currentTab, setCurrentTab] = useState<MonitorsTab>(() =>
+        getSelectedTabFromLocation(location.search, userHasCodeMonitors)
     )
 
     const onSelectTab = useCallback(
@@ -141,12 +141,12 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         () => [
             {
                 tab: 'list',
-                title: 'Monitors',
+                title: 'Code monitors',
                 isActive: currentTab === 'list',
             },
             {
                 tab: 'getting-started',
-                title: 'Getting Started',
+                title: 'Getting started',
                 isActive: currentTab === 'getting-started',
             },
             {
