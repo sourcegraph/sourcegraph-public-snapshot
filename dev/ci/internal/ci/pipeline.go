@@ -143,6 +143,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			bops.Append(
 				addBrowserExtensionUnitTests,
 				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+				addBrowserExtensionE2ESteps,
 			)
 			ops.Merge(bops)
 		}
