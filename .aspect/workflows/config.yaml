@@ -12,22 +12,20 @@ tasks:
       bazel:
         rcfiles:
             - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
-        env:
-            CI: "true"
-            PGUSER: postgres
-            PGPASSWORD: postgres
-            PGDATABASE: postgres
-            PGSSLMODE: disable
-            DOCKER_CONFIG: /etc/gcp/docker.json
-            REDIS_CACHE_ENDPOINT: ":6379"
-            GIT_PAGER: ''
-            DISPLAY: ":99"
+      env:
+          CI: "true"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+          PGSSLMODE: disable
+          REDIS_CACHE_ENDPOINT: ":6379"
+          GIT_PAGER: ''
+          DISPLAY: ":99"
 
-        collect_coverage: false
-        flags:
-            - --config=go-verbose-test
-        targets:
-            - //...
-            - //client/web:test
-            - //testing:codeintel_integration_test
-            - //testing:grpc_backend_integration_test
+      coverage: false
+      flags:
+        - --noexperimental_reuse_sandbox_directories
+      targets:
+          - //...
+          - //testing:grpc_backend_integration_test
+          - //testing:codeintel_integration_test

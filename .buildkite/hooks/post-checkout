@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-echo "🗣️ I AM: $(whoami)"
-
 # shellcheck disable=SC1090,SC1091
 source "$HOME/.profile"
 
