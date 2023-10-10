@@ -2,49 +2,63 @@ import { getPreviousMonday, redactSensitiveInfoFromAppURL } from './util'
 
 describe('tracking/util', () => {
     describe(`${redactSensitiveInfoFromAppURL.name}()`, () => {
-        it('removes search queries from URLs', () => {
-            expect(redactSensitiveInfoFromAppURL('https://sourcegraph.com/search?q=test+query')).toEqual(
-                'https://sourcegraph.com/search/redacted?q=redacted'
+        it('removes search queries from URLs when originating from cloud instance', () => {
+            expect(redactSensitiveInfoFromAppURL('https://sourcegraph.sourcegraph.com/search?q=test+query')).toEqual(
+                'https://sourcegraph.sourcegraph.com/search/redacted?q=redacted'
             )
         })
 
-        it('removes search queries from URLs but maintains marketing query params', () => {
+        it('removes search queries from URLs but maintains marketing query params from cloud instances', () => {
             expect(
                 redactSensitiveInfoFromAppURL(
-                    'https://sourcegraph.com/search?q=test+query&utm_source=test&utm_campaign=test&utm_cid=test'
+                    'https://sourcegraph.sourcegraph.com/search?q=test+query&utm_source=test&utm_campaign=test&utm_cid=test'
                 )
             ).toEqual(
-                'https://sourcegraph.com/search/redacted?q=redacted&utm_source=test&utm_campaign=test&utm_cid=test'
+                'https://sourcegraph.sourcegraph.com/search/redacted?q=redacted&utm_source=test&utm_campaign=test&utm_cid=test'
             )
         })
 
-        it('removes all query params from URLs but maintains marketing query params', () => {
+        it('removes all query params from URLs but maintains marketing query params from cloud instances', () => {
             expect(
                 redactSensitiveInfoFromAppURL(
-                    'https://sourcegraph.com/search?some_query_param=test+query&utm_source=test&utm_campaign=test&utm_content=test&utm_medium=test&utm_medium=test'
+                    'https://sourcegraph.sourcegraph.com/search?some_query_param=test+query&utm_source=test&utm_campaign=test&utm_content=test&utm_medium=test&utm_medium=test'
                 )
             ).toEqual(
-                'https://sourcegraph.com/search/redacted?some_query_param=redacted&utm_source=test&utm_campaign=test&utm_content=test&utm_medium=test&utm_medium=test'
+                'https://sourcegraph.sourcegraph.com/search/redacted?some_query_param=redacted&utm_source=test&utm_campaign=test&utm_content=test&utm_medium=test&utm_medium=test'
             )
         })
 
-        it('removes repo information from URLs', () => {
+        it('removes repo information from URLs from cloud instances', () => {
             expect(
                 redactSensitiveInfoFromAppURL(
-                    'https://sourcegraph.com/github.com/test/test?utm_source=test&utm_campaign=test'
+                    'https://sourcegraph.sourcegraph.com/github.com/test/test?utm_source=test&utm_campaign=test'
                 )
-            ).toEqual('https://sourcegraph.com/github.com/redacted?utm_source=test&utm_campaign=test')
+            ).toEqual('https://sourcegraph.sourcegraph.com/github.com/redacted?utm_source=test&utm_campaign=test')
         })
 
-        it('removes repo and file information from URLs', () => {
+        it('removes repo and file information from URLs from cloud instances', () => {
             expect(
                 redactSensitiveInfoFromAppURL(
-                    'https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/test?utm_source=test&utm_campaign=test'
+                    'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/test?utm_source=test&utm_campaign=test'
                 )
-            ).toEqual('https://sourcegraph.com/github.com/redacted?utm_source=test&utm_campaign=test')
+            ).toEqual('https://sourcegraph.sourcegraph.com/github.com/redacted?utm_source=test&utm_campaign=test')
         })
 
-        it('does not redact pathnames from marketing site URLs', () => {
+        it('redact pathnames from unknown app URLs from cloud instances', () => {
+            expect(
+                redactSensitiveInfoFromAppURL('https://sourcegraph.sourcegraph.com/notebooks/Tm90ZWJvb2s6MTMwMA==')
+            ).toEqual('https://sourcegraph.sourcegraph.com/redacted')
+        })
+
+        it('does not redact from sourcegraph subdomins (signup)', () => {
+            expect(
+                redactSensitiveInfoFromAppURL(
+                    'https://signup.sourcegraph.com/case-studies?utm_source=test&utm_campaign=test'
+                )
+            ).toEqual('https://signup.sourcegraph.com/case-studies?utm_source=test&utm_campaign=test')
+        })
+
+        it('does not redact from sourcegraph subdomains (about)', () => {
             expect(
                 redactSensitiveInfoFromAppURL(
                     'https://about.sourcegraph.com/case-studies?utm_source=test&utm_campaign=test'
@@ -52,11 +66,12 @@ describe('tracking/util', () => {
             ).toEqual('https://about.sourcegraph.com/case-studies?utm_source=test&utm_campaign=test')
         })
 
-        it('does not redact pathnames from all non-sensitive app URLs', () => {
-            expect(redactSensitiveInfoFromAppURL('https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTMwMA==')).toEqual(
-                'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTMwMA=='
+        it('does not redact url when request is from sourcegraph', () => {
+            expect(redactSensitiveInfoFromAppURL('https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/test?utm_source=test&utm_campaign=test')).toEqual(
+                'https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/test?utm_source=test&utm_campaign=test'
             )
         })
+
     })
 
     describe(`${getPreviousMonday.name}()`, () => {
