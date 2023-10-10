@@ -161,6 +161,12 @@ func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int
 }
 
 func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
+	if len(scopes) == 0 {
+		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
+		// GraphQL API wouldn't let you do so anyway.
+		return 0, "", errors.New("access tokens without scopes are not supported")
+	}
+
 	config := conf.Get().SiteConfig()
 
 	var isDevInstance bool
@@ -177,12 +183,6 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 	token, b, err := accesstoken.GeneratePersonalAccessToken(config.LicenseKey, isDevInstance)
 	if err != nil {
 		return 0, "", err
-	}
-
-	if len(scopes) == 0 {
-		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
-		// GraphQL API wouldn't let you do so anyway.
-		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
 	if err := s.Handle().QueryRowContext(ctx,
