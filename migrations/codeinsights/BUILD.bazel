@@ -1,4 +1,3 @@
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 load("@aspect_bazel_lib//lib:output_files.bzl", "output_files")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
