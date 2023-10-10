@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -108,11 +107,6 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 				return
 
 			case "/login":
-				if err := authutil.ConnectOrSignOut(w, r); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-
 				// It is safe to use r.Referer() because the redirect-to URL will be checked later,
 				// before the client is actually instructed to navigate there.
 				redirectToAuthURL(w, r, p, r.Referer())

@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
@@ -64,11 +63,6 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
-			if err := authutil.ConnectOrSignOut(w, r); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
 			p, safeErrMsg, err := openidconnect.GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetOIDCProvider)
 			if err != nil {
 				logger.Error("failed to get provider", log.Error(err))

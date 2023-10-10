@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -81,11 +80,6 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := authutil.ConnectOrSignOut(w, r); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		id := r.URL.Query().Get("pc")
 		p := GetProvider(serviceType, id)
 		if p == nil {

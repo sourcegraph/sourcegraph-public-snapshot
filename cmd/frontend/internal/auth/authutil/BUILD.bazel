@@ -6,7 +6,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
         "//internal/actor",
+        "//internal/database",
     ],
 )
