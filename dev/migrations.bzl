@@ -54,8 +54,11 @@ def _generate_schemas_impl(ctx):
             ctx.outputs.out_frontend_schema,
             ctx.outputs.out_codeintel_schema,
             ctx.outputs.out_codeinsights_schema,
+            ctx.outputs.out_frontend_schema_md,
+            ctx.outputs.out_codeintel_schema_md,
+            ctx.outputs.out_codeinsights_schema_md,
         ],
-        progress_message = "Running squash migration TODO",
+        progress_message = "Running sg migration ...",
         use_default_shell_env = True,
         execution_requirements = {"requires-network": "1"},
         command = """{cmd_preamble}
@@ -72,6 +75,10 @@ def _generate_schemas_impl(ctx):
         {sg} migration describe -db codeintel --format=json -force -out {out_codeintel_schema}
         {sg} migration describe -db codeinsights --format=json -force -out {out_codeinsights_schema}
 
+        {sg} migration describe -db frontend --format=psql -force -out {out_frontend_schema_md}
+        {sg} migration describe -db codeintel --format=psql -force -out {out_codeintel_schema_md}
+        {sg} migration describe -db codeinsights --format=psql -force -out {out_codeinsights_schema_md}
+
         """.format(
             cmd_preamble = CMD_PREAMBLE,
             sg = ctx.executable._sg.path,
@@ -81,6 +88,9 @@ def _generate_schemas_impl(ctx):
             out_frontend_schema = ctx.outputs.out_frontend_schema.path,
             out_codeintel_schema = ctx.outputs.out_codeintel_schema.path,
             out_codeinsights_schema = ctx.outputs.out_codeinsights_schema.path,
+            out_frontend_schema_md = ctx.outputs.out_frontend_schema_md.path,
+            out_codeintel_schema_md = ctx.outputs.out_codeintel_schema_md.path,
+            out_codeinsights_schema_md = ctx.outputs.out_codeinsights_schema_md.path,
         ),
         tools = ctx.attr._sg[DefaultInfo].default_runfiles.files
     )
@@ -94,15 +104,23 @@ def _generate_schemas_impl(ctx):
                 ctx.outputs.out_frontend_schema,
                 ctx.outputs.out_codeintel_schema,
                 ctx.outputs.out_codeinsights_schema,
+                ctx.outputs.out_frontend_schema_md,
+                ctx.outputs.out_codeintel_schema_md,
+                ctx.outputs.out_codeinsights_schema_md,
             ])
         ),
         OutputGroupInfo(
                 frontend_squash = depset([ctx.outputs.out_frontend_squash]),
                 codeintel_squash = depset([ctx.outputs.out_codeintel_squash]),
                 codeinsights_squash = depset([ctx.outputs.out_codeinsights_squash]),
-                frontend_schema = depset([ctx.outputs.out_frontend_schema]),
-                codeintel_schema = depset([ctx.outputs.out_codeintel_schema]),
-                codeinsights_schema = depset([ctx.outputs.out_codeinsights_schema]),
+                schemas = depset([
+                  ctx.outputs.out_frontend_schema,
+                  ctx.outputs.out_codeintel_schema,
+                  ctx.outputs.out_codeinsights_schema,
+                  ctx.outputs.out_frontend_schema_md,
+                  ctx.outputs.out_codeintel_schema_md,
+                  ctx.outputs.out_codeinsights_schema_md,
+                ])
         ),
     ]
 
@@ -118,6 +136,10 @@ generate_schemas = rule(
         "out_frontend_schema": attr.output(mandatory = True),
         "out_codeintel_schema": attr.output(mandatory = True),
         "out_codeinsights_schema": attr.output(mandatory = True),
+
+        "out_frontend_schema_md": attr.output(mandatory = True),
+        "out_codeintel_schema_md": attr.output(mandatory = True),
+        "out_codeinsights_schema_md": attr.output(mandatory = True),
 
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
     },

@@ -351,6 +351,11 @@ generate_schemas(
     out_codeintel_squash = "_codeintel_squashed.sql",
     out_frontend_schema = "_schema.json",
     out_frontend_squash = "_frontend_squashed.sql",
+
+    out_codeinsights_schema_md = "_schema.codeinsights.md",
+    out_codeintel_schema_md = "_schema.codeintel.md",
+    out_frontend_schema_md = "_schema.md",
+
     visibility = ["//visibility:public"],
 )
 
@@ -360,6 +365,9 @@ write_generated_to_source_files(
         "schema.json": "_schema.json",
         "schema.codeintel.json": "_schema.codeintel.json",
         "schema.codeinsights.json": "_schema.codeinsights.json",
+        "schema.md": "_schema.md",
+        "schema.codeintel.md": "_schema.codeintel.md",
+        "schema.codeinsights.md": "_schema.codeinsights.md",
     },
     target = ":generate_schemas",
 )
