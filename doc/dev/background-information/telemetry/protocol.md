@@ -24,7 +24,7 @@ This page contains generated documentation for telemetry event data that gets ex
     - [EventUser](#telemetrygateway-v1-EventUser)
     - [Identifier](#telemetrygateway-v1-Identifier)
     - [Identifier.LicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-LicensedInstanceIdentifier)
-    - [Identifier.UnlicensedInstanceIdenfitier](#telemetrygateway-v1-Identifier-UnlicensedInstanceIdenfitier)
+    - [Identifier.UnlicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-UnlicensedInstanceIdentifier)
     - [RecordEventsRequest](#telemetrygateway-v1-RecordEventsRequest)
     - [RecordEventsRequest.EventsPayload](#telemetrygateway-v1-RecordEventsRequest-EventsPayload)
     - [RecordEventsRequestMetadata](#telemetrygateway-v1-RecordEventsRequestMetadata)
@@ -245,7 +245,7 @@ Sourcegraph.com instance.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | licensed_instance | [Identifier.LicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-LicensedInstanceIdentifier) |  | <p>A licensed Sourcegraph instance.</p> |
-| unlicensed_instance | [Identifier.UnlicensedInstanceIdenfitier](#telemetrygateway-v1-Identifier-UnlicensedInstanceIdenfitier) |  | <p>An unlicensed Sourcegraph instance.</p> |
+| unlicensed_instance | [Identifier.UnlicensedInstanceIdentifier](#telemetrygateway-v1-Identifier-UnlicensedInstanceIdentifier) |  | <p>An unlicensed Sourcegraph instance.</p> |
 
 
 
@@ -268,9 +268,9 @@ Sourcegraph.com instance.
 
 
 
-<a name="telemetrygateway-v1-Identifier-UnlicensedInstanceIdenfitier"></a>
+<a name="telemetrygateway-v1-Identifier-UnlicensedInstanceIdentifier"></a>
 
-### Identifier.UnlicensedInstanceIdenfitier
+### Identifier.UnlicensedInstanceIdentifier
 
 
 
