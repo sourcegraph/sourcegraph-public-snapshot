@@ -364,7 +364,7 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 
 	logger.Info("Writing external account to the DB")
 
-	err = db.UserExternalAccounts().AssociateUserAndSave(
+	_, err = db.UserExternalAccounts().AssociateUserAndSave(
 		ctx,
 		user.ID,
 		extsvc.AccountSpec{
