@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -187,7 +186,7 @@ func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
 // defaultBranchContains tells if the default branch contains the given commit ID.
 func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, commit string) (bool, error) {
 	// Determine default branch name.
-	descriptions, err := c.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repo)
+	descriptions, err := c.gitserverClient.RefDescriptions(ctx, repo)
 	if err != nil {
 		return false, err
 	}
@@ -202,7 +201,7 @@ func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, 
 	}
 
 	// Determine if branch contains commit.
-	branches, err := c.gitserverClient.BranchesContaining(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
+	branches, err := c.gitserverClient.BranchesContaining(ctx, repo, api.CommitID(commit))
 	if err != nil {
 		return false, err
 	}
@@ -235,7 +234,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	trace.AddEvent("TODO Domain Owner", attribute.Bool("defaultBranch", isDefaultBranch))
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		directoryChildren, err := h.gitserverClient.ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(upload.Commit), dirnames)
+		directoryChildren, err := h.gitserverClient.ListDirectoryChildren(ctx, repo.Name, api.CommitID(upload.Commit), dirnames)
 		if err != nil {
 			return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 		}
@@ -257,7 +256,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		// database (if not already present). We need to have the commit data of every processed upload
 		// for a repository when calculating the commit graph (triggered at the end of this handler).
 
-		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(upload.Commit))
+		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, repo.Name, api.CommitID(upload.Commit))
 		if err != nil {
 			return errors.Wrap(err, "gitserverClient.CommitDate")
 		}

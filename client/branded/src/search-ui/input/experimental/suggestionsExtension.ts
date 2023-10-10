@@ -23,7 +23,7 @@ import { createRoot, type Root } from 'react-dom/client'
 
 import { compatNavigate, type HistoryOrNavigate } from '@sourcegraph/common'
 
-import { getSelectedMode, modeChanged, modesFacet, setModeEffect } from './modes'
+import { getSelectedMode, modeChanged, setModeEffect } from './modes'
 import { Suggestions } from './Suggestions'
 
 const ASYNC_THROTTLE_TIME = 300
@@ -274,7 +274,6 @@ class Result {
         return new Result(result.result, result.valid)
     }
 
-    // eslint-disable-next-line id-length
     public at(index: number): Option | undefined {
         return this.allOptions[index]
     }
@@ -693,7 +692,6 @@ interface ExternalConfig extends Config {
 }
 
 export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalConfig): Extension => [
-    modesFacet.of([]), // makes sure the facet is defined
     suggestionsConfig.of({ historyOrNavigate, id }),
     suggestionSources.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),

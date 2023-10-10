@@ -60,15 +60,17 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                     isOpen={isRemoveAccountModalOpen}
                 />
             )}
-            <AddGerritAccountModal
-                serviceID={authProvider.serviceID}
-                onDidAdd={() => {
-                    onDidAdd()
-                    setIsGerritAccountModalOpen(false)
-                }}
-                onDismiss={() => setIsGerritAccountModalOpen(false)}
-                isOpen={isAddGerritAccountModalOpen}
-            />
+            {isAddGerritAccountModalOpen && (
+                <AddGerritAccountModal
+                    serviceID={authProvider.serviceID}
+                    onDidAdd={() => {
+                        onDidAdd()
+                        setIsGerritAccountModalOpen(false)
+                    }}
+                    onDismiss={() => setIsGerritAccountModalOpen(false)}
+                    isOpen={isAddGerritAccountModalOpen}
+                />
+            )}
             <div className="align-self-center">
                 <AccountIcon className="mb-0 mr-2" />
             </div>

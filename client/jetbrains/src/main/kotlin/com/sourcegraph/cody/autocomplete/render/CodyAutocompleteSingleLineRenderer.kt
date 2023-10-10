@@ -9,10 +9,10 @@ import java.awt.Rectangle
 
 class CodyAutocompleteSingleLineRenderer(
     text: String,
-    completionItem: InlineAutocompleteItem,
+    items: List<InlineAutocompleteItem>,
     editor: Editor,
     type: AutocompleteRendererType
-) : CodyAutocompleteElementRenderer(text, completionItem, editor, type) {
+) : CodyAutocompleteElementRenderer(text, items, editor, type) {
   override fun paint(
       inlay: Inlay<*>,
       g: Graphics,

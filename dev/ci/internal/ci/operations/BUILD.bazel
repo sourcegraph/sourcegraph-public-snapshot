@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "operations",
+    srcs = ["operations.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations",
+    visibility = ["//dev/ci:__subpackages__"],
+    deps = [
+        "//dev/ci/internal/buildkite",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

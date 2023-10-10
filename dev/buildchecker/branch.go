@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

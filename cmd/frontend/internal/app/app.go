@@ -25,7 +25,7 @@ import (
 // and sets the actor in the request context.
 func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Handler) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
-		if deploy.IsApp() {
+		if deploy.IsSingleBinary() {
 			// Safari / WebKit-based browsers refuse to set cookies on localhost as it is not treated
 			// as a secure domain, in contrast to all other browsers.
 			// https://bugs.webkit.org/show_bug.cgi?id=232088

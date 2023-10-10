@@ -3,7 +3,7 @@ package bitbucketcloudoauth
 import (
 	"fmt"
 
-	"github.com/dghubble/gologin"
+	"github.com/dghubble/gologin/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"

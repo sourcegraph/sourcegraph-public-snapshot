@@ -55,8 +55,10 @@ const config: Meta = {
     argTypes: {
         disabled: {
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        disabled: false,
     },
 }
 

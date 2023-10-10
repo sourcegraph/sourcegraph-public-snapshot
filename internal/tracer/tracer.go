@@ -101,6 +101,7 @@ func Init(logger log.Logger, c WatchableConfigurationSource) {
 	// Create and set up global tracers from provider. We will be making updates to these
 	// tracers through the debugMode ref and underlying provider.
 	otelTracerProvider := newTracer(logger, provider, debugMode)
+	otel.SetTextMapPropagator(oteldefaults.Propagator())
 	otel.SetTracerProvider(otelTracerProvider)
 
 	// Initially everything is disabled since we haven't read conf yet - start a goroutine
@@ -121,9 +122,6 @@ func Init(logger log.Logger, c WatchableConfigurationSource) {
 }
 
 func newTracer(logger log.Logger, provider *oteltracesdk.TracerProvider, debugMode *atomic.Bool) oteltrace.TracerProvider {
-	propagator := oteldefaults.Propagator()
-	otel.SetTextMapPropagator(propagator)
-
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {

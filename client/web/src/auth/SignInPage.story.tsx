@@ -7,6 +7,9 @@ import { SignInPage, type SignInPageProps } from './SignInPage'
 
 const config: Meta = {
     title: 'web/auth/SignInPage',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 
 export default config
@@ -52,34 +55,44 @@ const context: SignInPageProps['context'] = {
 }
 
 export const Default: Story = () => (
-    <WebStory>{({ isLightTheme }) => <SignInPage context={context} authenticatedUser={null} />}</WebStory>
+    <WebStory>{() => <SignInPage context={context} authenticatedUser={null} />}</WebStory>
+)
+
+export const ShowMore: Story = () => (
+    <WebStory initialEntries={[{ pathname: '/sign-in', search: '?showMore' }]}>
+        {() => <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />}
+    </WebStory>
+)
+
+export const Dotcom: Story = () => (
+    <WebStory>
+        {() => <SignInPage context={{ ...context, sourcegraphDotComMode: true }} authenticatedUser={null} />}
+    </WebStory>
+)
+
+export const NoProviders: Story = () => (
+    <WebStory>{() => <SignInPage context={{ ...context, authProviders: [] }} authenticatedUser={null} />}</WebStory>
 )
 
 export const NoBuiltIn: Story = () => (
     <WebStory>
-        {({ isLightTheme }) => (
-            <SignInPage context={{ ...context, authProviders: noBuiltInAuthProviders }} authenticatedUser={null} />
-        )}
+        {() => <SignInPage context={{ ...context, authProviders: noBuiltInAuthProviders }} authenticatedUser={null} />}
     </WebStory>
 )
 
 export const NoResetPassword: Story = () => (
     <WebStory>
-        {({ isLightTheme }) => (
-            <SignInPage context={{ ...context, resetPasswordEnabled: false }} authenticatedUser={null} />
-        )}
+        {() => <SignInPage context={{ ...context, resetPasswordEnabled: false }} authenticatedUser={null} />}
     </WebStory>
 )
 
 export const NoSignUp: Story = () => (
-    <WebStory>
-        {({ isLightTheme }) => <SignInPage context={{ ...context, allowSignup: false }} authenticatedUser={null} />}
-    </WebStory>
+    <WebStory>{() => <SignInPage context={{ ...context, allowSignup: false }} authenticatedUser={null} />}</WebStory>
 )
 
 export const NoAccessRequest: Story = () => (
     <WebStory>
-        {({ isLightTheme }) => (
+        {() => (
             <SignInPage
                 context={{ ...context, allowSignup: false, authAccessRequest: { enabled: false } }}
                 authenticatedUser={null}
@@ -90,23 +103,19 @@ export const NoAccessRequest: Story = () => (
 
 export const DotComSignUp: Story = () => (
     <WebStory>
-        {({ isLightTheme }) => (
-            <SignInPage context={{ ...context, sourcegraphDotComMode: true }} authenticatedUser={null} />
-        )}
+        {() => <SignInPage context={{ ...context, sourcegraphDotComMode: true }} authenticatedUser={null} />}
     </WebStory>
 )
 
 export const OnlyOnePrimaryProvider: Story = () => (
     <WebStory>
-        {({ isLightTheme }) => (
-            <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />
-        )}
+        {() => <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />}
     </WebStory>
 )
 
 export const OnlyOnePrimaryProviderWithoutBuiltIn: Story = () => (
     <WebStory>
-        {({ isLightTheme }) => (
+        {() => (
             <SignInPage
                 context={{ ...context, primaryLoginProvidersCount: 1, authProviders: noBuiltInAuthProviders }}
                 authenticatedUser={null}
@@ -117,15 +126,13 @@ export const OnlyOnePrimaryProviderWithoutBuiltIn: Story = () => (
 
 export const ShowMoreProviders: Story = () => (
     <WebStory initialEntries={['/sign-in?showMore']}>
-        {({ isLightTheme }) => (
-            <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />
-        )}
+        {() => <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />}
     </WebStory>
 )
 
 export const ShowMoreProvidersWithoutBuiltIn: Story = () => (
     <WebStory initialEntries={['/sign-in?showMore']}>
-        {({ isLightTheme }) => (
+        {() => (
             <SignInPage
                 context={{ ...context, authProviders: noBuiltInAuthProviders, primaryLoginProvidersCount: 1 }}
                 authenticatedUser={null}
@@ -136,9 +143,7 @@ export const ShowMoreProvidersWithoutBuiltIn: Story = () => (
 
 export const OnlyBuiltInAuthProvider: Story = () => (
     <WebStory>
-        {({ isLightTheme }) => (
-            <SignInPage context={{ ...context, authProviders: onlyBuiltInAuthProvider }} authenticatedUser={null} />
-        )}
+        {() => <SignInPage context={{ ...context, authProviders: onlyBuiltInAuthProvider }} authenticatedUser={null} />}
     </WebStory>
 )
 
@@ -147,9 +152,7 @@ export const PrefixCanBeChanged: Story = () => {
 
     return (
         <WebStory>
-            {({ isLightTheme }) => (
-                <SignInPage context={{ ...context, authProviders: providers }} authenticatedUser={null} />
-            )}
+            {() => <SignInPage context={{ ...context, authProviders: providers }} authenticatedUser={null} />}
         </WebStory>
     )
 }

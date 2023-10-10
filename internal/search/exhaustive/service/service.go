@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
@@ -127,6 +128,10 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 	))
 	defer endObservation(1, observation.Args{})
 
+	if !isEnabled() {
+		return nil, errors.New("search jobs is an experimental feature, enable it by setting \"experimentalFeatures.searchJobs: true\" in site configuration")
+	}
+
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("search jobs can only be created by an authenticated user")
@@ -206,7 +211,7 @@ func (s *Service) GetSearchJobLogsWriterTo(parentCtx context.Context, id int64) 
 	defer endObservation(1, observation.Args{})
 
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
-	if _, err := s.GetSearchJob(ctx, id); err != nil {
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
 		return nil, err
 	}
 
@@ -278,8 +283,7 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 	}()
 
 	// 🚨 SECURITY: only someone with access to the job may delete data and the db entries
-	_, err = s.GetSearchJob(ctx, id)
-	if err != nil {
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
 		return err
 	}
 
@@ -320,8 +324,7 @@ func (s *Service) GetSearchJobCSVWriterTo(parentCtx context.Context, id int64) (
 	defer endObservation(1, observation.Args{})
 
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
-	_, err = s.GetSearchJob(ctx, id)
-	if err != nil {
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
 		return nil, err
 	}
 
@@ -395,7 +398,6 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 	writeKey := func(key string, skipHeader bool) (int64, error) {
 		rc, err := uploadStore.Get(ctx, key)
 		if err != nil {
-			_ = rc.Close()
 			return 0, err
 		}
 		defer rc.Close()
@@ -495,4 +497,11 @@ func (c *writeCounter) Write(p []byte) (n int, err error) {
 	n, err = c.w.Write(p)
 	c.n += int64(n)
 	return
+}
+
+func isEnabled() bool {
+	if experimentalFeatures := conf.SiteConfig().ExperimentalFeatures; experimentalFeatures != nil {
+		return experimentalFeatures.SearchJobs != nil && *experimentalFeatures.SearchJobs
+	}
+	return false
 }

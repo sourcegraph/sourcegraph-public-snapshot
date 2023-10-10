@@ -314,7 +314,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.20.8",
+    version = "1.20.9",
 )
 
 linter_dependencies()
@@ -404,7 +404,7 @@ load("//dev:oci_deps.bzl", "oci_deps")
 
 oci_deps()
 
-load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
+load("//cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
 
 embbedings_assets_deps()
 

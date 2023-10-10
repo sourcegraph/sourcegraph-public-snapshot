@@ -7480,6 +7480,43 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 
 <br />
 
+## telemetry: telemetry_gateway_exporter_queue_growth
+
+<p class="subtitle">rate of growth of export queue over 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 1+ rate of growth of export queue over 30m for 1h0m0s
+- <span class="badge badge-critical">critical</span> telemetry: 1+ rate of growth of export queue over 30m for 36h0m0s
+
+**Next steps**
+
+- Increase `TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE` to export more events per batch.
+- Reduce `TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL` to schedule more export jobs.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details to see if any export errors are occuring - if logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#telemetry-telemetry-gateway-exporter-queue-growth).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetry_gateway_exporter_queue_growth",
+  "critical_telemetry_telemetry_gateway_exporter_queue_growth"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max(deriv(src_telemetrygatewayexporter_queue_size[30m]))) > 1)`
+
+Generated query for critical alert: `max((max(deriv(src_telemetrygatewayexporter_queue_size[30m]))) > 1)`
+
+</details>
+
+<br />
+
 ## telemetry: telemetrygatewayexporter_exporter_errors_total
 
 <p class="subtitle">events exporter operation errors every 30m</p>

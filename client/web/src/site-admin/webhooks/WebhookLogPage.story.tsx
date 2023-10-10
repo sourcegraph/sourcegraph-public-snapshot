@@ -25,13 +25,15 @@ const config: Meta = {
         externalServiceCount: {
             name: 'external service count',
             control: { type: 'number' },
-            defaultValue: 2,
         },
         erroredWebhookCount: {
             name: 'errored webhook count',
             control: { type: 'number' },
-            defaultValue: 2,
         },
+    },
+    args: {
+        externalServiceCount: 2,
+        erroredWebhookCount: 2,
     },
 }
 

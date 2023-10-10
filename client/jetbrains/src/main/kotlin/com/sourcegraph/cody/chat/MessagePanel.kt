@@ -23,12 +23,12 @@ class MessagePanel(
   private var lastMessagePart: MessagePart? = null
 
   init {
-    val markdownNodes: Node = markdownParser.parse(chatMessage.displayText)
+    val markdownNodes: Node = markdownParser.parse(chatMessage.actualMessage())
     markdownNodes.accept(MessageContentCreatorFromMarkdownNodes(this, htmlRenderer))
   }
 
   fun updateContentWith(message: ChatMessage) {
-    val markdownNodes = markdownParser.parse(message.displayText)
+    val markdownNodes = markdownParser.parse(message.actualMessage())
     val lastMarkdownNode = markdownNodes.lastChild
     if (lastMarkdownNode.isCodeBlock()) {
       val (code, language) = lastMarkdownNode.extractCodeAndLanguage()

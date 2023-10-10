@@ -476,12 +476,15 @@ export function setDebugEventLoggingEnabled(enabled: boolean): void {
  */
 function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
-    const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
-    if (isBadgeRedirect) {
-        eventLogger.log('RepoBadgeRedirected')
+    if (parsedUrl.searchParams.has('signup')) {
+        eventLogger.log('web:auth:signUpCompleted')
     }
 
-    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
+    if (parsedUrl.searchParams.has('signin')) {
+        eventLogger.log('web:auth:signInCompleted')
+    }
+
+    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
 }
 
 /**

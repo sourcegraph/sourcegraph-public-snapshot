@@ -96,7 +96,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/users',
             render: () => (
                 <UsersManagement
-                    isEnterprise={true}
                     renderAssignmentModal={(onCancel, onSuccess, user) => (
                         <RoleAssignmentModal onCancel={onCancel} onSuccess={onSuccess} user={user} />
                     )}

@@ -5,6 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.config.CodySignedOutNotification
 import com.sourcegraph.config.ConfigUtil
@@ -44,6 +45,8 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
                 CodyAutocompleteStatus.CodyDisabled
               } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
                 CodyAutocompleteStatus.AutocompleteDisabled
+              } else if (!CodyAgent.isConnected(project)) {
+                CodyAutocompleteStatus.CodyAgentNotRunning
               } else if (CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
                 CodySignedOutNotification.show(project)
                 CodyAutocompleteStatus.CodyNotSignedIn
@@ -79,7 +82,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
     }
   }
 
-  override fun dispose() {}
+  override fun dispose() = Unit
 
   companion object {
 

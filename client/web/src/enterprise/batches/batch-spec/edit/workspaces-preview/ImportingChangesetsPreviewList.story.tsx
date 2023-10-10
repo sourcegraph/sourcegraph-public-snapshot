@@ -15,23 +15,25 @@ const config: Meta = {
         count: {
             name: 'Count',
             control: { type: 'number' },
-            defaultValue: 1,
         },
         isStale: {
             name: 'Stale',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
         hasNextPage: {
             name: 'Has Next Page',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
         loading: {
             name: 'Loading',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        count: 1,
+        isStale: false,
+        hasNextPage: false,
+        loading: false,
     },
 }
 

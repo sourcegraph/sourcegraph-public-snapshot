@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/log"
 
@@ -123,7 +123,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 			),
 		urn:                 urn,
 		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		githubDotCom:        URLIsGitHubDotCom(apiURL),
 		auth:                a,
 		httpClient:          cli,
 		internalRateLimiter: rl,
@@ -385,9 +385,9 @@ var MockGetAuthenticatedUserOrgs struct {
 	PagesMock map[int][]*Org
 }
 
-// GetAuthenticatedUserOrgsForPage returns given page of 100 organizations associated with the currently
+// GetAuthenticatedUserOrgs returns given page of 100 organizations associated with the currently
 // authenticated user.
-func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int) (
+func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context, page int) (
 	orgs []*Org,
 	hasNextPage bool,
 	rateLimitCost int,
@@ -431,7 +431,7 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 	rateLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
+	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgs(ctx, page)
 	if err != nil {
 		return
 	}

@@ -102,7 +102,7 @@ describe('codmirror completions', () => {
                 'type',
                 'visibility',
                 ...shorthandSuggestions,
-                'RepoRoutes',
+                'variable RepoRoutes',
             ].filter(label => label.toLowerCase().includes('re'))
         )
     })
@@ -359,7 +359,7 @@ describe('codmirror completions', () => {
         `)
     })
 
-    const suggestionType = (query: string): string => suggestionTypeFromTokens(getTokens(query), { applyOnEnter: true })
+    const suggestionType = (query: string): string => suggestionTypeFromTokens(getTokens(query))
     test('suggests repos for global queries', async () => {
         expect(suggestionType('sourcegraph')).toStrictEqual('repo')
     })

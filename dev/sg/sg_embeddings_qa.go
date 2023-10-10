@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

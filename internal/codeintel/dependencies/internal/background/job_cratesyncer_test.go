@@ -16,7 +16,6 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -63,7 +62,7 @@ func TestCrateSyncer(t *testing.T) {
 
 	gitclient := gitserver.NewMockClient()
 	gitclient.LsFilesFunc.SetDefaultReturn([]string{"petgraph", "percent"}, nil)
-	gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		var archive io.ReadCloser
 		switch opts.Pathspecs[0] {
 		case "petgraph":
@@ -120,7 +119,7 @@ func TestCrateSyncer(t *testing.T) {
 		extsvcStore.GetByIDFunc.history = extsvcStore.GetByIDFunc.history[:0]
 		autoindexSvc.QueueIndexesForPackageFunc.history = autoindexSvc.QueueIndexesForPackageFunc.history[:0]
 
-		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 			if slices.Contains(opts.Pathspecs, "petgraph") {
 				return createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON)}), nil
 			}
@@ -152,7 +151,7 @@ func TestCrateSyncer(t *testing.T) {
 		extsvcStore.GetByIDFunc.history = extsvcStore.GetByIDFunc.history[:0]
 		autoindexSvc.QueueIndexesForPackageFunc.history = autoindexSvc.QueueIndexesForPackageFunc.history[:0]
 
-		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 			if slices.Contains(opts.Pathspecs, "petgraph") {
 				return createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON[:len(petgraphJSON)-5])}), nil
 			}

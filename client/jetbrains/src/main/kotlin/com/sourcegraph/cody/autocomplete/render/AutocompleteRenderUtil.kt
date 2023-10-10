@@ -48,13 +48,13 @@ object AutocompleteRenderUtil {
             editor.inlayModel.addInlineElement(
                 inlayAutocomplete.offset,
                 CodyAutocompleteSingleLineRenderer(
-                    renderer.text, renderer.completionItem, editor, renderer.type))
+                    renderer.text, renderer.completionItems, editor, renderer.type))
             inlayAutocomplete.dispose()
           } else if (renderer is CodyAutocompleteBlockElementRenderer) {
             editor.inlayModel.addInlineElement(
                 inlayAutocomplete.offset,
                 CodyAutocompleteBlockElementRenderer(
-                    renderer.text, renderer.completionItem, editor))
+                    renderer.text, renderer.completionItems, editor))
             inlayAutocomplete.dispose()
           }
         }

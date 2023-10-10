@@ -6,10 +6,6 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-  - name: "p4 is runnable"
-    command: "p4"
-    args:
-      - -h
   - name: "coursier is runnable"
     command: "coursier"
 

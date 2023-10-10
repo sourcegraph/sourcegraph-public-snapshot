@@ -3,8 +3,6 @@
 
 @import 'wildcard/src/global-styles/base';
 @import './theming/highlight';
-@import './theming/monaco';
-@import '@vscode/codicons/dist/codicon';
 
 :root {
     // v2/debt: redefine our CSS variables using VS Code's CSS variables
