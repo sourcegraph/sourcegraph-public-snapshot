@@ -33,6 +33,7 @@ git add cmd/migrator/BUILD.bazel cmd/migrator/wip_git_versions.txt
 
 # Add the newly generated schemas
 git add internal/database/*.json
+git add internal/database/*.md
 
 git commit -m "release_patch: build ${NEW_VERSION}"
 
