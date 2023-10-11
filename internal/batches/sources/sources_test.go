@@ -409,7 +409,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -450,7 +450,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -485,7 +485,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 			css := NewMockChangesetSource()
-			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
 			assert.Error(t, err)
 		})
 
@@ -532,7 +532,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyGitHubApp)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyGitHubApp, repo)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -565,7 +565,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -591,7 +591,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			want := errors.New("validator was called")
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
-			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential, repo)
 			assert.Error(t, err)
 		})
 	})

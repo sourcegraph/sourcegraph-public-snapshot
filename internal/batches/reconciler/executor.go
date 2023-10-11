@@ -648,7 +648,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
-		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp, remoteRepo)
+		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp, e.remote)
 		if err != nil {
 			switch err {
 			case sources.ErrNoGitHubAppConfigured:
