@@ -295,7 +295,6 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }
