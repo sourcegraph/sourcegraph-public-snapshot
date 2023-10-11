@@ -48,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a user's Permissions page being inaccessible if the user has had no permission syncs with an external account connected. [#57372](https://github.com/sourcegraph/sourcegraph/pull/57372)
 - Fixed a bug where site admins could not view a user's permissions if they didn't have access to all of the repositories the user has. Admins still won't be able to see repositories they don't have access to, but they will now be able to view the rest of the user's repository permissions. [#57375](https://github.com/sourcegraph/sourcegraph/pull/57375)
 - Fixed a bug where gitserver statistics would not be properly decoded / reported when using REST (i.e. `experimentalFeatures.enableGRPC = false` in site configuration). [#57318](https://github.com/sourcegraph/sourcegraph/pull/57318)
+- Updated the `curl` and `libcurl` dependencies to `8.4.0-r0` to fix [CVE-2023-38545](https://curl.se/docs/CVE-2023-38545.html). [#57533](https://github.com/sourcegraph/sourcegraph/pull/57533)
 
 ### Removed
 
