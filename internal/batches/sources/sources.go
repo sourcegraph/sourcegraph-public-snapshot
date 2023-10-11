@@ -187,6 +187,9 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 				}
 			}
 		} else {
+			// Get owner from repo metadata. We expect repo.Metadata to be a github.Repository because the
+			// authentication strategy `AuthenticationStrategyGitHubApp` only applies to GitHub repositories.
+			// so this is a safe type cast.
 			repoMetadata := repo.Metadata.(*github.Repository)
 			owner, _, err = github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
 			if err != nil {
@@ -570,7 +573,7 @@ func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 		parsedURLs = append(parsedURLs, parsedURL)
 	}
 
-	sort.SliceStable(parsedURLs, func(i, _ int) bool {
+	sort.SliceStable(parsedURLs, func(i, j int) bool {
 		return !parsedURLs[i].IsSSH() && parsedURLs[j].IsSSH()
 	})
 
