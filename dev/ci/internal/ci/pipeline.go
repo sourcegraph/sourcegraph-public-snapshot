@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -440,33 +439,4 @@ func addWolfiOps(c Config, ops *operations.Set) {
 		)
 		ops.Merge(baseImageOps)
 	}
-}
-
-// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
-func wolfiRebuildAllBaseImages(c Config) *operations.Set {
-	// List all YAML files in wolfi-images/
-	dir := "wolfi-images"
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		panic(err)
-	}
-
-	var wolfiBaseImages []string
-	for _, f := range files {
-		if filepath.Ext(f.Name()) == ".yaml" {
-			fullPath := filepath.Join(dir, f.Name())
-			wolfiBaseImages = append(wolfiBaseImages, fullPath)
-		}
-	}
-
-	// Rebuild all images
-	var baseImageOps *operations.Set
-	if len(wolfiBaseImages) > 0 {
-		baseImageOps, _ = WolfiBaseImagesOperations(
-			wolfiBaseImages,
-			c.Version,
-			false,
-		)
-	}
-	return baseImageOps
 }
