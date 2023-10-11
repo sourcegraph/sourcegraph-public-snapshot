@@ -55,11 +55,14 @@ func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op 
 			std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping updating registry as it's public which we assume is the default, %q", err.Error())))
 		}
 	}
-	valuesFileString = strings.ReplaceAll(
-		valuesFileString,
-		existingReg,
-		filepath.Join(registry.Host(), registry.Org()),
-	)
+
+	if existingReg != "" {
+		valuesFileString = strings.ReplaceAll(
+			valuesFileString,
+			existingReg,
+			filepath.Join(registry.Host(), registry.Org()),
+		)
+	}
 
 	// Collect all images.
 	var imgs []string
