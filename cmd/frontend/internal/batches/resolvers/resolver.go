@@ -1478,37 +1478,6 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) ExportChangesets(ctx context.Context, args *graphqlbackend.ExportChangesetsArgs) (_ graphqlbackend.ExportChangesetsResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ExportChangesets",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
-	defer tr.EndWithErr(&err)
-
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
-		return nil, err
-	}
-
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
-		return nil, err
-	}
-
-	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
-	if err != nil {
-		return nil, err
-	}
-
-	svc := service.New(r.store)
-	batchChange, csvData, err := svc.ExportChangesets(ctx, batchChangeID, changesetIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	return &exportChangesetsResolver{
-		batchChange: batchChange,
-		csvData:     csvData,
-	}, nil
-}
-
 func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.CloseChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CloseChangesets",
 		attribute.String("batchChange", string(args.BatchChange)),

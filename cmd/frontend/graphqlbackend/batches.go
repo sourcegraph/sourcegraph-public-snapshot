@@ -308,8 +308,6 @@ type BatchChangesResolver interface {
 
 	MaxUnlicensedChangesets(ctx context.Context) int32
 
-	ExportChangesets(ctx context.Context, args *ExportChangesetsArgs) (ExportChangesetsResolver, error)
-
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
