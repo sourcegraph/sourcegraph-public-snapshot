@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # TODO: Manage these variables properly
 GCP_PROJECT="sourcegraph-ci"

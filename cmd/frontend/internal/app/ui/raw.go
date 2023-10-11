@@ -15,10 +15,10 @@ import (
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -60,7 +60,7 @@ import (
 // - This route would ideally be using strict slashes, in order for us to support symlinks via HTTP redirects.
 //
 
-func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
+func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Client) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		const (
 			textPlain       = "text/plain"
@@ -132,7 +132,17 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 		)
 		defer func() {
 			duration := time.Since(start)
-			log15.Debug("raw endpoint", "repo", common.Repo.Name, "commit", common.CommitID, "contentType", contentType, "type", requestType, "path", requestedPath, "size", size, "duration", duration, "error", err)
+			logger.Debug(
+				"raw endpoint",
+				log.String("repo", string(common.Repo.Name)),
+				log.String("commit", string(common.CommitID)),
+				log.String("contentType", contentType),
+				log.String("type", requestType),
+				log.String("path", requestedPath),
+				log.Int64("size", size),
+				log.Duration("duration", duration),
+				log.Error(err),
+			)
 			var errorS string
 			switch {
 			case err == nil:

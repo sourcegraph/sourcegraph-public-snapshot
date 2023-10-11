@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
@@ -14,6 +15,9 @@ import (
 )
 
 func main() {
+	liblog := log.Init(log.Resource{Name: "migration-generator"})
+	defer liblog.Sync()
+
 	if err := mainErr(); err != nil {
 		panic(fmt.Sprintf("error: %s", err))
 	}
