@@ -594,7 +594,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			targetRepo := &types.Repo{
 				Sources: map[string]*types.SourceInfo{
 					"fork": {
-						ID:       "1",
+						ID:       es.URN(),
 						CloneURL: fmt.Sprintf("https://github.com/%s/sourcegraph", forkedRepoNamespace),
 					},
 				},
