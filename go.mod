@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.19
+go 1.21
 
 // Permanent replace directives
 // ============================
