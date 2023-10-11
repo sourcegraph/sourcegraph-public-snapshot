@@ -18,6 +18,7 @@ import {
     StateEffect,
     type StateEffectType,
     StateField,
+    TransactionSpec,
 } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
@@ -179,17 +180,17 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
  *
  * @returns a compartmentalized extension
  */
-export function useCompartment(editorRef: RefObject<EditorView>, extension: Extension): Extension {
+export function useCompartment(editorRef: RefObject<EditorView>, extension: Extension, extender?: (view: EditorView) => StateEffect<unknown>[]): Extension {
     const compartment = useMemo(() => new Compartment(), [])
     // We only want to trigger CodeMirror transactions when the component updates,
     // not on the first render.
     const shouldUpdate = useRef(false)
 
     useEffect(() => {
-        if (shouldUpdate.current) {
-            editorRef.current?.dispatch({ effects: compartment.reconfigure(extension) })
-        } else {
-            shouldUpdate.current = true
+        const view = editorRef.current
+        if (view && compartment.get(view.state) !== extension) {
+            console.log('update compartment', extension)
+            view.dispatch({ effects: [compartment.reconfigure(extension), ...extender?.(view) ?? []] })
         }
     }, [shouldUpdate, compartment, editorRef, extension])
 

@@ -15,17 +15,16 @@ import {
     ViewPlugin,
     type ViewUpdate,
     WidgetType,
+    PluginValue,
 } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createRoot, type Root } from 'react-dom/client'
-import type { NavigateFunction } from 'react-router-dom'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 import type { BlameHunk, BlameHunkData } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
-
-import { blobPropsFacet } from '.'
+import { NavigateFunction } from 'react-router-dom'
 
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
 const startOfHunkDecoration = Decoration.line({ class: 'border-top' })
@@ -52,20 +51,15 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
 class BlameDecorationWidget extends WidgetType {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
-    private state: { navigate: NavigateFunction }
 
     constructor(
         public view: EditorView,
         public readonly hunk: BlameHunk | undefined,
         public readonly line: number,
-        // We can not access the light theme and first commit date from the view
-        // props because we need the widget to re-render when it updates.
-        public readonly isLightTheme: boolean,
-        public readonly blameHunkMetadata: Omit<BlameHunkData, 'current'>
+        public readonly blameHunkMetadata: Omit<BlameHunkData, 'current'>,
+        private readonly navigate: NavigateFunction
     ) {
         super()
-        const blobProps = this.view.state.facet(blobPropsFacet)
-        this.state = { navigate: blobProps.navigate }
     }
 
     public eq(other: BlameDecorationWidget): boolean {
@@ -80,9 +74,9 @@ class BlameDecorationWidget extends WidgetType {
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
                 <BlameDecoration
+                    navigate={this.navigate}
                     line={this.line ?? 0}
                     blameHunk={this.hunk}
-                    navigate={this.state.navigate}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                     firstCommitDate={this.blameHunkMetadata.firstCommitDate}
@@ -99,7 +93,7 @@ class BlameDecorationWidget extends WidgetType {
     }
 
     private deselectRow = (line: number): void => {
-        if (this.view.state.field(hoveredLine) === line) {
+        if (this.view.state.field(hoveredLine, false) === line) {
             setHoveredLine(this.view, null)
         }
     }
@@ -146,106 +140,87 @@ const blameDecorationTheme = EditorView.theme({
     },
 })
 
+class BlameDecorationViewPlugin implements PluginValue {
+    public decorations: DecorationSet
+    private previousHunkLength = -1
+    private previousBlameHunkMetadata: Omit<BlameHunkData, 'current'> | undefined
+
+    constructor(private view: EditorView, private navigate: NavigateFunction) {
+        this.decorations = this.computeDecorations(view.state.facet(showGitBlameDecorations))
+    }
+
+    public update(update: ViewUpdate): void {
+        const facetProps = update.view.state.facet(showGitBlameDecorations)
+        const hunks = facetProps.hunks
+        const blameHunkMetadata = facetProps.blameHunkMetadata
+
+        if (
+            update.docChanged ||
+                update.viewportChanged ||
+                this.previousHunkLength !== hunks.length ||
+                this.previousBlameHunkMetadata !== blameHunkMetadata
+        ) {
+            this.decorations = this.computeDecorations(facetProps)
+            this.previousHunkLength = hunks.length
+            this.previousBlameHunkMetadata = blameHunkMetadata
+        }
+    }
+
+    private computeDecorations({hunks, blameHunkMetadata}: BlameDecorationsFacetProps): DecorationSet {
+        const view = this.view
+        const widgets = []
+
+        for (const { from, to } of view.visibleRanges) {
+            let nextHunkDecorationLineRenderedAt = -1
+            for (let position = from; position <= to; ) {
+                const line = view.state.doc.lineAt(position)
+                const matchingHunk = hunks.find(
+                    hunk => line.number >= hunk.startLine && line.number < hunk.endLine
+                )
+
+                const isStartOfHunk = matchingHunk?.startLine === line.number
+                if (
+                    (isStartOfHunk && line.number !== 1) ||
+                        nextHunkDecorationLineRenderedAt === line.from
+                ) {
+                    widgets.push(startOfHunkDecoration.range(line.from))
+
+                    // When we found a hunk, we already know when the next one will start even if this
+                    // hunk was not loaded yet.
+                    //
+                    // We mark this as rendered in `nextHunkDecorationLineRenderedAt` so that the next
+                    // startLine can be skipped if it was rendered already
+                    if (matchingHunk) {
+                        nextHunkDecorationLineRenderedAt = view.state.doc.line(matchingHunk.endLine).from
+                    }
+                }
+
+                const decoration = Decoration.widget({
+                    widget: new BlameDecorationWidget(
+                        view,
+                        matchingHunk,
+                        line.number,
+                        blameHunkMetadata,
+                        this.navigate,
+                    ),
+                })
+                widgets.push(decoration.range(line.from))
+                position = line.to + 1
+            }
+        }
+        return Decoration.set(widgets)
+    }
+}
+
 /**
  * Facet to show git blame decorations.
  */
 interface BlameDecorationsFacetProps {
     hunks: BlameHunk[]
-    isLightTheme: boolean
     blameHunkMetadata: Omit<BlameHunkData, 'current'>
 }
 const showGitBlameDecorations = Facet.define<BlameDecorationsFacetProps, BlameDecorationsFacetProps>({
-    combine: decorations => decorations[0],
-    enables: facet => [
-        hoveredLine,
-
-        // Render blame hunks as line decorations.
-        ViewPlugin.fromClass(
-            class {
-                public decorations: DecorationSet
-                private previousHunkLength = -1
-                private previousIsLightTheme = false
-                private previousBlameHunkMetadata: Omit<BlameHunkData, 'current'> | undefined
-
-                constructor(view: EditorView) {
-                    this.decorations = this.computeDecorations(view, facet)
-                }
-
-                public update(update: ViewUpdate): void {
-                    const facetProps = update.view.state.facet(facet)
-                    const hunks = facetProps.hunks
-                    const isLightMode = facetProps.isLightTheme
-                    const blameHunkMetadata = facetProps.blameHunkMetadata
-
-                    if (
-                        update.docChanged ||
-                        update.viewportChanged ||
-                        this.previousHunkLength !== hunks.length ||
-                        this.previousIsLightTheme !== isLightMode ||
-                        this.previousBlameHunkMetadata !== blameHunkMetadata
-                    ) {
-                        this.decorations = this.computeDecorations(update.view, facet)
-                        this.previousHunkLength = hunks.length
-                        this.previousIsLightTheme = isLightMode
-                        this.previousBlameHunkMetadata = blameHunkMetadata
-                    }
-                }
-
-                private computeDecorations(
-                    view: EditorView,
-                    facet: Facet<BlameDecorationsFacetProps, BlameDecorationsFacetProps>
-                ): DecorationSet {
-                    const widgets = []
-                    const facetProps = view.state.facet(facet)
-                    const { hunks, isLightTheme, blameHunkMetadata } = facetProps
-
-                    for (const { from, to } of view.visibleRanges) {
-                        let nextHunkDecorationLineRenderedAt = -1
-                        for (let position = from; position <= to; ) {
-                            const line = view.state.doc.lineAt(position)
-                            const matchingHunk = hunks.find(
-                                hunk => line.number >= hunk.startLine && line.number < hunk.endLine
-                            )
-
-                            const isStartOfHunk = matchingHunk?.startLine === line.number
-                            if (
-                                (isStartOfHunk && line.number !== 1) ||
-                                nextHunkDecorationLineRenderedAt === line.from
-                            ) {
-                                widgets.push(startOfHunkDecoration.range(line.from))
-
-                                // When we found a hunk, we already know when the next one will start even if this
-                                // hunk was not loaded yet.
-                                //
-                                // We mark this as rendered in `nextHunkDecorationLineRenderedAt` so that the next
-                                // startLine can be skipped if it was rendered already
-                                if (matchingHunk) {
-                                    nextHunkDecorationLineRenderedAt = view.state.doc.line(matchingHunk.endLine).from
-                                }
-                            }
-
-                            const decoration = Decoration.widget({
-                                widget: new BlameDecorationWidget(
-                                    view,
-                                    matchingHunk,
-                                    line.number,
-                                    isLightTheme,
-                                    blameHunkMetadata
-                                ),
-                            })
-                            widgets.push(decoration.range(line.from))
-                            position = line.to + 1
-                        }
-                    }
-                    return Decoration.set(widgets)
-                }
-            },
-            {
-                decorations: ({ decorations }) => decorations,
-            }
-        ),
-        blameDecorationTheme,
-    ],
+    combine: decorations => decorations[0] ?? {hunks: [], blameHunkMetadata: {}},
 })
 
 const blameGutterElement = new (class extends GutterMarker {
@@ -254,62 +229,60 @@ const blameGutterElement = new (class extends GutterMarker {
     }
 })()
 
-const gutterTheme = EditorView.theme({
-    '.blame-gutter': {
-        background: 'var(--body-bg)',
-        width: 'var(--blame-decoration-width)',
-    },
-})
+const blameGutter: Extension = [
+    // Render gutter with no content only to create a column with specified background.
+    // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
+    // to achieve column-like view of inline blame decorations.
+    gutter({
+        class: 'blame-gutter',
+        lineMarker: () => blameGutterElement,
+        initialSpacer: () => blameGutterElement,
+    }),
 
-const showBlameGutter = Facet.define<boolean>({
-    combine: value => value.flat(),
-    enables: [
-        // Render gutter with no content only to create a column with specified background.
-        // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
-        // to achieve column-like view of inline blame decorations.
-        gutter({
-            class: 'blame-gutter',
-            lineMarker: () => blameGutterElement,
-            initialSpacer: () => blameGutterElement,
-        }),
+    // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
+    // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
+    gutters({ fixed: false }),
 
-        // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
-        // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
-        gutters({ fixed: false }),
-
-        gutterTheme,
-    ],
-})
+    EditorView.theme({
+        '.blame-gutter': {
+            background: 'var(--body-bg)',
+            width: 'var(--blame-decoration-width)',
+        },
+    })
+]
 
 const blameLineTheme = EditorView.theme({
     '.cm-line': {
-        lineHeight: '1rem',
-        borderTop: 'none',
-
-        '.sg-blame-visible &': {
-            lineHeight: '1.5rem',
-            // Avoid jumping when blame decorations are streamed in because we use a border
-            borderTop: '1px solid transparent',
-        },
+        lineHeight: '1.5rem',
+        // Avoid jumping when blame decorations are streamed in because we use a border
+        borderTop: '1px solid transparent',
     },
 })
 
-export const createBlameDecorationsExtension = (
-    isBlameVisible: boolean,
-    blameHunks: BlameHunkData | undefined,
-    isLightTheme: boolean
-): Extension => [
-    EditorView.contentAttributes.of({ class: isBlameVisible ? 'sg-blame-visible' : '' }),
-    blameLineTheme,
-    isBlameVisible ? showBlameGutter.of(isBlameVisible) : [],
-    blameHunks?.current
+export function showBlame(navigate: NavigateFunction): Extension {
+    return [
+        EditorView.editorAttributes.of({ class: 'sg-blame-visible'}),
+        blameLineTheme,
+        blameGutter,
+        hoveredLine,
+        blameDecorationTheme,
+        ViewPlugin.define(
+            view => new BlameDecorationViewPlugin(view, navigate),
+            {
+                decorations: ({ decorations }) => decorations,
+            }
+        ),
+    ]
+}
+
+export function blameData(blameHunks: BlameHunkData | undefined): Extension {
+    return blameHunks?.current
         ? showGitBlameDecorations.of({
               hunks: blameHunks.current,
-              isLightTheme,
               blameHunkMetadata: {
                   firstCommitDate: blameHunks.firstCommitDate,
                   externalURLs: blameHunks.externalURLs,
               },
-          })
-        : [],
-]
+          }): []
+
+}

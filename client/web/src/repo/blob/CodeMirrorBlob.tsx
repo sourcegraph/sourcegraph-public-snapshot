@@ -2,7 +2,7 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Range, type Extension, Line } from '@codemirror/state'
@@ -16,7 +16,7 @@ import {
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -36,7 +36,7 @@ import type { BlameHunkData } from '../blame/useBlameHunks'
 import type { HoverThresholdProps } from '../RepoContainer'
 
 import { blobPropsFacet } from './codemirror'
-import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
+import { blameData, enableBlame } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
@@ -212,8 +212,6 @@ const staticExtensions: Extension = [
 
 // Compartment to update various smaller settings
 const settingsCompartment = new Compartment()
-// Compartment to update blame decorations
-const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
 // Compartment for line wrapping.
@@ -275,11 +273,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
-    const blameDecorations = useMemo(
-        () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks, isLightTheme),
-        [isBlameVisible, blameHunks, isLightTheme]
-    )
-
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
     // reconfigure the editor extensions
@@ -327,6 +320,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const editorRef = useRef<EditorView | null>(null)
 
+    const blameDecorations = useBlameDecoration(editorRef, {visible: !!isBlameVisible, blameHunks, navigate})
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -369,7 +363,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
-            blameDecorationsCompartment.of(blameDecorations),
+            blameDecorations,
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
             search({
@@ -385,13 +379,14 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, isCodyEnabled, editorRef.current]
+        [onSelection, blobInfo, extensionsController, isCodyEnabled, editorRef.current, blameDecorations]
     )
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
         const editor = editorRef.current
         if (editor) {
+            console.log('recreate state')
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
@@ -433,15 +428,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             editor.dispatch({ effects: blobPropsCompartment.reconfigure(blobProps) })
         }
     }, [blobProps])
-
-    // Update blame decorations
-    useLayoutEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            const effects = [blameDecorationsCompartment.reconfigure(blameDecorations), ...lockFirstVisibleLine(editor)]
-            editor.dispatch({ effects })
-        }
-    }, [blameDecorations])
 
     // Update theme
     useEffect(() => {
@@ -549,6 +535,24 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 ))}
         </>
     )
+}
+
+
+/**
+ * Create and update blame decorations.
+ */
+function useBlameDecoration(editorRef: RefObject<EditorView>, {visible, blameHunks, navigate}: {visible: boolean, blameHunks?: BlameHunkData, navigate: NavigateFunction}): Extension {
+    // Blame support is split into two compartments because we only want to trigger
+    // `lockFirstVisibleLine` when blame is enabled, not when data is received
+    // (this can cause the editor to scroll to a different line)
+    const enabled = useCompartment(
+        editorRef,
+        useMemo(() => visible ? enableBlame(navigate): [], [visible, navigate]),
+        lockFirstVisibleLine,
+    )
+
+    const data = useCompartment(editorRef, useMemo(() => blameData(blameHunks), [blameHunks]))
+    return useMemo(() => [enabled, data], [enabled, data])
 }
 
 /**
