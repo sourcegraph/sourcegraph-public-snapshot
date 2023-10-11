@@ -192,7 +192,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images and push to registry
-		addWolfiRebuildAllBaseImagesOps(c, ops)
+		baseImageOps := wolfiRebuildAllBaseImages(c)
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+		}
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
@@ -439,8 +442,8 @@ func addWolfiOps(c Config, ops *operations.Set) {
 	}
 }
 
-// addWolfiRebuildAllBaseImagesOps adds operations to rebuild all Wolfi base images and push to registry
-func addWolfiRebuildAllBaseImagesOps(c Config, ops *operations.Set) {
+// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
+func wolfiRebuildAllBaseImages(c Config) *operations.Set {
 	// List all YAML files in wolfi-images/
 	dir := "wolfi-images"
 	files, err := os.ReadDir(dir)
@@ -457,12 +460,13 @@ func addWolfiRebuildAllBaseImagesOps(c Config, ops *operations.Set) {
 	}
 
 	// Rebuild all images
+	var baseImageOps *operations.Set
 	if len(wolfiBaseImages) > 0 {
-		baseImageOps, _ := WolfiBaseImagesOperations(
+		baseImageOps, _ = WolfiBaseImagesOperations(
 			wolfiBaseImages,
 			c.Version,
 			false,
 		)
-		ops.Merge(baseImageOps)
 	}
+	return baseImageOps
 }
