@@ -224,10 +224,6 @@ type MergeChangesetsArgs struct {
 	Squash bool
 }
 
-type ExportChangesetsArgs struct {
-	BulkOperationBaseArgs
-}
-
 type CloseChangesetsArgs struct {
 	BulkOperationBaseArgs
 }
@@ -327,11 +323,6 @@ type BulkOperationResolver interface {
 	ChangesetCount() int32
 	CreatedAt() gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime
-}
-
-type ExportChangesetsResolver interface {
-	BatchChange() string
-	Data() string
 }
 
 type ChangesetJobErrorResolver interface {
