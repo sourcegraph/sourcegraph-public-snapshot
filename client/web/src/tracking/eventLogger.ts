@@ -277,8 +277,16 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getSessionFirstURL(): string {
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
-        cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
-        return sessionFirstURL
+
+        if (isSourcegraphWebSiteId) {
+            cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
+            return sessionFirstURL
+        }
+        {
+            const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
+            cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
+            return redactedURL
+        }
     }
 
     public getDeviceSessionID(): string {

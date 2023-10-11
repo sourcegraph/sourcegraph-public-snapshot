@@ -43,6 +43,11 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 			url:  "https://sourcegraph.com/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
 			want: "https://sourcegraph.com/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
 		},
+		{
+			name: "referrer value test",
+			url:  "https://marketingWebsite.com/r/somepath?utm_source=test",
+			want: "https://marketingWebsite.com/r/somepath?utm_source=test",
+		},
 	}
 
 	for _, c := range cases {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -222,6 +223,10 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		saferReferrer, err := redactSensitiveInfoFromCloudURL(referrer)
+		if err != nil {
+			return nil, err
+		}
 
 		pubsubEvent, err := json.Marshal(bigQueryEvent{
 			EventName:              event.EventName,
@@ -230,7 +235,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			URL:                    saferUrl,
 			FirstSourceURL:         firstSourceURL,
 			LastSourceURL:          lastSourceURL,
-			Referrer:               referrer,
+			Referrer:               saferReferrer,
 			OriginalReferrer:       originalReferrer,
 			SessionReferrer:        sessionReferrer,
 			SessionFirstURL:        sessionFirstURL,
@@ -321,6 +326,10 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // and only maintain query parameters in a specified allowlist,
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
 
+// func redactSensitiveInfoFromCloudReferrer (rawURL string) (string, error) {
+// 	parsedURL, err := url.Parse(rawURL)
+// }
+
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -339,6 +348,9 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return rawURL, nil
 	}
 
+	// if url has regex of .sourcegraph.
+	var sourcegraphCloudRegex = regexp.MustCompile(`\.sourcegraph\.`)
+
 	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
 	if strings.HasPrefix(parsedURL.Path, "/github.com") {
 		parsedURL.RawPath = "/github.com/redacted"
@@ -352,8 +364,12 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	} else if strings.HasPrefix(parsedURL.Path, "/sign-in") {
 		parsedURL.RawPath = "/sign-in/redacted"
 		parsedURL.Path = "/sign-in/redacted"
-	} else {
+	} else if !sourcegraphCloudRegex.MatchString(parsedURL.Host) {
+		// if its not a cloud instance url, return rawURL so that referrers are not redacted
 		return rawURL, nil
+	} else {
+		parsedURL.RawPath = "redacted"
+		parsedURL.Path = "redacted"
 	}
 
 	marketingQueryParameters := map[string]struct{}{
