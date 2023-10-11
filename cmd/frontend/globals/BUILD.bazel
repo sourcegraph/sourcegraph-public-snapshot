@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//internal/conf",
         "//schema",
-        "@com_github_sourcegraph_log//:log",
+        "@com_github_inconshreveable_log15//:log15",
     ],
 )
