@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -328,7 +329,12 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	store := db.UserExternalAccounts().WithEncryptionKey(et.TestKey{})
+	defaultKeyring := keyring.Default()
+	keyring.MockDefault(keyring.Ring{UserExternalAccountKey: et.TestKey{}})
+	t.Cleanup(func() {
+		keyring.MockDefault(defaultKeyring)
+	})
+	store := db.UserExternalAccounts()
 
 	spec := extsvc.AccountSpec{
 		ServiceType: "xa",
