@@ -288,7 +288,7 @@ func TestSendUserEmailOnTokenChange(t *testing.T) {
 
 func TestUserEmailsAddRemove(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -357,7 +357,7 @@ func TestUserEmailsAddRemove(t *testing.T) {
 
 func TestUserEmailsSetPrimary(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -398,7 +398,7 @@ func TestUserEmailsSetPrimary(t *testing.T) {
 
 func TestUserEmailsSetVerified(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -447,7 +447,7 @@ func TestUserEmailsSetVerified(t *testing.T) {
 
 func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -520,7 +520,7 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 
 func TestRemoveStalePerforceAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 

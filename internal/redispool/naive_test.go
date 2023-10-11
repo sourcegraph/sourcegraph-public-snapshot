@@ -58,7 +58,7 @@ func TestDBKeyValue(t *testing.T) {
 
 func dbStoreTransact(t *testing.T) redispool.DBStoreTransact {
 	logger := logtest.Scoped(t)
-	kvNoTX := database.NewDB(logger, dbtest.NewDB(logger, t)).RedisKeyValue()
+	kvNoTX := database.NewDB(logger, dbtest.NewDB(t)).RedisKeyValue()
 
 	return func(ctx context.Context, f func(redispool.DBStore) error) error {
 		return kvNoTX.WithTransact(ctx, func(tx database.RedisKeyValueStore) error {

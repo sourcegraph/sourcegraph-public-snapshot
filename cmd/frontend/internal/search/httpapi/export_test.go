@@ -40,7 +40,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 			return iterator.From([]string{}), nil
 		})
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bs := basestore.NewWithHandle(db.Handle())
 	s := store.New(db, observation.TestContextTB(t))
 	svc := service.New(observationCtx, s, mockUploadStore, service.NewSearcherFake())

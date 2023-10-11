@@ -36,7 +36,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.NoOp(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	handler := sourcegraphOperatorCleanHandler{
 		db:                db,
 		lifecycleDuration: 60 * time.Minute,

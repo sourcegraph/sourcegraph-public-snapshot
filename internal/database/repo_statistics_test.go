@@ -21,7 +21,7 @@ func TestRepoStatistics(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -174,7 +174,7 @@ func TestRepoStatistics_RecloneAndCorruption(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -263,7 +263,7 @@ func TestRepoStatistics_DeleteAndUndelete(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -359,7 +359,7 @@ func TestRepoStatistics_AvoidZeros(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -414,7 +414,7 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 

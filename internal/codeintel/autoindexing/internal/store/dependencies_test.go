@@ -15,7 +15,7 @@ import (
 
 func TestInsertDependencyIndexingJob(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
@@ -45,7 +45,7 @@ func TestInsertDependencyIndexingJob(t *testing.T) {
 func TestGetQueuedRepoRev(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	expected := []RepoRev{

@@ -37,7 +37,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	t.Run("has github account", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
 		sr := newSchemaResolver(db, gitserver.NewClient())

@@ -272,7 +272,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 func TestResolverIterator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	for i := 1; i <= 5; i++ {
 		r := types.MinimalRepo{
@@ -426,7 +426,7 @@ func TestResolverIterator(t *testing.T) {
 func TestResolverIterateRepoRevs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	// intentionally nil so it panics if we call it
 	var gsClient gitserver.Client = nil

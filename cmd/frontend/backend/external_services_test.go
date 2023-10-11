@@ -392,8 +392,7 @@ func TestExternalService_ListNamespaces(t *testing.T) {
 
 			logger := logtest.Scoped(t)
 
-			sqlDB := dbtest.NewDB(logger, t)
-			db := database.NewDB(logger, sqlDB)
+			db := database.NewDB(logger, dbtest.NewDB(t))
 
 			var store internalrepos.Store
 			if tc.externalService != nil {
@@ -626,8 +625,7 @@ func TestExternalService_DiscoverRepos(t *testing.T) {
 
 			logger := logtest.Scoped(t)
 
-			sqlDB := dbtest.NewDB(logger, t)
-			db := database.NewDB(logger, sqlDB)
+			db := database.NewDB(logger, dbtest.NewDB(t))
 
 			var store internalrepos.Store
 			if tc.externalService != nil {

@@ -30,7 +30,7 @@ func toStringPtr(n int) *string {
 
 func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usersToCreate := []database.NewUser{

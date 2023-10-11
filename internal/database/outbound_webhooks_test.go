@@ -440,11 +440,11 @@ func runBothEncryptionStates(t *testing.T, f func(t *testing.T, logger log.Logge
 	var key encryption.Key
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Run("unencrypted", func(t *testing.T) { f(t, logger, db, key) })
 
 	logger = logtest.Scoped(t)
-	db = NewDB(logger, dbtest.NewDB(logger, t))
+	db = NewDB(logger, dbtest.NewDB(t))
 	key = et.ByteaTestKey{}
 	t.Run("encrypted", func(t *testing.T) { f(t, logger, db, key) })
 }
