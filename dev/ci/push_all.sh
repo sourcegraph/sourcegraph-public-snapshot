@@ -70,8 +70,8 @@ fi
 
 # TODO RFC 795
 if [[ "$BUILDKITE_BRANCH" =~ ^wip_v[0-9]+\.[0-9]+\.[0-9] ]]; then
-  dev_tags+=("wip_releases")
-  prod_tags+=("wip_releases")
+  dev_tags+=("$BUILDKITE_BRANCH")
+  prod_tags+=("$BUILDKITE_BRANCH")
   push_prod=false
 fi
 
