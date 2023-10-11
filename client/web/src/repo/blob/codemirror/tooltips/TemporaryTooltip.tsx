@@ -2,8 +2,6 @@ import type { EditorView, Tooltip, TooltipView } from '@codemirror/view'
 
 import type * as sourcegraph from '@sourcegraph/extension-api-types'
 
-import { getCodeIntelTooltipState, setFocusedOccurrenceTooltip } from '../token-selection/code-intel-tooltips'
-
 class TemporaryTooltip implements Tooltip {
     public readonly above = true
     constructor(

@@ -2,7 +2,10 @@ import type { Line, SelectionRange, Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 
 import type { Position } from '@sourcegraph/extension-api-types'
-import type { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import { Range } from '@sourcegraph/shared/src/codeintel/scip'
+import { BlobViewState, UIPositionSpec, UIRangeSpec, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+
+import type { Location } from './token-selection/api'
 
 /**
  * The MouseEvent uses numbers to indicate which button was pressed.
@@ -193,4 +196,40 @@ export function isValidLineRange(
     }
 
     return true
+}
+
+export function locationToURL(
+    documentInfo: { repoName: string; filePath: string; commitID: string; revision?: string },
+    location: Location,
+    viewState?: BlobViewState
+): string {
+    const { range, filePath, repoName, revision: locationRevision } = location
+
+    // Try to preserve the non-canonical revision (branch name or empty revision)
+    // when possible.
+    const preserveNonCanonicalRevision =
+        documentInfo.repoName === repoName && // Destination location is within the same repo.
+        documentInfo.revision !== documentInfo.commitID && // Current URL is non-canonical/non-commit revision.
+        documentInfo.commitID === locationRevision // Destination revision is the as as current revision.
+    const revision = preserveNonCanonicalRevision ? documentInfo.revision : locationRevision
+
+    return toPrettyBlobURL({
+        repoName,
+        revision,
+        filePath,
+        position: { line: range.start.line + 1, character: range.start.character + 1 },
+        range: location.range ? Range.fromExtensions(location.range).withIncrementedValues() : undefined,
+        viewState,
+    })
+}
+
+// Returns true if this event is "regular", meaning the user is not holding down
+// modifier keys or clicking with a non-main button.
+export function isRegularEvent(event: MouseEvent | KeyboardEvent): boolean {
+    return (
+        ('button' in event ? event.button === MOUSE_MAIN_BUTTON : true) &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        !event.ctrlKey
+    )
 }

@@ -1,17 +1,20 @@
 import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate } from '@codemirror/view'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
-import { combineLatest, type Observable, Subject, type Subscription } from 'rxjs'
+import { combineLatest, Observable, Subject, type Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
 import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 
 import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
 import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../../CodeMirrorBlob'
-import type { HoverData, UIRange } from '../hovercard'
 import { blobPropsFacet } from '../index'
 import { CodeMirrorContainer } from '../react-interop'
+import { TooltipViewOptions } from '../token-selection/api'
+import { pinnedLocation } from '../token-selection/pin'
 import { zeroToOneBasedPosition } from '../utils'
+
+type Unwrap<T> = T extends Observable<infer U> ? U : never
 
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.
@@ -35,11 +38,13 @@ export class HovercardView implements TooltipView {
 
     constructor(
         private readonly view: EditorView,
-        private readonly tokenRange: UIRange,
-        pinned: boolean,
-        hovercardData: Observable<HoverData>
+        private readonly tokenRange: TooltipViewOptions['token'],
+        hovercardData: TooltipViewOptions['hovercardData']
     ) {
         this.dom = document.createElement('div')
+        this.dom.className = 'sg-code-intel-hovercard'
+        const pin = view.state.facet(pinnedLocation)
+        const pinned = pin?.line === tokenRange.start.line && pin?.character === tokenRange.start.character
 
         this.subscription = combineLatest([
             this.nextContainer,
@@ -74,7 +79,7 @@ export class HovercardView implements TooltipView {
 
     private render(
         root: Root,
-        { hoverOrError, actionsOrError }: HoverData,
+        { hoverOrError, actionsOrError }: Unwrap<TooltipViewOptions['hovercardData']>,
         props: BlobPropsFacet,
         pinned: boolean
     ): void {

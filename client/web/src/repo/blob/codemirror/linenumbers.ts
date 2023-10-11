@@ -20,11 +20,7 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
-import classNames from 'classnames'
 
-import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-
-import { blobPropsFacet } from './index'
 import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
 const selectedLinesTheme = EditorView.theme({
@@ -33,6 +29,8 @@ const selectedLinesTheme = EditorView.theme({
      * returns absolutely positioned markers. Markers top position has extra 1px (5px in case blame decorations
      * are visible) more in its `top` value breaking alignment wih the line.
      * We compensate this spacing by setting negative margin-top.
+     *
+     * todo(fkling): Revisit this, styling is not correct for empty lines
      */
     '.selected-lines-layer .selected-line': {
         marginTop: '-1px',
@@ -156,7 +154,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
                 return RectangleMarker.forRange(
                     view,
-                    classNames('selected-line', { ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible }),
+                    'selected-line',
                     EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
                 )
             },
@@ -274,7 +272,7 @@ const selectedLineNumberTheme = EditorView.theme({
 interface SelectableLineNumbersConfig {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
-    navigateToLineOnAnyClick: boolean
+    onClick?: (line: number) => void
 }
 
 /**
@@ -297,7 +295,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         lineNumbers({
             domEventHandlers: {
                 mouseup(view, block, event) {
-                    if (!config.navigateToLineOnAnyClick) {
+                    if (!config.onClick) {
                         return false
                     }
 
@@ -306,19 +304,13 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                         return false
                     }
 
-                    const { blobInfo, navigate } = view.state.facet(blobPropsFacet)
                     const line = view.state.doc.lineAt(block.from).number
-                    const href = toPrettyBlobURL({
-                        ...blobInfo,
-                        position: { line, character: 0 },
-                    })
-                    navigate(href)
-
+                    config.onClick(line)
                     return true
                 },
 
                 mousedown(view, block, event) {
-                    if (config.navigateToLineOnAnyClick) {
+                    if (config.onClick) {
                         return false
                     }
 

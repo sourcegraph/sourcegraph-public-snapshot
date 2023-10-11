@@ -1,56 +1,90 @@
-import { type Extension, StateField } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
+import { RangeSetBuilder, type Extension, StateField, StateEffect } from '@codemirror/state'
+import { Decoration, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
-import type { DocumentHighlight } from '@sourcegraph/codeintellify'
-import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
-import type { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { getCodeIntelAPI } from './api'
+import { getSelectedToken } from './token-selection'
 
-import { blobPropsFacet } from '..'
+interface Range {
+    from: number
+    to: number
+}
 
-const documentHighlightCache = StateField.define<Map<Occurrence, Promise<DocumentHighlight[]>>>({
-    create: () => new Map(),
-    update: value => value,
-})
-export const [documentHighlightsField, , setDocumentHighlights] = createUpdateableField<DocumentHighlight[]>([])
+const DocumentHighlightLoader = ViewPlugin.fromClass(
+    class implements PluginValue {
+        private focusedRange: Range | null = null
 
-async function getDocumentHighlights(view: EditorView, occurrence: Occurrence): Promise<DocumentHighlight[]> {
-    const cache = view.state.field(documentHighlightCache)
-    const fromCache = cache.get(occurrence)
-    if (fromCache) {
-        return fromCache
+        constructor(private view: EditorView) {}
+
+        update(update: ViewUpdate) {
+            const focusedRange = getSelectedToken(update.state)
+            if (focusedRange !== getSelectedToken(update.startState)) {
+                this.fetchHighlights(focusedRange)
+            }
+        }
+
+        private fetchHighlights(range: Range | null) {
+            this.focusedRange = range
+
+            if (range) {
+                getCodeIntelAPI(this.view.state)
+                    .getDocumentHighlights(this.view.state, range)
+                    .then(
+                        highlights => {
+                            if (this.focusedRange === range) {
+                                this.view.dispatch({ effects: setDocumentHighlights.of({ target: range, highlights }) })
+                            }
+                        },
+                        () => {}
+                    )
+            }
+        }
     }
-    const blobProps = view.state.facet(blobPropsFacet)
+)
 
-    const api = await getOrCreateCodeIntelAPI(blobProps.platformContext)
-    const promise = api.getDocumentHighlights({
-        textDocument: { uri: toURIWithPath(blobProps.blobInfo) },
-        position: occurrence.range.start,
-    })
-    cache.set(occurrence, promise)
-    return promise
-}
-export function showDocumentHighlightsForOccurrence(view: EditorView, occurrence: Occurrence): void {
-    getDocumentHighlights(view, occurrence).then(
-        result => view.dispatch({ effects: setDocumentHighlights.of(result) }),
-        () => {}
-    )
-}
+const documentHighlightDecoration = Decoration.mark({ class: 'sourcegraph-document-highlight' })
+const setDocumentHighlights = StateEffect.define<{ target: Range; highlights: Range[] }>()
 
-export function findByOccurrence(
-    highlights: DocumentHighlight[],
-    occurrence: Occurrence
-): DocumentHighlight | undefined {
-    return highlights.find(
-        highlight =>
-            occurrence.range.start.line === highlight.range.start.line &&
-            occurrence.range.start.character === highlight.range.start.character &&
-            occurrence.range.end.line === highlight.range.end.line &&
-            occurrence.range.end.character === highlight.range.end.character
-    )
-}
+const documentHighlights = StateField.define<{ target: Range | null; highlights: Range[] }>({
+    create() {
+        return { target: null, highlights: [] }
+    },
 
-export function documentHighlightsExtension(): Extension {
-    return [documentHighlightCache, documentHighlightsField]
-}
+    update(value, transaction) {
+        const selectedToken = getSelectedToken(transaction.state)
+        if (selectedToken !== getSelectedToken(transaction.startState)) {
+            return { target: selectedToken, highlights: [] }
+        }
+
+        for (const effect of transaction.effects) {
+            // We have to clear the highlights in the same transaction the selected token
+            // changes. Otherwise the (new) selected token will loose focus when selection changes
+            // to a token that was previously highlighted, breaking keyboard navigation
+            if (
+                effect.is(setDocumentHighlights) &&
+                effect.value.target.from === value.target?.from &&
+                effect.value.target.to === value.target.to
+            ) {
+                return effect.value
+            }
+        }
+        return value
+    },
+
+    provide(field) {
+        return EditorView.decorations.compute([field], state => {
+            const builder = new RangeSetBuilder<Decoration>()
+            const { target, highlights } = state.field(field) ?? { target: null, highlights: [] }
+            if (target) {
+                for (const highlight of highlights.sort((a, b) => a.from - b.from)) {
+                    if (highlight.from !== target.from || highlight.to !== target.to) {
+                        // Focused occurrence is already highlighted.
+                        builder.add(highlight.from, highlight.to, documentHighlightDecoration)
+                    }
+                }
+            }
+            return builder.finish()
+        })
+    },
+})
+
+export const documentHighlightsExtension: Extension = [DocumentHighlightLoader, documentHighlights]

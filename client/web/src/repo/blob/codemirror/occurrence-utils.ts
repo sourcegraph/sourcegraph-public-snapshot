@@ -1,11 +1,9 @@
-import { EditorSelection, type EditorState, type SelectionRange } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
+import { EditorSelection, Text, type EditorState, type SelectionRange } from '@codemirror/state'
 
-import { Occurrence, Position, Range, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+import type { Range } from '@sourcegraph/extension-api-types'
+import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { type HighlightIndex, syntaxHighlight } from './highlight'
-import { fallbackOccurrences } from './token-selection/selections'
-import { preciseOffsetAtCoords } from './utils'
 
 /**
  * Occurrences that are possibly interactive (i.e. they can have code intelligence).
@@ -35,45 +33,23 @@ export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
     return INTERACTIVE_OCCURRENCE_KINDS.has(occurrence.kind)
 }
 
-export function occurrenceAtMouseEvent(
-    view: EditorView,
-    event: MouseEvent
-): { occurrence: Occurrence; position: Position } | undefined {
-    const position = positionAtMouseEvent(view, event)
-    if (!position) {
-        return
-    }
-    const occurrence = occurrenceAtPosition(view.state, position)
-    if (!occurrence) {
-        return
-    }
-    return { occurrence, position }
-}
-
-export function positionAtMouseEvent(view: EditorView, event: MouseEvent): Position | undefined {
-    const position = preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY })
-    if (position === null) {
-        return
-    }
-    return positionAtCmPosition(view, position)
-}
-
-export function occurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
+export function occurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
     // First we try to get an occurrence from syntax highlighting data.
-    const fromHighlighting = highlightingOccurrenceAtPosition(state, position)
+    const fromHighlighting = highlightingOccurrenceAtPosition(state, offset)
     if (fromHighlighting) {
         return fromHighlighting
     }
     // If the syntax highlighting data is incomplete then we fallback to a
     // heursitic to infer the occurrence.
-    return inferOccurrenceAtPosition(state, position)
+    return inferOccurrenceAtPosition(state, offset)
 }
 
 // Returns the occurrence at this position based on syntax highlighting data.
 // The highlighting data can come from Syntect (low-ish quality) or tree-sitter
 // (better quality). When we implement semantic highlighting in the future, the
 // highlighting data may come from precise indexers.
-export function highlightingOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
+function highlightingOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
+    const position = positionAtCmPosition(state.doc, offset)
     const table = state.facet(syntaxHighlight)
     for (
         let index = table.lineIndex[position.line];
@@ -95,26 +71,14 @@ export function highlightingOccurrenceAtPosition(state: EditorState, position: P
 // well for languages with C/Java-like identifiers, but we may want to customize
 // the heurstic for other languages like Clojure where kebab-case identifiers
 // are common.
-export function inferOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
-    const fallback = state.field(fallbackOccurrences)
-    const cmLine = state.doc.line(position.line + 1)
-    const cmPosition = cmLine.from + position.character
-    // We rely on `Occurrence` reference equality in some downstream facets so
-    // it's important to reuse instances between invocations.
-    const fromCache = fallback.get(cmPosition)
-    if (fromCache) {
-        return fromCache
-    }
-    const identifier = state.wordAt(cmPosition)
-    if (identifier === null) {
+function inferOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
+    const identifier = state.wordAt(offset)
+    // We need to ignore words that end at the requested position to match the logic
+    // we use to look up occurrences in SCIP data.
+    if (identifier === null || offset === identifier.to) {
         return undefined
     }
-    const freshOccurrence = new Occurrence(cmSelectionToRange(state, identifier), SyntaxKind.Identifier)
-    for (let index = identifier.from; index < identifier.to; index++) {
-        // The cache is keyed by CodeMirror numeric positions to enable cheapa and simple lookups.
-        fallback.set(index, freshOccurrence)
-    }
-    return freshOccurrence
+    return new Occurrence(cmSelectionToRange(state, identifier), SyntaxKind.Identifier)
 }
 
 // Returns the occurrence in the provided line number that is closest to the
@@ -149,8 +113,16 @@ export function closestOccurrenceByCharacter(
     return undefined
 }
 
-export function positionAtCmPosition(view: EditorView, position: number): Position {
-    const cmLine = view.state.doc.lineAt(position)
+function cmSelectionToRange(state: EditorState, selection: SelectionRange): ScipRange {
+    const startLine = state.doc.lineAt(selection.from)
+    const endLine = state.doc.lineAt(selection.to)
+    const start = new Position(startLine.number - 1, selection.from - startLine.from)
+    const end = new Position(endLine.number - 1, selection.to - endLine.from)
+    return new ScipRange(start, end)
+}
+
+export function positionAtCmPosition(doc: Text, position: number): Position {
+    const cmLine = doc.lineAt(position)
     const line = cmLine.number - 1
     // The lack of "- 1" at the end of the line below is intentional because it
     // makes clicking on the first character of a token have no effect.
@@ -158,40 +130,19 @@ export function positionAtCmPosition(view: EditorView, position: number): Positi
     return new Position(line, character)
 }
 
-export function cmSelectionToRange(state: EditorState, selection: SelectionRange): Range {
-    const startLine = state.doc.lineAt(selection.from)
-    const endLine = state.doc.lineAt(selection.to)
-    const start = new Position(startLine.number - 1, selection.from - startLine.from)
-    const end = new Position(endLine.number - 1, selection.to - endLine.from)
-    return new Range(start, end)
-}
-
-export const rangeToCmSelection = (state: EditorState, range: Range): SelectionRange => {
-    const startLine = state.doc.line(Math.min(state.doc.lines, range.start.line + 1))
-    const endLine = state.doc.line(Math.min(state.doc.lines, range.end.line + 1))
+export const rangeToCmSelection = (doc: Text, range: ScipRange): SelectionRange => {
+    const startLine = doc.line(Math.min(doc.lines, range.start.line + 1))
+    const endLine = doc.line(Math.min(doc.lines, range.end.line + 1))
     const start = startLine.from + range.start.character
     const end = Math.min(endLine.from + range.end.character, endLine.to)
-    return EditorSelection.range(Math.max(0, start), Math.min(state.doc.length - 1, end))
+    return EditorSelection.range(Math.max(0, start), Math.min(doc.length - 1, end))
 }
 
-// Wrapper arounds a `Map<Occurrence, T>` with special support to insert undefined values.
-export class OccurrenceMap<T> {
-    constructor(private readonly occurrences: Map<Occurrence, T>, private readonly emptyValue: T) {}
-    public withOccurrence(occurrence: Occurrence, value?: T): OccurrenceMap<T> {
-        this.occurrences.set(occurrence, value ?? this.emptyValue)
-        return new OccurrenceMap(this.occurrences, this.emptyValue)
-    }
-    public get(occurrence: Occurrence | null): { value?: T; hasOccurrence: boolean } {
-        if (occurrence === null) {
-            return { hasOccurrence: false }
-        }
-        const value = this.occurrences.get(occurrence)
-        if (value === undefined) {
-            return { hasOccurrence: false }
-        }
-        if (value === this.emptyValue) {
-            return { hasOccurrence: true }
-        }
-        return { value, hasOccurrence: true }
-    }
+export function contains(range: Range, position: Range['start']): boolean {
+    return (
+        range.start.line <= position.line &&
+        range.start.character <= position.character &&
+        position.line <= range.end.line &&
+        position.character <= range.end.character
+    )
 }

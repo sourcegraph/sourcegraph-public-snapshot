@@ -13,66 +13,39 @@ import {
 } from '@codemirror/commands'
 import { type Extension, Prec } from '@codemirror/state'
 import { EditorView, type KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
+import { NavigateFunction } from 'react-router-dom'
 
-import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
 import { positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
-import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'
-import { LoadingTooltip } from '../tooltips/LoadingTooltip'
-import { positionToOffset } from '../utils'
+import { positionToOffset, preciseOffsetAtCoords } from '../utils'
 
-import {
-    getCodeIntelTooltipState,
-    setFocusedOccurrenceTooltip,
-    selectOccurrence,
-    getHoverTooltip,
-} from './code-intel-tooltips'
-import { goToDefinitionAtOccurrence } from './definition'
-import { isModifierKeyHeld } from './modifier-click'
+import { getCodeIntelAPI } from './api'
+import { getSelectedToken, setSelection } from './token-selection'
+import { getTooltipState, hideTooltipForKey, showCodeIntelTooltipAtRange } from './tooltips'
 
 const keybindings: KeyBinding[] = [
     {
         key: 'Space',
         run(view) {
-            const selected = getCodeIntelTooltipState(view, 'focus')
+            const selected = getSelectedToken(view.state)
             if (!selected) {
                 return true
             }
 
-            if (selected.tooltip instanceof CodeIntelTooltip) {
-                view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
-                return true
-            }
-
-            const offset = positionToOffset(view.state.doc, selected.occurrence.range.start)
-            if (offset === null) {
+            if (getTooltipState(view.state, 'focus')?.visible) {
+                view.dispatch(hideTooltipForKey('focus'))
                 return true
             }
 
             // show loading tooltip
-            view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
-
-            getHoverTooltip(view, offset)
-                .then(value => view.dispatch({ effects: setFocusedOccurrenceTooltip.of(value) }))
-                .finally(() => {
-                    // close loading tooltip if any
-                    const current = getCodeIntelTooltipState(view, 'focus')
-                    if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === selected.occurrence) {
-                        view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
-                    }
-                })
-
+            showCodeIntelTooltipAtRange(view, selected, 'focus', true)
             return true
         },
     },
     {
         key: 'Escape',
         run(view) {
-            const current = getCodeIntelTooltipState(view, 'focus')
-            if (current?.tooltip instanceof CodeIntelTooltip) {
-                view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
-            }
-
+            view.dispatch(hideTooltipForKey('focus'))
             return true
         },
     },
@@ -80,58 +53,51 @@ const keybindings: KeyBinding[] = [
     {
         key: 'Enter',
         run(view) {
-            const selected = getCodeIntelTooltipState(view, 'focus')
-            if (!selected?.occurrence) {
+            const selected = getSelectedToken(view.state)
+            if (!selected) {
                 return false
             }
 
-            const offset = positionToOffset(view.state.doc, selected.occurrence.range.start)
-            if (offset === null) {
-                return true
+            // TODO: show loading tooltip
+            // TODO ? : const startTime = Date.now()
+            getCodeIntelAPI(view.state).goToDefinitionAt(view, selected.from)
+            return true
+        },
+    },
+    {
+        key: 'Mod-Enter',
+        run(view) {
+            const selected = getSelectedToken(view.state)
+            if (!selected) {
+                return false
             }
 
-            // show loading tooltip
-            view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
-
-            const startTime = Date.now()
-            goToDefinitionAtOccurrence(view, selected.occurrence)
-                .then(
-                    ({ handler, url }) => {
-                        if (view.state.field(isModifierKeyHeld) && url) {
-                            window.open(url, '_blank')
-                        } else {
-                            handler(selected.occurrence.range.start, startTime)
-                        }
-                    },
-                    () => {}
-                )
-                .finally(() => {
-                    // close loading tooltip if any
-                    const current = getCodeIntelTooltipState(view, 'focus')
-                    if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === selected.occurrence) {
-                        view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
-                    }
-                })
-
-            return true
-        },
-    },
-
-    {
-        key: 'Mod-ArrowRight',
-        run(view) {
-            view.state.facet(blobPropsFacet).navigate(1)
-            return true
-        },
-    },
-    {
-        key: 'Mod-ArrowLeft',
-        run(view) {
-            view.state.facet(blobPropsFacet).navigate(-1)
+            // TODO: show loading tooltip
+            // TODO ? : const startTime = Date.now()
+            getCodeIntelAPI(view.state).goToDefinitionAt(view, selected.from, { newWindow: true })
             return true
         },
     },
 ]
+
+function navigationKeybindings(navigate: NavigateFunction): KeyBinding[] {
+    return [
+        {
+            key: 'Mod-ArrowRight',
+            run() {
+                navigate(1)
+                return true
+            },
+        },
+        {
+            key: 'Mod-ArrowLeft',
+            run() {
+                navigate(-1)
+                return true
+            },
+        },
+    ]
+}
 
 /**
  * Keybindings to support text selection.
@@ -203,52 +169,56 @@ const textSelectionKeybindings: KeyBinding[] = [
 function keyDownHandler(event: KeyboardEvent, view: EditorView): boolean {
     switch (event.key) {
         case 'ArrowLeft': {
-            const selectedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
-            const position = selectedOccurrence?.range.start || positionAtCmPosition(view, view.viewport.from)
+            const range = getSelectedToken(view.state)?.from || view.viewport.from
+            const position = positionAtCmPosition(view.state.doc, range)
             const table = view.state.facet(syntaxHighlight)
             const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
                 occurrence.range.start.isSmaller(position)
             )
-            if (occurrence) {
-                selectOccurrence(view, occurrence)
+            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+            if (anchor !== null) {
+                view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
             }
 
             return true
         }
         case 'ArrowRight': {
-            const selectedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
-            const position = selectedOccurrence?.range.start || positionAtCmPosition(view, view.viewport.from)
+            const range = getSelectedToken(view.state)?.from || view.viewport.from
+            const position = positionAtCmPosition(view.state.doc, range)
             const table = view.state.facet(syntaxHighlight)
             const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
                 occurrence.range.start.isGreater(position)
             )
-            if (occurrence) {
-                selectOccurrence(view, occurrence)
+            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+            if (anchor !== null) {
+                view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
             }
 
             return true
         }
         case 'ArrowUp': {
-            const selectedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
-            const position = selectedOccurrence?.range.start || positionAtCmPosition(view, view.viewport.from)
+            const range = getSelectedToken(view.state)?.from || view.viewport.from
+            const position = positionAtCmPosition(view.state.doc, range)
             const table = view.state.facet(syntaxHighlight)
             for (let line = position.line - 1; line >= 0; line--) {
                 const occurrence = closestOccurrenceByCharacter(line, table, position)
-                if (occurrence) {
-                    selectOccurrence(view, occurrence)
+                const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+                if (anchor !== null) {
+                    view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
                     return true
                 }
             }
             return true
         }
         case 'ArrowDown': {
-            const selectedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
-            const position = selectedOccurrence?.range.start || positionAtCmPosition(view, view.viewport.from)
+            const range = getSelectedToken(view.state)?.from || view.viewport.from
+            const position = positionAtCmPosition(view.state.doc, range)
             const table = view.state.facet(syntaxHighlight)
             for (let line = position.line + 1; line < table.lineIndex.length; line++) {
                 const occurrence = closestOccurrenceByCharacter(line, table, position)
-                if (occurrence) {
-                    selectOccurrence(view, occurrence)
+                const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+                if (anchor !== null) {
+                    view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
                     return true
                 }
             }
@@ -319,6 +289,28 @@ function textSelectionExtension(): Extension {
     return [keymap.of(textSelectionKeybindings), selectionLayer, theme]
 }
 
-export function keyboardShortcutsExtension(): Extension {
-    return [textSelectionExtension(), keymap.of(keybindings), occurrenceKeyboardNavigation()]
+/**
+ * Not a keybinding but related to it. This extension closes
+ * focus-related tooltips when selection moves elsewhere.
+ */
+const closeTooltipOnClickOutside = EditorView.domEventHandlers({
+    click(event, view) {
+        const offset = preciseOffsetAtCoords(view, event)
+        if (offset) {
+            const range = getCodeIntelAPI(view.state).findOccurrenceRangeAt(offset, view.state)
+            if (range && range?.from === getTooltipState(view.state, 'focus')?.position.range.from) {
+                return
+            }
+        }
+        view.dispatch(hideTooltipForKey('focus'))
+    },
+})
+
+export function keyboardShortcutsExtension(navigate: NavigateFunction): Extension {
+    return [
+        textSelectionExtension(),
+        keymap.of([...keybindings, ...navigationKeybindings(navigate)]),
+        occurrenceKeyboardNavigation(),
+        closeTooltipOnClickOutside,
+    ]
 }

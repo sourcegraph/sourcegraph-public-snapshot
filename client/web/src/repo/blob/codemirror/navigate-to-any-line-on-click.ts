@@ -7,6 +7,7 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
+import { NavigateFunction } from 'react-router-dom'
 
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -52,25 +53,21 @@ class LineLinkManager implements PluginValue {
 // Extension that is only used in the ref panel preview pane. Wraps all lines
 // with an anchor link so that clicking on the line promotes that line from the
 // preview pane into the main blob view.
-export const navigateToLineOnAnyClickExtension: Extension = [
-    ViewPlugin.fromClass(LineLinkManager, { decorations: plugin => plugin.decorations }),
-    EditorView.domEventHandlers({
-        click(event, view) {
-            const target = event.target as HTMLElement
-            const closest = target.closest('[data-cm-line-link]')
+export function navigateToLineOnAnyClickExtension(navigate: NavigateFunction): Extension {
+    return [
+        ViewPlugin.fromClass(LineLinkManager, { decorations: plugin => plugin.decorations }),
+        EditorView.domEventHandlers({
+            click(event) {
+                const target = event.target as HTMLElement
+                const closest = target.closest('[data-cm-line-link]')
 
-            // Check to see if the clicked target is a or is inside a token link.
-            // If it is, navigate to the link.
-            if (closest) {
-                event.preventDefault()
-                const href = closest.getAttribute('href')!
-                const props = view.state.facet(blobPropsFacet)
-                if (props.nav) {
-                    props.nav(href)
-                } else {
-                    props.navigate(href)
+                // Check to see if the clicked target is a or is inside a token link.
+                // If it is, navigate to the link.
+                if (closest) {
+                    event.preventDefault()
+                    navigate(closest.getAttribute('href')!)
                 }
-            }
-        },
-    }),
-]
+            },
+        }),
+    ]
+}
