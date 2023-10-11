@@ -1699,7 +1699,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	for _, changeset := range changesets {
-		// The asumption here is that all changesets should be exportable. That's why we always increment
+		// The assumption here is that all changesets should be exportable. That's why we always increment
 		// this for all changesets. The other operations depend on the changeset state.
 		bulkOperationsCounter[btypes.ChangesetJobTypeExport]++
 
