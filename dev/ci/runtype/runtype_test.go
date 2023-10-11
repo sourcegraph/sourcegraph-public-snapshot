@@ -61,6 +61,15 @@ func TestComputeRunType(t *testing.T) {
 		},
 		want: VsceNightly,
 	}, {
+		name: "wolfi base image rebuild",
+		args: args{
+			branch: "main",
+			env: map[string]string{
+				"WOLFI_BASE_REBUILD": "true",
+			},
+		},
+		want: WolfiBaseRebuild,
+	}, {
 		name: "vsce release",
 		args: args{
 			branch: "vsce/release",

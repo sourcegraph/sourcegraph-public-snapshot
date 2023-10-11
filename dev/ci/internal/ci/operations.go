@@ -88,9 +88,10 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		tag    = os.Getenv("BUILDKITE_TAG")
 		// evaluates what type of pipeline run this is
 		runType = runtype.Compute(tag, branch, map[string]string{
-			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
-			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
-			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+			"BEXT_NIGHTLY":       os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY":    os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":       os.Getenv("VSCE_NIGHTLY"),
+			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
 		})
 	)
 

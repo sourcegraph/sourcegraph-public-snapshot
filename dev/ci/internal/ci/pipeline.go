@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -188,6 +189,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			addVsceTests,
 		)
+
+	case runtype.WolfiBaseRebuild:
+		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images and push to registry
+		addWolfiRebuildAllBaseImagesOps(c, ops)
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
@@ -429,6 +434,34 @@ func addWolfiOps(c Config, ops *operations.Set) {
 			imagesToRebuild,
 			c.Version,
 			(len(updatedPackages) > 0),
+		)
+		ops.Merge(baseImageOps)
+	}
+}
+
+// addWolfiRebuildAllBaseImagesOps adds operations to rebuild all Wolfi base images and push to registry
+func addWolfiRebuildAllBaseImagesOps(c Config, ops *operations.Set) {
+	// List all YAML files in wolfi-images/
+	dir := "wolfi-images"
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	var wolfiBaseImages []string
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".yaml" {
+			fullPath := filepath.Join(dir, f.Name())
+			wolfiBaseImages = append(wolfiBaseImages, fullPath)
+		}
+	}
+
+	// Rebuild all images
+	if len(wolfiBaseImages) > 0 {
+		baseImageOps, _ := WolfiBaseImagesOperations(
+			wolfiBaseImages,
+			c.Version,
+			false,
 		)
 		ops.Merge(baseImageOps)
 	}
