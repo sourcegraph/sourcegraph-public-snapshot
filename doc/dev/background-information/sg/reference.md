@@ -350,6 +350,7 @@ Available testsuites in `sg.config.yaml`:
 
 * backend
 * backend-integration
+* bazel-e2e
 * bext
 * bext-build
 * bext-e2e
