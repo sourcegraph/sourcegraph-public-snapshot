@@ -143,7 +143,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(securityOps)
 
 		// Wolfi package and base images
-		addWolfiOps(c, ops)
+		packageOps, baseImageOps := addWolfiOps(c)
+		if packageOps != nil {
+			ops.Merge(packageOps)
+		}
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+		}
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -188,6 +194,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			addVsceTests,
 		)
+
+	case runtype.WolfiBaseRebuild:
+		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images and push to registry
+		baseImageOps := wolfiRebuildAllBaseImages(c)
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+		}
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
@@ -302,7 +315,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 
 		// Wolfi package and base images
-		addWolfiOps(c, ops)
+		packageOps, baseImageOps := addWolfiOps(c)
+		if packageOps != nil {
+			ops.Merge(packageOps)
+		}
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+		}
 
 		// All operations before this point are required
 		ops.Append(wait)
@@ -402,34 +421,4 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
-}
-
-// addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
-func addWolfiOps(c Config, ops *operations.Set) {
-	// Rebuild Wolfi packages that have config changes
-	var updatedPackages []string
-	if c.Diff.Has(changed.WolfiPackages) {
-		var packageOps *operations.Set
-		packageOps, updatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
-		ops.Merge(packageOps)
-	}
-
-	// Rebuild Wolfi base images
-	// Inspect package dependencies, and rebuild base images with updated packages
-	_, imagesWithChangedPackages, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
-	if err != nil {
-		panic(err)
-	}
-	// Rebuild base images with package changes AND with config changes
-	imagesToRebuild := append(imagesWithChangedPackages, c.ChangedFiles[changed.WolfiBaseImages]...)
-	imagesToRebuild = sortUniq(imagesToRebuild)
-
-	if len(imagesToRebuild) > 0 {
-		baseImageOps, _ := WolfiBaseImagesOperations(
-			imagesToRebuild,
-			c.Version,
-			(len(updatedPackages) > 0),
-		)
-		ops.Merge(baseImageOps)
-	}
 }
