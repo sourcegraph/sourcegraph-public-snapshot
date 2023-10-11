@@ -106,7 +106,7 @@ type Sourcer interface {
 	//
 	// If the changeset was not created by a batch change, then a site credential will be
 	// used. If another AuthenticationStrategy is specified, then it will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error)
+	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo) (ChangesetSource, error)
 	// ForUser returns a ChangesetSource for changesets on the given repo.
 	// It will be authenticated with the given authenticator.
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
@@ -136,7 +136,7 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, r *types.Repo) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -160,8 +160,6 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	}
 
 	if as == AuthenticationStrategyGitHubApp {
-		repoMetadata := repo.Metadata.(*github.Repository)
-
 		cs, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
 		if err != nil {
 			return nil, errors.Wrap(err, "getting changeset spec")
@@ -171,23 +169,30 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		// We check if the changeset is meant to be pushed to a fork.
 		// If yes, then we try to figure out the user namespace and get a github app for the user namespace.
 		if cs.IsFork() {
-			// if cs.GetForkNamespace() != nil {
-			// 	// if a named fork namespace is specified in the spec, then we set the owner
-			// 	// to that else we compute the user's namespace.
-			// 	owner = *cs.GetForkNamespace()
-			// } else {
-			// 	owner = ch.Ext
-			// }
-			owner = *cs.ForkNamespace
+			// forkNamespace is nil returns a non-nil value if the fork namespace is explicitly defined
+			// e.g sourcegraph.
+			// if it isn't then we assume the changeset will be forked into the current user's namespace
+			forkNamespace := cs.GetForkNamespace()
+			if forkNamespace != nil {
+				owner = *forkNamespace
+			} else {
+				u, err := getCloneURL(r)
+				if err != nil {
+					return nil, errors.Wrap(err, "getting url for forked changeset")
+				}
+
+				owner, _, err = github.SplitRepositoryNameWithOwner(strings.TrimPrefix(u.Path, "/"))
+				if err != nil {
+					return nil, errors.Wrap(err, "getting owner from repo name")
+				}
+			}
 		} else {
+			repoMetadata := repo.Metadata.(*github.Repository)
 			owner, _, err = github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
 			if err != nil {
 				return nil, errors.Wrap(err, "getting owner from repo name")
 			}
 		}
-
-		fmt.Println("owner is ", owner)
-		fmt.Println("changeset ext fork", ch.ExternalForkName, ch.ExternalForkNamespace)
 
 		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
 	}
@@ -565,7 +570,7 @@ func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 		parsedURLs = append(parsedURLs, parsedURL)
 	}
 
-	sort.SliceStable(parsedURLs, func(i, j int) bool {
+	sort.SliceStable(parsedURLs, func(i, _ int) bool {
 		return !parsedURLs[i].IsSSH()
 	})
 
