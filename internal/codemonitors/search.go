@@ -200,24 +200,20 @@ func hookWithID(
 	argsCopy.Revisions = newRevs
 
 	// Execute the search
-	err = doSearch(&argsCopy)
-	if err != nil {
-		if errors.IsContextError(err) {
-			logger.Warn(
-				"commit search timed out, some commits may have been skipped",
-				log.Error(err),
-				log.String("repo", string(args.Repo)),
-				log.Strings("include", commitHashes),
-				log.Strings("exlcude", lastSearched),
-			)
-		} else {
-			return err
-		}
+	searchErr := doSearch(&argsCopy)
+
+	// NOTE(camdencheek): we want to always save the "last searched" commits
+	// because if we stream results, the user will get a notification for them
+	// whether or not there was an error and forcing a re-search will cause the
+	// user to get repeated notifications for the same commits. This makes code
+	// monitors look very broken, and should be avoided.
+	upsertErr := cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
+	if upsertErr != nil {
+		return upsertErr
 	}
 
-	// If the search was successful, store the resolved hashes
-	// as the new "last searched" hashes
-	return cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
+	// Still return the error so it can be displayed to the user
+	return searchErr
 }
 
 func stringsEqual(left, right []string) bool {
