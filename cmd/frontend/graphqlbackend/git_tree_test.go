@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -86,7 +85,7 @@ func TestGitTree(t *testing.T) {
 func setupGitserverClient(t *testing.T) gitserver.Client {
 	t.Helper()
 	gsClient := gitserver.NewMockClient()
-	gsClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+	gsClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
 		assert.Equal(t, "foo bar", name)
 		assert.False(t, recurse)
@@ -97,7 +96,7 @@ func setupGitserverClient(t *testing.T) gitserver.Client {
 			&fileutil.FileInfo{Name_: name + "/% token.4288249258.sql", Mode_: 0},
 		}, nil
 	})
-	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
 		assert.Equal(t, "foo bar", path)
 		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir}, nil

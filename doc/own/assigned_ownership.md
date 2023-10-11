@@ -33,7 +33,7 @@ Owner is assigned successfully.
 
 ### Directory level ownership
 
-Go to any directory view (in our example it is `cmd/gitserver/server`) and click "Show more" on Own panel.
+Go to any directory view (in our example it is `cmd/gitserver/internal`) and click "Show more" on Own panel.
 
 <picture title="Repository page with Ownership button selected"><img class="theme-dark-only" src="https://storage.googleapis.com/sourcegraph-assets/docs/own/assigned-owners-dir-1-dark.png"><img class="theme-light-only" src="https://storage.googleapis.com/sourcegraph-assets/docs/own/assigned-owners-dir-1-light.png"></picture>
 
@@ -50,7 +50,7 @@ Owner is assigned successfully.
 
 ### File level ownership
 
-Go to the blob view of any file (in our example it is `cmd/gitserver/server/cleanup.go`).
+Go to the blob view of any file (in our example it is `cmd/gitserver/internal/cleanup.go`).
 
 1. Click on the Own bar in the top-right corner.
 2. Click "Add owner" button in the bottom-right corner of an opened Ownership tab.

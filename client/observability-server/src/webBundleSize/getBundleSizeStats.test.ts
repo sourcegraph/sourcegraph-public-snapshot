@@ -22,7 +22,7 @@ jest.mock(
 )
 
 jest.mock(
-    'webpack.manifest.json',
+    'web.manifest.json',
     () => ({
         'app.js': '/.assets/scripts/app.bundle.js',
         'app.css': '/.assets/styles/app.123.bundle.css',
@@ -35,7 +35,7 @@ describe('getBundleSizeStats', () => {
         const stats = getBundleSizeStats({
             staticAssetsPath: MOCK_ASSETS_PATH,
             bundlesizeConfigPath: 'bundlesize.config.js',
-            webpackManifestPath: 'webpack.manifest.json',
+            webBuildManifestPath: 'web.manifest.json',
         })
 
         expect(stats).toEqual({

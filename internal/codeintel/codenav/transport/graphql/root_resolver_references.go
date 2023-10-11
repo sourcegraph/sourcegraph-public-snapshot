@@ -52,7 +52,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
 
-	refs, refCursor, err := r.codeNavSvc.NewGetReferences(ctx, requestArgs, r.requestState, cursor)
+	refs, refCursor, err := r.codeNavSvc.GetReferences(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "svc.GetReferences")
 	}

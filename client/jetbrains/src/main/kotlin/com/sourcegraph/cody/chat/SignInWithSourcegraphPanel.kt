@@ -1,6 +1,14 @@
 package com.sourcegraph.cody.chat
 
+import com.intellij.ide.DataManager
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContextWrapper
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.ui.ColorUtil
 import com.intellij.ui.SeparatorComponent
@@ -8,7 +16,10 @@ import com.intellij.ui.components.AnActionLink
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.Icons
-import com.sourcegraph.cody.auth.ui.SignInWithSourcegraphAction
+import com.sourcegraph.cody.auth.ui.SignInWithEnterpriseInstanceAction
+import com.sourcegraph.cody.config.CodyAccountsHost
+import com.sourcegraph.cody.config.CodyPersistentAccountsHost
+import com.sourcegraph.cody.config.LogInToSourcegraphAction
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import com.sourcegraph.cody.ui.UnderlinedActionLink
 import java.awt.BorderLayout
@@ -20,7 +31,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.border.Border
 
-class SignInWithSourcegraphPanel : JPanel() {
+class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
 
   private val mainButton = UIComponents.createMainButton("Sign in for free with Sourcegraph.com")
 
@@ -32,7 +43,24 @@ class SignInWithSourcegraphPanel : JPanel() {
             "</body></html>")
     val signInWithSourcegraphButton = mainButton
     signInWithSourcegraphButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-
+    val logInToSourcegraphAction = LogInToSourcegraphAction()
+    signInWithSourcegraphButton.addActionListener {
+      val dataContext = DataManager.getInstance().getDataContext(signInWithSourcegraphButton)
+      val dataContextWrapper = DataContextWrapper(dataContext)
+      val accountsHost: CodyAccountsHost = CodyPersistentAccountsHost(project)
+      dataContextWrapper.putUserData(CodyAccountsHost.KEY, accountsHost)
+      val event =
+          AnActionEvent(
+              null,
+              dataContext,
+              ActionPlaces.POPUP,
+              Presentation(),
+              ActionManager.getInstance(),
+              it.modifiers)
+      if (ActionUtil.lastUpdateAndCheckDumb(logInToSourcegraphAction, event, false)) {
+        ActionUtil.performActionDumbAwareWithCallbacks(logInToSourcegraphAction, event)
+      }
+    }
     val panelWithTheMessage = JPanel()
     panelWithTheMessage.setLayout(BoxLayout(panelWithTheMessage, BoxLayout.Y_AXIS))
     jEditorPane.setMargin(JBUI.emptyInsets())
@@ -67,7 +95,8 @@ class SignInWithSourcegraphPanel : JPanel() {
 
   private fun createPanelWithSignInWithAnEnterpriseInstance(): JPanel {
     val signInWithAnEnterpriseInstance: AnActionLink =
-        UnderlinedActionLink("Sign in with an Enterprise Instance", SignInWithSourcegraphAction(""))
+        UnderlinedActionLink(
+            "Sign in with an Enterprise Instance", SignInWithEnterpriseInstanceAction(""))
     signInWithAnEnterpriseInstance.setAlignmentX(CENTER_ALIGNMENT)
     val panelWithSettingsLink = JPanel(BorderLayout())
     panelWithSettingsLink.setBorder(JBUI.Borders.empty(PADDING, 0))

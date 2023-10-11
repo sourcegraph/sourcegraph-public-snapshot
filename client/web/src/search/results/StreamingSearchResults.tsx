@@ -36,6 +36,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../../tour/hooks'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
 import { DidYouMean } from '../suggestion/DidYouMean'
@@ -86,9 +87,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
     const [rankingEnabled] = useFeatureFlag('search-ranking')
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
-    const [enduserOnboardingEnabled] = useFeatureFlag('end-user-onboarding', false)
 
-    const showOnboardingTour = enduserOnboardingEnabled && !!authenticatedUser && !isSourcegraphDotCom
+    const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -403,7 +403,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 setSidebarCollapsed={setSidebarCollapsed}
             >
                 {showOnboardingTour && (
-                    <GettingStartedTour className="mb-1" telemetryService={props.telemetryService} />
+                    <GettingStartedTour
+                        className="mb-1"
+                        telemetryService={props.telemetryService}
+                        authenticatedUser={authenticatedUser}
+                    />
                 )}
             </SearchFiltersSidebar>
 

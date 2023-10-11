@@ -2,8 +2,6 @@ package cloudkms
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"hash/crc32"
 	"strconv"
 	"strings"
@@ -16,24 +14,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/envelope"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/wrapper"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const (
+	mechanismEncrypt  = "encrypt"
+	mechanismEnvelope = "envelope"
+)
+
 func NewKey(ctx context.Context, config schema.CloudKMSEncryptionKey) (encryption.Key, error) {
-	opts := []option.ClientOption{}
-	if config.CredentialsFile != "" {
-		opts = append(opts, option.WithCredentialsFile(config.CredentialsFile))
-	}
-	client, err := kms.NewKeyManagementClient(ctx, opts...)
+	client, err := kms.NewKeyManagementClient(ctx, clientOptions(config.CredentialsFile)...)
 	if err != nil {
 		return nil, err
 	}
+	return newKeyWithClient(ctx, config.Keyname, client)
+}
+
+func newKeyWithClient(ctx context.Context, keyName string, client *kms.KeyManagementClient) (*Key, error) {
 	k := &Key{
-		name:   config.Keyname,
+		name:   keyName,
 		client: client,
 	}
-	_, err = k.Version(ctx)
+	_, err := k.Version(ctx)
 	return k, err
+}
+
+func clientOptions(credentialsFile string) []option.ClientOption {
+	opts := []option.ClientOption{}
+	if credentialsFile != "" {
+		opts = append(opts, option.WithCredentialsFile(credentialsFile))
+	}
+	return opts
 }
 
 type Key struct {
@@ -64,34 +77,62 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (_ *encryption.Sec
 		cryptographicTotal.WithLabelValues("decrypt", strconv.FormatBool(err == nil)).Inc()
 	}()
 
-	buf, err := base64.StdEncoding.DecodeString(string(cipherText))
+	wr, err := wrapper.FromCiphertext(cipherText)
 	if err != nil {
 		return nil, err
 	}
-	// unmarshal the encrypted value into encryptedValue, this struct contains the raw
-	// ciphertext, the key name, and a crc32 checksum
-	ev := encryptedValue{}
-	err = json.Unmarshal(buf, &ev)
-	if err != nil {
-		return nil, err
+
+	// Fallback value for before we had the wrapper.
+	if wr.Mechanism == "" {
+		wr.Mechanism = mechanismEncrypt
 	}
-	if !strings.HasPrefix(ev.KeyName, k.name) {
+
+	if !strings.HasPrefix(wr.KeyName, k.name) {
 		return nil, errors.New("invalid key name, are you trying to decrypt something with the wrong key?")
 	}
-	// decrypt ciphertext
-	res, err := k.client.Decrypt(ctx, &kmspb.DecryptRequest{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
-		Name:       k.name,
-		Ciphertext: ev.Ciphertext,
-	})
-	if err != nil {
-		return nil, err
+
+	switch wr.Mechanism {
+	case mechanismEncrypt:
+		res, err := k.client.Decrypt(ctx, &kmspb.DecryptRequest{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
+			Name:       k.name,
+			Ciphertext: wr.Ciphertext,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// validate checksum
+		if int64(crc32Sum(res.Plaintext)) != res.PlaintextCrc32C.GetValue() {
+			return nil, errors.New("invalid checksum, either the wrong key was used, or the request was corrupted in transit")
+		}
+
+		s := encryption.NewSecret(string(res.Plaintext))
+		return &s, nil
+	case mechanismEnvelope:
+		// First, decrypt the envelope key using KMS.
+		res, err := k.client.Decrypt(ctx, &kmspb.DecryptRequest{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
+			Name:       k.name,
+			Ciphertext: wr.WrappedKey,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Next, decrypt the envelope content.
+		plaintext, err := envelope.Decrypt(&envelope.Envelope{
+			Key:        res.Plaintext,
+			Nonce:      wr.Nonce,
+			Ciphertext: wr.Ciphertext,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		s := encryption.NewSecret(string(plaintext))
+		return &s, nil
+	default:
+		return nil, errors.Errorf("unsupported encryption mechanism: %s", wr.Mechanism)
 	}
-	// validate checksum
-	if int64(crc32Sum(res.Plaintext)) != res.PlaintextCrc32C.GetValue() {
-		return nil, errors.New("invalid checksum, either the wrong key was used, or the request was corrupted in transit")
-	}
-	s := encryption.NewSecret(string(res.Plaintext))
-	return &s, nil
 }
 
 // Encrypt a secret, storing it as a base64 encoded json blob, this json contains
@@ -102,37 +143,36 @@ func (k *Key) Encrypt(ctx context.Context, plaintext []byte) (_ []byte, err erro
 		encryptPayloadSize.WithLabelValues(strconv.FormatBool(err == nil)).Observe(float64(len(plaintext)) / 1024)
 	}()
 
-	// encrypt plaintext
+	// First, envelope encrypt the plaintext.
+	ev, err := envelope.Encrypt(plaintext)
+	if err != nil {
+		return nil, errors.Wrap(err, "envelope encrypting payload")
+	}
+
+	// Encrypt the key of the envelope.
 	res, err := k.client.Encrypt(ctx, &kmspb.EncryptRequest{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45843
 		Name:            k.name,
-		Plaintext:       plaintext,
-		PlaintextCrc32C: wrapperspb.Int64(int64(crc32Sum(plaintext))),
+		Plaintext:       ev.Key,
+		PlaintextCrc32C: wrapperspb.Int64(int64(crc32Sum(ev.Key))),
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "encrypting envelope key")
 	}
+
 	// check that both the plaintext & ciphertext checksums are valid
-	if !res.VerifiedPlaintextCrc32C ||
-		res.CiphertextCrc32C.GetValue() != int64(crc32Sum(res.Ciphertext)) {
+	if !res.VerifiedPlaintextCrc32C || res.CiphertextCrc32C.GetValue() != int64(crc32Sum(res.Ciphertext)) {
 		return nil, errors.New("invalid checksum, request corrupted in transit")
 	}
-	ek := encryptedValue{
-		KeyName:    res.Name,
-		Ciphertext: res.Ciphertext,
-		Checksum:   crc32Sum(plaintext),
-	}
-	jsonKey, err := json.Marshal(ek)
-	if err != nil {
-		return nil, err
-	}
-	buf := base64.StdEncoding.EncodeToString(jsonKey)
-	return []byte(buf), err
-}
 
-type encryptedValue struct {
-	KeyName    string
-	Ciphertext []byte
-	Checksum   uint32
+	ek := wrapper.StorableEncryptedKey{
+		Mechanism:  mechanismEnvelope,
+		KeyName:    res.Name,
+		WrappedKey: res.Ciphertext,
+		Ciphertext: ev.Ciphertext,
+		Nonce:      ev.Nonce,
+	}
+
+	return ek.Serialize()
 }
 
 func crc32Sum(data []byte) uint32 {

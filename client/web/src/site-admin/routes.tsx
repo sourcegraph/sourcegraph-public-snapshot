@@ -262,7 +262,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
 
 const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
     path: '/users',
-    render: () => <UsersManagement isEnterprise={false} renderAssignmentModal={() => null} />,
+    render: () => <UsersManagement renderAssignmentModal={() => null} />,
 }
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [

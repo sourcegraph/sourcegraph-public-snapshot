@@ -7,8 +7,6 @@ import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 
-import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
-
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
     () => import('./batches/global/GlobalBatchChangesArea'),
@@ -23,7 +21,6 @@ const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
 )
-const SentinelRouter = lazyComponent(() => import('./sentinel/SentinelRouter'), 'SentinelRouter')
 const CreateSearchContextPage = lazyComponent(
     () => import('./searchContexts/CreateSearchContextPage'),
     'CreateSearchContextPage'
@@ -87,15 +84,6 @@ export const enterpriseRoutes: RouteObject[] = [
                     />
                 )}
                 condition={isSearchJobsEnabled}
-            />
-        ),
-    },
-    {
-        path: EnterprisePageRoutes.Sentinel,
-        element: (
-            <LegacyRoute
-                render={props => <SentinelRouter {...props} />}
-                condition={props => isSentinelEnabled(props)}
             />
         ),
     },

@@ -13,7 +13,7 @@ on:
       - 'lib/errors/**'
       - 'lib/group/**'
       # Important things sg imports
-      - 'enterprise/dev/ci/images/**'    # sg ops
+      - 'dev/ci/images/**'               # sg ops
       - 'internal/database/migration/**' # sg migration
       - 'monitoring/**'                  # sg monitoring
 

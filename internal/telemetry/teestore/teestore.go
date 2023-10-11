@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,6 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+var counterV1Events = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "telemetry_teestore",
+	Name:      "v1_events",
+	Help:      "Events tee'd to the V1 event_logs table",
+}, []string{"failed"})
 
 // Store tees events into both the event_logs table and the new telemetry export
 // queue, translating the message into the existing event_logs format on a
@@ -40,7 +49,11 @@ func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 	})
 	if !shouldDisableV1(ctx) {
 		wg.Go(func() error {
-			if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
+			err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events))
+			counterV1Events.
+				WithLabelValues(strconv.FormatBool(err != nil)).
+				Add(float64(len(events)))
+			if err != nil {
 				return errors.Wrap(err, "bulk inserting events logs")
 			}
 			return nil
@@ -49,6 +62,8 @@ func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 	return wg.Wait()
 }
 
+// toEventLogs is the mechanism translating the new exportable telemetry events
+// into the legacy event_logs table for convenience.
 func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Event) []*database.Event {
 	sensitiveMetadataAllowlist := sensitivemetadataallowlist.AllowedEventTypes()
 
@@ -56,6 +71,7 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 	for i, e := range telemetryEvents {
 		// Note that all generated proto getters are nil-safe, so use those to
 		// get fields rather than accessing fields directly.
+		userID := e.GetUser().GetUserId()
 		eventLogs[i] = &database.Event{
 			ID:       0,   // not required on insert
 			InsertID: nil, // not required on insert
@@ -70,8 +86,15 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 			}(),
 
 			// User
-			UserID:          uint32(e.GetUser().GetUserId()),
-			AnonymousUserID: e.GetUser().GetAnonymousUserId(),
+			UserID: uint32(userID),
+			AnonymousUserID: func() string {
+				// One of userID, anonymousUserID must be set in event_logs
+				anonymous := e.GetUser().GetAnonymousUserId()
+				if userID == 0 && anonymous == "" {
+					return "unknown"
+				}
+				return anonymous
+			}(),
 
 			// GetParameters.Metadata
 			PublicArgument: func() json.RawMessage {

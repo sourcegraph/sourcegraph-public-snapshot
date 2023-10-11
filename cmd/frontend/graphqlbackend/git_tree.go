@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -45,7 +44,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.entries")
 	defer tr.EndWithErr(&err)
 
-	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)
+	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error

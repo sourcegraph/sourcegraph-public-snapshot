@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/auth/providers",
-        "//internal/authz",
         "//internal/collections",
         "//internal/database",
         "//internal/errcode",
@@ -40,7 +39,6 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/auth/providers",
-        "//internal/authz",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",

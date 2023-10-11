@@ -13,7 +13,6 @@ go_library(
         "//cmd/frontend/envvar",
         "//cmd/searcher/protocol",
         "//internal/api",
-        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/endpoint",
@@ -59,7 +58,6 @@ go_test(
     deps = [
         "//cmd/searcher/protocol",
         "//internal/api",
-        "//internal/authz",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",

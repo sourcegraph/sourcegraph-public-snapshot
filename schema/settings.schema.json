@@ -169,14 +169,6 @@
             "pointer": true
           }
         },
-        "applySearchQuerySuggestionOnEnter": {
-          "description": "This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "searchResultsAggregations": {
           "description": "Display aggregations for your search results on the search screen.",
           "type": "boolean",

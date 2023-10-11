@@ -21,7 +21,7 @@ type AuthzResolver interface {
 	SetRepositoryPermissionsForBitbucketProject(ctx context.Context, args *RepoPermsBitbucketProjectArgs) (*EmptyResponse, error)
 	CancelPermissionsSyncJob(ctx context.Context, args *CancelPermissionsSyncJobArgs) (CancelPermissionsSyncJobResultMessage, error)
 
-	//AuthorizedUserRepositories and functions below are GraphQL Queries.
+	// AuthorizedUserRepositories and functions below are GraphQL Queries.
 	AuthorizedUserRepositories(ctx context.Context, args *AuthorizedRepoArgs) (RepositoryConnectionResolver, error)
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
@@ -133,7 +133,7 @@ type PermissionsInfoResolver interface {
 
 type PermissionsInfoRepositoryResolver interface {
 	ID() graphql.ID
-	Repository() *RepositoryResolver
+	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Reason() string
 	UpdatedAt() *gqlutil.DateTime
 }

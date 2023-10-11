@@ -89,7 +89,6 @@ go_test(
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/ui/router",
         "//internal/api",
-        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
@@ -105,6 +104,7 @@ go_test(
         "//schema",
         "//ui/assets",
         "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
     ],
 )

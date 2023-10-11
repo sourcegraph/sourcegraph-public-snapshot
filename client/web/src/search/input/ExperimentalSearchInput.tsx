@@ -3,7 +3,7 @@ import { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useRe
 import { Prec } from '@codemirror/state'
 
 // This component makes the experimental search input accessible in the web app
-// eslint-disable-next-line no-restricted-imports
+
 import {
     type Action,
     CodeMirrorQueryInputWrapper,
@@ -14,7 +14,6 @@ import {
     searchHistoryExtension,
     selectionListener,
 } from '@sourcegraph/branded/src/search-ui/experimental'
-import type { Editor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
@@ -132,8 +131,6 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
         getSearchContextRef.current = () => selectedSearchContextSpec
     }, [selectedSearchContextSpec])
 
-    const editorRef = useRef<Editor | null>(null)
-
     const suggestionSource = useMemo(
         () =>
             createSuggestionsSource({
@@ -157,10 +154,10 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                     placeholder: 'Filter history',
                 },
                 source: () => recentSearchesRef.current ?? [],
-                submitQuery: query => {
+                submitQuery: (query, view) => {
                     if (submitSearchRef?.current) {
                         submitSearchRef.current?.({ query })
-                        editorRef.current?.blur()
+                        view.contentDOM.blur()
                     }
                 },
             }),
@@ -183,13 +180,11 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
 
     return (
         <CodeMirrorQueryInputWrapper
-            ref={editorRef}
             patternType={inputProps.patternType}
             interpretComments={false}
             queryState={inputProps.queryState}
             onChange={inputProps.onChange}
             onSubmit={inputProps.onSubmit}
-            isLightTheme={inputProps.isLightTheme}
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
             extensions={extensions}

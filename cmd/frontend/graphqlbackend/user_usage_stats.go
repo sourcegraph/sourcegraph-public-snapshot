@@ -171,7 +171,11 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 				}
 			}
 
-			hubspotutil.SyncUserWithEventParams(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+				DatabaseID: userID,
+			})
+
+			hubspotutil.SyncUserWithEventParams(userPrimaryEmail, hubspotutil.NewCodyClientInstalledEventID, &hubspot.ContactProperties{
 				DatabaseID:                   userID,
 				VSCodyInstalledEmailsEnabled: emailsEnabled,
 			}, map[string]string{"ide": ide, "emailsEnabled": strconv.FormatBool(emailsEnabled)})

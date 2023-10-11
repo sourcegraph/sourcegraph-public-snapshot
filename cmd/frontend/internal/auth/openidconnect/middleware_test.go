@@ -106,11 +106,11 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 	srv := httptest.NewServer(s)
 
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 		if op.ExternalAccount.ServiceType == "openidconnect" && op.ExternalAccount.ServiceID == oidcProvider.Issuer && op.ExternalAccount.ClientID == testClientID && op.ExternalAccount.AccountID == testOIDCUser {
-			return 123, "", nil
+			return false, 123, "", nil
 		}
-		return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+		return false, 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
 
 	return srv, &email
@@ -293,7 +293,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/redirect"; got != want {
+		if got, want := resp.Header.Get("Location"), "/redirect?signin="; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		}
 	})

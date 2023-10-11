@@ -58,9 +58,10 @@ export const ExternalServicesAndErrors: Story = args => (
 ExternalServicesAndErrors.storyName = 'has errors'
 
 ExternalServicesAndErrors.argTypes = {
-    erroredWebhookCount: {
-        defaultValue: 500,
-    },
+    erroredWebhookCount: {},
+}
+ExternalServicesAndErrors.args = {
+    erroredWebhookCount: 500,
 }
 
 const buildHeaderMock = (webhookLogCount: number): MockedResponse<WebhookByIDLogPageHeaderResult>[] => [

@@ -6,7 +6,8 @@ import (
 
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/opencontainers/go-digest"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+
+	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,6 +21,7 @@ type Registry interface {
 	GetLatest(repo string, latest func(tags []string) (string, error)) (*Repository, error)
 	Host() string
 	Org() string
+	Public() bool
 }
 
 type Repository struct {

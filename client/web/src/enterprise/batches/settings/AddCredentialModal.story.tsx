@@ -70,8 +70,10 @@ RequiresSSHstep1.argTypes = {
     externalServiceKind: {
         name: 'External service kind',
         control: { type: 'select', options: Object.values(ExternalServiceKind) },
-        defaultValue: ExternalServiceKind.GITHUB,
     },
+}
+RequiresSSHstep1.args = {
+    externalServiceKind: ExternalServiceKind.GITHUB,
 }
 
 RequiresSSHstep1.storyName = 'Requires SSH - step 1'
@@ -97,8 +99,10 @@ RequiresSSHstep2.argTypes = {
     externalServiceKind: {
         name: 'External service kind',
         control: { type: 'select', options: Object.values(ExternalServiceKind) },
-        defaultValue: ExternalServiceKind.GITHUB,
     },
+}
+RequiresSSHstep2.args = {
+    externalServiceKind: ExternalServiceKind.GITHUB,
 }
 
 RequiresSSHstep2.storyName = 'Requires SSH - step 2'

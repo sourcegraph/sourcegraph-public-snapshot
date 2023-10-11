@@ -1,4 +1,7 @@
-// We want to polyfill first.
+// Set globals first before any imports.
+import '../../config/extension.entry'
+import '../../config/background.entry'
+// Polyfill before other imports.
 import '../../shared/polyfills'
 
 import type { Endpoint } from 'comlink'
@@ -204,7 +207,7 @@ async function main(): Promise<void> {
                          * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
                          */
                         await browser.tabs.executeScript(tabId, {
-                            file: 'js/inject.bundle.js',
+                            file: 'js/contentPage.main.bundle.js',
                             runAt: 'document_end',
                         })
                     }

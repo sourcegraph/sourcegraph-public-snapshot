@@ -193,6 +193,10 @@ func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
 
 	closeFn := func() error {
 		csvWriter.Flush()
+		// Don't upload empty files.
+		if c.buf.Len() == 0 {
+			return nil
+		}
 		_, err := c.store.Upload(ctx, key, &c.buf)
 		return err
 	}

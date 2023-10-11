@@ -17,10 +17,6 @@ const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
-const InstallGitHubAppSuccessPage = lazyComponent(
-    () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
-    'InstallGitHubAppSuccessPage'
-)
 const RedirectToUserSettings = lazyComponent(
     () => import('./user/settings/RedirectToUserSettings'),
     'RedirectToUserSettings'
@@ -86,10 +82,6 @@ export const routes: RouteObject[] = [
         element: <Navigate replace={true} to={PageRoutes.Search} />,
     },
     {
-        path: PageRoutes.InstallGitHubAppSuccess,
-        element: <InstallGitHubAppSuccessPage />,
-    },
-    {
         path: PageRoutes.Settings,
         element: <LegacyRoute render={props => <RedirectToUserSettings {...props} />} />,
     },
@@ -127,7 +119,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.PasswordReset,
-        element: <LegacyRoute render={props => <ResetPasswordPage {...props} />} />,
+        element: <LegacyRoute render={props => <ResetPasswordPage {...props} context={window.context} />} />,
     },
     {
         path: PageRoutes.ApiConsole,

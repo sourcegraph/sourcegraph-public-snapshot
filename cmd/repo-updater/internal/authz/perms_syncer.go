@@ -458,7 +458,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 		providerLogger.Debug("account found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID), log.Int32("account_id", acct.ID))
 
-		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		acct, err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			providerLogger.Error("could not associate external account to user", log.Error(err))
 			continue

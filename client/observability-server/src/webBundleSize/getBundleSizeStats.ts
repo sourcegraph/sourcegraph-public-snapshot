@@ -27,19 +27,19 @@ interface BundleSizeStats {
 interface GetBundleSizeStatsOptions {
     staticAssetsPath: string
     bundlesizeConfigPath: string
-    webpackManifestPath: string
+    webBuildManifestPath: string
 }
 
 /**
  * Get a list of files specified by bundlesize config glob and their respective sizes.
  */
 export function getBundleSizeStats(options: GetBundleSizeStatsOptions): BundleSizeStats {
-    const { bundlesizeConfigPath, webpackManifestPath, staticAssetsPath } = options
+    const { bundlesizeConfigPath, webBuildManifestPath, staticAssetsPath } = options
     const bundleSizeConfig = require(bundlesizeConfigPath) as BundleSizeConfig
-    const webpackManifest = require(webpackManifestPath) as Record<string, string>
+    const webBuildManifest = require(webBuildManifestPath) as Record<string, string>
 
     const initialResources = new Set(
-        Object.values(webpackManifest).map(resourcePath =>
+        Object.values(webBuildManifest).map(resourcePath =>
             path.join(staticAssetsPath, resourcePath.replace('/.assets/', ''))
         )
     )

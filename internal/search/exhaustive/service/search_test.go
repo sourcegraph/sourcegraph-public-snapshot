@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 func TestWrongUser(t *testing.T) {
@@ -63,22 +64,7 @@ func (c *csvBuffer) WriteRow(row ...string) error {
 }
 
 func TestBlobstoreCSVWriter(t *testing.T) {
-	// Each entry in bucket corresponds to one 1 uploaded csv file.
-	var bucket [][]byte
-	var keys []string
-
-	mockStore := mocks.NewMockStore()
-	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			return 0, err
-		}
-
-		bucket = append(bucket, b)
-		keys = append(keys, key)
-
-		return int64(len(b)), nil
-	})
+	mockStore := setupMockStore(t)
 
 	csvWriter := NewBlobstoreCSVWriter(context.Background(), mockStore, "blob")
 	csvWriter.maxBlobSizeBytes = 12
@@ -95,11 +81,87 @@ func TestBlobstoreCSVWriter(t *testing.T) {
 	require.NoError(t, err)
 
 	wantFiles := 2
-	require.Equal(t, wantFiles, len(bucket))
+	iter, err := mockStore.List(context.Background(), "")
+	require.NoError(t, err)
+	haveFiles := 0
+	for iter.Next() {
+		haveFiles++
+	}
+	require.Equal(t, wantFiles, haveFiles)
 
-	require.Equal(t, "blob", keys[0])
-	require.Equal(t, "h,h,h\na,a,a\n", string(bucket[0]))
+	tc := []struct {
+		wantKey  string
+		wantBlob []byte
+	}{
+		{
+			wantKey:  "blob",
+			wantBlob: []byte("h,h,h\na,a,a\n"),
+		},
+		{
+			wantKey:  "blob-2",
+			wantBlob: []byte("h,h,h\nb,b,b\n"),
+		},
+	}
 
-	require.Equal(t, "blob-2", keys[1])
-	require.Equal(t, "h,h,h\nb,b,b\n", string(bucket[1]))
+	for _, c := range tc {
+		blob, err := mockStore.Get(context.Background(), c.wantKey)
+		require.NoError(t, err)
+
+		blobBytes, err := io.ReadAll(blob)
+		require.NoError(t, err)
+
+		require.Equal(t, c.wantBlob, blobBytes)
+	}
+}
+
+func TestNoUploadIfNotData(t *testing.T) {
+	mockStore := setupMockStore(t)
+	csvWriter := NewBlobstoreCSVWriter(context.Background(), mockStore, "blob")
+
+	// No data written, so no upload should happen.
+	err := csvWriter.Close()
+	require.NoError(t, err)
+	iter, err := mockStore.List(context.Background(), "")
+	require.NoError(t, err)
+
+	for iter.Next() {
+		t.Fatal("should not have uploaded anything")
+	}
+}
+
+func setupMockStore(t *testing.T) *mocks.MockStore {
+	t.Helper()
+
+	bucket := make(map[string][]byte)
+
+	mockStore := mocks.NewMockStore()
+	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+
+		bucket[key] = b
+
+		return int64(len(b)), nil
+	})
+
+	mockStore.ListFunc.SetDefaultHook(func(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+		var keys []string
+		for k := range bucket {
+			if strings.HasPrefix(k, prefix) {
+				keys = append(keys, k)
+			}
+		}
+		return iterator.From(keys), nil
+	})
+
+	mockStore.GetFunc.SetDefaultHook(func(ctx context.Context, key string) (io.ReadCloser, error) {
+		if b, ok := bucket[key]; ok {
+			return io.NopCloser(bytes.NewReader(b)), nil
+		}
+		return nil, errors.New("key not found")
+	})
+
+	return mockStore
 }

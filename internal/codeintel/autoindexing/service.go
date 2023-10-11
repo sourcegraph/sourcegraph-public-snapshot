@@ -8,7 +8,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/jobselector"
@@ -92,12 +91,12 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 
 	if commit == "" {
 		var ok bool
-		commit, ok, err = s.gitserverClient.Head(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
+		commit, ok, err = s.gitserverClient.Head(ctx, repo.Name)
 		if err != nil || !ok {
 			return nil, errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
 		}
 	} else {
-		exists, err := s.gitserverClient.CommitExists(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit))
+		exists, err := s.gitserverClient.CommitExists(ctx, repo.Name, api.CommitID(commit))
 		if err != nil {
 			return nil, errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
 		}
