@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -147,13 +146,11 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 			return err
 		}
 
-		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-			// Snapshot the state of the searched repos when the monitor is created so that
-			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID)
-			if err != nil {
-				return err
-			}
+		// Snapshot the state of the searched repos when the monitor is created so that
+		// we can distinguish new repos.
+		err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID)
+		if err != nil {
+			return err
 		}
 
 		// Create actions.
@@ -534,21 +531,19 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
+	currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	// When the query is changed, take a new snapshot of the commits that currently
+	// exist so we know where to start.
+	if currentTrigger.QueryString != args.Trigger.Update.Query {
+		// Snapshot the state of the searched repos when the monitor is created so that
+		// we can distinguish new repos.
+		err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID)
 		if err != nil {
 			return nil, err
-		}
-
-		// When the query is changed, take a new snapshot of the commits that currently
-		// exist so we know where to start.
-		if currentTrigger.QueryString != args.Trigger.Update.Query {
-			// Snapshot the state of the searched repos when the monitor is created so that
-			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
