@@ -44,7 +44,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 	}
 
 	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
-		return hookWithID(ctx, db, logger, gs, monitorID, repoID, args, doSearch)
+		return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
 	}
 	planJob, err = addCodeMonitorHook(planJob, hook)
 	if err != nil {
@@ -161,7 +161,6 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 func hookWithID(
 	ctx context.Context,
 	db database.DB,
-	logger log.Logger,
 	gs commit.GitserverClient,
 	monitorID int64,
 	repoID api.RepoID,
