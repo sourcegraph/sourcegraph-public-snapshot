@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -13,7 +12,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -251,6 +250,8 @@ func brandNameSubtitle(titles ...string) string {
 }
 
 func initRouter(db database.DB, router *mux.Router) {
+	logger := log.Scoped("router", "")
+
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
@@ -401,7 +402,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient())))
+	router.Get(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient())))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -509,6 +510,8 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
+	logger := log.Scoped("ui", "logger for serveErrorNoDebug")
+
 	// Determine trace URL and log the error.
 	var traceURL string
 	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
@@ -516,15 +519,26 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
-	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
+	logger.Error(
+		"ui HTTP handler error response",
+		log.String("method", r.Method),
+		log.String("request_uri", r.URL.RequestURI()),
+		log.Int("status_code", statusCode),
+		log.Error(err),
+		log.String("error_id", errorID),
+		log.String("trace", traceURL),
+	)
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it
-	// separately (since log15 prints the escaped sequence).
+	// separately.
 	var e recoverError
 	if errors.As(err, &e) {
-		err = errors.Errorf("ui: recovered from panic %v\n\n%s", e.recover, e.stack)
-		log.Println(err)
+		err = errors.Errorf("%v\n\n%s", e.recover, e.stack)
+		logger.Error(
+			"recovered from panic",
+			log.Error(err),
+		)
 	}
 
 	var errorIfDebug string
@@ -561,7 +575,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 			Common: common,
 		})
 		if fancyErr != nil {
-			log15.Error("ui: error while serving fancy error template", "error", fancyErr)
+			logger.Error("ui: error while serving fancy error template", log.Error(fancyErr))
 			// continue onto fallback below..
 		} else {
 			return
@@ -571,7 +585,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	// Fallback to ugly / reliable error template.
 	stdErr := renderTemplate(w, "error.html", pageErrorContext)
 	if stdErr != nil {
-		log15.Error("ui: error while serving final error template", "error", stdErr)
+		logger.Error("error while serving final error template", log.Error(stdErr))
 	}
 }
 

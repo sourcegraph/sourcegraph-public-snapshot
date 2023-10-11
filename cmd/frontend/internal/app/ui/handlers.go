@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"html/template"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -14,9 +13,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -141,7 +139,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has a nil Repo.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
-	logger := sglog.Scoped("commonHandler", "")
+	logger := log.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
@@ -263,7 +261,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			ctx := context.Background()
 			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, common.Repo.Name)
 			if err != nil {
-				log15.Error("EnqueueRepoUpdate", "error", err)
+				logger.Error("EnqueueRepoUpdate", log.Error(err))
 			}
 		}()
 	}
@@ -540,7 +538,6 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 			r.URL.Host = "search-badger"
 			r.URL.Path = "/"
 		},
-		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
 	}
 }
 
