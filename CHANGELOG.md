@@ -13,27 +13,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased 5.2.0 (planned release date: October 4, 2023)
-## Unreleased 5.3.0 (planned release date: February, 2024)
-
-### Added
-
--
-
-### Changed
-
--
-
-### Fixed
-
--
-
-### Removed
-
-- The experimental GraphQL query `User.invitableCollaborators`.
-- The following experimental settings in site-configuration are now deprecated and will not be read anymore: `maxReorderQueueSize`, `maxQueueMatchCount`, `maxReorderDurationMS`. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
-- The feature-flag `search-ranking`, which allowed to disable the improved ranking introduced in 5.1, is now deprecated and will not be read anymore. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
-
 ## Unreleased 5.2.1
 
 ### Added
