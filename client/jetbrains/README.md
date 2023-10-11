@@ -212,3 +212,4 @@ If you have any questions, feedback, or bug report, we appreciate if you [open a
 ## Version History
 
 See [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/CHANGELOG.md).
+Hello World
