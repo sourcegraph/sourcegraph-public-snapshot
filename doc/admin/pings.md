@@ -209,6 +209,8 @@ Sourcegraph currently uses Cloudflare to provide web application security. You s
 
 The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry requests.
 
+Be sure to update the enviornment variable like so : ```TELEMETRY_HTTP_PROXY:"http://proxy.example.com:8080"```
+
 ## Connections to Sourcegraph.com
 
 Sourcegraph only connects to Sourcegraph.com for three purposes:
