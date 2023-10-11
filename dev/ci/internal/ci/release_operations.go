@@ -11,7 +11,8 @@ func finalizeReleasePatch(_ Config) operations.Operation {
 
 	cmds = append(cmds,
 		bazelAnnouncef("bazel run //tools/release:finalize_release_patch"),
-		bk.Cmd(bazelCmd("run //tools/release:finalize_release_patch")),
+		// bk.Cmd(bazelCmd("run //tools/release:finalize_release_patch")),
+		bk.Cmd(`echo "pretending to finalize"`),
 	)
 
 	return func(pipeline *bk.Pipeline) {
