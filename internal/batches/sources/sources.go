@@ -571,7 +571,7 @@ func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	}
 
 	sort.SliceStable(parsedURLs, func(i, _ int) bool {
-		return !parsedURLs[i].IsSSH()
+		return !parsedURLs[i].IsSSH() && parsedURLs[j].IsSSH()
 	})
 
 	return parsedURLs[0], nil
