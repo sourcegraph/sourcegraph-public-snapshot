@@ -2,14 +2,12 @@ package codemonitors
 
 import (
 	"context"
-	"net/url"
 	"sort"
 	"sync"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -220,16 +218,6 @@ func hookWithID(
 	// If the search was successful, store the resolved hashes
 	// as the new "last searched" hashes
 	return cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
-}
-
-func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(internalapi.Client.URL)
-	if err != nil {
-		return "", err
-	}
-	u.Path = "/.internal/graphql"
-	u.RawQuery = queryName
-	return u.String(), nil
 }
 
 func stringsEqual(left, right []string) bool {
