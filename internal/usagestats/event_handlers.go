@@ -198,13 +198,13 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if event.LastSourceURL != nil {
 			lastSourceURL = *event.LastSourceURL
 		}
-		saferReferrer, err := redactSensitiveInfoFromCloudURL(*event.Referrer)
-		if err != nil {
-			return nil, err
-		}
 		referrer := ""
 		if event.Referrer != nil {
 			referrer = *event.Referrer
+		}
+		originalReferrer := ""
+		if event.OriginalReferrer != nil {
+			originalReferrer = *event.OriginalReferrer
 		}
 		sessionReferrer := ""
 		if event.SessionReferrer != nil {
@@ -230,8 +230,8 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			URL:                    saferUrl,
 			FirstSourceURL:         firstSourceURL,
 			LastSourceURL:          lastSourceURL,
-			Referrer:               saferReferrer,
-			OriginalReferrer:       referrer,
+			Referrer:               referrer,
+			OriginalReferrer:       originalReferrer,
 			SessionReferrer:        sessionReferrer,
 			SessionFirstURL:        sessionFirstURL,
 			Source:                 event.Source,
@@ -353,8 +353,7 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		parsedURL.RawPath = "/sign-in/redacted"
 		parsedURL.Path = "/sign-in/redacted"
 	} else {
-		parsedURL.RawPath = "/redacted"
-		parsedURL.Path = "/redacted"
+		return rawURL, nil
 	}
 
 	marketingQueryParameters := map[string]struct{}{
