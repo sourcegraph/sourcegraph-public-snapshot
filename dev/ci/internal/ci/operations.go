@@ -714,7 +714,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 			// TODO RFC 795
 			if c.RunType.Is(runtype.WIPRelease) {
 				if image != publishImage {
-					imgs = append(imgs, fmt.Sprintf("%s:wip_insiders", image))
+					imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Branch))
 				}
 				continue
 			}
