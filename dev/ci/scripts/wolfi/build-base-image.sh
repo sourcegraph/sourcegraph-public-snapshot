@@ -56,7 +56,7 @@ fi
 name=${1%/}
 # Soft-fail if file doesn't exist, as CI step is triggered whenever base image configs are changed - including deletions/renames
 if [ ! -f "wolfi-images/${name}.yaml" ]; then
-  echo "File '$name.yaml' does not exist"
+  echo "File '${name}.yaml' does not exist cwd: '${PWD}'"
   exit 222
 fi
 
