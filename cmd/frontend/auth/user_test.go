@@ -311,7 +311,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		},
 		{
 			description: "createUserAndSaveErr",
-			mock:        mockParams{createUserAndSaveErr: unexpectedErr, userInfos: oneUser},
+			mock:        mockParams{createWithExternalAccountErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
 				op:         getNonExistentUserCreateIfNotExistOp,
 				expSafeErr: "Unable to create a new user account due to a unexpected error. Ask a site admin for help.",
@@ -462,12 +462,12 @@ func TestGetAndSaveUser(t *testing.T) {
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 		usersStore := dbmocks.NewMockUserStore()
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
-		externalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
-		externalAccountsStore.UpdateFunc.SetDefaultReturn(nil, errNotFound)
-		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
+		usersStore.CreateWithExternalAccountFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ *extsvc.Account) (*types.User, error) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return &types.User{ID: 1}, nil
 		})
+		externalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
+		externalAccountsStore.UpdateFunc.SetDefaultReturn(nil, errNotFound)
 		eventLogsStore := dbmocks.NewMockEventLogStore()
 		eventLogsStore.BulkInsertFunc.SetDefaultHook(func(ctx context.Context, _ []*database.Event) error {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
@@ -497,7 +497,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
-		mockrequire.Called(t, externalAccountsStore.CreateUserAndSaveFunc)
+		mockrequire.Called(t, usersStore.CreateWithExternalAccountFunc)
 	})
 }
 
@@ -619,14 +619,14 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 }
 
 type mockParams struct {
-	userInfos                []userInfo
-	externalAccountUpdateErr error
-	createUserAndSaveErr     error
-	upsertErr                error
-	getByVerifiedEmailErr    error
-	getByUsernameErr         error //nolint:structcheck
-	getByIDErr               error
-	updateErr                error
+	userInfos                    []userInfo
+	externalAccountUpdateErr     error
+	createWithExternalAccountErr error
+	upsertErr                    error
+	getByVerifiedEmailErr        error
+	getByUsernameErr             error //nolint:structcheck
+	getByIDErr                   error
+	updateErr                    error
 }
 
 // mocks provide mocking. It should only be used for one call of auth.GetAndSaveUser, because saves
@@ -662,13 +662,13 @@ func (m *mocks) DB() database.DB {
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.UpdateFunc.SetDefaultHook(m.ExternalAccountUpdate)
 	externalAccounts.UpsertFunc.SetDefaultHook(m.Upsert)
-	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(m.GetByID)
 	users.GetByVerifiedEmailFunc.SetDefaultHook(m.GetByVerifiedEmail)
 	users.GetByUsernameFunc.SetDefaultHook(m.GetByUsername)
 	users.UpdateFunc.SetDefaultHook(m.Update)
+	users.CreateWithExternalAccountFunc.SetDefaultHook(m.CreateWithExternalAccountFunc)
 
 	authzStore := dbmocks.NewMockAuthzStore()
 	authzStore.GrantPendingPermissionsFunc.SetDefaultHook(m.GrantPendingPermissions)
@@ -704,10 +704,10 @@ func (m *mocks) ExternalAccountUpdate(_ context.Context, acct *extsvc.Account) (
 	return nil, &errcode.Mock{IsNotFound: true}
 }
 
-// CreateUserAndSave mocks database.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
-	if m.createUserAndSaveErr != nil {
-		return &types.User{}, m.createUserAndSaveErr
+// CreateWithExternalACcountFunc mocks database.Users.CreateWithExternalAccountFunc
+func (m *mocks) CreateWithExternalAccountFunc(_ context.Context, newUser database.NewUser, acct *extsvc.Account) (createdUser *types.User, err error) {
+	if m.createWithExternalAccountErr != nil {
+		return &types.User{}, m.createWithExternalAccountErr
 	}
 
 	// Check if username already exists
@@ -734,7 +734,7 @@ func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, s
 	m.createdUsers[userID] = newUser
 
 	// Save ext acct
-	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
+	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], acct.AccountSpec)
 
 	return &types.User{ID: userID}, nil
 }

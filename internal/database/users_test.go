@@ -363,16 +363,16 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 
 	// Create a Sourcegraph Operator user and should be excluded when desired
-	_, err = db.UserExternalAccounts().CreateUserAndSave(
+	_, err = db.Users().CreateWithExternalAccount(
 		ctx,
 		NewUser{
 			Username: "sourcegraph-operator-logan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "sourcegraph-operator",
+			},
+		})
 	require.NoError(t, err)
 	count, err := db.Users().Count(
 		ctx,
@@ -488,7 +488,10 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 		userToSoftDelete,
 	}
 	for _, newUser := range newUsers {
-		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
+		user, err := db.Users().CreateWithExternalAccount(ctx, newUser.NewUser,
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID},
+			})
 		for _, email := range newUser.AdditionalVerifiedEmails {
 			verificationCode := "x"
 			err := db.UserEmails().Add(ctx, user.ID, email, &verificationCode)

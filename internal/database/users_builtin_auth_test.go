@@ -110,7 +110,6 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err.Error() != want {
 		t.Fatalf("Want %q, got %q", want, err.Error())
 	}
-
 }
 
 func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
@@ -271,23 +270,24 @@ func TestUsers_CreatePassword(t *testing.T) {
 	}
 
 	// A new user with an external account should be able to create a password
-	newUser, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{
+	newUser, err := db.Users().CreateWithExternalAccount(ctx, NewUser{
 		Email:                 "usr3@bar.com",
 		Username:              "usr3",
 		Password:              "",
 		EmailVerificationCode: "c",
 	},
-		extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "123",
-			ClientID:    "456",
-			AccountID:   "789",
-		},
-		extsvc.AccountData{
-			AuthData: nil,
-			Data:     nil,
-		},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "123",
+				ClientID:    "456",
+				AccountID:   "789",
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: nil,
+				Data:     nil,
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}

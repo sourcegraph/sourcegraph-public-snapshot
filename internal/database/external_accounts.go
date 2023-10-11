@@ -12,8 +12,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -46,13 +44,6 @@ type UserExternalAccountsStore interface {
 	Upsert(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error)
 
 	Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error)
-
-	// CreateUserAndSave is used to create a new Sourcegraph user account from an external account
-	// (e.g., "signup from SAML").
-	//
-	// It creates a new user and associates it with the specified external account. If the user to
-	// create already exists, it returns an error.
-	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error)
 
 	// Delete will soft (or hard) delete all accounts matching the options combined using AND.
 	// If options are all zero values then it does nothing.
@@ -288,29 +279,6 @@ RETURNING
 		return nil, err
 	}
 	return acct, nil
-}
-
-func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	createdUser, err = UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = tx.Insert(ctx, &extsvc.Account{
-		UserID:      createdUser.ID,
-		AccountSpec: spec,
-		AccountData: data,
-	})
-	if err == nil {
-		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
-	}
-	return createdUser, err
 }
 
 func (s *userExternalAccountsStore) Insert(ctx context.Context, acct *extsvc.Account) (_ *extsvc.Account, err error) {

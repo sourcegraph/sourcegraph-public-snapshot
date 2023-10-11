@@ -78831,9 +78831,6 @@ type MockUserExternalAccountsStore struct {
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *UserExternalAccountsStoreCountFunc
-	// CreateUserAndSaveFunc is an instance of a mock function object
-	// controlling the behavior of the method CreateUserAndSave.
-	CreateUserAndSaveFunc *UserExternalAccountsStoreCreateUserAndSaveFunc
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *UserExternalAccountsStoreDeleteFunc
@@ -78894,11 +78891,6 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 	return &MockUserExternalAccountsStore{
 		CountFunc: &UserExternalAccountsStoreCountFunc{
 			defaultHook: func(context.Context, database.ExternalAccountsListOptions) (r0 int, r1 error) {
-				return
-			},
-		},
-		CreateUserAndSaveFunc: &UserExternalAccountsStoreCreateUserAndSaveFunc{
-			defaultHook: func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (r0 *types.User, r1 error) {
 				return
 			},
 		},
@@ -79000,11 +78992,6 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Count")
 			},
 		},
-		CreateUserAndSaveFunc: &UserExternalAccountsStoreCreateUserAndSaveFunc{
-			defaultHook: func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error) {
-				panic("unexpected invocation of MockUserExternalAccountsStore.CreateUserAndSave")
-			},
-		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
 			defaultHook: func(context.Context, database.ExternalAccountsDeleteOptions) error {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Delete")
@@ -79100,9 +79087,6 @@ func NewMockUserExternalAccountsStoreFrom(i database.UserExternalAccountsStore) 
 	return &MockUserExternalAccountsStore{
 		CountFunc: &UserExternalAccountsStoreCountFunc{
 			defaultHook: i.Count,
-		},
-		CreateUserAndSaveFunc: &UserExternalAccountsStoreCreateUserAndSaveFunc{
-			defaultHook: i.CreateUserAndSave,
 		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
 			defaultHook: i.Delete,
@@ -79264,124 +79248,6 @@ func (c UserExternalAccountsStoreCountFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserExternalAccountsStoreCountFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// UserExternalAccountsStoreCreateUserAndSaveFunc describes the behavior
-// when the CreateUserAndSave method of the parent
-// MockUserExternalAccountsStore instance is invoked.
-type UserExternalAccountsStoreCreateUserAndSaveFunc struct {
-	defaultHook func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error)
-	hooks       []func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error)
-	history     []UserExternalAccountsStoreCreateUserAndSaveFuncCall
-	mutex       sync.Mutex
-}
-
-// CreateUserAndSave delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) CreateUserAndSave(v0 context.Context, v1 database.NewUser, v2 extsvc.AccountSpec, v3 extsvc.AccountData) (*types.User, error) {
-	r0, r1 := m.CreateUserAndSaveFunc.nextHook()(v0, v1, v2, v3)
-	m.CreateUserAndSaveFunc.appendCall(UserExternalAccountsStoreCreateUserAndSaveFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CreateUserAndSave
-// method of the parent MockUserExternalAccountsStore instance is invoked
-// and the hook queue is empty.
-func (f *UserExternalAccountsStoreCreateUserAndSaveFunc) SetDefaultHook(hook func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CreateUserAndSave method of the parent MockUserExternalAccountsStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *UserExternalAccountsStoreCreateUserAndSaveFunc) PushHook(hook func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserExternalAccountsStoreCreateUserAndSaveFunc) SetDefaultReturn(r0 *types.User, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserExternalAccountsStoreCreateUserAndSaveFunc) PushReturn(r0 *types.User, r1 error) {
-	f.PushHook(func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserExternalAccountsStoreCreateUserAndSaveFunc) nextHook() func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (*types.User, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserExternalAccountsStoreCreateUserAndSaveFunc) appendCall(r0 UserExternalAccountsStoreCreateUserAndSaveFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// UserExternalAccountsStoreCreateUserAndSaveFuncCall objects describing the
-// invocations of this function.
-func (f *UserExternalAccountsStoreCreateUserAndSaveFunc) History() []UserExternalAccountsStoreCreateUserAndSaveFuncCall {
-	f.mutex.Lock()
-	history := make([]UserExternalAccountsStoreCreateUserAndSaveFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserExternalAccountsStoreCreateUserAndSaveFuncCall is an object that
-// describes an invocation of method CreateUserAndSave on an instance of
-// MockUserExternalAccountsStore.
-type UserExternalAccountsStoreCreateUserAndSaveFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 database.NewUser
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 extsvc.AccountSpec
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 extsvc.AccountData
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *types.User
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserExternalAccountsStoreCreateUserAndSaveFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserExternalAccountsStoreCreateUserAndSaveFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -82996,6 +82862,10 @@ type MockUserStore struct {
 	// CreatePasswordFunc is an instance of a mock function object
 	// controlling the behavior of the method CreatePassword.
 	CreatePasswordFunc *UserStoreCreatePasswordFunc
+	// CreateWithExternalAccountFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CreateWithExternalAccount.
+	CreateWithExternalAccountFunc *UserStoreCreateWithExternalAccountFunc
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *UserStoreDeleteFunc
@@ -83132,6 +83002,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		CreatePasswordFunc: &UserStoreCreatePasswordFunc{
 			defaultHook: func(context.Context, int32, string) (r0 error) {
+				return
+			},
+		},
+		CreateWithExternalAccountFunc: &UserStoreCreateWithExternalAccountFunc{
+			defaultHook: func(context.Context, database.NewUser, *extsvc.Account) (r0 *types.User, r1 error) {
 				return
 			},
 		},
@@ -83342,6 +83217,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.CreatePassword")
 			},
 		},
+		CreateWithExternalAccountFunc: &UserStoreCreateWithExternalAccountFunc{
+			defaultHook: func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error) {
+				panic("unexpected invocation of MockUserStore.CreateWithExternalAccount")
+			},
+		},
 		DeleteFunc: &UserStoreDeleteFunc{
 			defaultHook: func(context.Context, int32) error {
 				panic("unexpected invocation of MockUserStore.Delete")
@@ -83536,6 +83416,9 @@ func NewMockUserStoreFrom(i database.UserStore) *MockUserStore {
 		},
 		CreatePasswordFunc: &UserStoreCreatePasswordFunc{
 			defaultHook: i.CreatePassword,
+		},
+		CreateWithExternalAccountFunc: &UserStoreCreateWithExternalAccountFunc{
+			defaultHook: i.CreateWithExternalAccount,
 		},
 		DeleteFunc: &UserStoreDeleteFunc{
 			defaultHook: i.Delete,
@@ -84294,6 +84177,120 @@ func (c UserStoreCreatePasswordFuncCall) Args() []interface{} {
 // invocation.
 func (c UserStoreCreatePasswordFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// UserStoreCreateWithExternalAccountFunc describes the behavior when the
+// CreateWithExternalAccount method of the parent MockUserStore instance is
+// invoked.
+type UserStoreCreateWithExternalAccountFunc struct {
+	defaultHook func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error)
+	hooks       []func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error)
+	history     []UserStoreCreateWithExternalAccountFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateWithExternalAccount delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUserStore) CreateWithExternalAccount(v0 context.Context, v1 database.NewUser, v2 *extsvc.Account) (*types.User, error) {
+	r0, r1 := m.CreateWithExternalAccountFunc.nextHook()(v0, v1, v2)
+	m.CreateWithExternalAccountFunc.appendCall(UserStoreCreateWithExternalAccountFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CreateWithExternalAccount method of the parent MockUserStore instance is
+// invoked and the hook queue is empty.
+func (f *UserStoreCreateWithExternalAccountFunc) SetDefaultHook(hook func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateWithExternalAccount method of the parent MockUserStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserStoreCreateWithExternalAccountFunc) PushHook(hook func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreCreateWithExternalAccountFunc) SetDefaultReturn(r0 *types.User, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreCreateWithExternalAccountFunc) PushReturn(r0 *types.User, r1 error) {
+	f.PushHook(func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreCreateWithExternalAccountFunc) nextHook() func(context.Context, database.NewUser, *extsvc.Account) (*types.User, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreCreateWithExternalAccountFunc) appendCall(r0 UserStoreCreateWithExternalAccountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreCreateWithExternalAccountFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreCreateWithExternalAccountFunc) History() []UserStoreCreateWithExternalAccountFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreCreateWithExternalAccountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreCreateWithExternalAccountFuncCall is an object that describes an
+// invocation of method CreateWithExternalAccount on an instance of
+// MockUserStore.
+type UserStoreCreateWithExternalAccountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.NewUser
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *extsvc.Account
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.User
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreCreateWithExternalAccountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreCreateWithExternalAccountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserStoreDeleteFunc describes the behavior when the Delete method of the

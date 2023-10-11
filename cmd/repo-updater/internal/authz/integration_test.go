@@ -169,9 +169,13 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-	user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-		AuthData: extsvc.NewUnencryptedData(authData),
-	})
+	user, err := testDB.Users().CreateWithExternalAccount(ctx, newUser,
+		&extsvc.Account{
+			AccountSpec: spec,
+			AccountData: extsvc.AccountData{
+				AuthData: extsvc.NewUnencryptedData(authData),
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,8 +361,11 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 	}
 
 	authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-	user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-		AuthData: extsvc.NewUnencryptedData(authData),
+	user, err := testDB.Users().CreateWithExternalAccount(ctx, newUser, &extsvc.Account{
+		AccountSpec: spec,
+		AccountData: extsvc.AccountData{
+			AuthData: extsvc.NewUnencryptedData(authData),
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -474,8 +481,11 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-			AuthData: extsvc.NewUnencryptedData(authData),
+		user, err := testDB.Users().CreateWithExternalAccount(ctx, newUser, &extsvc.Account{
+			AccountSpec: spec,
+			AccountData: extsvc.AccountData{
+				AuthData: extsvc.NewUnencryptedData(authData),
+			},
 		})
 		require.NoError(t, err)
 

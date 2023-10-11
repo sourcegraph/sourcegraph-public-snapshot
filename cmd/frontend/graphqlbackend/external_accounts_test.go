@@ -49,7 +49,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 			AccountID:   "xd",
 		}
 
-		_, err := db.UserExternalAccounts().CreateUserAndSave(ctx, database.NewUser{Username: "u"}, spec, extsvc.AccountData{})
+		_, err := db.Users().CreateWithExternalAccount(ctx, database.NewUser{Username: "u"}, &extsvc.Account{AccountSpec: spec})
 		require.NoError(t, err)
 
 		graphqlArgs := struct {

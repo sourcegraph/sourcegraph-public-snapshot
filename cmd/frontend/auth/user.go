@@ -66,6 +66,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 	}
 
 	externalAccountsStore := db.UserExternalAccounts()
+	users := db.Users()
 	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
 
 	userID, newUserSaved, extAcctSaved, safeErrMsg, err := func() (int32, bool, bool, string, error) {
@@ -128,7 +129,9 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
-		user, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		user, err := users.CreateWithExternalAccount(ctx,
+			op.UserProps,
+			&extsvc.Account{AccountSpec: op.ExternalAccount, AccountData: op.ExternalAccountData})
 		switch {
 		case database.IsUsernameExists(err):
 			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
