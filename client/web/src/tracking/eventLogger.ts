@@ -231,7 +231,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         if (isSourcegraphWebSiteId) {
             cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
             return firstSourceURL
-        } else {
+        }
+        {
             const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
             cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
             return redactedURL
@@ -246,7 +247,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         if (isSourcegraphWebSiteId) {
             cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
             return lastSourceURL
-        } else {
+        }
+        {
             const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
             cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
             return redactedURL
