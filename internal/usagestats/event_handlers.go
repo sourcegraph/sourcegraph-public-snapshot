@@ -227,6 +227,10 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		saferOriginalReferrer, err := redactSensitiveInfoFromCloudURL(originalReferrer)
+		if err != nil {
+			return nil, err
+		}
 
 		pubsubEvent, err := json.Marshal(bigQueryEvent{
 			EventName:              event.EventName,
@@ -236,7 +240,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			FirstSourceURL:         firstSourceURL,
 			LastSourceURL:          lastSourceURL,
 			Referrer:               saferReferrer,
-			OriginalReferrer:       originalReferrer,
+			OriginalReferrer:       saferOriginalReferrer,
 			SessionReferrer:        sessionReferrer,
 			SessionFirstURL:        sessionFirstURL,
 			Source:                 event.Source,

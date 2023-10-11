@@ -271,8 +271,15 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // Gets the session referrer from the cookie
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
 
-        cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
-        return sessionReferrer
+        if (isSourcegraphWebSiteId) {
+            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
+            return sessionReferrer
+        }
+        {
+            const redactedURL = redactSensitiveInfoFromAppURL(sessionReferrer)
+            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
+            return redactedURL
+        }
     }
 
     public getSessionFirstURL(): string {
