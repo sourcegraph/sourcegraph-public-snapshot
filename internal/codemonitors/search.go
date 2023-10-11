@@ -212,7 +212,11 @@ func hookWithID(
 	}
 
 	// Still return the error so it can be displayed to the user
-	return searchErr
+	if searchErr != nil {
+		return errors.Wrap(searchErr, "search failed, some commits may be skipped")
+	}
+
+	return nil
 }
 
 func stringsEqual(left, right []string) bool {

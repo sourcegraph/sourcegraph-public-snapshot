@@ -176,6 +176,6 @@ func TestCodeMonitorHook(t *testing.T) {
 			return context.DeadlineExceeded
 		}
 		err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
-		require.Error(t, err)
+		require.ErrorContains(t, err, "some commits may be skipped")
 	})
 }
