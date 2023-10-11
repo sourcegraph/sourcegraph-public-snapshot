@@ -190,13 +190,13 @@ func publishSourcegraphDotComEvents(events []Event) error {
 func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 	pubsubEvents := make([][]byte, 0, len(events))
 	for _, event := range events {
-		saferFirstSourceUrl, err := redactSensitiveInfoFromCloudURL(*event.FirstSourceURL)
-		if err != nil {
-			return nil, err
+		firstSourceURL := ""
+		if event.FirstSourceURL != nil {
+			firstSourceURL = *event.FirstSourceURL
 		}
-		saferLastSourceUrl, err := redactSensitiveInfoFromCloudURL(*event.LastSourceURL)
-		if err != nil {
-			return nil, err
+		lastSourceURL := ""
+		if event.LastSourceURL != nil {
+			lastSourceURL = *event.LastSourceURL
 		}
 		saferReferrer, err := redactSensitiveInfoFromCloudURL(*event.Referrer)
 		if err != nil {
@@ -228,8 +228,8 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			UserID:                 int(event.UserID),
 			AnonymousUserID:        event.UserCookieID,
 			URL:                    saferUrl,
-			FirstSourceURL:         saferFirstSourceUrl,
-			LastSourceURL:          saferLastSourceUrl,
+			FirstSourceURL:         firstSourceURL,
+			LastSourceURL:          lastSourceURL,
 			Referrer:               saferReferrer,
 			OriginalReferrer:       referrer,
 			SessionReferrer:        sessionReferrer,
@@ -339,10 +339,6 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return rawURL, nil
 	}
 
-	if parsedURL.Host != "sourcegraph.com" {
-		return rawURL, nil
-	}
-
 	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
 	if strings.HasPrefix(parsedURL.Path, "/github.com") {
 		parsedURL.RawPath = "/github.com/redacted"
@@ -357,7 +353,8 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		parsedURL.RawPath = "/sign-in/redacted"
 		parsedURL.Path = "/sign-in/redacted"
 	} else {
-		return rawURL, nil
+		parsedURL.RawPath = "/redacted"
+		parsedURL.Path = "/redacted"
 	}
 
 	marketingQueryParameters := map[string]struct{}{

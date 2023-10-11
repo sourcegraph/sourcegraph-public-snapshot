@@ -12,7 +12,7 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, stripURLParameters } from './util'
+import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -228,8 +228,14 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
-        return firstSourceURL
+        if (isSourcegraphWebSiteId) {
+            cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
+            return firstSourceURL
+        } else {
+            const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
+            cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+            return redactedURL
+        }
     }
 
     public getLastSourceURL(): string {
@@ -237,8 +243,14 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
-        cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
-        return lastSourceURL
+        if (isSourcegraphWebSiteId) {
+            cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
+            return lastSourceURL
+        } else {
+            const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
+            cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+            return redactedURL
+        }
     }
 
     public getOriginalReferrer(): string {
@@ -303,12 +315,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getReferrer(): string {
         const referrer = document.referrer
-        if (isSourcegraphWebSiteId) {
-            return referrer
-        }
-        {
-            return ''
-        }
+        return referrer
     }
 
     public getClient(): string {
