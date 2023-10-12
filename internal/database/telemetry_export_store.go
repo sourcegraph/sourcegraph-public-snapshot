@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -95,9 +96,9 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	}
 
 	err := batch.InsertValues(
-		// Create a background context with trace details to avoid interrupting
-		// the insert when the parent context is cancelled.
-		trace.BackgroundContext(ctx),
+		// Create a cancel-free context to avoid interrupting the insert when
+		// the parent context is cancelled.
+		xcontext.Detach(ctx),
 		s.Handle(),
 		"telemetry_events_export_queue",
 		batch.MaxNumPostgresParameters,

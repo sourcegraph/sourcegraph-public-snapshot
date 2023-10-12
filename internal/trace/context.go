@@ -22,23 +22,6 @@ func CopyContext(ctx context.Context, from context.Context) context.Context {
 	return ctx
 }
 
-// BackgroundContext returns a background context with the same tracing
-// policy and trace ID associated with from, if available. It is a convenience
-// alias for CopyContext(context.Background(), from).
-//
-// Using context.Background() is desirable in scenarios where we don't want an
-// action to be cancelled if the parent action is cancelled, while retaining a
-// trace hierarchy.
-//
-// 🚨 SECURITY: The returned context does NOT retain any other context baggage,
-// including Actor context.
-//
-// 🔔 TODO(go1.21): Replace all callsites with https://pkg.go.dev/context#WithoutCancel
-// when we upgrade to Go .21
-func BackgroundContext(from context.Context) context.Context {
-	return CopyContext(context.Background(), from)
-}
-
 // ID returns a trace ID, if any, found in the given context. If you need both trace and
 // span ID, use trace.Context.
 func ID(ctx context.Context) string {

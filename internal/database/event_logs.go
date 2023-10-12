@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -294,9 +295,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	close(rowValues)
 
 	return batch.InsertValues(
-		// Create a background context with trace details to avoid interrupting
-		// the insert when the parent context is cancelled.
-		trace.BackgroundContext(ctx),
+		// Create a cancel-free context to avoid interrupting the insert when
+		// the parent context is cancelled.
+		xcontext.Detach(ctx),
 		l.Handle(),
 		"event_logs",
 		batch.MaxNumPostgresParameters,
