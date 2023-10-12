@@ -13,3 +13,7 @@ go run ./dev/sg wolfi update-hashes
 
 # DEBUG: Print oci_deps
 cat dev/oci_deps.bzl
+
+# Try using GitHub CLI
+gh help
+gh version
