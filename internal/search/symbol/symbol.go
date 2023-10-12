@@ -26,10 +26,12 @@ const DefaultSymbolLimit = 100
 
 var DefaultSymbolsClient = SymbolsClient{
 	subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
+	zoektStreamer:       search.Indexed(),
 }
 
 type SymbolsClient struct {
 	subRepoPermsChecker authz.SubRepoPermissionChecker
+	zoektStreamer       zoekt.Streamer
 }
 
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
@@ -77,7 +79,17 @@ func FilterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChec
 	return filtered, nil
 }
 
-func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func searchZoekt(
+	ctx context.Context,
+	z zoekt.Searcher,
+	repoName types.MinimalRepo,
+	commitID api.CommitID,
+	inputRev *string,
+	branch string,
+	queryString *string,
+	first *int32,
+	includePatterns *[]string,
+) (res []*result.SymbolMatch, err error) {
 	var raw string
 	if queryString != nil {
 		raw = *queryString
@@ -122,7 +134,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
-	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
+	resp, err := z.Search(ctx, final, &zoekt.SearchOptions{
 		Trace:              policy.ShouldTrace(ctx),
 		MaxWallTime:        3 * time.Second,
 		ShardMaxMatchCount: match * 25,
@@ -204,7 +216,7 @@ func (s *SymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo,
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
-		results, err := searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
+		results, err := searchZoekt(ctx, s.zoektStreamer, repoName, commitID, inputRev, branch, query, first, includePatterns)
 		if err != nil {
 			return nil, errors.Wrap(err, "zoekt symbol search")
 		}
