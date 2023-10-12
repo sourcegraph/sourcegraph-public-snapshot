@@ -32,6 +32,9 @@ func CopyContext(ctx context.Context, from context.Context) context.Context {
 //
 // 🚨 SECURITY: The returned context does NOT retain any other context baggage,
 // including Actor context.
+//
+// 🔔 TODO(go1.21): Replace all callsites with https://pkg.go.dev/context#WithoutCancel
+// when we upgrade to Go .21
 func BackgroundContext(from context.Context) context.Context {
 	return CopyContext(context.Background(), from)
 }
