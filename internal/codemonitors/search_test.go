@@ -27,7 +27,7 @@ func TestSnapshot(t *testing.T) {
 	t.Run("fails with transaction", func(t *testing.T) {
 		ctx := context.Background()
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 		err := db.WithTransact(ctx, func(tx database.DB) error {
 			_, err := Snapshot(ctx, logtest.Scoped(t), tx, "type:commit")
 			return err
