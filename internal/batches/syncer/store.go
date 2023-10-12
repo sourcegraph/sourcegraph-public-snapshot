@@ -27,5 +27,4 @@ type SyncStore interface {
 	UserCredentials() database.UserCredentialsStore
 	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 	GitHubAppsStore() ghastore.GitHubAppsStore
-	GetChangesetSpecByID(ctx context.Context, id int64) (*btypes.ChangesetSpec, error)
 }
