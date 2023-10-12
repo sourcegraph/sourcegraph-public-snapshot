@@ -16,15 +16,7 @@ export SOURCEGRAPH_BASE_URL
 
 # Backend integration tests uses a specific GITHUB_TOKEN that is available as GHE_GITHUB_TOKEN
 # because it refers to our internal GitHub enterprise instance used for testing.
-if [ -n "${GHE_GITHUB_TOKEN:-''}" ]; then
-  echo "GHE_GITHUB_TOKEN is empty"
-
-  echo "--- debug"
-  echo "$(env | grep GITHUB)"
-  GITHUB_TOKEN=""
-else
-  GITHUB_TOKEN="$GHE_GITHUB_TOKEN"
-fi
+GITHUB_TOKEN="$GHE_GITHUB_TOKEN"
 export GITHUB_TOKEN
 
 ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="true"
