@@ -255,8 +255,6 @@ Flags:
 Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types).
 
 
-Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
-
 Optionally provide a run type to build with.
 
 This command is useful when:
@@ -327,8 +325,6 @@ Flags:
 
 Render reference documentation for build pipeline types.
 
-An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.
-
 
 Flags:
 
@@ -354,6 +350,7 @@ Available testsuites in `sg.config.yaml`:
 
 * backend
 * backend-integration
+* bazel-e2e
 * bext
 * bext-build
 * bext-e2e

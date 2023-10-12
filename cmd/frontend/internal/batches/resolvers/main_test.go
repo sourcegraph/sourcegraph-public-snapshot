@@ -189,7 +189,7 @@ func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, bas
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-	gitserverClientWithExecReader := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
+	gitserverClientWithExecReader := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}

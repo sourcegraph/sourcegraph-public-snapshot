@@ -35,7 +35,6 @@ export interface JetBrainsSearchBoxProps
     submitSearchOnToggle?: SubmitSearchProps['submitSearch']
     onFocus?: () => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
-    onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     className?: string
@@ -46,9 +45,6 @@ export interface JetBrainsSearchBoxProps
 
     /** Don't show search help button */
     hideHelpButton?: boolean
-
-    /** Set in JSContext only available to the web app. */
-    isExternalServicesUserModeAll?: boolean
 
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void

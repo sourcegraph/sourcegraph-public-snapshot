@@ -40,10 +40,10 @@
     appearance: none;
     transition: var(--custom-forms-transition);
 
-    &:focus {
-        border-color: var(--input-focus-border-color);
+    &.focus-visible {
         outline: 0;
         box-shadow: var(--input-focus-box-shadow);
+        border-color: var(--input-focus-border-color);
 
         &::-ms-value {
             // For visual consistency with other platforms/browsers,

@@ -114,7 +114,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	secret := "secret"

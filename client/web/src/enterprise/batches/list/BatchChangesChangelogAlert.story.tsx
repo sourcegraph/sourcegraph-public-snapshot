@@ -13,8 +13,10 @@ const config: Meta = {
         viewerIsAdmin: {
             name: 'Viewer is admin?',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        viewerIsAdmin: false,
     },
 }
 

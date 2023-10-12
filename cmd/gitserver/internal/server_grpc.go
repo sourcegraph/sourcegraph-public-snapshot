@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
@@ -29,6 +28,8 @@ type GRPCServer struct {
 	Server *Server
 	proto.UnimplementedGitserverServiceServer
 }
+
+var _ proto.GitserverServiceServer = &GRPCServer{}
 
 func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
 	gs.Server.operations = gs.Server.ensureOperations()
@@ -251,92 +252,6 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 	return resp.ToProto(), nil
 }
 
-func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
-	arguments := byteSlicesToStrings(req.GetArgs())
-
-	if len(arguments) < 1 {
-		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
-	}
-
-	subCommand := arguments[0]
-
-	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group", "changes"}
-	allowed := false
-	for _, c := range allowlist {
-		if subCommand == c {
-			allowed = true
-			break
-		}
-	}
-	if !allowed {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", subCommand))
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
-	if err != nil {
-		return status.Error(codes.Internal, err.Error())
-	}
-
-	// Log which actor is accessing p4-exec.
-	//
-	// p4-exec is currently only used for fetching user based permissions information
-	// so, we don't have a repo name.
-	accesslog.Record(ss.Context(), "<no-repo>",
-		log.String("p4user", req.GetP4User()),
-		log.String("p4port", req.GetP4Port()),
-		log.Strings("args", arguments),
-	)
-
-	// Make sure credentials are valid before heavier operation
-	err = perforce.P4TestWithTrust(ss.Context(), p4home, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
-	if err != nil {
-		if ctxErr := ss.Context().Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	w := streamio.NewWriter(func(p []byte) error {
-		return ss.Send(&proto.P4ExecResponse{
-			Data: p,
-		})
-	})
-
-	var r protocol.P4ExecRequest
-	r.FromProto(req)
-
-	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &r, "unknown-grpc-client", w)
-}
-
-func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
-	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
-
-	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		gRPCStatus := codes.Unknown
-		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
-			gRPCStatus = codes.Aborted
-		}
-
-		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
-			StatusCode: int32(execStatus.ExitStatus),
-			Stderr:     execStatus.Stderr,
-		})
-		if err != nil {
-			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
-			return err
-		}
-		return s.Err()
-	}
-
-	return nil
-}
-
 func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteRequest) (*proto.ListGitoliteResponse, error) {
 	host := req.GetGitoliteHost()
 	repos, err := defaultGitolite.listRepos(ctx, host)
@@ -459,7 +374,8 @@ func (gs *GRPCServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err = perforce.IsDepotPathCloneable(ctx, p4home, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd(), req.GetDepotPath())
+	conn := req.GetConnectionDetails()
+	err = perforce.IsDepotPathCloneable(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.DepotPath)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -473,12 +389,230 @@ func (gs *GRPCServer) CheckPerforceCredentials(ctx context.Context, req *proto.C
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err = perforce.P4TestWithTrust(ctx, p4home, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
+	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
 	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &proto.CheckPerforceCredentialsResponse{}, nil
+}
+
+func (gs *GRPCServer) PerforceUsers(ctx context.Context, req *proto.PerforceUsersRequest) (*proto.PerforceUsersResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	accesslog.Record(
+		ctx,
+		"<no-repo>",
+		log.String("p4user", conn.GetP4User()),
+		log.String("p4port", conn.GetP4Port()),
+	)
+
+	users, err := perforce.P4Users(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := &proto.PerforceUsersResponse{
+		Users: make([]*proto.PerforceUser, 0, len(users)),
+	}
+
+	for _, user := range users {
+		resp.Users = append(resp.Users, user.ToProto())
+	}
+
+	return resp, nil
+}
+
+func (gs *GRPCServer) PerforceProtectsForUser(ctx context.Context, req *proto.PerforceProtectsForUserRequest) (*proto.PerforceProtectsForUserResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	accesslog.Record(
+		ctx,
+		"<no-repo>",
+		log.String("p4user", conn.GetP4User()),
+		log.String("p4port", conn.GetP4Port()),
+	)
+
+	protects, err := perforce.P4ProtectsForUser(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetUsername())
+	if err != nil {
+		return nil, err
+	}
+
+	protoProtects := make([]*proto.PerforceProtect, len(protects))
+	for i, p := range protects {
+		protoProtects[i] = p.ToProto()
+	}
+
+	return &proto.PerforceProtectsForUserResponse{
+		Protects: protoProtects,
+	}, nil
+}
+
+func (gs *GRPCServer) PerforceProtectsForDepot(ctx context.Context, req *proto.PerforceProtectsForDepotRequest) (*proto.PerforceProtectsForDepotResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	accesslog.Record(
+		ctx,
+		"<no-repo>",
+		log.String("p4user", conn.GetP4User()),
+		log.String("p4port", conn.GetP4Port()),
+	)
+
+	protects, err := perforce.P4ProtectsForDepot(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetDepot())
+	if err != nil {
+		return nil, err
+	}
+
+	protoProtects := make([]*proto.PerforceProtect, len(protects))
+	for i, p := range protects {
+		protoProtects[i] = p.ToProto()
+	}
+
+	return &proto.PerforceProtectsForDepotResponse{
+		Protects: protoProtects,
+	}, nil
+}
+
+func (gs *GRPCServer) PerforceGroupMembers(ctx context.Context, req *proto.PerforceGroupMembersRequest) (*proto.PerforceGroupMembersResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	accesslog.Record(
+		ctx,
+		"<no-repo>",
+		log.String("p4user", conn.GetP4User()),
+		log.String("p4port", conn.GetP4Port()),
+	)
+
+	members, err := perforce.P4GroupMembers(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetGroup())
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.PerforceGroupMembersResponse{
+		Usernames: members,
+	}, nil
+}
+
+func (gs *GRPCServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerforceSuperUserRequest) (*proto.IsPerforceSuperUserResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	err = perforce.P4UserIsSuperUser(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		if err == perforce.ErrIsNotSuperUser {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &proto.IsPerforceSuperUserResponse{}, nil
+}
+
+func (gs *GRPCServer) PerforceGetChangelist(ctx context.Context, req *proto.PerforceGetChangelistRequest) (*proto.PerforceGetChangelistResponse, error) {
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conn := req.GetConnectionDetails()
+	err = perforce.P4TestWithTrust(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	accesslog.Record(
+		ctx,
+		"<no-repo>",
+		log.String("p4user", conn.GetP4User()),
+		log.String("p4port", conn.GetP4Port()),
+	)
+
+	changelist, err := perforce.GetChangelistByID(ctx, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetChangelistId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.PerforceGetChangelistResponse{
+		Changelist: changelist.ToProto(),
+	}, nil
 }
 
 func byteSlicesToStrings(in [][]byte) []string {

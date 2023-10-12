@@ -30,7 +30,7 @@ func clock() time.Time {
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create repos needed
@@ -71,7 +71,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	}
 
 	// Add two external accounts
-	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
+	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "gitlab",
 			ServiceID:   "https://gitlab.com/",
@@ -82,7 +82,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
+	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
@@ -246,7 +246,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 
 func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)
@@ -357,7 +357,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)

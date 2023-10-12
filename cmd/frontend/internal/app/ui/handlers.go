@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"html/template"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -14,9 +13,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -89,9 +87,9 @@ type Common struct {
 
 	PreloadedAssets *[]PreloadedAsset
 
-	Manifest *assets.WebpackManifest
+	Manifest *assets.WebBuildManifest
 
-	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
+	WebBuilderDevServer bool // whether the web builder dev server is running (WEB_BUILDER_DEV_SERVER env var)
 
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
@@ -99,7 +97,7 @@ type Common struct {
 	api.CommitID        // resolved SHA1 revision
 }
 
-var webpackDevServer, _ = strconv.ParseBool(os.Getenv("WEBPACK_DEV_SERVER"))
+var webBuilderDevServer, _ = strconv.ParseBool(os.Getenv("WEB_BUILDER_DEV_SERVER"))
 
 // repoShortName trims the first path element of the given repo name if it has
 // at least two path components.
@@ -141,14 +139,14 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has a nil Repo.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
-	logger := sglog.Scoped("commonHandler", "")
+	logger := log.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
 
-	manifest, err := assets.Provider.LoadWebpackManifest()
+	manifest, err := assets.Provider.LoadWebBuildManifest()
 	if err != nil {
-		return nil, errors.Wrap(err, "loading webpack manifest")
+		return nil, errors.Wrap(err, "loading web build manifest")
 	}
 
 	if !indexed {
@@ -182,7 +180,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
 
-		WebpackDevServer: webpackDevServer,
+		WebBuilderDevServer: webBuilderDevServer,
 	}
 
 	if enableHTMLInject != "true" {
@@ -263,7 +261,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			ctx := context.Background()
 			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, common.Repo.Name)
 			if err != nil {
-				log15.Error("EnqueueRepoUpdate", "error", err)
+				logger.Error("EnqueueRepoUpdate", log.Error(err))
 			}
 		}()
 	}
@@ -386,7 +384,7 @@ func serveEmbed(db database.DB) handlerFunc {
 
 		// 🚨 SECURITY: Removing the `X-Frame-Options` header allows embedding the `/embed` route in an iframe.
 		// The embedding is safe because the `/embed` route serves the `embed` JS bundle instead of the
-		// regular Sourcegraph (web) app bundle (see `client/web/webpack.config.js` for the entrypoint definitions).
+		// regular Sourcegraph (web) app bundle.
 		// It contains only the components needed to render the embedded content, and it should not include sensitive pages, like the sign-in page.
 		// The embed bundle also has its own React router that only recognizes specific routes (e.g., for embedding a notebook).
 		//
@@ -424,7 +422,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 		}
 		return false, nil
 	}
-	stat, err := client.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
+	stat, err := client.Stat(r.Context(), common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			serveError(w, r, db, err, http.StatusNotFound)
@@ -540,7 +538,6 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 			r.URL.Host = "search-badger"
 			r.URL.Path = "/"
 		},
-		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
 	}
 }
 

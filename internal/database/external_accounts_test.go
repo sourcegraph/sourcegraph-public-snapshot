@@ -25,7 +25,7 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -54,7 +54,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{Username: "u"})
@@ -75,7 +75,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 		AuthData: extsvc.NewUnencryptedData(authData),
 		Data:     extsvc.NewUnencryptedData(data),
 	}
-	if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
+	if _, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
 		t.Fatal(err)
 	}
 
@@ -106,7 +106,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -164,7 +164,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -208,7 +208,7 @@ func TestExternalAccounts_List(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	specs := []extsvc.AccountSpec{
@@ -341,7 +341,7 @@ func TestExternalAccounts_ListForUsers(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	specs := []extsvc.AccountSpec{
 		{ServiceType: "xa", ServiceID: "xb", ClientID: "xc", AccountID: "11"},
@@ -362,7 +362,7 @@ func TestExternalAccounts_ListForUsers(t *testing.T) {
 			userIDs = append(userIDs, user.ID)
 		} else {
 			// Last user gets all the accounts.
-			err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userIDs[2], spec, extsvc.AccountData{})
+			_, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userIDs[2], spec, extsvc.AccountData{})
 			require.NoError(t, err)
 		}
 	}
@@ -415,7 +415,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := db.UserExternalAccounts().WithEncryptionKey(et.TestKey{})
@@ -488,7 +488,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 
 	// AssociateUserAndSave should encrypt the accountData correctly
-	err = store.AssociateUserAndSave(ctx, userID, spec, accountData)
+	_, err = store.AssociateUserAndSave(ctx, userID, spec, accountData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -509,7 +509,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -599,7 +599,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -647,7 +647,7 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -660,10 +660,10 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	spec.ServiceID = "xb2"
 	require.NoError(t, err)
-	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 	require.NoError(t, err)
 	spec.ServiceID = "xb3"
-	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 	require.NoError(t, err)
 
 	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
@@ -690,7 +690,7 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 	t.Parallel()
 	t.Run("non-empty list", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		ctx := context.Background()
 
 		spec := extsvc.AccountSpec{
@@ -703,10 +703,10 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 		spec.ServiceID = "xb2"
 		require.NoError(t, err)
-		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 		require.NoError(t, err)
 		spec.ServiceID = "xb3"
-		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 		require.NoError(t, err)
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
@@ -732,7 +732,7 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 	})
 	t.Run("empty list", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		ctx := context.Background()
 
 		acctIds := []int32{}

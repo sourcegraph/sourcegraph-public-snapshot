@@ -291,8 +291,6 @@ var buildCommand = &cli.Command{
 	ArgsUsage: "[runtype] <argument>",
 	Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
 	Description: fmt.Sprintf(`
-Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
-
 Optionally provide a run type to build with.
 
 This command is useful when:
@@ -611,9 +609,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 }
 
 var docsCommand = &cli.Command{
-	Name:        "docs",
-	Usage:       "Render reference documentation for build pipeline types",
-	Description: "An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
+	Name:  "docs",
+	Usage: "Render reference documentation for build pipeline types",
 	Action: func(ctx *cli.Context) error {
 		cmd := exec.Command("go", "run", "./dev/ci/gen-pipeline.go", "-docs")
 		out, err := run.InRoot(cmd)

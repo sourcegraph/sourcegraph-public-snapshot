@@ -495,7 +495,6 @@ func watchAuthzProviders(ctx context.Context, db database.DB) {
 			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
 				ctx,
 				conf.Get(),
-				db.ExternalServices(),
 				db,
 			)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)

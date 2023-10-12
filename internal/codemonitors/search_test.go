@@ -121,7 +121,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	fixtures := populateFixtures(db)
 	ctx := context.Background()
 

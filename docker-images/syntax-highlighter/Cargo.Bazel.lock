@@ -1,5 +1,5 @@
 {
-  "checksum": "edfef804723dc794cca785f7de2dc8def338c0fa9829ef5b2afab75ca692c755",
+  "checksum": "6b6ba3c51455d45ee7ca8cffdf32b99d0347fd1e79ac8571c5345a9a6e3d0932",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -9720,6 +9720,10 @@
               "target": "tree_sitter_kotlin"
             },
             {
+              "id": "tree-sitter-matlab 1.0.2",
+              "target": "tree_sitter_matlab"
+            },
+            {
               "id": "tree-sitter-nickel 0.0.1",
               "target": "tree_sitter_nickel"
             },
@@ -12909,6 +12913,74 @@
         },
         "edition": "2018",
         "version": "0.2.11"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.83",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-matlab 1.0.2": {
+      "name": "tree-sitter-matlab",
+      "version": "1.0.2",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/acristoffers/tree-sitter-matlab",
+          "commitish": {
+            "Rev": "6071891a8c39600203eba20513666cf93b4d650a"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_matlab",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_matlab",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-matlab 1.0.2",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "1.0.2"
       },
       "build_script_attrs": {
         "data_glob": [

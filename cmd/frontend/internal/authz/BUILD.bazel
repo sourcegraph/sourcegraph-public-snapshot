@@ -26,7 +26,6 @@ go_library(
         "//internal/licensing",
         "//internal/observation",
         "//internal/timeutil",
-        "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
 )

@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -58,7 +57,7 @@ func TestGitHubWebhooks(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	whStore := db.Webhooks(keyring.Default().WebhookKey)
 	esStore := db.ExternalServices()
 
@@ -69,7 +68,7 @@ func TestGitHubWebhooks(t *testing.T) {
 	require.NoError(t, err)
 
 	accountID := int64(123)
-	err = db.UserExternalAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
+	_, err = db.UserExternalAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
 		ServiceID:   "https://github.com/",
 		AccountID:   strconv.Itoa(int(accountID)),
@@ -257,7 +256,7 @@ func TestGitHubWebhooks(t *testing.T) {
 			// detection by test runner
 			wantRepo := webhookTest.wantRepo
 			wantUser := webhookTest.wantUser
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 				if wantRepo {
 					webhookCalled <- req.RepoIDs[0] == repo.ID
 				}

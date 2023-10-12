@@ -15,8 +15,10 @@ const config: Meta = {
         cachedResultFound: {
             name: 'Cache Found',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        cachedResultFound: false,
     },
 }
 

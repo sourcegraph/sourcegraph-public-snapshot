@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -175,7 +174,7 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 		return nil, false, err
 	}
 
-	content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
+	content, err := s.gitserverClient.ReadFile(ctx, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, false, nil

@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -264,4 +265,63 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 	}
 
 	return config.Contents.Packages, nil
+}
+
+// addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
+func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
+	// Rebuild Wolfi packages that have config changes
+	var updatedPackages []string
+	if c.Diff.Has(changed.WolfiPackages) {
+		packageOps, updatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
+	}
+
+	// Rebuild Wolfi base images
+	// Inspect package dependencies, and rebuild base images with updated packages
+	_, imagesWithChangedPackages, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
+	if err != nil {
+		panic(err)
+	}
+	// Rebuild base images with package changes AND with config changes
+	imagesToRebuild := append(imagesWithChangedPackages, c.ChangedFiles[changed.WolfiBaseImages]...)
+	imagesToRebuild = sortUniq(imagesToRebuild)
+
+	if len(imagesToRebuild) > 0 {
+		baseImageOps, _ = WolfiBaseImagesOperations(
+			imagesToRebuild,
+			c.Version,
+			(len(updatedPackages) > 0),
+		)
+	}
+
+	return packageOps, baseImageOps
+}
+
+// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
+func wolfiRebuildAllBaseImages(c Config) *operations.Set {
+	// List all YAML files in wolfi-images/
+	dir := "wolfi-images"
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	var wolfiBaseImages []string
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".yaml" {
+			fullPath := filepath.Join(dir, f.Name())
+			wolfiBaseImages = append(wolfiBaseImages, fullPath)
+		}
+	}
+
+	// Rebuild all images
+	var baseImageOps *operations.Set
+	if len(wolfiBaseImages) > 0 {
+		baseImageOps, _ = WolfiBaseImagesOperations(
+			wolfiBaseImages,
+			c.Version,
+			false,
+		)
+	}
+
+	return baseImageOps
 }

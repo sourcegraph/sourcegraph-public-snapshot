@@ -34,7 +34,7 @@ message Identifier {
     string instance_id = 2;
   }
 
-  message UnlicensedInstanceIdenfitier {
+  message UnlicensedInstanceIdentifier {
     // Self-reported Sourcegraph instance identifier.
     string instance_id = 1;
   }
@@ -43,7 +43,7 @@ message Identifier {
     // A licensed Sourcegraph instance.
     LicensedInstanceIdentifier licensed_instance = 1;
     // An unlicensed Sourcegraph instance.
-    UnlicensedInstanceIdenfitier unlicensed_instance = 2;
+    UnlicensedInstanceIdentifier unlicensed_instance = 2;
   }
 }
 

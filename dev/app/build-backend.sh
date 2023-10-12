@@ -2,7 +2,7 @@
 
 set -eu
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")"/../.. || exit 1
 
 # We need the current go build since when cross compiling using bazel
 # the zig compiler or bazel is unable to find system libraries

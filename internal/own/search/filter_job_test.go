@@ -8,7 +8,6 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -538,7 +537,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			ctx := context.Background()
 
 			gitserverClient := gitserver.NewMockClient()
-			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 				content, ok := tt.args.repoContent[file]
 				if !ok {
 					return nil, fs.ErrNotExist

@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -74,7 +73,7 @@ func scheduleUserUpdate(ctx context.Context, logger log.Logger, db database.DB, 
 
 	logger.Debug("scheduleUserUpdate: Dispatching permissions update", log.Int32s("users", ids))
 
-	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 		UserIDs: ids,
 		Options: opts,
 		Reason:  database.ReasonGitHubUserEvent,

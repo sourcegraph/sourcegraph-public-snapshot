@@ -51,7 +51,6 @@ go_test(
     ],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/dependencies/internal/store",
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",

@@ -65,7 +65,7 @@ pnpm-debug.log
 /ui/assets/sourcebox.css
 /ui/assets/test.js
 /ui/assets/test.css
-/ui/assets/webpack.manifest.json
+/ui/assets/web.manifest.json
 /ui/assets/vs
 /ui/assets/*.html
 /ui/assets/*.map

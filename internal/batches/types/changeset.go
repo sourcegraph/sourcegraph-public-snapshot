@@ -11,21 +11,19 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-
-	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
+	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -470,7 +468,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalServiceType = extsvc.TypeGerrit
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Change.Branch)
 		c.ExternalUpdatedAt = pr.Change.Updated
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		c.Metadata = pr
 		c.ExternalID = pr.ID
 		c.ExternalServiceType = extsvc.TypePerforce
@@ -510,7 +508,7 @@ func (c *Changeset) Title() (string, error) {
 		// Remove extra quotes added by the commit message
 		title = strings.TrimPrefix(strings.TrimSuffix(title, "\""), "\"")
 		return title, nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return m.Title, nil
 	default:
 		return "", errors.New("title unknown changeset type")
@@ -537,7 +535,7 @@ func (c *Changeset) AuthorName() (string, error) {
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
 		return m.Change.Owner.Name, nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return m.Author, nil
 	default:
 		return "", errors.New("authorname unknown changeset type")
@@ -572,7 +570,7 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
 		return m.Change.Owner.Email, nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return "", nil
 	default:
 		return "", errors.New("author email unknown changeset type")
@@ -596,7 +594,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreationDate
 	case *gerritbatches.AnnotatedChange:
 		return m.Change.Created
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return m.CreationDate
 	default:
 		return time.Time{}
@@ -619,7 +617,7 @@ func (c *Changeset) Body() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		// Gerrit doesn't really differentiate between title/description.
 		return m.Change.Subject, nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return "", nil
 	default:
 		return "", errors.New("body unknown changeset type")
@@ -687,7 +685,7 @@ func (c *Changeset) URL() (s string, err error) {
 		return returnURL.String(), nil
 	case *gerritbatches.AnnotatedChange:
 		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Change.Project), "+", url.PathEscape(strconv.Itoa(m.Change.ChangeNumber))).String(), nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return "", nil
 	default:
 		return "", errors.New("url unknown changeset type")
@@ -907,7 +905,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    reviewer,
 			})
 		}
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		// We don't have any events we care about right now
 		break
 	}
@@ -932,7 +930,7 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return "", nil
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return "", nil
 	default:
 		return "", errors.New("head ref oid unknown changeset type")
@@ -955,7 +953,7 @@ func (c *Changeset) HeadRef() (string, error) {
 		return m.SourceRefName, nil
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return "", nil
 	default:
 		return "", errors.New("headref unknown changeset type")
@@ -979,7 +977,7 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return "", nil
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		return "", nil
 	default:
 		return "", errors.New("base ref oid unknown changeset type")
@@ -1002,7 +1000,7 @@ func (c *Changeset) BaseRef() (string, error) {
 		return m.TargetRefName, nil
 	case *gerritbatches.AnnotatedChange:
 		return "refs/heads/" + m.Change.Branch, nil
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		// TODO: @peterguy we may need to change this to something.
 		return "", nil
 	default:

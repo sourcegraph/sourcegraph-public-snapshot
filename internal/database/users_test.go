@@ -83,7 +83,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -106,7 +106,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 
 func TestUsers_Create_SiteAdmin(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := db.GlobalState().Get(ctx); err != nil {
@@ -218,7 +218,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -269,7 +269,7 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -400,7 +400,7 @@ func TestUsers_List_Query(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	users := map[string]int32{}
@@ -476,7 +476,7 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	userToSoftDelete := NewUserForSCIM{NewUser: NewUser{Email: "notactive@example.com", Username: "notactive", EmailIsVerified: true}, SCIMExternalID: "notactive"}
@@ -534,7 +534,7 @@ func TestUsers_Update(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -631,7 +631,7 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -667,7 +667,7 @@ func TestUsers_GetByUsername(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -705,7 +705,6 @@ func TestUsers_GetByUsername(t *testing.T) {
 			t.Errorf("got %s, but want %s", have.Username, want)
 		}
 	}
-
 }
 
 func TestUsers_GetByUsernames(t *testing.T) {
@@ -714,7 +713,7 @@ func TestUsers_GetByUsernames(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -762,7 +761,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 			t.Parallel()
 			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(logger, t))
+			db := NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -917,7 +916,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -936,7 +935,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, otherUser.ID,
+	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, otherUser.ID,
 		extsvc.AccountSpec{
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
@@ -948,7 +947,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	//Test reviving a user that does not exist
+	// Test reviving a user that does not exist
 	t.Run("fails on nonexistent user", func(t *testing.T) {
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{65})
 		if err != nil {
@@ -958,7 +957,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 			t.Errorf("got %d recovered users, want 0", len(ru))
 		}
 	})
-	//Test reviving a user that does exist and hasn't not been deleted
+	// Test reviving a user that does exist and hasn't not been deleted
 	t.Run("fails on non-deleted user", func(t *testing.T) {
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
 		if err == nil {
@@ -969,7 +968,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		}
 	})
 
-	//Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
+	// Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
 	t.Run("revives user with no additional resources", func(t *testing.T) {
 		err := db.Users().Delete(ctx, user.ID)
 		if err != nil {
@@ -995,7 +994,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 			t.Errorf("got %d users, want 1", len(users))
 		}
 	})
-	//Test reviving a user that does exist and does have additional resources deleted in the same timeframe
+	// Test reviving a user that does exist and does have additional resources deleted in the same timeframe
 	t.Run("revives user and additional resources", func(t *testing.T) {
 		err := db.Users().Delete(ctx, otherUser.ID)
 		if err != nil {
@@ -1042,7 +1041,7 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -1086,7 +1085,7 @@ func TestUsers_SetIsSiteAdmin(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	adminUser, err := db.Users().Create(ctx, NewUser{Username: "u"})
@@ -1154,7 +1153,7 @@ func TestUsers_GetSetChatCompletionsQuota(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -1213,7 +1212,7 @@ func TestUsers_GetSetCodeCompletionsQuota(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{

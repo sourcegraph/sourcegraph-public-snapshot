@@ -5,7 +5,7 @@
 import { action } from '@storybook/addon-actions'
 import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
 
@@ -442,26 +442,28 @@ export const Meter: Story = args => (
 Meter.argTypes = {
     min: {
         type: 'number',
-        defaultValue: 0,
     },
     max: {
         type: 'number',
-        defaultValue: 1,
     },
     high: {
         type: 'number',
-        defaultValue: 0.8,
     },
     low: {
         type: 'number',
-        defaultValue: 0.2,
     },
     optimum: {
         type: 'number',
-        defaultValue: 1,
     },
     value: {
         type: 'number',
-        defaultValue: 0.1,
     },
+}
+Meter.args = {
+    min: 0,
+    max: 1,
+    high: 0.8,
+    low: 0.2,
+    optimum: 1,
+    value: 0.1,
 }

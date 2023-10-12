@@ -48,7 +48,7 @@ func TestActionRunner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := database.NewDB(logger, dbtest.NewDB(logger, t))
+			db := database.NewDB(logger, dbtest.NewDB(t))
 			testQuery := "test patternType:literal"
 			externalURL := "https://www.sourcegraph.com"
 

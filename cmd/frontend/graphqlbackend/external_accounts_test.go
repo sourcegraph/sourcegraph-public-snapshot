@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -38,7 +37,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	t.Run("has github account", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
 		sr := newSchemaResolver(db, gitserver.NewClient())
@@ -58,7 +57,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		}{
 			ExternalAccount: graphql.ID(base64.URLEncoding.EncodeToString([]byte("ExternalAccount:1"))),
 		}
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 			if req.Reason != database.ReasonExternalAccountDeleted {
 				t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountDeleted)
 			}
@@ -142,7 +141,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				},
 			}, nil)
 
-			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, uID int32, acctSpec extsvc.AccountSpec, acctData extsvc.AccountData) error {
+			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, uID int32, acctSpec extsvc.AccountSpec, acctData extsvc.AccountData) (*extsvc.Account, error) {
 				if uID != tc.user.ID {
 					t.Errorf("got userID %d, want %d", uID, tc.user.ID)
 				}
@@ -155,7 +154,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				if acctSpec.AccountID != "1234" {
 					t.Errorf("got account ID %q, want %q", acctSpec.AccountID, "alice")
 				}
-				return nil
+				return nil, nil
 			})
 			confGet := func() *conf.Unified {
 				return &conf.Unified{}
@@ -184,7 +183,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				AccountDetails: tc.accountDetails,
 			}
 
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 				if req.UserIDs[0] != tc.user.ID {
 					t.Errorf("got userID %d, want %d", req.UserIDs[0], tc.user.ID)
 				}

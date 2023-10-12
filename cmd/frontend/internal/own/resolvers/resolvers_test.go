@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -110,7 +109,7 @@ func fakeOwnDb() *dbmocks.MockDB {
 
 type repoFiles map[repoPath]string
 
-func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (g fakeGitserver) ReadFile(_ context.Context, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
 	if g.files == nil {
 		return nil, os.ErrNotExist
 	}
@@ -125,7 +124,7 @@ func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChec
 // indicating a regular file for every path it is given,
 // except the ones that are actual ancestor paths of some file
 // in fakeGitServer.files.
-func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, path string) (fs.FileInfo, error) {
+func (g fakeGitserver) Stat(_ context.Context, repoName api.RepoName, commitID api.CommitID, path string) (fs.FileInfo, error) {
 	isDir := false
 	p := repoPath{
 		Repo:     repoName,
@@ -1249,7 +1248,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 
 func Test_SignalConfigurations(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	git := fakeGitserver{}
 	own := fakeOwnService{}
 
@@ -1699,7 +1698,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 
 func TestAssignOwner(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}
@@ -1826,7 +1825,7 @@ func TestAssignOwner(t *testing.T) {
 
 func TestDeleteAssignedOwner(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}
@@ -1963,7 +1962,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 
 func TestAssignTeam(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}
@@ -2092,7 +2091,7 @@ func TestAssignTeam(t *testing.T) {
 
 func TestDeleteAssignedTeam(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}

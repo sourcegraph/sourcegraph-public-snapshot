@@ -48,7 +48,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 	t.Run("schedule jobs", func(t *testing.T) {
 		t.Helper()
 
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 
 		store := database.PermissionSyncJobsWith(logger, db)
 		usersStore := database.UsersWith(logger, db)
@@ -79,7 +79,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		require.NoError(t, err)
 
 		// Creating an external account
-		err = externalAccountStore.Insert(ctx, user1.ID, extsvc.AccountSpec{ServiceType: "test", ServiceID: "test", AccountID: user1.Username}, extsvc.AccountData{})
+		_, err = externalAccountStore.Insert(ctx, user1.ID, extsvc.AccountSpec{ServiceType: "test", ServiceID: "test", AccountID: user1.Username}, extsvc.AccountData{})
 		require.NoError(t, err)
 
 		// Creating a repo.
@@ -124,7 +124,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		require.NoError(t, err)
 
 		// Creating an external account
-		err = externalAccountStore.Insert(ctx, user2.ID, extsvc.AccountSpec{ServiceType: "test", ServiceID: "test", AccountID: user2.Username}, extsvc.AccountData{})
+		_, err = externalAccountStore.Insert(ctx, user2.ID, extsvc.AccountSpec{ServiceType: "test", ServiceID: "test", AccountID: user2.Username}, extsvc.AccountData{})
 		require.NoError(t, err)
 
 		// Creating a repo.

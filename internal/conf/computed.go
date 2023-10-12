@@ -370,6 +370,14 @@ func SearchDocumentRanksWeight() float64 {
 	}
 }
 
+func RankingMaxQueueSizeBytes() int {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking == nil || ranking.MaxQueueSizeBytes == nil {
+		return -1
+	}
+	return *ranking.MaxQueueSizeBytes
+}
+
 // SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
 // larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
 func SearchFlushWallTime(keywordScoring bool) time.Duration {
@@ -487,41 +495,6 @@ func AuthLockout() *schema.AuthLockout {
 		val.LockoutPeriod = 1800
 	}
 	return val
-}
-
-type ExternalServiceMode int
-
-const (
-	ExternalServiceModeDisabled ExternalServiceMode = 0
-	ExternalServiceModePublic   ExternalServiceMode = 1
-	ExternalServiceModeAll      ExternalServiceMode = 2
-)
-
-func (e ExternalServiceMode) String() string {
-	switch e {
-	case ExternalServiceModeDisabled:
-		return "disabled"
-	case ExternalServiceModePublic:
-		return "public"
-	case ExternalServiceModeAll:
-		return "all"
-	default:
-		return "unknown"
-	}
-}
-
-// ExternalServiceUserMode returns the site level mode describing if users are
-// allowed to add external services for public and private repositories. It does
-// NOT take into account permissions granted to the current user.
-func ExternalServiceUserMode() ExternalServiceMode {
-	switch Get().ExternalServiceUserMode {
-	case "public":
-		return ExternalServiceModePublic
-	case "all":
-		return ExternalServiceModeAll
-	default:
-		return ExternalServiceModeDisabled
-	}
 }
 
 const defaultGitLongCommandTimeout = time.Hour

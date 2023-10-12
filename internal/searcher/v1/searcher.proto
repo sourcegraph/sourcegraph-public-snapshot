@@ -14,6 +14,8 @@ service SearcherService {
 
 // SearchRequest is set of parameters for a search.
 message SearchRequest {
+  reserved 9;
+
   // repo is the name of the repo to search (e.g. "github.com/gorilla/mux")
   string repo = 1;
 
@@ -54,11 +56,6 @@ message SearchRequest {
   // fetch will still happen in the background so future requests don't
   // have to wait.
   google.protobuf.Duration fetch_timeout = 8;
-
-  // feat_hybrid is a feature flag which enables hybrid search.
-  // Hybrid search will only search what has changed since Zoekt has
-  // indexed as well as including Zoekt results.
-  bool feat_hybrid = 9;
 }
 
 // SearchResponse is a message in the response stream for Search

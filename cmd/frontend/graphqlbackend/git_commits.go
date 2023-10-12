@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -77,7 +76,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			return []*gitdomain.Commit{}, errors.Wrap(err, "failed to parse afterCursor")
 		}
 
-		return r.gitserverClient.Commits(ctx, authz.DefaultSubRepoPermsChecker, r.repo.RepoName(), gitserver.CommitsOptions{
+		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: toValue(r.query).(string),

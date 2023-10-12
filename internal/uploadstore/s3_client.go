@@ -14,8 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/inconshreveable/log15"
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,6 +23,7 @@ import (
 )
 
 type s3Store struct {
+	logger       log.Logger
 	bucket       string
 	manageBucket bool
 	client       s3API
@@ -144,7 +144,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 			}
 
 			byteOffset += n
-			log15.Warn("Transient error while reading payload", "key", key, "error", err)
+			s.operations.Get.Logger.Warn("Transient error while reading payload", log.String("key", key), log.Error(err))
 
 			if n == 0 {
 				zeroReads++
@@ -226,7 +226,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		if err == nil {
 			// Delete sources on success
 			if err := s.deleteSources(ctx, *multipartUpload.Bucket, sources); err != nil {
-				log15.Error("Failed to delete source objects", "error", err)
+				s.operations.Compose.Logger.Error("failed to delete source objects", log.Error(err))
 			}
 		} else {
 			// On failure, try to clean up copied then orphaned parts
@@ -235,7 +235,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 				Key:      multipartUpload.Key,
 				UploadId: multipartUpload.UploadId,
 			}); err != nil {
-				log15.Error("Failed to abort multipart upload", "error", err)
+				s.operations.Compose.Logger.Error("Failed to abort multipart upload", log.Error(err))
 			}
 		}
 	}()
@@ -327,8 +327,8 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 		})
 		if err != nil {
 			s.operations.ExpireObjects.Logger.Error("Failed to delete objects in S3 bucket",
-				sglog.Error(err),
-				sglog.String("bucket", s.bucket))
+				log.Error(err),
+				log.String("bucket", s.bucket))
 			return // try again at next flush
 		}
 		toDelete = toDelete[:0]
@@ -340,7 +340,7 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
-			s.operations.ExpireObjects.Error("Failed to paginate S3 bucket", sglog.Error(err))
+			s.operations.ExpireObjects.Error("Failed to paginate S3 bucket", log.Error(err))
 			break // we'll try again later
 		}
 		for _, object := range page.Contents {

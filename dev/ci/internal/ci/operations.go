@@ -88,9 +88,10 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		tag    = os.Getenv("BUILDKITE_TAG")
 		// evaluates what type of pipeline run this is
 		runType = runtype.Compute(tag, branch, map[string]string{
-			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
-			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
-			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+			"BEXT_NIGHTLY":       os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY":    os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":       os.Getenv("VSCE_NIGHTLY"),
+			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
 		})
 	)
 
@@ -311,7 +312,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		}
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "pnpm chromatic --exit-zero-on-changes --exit-once-uploaded --build-script-name=storybook:build"
+		chromaticCommand := "pnpm chromatic --exit-zero-on-changes --exit-once-uploaded"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
@@ -390,34 +391,6 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
-}
-
-// Release a snapshot of App.
-func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
-	// The version scheme we use for App is one of:
-	//
-	// * yyyy.mm.dd+$BUILDNUM.$COMMIT
-	// * yyyy.mm.dd-insiders+$BUILDNUM.$COMMIT
-	//
-	// We do not follow the Sourcegraph enterprise versioning scheme, because Cody App is
-	// released much more frequently than the enterprise versions by nature of being a desktop
-	// app.
-	//
-	// Also note that goreleaser requires the version is semver-compatible.
-	insidersStr := ""
-	if insiders {
-		insidersStr = "-insiders"
-	}
-	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.02"), insidersStr, c.BuildNumber, c.Commit)
-
-	return func(pipeline *bk.Pipeline) {
-		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
-		pipeline.AddStep(":desktop_computer: App release",
-			withPnpmCache(),
-			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-			bk.Env("VERSION", version),
-			bk.Cmd("dev/ci/scripts/release-app.sh"))
-	}
 }
 
 // Adds a Buildkite pipeline "Wait".

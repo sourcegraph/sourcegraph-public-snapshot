@@ -158,10 +158,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return errors.Wrap(err, "failed to create database connection")
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
-	if err != nil {
-		return errors.Wrap(err, "failed to create sub-repo client")
-	}
+	authz.DefaultSubRepoPermsChecker = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 
 	// Emit metrics to help site admins detect instances that accidentally
 	// omit a job from from the instance's deployment configuration.
@@ -395,7 +392,7 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 	globals.WatchPermissionsUserMapping()
 
 	for range time.NewTicker(providers.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }
