@@ -170,8 +170,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
 				}
 				if flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
-					// keep this for backwards-compatibility of abuse data
-					// only record prompt prefixes for .com actors
 					requestMetadata := getFlaggingMetadata(flaggingResult, act)
 					err := eventLogger.LogEvent(
 						r.Context(),
@@ -426,8 +424,6 @@ func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
 }
 
 type flaggingResult struct {
-	provider          string
-	model             string
 	shouldBlock       bool
 	reasons           []string
 	promptPrefix      string
