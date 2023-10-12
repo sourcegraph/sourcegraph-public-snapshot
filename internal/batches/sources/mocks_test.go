@@ -2992,6 +2992,9 @@ type MockSourcerStore struct {
 	// GetBatchChangeFunc is an instance of a mock function object
 	// controlling the behavior of the method GetBatchChange.
 	GetBatchChangeFunc *SourcerStoreGetBatchChangeFunc
+	// GetChangesetSpecByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetChangesetSpecByID.
+	GetChangesetSpecByIDFunc *SourcerStoreGetChangesetSpecByIDFunc
 	// GetExternalServiceIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetExternalServiceIDs.
 	GetExternalServiceIDsFunc *SourcerStoreGetExternalServiceIDsFunc
@@ -3025,6 +3028,11 @@ func NewMockSourcerStore() *MockSourcerStore {
 		},
 		GetBatchChangeFunc: &SourcerStoreGetBatchChangeFunc{
 			defaultHook: func(context.Context, store.GetBatchChangeOpts) (r0 *types1.BatchChange, r1 error) {
+				return
+			},
+		},
+		GetChangesetSpecByIDFunc: &SourcerStoreGetChangesetSpecByIDFunc{
+			defaultHook: func(context.Context, int64) (r0 *types1.ChangesetSpec, r1 error) {
 				return
 			},
 		},
@@ -3075,6 +3083,11 @@ func NewStrictMockSourcerStore() *MockSourcerStore {
 				panic("unexpected invocation of MockSourcerStore.GetBatchChange")
 			},
 		},
+		GetChangesetSpecByIDFunc: &SourcerStoreGetChangesetSpecByIDFunc{
+			defaultHook: func(context.Context, int64) (*types1.ChangesetSpec, error) {
+				panic("unexpected invocation of MockSourcerStore.GetChangesetSpecByID")
+			},
+		},
 		GetExternalServiceIDsFunc: &SourcerStoreGetExternalServiceIDsFunc{
 			defaultHook: func(context.Context, store.GetExternalServiceIDsOpts) ([]int64, error) {
 				panic("unexpected invocation of MockSourcerStore.GetExternalServiceIDs")
@@ -3116,6 +3129,9 @@ func NewMockSourcerStoreFrom(i SourcerStore) *MockSourcerStore {
 		},
 		GetBatchChangeFunc: &SourcerStoreGetBatchChangeFunc{
 			defaultHook: i.GetBatchChange,
+		},
+		GetChangesetSpecByIDFunc: &SourcerStoreGetChangesetSpecByIDFunc{
+			defaultHook: i.GetChangesetSpecByID,
 		},
 		GetExternalServiceIDsFunc: &SourcerStoreGetExternalServiceIDsFunc{
 			defaultHook: i.GetExternalServiceIDs,
@@ -3439,6 +3455,117 @@ func (c SourcerStoreGetBatchChangeFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SourcerStoreGetBatchChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SourcerStoreGetChangesetSpecByIDFunc describes the behavior when the
+// GetChangesetSpecByID method of the parent MockSourcerStore instance is
+// invoked.
+type SourcerStoreGetChangesetSpecByIDFunc struct {
+	defaultHook func(context.Context, int64) (*types1.ChangesetSpec, error)
+	hooks       []func(context.Context, int64) (*types1.ChangesetSpec, error)
+	history     []SourcerStoreGetChangesetSpecByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetChangesetSpecByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSourcerStore) GetChangesetSpecByID(v0 context.Context, v1 int64) (*types1.ChangesetSpec, error) {
+	r0, r1 := m.GetChangesetSpecByIDFunc.nextHook()(v0, v1)
+	m.GetChangesetSpecByIDFunc.appendCall(SourcerStoreGetChangesetSpecByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetChangesetSpecByID
+// method of the parent MockSourcerStore instance is invoked and the hook
+// queue is empty.
+func (f *SourcerStoreGetChangesetSpecByIDFunc) SetDefaultHook(hook func(context.Context, int64) (*types1.ChangesetSpec, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetChangesetSpecByID method of the parent MockSourcerStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SourcerStoreGetChangesetSpecByIDFunc) PushHook(hook func(context.Context, int64) (*types1.ChangesetSpec, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SourcerStoreGetChangesetSpecByIDFunc) SetDefaultReturn(r0 *types1.ChangesetSpec, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*types1.ChangesetSpec, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SourcerStoreGetChangesetSpecByIDFunc) PushReturn(r0 *types1.ChangesetSpec, r1 error) {
+	f.PushHook(func(context.Context, int64) (*types1.ChangesetSpec, error) {
+		return r0, r1
+	})
+}
+
+func (f *SourcerStoreGetChangesetSpecByIDFunc) nextHook() func(context.Context, int64) (*types1.ChangesetSpec, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SourcerStoreGetChangesetSpecByIDFunc) appendCall(r0 SourcerStoreGetChangesetSpecByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SourcerStoreGetChangesetSpecByIDFuncCall
+// objects describing the invocations of this function.
+func (f *SourcerStoreGetChangesetSpecByIDFunc) History() []SourcerStoreGetChangesetSpecByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]SourcerStoreGetChangesetSpecByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SourcerStoreGetChangesetSpecByIDFuncCall is an object that describes an
+// invocation of method GetChangesetSpecByID on an instance of
+// MockSourcerStore.
+type SourcerStoreGetChangesetSpecByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types1.ChangesetSpec
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SourcerStoreGetChangesetSpecByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SourcerStoreGetChangesetSpecByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
