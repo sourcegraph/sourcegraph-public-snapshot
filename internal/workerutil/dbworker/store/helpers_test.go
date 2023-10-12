@@ -11,7 +11,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -83,8 +82,7 @@ func testScanRecordRetry(sc dbutil.Scanner) (*TestRecordRetry, error) {
 }
 
 func setupStoreTest(t *testing.T) *sql.DB {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (

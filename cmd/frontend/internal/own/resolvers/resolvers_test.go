@@ -1248,7 +1248,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 
 func Test_SignalConfigurations(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	git := fakeGitserver{}
 	own := fakeOwnService{}
 
@@ -1698,7 +1698,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 
 func TestAssignOwner(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}
@@ -1825,7 +1825,7 @@ func TestAssignOwner(t *testing.T) {
 
 func TestDeleteAssignedOwner(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}
@@ -1962,7 +1962,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 
 func TestAssignTeam(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}
@@ -2091,7 +2091,7 @@ func TestAssignTeam(t *testing.T) {
 
 func TestDeleteAssignedTeam(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := dbtest.NewDB(logger, t)
+	testDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}

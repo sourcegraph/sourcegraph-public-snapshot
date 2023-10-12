@@ -36,7 +36,7 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
 		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+		postgres := database.NewDB(logger, dbtest.NewDB(t))
 		permStore := store.NewInsightPermissionStore(postgres)
 		clock := timeutil.Now
 		timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
@@ -101,7 +101,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgresDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgresDB := database.NewDB(logger, dbtest.NewDB(t))
 	base := baseInsightResolver{
 		insightStore:   store.NewInsightStore(insightsDB),
 		dashboardStore: store.NewDashboardStore(insightsDB),

@@ -219,7 +219,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			sqlDB := dbtest.NewDB(logger, t)
+			sqlDB := dbtest.NewDB(t)
 			store := tc.init(database.NewDB(logger, sqlDB))
 
 			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
@@ -248,7 +248,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 func TestServer_RepoLookup(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	store := repos.NewStore(logger, database.NewDB(logger, db))
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)

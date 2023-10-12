@@ -26,7 +26,7 @@ import (
 func Test_RecentContributorIndexFromGitserver(t *testing.T) {
 	rcache.SetupForTest(t)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 
@@ -116,7 +116,7 @@ func Test_RecentContributorIndexFromGitserver(t *testing.T) {
 func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
 	rcache.SetupForTest(t)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	err := db.Repos().Create(ctx, &types.Repo{
@@ -163,7 +163,7 @@ func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
 func Test_RecentContributorIndexSkipsSubrepoPermsRepos(t *testing.T) {
 	rcache.SetupForTest(t)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 

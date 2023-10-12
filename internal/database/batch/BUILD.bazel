@@ -35,6 +35,5 @@ go_test(
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_log//logtest",
     ],
 )

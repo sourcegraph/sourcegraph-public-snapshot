@@ -51,7 +51,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	idMapping := make(map[api.RepoName]api.RepoID)
 
@@ -156,7 +156,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

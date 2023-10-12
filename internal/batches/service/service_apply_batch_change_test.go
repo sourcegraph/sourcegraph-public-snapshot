@@ -29,7 +29,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	admin := bt.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))

@@ -30,7 +30,7 @@ func clock() time.Time {
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create repos needed
@@ -246,7 +246,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 
 func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)
@@ -357,7 +357,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)

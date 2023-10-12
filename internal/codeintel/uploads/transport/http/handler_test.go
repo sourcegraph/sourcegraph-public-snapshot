@@ -34,7 +34,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := backend.NewRepos(logger, db, gitserver.NewMockClient())
 	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()

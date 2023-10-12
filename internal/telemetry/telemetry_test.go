@@ -42,7 +42,7 @@ func TestRecorderEndToEnd(t *testing.T) {
 	ctx = featureflag.WithFlags(ctx, ff)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	recorder := telemetry.NewEventRecorder(teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs()))
 

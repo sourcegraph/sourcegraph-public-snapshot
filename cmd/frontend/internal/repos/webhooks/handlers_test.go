@@ -56,7 +56,7 @@ func TestGitHubHandler(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := repos.NewStore(logger, db)
 	repoStore := store.RepoStore()
 	esStore := store.ExternalServiceStore()

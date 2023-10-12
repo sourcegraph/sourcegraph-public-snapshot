@@ -69,7 +69,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	wantGitDirBytes := gitserverfs.DirSize(root)
 
 	logger, capturedLogs := logtest.Captured(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	if _, err := db.ExecContext(context.Background(), `
 INSERT INTO repo(id, name, private) VALUES (1, 'a', false), (2, 'b/d', false), (3, 'c', true);
@@ -385,7 +385,7 @@ func TestCleanupExpired(t *testing.T) {
 			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		Hostname:                "test-gitserver",
-		DB:                      database.NewDB(logger, dbtest.NewDB(logger, t)),
+		DB:                      database.NewDB(logger, dbtest.NewDB(t)),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("test", rate.NewLimiter(100, 10)),

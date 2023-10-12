@@ -48,7 +48,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 	t.Run("schedule jobs", func(t *testing.T) {
 		t.Helper()
 
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 
 		store := database.PermissionSyncJobsWith(logger, db)
 		usersStore := database.UsersWith(logger, db)

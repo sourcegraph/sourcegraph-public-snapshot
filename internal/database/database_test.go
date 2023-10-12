@@ -22,7 +22,7 @@ func TestDBTransactions(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	t.Run("no transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		err := db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
@@ -34,7 +34,7 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("basic transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
@@ -66,7 +66,7 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("rolled back transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
@@ -97,7 +97,7 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("nested transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
@@ -159,7 +159,7 @@ func TestDBTransactions(t *testing.T) {
 	})
 
 	t.Run("nested transaction rollback works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
@@ -228,7 +228,7 @@ func TestDBWithTransact(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	t.Run("no transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		err := db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
@@ -240,7 +240,7 @@ func TestDBWithTransact(t *testing.T) {
 	})
 
 	t.Run("basic transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		err := db.WithTransact(ctx, func(tx DB) error {
@@ -271,7 +271,7 @@ func TestDBWithTransact(t *testing.T) {
 	})
 
 	t.Run("rolled back transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		err := db.WithTransact(ctx, func(tx DB) error {
@@ -301,7 +301,7 @@ func TestDBWithTransact(t *testing.T) {
 	})
 
 	t.Run("nested transaction works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		err := db.WithTransact(ctx, func(tx1 DB) error {
@@ -357,7 +357,7 @@ func TestDBWithTransact(t *testing.T) {
 	})
 
 	t.Run("nested transaction rollback works", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		err := db.WithTransact(ctx, func(tx1 DB) error {
@@ -416,7 +416,7 @@ func TestDBWithTransact(t *testing.T) {
 	})
 
 	t.Run("panic during transaction rolls back", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(logger, t)
+		sqlDB := dbtest.NewDB(t)
 		db := NewDB(logger, sqlDB)
 
 		// Panic should be propagated
