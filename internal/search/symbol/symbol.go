@@ -264,9 +264,13 @@ func (s *SymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo,
 	return matches, err
 }
 
+func GetMatchAtLineCharacter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+	return DefaultSymbolsClient.GetMatchAtLineCharacter(ctx, checker, repo, commitID, filePath, line, character)
+}
+
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func (s *SymbolsClient) GetMatchAtLineCharacter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""
