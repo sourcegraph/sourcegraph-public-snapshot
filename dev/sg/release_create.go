@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -51,28 +52,24 @@ type input struct {
 	ReleaseID string `yaml:"releaseId"`
 }
 
-func parseInputs(str string) (map[string]string, error) {
-	if str == "" {
-		return nil, nil
-	}
-	m := map[string]string{}
-	parts := strings.Split(str, ",")
-	for _, part := range parts {
-		subparts := strings.Split(part, "=")
-		if len(subparts) != 2 {
-			return nil, errors.New("invalid inputs")
-		}
-		m[subparts[0]] = subparts[1]
-	}
-	return m, nil
+type releaseRunner struct {
+	vars    map[string]string
+	inputs  map[string]string
+	m       *createReleaseManifest
+	version string
+	pretend bool
+	typ     string
 }
 
-func createReleaseCommand(cctx *cli.Context) error {
+func NewReleaseRunner(cctx *cli.Context) (*releaseRunner, error) {
+	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
 	version := cctx.String("version")
+	typ := cctx.String("type")
+
 	inputs, err := parseInputs(cctx.String("inputs"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	vars := map[string]string{
@@ -85,16 +82,15 @@ func createReleaseCommand(cctx *cli.Context) error {
 		vars[fmt.Sprintf("inputs.%s.tag", k)] = strings.TrimPrefix(v, "v")
 	}
 
-	workdir := cctx.String("workdir")
 	announce2("setup", "Finding release manifest in %q", workdir)
 	if err := os.Chdir(cctx.String("workdir")); err != nil {
-		return err
+		return nil, err
 	}
 
 	f, err := os.Open("release.yaml")
 	if err != nil {
 		say("setup", "failed to find release manifest")
-		return err
+		return nil, err
 	}
 	defer f.Close()
 
@@ -118,7 +114,7 @@ func createReleaseCommand(cctx *cli.Context) error {
 		}
 		if !found {
 			sayFail("inputs", "Couldn't find input %q, required by manifest, but --inputs=%s=... flag is missing", in.ReleaseID, in.ReleaseID)
-			return errors.New("missing input")
+			return nil, errors.New("missing input")
 		}
 	}
 
@@ -127,9 +123,37 @@ func createReleaseCommand(cctx *cli.Context) error {
 		say("vars", "%s=%q", k, v)
 	}
 
+	r := &releaseRunner{
+		version: version,
+		pretend: pretend,
+		inputs:  inputs,
+		typ:     typ,
+		m:       &m,
+	}
+
+	return r, nil
+}
+
+func parseInputs(str string) (map[string]string, error) {
+	if str == "" {
+		return nil, nil
+	}
+	m := map[string]string{}
+	parts := strings.Split(str, ",")
+	for _, part := range parts {
+		subparts := strings.Split(part, "=")
+		if len(subparts) != 2 {
+			return nil, errors.New("invalid inputs")
+		}
+		m[subparts[0]] = subparts[1]
+	}
+	return m, nil
+}
+
+func (r *releaseRunner) checkDeps(ctx context.Context) error {
 	announce2("reqs", "Checking requirements...")
 	var failed bool
-	for _, req := range m.Requirements {
+	for _, req := range r.m.Requirements {
 		if req.Env != "" && req.Cmd != "" {
 			return errors.Newf("requirement %q can't have both env and cmd defined", req.Name)
 		}
@@ -143,7 +167,7 @@ func createReleaseCommand(cctx *cli.Context) error {
 			continue
 		}
 
-		lines, err := run.Cmd(cctx.Context, req.Cmd).Run().Lines()
+		lines, err := run.Cmd(ctx, req.Cmd).Run().Lines()
 		if err != nil {
 			failed = true
 			sayFail("reqs", "FAIL %s", req.Name)
@@ -159,20 +183,27 @@ func createReleaseCommand(cctx *cli.Context) error {
 		announce2("reqs", "Requirement checks failed, aborting.")
 		return errors.New("failed requirements")
 	}
+	return nil
+}
+
+func (r *releaseRunner) CreateRelease(ctx context.Context) error {
+	if err := r.checkDeps(ctx); err != nil {
+		return nil
+	}
 
 	var steps []cmdManifest
-	switch cctx.String("type") {
+	switch r.typ {
 	case "patch":
-		steps = m.Create.Steps.Patch
+		steps = r.m.Create.Steps.Patch
 	case "minor":
-		steps = m.Create.Steps.Minor
+		steps = r.m.Create.Steps.Minor
 	case "major":
-		steps = m.Create.Steps.Major
+		steps = r.m.Create.Steps.Major
 	}
 
 	for _, step := range steps {
-		cmd := interpolate(step.Cmd, vars)
-		if pretend {
+		cmd := interpolate(step.Cmd, r.vars)
+		if r.pretend {
 			announce2("step", "Pretending to run step %q", step.Name)
 			for _, line := range strings.Split(cmd, "\n") {
 				say(step.Name, line)
@@ -180,7 +211,7 @@ func createReleaseCommand(cctx *cli.Context) error {
 			continue
 		}
 		announce2("step", "Running step %q", step.Name)
-		err := run.Bash(cctx.Context, cmd).Run().StreamLines(func(line string) {
+		err := run.Bash(ctx, cmd).Run().StreamLines(func(line string) {
 			say(step.Name, line)
 		})
 		if err != nil {
@@ -192,6 +223,132 @@ func createReleaseCommand(cctx *cli.Context) error {
 	}
 	return nil
 }
+
+// func createReleaseCommand(cctx *cli.Context) error {
+// 	pretend := cctx.Bool("pretend")
+// 	version := cctx.String("version")
+// 	inputs, err := parseInputs(cctx.String("inputs"))
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	vars := map[string]string{
+// 		"version": version,
+// 		"tag":     strings.TrimPrefix(version, "v"),
+// 	}
+// 	for k, v := range inputs {
+// 		// TODO sanitize input format
+// 		vars[fmt.Sprintf("inputs.%s.version", k)] = v
+// 		vars[fmt.Sprintf("inputs.%s.tag", k)] = strings.TrimPrefix(v, "v")
+// 	}
+//
+// 	workdir := cctx.String("workdir")
+// 	announce2("setup", "Finding release manifest in %q", workdir)
+// 	if err := os.Chdir(cctx.String("workdir")); err != nil {
+// 		return err
+// 	}
+//
+// 	f, err := os.Open("release.yaml")
+// 	if err != nil {
+// 		say("setup", "failed to find release manifest")
+// 		return err
+// 	}
+// 	defer f.Close()
+//
+// 	var m createReleaseManifest
+// 	dec := yaml.NewDecoder(f)
+// 	if err := dec.Decode(&m); err != nil {
+// 		say("setup", "failed to decode manifest")
+// 	}
+// 	saySuccess("setup", "Found manifest for %q (%s)", m.Meta.ProductName, m.Meta.Repository)
+//
+// 	announce2("meta", "Will create a patch release %q", version)
+// 	say("meta", "Owners: %s", strings.Join(m.Meta.Owners, ", "))
+// 	say("meta", "Repository: %s", m.Meta.Repository)
+//
+// 	for _, in := range m.Inputs {
+// 		var found bool
+// 		for k := range inputs {
+// 			if k == in.ReleaseID {
+// 				found = true
+// 			}
+// 		}
+// 		if !found {
+// 			sayFail("inputs", "Couldn't find input %q, required by manifest, but --inputs=%s=... flag is missing", in.ReleaseID, in.ReleaseID)
+// 			return errors.New("missing input")
+// 		}
+// 	}
+//
+// 	announce2("vars", "Variables")
+// 	for k, v := range vars {
+// 		say("vars", "%s=%q", k, v)
+// 	}
+//
+// 	announce2("reqs", "Checking requirements...")
+// 	var failed bool
+// 	for _, req := range m.Requirements {
+// 		if req.Env != "" && req.Cmd != "" {
+// 			return errors.Newf("requirement %q can't have both env and cmd defined", req.Name)
+// 		}
+// 		if req.Env != "" {
+// 			if _, ok := os.LookupEnv(req.Env); !ok {
+// 				failed = true
+// 				sayFail("reqs", "FAIL %s, $%s is not defined.", req.Name, req.Env)
+// 				continue
+// 			}
+// 			saySuccess("reqs", "OK %s", req.Name)
+// 			continue
+// 		}
+//
+// 		lines, err := run.Cmd(cctx.Context, req.Cmd).Run().Lines()
+// 		if err != nil {
+// 			failed = true
+// 			sayFail("reqs", "FAIL %s", req.Name)
+// 			sayFail("reqs", "  Error: %s", err.Error())
+// 			for _, line := range lines {
+// 				sayFail("reqs", "  "+line)
+// 			}
+// 		} else {
+// 			saySuccess("reqs", "OK %s", req.Name)
+// 		}
+// 	}
+// 	if failed {
+// 		announce2("reqs", "Requirement checks failed, aborting.")
+// 		return errors.New("failed requirements")
+// 	}
+//
+// 	var steps []cmdManifest
+// 	switch cctx.String("type") {
+// 	case "patch":
+// 		steps = m.Create.Steps.Patch
+// 	case "minor":
+// 		steps = m.Create.Steps.Minor
+// 	case "major":
+// 		steps = m.Create.Steps.Major
+// 	}
+//
+// 	for _, step := range steps {
+// 		cmd := interpolate(step.Cmd, vars)
+// 		if pretend {
+// 			announce2("step", "Pretending to run step %q", step.Name)
+// 			for _, line := range strings.Split(cmd, "\n") {
+// 				say(step.Name, line)
+// 			}
+// 			continue
+// 		}
+// 		announce2("step", "Running step %q", step.Name)
+// 		err := run.Bash(cctx.Context, cmd).Run().StreamLines(func(line string) {
+// 			say(step.Name, line)
+// 		})
+// 		if err != nil {
+// 			sayFail(step.Name, "Step failed: %v", err)
+// 			return err
+// 		} else {
+// 			saySuccess("step", "Step %q succeeded", step.Name)
+// 		}
+// 	}
+// 	return nil
+// }
 
 func interpolate(s string, m map[string]string) string {
 	for k, v := range m {
@@ -222,4 +379,27 @@ func saySuccess(section string, format string, a ...any) {
 
 func sayKind(style output.Style, section string, format string, a ...any) {
 	std.Out.WriteLine(output.Linef("  ", style, fmt.Sprintf("[%10s] %s", section, format), a...))
+}
+
+func loadReleaseManifest(cctx *cli.Context) (*createReleaseManifest, error) {
+	workdir := cctx.String("workdir")
+	announce2("setup", "Finding release manifest in %q", workdir)
+	if err := os.Chdir(cctx.String("workdir")); err != nil {
+		return nil, err
+	}
+
+	f, err := os.Open("release.yaml")
+	if err != nil {
+		say("setup", "failed to find release manifest")
+		return nil, err
+	}
+	defer f.Close()
+
+	var m createReleaseManifest
+	dec := yaml.NewDecoder(f)
+	if err := dec.Decode(&m); err != nil {
+		say("setup", "failed to decode manifest")
+	}
+	saySuccess("setup", "Found manifest for %q (%s)", m.Meta.ProductName, m.Meta.Repository)
+	return &m, nil
 }

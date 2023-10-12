@@ -63,7 +63,13 @@ var releaseCommand = &cli.Command{
 					Usage: "Set inputs to use for a given release, ex: --input=server=v5.2.404040,foobar=ffefe",
 				},
 			},
-			Action: createReleaseCommand,
+			Action: func(cctx *cli.Context) error {
+				r, err := NewReleaseRunner(cctx)
+				if err != nil {
+					return err
+				}
+				return r.CreateRelease(cctx.Context)
+			},
 		},
 	},
 }
