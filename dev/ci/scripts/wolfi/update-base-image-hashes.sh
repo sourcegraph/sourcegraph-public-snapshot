@@ -32,6 +32,7 @@ BRANCH_NAME="wolfi-autoupdate/main"
 PR_TITLE="Update Wolfi base images to latest"
 
 # Commit changes to dev/oci-deps.bzl
+git branch -D "${BRANCH_NAME}"
 git checkout -b "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
 git commit -m "Automatically update Wolfi base image hashes at $(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")"
