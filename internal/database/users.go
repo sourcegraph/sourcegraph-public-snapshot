@@ -264,7 +264,7 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	return newUser, err
 }
 
-func (u *userStore) CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (*types.User, error) {
+func (u *userStore) CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (_ *types.User, err error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return nil, err
