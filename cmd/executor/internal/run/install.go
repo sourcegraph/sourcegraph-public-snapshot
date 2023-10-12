@@ -227,13 +227,13 @@ func installSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) e
 		// and confusing error messages.
 		queue.TelemetryOptions{},
 	)
-	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
-	if err != nil {
-		return err
-	}
 	srcVersion := srccli.MinimumVersion
 	if copts.BaseClientOptions.EndpointOptions.URL != "" {
-		srcVersion, err = util.LatestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
+		client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
+		if err != nil {
+			return err
+		}
+		srcVersion, err = util.LatestSrcCLIVersion(cliCtx.Context, client)
 		if err != nil {
 			logger.Warn("Failed to fetch latest src version, falling back to minimum version required by this executor", log.Error(err))
 		}
