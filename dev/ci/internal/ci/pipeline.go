@@ -204,7 +204,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// 	ops.Merge(wolfiGenerateBaseImagePR(c))
 		// }
 		// TODO: Remove after debugging
-		ops.Merge(wolfiGenerateBaseImagePR(c))
+		ops.Merge(wolfiGenerateBaseImagePR())
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")

@@ -327,7 +327,7 @@ func wolfiRebuildAllBaseImages(c Config) *operations.Set {
 }
 
 // wolfiGenerateBaseImagePR updates base image hashes and creates a PR in GitHub
-func wolfiGenerateBaseImagePR(c Config) *operations.Set {
+func wolfiGenerateBaseImagePR() *operations.Set {
 	ops := operations.NewNamedSet("Base Image Update PR")
 
 	ops.Append(
