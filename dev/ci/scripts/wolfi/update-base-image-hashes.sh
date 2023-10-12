@@ -10,22 +10,22 @@ go run ./dev/sg wolfi update-hashes
 git diff dev/oci_deps.bzl
 
 # Git and GitHub config
-BRANCH_NAME="wolfi-autoupdate/main"
-TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")
-PR_TITLE="Update Wolfi base images to latest"
+BRANCH_NAME="wolfi-auto-update/main"
+TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S UTC")
+PR_TITLE="Auto-update Wolfi base images to latest"
 # PR_REVIEWER="sourcegraph/security"
 PR_LABELS="SSDLC,wolfi-auto-update,backport 5.2"
 PR_BODY="Automatically generated PR to update Wolfi base images to the latest hashes.
 ## Test Plan
 - CI build verifies image functionality
-- Confirm PR should be backported to release branch"
+- [ ] Confirm PR should be backported to release branch"
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
 git branch -D "${BRANCH_NAME}" || :
 git checkout -b "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
-git commit -m "Automatically update Wolfi base image hashes at ${TIMESTAMP}"
+git commit -m "Auto-update Wolfi base image hashes at ${TIMESTAMP}"
 git push --force -u origin "${BRANCH_NAME}"
 echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
