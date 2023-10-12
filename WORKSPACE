@@ -314,7 +314,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.20.9",
+    version = "1.20.10",
 )
 
 linter_dependencies()
