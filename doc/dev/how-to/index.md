@@ -56,6 +56,7 @@
 ## Executors
 
 - [How to deploy a new executor image](deploy_executor_image.md)
+- [How to debug Firecracker executors](debug_executor.md)
 
 ## Access Control
 
