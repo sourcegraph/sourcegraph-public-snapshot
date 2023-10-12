@@ -33,7 +33,8 @@ PR_TITLE="Update Wolfi base images to latest"
 TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")
 
 # Commit changes to dev/oci-deps.bzl
-git branch -D "${BRANCH_NAME}"
+# Delete branch if it exists; catch status code if not
+git branch -D "${BRANCH_NAME}" || :
 git checkout -b "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
 git commit -m "Automatically update Wolfi base image hashes at ${TIMESTAMP}"
