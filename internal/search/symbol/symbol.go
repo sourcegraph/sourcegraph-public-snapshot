@@ -60,7 +60,7 @@ func indexedSymbolsBranch(ctx context.Context, zs zoekt.Searcher, repo *types.Mi
 	return ""
 }
 
-func FilterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
+func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return results, nil
 	}
@@ -216,7 +216,7 @@ func (s *SymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo,
 		if err != nil {
 			return nil, errors.Wrap(err, "zoekt symbol search")
 		}
-		results, err = FilterZoektResults(ctx, s.subRepoPermsChecker, repoName.Name, results)
+		results, err = filterZoektResults(ctx, s.subRepoPermsChecker, repoName.Name, results)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking permissions")
 		}

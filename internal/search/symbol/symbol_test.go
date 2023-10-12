@@ -60,7 +60,7 @@ func TestFilterZoektResults(t *testing.T) {
 			},
 		},
 	}
-	filtered, err := FilterZoektResults(ctx, checker, repoName, results)
+	filtered, err := filterZoektResults(ctx, checker, repoName, results)
 	if err != nil {
 		t.Fatal(err)
 	}
