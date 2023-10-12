@@ -193,6 +193,10 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 }
 
 func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+	return DefaultSymbolsClient.Compute(ctx, checker, repoName, commitID, inputRev, query, first, includePatterns)
+}
+
+func (s *SymbolsClient) Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
