@@ -40,6 +40,9 @@ type TelemetryEventsExportQueueStore interface {
 	// feature-flagged, such that if the flag is not enabled for the given
 	// context, we do not cache the event for export.
 	//
+	// It does NOT respect context cancellation, as it is assumed that we never
+	// drop events once we attempt to queue it for export.
+	//
 	// 🚨 SECURITY: The implementation strips out sensitive contents from events
 	// that are not in sensitivemetadataallowlist.AllowedEventTypes().
 	QueueForExport(context.Context, []*telemetrygatewayv1.Event) error
@@ -91,7 +94,10 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 		return nil
 	}
 
-	err := batch.InsertValues(ctx,
+	err := batch.InsertValues(
+		// Create a background context with trace details to avoid interrupting
+		// the insert when the parent context is cancelled.
+		trace.BackgroundContext(ctx),
 		s.Handle(),
 		"telemetry_events_export_queue",
 		batch.MaxNumPostgresParameters,

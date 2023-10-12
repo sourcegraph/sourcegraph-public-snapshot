@@ -45,6 +45,10 @@ type EventLogStore interface {
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
+	// BulkInsert inserts a set of events.
+	//
+	// It does NOT respect context cancellation, as it is assumed that we never
+	// drop events once we attempt to queue it for export.
 	BulkInsert(ctx context.Context, events []*Event) error
 
 	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
@@ -290,7 +294,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	close(rowValues)
 
 	return batch.InsertValues(
-		ctx,
+		// Create a background context with trace details to avoid interrupting
+		// the insert when the parent context is cancelled.
+		trace.BackgroundContext(ctx),
 		l.Handle(),
 		"event_logs",
 		batch.MaxNumPostgresParameters,
