@@ -30,15 +30,18 @@ gh --version
 
 BRANCH_NAME="wolfi-autoupdate/main"
 PR_TITLE="Update Wolfi base images to latest"
+TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")
 
 # Commit changes to dev/oci-deps.bzl
 git branch -D "${BRANCH_NAME}"
 git checkout -b "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
-git commit -m "Automatically update Wolfi base image hashes at $(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")"
+git commit -m "Automatically update Wolfi base image hashes at ${TIMESTAMP}"
 # git remote set-url token-origin https://sg-test:${GH_TOKEN}@github.com/sourcegraph/sourcegraph.git
 # git push --force -u token-origin "${BRANCH_NAME}"
+echo "Successfully commited changes and pushed"
 
+gh pr list --search "title:${PR_TITLE}" --state all
 # Check if an update PR already exists
 pr_exists=$(gh pr list --search "title:${PR_TITLE}" --state all | grep "${PR_TITLE}")
 if [ -z "$pr_exists" ]; then
