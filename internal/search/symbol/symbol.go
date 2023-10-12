@@ -24,6 +24,10 @@ import (
 
 const DefaultSymbolLimit = 100
 
+var DefaultSymbolsClient = SymbolsClient{}
+
+type SymbolsClient struct{}
+
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
