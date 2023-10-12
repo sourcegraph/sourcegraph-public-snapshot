@@ -33,7 +33,7 @@ PR_TITLE="Update Wolfi base images to latest"
 
 # Commit changes to dev/oci-deps.bzl
 git checkout -b "${BRANCH_NAME}"
-git add dev/oci-deps.bzl
+git add dev/oci_deps.bzl
 git commit -m "Automatically update Wolfi base image hashes at $(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")"
 # git remote set-url token-origin https://sg-test:${GH_TOKEN}@github.com/sourcegraph/sourcegraph.git
 # git push --force -u token-origin "${BRANCH_NAME}"
