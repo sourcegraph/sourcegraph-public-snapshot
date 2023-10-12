@@ -272,10 +272,6 @@ func (s *SymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo,
 	return matches, err
 }
 
-func GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
-	return DefaultSymbolsClient.GetMatchAtLineCharacter(ctx, repo, commitID, filePath, line, character)
-}
-
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
 func (s *SymbolsClient) GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
