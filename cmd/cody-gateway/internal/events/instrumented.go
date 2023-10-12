@@ -9,8 +9,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var tracer = otel.GetTracerProvider().Tracer("cody-gateway/internal/events")
@@ -23,7 +21,7 @@ type instrumentedLogger struct {
 var _ Logger = &DelayedLogger{}
 
 func (i *instrumentedLogger) LogEvent(spanCtx context.Context, event Event) error {
-	_, span := tracer.Start(sgtrace.BackgroundContext(spanCtx), fmt.Sprintf("%s.LogEvent", i.Scope),
+	_, span := tracer.Start(spanCtx, fmt.Sprintf("%s.LogEvent", i.Scope),
 		trace.WithAttributes(
 			attribute.String("source", event.Source),
 			attribute.String("event.name", string(event.Name))))
