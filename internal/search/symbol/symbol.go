@@ -208,10 +208,6 @@ func searchZoekt(
 	return
 }
 
-func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	return DefaultSymbolsClient.Compute(ctx, repoName, commitID, inputRev, query, first, includePatterns)
-}
-
 func (s *SymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
