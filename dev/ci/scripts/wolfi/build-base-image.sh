@@ -151,6 +151,6 @@ if [[ "$IS_MAIN" != "true" ]]; then
     echo -e "Run the \`${name}\` base image locally using:
 \`\`\`
 docker pull us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
-  \`\`\`" | "$REPO_DIR/dev/ci/scripts/annotate.sh" -m -t "info"
+  \`\`\`" | "$REPO_DIR/dev/ci/scripts/annotate.sh" -m -t "info" -s "\`${name}\`" -c ":squid: Wolfi images"
   fi
 fi
