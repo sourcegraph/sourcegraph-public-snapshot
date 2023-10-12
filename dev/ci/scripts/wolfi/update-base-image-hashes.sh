@@ -14,10 +14,11 @@ BRANCH_NAME="wolfi-autoupdate/main"
 TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")
 PR_TITLE="Update Wolfi base images to latest"
 # PR_REVIEWER="sourcegraph/security"
-PR_LABELS="SSDLC,wolfi-auto-update"
+PR_LABELS="SSDLC,wolfi-auto-update,backport 5.2"
 PR_BODY="Automatically generated PR to update Wolfi base images to the latest hashes.
 ## Test Plan
-- CI build verifies image functionality"
+- CI build verifies image functionality
+- Confirm PR should be backported to release branch"
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
