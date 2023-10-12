@@ -4,6 +4,9 @@ set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+# TODO: Remove debugging
+go version
+
 # Update hashes for all base images
 go run ./dev/sg wolfi update-hashes
 # Print diff
