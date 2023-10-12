@@ -6,9 +6,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # Update hashes for all base images
 go run ./dev/sg wolfi update-hashes
-
-# DEBUG: Print oci_deps
-cat dev/oci_deps.bzl
+# Print diff
+git diff dev/oci_deps.bzl
 
 # Temporary: Install GitHub CLI
 ghtmpdir=$(mktemp -d -t github-cli.XXXXXXXX)
