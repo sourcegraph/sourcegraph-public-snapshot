@@ -99,7 +99,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	it := repos.Iterator(ctx, j.RepoOpts)
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(j.Concurrency).WithFirstError()
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(4).WithFirstError()
 
 	for it.Next() {
 		page := it.Current()
