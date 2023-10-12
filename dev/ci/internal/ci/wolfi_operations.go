@@ -325,3 +325,21 @@ func wolfiRebuildAllBaseImages(c Config) *operations.Set {
 
 	return baseImageOps
 }
+
+// wolfiGenerateBaseImagePR updates base image hashes and creates a PR in GitHub
+func wolfiGenerateBaseImagePR() *operations.Set {
+	ops := operations.NewNamedSet("Base Image Update PR")
+
+	ops.Append(
+		func(pipeline *bk.Pipeline) {
+			pipeline.AddStep(":whale::hash: Update Base Image Hashes",
+				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
+				bk.Agent("queue", "bazel"),
+				bk.DependsOn("buildAllBaseImages"),
+				bk.Key("updateBaseImageHashes"),
+			)
+		},
+	)
+
+	return ops
+}
