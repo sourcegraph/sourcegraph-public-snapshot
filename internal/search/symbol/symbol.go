@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -27,11 +27,13 @@ const DefaultSymbolLimit = 100
 var DefaultSymbolSearchClient = SymbolSearchClient{
 	subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	zoektStreamer:       search.Indexed(),
+	symbols:             symbols.DefaultClient,
 }
 
 type SymbolSearchClient struct {
 	subRepoPermsChecker authz.SubRepoPermissionChecker
 	zoektStreamer       zoekt.Streamer
+	symbols             *symbols.Client
 }
 
 func (s *SymbolSearchClient) Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
@@ -74,7 +76,7 @@ func (s *SymbolSearchClient) Compute(ctx context.Context, repoName types.Minimal
 		searchArgs.Query = *query
 	}
 
-	symbols, err := symbols.DefaultClient.Search(ctx, searchArgs)
+	symbols, err := s.symbols.Search(ctx, searchArgs)
 	if err != nil {
 		return nil, err
 	}
