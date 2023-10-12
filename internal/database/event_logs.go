@@ -294,10 +294,14 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	}
 	close(rowValues)
 
+	// Create a cancel-free context to avoid interrupting the insert when
+	// the parent context is cancelled, and add our own timeout on the insert
+	// to make sure things don't get stuck in an unbounded manner.
+	insertCtx, cancel := context.WithTimeout(xcontext.Detach(ctx), 5*time.Minute)
+	defer cancel()
+
 	return batch.InsertValues(
-		// Create a cancel-free context to avoid interrupting the insert when
-		// the parent context is cancelled.
-		xcontext.Detach(ctx),
+		insertCtx,
 		l.Handle(),
 		"event_logs",
 		batch.MaxNumPostgresParameters,
