@@ -37,11 +37,11 @@ type SymbolsClient struct {
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
-func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
+func indexedSymbolsBranch(ctx context.Context, zs zoekt.Searcher, repo *types.MinimalRepo, commit string) string {
 	// We use ListAllIndexed since that is cached.
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	list, err := search.ListAllIndexed(ctx)
+	list, err := search.ListAllIndexed(ctx, zs)
 	if err != nil {
 		return ""
 	}
@@ -211,7 +211,7 @@ func searchZoekt(
 func (s *SymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
-	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
+	if branch := indexedSymbolsBranch(ctx, s.zoektStreamer, &repoName, string(commitID)); branch != "" {
 		results, err := searchZoekt(ctx, s.zoektStreamer, repoName, commitID, inputRev, branch, query, first, includePatterns)
 		if err != nil {
 			return nil, errors.Wrap(err, "zoekt symbol search")

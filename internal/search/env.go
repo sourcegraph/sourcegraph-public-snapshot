@@ -74,11 +74,11 @@ type ZoektAllIndexed struct {
 }
 
 // ListAllIndexed lists all indexed repositories.
-func ListAllIndexed(ctx context.Context) (*ZoektAllIndexed, error) {
+func ListAllIndexed(ctx context.Context, zs zoekt.Searcher) (*ZoektAllIndexed, error) {
 	q := &query.Const{Value: true}
 	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap}
 
-	repos, err := Indexed().List(ctx, q, opts)
+	repos, err := zs.List(ctx, q, opts)
 	if err != nil {
 		return nil, err
 	}

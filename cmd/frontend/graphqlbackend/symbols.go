@@ -33,7 +33,7 @@ func (r *GitTreeEntryResolver) Symbol(ctx context.Context, args *struct {
 	Line      int32
 	Character int32
 }) (*symbolResolver, error) {
-	symbolMatch, err := symbol.GetMatchAtLineCharacter(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
+	symbolMatch, err := symbol.DefaultSymbolsClient.GetMatchAtLineCharacter(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
 	if err != nil || symbolMatch == nil {
 		return nil, err
 	}
