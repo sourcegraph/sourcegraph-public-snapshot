@@ -73,7 +73,9 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	parseResponseAndUsage func(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
 }
 
-type UpstreamRequest interface{}
+type UpstreamRequest interface {
+	GetModel() string
+}
 
 func makeUpstreamHandler[ReqT UpstreamRequest](
 	baseLogger log.Logger,
@@ -383,4 +385,18 @@ func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
 		}
 	}
 	return dst
+}
+
+type flaggingResult struct {
+	provider          string
+	model             string
+	shouldBlock       bool
+	reasons           []string
+	promptPrefix      string
+	maxTokensToSample int
+	promptTokenCount  int
+}
+
+func (f *flaggingResult) IsFlagged() bool {
+	return f != nil
 }

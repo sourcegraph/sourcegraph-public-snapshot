@@ -75,7 +75,7 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 			maxTokensToSample: int(ar.MaxTokensToSample),
 			promptPrefix:      promptPrefix,
 			promptTokenCount:  tokenCount,
-			shouldBeBlocked:   blocked,
+			shouldBlock:       blocked,
 		}, nil
 	}
 
@@ -142,8 +142,7 @@ func NewAnthropicHandler(
 					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
 						logger.Warn("failed to record flagged prompt", log.Error(err))
 					}
-					if requestBlockingEnabled && result.shouldBeBlocked {
-						result.wasBlocked = true
+					if requestBlockingEnabled && result.shouldBlock {
 						return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
 					}
 					return 0, result, nil
@@ -263,6 +262,10 @@ type anthropicRequest struct {
 	promptTokens *anthropicTokenCount
 }
 
+func (ar anthropicRequest) GetModel() string {
+	return ar.Model
+}
+
 type anthropicTokenCount struct {
 	count int
 	err   error
@@ -289,17 +292,4 @@ type anthropicRequestMetadata struct {
 type anthropicResponse struct {
 	Completion string `json:"completion,omitempty"`
 	StopReason string `json:"stop_reason,omitempty"`
-}
-
-type flaggingResult struct {
-	shouldBeBlocked   bool
-	wasBlocked        bool
-	reasons           []string
-	promptPrefix      string
-	maxTokensToSample int
-	promptTokenCount  int
-}
-
-func (f *flaggingResult) IsFlagged() bool {
-	return f != nil
 }
