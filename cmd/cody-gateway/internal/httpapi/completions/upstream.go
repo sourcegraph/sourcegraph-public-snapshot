@@ -169,6 +169,39 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				if status == 0 {
 					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
 				}
+				if flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
+					// keep this for backwards-compatibility of abuse data
+					// only record prompt prefixes for .com actors
+					requestMetadata := getFlaggingMetadata(flaggingResult, act)
+					err := eventLogger.LogEvent(
+						r.Context(),
+						events.Event{
+							Name:       codygateway.EventNameRequestBlocked,
+							Source:     act.Source.Name(),
+							Identifier: act.ID,
+							Metadata: mergeMaps(requestMetadata, map[string]any{
+								codygateway.CompletionsEventFeatureMetadataField: feature,
+								"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
+								"provider": upstreamName,
+
+								// Response details
+								"resolved_status_code": status,
+
+								// Request metadata
+								"prompt_token_count":   flaggingResult.promptTokenCount,
+								"max_tokens_to_sample": flaggingResult.maxTokensToSample,
+
+								// Actor details, specific to the actor Source
+								"sg_actor_id":            sgActorID,
+								"sg_actor_anonymous_uid": sgActorAnonymousUID,
+							}),
+						},
+					)
+					if err != nil {
+						logger.Error("failed to log event", log.Error(err))
+					}
+				}
+
 				response.JSONError(logger, w, status, err)
 				return
 			}
@@ -230,18 +263,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						attribute.Int("resolvedStatusCode", resolvedStatusCode))
 				}
 				if flaggingResult.IsFlagged() {
-					// keep this for backwards-compatibility of abuse data
-					requestMetadata["flagged"] = true
-					flaggingMetadata := map[string]any{
-						"reason":       flaggingResult.reasons,
-						"should_block": flaggingResult.shouldBeBlocked,
-						"did_block":    flaggingResult.wasBlocked,
-					}
-					// only record prompt prefixes for .com actors
-					if act.IsDotComActor() {
-						flaggingMetadata["prompt_prefix"] = flaggingResult.promptPrefix
-					}
-					requestMetadata["flagging_result"] = flaggingMetadata
+					requestMetadata = mergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
 				}
 				usageData := map[string]any{
 					"prompt_character_count":     promptUsage.characters,
@@ -358,6 +380,22 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					log.Int("status_code", upstreamStatusCode))
 			}
 		}))
+}
+
+func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[string]any {
+	requestMetadata := map[string]any{}
+
+	requestMetadata["flagged"] = true
+	flaggingMetadata := map[string]any{
+		"reason":       flaggingResult.reasons,
+		"should_block": flaggingResult.shouldBlock,
+	}
+
+	if act.IsDotComActor() {
+		flaggingMetadata["prompt_prefix"] = flaggingResult.promptPrefix
+	}
+	requestMetadata["flagging_result"] = flaggingMetadata
+	return requestMetadata
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {
