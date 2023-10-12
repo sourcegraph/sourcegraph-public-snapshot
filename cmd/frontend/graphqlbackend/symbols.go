@@ -19,7 +19,7 @@ type symbolsArgs struct {
 }
 
 func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := symbol.DefaultSymbolSearchClient.Compute(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
+	symbols, err := symbol.DefaultZoektSymbolsClient.Compute(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (r *GitTreeEntryResolver) Symbol(ctx context.Context, args *struct {
 	Line      int32
 	Character int32
 }) (*symbolResolver, error) {
-	symbolMatch, err := symbol.DefaultSymbolSearchClient.GetMatchAtLineCharacter(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
+	symbolMatch, err := symbol.DefaultZoektSymbolsClient.GetMatchAtLineCharacter(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
 	if err != nil || symbolMatch == nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (r *GitTreeEntryResolver) Symbol(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := symbol.DefaultSymbolSearchClient.Compute(ctx, r.repoResolver.RepoMatch.RepoName(), api.CommitID(r.oid), r.inputRev, args.Query, args.First, args.IncludePatterns)
+	symbols, err := symbol.DefaultZoektSymbolsClient.Compute(ctx, r.repoResolver.RepoMatch.RepoName(), api.CommitID(r.oid), r.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}

@@ -24,19 +24,19 @@ import (
 
 const DefaultSymbolLimit = 100
 
-var DefaultSymbolSearchClient = SymbolSearchClient{
+var DefaultZoektSymbolsClient = ZoektSymbolsClient{
 	subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 	zoektStreamer:       search.Indexed(),
 	symbols:             symbols.DefaultClient,
 }
 
-type SymbolSearchClient struct {
+type ZoektSymbolsClient struct {
 	subRepoPermsChecker authz.SubRepoPermissionChecker
 	zoektStreamer       zoekt.Streamer
 	symbols             *symbols.Client
 }
 
-func (s *SymbolSearchClient) Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, s.zoektStreamer, &repoName, string(commitID)); branch != "" {
@@ -106,7 +106,7 @@ func (s *SymbolSearchClient) Compute(ctx context.Context, repoName types.Minimal
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func (s *SymbolSearchClient) GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func (s *ZoektSymbolsClient) GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""

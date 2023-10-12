@@ -275,7 +275,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
 			defer cancel()
 
-			if symbolMatch, _ := symbol.DefaultSymbolSearchClient.GetMatchAtLineCharacter(
+			if symbolMatch, _ := symbol.DefaultZoektSymbolsClient.GetMatchAtLineCharacter(
 				ctx,
 				types.MinimalRepo{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
