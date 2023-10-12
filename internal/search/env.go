@@ -30,8 +30,6 @@ var (
 
 	indexedDialerOnce sync.Once
 	indexedDialer     backend.ZoektDialer
-
-	IndexedMock zoekt.Streamer
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -53,9 +51,6 @@ func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
 }
 
 func Indexed() zoekt.Streamer {
-	if IndexedMock != nil {
-		return IndexedMock
-	}
 	indexedSearchOnce.Do(func() {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
