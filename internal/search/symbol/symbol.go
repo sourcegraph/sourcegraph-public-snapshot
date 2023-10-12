@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,11 +25,13 @@ import (
 
 const DefaultSymbolLimit = 100
 
-var DefaultZoektSymbolsClient = ZoektSymbolsClient{
-	subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
-	zoektStreamer:       search.Indexed(),
-	symbols:             symbols.DefaultClient,
-}
+var DefaultZoektSymbolsClient = syncx.OnceValue(func() *ZoektSymbolsClient {
+	return &ZoektSymbolsClient{
+		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
+		zoektStreamer:       search.Indexed(),
+		symbols:             symbols.DefaultClient,
+	}
+})
 
 type ZoektSymbolsClient struct {
 	subRepoPermsChecker authz.SubRepoPermissionChecker
