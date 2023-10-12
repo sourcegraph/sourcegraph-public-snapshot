@@ -5,7 +5,7 @@ set -eu -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # Update hashes for all base images
-go run ./dev/sg wolfi update-hashes
+bazel run //dev/sg -- wolfi update-hashes
 # Print diff
 git diff dev/oci_deps.bzl
 
@@ -18,7 +18,7 @@ actual_hash=$(sha256sum "${ghtmpdir}/gh.tar.gz" | cut -d ' ' -f 1)
 if [ "$expected_hash" = "$actual_hash" ]; then
   echo "Hashes match"
 else
-  echo "Error - hashes do not match!"
+  echo "Error - hashes do not match"
   exit 1
 fi
 tar -xzf "${ghtmpdir}/gh.tar.gz" -C "${ghtmpdir}/"
@@ -26,22 +26,23 @@ cp "${ghtmpdir}/gh_2.36.0_linux_amd64/bin/gh" "/usr/local/bin/"
 # Test gh
 gh --version
 
-BRANCH_NAME="wolfi-autoupdate/main"
-TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")
-PR_TITLE="Update Wolfi base images to latest"
+# Git and GitHub config
+BRANCH_NAME="wolfi-auto-update/main"
+TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S UTC")
+PR_TITLE="Auto-update Wolfi base images to latest"
 # PR_REVIEWER="sourcegraph/security"
-PR_LABELS="SSDLC,wolfi-auto-update"
+PR_LABELS="SSDLC,wolfi-auto-update,backport 5.2"
 PR_BODY="Automatically generated PR to update Wolfi base images to the latest hashes.
 ## Test Plan
-- CI build verifies image functionality"
+- CI build verifies image functionality
+- [ ] Confirm PR should be backported to release branch"
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
 git branch -D "${BRANCH_NAME}" || :
 git checkout -b "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
-git commit -m "Automatically update Wolfi base image hashes at ${TIMESTAMP}"
-# git remote set-url token-origin https://sg-test:${GH_TOKEN}@github.com/sourcegraph/sourcegraph.git
+git commit -m "Auto-update Wolfi base image hashes at ${TIMESTAMP}"
 git push --force -u origin "${BRANCH_NAME}"
 echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
