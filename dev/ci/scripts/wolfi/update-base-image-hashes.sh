@@ -18,7 +18,7 @@ actual_hash=$(sha256sum "${ghtmpdir}/gh.tar.gz" | cut -d ' ' -f 1)
 if [ "$expected_hash" = "$actual_hash" ]; then
   echo "Hashes match"
 else
-  echo "Error - hashes do not match!"
+  echo "Error - hashes do not match"
   exit 1
 fi
 tar -xzf "${ghtmpdir}/gh.tar.gz" -C "${ghtmpdir}/"
