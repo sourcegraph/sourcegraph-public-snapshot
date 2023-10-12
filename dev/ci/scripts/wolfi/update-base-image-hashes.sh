@@ -46,7 +46,7 @@ git push --force -u origin "${BRANCH_NAME}"
 echo "Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
 # Check if an update PR already exists
-if gh pr list --head "${BRANCH_NAME}" --state open | grep "${PR_TITLE}"; then
+if gh pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
   echo "A pull request already exists - no action required"
 else
   # If not, create a new PR from the branch foobar-day
