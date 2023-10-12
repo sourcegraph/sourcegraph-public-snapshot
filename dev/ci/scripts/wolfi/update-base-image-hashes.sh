@@ -24,13 +24,15 @@ else
 fi
 tar -xzf "${ghtmpdir}/gh.tar.gz" -C "${ghtmpdir}/"
 cp "${ghtmpdir}/gh_2.36.0_linux_amd64/bin/gh" "/usr/local/bin/"
-
-# Run gh
+# Test gh
 gh --version
 
 BRANCH_NAME="wolfi-autoupdate/main"
-PR_TITLE="Update Wolfi base images to latest"
 TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S %z")
+PR_TITLE="Update Wolfi base images to latest"
+PR_BODY="Automatically generated PR to update Wolfi base images to the latest hashes"
+PR_REVIEWER="sourcegraph/security"
+PR_LABELS="SSDLC,wolfi-auto-update"
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
@@ -43,11 +45,11 @@ git push --force -u origin "${BRANCH_NAME}"
 echo "Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
 # Check if an update PR already exists
-
 if gh pr list --head "${BRANCH_NAME}" --state open | grep "${PR_TITLE}"; then
   echo "A pull request already exists - no action required"
 else
   # If not, create a new PR from the branch foobar-day
-  gh pr create --title "foobar" --head "${BRANCH_NAME}" --base main --body "Automatically generated PR to update Wolfi base images to the latest hashes"
+  # TODO: Once validated add '--reviewer "${PR_REVIEWER}"'
+  gh pr create --title "${PR_TITLE}" --head "${BRANCH_NAME}" --base main --body "${PR_BODY}" --label "${PR_LABELS}"
   echo "Created a new pull request from branch '${BRANCH_NAME}' with title '${PR_TITLE}'"
 fi
