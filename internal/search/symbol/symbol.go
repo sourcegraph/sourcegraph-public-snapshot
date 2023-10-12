@@ -25,6 +25,9 @@ import (
 
 const DefaultSymbolLimit = 100
 
+// NOTE: this lives inside a syncx.OnceValue because search.Indexed depends on
+// conf.Get, and running conf.Get() at init time can cause a deadlock. So,
+// we construct it lazily instead.
 var DefaultZoektSymbolsClient = syncx.OnceValue(func() *ZoektSymbolsClient {
 	return &ZoektSymbolsClient{
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
