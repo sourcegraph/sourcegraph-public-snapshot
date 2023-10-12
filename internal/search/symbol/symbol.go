@@ -24,9 +24,13 @@ import (
 
 const DefaultSymbolLimit = 100
 
-var DefaultSymbolsClient = SymbolsClient{}
+var DefaultSymbolsClient = SymbolsClient{
+	subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
+}
 
-type SymbolsClient struct{}
+type SymbolsClient struct {
+	subRepoPermsChecker authz.SubRepoPermissionChecker
+}
 
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
@@ -192,11 +196,11 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	return
 }
 
-func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	return DefaultSymbolsClient.Compute(ctx, checker, repoName, commitID, inputRev, query, first, includePatterns)
+func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+	return DefaultSymbolsClient.Compute(ctx, repoName, commitID, inputRev, query, first, includePatterns)
 }
 
-func (s *SymbolsClient) Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func (s *SymbolsClient) Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
@@ -204,7 +208,7 @@ func (s *SymbolsClient) Compute(ctx context.Context, checker authz.SubRepoPermis
 		if err != nil {
 			return nil, errors.Wrap(err, "zoekt symbol search")
 		}
-		results, err = FilterZoektResults(ctx, checker, repoName.Name, results)
+		results, err = FilterZoektResults(ctx, s.subRepoPermsChecker, repoName.Name, results)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking permissions")
 		}
@@ -267,7 +271,7 @@ func GetMatchAtLineCharacter(ctx context.Context, checker authz.SubRepoPermissio
 	first := int32(999999)
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	symbolMatches, err := Compute(ctx, checker, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
+	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
 	if err != nil {
 		return nil, err
 	}
