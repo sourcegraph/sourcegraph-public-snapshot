@@ -47,10 +47,10 @@ echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
 # Check if an update PR already exists
 if gh pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
-  echo "A pull request already exists - no action required"
+  echo ":github: A pull request already exists - no action required"
 else
   # If not, create a new PR from the branch foobar-day
   # TODO: Once validated add '--reviewer "${PR_REVIEWER}"'
   gh pr create --title "${PR_TITLE}" --head "${BRANCH_NAME}" --base main --body "${PR_BODY}" --label "${PR_LABELS}"
-  echo "Created a new pull request from branch '${BRANCH_NAME}' with title '${PR_TITLE}'"
+  echo ":github: Created a new pull request from branch '${BRANCH_NAME}' with title '${PR_TITLE}'"
 fi
