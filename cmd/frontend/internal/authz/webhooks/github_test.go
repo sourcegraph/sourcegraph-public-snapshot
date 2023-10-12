@@ -57,7 +57,7 @@ func TestGitHubWebhooks(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	whStore := db.Webhooks(keyring.Default().WebhookKey)
 	esStore := db.ExternalServices()
 

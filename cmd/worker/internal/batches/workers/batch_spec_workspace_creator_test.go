@@ -32,7 +32,7 @@ import (
 
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 4)
 
@@ -175,7 +175,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 
 func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 
@@ -801,7 +801,7 @@ changesetTemplate:
 
 func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -859,7 +859,7 @@ importChangesets:
 
 func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -918,7 +918,7 @@ importChangesets:
 func TestBatchSpecWorkspaceCreatorProcess_Secrets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := bt.CreateTestUser(t, db, true)
 	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))

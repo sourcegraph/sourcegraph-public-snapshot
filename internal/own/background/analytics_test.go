@@ -49,7 +49,7 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "test"})
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
 	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	var repoID api.RepoID = 1
 	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})
@@ -127,7 +127,7 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	var repoID api.RepoID = 1
 	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})

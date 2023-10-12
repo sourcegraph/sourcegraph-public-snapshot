@@ -16,14 +16,16 @@ These configuration files can be processed with apko, which will generate a base
 
 Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes.
 
-This is currently a two-step process, which will be further automated in the future:
-
-- Run [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@588463afbb0904c125cdcf78c7b182f43328504e/-/blob/wolfi-images/rebuild-images.sh) script, commit the updated YAML files, and merge to main.
-- Wait for the `main` branch's Buildkite run to complete.
-  - Buildkite will rebuild the base images and publish them to Dockerhub.
 - Run `sg wolfi update-hashes` locally to update the base image hashes in `dev/oci_deps.bzl`. Commit these changes and merge to `main`.
-  - This fetches the updated base image hashes from the images that were pushed to Dockerhub in the previous step.
-- Backport the PR that updated `dev/oci_deps.bzl` to the release branch.
+- Backport the PR to the release branch.
+
+#### Automation
+
+This process is partially automated by Buildkite. A scheduled build runs daily to rebuild Wolfi base images - pulling in any updated dependencies - then push them to Docker Hub. When `sg wolfi update-hashes` is run, it pulls these latest image hashes from Docker Hub to update the references in `dev/oci_deps.bzl`.
+
+To rebuild the images (perhaps to pick up a just-released package version), [find a scheduled build](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=main) in Buildkite named "Nightly Rebuild of Wolfi Base Images", and hit "Rebuild".
+
+It is also possible to manually rebuild individual images by running `wolfi-images/rebuild-images.sh` locally, then pushing and merging.
 
 ### Modify an existing base image
 

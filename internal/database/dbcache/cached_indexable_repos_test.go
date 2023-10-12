@@ -12,7 +12,7 @@ import (
 
 func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
 	logger := logtest.Scoped(b)
-	db := database.NewDB(logger, dbtest.NewDB(logger, b))
+	db := database.NewDB(logger, dbtest.NewDB(b))
 
 	ctx := context.Background()
 	select {

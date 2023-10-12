@@ -30,7 +30,7 @@ func TestUpdateFileCounts(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	// Create repo
 	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
@@ -55,7 +55,7 @@ func TestAggregateFileCounts(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create repos.

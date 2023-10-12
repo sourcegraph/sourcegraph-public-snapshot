@@ -44,7 +44,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	logger := observationCtx.Logger
 
 	mockUploadStore, bucket := newMockUploadStore(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	s := store.New(db, observation.TestContextTB(t))
 	svc := service.New(observationCtx, s, mockUploadStore, service.NewSearcherFake())
 

@@ -127,7 +127,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				t.Cleanup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
-				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+				db := database.NewDB(logger, dbtest.NewDB(t))
 
 				// We ensure the GlobalState is initialized so that the first user isn't
 				// a site administrator.
@@ -182,7 +182,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				t.Cleanup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
-				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+				db := database.NewDB(logger, dbtest.NewDB(t))
 
 				// We ensure the GlobalState is initialized so that the first user isn't
 				// a site administrator.

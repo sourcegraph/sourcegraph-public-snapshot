@@ -33,7 +33,7 @@ import (
 
 func TestWebhooksHandler(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u, err := db.Users().Create(context.Background(), database.NewUser{
 		Email:           "test@user.com",
 		Username:        "testuser",

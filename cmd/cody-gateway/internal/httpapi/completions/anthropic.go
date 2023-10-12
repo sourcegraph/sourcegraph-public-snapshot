@@ -27,8 +27,11 @@ const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 const (
 	logPromptPrefixLength = 250
 
-	promptTokenLimit   = 18000
-	responseTokenLimit = 1000
+	promptTokenFlaggingLimit   = 18000
+	responseTokenFlaggingLimit = 1000
+
+	promptTokenBlockingLimit   = 20000
+	responseTokenBlockingLimit = 1000
 )
 
 func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
@@ -44,7 +47,7 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 	}
 
 	// If this request has a very high token count for responses, then flag it.
-	if ar.MaxTokensToSample > responseTokenLimit {
+	if ar.MaxTokensToSample > responseTokenFlaggingLimit {
 		reasons = append(reasons, "high_max_tokens_to_sample")
 	}
 
@@ -53,11 +56,16 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 	if err != nil {
 		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
 	}
-	if tokenCount > promptTokenLimit {
+	if tokenCount > promptTokenFlaggingLimit {
 		reasons = append(reasons, "high_prompt_token_count")
 	}
 
 	if len(reasons) > 0 {
+		blocked := false
+		if tokenCount > promptTokenBlockingLimit || ar.MaxTokensToSample > responseTokenBlockingLimit {
+			blocked = true
+		}
+
 		promptPrefix := ar.Prompt
 		if len(promptPrefix) > logPromptPrefixLength {
 			promptPrefix = promptPrefix[0:logPromptPrefixLength]
@@ -67,6 +75,7 @@ func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, pro
 			maxTokensToSample: int(ar.MaxTokensToSample),
 			promptPrefix:      promptPrefix,
 			promptTokenCount:  tokenCount,
+			shouldBlock:       blocked,
 		}, nil
 	}
 
@@ -99,6 +108,7 @@ func NewAnthropicHandler(
 	maxTokensToSample int,
 	promptRecorder PromptRecorder,
 	allowedPromptPatterns []string,
+	requestBlockingEnabled bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
 	anthropicTokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
@@ -131,6 +141,9 @@ func NewAnthropicHandler(
 					// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
 					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
 						logger.Warn("failed to record flagged prompt", log.Error(err))
+					}
+					if requestBlockingEnabled && result.shouldBlock {
+						return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
 					}
 					return 0, result, nil
 				}
@@ -249,6 +262,10 @@ type anthropicRequest struct {
 	promptTokens *anthropicTokenCount
 }
 
+func (ar anthropicRequest) GetModel() string {
+	return ar.Model
+}
+
 type anthropicTokenCount struct {
 	count int
 	err   error
@@ -275,16 +292,4 @@ type anthropicRequestMetadata struct {
 type anthropicResponse struct {
 	Completion string `json:"completion,omitempty"`
 	StopReason string `json:"stop_reason,omitempty"`
-}
-
-type flaggingResult struct {
-	blocked           bool
-	reasons           []string
-	promptPrefix      string
-	maxTokensToSample int
-	promptTokenCount  int
-}
-
-func (f *flaggingResult) IsFlagged() bool {
-	return f != nil
 }

@@ -39,7 +39,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 	operations := httpapi.NewOperations(&observation.TestContext)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	creatorID := bt.CreateTestUser(t, db, false).ID
 	adminID := bt.CreateTestUser(t, db, true).ID

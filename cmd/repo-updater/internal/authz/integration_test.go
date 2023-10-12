@@ -137,7 +137,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		Username:        "sourcegraph-vcr-bob",
 		EmailIsVerified: true,
 	}
-	testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	testDB := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	reposStore := repos.NewStore(logtest.Scoped(t), testDB)
@@ -309,7 +309,7 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 
 	cli := newTestRecorderClient(t, uri.String(), apiURI, token)
 
-	testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	testDB := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	reposStore := repos.NewStore(logtest.Scoped(t), testDB)
@@ -452,7 +452,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		doer, err := cf.Doer()
 		require.NoError(t, err)
 
-		testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+		testDB := database.NewDB(logger, dbtest.NewDB(t))
 
 		ctx := actor.WithInternalActor(context.Background())
 
