@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -74,9 +74,13 @@ func (s *SymbolSearchClient) Compute(ctx context.Context, repoName types.Minimal
 		searchArgs.Query = *query
 	}
 
-	symbols, err := backend.Symbols.ListTags(ctx, searchArgs)
+	symbols, err := symbols.DefaultClient.Search(ctx, searchArgs)
 	if err != nil {
 		return nil, err
+	}
+
+	for i := range symbols {
+		symbols[i].Line += 1 // callers expect 1-indexed lines
 	}
 
 	fileWithPath := func(path string) *result.File {

@@ -7,11 +7,11 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -103,7 +103,7 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 	}
 	tr.SetAttributes(commitID.Attr())
 
-	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
+	symbols, err := symbols.DefaultClient.Search(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
 		Query:           patternInfo.Pattern,
@@ -114,6 +114,13 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 		// Ask for limit + 1 so we can detect whether there are more results than the limit.
 		First: limit + 1,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range symbols {
+		symbols[i].Line += 1 // callers expect 1-indexed lines
+	}
 
 	// All symbols are from the same repo, so we can just partition them by path
 	// to build file matches
