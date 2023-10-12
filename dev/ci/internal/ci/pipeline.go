@@ -198,13 +198,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
 		// and push to registry, then open a PR
-		// TODO: Remove comment
-		// baseImageOps := wolfiRebuildAllBaseImages(c)
-		// if baseImageOps != nil {
-		// 	ops.Merge(baseImageOps)
-		// 	ops.Merge(wolfiGenerateBaseImagePR())
-		// }
-		ops.Merge(wolfiGenerateBaseImagePR())
+		baseImageOps := wolfiRebuildAllBaseImages(c)
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+			ops.Merge(wolfiGenerateBaseImagePR())
+		}
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")

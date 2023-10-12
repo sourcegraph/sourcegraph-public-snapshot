@@ -335,8 +335,7 @@ func wolfiGenerateBaseImagePR() *operations.Set {
 			pipeline.AddStep(":whale::hash: Update Base Image Hashes",
 				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
 				bk.Agent("queue", "bazel"),
-				// TODO: Remove comment
-				// bk.DependsOn("buildAllBaseImages"),
+				bk.DependsOn("buildAllBaseImages"),
 				bk.Key("updateBaseImageHashes"),
 			)
 		},
