@@ -43,7 +43,7 @@ git add dev/oci_deps.bzl
 git commit -m "Automatically update Wolfi base image hashes at ${TIMESTAMP}"
 # git remote set-url token-origin https://sg-test:${GH_TOKEN}@github.com/sourcegraph/sourcegraph.git
 git push --force -u origin "${BRANCH_NAME}"
-echo "Successfully commited changes and pushed to branch ${BRANCH_NAME}"
+echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
 # Check if an update PR already exists
 if gh pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
