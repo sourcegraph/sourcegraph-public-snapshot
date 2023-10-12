@@ -39,7 +39,7 @@ git checkout -b "${BRANCH_NAME}"
 git add dev/oci_deps.bzl
 git commit -m "Automatically update Wolfi base image hashes at ${TIMESTAMP}"
 # git remote set-url token-origin https://sg-test:${GH_TOKEN}@github.com/sourcegraph/sourcegraph.git
-# git push --force -u token-origin "${BRANCH_NAME}"
+git push --force -u origin "${BRANCH_NAME}"
 echo "Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
 # Check if an update PR already exists
@@ -48,6 +48,6 @@ if gh pr list --head "${BRANCH_NAME}" --state open | grep "${PR_TITLE}"; then
   echo "A pull request already exists - no action required"
 else
   # If not, create a new PR from the branch foobar-day
-  # gh pr create --title "foobar" --head "${BRANCH_NAME}" --base main --body "Automatically generated PR to update Wolfi base images to the latest hashes"
-  echo "Would have created a new pull request from branch ${BRANCH_NAME} with title ${PR_TITLE}"
+  gh pr create --title "foobar" --head "${BRANCH_NAME}" --base main --body "Automatically generated PR to update Wolfi base images to the latest hashes"
+  echo "Created a new pull request from branch '${BRANCH_NAME}' with title '${PR_TITLE}'"
 fi
