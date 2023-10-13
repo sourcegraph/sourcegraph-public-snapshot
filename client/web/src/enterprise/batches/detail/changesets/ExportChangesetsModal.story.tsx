@@ -28,7 +28,7 @@ const mocks = new WildcardMockLink([
         result: { data: {
                 getChangesetsByIDs: [{
                     __typename: 'ExternalChangeset',
-                    id: '001',
+                    id: 'test-123',
                     title: 'Test Changeset',
                     state: 'OPEN',
                     reviewState: 'PENDING',
@@ -52,7 +52,7 @@ export const Confirmation: StoryFn = () => (
                     {...props}
                     afterCreate={noop}
                     batchChangeID="test-123"
-                    changesetIDs={['test-123', 'test-234']}
+                    changesetIDs={['test-123']}
                     onCancel={noop}
                 />
             </MockedTestProvider>
