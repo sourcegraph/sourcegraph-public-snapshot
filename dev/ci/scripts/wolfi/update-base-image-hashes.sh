@@ -33,6 +33,8 @@ PR_TITLE="Auto-update Wolfi base images to latest"
 # PR_REVIEWER="sourcegraph/security"
 PR_LABELS="SSDLC,wolfi-auto-update,backport 5.2"
 PR_BODY="Automatically generated PR to update Wolfi base images to the latest hashes.
+
+Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sourcegraph/sourcegraph/builds/${BUILDKITE_BUILD_NUMBER}).
 ## Test Plan
 - CI build verifies image functionality
 - [ ] Confirm PR should be backported to release branch"
@@ -48,7 +50,8 @@ echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
 # Check if an update PR already exists
 if gh pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
-  echo ":github: A pull request already exists - no action required"
+  echo ":github: A pull request already exists - editing it"
+  gh pr edit "${BRANCH_NAME}" --body "${PR_BODY}"
 else
   # If not, create a new PR from the branch foobar-day
   # TODO: Once validated add '--reviewer "${PR_REVIEWER}"'

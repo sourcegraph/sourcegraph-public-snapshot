@@ -14,9 +14,9 @@ These configuration files can be processed with apko, which will generate a base
 
 ### Update base images for a new release
 
-Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes.
+Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes. To update the images:
 
-- Review the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-autoupdate/main+is:open) opened by Buildkite, and merge it
+- Review the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-auto-update/main+is:open) opened by Buildkite, and merge it
 
 #### Automation
 
@@ -27,7 +27,7 @@ This process is automated by Buildkite, which runs a daily scheduled build to:
 - Update the base image hashes in `dev/oci_deps.bzl`.
 - Open, or update the already open pull request updating the hashes.
 
-To update the images (perhaps to pick up a just-released package version), [find a scheduled build](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=main) in Buildkite named "Nightly Rebuild of Wolfi Base Images", and hit "Rebuild".
+To rerun the automation (perhaps to pick up a just-released package version), click the Buildkite run link in the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-autoupdate/main+is:open) and hit "Rebuild". Alternatively, look for the latest "Nightly Rebuild of Wolfi Base Images" run [on Buildkite](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=main).
 
 #### Manual image updates
 
