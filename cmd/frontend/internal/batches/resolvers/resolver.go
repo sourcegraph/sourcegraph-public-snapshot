@@ -2108,7 +2108,8 @@ func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	// we store a map of repos to avoide duplicate DB queries
+	// We store a map of repos to avoid duplicate DB queries to fetch a changeset's repository.
+	// This is simply a lazy cache for this query.
 	reposMap := map[api.RepoID]*types.Repo{}
 
 	cs := make([]graphqlbackend.ChangesetResolver, len(changesets))
