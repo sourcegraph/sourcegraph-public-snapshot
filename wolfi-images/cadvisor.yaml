@@ -1,6 +1,5 @@
 include: ./sourcegraph-base.yaml
 
-# comment
 contents:
   packages:
     # Included by existing SG base image
