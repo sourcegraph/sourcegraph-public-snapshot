@@ -2,13 +2,12 @@
 package globals
 
 import (
-	"fmt"
 	"net/url"
 	"reflect"
 	"sync"
 	"sync/atomic"
 
-	"github.com/sourcegraph/log"
+	"github.com/inconshreveable/log15" //nolint:go
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -30,15 +29,13 @@ var watchExternalURLOnce sync.Once
 // WatchExternalURL watches for changes in the `externalURL` site configuration
 // so that changes are reflected in what is returned by the ExternalURL function.
 func WatchExternalURL() {
-	logger := log.Scoped("externalURLWatcher", "")
-
 	watchExternalURLOnce.Do(func() {
 		conf.Watch(func() {
 			after := defaultExternalURL
 			if val := conf.Get().ExternalURL; val != "" {
 				var err error
 				if after, err = url.Parse(val); err != nil {
-					logger.Error("globals.ExternalURL", log.String("value", val), log.Error(err))
+					log15.Error("globals.ExternalURL", "value", val, "error", err)
 					return
 				}
 			}
@@ -46,11 +43,11 @@ func WatchExternalURL() {
 			if before := ExternalURL(); !reflect.DeepEqual(before, after) {
 				SetExternalURL(after)
 				if before.Host != "example.com" {
-					logger.Info(
+					log15.Info(
 						"globals.ExternalURL",
-						log.Bool("updated", true),
-						log.String("before", before.String()),
-						log.String("after", after.String()),
+						"updated", true,
+						"before", before,
+						"after", after,
 					)
 				}
 			}
@@ -87,25 +84,23 @@ var watchPermissionsUserMappingOnce sync.Once
 // WatchPermissionsUserMapping watches for changes in the `permissions.userMapping` site configuration
 // so that changes are reflected in what is returned by the PermissionsUserMapping function.
 func WatchPermissionsUserMapping() {
-	logger := log.Scoped("permissionsUserMapWatcher", "")
-
 	watchPermissionsUserMappingOnce.Do(func() {
 		conf.Watch(func() {
 			after := conf.Get().PermissionsUserMapping
 			if after == nil {
 				after = defaultPermissionsUserMapping
 			} else if after.BindID != "email" && after.BindID != "username" {
-				logger.Error("globals.PermissionsUserMapping", log.String("BindID", after.BindID), log.String("error", "not a valid value"))
+				log15.Error("globals.PermissionsUserMapping", "BindID", after.BindID, "error", "not a valid value")
 				return
 			}
 
 			if before := PermissionsUserMapping(); !reflect.DeepEqual(before, after) {
 				SetPermissionsUserMapping(after)
-				logger.Info(
+				log15.Info(
 					"globals.PermissionsUserMapping",
-					log.Bool("updated", true),
-					log.String("before", fmt.Sprint(before)),
-					log.String("after", fmt.Sprint(after)),
+					"updated", true,
+					"before", before,
+					"after", after,
 				)
 			}
 		})
@@ -145,8 +140,6 @@ func WatchBranding() {
 		panic("WatchBranding called more than once")
 	}
 
-	logger := log.Scoped("brandingWatcher", "")
-
 	conf.Watch(func() {
 		after := conf.Get().Branding
 		if after == nil {
@@ -159,11 +152,11 @@ func WatchBranding() {
 
 		if before := Branding(); !reflect.DeepEqual(before, after) {
 			SetBranding(after)
-			logger.Debug(
+			log15.Debug(
 				"globals.Branding",
-				log.Bool("updated", true),
-				log.String("before", fmt.Sprint(before)),
-				log.String("after", fmt.Sprint(after)),
+				"updated", true,
+				"before", before,
+				"after", after,
 			)
 		}
 	})

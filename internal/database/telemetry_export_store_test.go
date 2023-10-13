@@ -24,7 +24,7 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 	ctx := featureflag.WithFlags(context.Background(), ff)
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := TelemetryEventsExportQueueWith(logger, db)
 

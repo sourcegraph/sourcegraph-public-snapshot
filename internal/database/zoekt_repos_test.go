@@ -24,7 +24,7 @@ func TestZoektRepos_GetZoektRepo(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -45,7 +45,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 	timeUnix := int64(1686763487)
@@ -212,7 +212,7 @@ func assertZoektRepos(t *testing.T, ctx context.Context, s *zoektReposStore, wan
 
 func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	logger := logtest.Scoped(b)
-	db := NewDB(logger, dbtest.NewDB(logger, b))
+	db := NewDB(logger, dbtest.NewDB(b))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 

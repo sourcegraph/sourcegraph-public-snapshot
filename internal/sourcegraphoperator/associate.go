@@ -79,13 +79,18 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal account data")
 		}
-		if _, err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   serviceID,
-			ClientID:    details.ClientID,
+		if _, err := db.UserExternalAccounts().Upsert(ctx,
+			&extsvc.Account{
+				UserID: userID,
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: auth.SourcegraphOperatorProviderType,
+					ServiceID:   serviceID,
+					ClientID:    details.ClientID,
 
-			AccountID: details.AccountID,
-		}, accountData); err != nil {
+					AccountID: details.AccountID,
+				},
+				AccountData: accountData,
+			}); err != nil {
 			return errors.Wrap(err, "failed to associate user with Sourcegraph Operator provider")
 		}
 		return nil

@@ -18,11 +18,12 @@ const (
 
 	// Nightly builds - must be first because they take precedence
 
-	ReleaseNightly // release branch nightly healthcheck builds
-	BextNightly    // browser extension nightly build
-	VsceNightly    // vs code extension nightly build
-	AppRelease     // app release build
-	AppInsiders    // app insiders build
+	ReleaseNightly   // release branch nightly healthcheck builds
+	BextNightly      // browser extension nightly build
+	VsceNightly      // vs code extension nightly build
+	AppRelease       // app release build
+	AppInsiders      // app insiders build
+	WolfiBaseRebuild // wolfi base image build
 
 	// Release branches
 
@@ -108,6 +109,12 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			Branch:      "vsce/release",
 			BranchExact: true,
 		}
+	case WolfiBaseRebuild:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"WOLFI_BASE_REBUILD": "true",
+			},
+		}
 
 	case AppRelease:
 		return &RunTypeMatcher{
@@ -192,6 +199,8 @@ func (t RunType) String() string {
 		return "Browser extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
+	case WolfiBaseRebuild:
+		return "Wolfi base images rebuild"
 	case AppRelease:
 		return "App release build"
 	case AppInsiders:

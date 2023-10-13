@@ -82,7 +82,7 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	ctx := context.Background()
 
@@ -180,7 +180,7 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	ctx := context.Background()
 
@@ -235,7 +235,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
@@ -593,7 +593,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	source := authz.SourceUserSync
@@ -756,7 +756,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	tests := []struct {
@@ -897,7 +897,7 @@ func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	source := authz.SourceRepoSync
@@ -992,7 +992,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	ctx := context.Background()
@@ -1159,7 +1159,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	type testUpdate struct {
@@ -1419,7 +1419,7 @@ func TestPermsStore_LoadUserPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	t.Run("no matching with different account ID", func(t *testing.T) {
@@ -1716,7 +1716,7 @@ func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	alice := extsvc.AccountSpec{
@@ -1999,7 +1999,7 @@ func TestPermsStore_ListPendingUsers(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	type update struct {
@@ -2117,7 +2117,7 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -2759,7 +2759,7 @@ func TestPermsStore_SetPendingPermissionsAfterGrant(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	defer cleanupPermsTables(t, s)
@@ -2831,7 +2831,7 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	t.Cleanup(func() {
@@ -2916,7 +2916,7 @@ func TestPermsStore_DeleteAllUserPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	t.Cleanup(func() {
@@ -2978,7 +2978,7 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 	t.Cleanup(func() {
@@ -3093,7 +3093,7 @@ func TestPermsStore_GetUserIDsByExternalAccounts(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	s := perms(logger, db, time.Now)
@@ -3175,7 +3175,7 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3237,7 +3237,7 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3292,7 +3292,7 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3351,7 +3351,7 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3398,7 +3398,7 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3503,7 +3503,7 @@ func TestPermsStore_CountUsersWithStalePerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3571,7 +3571,7 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3674,7 +3674,7 @@ func TestPermsStore_CountReposWithStalePerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3740,7 +3740,7 @@ func TestPermsStore_MapUsers(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3812,7 +3812,7 @@ func TestPermsStore_Metrics(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 
@@ -3923,7 +3923,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -4084,7 +4084,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	s := perms(logtest.Scoped(t), db, clock)

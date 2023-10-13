@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 REPO_DIR=$(pwd)
 
 GCP_PROJECT="sourcegraph-ci"
@@ -56,7 +56,7 @@ fi
 name=${1%/}
 # Soft-fail if file doesn't exist, as CI step is triggered whenever base image configs are changed - including deletions/renames
 if [ ! -f "wolfi-images/${name}.yaml" ]; then
-  echo "File '$name.yaml' does not exist"
+  echo "File '${name}.yaml' does not exist cwd: '${PWD}'"
   exit 222
 fi
 
@@ -148,9 +148,19 @@ fi
 # Show image usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
-    echo -e "Run the \`${name}\` base image locally using:
-\`\`\`
+    mkdir -p ./annotations
+    file="${name} image.md"
+    cat <<-EOF > "${REPO_DIR}/annotations/${file}"
+
+<strong>:octopus: ${name} image &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
+<br />
+<br />
+Run the \`${name}\` base image locally using:
+
+\`\`\`bash
 docker pull us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
-  \`\`\`" | "$REPO_DIR/dev/ci/scripts/annotate.sh" -m -t "info"
+\`\`\`
+
+EOF
   fi
 fi

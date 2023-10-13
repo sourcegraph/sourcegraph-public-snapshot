@@ -23,7 +23,7 @@ func TestRecordEncrypter(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	key := &base64Key{}
 	encrypter := NewRecordEncrypter(db)
 

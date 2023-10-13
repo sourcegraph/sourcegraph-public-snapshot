@@ -36,7 +36,6 @@ go_library(
         "//cmd/frontend/internal/search",
         "//internal/api",
         "//internal/auth/userpasswd",
-        "//internal/authz",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/cookie",

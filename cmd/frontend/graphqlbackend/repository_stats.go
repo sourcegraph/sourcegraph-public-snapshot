@@ -71,7 +71,7 @@ func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt
 
 func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int32, int64, error) {
 	r.indexedStatsOnce.Do(func() {
-		repos, err := search.ListAllIndexed(ctx)
+		repos, err := search.ListAllIndexed(ctx, search.Indexed())
 		if err != nil {
 			r.indexedStatsErr = err
 			return

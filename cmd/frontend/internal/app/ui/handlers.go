@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -276,9 +275,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
 			defer cancel()
 
-			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
+			if symbolMatch, _ := symbol.DefaultZoektSymbolsClient().GetMatchAtLineCharacter(
 				ctx,
-				authz.DefaultSubRepoPermsChecker,
 				types.MinimalRepo{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
 				strings.TrimLeft(blobPath, "/"),
