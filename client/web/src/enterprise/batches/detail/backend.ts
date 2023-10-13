@@ -835,16 +835,18 @@ export async function publishChangesets(
 export const GET_CHANGESETS_BY_IDS_QUERY = gql`
     query GetChangesetsByIDs($batchChange: ID!, $changesets: [ID!]!) {
         getChangesetsByIDs(batchChange: $batchChange, changesets: $changesets) {
-            ... on ExternalChangeset {
-                id
-                title
-                state
-                reviewState
-                externalURL {
-                    url
-                }
-                repository {
-                    name
+            nodes {
+                ... on ExternalChangeset {
+                    id
+                    title
+                    state
+                    reviewState
+                    externalURL {
+                        url
+                    }
+                    repository {
+                        name
+                    }
                 }
             }
         }

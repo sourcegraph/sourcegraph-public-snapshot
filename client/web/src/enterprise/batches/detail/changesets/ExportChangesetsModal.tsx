@@ -14,9 +14,11 @@ export interface ExportChangesetsModalProps {
 }
 
 const exportOptions = {
-    CSV: 'CSV',
-    JSON: 'JSON',
+    CSV: 'csv',
+    JSON: 'json',
 } as const
+
+type ExportFormat = typeof exportOptions[keyof typeof exportOptions]
 
 const headers = ['title', 'externalURL', 'repository', 'reviewState', 'state'] as const
 
@@ -27,51 +29,55 @@ export const ExportChangesetsModal: React.FunctionComponent<React.PropsWithChild
     changesetIDs,
 }) => {
     const [getChangesetsByIDs, { loading, error }] = useGetChangesetsByIDs(batchChangeID, changesetIDs)
-    const [selectedDataExportType, setSelectedDataExportType] = React.useState<keyof typeof exportOptions>(
-        exportOptions.CSV
-    )
+    const [selectedDataExportType, setSelectedDataExportType] = React.useState<ExportFormat>(exportOptions.CSV)
 
     const handleFormatChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
-        setSelectedDataExportType(event.target.value as keyof typeof exportOptions)
+        setSelectedDataExportType(event.target.value as ExportFormat)
     }, [])
 
-    const constructCSVDataExport = useCallback((nodes: GetChangesetsByIDsResult['getChangesetsByIDs']): string => {
-        const csvRows: (string | null)[] = []
-        csvRows.push(headers.join(', '))
+    const constructCSVDataExport = useCallback(
+        (nodes: GetChangesetsByIDsResult['getChangesetsByIDs']['nodes']): string => {
+            const csvRows: (string | null)[] = []
+            csvRows.push(headers.join(', '))
 
-        for (const node of nodes) {
-            if (node.__typename === 'ExternalChangeset') {
-                // the order is quite important here to ensure the items inserted into `csvRows`
-                // match the headers array above.
-                csvRows.push(
-                    [
-                        node.title || '',
-                        node.externalURL?.url || '',
-                        node.repository.name,
-                        node.reviewState,
-                        node.state,
-                    ].join(', ')
-                )
+            for (const node of nodes) {
+                if (node.__typename === 'ExternalChangeset') {
+                    // the order is quite important here to ensure the items inserted into `csvRows`
+                    // match the headers array above.
+                    csvRows.push(
+                        [
+                            node.title || '',
+                            node.externalURL?.url || '',
+                            node.repository.name,
+                            node.reviewState,
+                            node.state,
+                        ].join(', ')
+                    )
+                }
             }
-        }
-        return csvRows.join('\n')
-    }, [])
+            return csvRows.join('\n')
+        },
+        []
+    )
 
-    const constructJSONDataExport = useCallback((nodes: GetChangesetsByIDsResult['getChangesetsByIDs']): string => {
-        const jsonRows: Record<typeof headers[number], string | null>[] = []
-        for (const node of nodes) {
-            if (node.__typename === 'ExternalChangeset') {
-                jsonRows.push({
-                    title: node.title,
-                    externalURL: node.externalURL?.url || '',
-                    repository: node.repository.name,
-                    reviewState: node.reviewState,
-                    state: node.state,
-                })
+    const constructJSONDataExport = useCallback(
+        (nodes: GetChangesetsByIDsResult['getChangesetsByIDs']['nodes']): string => {
+            const jsonRows: Record<typeof headers[number], string | null>[] = []
+            for (const node of nodes) {
+                if (node.__typename === 'ExternalChangeset') {
+                    jsonRows.push({
+                        title: node.title,
+                        externalURL: node.externalURL?.url || '',
+                        repository: node.repository.name,
+                        reviewState: node.reviewState,
+                        state: node.state,
+                    })
+                }
             }
-        }
-        return JSON.stringify(jsonRows, null, 2)
-    }, [])
+            return JSON.stringify(jsonRows, null, 2)
+        },
+        []
+    )
 
     const onSubmit = useCallback<React.FormEventHandler>(
         () =>
@@ -79,9 +85,9 @@ export const ExportChangesetsModal: React.FunctionComponent<React.PropsWithChild
                 onCompleted: node => {
                     let exportData: string
                     if (selectedDataExportType === exportOptions.CSV) {
-                        exportData = constructCSVDataExport(node.getChangesetsByIDs)
+                        exportData = constructCSVDataExport(node.getChangesetsByIDs.nodes)
                     } else {
-                        exportData = constructJSONDataExport(node.getChangesetsByIDs)
+                        exportData = constructJSONDataExport(node.getChangesetsByIDs.nodes)
                     }
 
                     const blob = new Blob([exportData], {
@@ -91,7 +97,7 @@ export const ExportChangesetsModal: React.FunctionComponent<React.PropsWithChild
                     const url = URL.createObjectURL(blob)
 
                     const element = document.createElement('a')
-                    element.download = `batch_change_export_${batchChangeID}.${selectedDataExportType.toLowerCase()}`
+                    element.download = `batch_change_export.${selectedDataExportType}`
                     element.href = url
                     document.body.append(element)
                     element.click()
@@ -101,14 +107,7 @@ export const ExportChangesetsModal: React.FunctionComponent<React.PropsWithChild
                     afterCreate()
                 },
             }),
-        [
-            getChangesetsByIDs,
-            afterCreate,
-            selectedDataExportType,
-            batchChangeID,
-            constructCSVDataExport,
-            constructJSONDataExport,
-        ]
+        [getChangesetsByIDs, afterCreate, selectedDataExportType, constructCSVDataExport, constructJSONDataExport]
     )
 
     return (

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
@@ -2082,7 +2083,7 @@ func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
 	}
 }
 
-func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.GetChangesetsByIDsArgs) (cs []graphqlbackend.ChangesetResolver, err error) {
+func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.GetChangesetsByIDsArgs) (_ graphqlutil.SliceConnectionResolver[graphqlbackend.ChangesetResolver], err error) {
 	tr, ctx := trace.New(ctx, "Resolver.GetChangesetsByIDs",
 		attribute.String("batchChange", string(args.BatchChange)),
 		attribute.Int("changesets.len", len(args.Changesets)))
@@ -2110,7 +2111,8 @@ func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.
 	// we store a map of repos to avoide duplicate DB queries
 	reposMap := map[api.RepoID]*types.Repo{}
 
-	for _, changeset := range changesets {
+	cs := make([]graphqlbackend.ChangesetResolver, len(changesets))
+	for i, changeset := range changesets {
 		repo, ok := reposMap[changeset.RepoID]
 		if !ok {
 			repo, err = r.store.Repos().Get(ctx, changeset.RepoID)
@@ -2119,10 +2121,11 @@ func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.
 			}
 		}
 
-		cs = append(cs, NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo))
+		cs[i] = NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo)
 	}
 
-	return cs, nil
+	fmt.Println("cs is", len(cs))
+	return graphqlutil.NewSliceConnectionResolver(cs, len(cs), len(cs)), nil
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {

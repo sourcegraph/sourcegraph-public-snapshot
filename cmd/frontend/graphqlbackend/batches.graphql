@@ -1952,9 +1952,9 @@ extend type Query {
     maxUnlicensedChangesets: Int!
 
     """
-    Get all changesets in the given batch change by IDs.
+    Get all changesets in the given batch change by ID.
     """
-    getChangesetsByIDs(batchChange: ID!, changesets: [ID!]!): [Changeset!]!
+    getChangesetsByIDs(batchChange: ID!, changesets: [ID!]!): ChangesetConnection!
 }
 
 """

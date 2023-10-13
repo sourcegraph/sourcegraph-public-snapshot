@@ -304,7 +304,7 @@ type BatchChangesResolver interface {
 
 	MaxUnlicensedChangesets(ctx context.Context) int32
 
-	GetChangesetsByIDs(ctx context.Context, args *GetChangesetsByIDsArgs) ([]ChangesetResolver, error)
+	GetChangesetsByIDs(ctx context.Context, args *GetChangesetsByIDsArgs) (graphqlutil.SliceConnectionResolver[ChangesetResolver], error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
