@@ -431,10 +431,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				},
 			},
 			{
-				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
-			},
-			{
 				name:       `case sensitive`,
 				query:      `case:yes type:repo Diff`,
 				zeroResult: true,
@@ -537,10 +533,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: "index:no patterntype:regexp ^func.*$",
 			},
 			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
-			//{
+			// {
 			//	name:  "fork:only",
 			//	query: "fork:only router",
-			//},
+			// },
 			{
 				name:  "double-quoted pattern, nonzero result",
 				query: `"func main() {\n" patterntype:regexp type:file`,
@@ -723,6 +719,31 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("structural search", func(t *testing.T) {
+		// Enable structural search.
+		siteConfig, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		oldSiteConfig := new(schema.SiteConfiguration)
+		*oldSiteConfig = *siteConfig
+		defer func() {
+			_, lastID, err := client.SiteConfiguration()
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		tests := []struct {
 			name       string
 			query      string
@@ -746,6 +767,18 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `Structural search quotes are interpreted literally`,
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
+			},
+			{
+				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
+			},
+			{
+				name:  `Dedupe union operation`,
+				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
+			},
+			{
+				name:  `Dedupe union operation`,
+				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
 			},
 		}
 		for _, test := range tests {
@@ -928,10 +961,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp type:file`,
 			},
 			{
-				name:  `Structural search uses literal search parser`,
-				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go :[[v]] := ts and printFileHeader(:[_]) patterntype:structural`,
-			},
-			{
 				name:  `Union file matches per file and accurate counts`,
 				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func or package`,
 			},
@@ -955,10 +984,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:       `Intersect file matches per file against an empty result set`,
 				query:      `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and doesnotexist838338`,
 				zeroResult: true,
-			},
-			{
-				name:  `Dedupe union operation`,
-				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
 			},
 		}
 		for _, test := range tests {
@@ -1355,11 +1380,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			// Temporarily disabled as it can be flaky
-			//{
+			// {
 			//	name:   `select file`,
 			//	query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
 			//	counts: counts{File: 1},
-			//},
+			// },
 			{
 				name:   `or statement merges file`,
 				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
