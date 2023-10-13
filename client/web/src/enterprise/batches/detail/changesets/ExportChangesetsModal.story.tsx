@@ -42,7 +42,7 @@ const mocks = new WildcardMockLink([
                                 name: 'github.com/sourcegraph/sourcegraph',
                             },
                         },
-                    ]
+                    ],
                 },
             },
         },
