@@ -283,7 +283,6 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
 	defer tr.EndWithErr(&err)
 
-
 	stat, err := r.gitserverClient.Stat(ctx, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
