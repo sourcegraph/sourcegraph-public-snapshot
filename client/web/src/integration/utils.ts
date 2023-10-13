@@ -1,5 +1,4 @@
 import type { EditorView } from '@codemirror/view'
-import { merge } from 'lodash'
 import type { Page } from 'puppeteer'
 
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
@@ -356,7 +355,7 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
     return api
 }
 
-export type SearchQueryInput = Extract<Editor, 'codemirror6' | 'experimental-search-input'>
+export type SearchQueryInput = Extract<Editor, 'experimental-search-input'>
 interface SearchQueryInputAPI {
     /**
      * The name of the currently used query input implementation. Can be used to dynamically generate
@@ -367,20 +366,13 @@ interface SearchQueryInputAPI {
     applySettings: (settings?: Settings) => Settings
 }
 
-const searchInputNames: SearchQueryInput[] = ['codemirror6', 'experimental-search-input']
+const searchInputNames: SearchQueryInput[] = ['experimental-search-input']
 
 const searchInputConfigs: Record<SearchQueryInput, SearchQueryInputAPI> = {
-    codemirror6: {
-        name: 'codemirror6',
-        waitForInput: (driver: Driver, rootSelector: string) => createEditorAPI(driver, rootSelector),
-        applySettings: (settings = {}) =>
-            merge(settings, { experimentalFeatures: { searchQueryInput: 'v1' } } satisfies Settings),
-    },
     'experimental-search-input': {
         name: 'experimental-search-input',
         waitForInput: (driver: Driver, rootSelector: string) => createEditorAPI(driver, rootSelector),
-        applySettings: (settings = {}) =>
-            merge(settings, { experimentalFeatures: { searchQueryInput: 'experimental' } } satisfies Settings),
+        applySettings: (settings = {}) => settings,
     },
 }
 

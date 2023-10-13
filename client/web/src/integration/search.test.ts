@@ -116,7 +116,6 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
 }
 
 const queryInputSelectors: Record<SearchQueryInput, string> = {
-    codemirror6: '[data-testid="searchbox"] .test-query-input',
     'experimental-search-input': '.test-experimental-search-input',
 }
 

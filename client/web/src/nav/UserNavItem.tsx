@@ -3,11 +3,9 @@ import { useCallback, useMemo, type ChangeEventHandler, type FC } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
@@ -23,12 +21,10 @@ import {
     AnchorLink,
     Select,
     Icon,
-    ProductStatusBadge,
     Text,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
-import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 
 import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
 
@@ -85,16 +81,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     }, [setThemeSetting, themeSetting])
 
     const organizations = authenticatedUser.organizations.nodes
-    const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
-    const [experimentalQueryInputEnabled, setExperimentalQueryInputEnabled] = useExperimentalQueryInput()
-
-    const onExperimentalQueryInputChange = useCallback(
-        (enabled: boolean) => {
-            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
-            setExperimentalQueryInputEnabled(enabled)
-        },
-        [telemetryService, setExperimentalQueryInputEnabled]
-    )
 
     return (
         <>
@@ -188,19 +174,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {!isCodyApp && searchQueryInputFeature === 'experimental' && (
-                                <div className="px-2 py-1">
-                                    <div className="d-flex align-items-center justify-content-between">
-                                        <div className="mr-2">
-                                            New search input <ProductStatusBadge status="beta" className="ml-1" />
-                                        </div>
-                                        <Toggle
-                                            value={experimentalQueryInputEnabled}
-                                            onToggle={onExperimentalQueryInputChange}
-                                        />
-                                    </div>
-                                </div>
-                            )}
 
                             {organizations.length > 0 && (
                                 <>
