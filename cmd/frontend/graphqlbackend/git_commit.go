@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -281,6 +282,16 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
 	defer tr.EndWithErr(&err)
 
+	if path == "" {
+		// This is referring to the root tree, will always exist, and will always be a directory,
+		// so we can skip the gitserver call to resolve the tree object. This is a common operation,
+		// so it's worth optimizing for.
+		return NewGitTreeEntryResolver(r.db, r.gitserverClient, GitTreeEntryResolverOpts{
+			Commit: r,
+			Stat:   &rootTreeFileInfo{},
+		}), nil
+	}
+
 	stat, err := r.gitserverClient.Stat(ctx, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -297,6 +308,17 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	}
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
+
+type rootTreeFileInfo struct{}
+
+var _ os.FileInfo = (*rootTreeFileInfo)(nil)
+
+func (*rootTreeFileInfo) IsDir() bool        { return true }
+func (*rootTreeFileInfo) ModTime() time.Time { return time.Time{} }
+func (*rootTreeFileInfo) Mode() fs.FileMode  { return fs.ModeDir }
+func (*rootTreeFileInfo) Name() string       { return "" }
+func (*rootTreeFileInfo) Size() int64        { return 0 }
+func (*rootTreeFileInfo) Sys() any           { return nil }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
 	return r.gitserverClient.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
