@@ -270,9 +270,6 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
-	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
-	defer tr.EndWithErr(&err)
-
 	if path == "" {
 		// This is referring to the root tree, will always exist, and will always be a directory,
 		// so we can skip the gitserver call to resolve the tree object. This is a common operation,
@@ -282,6 +279,10 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 			Stat:   &rootTreeFileInfo{},
 		}), nil
 	}
+
+	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
+	defer tr.EndWithErr(&err)
+
 
 	stat, err := r.gitserverClient.Stat(ctx, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
