@@ -2224,7 +2224,7 @@ func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 		}
 	}
 
-	fileNames := parseCommitFileNames(parts[9])
+	fileNames := strings.Split(string(bytes.TrimSpace(parts[0])), "\n")
 
 	return &wrappedCommit{
 		Commit: &gitdomain.Commit{
@@ -2235,22 +2235,6 @@ func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 			Parents:   parents,
 		}, files: fileNames,
 	}, nil
-}
-
-// If the commit has filenames, parse those and return as a list.
-func parseCommitFileNames(rawNames []byte) []string {
-	rawNames = bytes.TrimPrefix(rawNames, []byte{'\n'})
-	fileNameParts := bytes.Split(rawNames, []byte{'\n'})
-	fileNames := make([]string, 0, len(fileNameParts))
-	for _, name := range fileNameParts {
-		// Skip any files names that are empty strings.
-		// TODO(camdencheek): check if this is actually necessary. I'm just copying
-		// what the old code appeared to do.
-		if len(name) > 0 {
-			fileNames = append(fileNames, string(name))
-		}
-	}
-	return fileNames
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for
