@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Structural Search is now disabled by default. To enable it, set `experimentalFeatures.structuralSearch: "enabled"` in the site-admin settings.[#57584](https://github.com/sourcegraph/sourcegraph/pull/57584)
 
 ### Fixed
 

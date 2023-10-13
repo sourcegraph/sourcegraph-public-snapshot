@@ -352,7 +352,7 @@ func EventLoggingEnabled() bool {
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
 	if val == "" {
-		return true
+		return false
 	}
 	return val == "enabled"
 }
