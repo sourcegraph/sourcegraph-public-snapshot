@@ -29,7 +29,7 @@ class RepoHeaderContributionStore {
     constructor(
         /** The common ancestor component's setState method. */
         private setState: (callback: (previousState: RepoHeaderContribution[]) => RepoHeaderContribution[]) => void
-    ) {}
+    ) { }
 
     private onRepoHeaderContributionAdd(item: RepoHeaderContribution): void {
         if (!item.children || typeof item.children !== 'function') {
@@ -115,7 +115,7 @@ export interface RepoHeaderContext {
     actionType: 'nav' | 'dropdown'
 }
 
-export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
+export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> { }
 
 interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps {
     /**
@@ -167,6 +167,10 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
     }, [onLifecyclePropsChange, repoHeaderContributionStore.props])
+
+    // useEffect(() => {
+    //     console.log(props.breadcrumbs)
+    // }, [])
 
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({

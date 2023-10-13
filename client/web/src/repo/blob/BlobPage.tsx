@@ -91,26 +91,27 @@ const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookM
 
 interface BlobPageProps
     extends RepoFile,
-        ModeSpec,
-        RepoHeaderContributionsLifecycleProps,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        ExtensionsControllerProps,
-        HoverThresholdProps,
-        BreadcrumbSetters,
-        SearchStreamingProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
-        NotebookProps,
-        OwnConfigProps {
+    ModeSpec,
+    RepoHeaderContributionsLifecycleProps,
+    SettingsCascadeProps,
+    PlatformContextProps,
+    TelemetryProps,
+    ExtensionsControllerProps,
+    HoverThresholdProps,
+    BreadcrumbSetters,
+    SearchStreamingProps,
+    Pick<SearchContextProps, 'searchContextsEnabled'>,
+    Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+    Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
+    NotebookProps,
+    OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     repoID?: Scalars['ID']
     repoUrl?: string
     repoServiceType?: string
+    handleSidebarToggle: (value: boolean) => void
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
@@ -296,7 +297,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
         ? // Fallback to formatted blob whilst we do not have the highlighted blob
-          highlightedBlobInfoOrError || formattedBlobInfoOrError
+        highlightedBlobInfoOrError || formattedBlobInfoOrError
         : highlightedBlobInfoOrError
 
     const onExtendTimeoutClick = useCallback(
@@ -322,9 +323,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
-            !isErrorLike(blobInfoOrError) &&
-            blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-            props.notebooksEnabled
+        !isErrorLike(blobInfoOrError) &&
+        blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
+        props.notebooksEnabled
     )
 
     const onCopyNotebook = useCallback(
@@ -454,6 +455,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     revision={revision}
                     filePath={filePath}
                     enableOwnershipPanel={enableOwnershipPanel}
+                    handleSidebarToggle={props.handleSidebarToggle}
                 />
             )}
         </>

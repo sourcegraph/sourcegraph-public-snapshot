@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiAccount } from '@mdi/js'
+import { mdiAccount, mdiPageLayoutSidebarLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -23,7 +23,8 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     revision?: string
     filePath: string
     enableOwnershipPanel: boolean
-}> = ({ repoID, revision, filePath, enableOwnershipPanel }) => {
+    handleSidebarToggle: (value: boolean) => void
+}> = ({ repoID, revision, filePath, enableOwnershipPanel, handleSidebarToggle }) => {
     const navigate = useNavigate()
 
     const openOwnershipPanel = useCallback(() => {
@@ -86,6 +87,19 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         <div className={styles.wrapper}>
             {history && (
                 <div className={styles.historyPanel}>
+                    <Tooltip content="Hide sidebar" placement="right">
+                        <Button
+                            aria-label="Hide sidebar"
+                            variant="icon"
+                            className={classNames(
+                                'border mr-2',
+                                // styles.toggle
+                            )}
+                            onClick={() => handleSidebarToggle(true)}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiPageLayoutSidebarLeft} />
+                        </Button>
+                    </Tooltip>
                     <GitCommitNode
                         node={history}
                         extraCompact={true}
