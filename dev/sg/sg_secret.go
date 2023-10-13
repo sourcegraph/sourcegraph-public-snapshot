@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
@@ -27,7 +28,7 @@ sg secret list
 # ease of use
 sg secret reset buildkite
 `,
-		Category: CategoryEnv,
+		Category: category.Env,
 		Subcommands: []*cli.Command{
 			{
 				Name:         "reset",

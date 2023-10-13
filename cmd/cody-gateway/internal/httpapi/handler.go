@@ -25,16 +25,18 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier          notify.RateLimitNotifier
-	AnthropicAccessToken       string
-	AnthropicAllowedModels     []string
-	AnthropicMaxTokensToSample int
-	OpenAIAccessToken          string
-	OpenAIOrgID                string
-	OpenAIAllowedModels        []string
-	FireworksAccessToken       string
-	FireworksAllowedModels     []string
-	EmbeddingsAllowedModels    []string
+	RateLimitNotifier               notify.RateLimitNotifier
+	AnthropicAccessToken            string
+	AnthropicAllowedModels          []string
+	AnthropicAllowedPromptPatterns  []string
+	AnthropicRequestBlockingEnabled bool
+	AnthropicMaxTokensToSample      int
+	OpenAIAccessToken               string
+	OpenAIOrgID                     string
+	OpenAIAllowedModels             []string
+	FireworksAccessToken            string
+	FireworksAllowedModels          []string
+	EmbeddingsAllowedModels         []string
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -52,6 +54,7 @@ func NewHandler(
 	rs limiter.RedisStore,
 	httpClient httpcli.Doer,
 	authr *auth.Authenticator,
+	promptRecorder completions.PromptRecorder,
 	config *Config,
 ) (http.Handler, error) {
 	// Initialize metrics
@@ -69,6 +72,23 @@ func NewHandler(
 	v1router := r.PathPrefix("/v1").Subrouter()
 
 	if config.AnthropicAccessToken != "" {
+		anthropicHandler, err := completions.NewAnthropicHandler(
+			logger,
+			eventLogger,
+			rs,
+			config.RateLimitNotifier,
+			httpClient,
+			config.AnthropicAccessToken,
+			config.AnthropicAllowedModels,
+			config.AnthropicMaxTokensToSample,
+			promptRecorder,
+			config.AnthropicAllowedPromptPatterns,
+			config.AnthropicRequestBlockingEnabled,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "init Anthropic handler")
+		}
+
 		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.anthropic",
 				gaugeHandler(
@@ -77,16 +97,7 @@ func NewHandler(
 					authr.Middleware(
 						requestlogger.Middleware(
 							logger,
-							completions.NewAnthropicHandler(
-								logger,
-								eventLogger,
-								rs,
-								config.RateLimitNotifier,
-								httpClient,
-								config.AnthropicAccessToken,
-								config.AnthropicAllowedModels,
-								config.AnthropicMaxTokensToSample,
-							),
+							anthropicHandler,
 						),
 					),
 				),

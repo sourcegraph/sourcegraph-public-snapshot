@@ -524,6 +524,28 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "AWS Bedrock completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "aws-bedrock",
+					Endpoint: "us-west-2",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "anthropic.claude-v2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "anthropic.claude-instant-v1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic.claude-instant-v1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "",
+				Provider:                 "aws-bedrock",
+				Endpoint:                 "us-west-2",
+			},
+		},
+		{
 			name: "zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
@@ -674,6 +696,19 @@ func TestGetCompletionsConfig(t *testing.T) {
 func TestGetEmbeddingsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	defaultQdrantConfig := conftypes.QdrantConfig{
+		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
+			OnDisk: true,
+		},
+		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
+			IndexingThreshold: 0,
+			MemmapThreshold:   100,
+		},
+		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
+			Enabled:  true,
+			Quantile: 0.98,
+		},
+	}
 	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
 		Provider:                   "sourcegraph",
 		AccessToken:                licenseAccessToken,
@@ -689,6 +724,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			MaxFileSizeBytes: 1000000,
 		},
 		ExcludeChunkOnError: true,
+		Qdrant:              defaultQdrantConfig,
 	}
 
 	testCases := []struct {
@@ -795,6 +831,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -829,6 +866,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: false,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -855,6 +893,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -893,6 +932,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -934,6 +974,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -960,6 +1001,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -999,6 +1041,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -1026,6 +1069,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{

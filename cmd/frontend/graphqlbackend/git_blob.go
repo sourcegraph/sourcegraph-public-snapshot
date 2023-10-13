@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
@@ -13,7 +12,7 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 		StartLine int32
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
-	hunks, err := r.gitserverClient.BlameFile(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
+	hunks, err := r.gitserverClient.BlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.OID()),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),

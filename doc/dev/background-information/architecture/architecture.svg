@@ -297,7 +297,7 @@
 <!-- worker -->
 <g id="node8" class="node">
 <title>worker</title>
-<g id="a_node8"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/worker" xlink:title="worker" target="_blank">
+<g id="a_node8"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/worker" xlink:title="worker" target="_blank">
 <polygon fill="#22ffff" stroke="black" points="627,-512 568,-512 568,-476 627,-476 627,-512"/>
 <text text-anchor="middle" x="597.5" y="-491.5" font-family="Source Code Pro, monospace" font-size="10.00">worker</text>
 </a>
@@ -405,21 +405,6 @@
 <path fill="none" stroke="black" stroke-width="0.6" d="M630.24,-636.33C630.24,-636.33 746.43,-636.33 746.43,-636.33"/>
 <polygon fill="#c1eaea" stroke="black" stroke-width="0.6" points="746.43,-641.06 759.93,-636.33 746.43,-631.61 746.43,-641.06"/>
 </g>
-<!-- github_proxy -->
-<g id="node16" class="node">
-<title>github_proxy</title>
-<g id="a_node16"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/github-proxy" xlink:title="github proxy" target="_blank">
-<polygon fill="#aaaaff" stroke="black" points="846,-876 751,-876 751,-840 846,-840 846,-876"/>
-<text text-anchor="middle" x="798.5" y="-855.5" font-family="Source Code Pro, monospace" font-size="10.00">github proxy</text>
-</a>
-</g>
-</g>
-<!-- gitserver&#45;&gt;github_proxy -->
-<g id="edge30" class="edge">
-<title>gitserver&#45;&gt;github_proxy</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M799,-661.33C799,-661.33 799,-826.22 799,-826.22"/>
-<polygon fill="#cd5c5c" stroke="black" stroke-width="0.6" points="794.28,-826.22 799,-839.72 803.73,-826.22 794.28,-826.22"/>
-</g>
 <!-- bitbucket_server -->
 <g id="node28" class="node">
 <title>bitbucket_server</title>
@@ -432,12 +417,6 @@
 <title>gitserver&#45;&gt;bitbucket_server</title>
 <path fill="none" stroke="black" stroke-width="0.6" d="M812,-624.92C812,-619.84 812,-615.67 812,-615.67 812,-615.67 859.18,-615.67 891.18,-615.67"/>
 <polygon fill="#cd5c5c" stroke="black" stroke-width="0.6" points="891.5,-620.39 905,-615.67 891.5,-610.94 891.5,-620.39"/>
-</g>
-<!-- repo_updater&#45;&gt;github_proxy -->
-<g id="edge31" class="edge">
-<title>repo_updater&#45;&gt;github_proxy</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M638,-746.12C638,-778.75 638,-844 638,-844 638,-844 737.28,-844 737.28,-844"/>
-<polygon fill="#05a167" stroke="black" stroke-width="0.6" points="737.28,-848.73 750.78,-844 737.28,-839.28 737.28,-848.73"/>
 </g>
 <!-- repo_updater&#45;&gt;postgres -->
 <g id="edge32" class="edge">
@@ -456,12 +435,6 @@
 <title>github_dot_com</title>
 <ellipse fill="#fff0d0" stroke="black" cx="952.5" cy="-1013" rx="39.5" ry="39.5"/>
 <text text-anchor="middle" x="952.5" y="-1010.5" font-family="Source Code Pro, monospace" font-size="10.00">github.com</text>
-</g>
-<!-- github_proxy&#45;&gt;github_dot_com -->
-<g id="edge4" class="edge">
-<title>github_proxy&#45;&gt;github_dot_com</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M799,-876.08C799,-916.97 799,-1013 799,-1013 799,-1013 899.47,-1013 899.47,-1013"/>
-<polygon fill="#aaaaff" stroke="black" stroke-width="0.6" points="899.47,-1017.73 912.97,-1013 899.47,-1008.28 899.47,-1017.73"/>
 </g>
 <!-- executor -->
 <g id="node23" class="node">

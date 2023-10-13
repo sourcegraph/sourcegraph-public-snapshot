@@ -20,18 +20,26 @@ http_archive(
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.31.2/bazel-lib-v1.31.2.tar.gz",
 )
 
+# rules_js defines an older rules_nodejs, so we override it here
+http_archive(
+    name = "rules_nodejs",
+    sha256 = "5ad078287b5f3069735652e1fc933cb2e2189b15d2c9fc826c889dc466c32a07",
+    strip_prefix = "rules_nodejs-6.0.1",
+    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.1/rules_nodejs-v6.0.1.tar.gz",
+)
+
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "0b69e0967f8eb61de60801d6c8654843076bf7ef7512894a692a47f86e84a5c2",
-    strip_prefix = "rules_js-1.27.1",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.27.1/rules_js-v1.27.1.tar.gz",
+    sha256 = "77c4ea46c27f96e4aadcc580cd608369208422cf774988594ae8a01df6642c82",
+    strip_prefix = "rules_js-1.32.2",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.32.2/rules_js-v1.32.2.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "ace5b609603d9b5b875d56c9c07182357c4ee495030f40dcefb10d443ba8c208",
-    strip_prefix = "rules_ts-1.4.0",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v1.4.0/rules_ts-v1.4.0.tar.gz",
+    sha256 = "8aabb2055629a7becae2e77ae828950d3581d7fc3602fe0276e6e039b65092cb",
+    strip_prefix = "rules_ts-2.0.0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.0.0/rules_ts-v2.0.0.tar.gz",
 )
 
 http_archive(
@@ -48,6 +56,13 @@ http_archive(
         "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
         "https://github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
     ],
+)
+
+http_archive(
+    name = "rules_proto_grpc",
+    sha256 = "9ba7299c5eb6ec45b6b9a0ceb9916d0ab96789ac8218269322f0124c0c0d24e2",
+    strip_prefix = "rules_proto_grpc-4.5.0",
+    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/releases/download/4.5.0/rules_proto_grpc-4.5.0.tar.gz"],
 )
 
 http_archive(
@@ -77,9 +92,9 @@ http_archive(
 # Container rules
 http_archive(
     name = "rules_oci",
-    sha256 = "db57efd706f01eb3ce771468366baa1614b5b25f4cce99757e2b8d942155b8ec",
-    strip_prefix = "rules_oci-1.0.0",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.0.0/rules_oci-v1.0.0.tar.gz",
+    sha256 = "c71c25ed333a4909d2dd77e0b16c39e9912525a98c7fa85144282be8d04ef54c",
+    strip_prefix = "rules_oci-1.3.4",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.3.4/rules_oci-v1.3.4.tar.gz",
 )
 
 http_archive(
@@ -132,7 +147,7 @@ load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
 nodejs_register_toolchains(
     name = "nodejs",
-    node_version = "16.19.0",
+    node_version = "18.17.1",
 )
 
 # rules_js npm setup ============================
@@ -233,6 +248,21 @@ load("@webpack//:npm_repositories.bzl", webpack_npm_repositories = "npm_reposito
 webpack_npm_repositories()
 
 # Go toolchain setup
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+load("@rules_proto_grpc//doc:repositories.bzl", rules_proto_grpc_doc_repos = "doc_repos")
+
+rules_proto_grpc_doc_repos()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
 
 load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
 
@@ -243,12 +273,6 @@ rules_buf_toolchains(version = "v1.11.0")
 load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
 
 gazelle_buf_dependencies()
-
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-
-rules_proto_dependencies()
-
-rules_proto_toolchains()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
@@ -290,7 +314,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.20.5",
+    version = "1.20.10",
 )
 
 linter_dependencies()
@@ -380,7 +404,7 @@ load("//dev:oci_deps.bzl", "oci_deps")
 
 oci_deps()
 
-load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
+load("//cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
 
 embbedings_assets_deps()
 

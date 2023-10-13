@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
@@ -70,7 +70,7 @@ var app = &cli.App{
 							return err
 						}
 						baseURL.Path = "/api/v3"
-						gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+						gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 						if err != nil {
 							logger.Fatal("failed to sign-in to GitHub", log.Error(err))
 						}
@@ -248,7 +248,6 @@ func (m *MockRepoFetcher) Next(_ context.Context) []*store.Repo {
 	// advance the start index
 	m.start += m.iterSize
 	return results
-
 }
 
 type GithubRepoFetcher struct {
@@ -354,5 +353,4 @@ func main() {
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		logger.Fatal("failed to run", log.Error(err))
 	}
-
 }

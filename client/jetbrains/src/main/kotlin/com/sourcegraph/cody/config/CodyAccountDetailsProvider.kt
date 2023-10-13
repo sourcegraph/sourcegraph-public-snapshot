@@ -2,19 +2,17 @@ package com.sourcegraph.cody.config
 
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
-import com.intellij.collaboration.auth.ui.LoadingAccountsDetailsProvider
 import com.intellij.collaboration.util.ProgressIndicatorsProvider
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.util.IconUtil
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
+import com.sourcegraph.cody.auth.ui.LoadingAccountsDetailsProvider
 import java.util.concurrent.CompletableFuture
 
-class CodyAccounDetailsProvider(
+class CodyAccountDetailsProvider(
     progressIndicatorsProvider: ProgressIndicatorsProvider,
     private val accountManager: CodyAccountManager,
     private val accountsModel: CodyAccountListModel
@@ -29,7 +27,7 @@ class CodyAccounDetailsProvider(
             ?: return CompletableFuture.completedFuture(noToken())
     val executor = service<SourcegraphApiRequestExecutor.Factory>().create(token)
     return ProgressManager.getInstance()
-        .submitIOTask(EmptyProgressIndicator()) {
+        .submitIOTask(indicator) {
           if (account.isCodyApp()) {
             val details = CodyAccountDetails(account.name, account.name, null)
             DetailsLoadingResult(details, IconUtil.toBufferedImage(defaultIcon), null, false)
@@ -43,7 +41,7 @@ class CodyAccounDetailsProvider(
             DetailsLoadingResult(accountDetails, image, null, false)
           }
         }
-        .successOnEdt(ModalityState.any()) {
+        .successOnEdt(indicator.modalityState) {
           accountsModel.accountsListModel.contentsChanged(account)
           it
         }

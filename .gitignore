@@ -2,7 +2,7 @@
 .tmp/
 
 # Bazel
-bazel-*
+/bazel-*
 .bazelrc-nix
 
 # Vim
@@ -65,7 +65,7 @@ pnpm-debug.log
 /ui/assets/sourcebox.css
 /ui/assets/test.js
 /ui/assets/test.css
-/ui/assets/webpack.manifest.json
+/ui/assets/web.manifest.json
 /ui/assets/vs
 /ui/assets/*.html
 /ui/assets/*.map
@@ -203,6 +203,15 @@ result
 result-*
 
 # Windows
-/enterprise/cmd/sourcegraph/__debug_bin.exe
+/cmd/sourcegraph/__debug_bin.exe
 
+# For locally building and testing shared packages from the sourcegraph/cody repository on
+# the web client.
 /cody
+
+/playwright
+
+# JUnit execution reports
+junit.xml
+
+/enterprise/

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -33,7 +32,7 @@ func TestSearchFilteringExample(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	user, err := initUser(ctx, t, db)
 	require.NoError(t, err)
@@ -133,7 +132,7 @@ func TestBagNoUser(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	bag := ByTextReference(ctx, db, "userdoesnotexist")
 	for name, r := range map[string]Reference{
@@ -186,7 +185,7 @@ func TestBagUserFoundNoMatches(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	user, err := initUser(ctx, t, db)
 	require.NoError(t, err)
@@ -260,7 +259,7 @@ func TestBagUnverifiedEmailOnlyMatchesWithItself(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	user, err := initUser(ctx, t, db)
 	require.NoError(t, err)
@@ -305,7 +304,7 @@ func TestBagRetrievesTeamsByName(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	team, err := db.Teams().CreateTeam(ctx, &types.Team{Name: "team-name"})
 	require.NoError(t, err)
@@ -319,7 +318,7 @@ func TestBagManyUsers(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	user1, err := db.Users().Create(ctx, database.NewUser{
 		Email:           "john.doe@example.com",
@@ -365,7 +364,13 @@ func initUser(ctx context.Context, t *testing.T, db database.DB) (*types.User, e
 		AccountID:   "5C1M",
 	}
 	scimAccountData := extsvc.AccountData{Data: extsvc.NewUnencryptedData(json.RawMessage("{}"))}
-	require.NoError(t, db.UserExternalAccounts().Insert(ctx, user.ID, scimSpec, scimAccountData))
+	_, err = db.UserExternalAccounts().Insert(ctx,
+		&extsvc.Account{
+			UserID:      user.ID,
+			AccountSpec: scimSpec,
+			AccountData: scimAccountData,
+		})
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		providers.MockProviders = nil
 	})
@@ -388,10 +393,16 @@ func addMockExternalAccount(ctx context.Context, t *testing.T, db database.DB, u
 	accountData := extsvc.AccountData{
 		Data: extsvc.NewUnencryptedData(data),
 	}
-	require.NoError(t, db.UserExternalAccounts().Insert(ctx, userID, spec, accountData))
+	_, err := db.UserExternalAccounts().Insert(ctx,
+		&extsvc.Account{
+			UserID:      userID,
+			AccountSpec: spec,
+			AccountData: accountData,
+		})
+	require.NoError(t, err)
 	mockProvider := providers.MockAuthProvider{
 		MockConfigID:          providers.ConfigID{Type: serviceType},
-		MockPublicAccountData: &extsvc.PublicAccountData{Login: pointers.Ptr(handle)},
+		MockPublicAccountData: &extsvc.PublicAccountData{Login: handle},
 	}
 	// Adding providers to the mock.
 	providers.MockProviders = append(providers.MockProviders, mockProvider)

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 )
 
 func mustTime() time.Time {
@@ -65,7 +65,7 @@ func TestParseTag(t *testing.T) {
 	}
 }
 
-func Test_findLatestTag(t *testing.T) {
+func TestFindLatestTag(t *testing.T) {
 	tests := []struct {
 		name string
 		tags []string
@@ -84,7 +84,7 @@ func Test_findLatestTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := findLatestMainTag(tt.tags); got != tt.want {
+			if got, _ := FindLatestMainTag(tt.tags); got != tt.want {
 				t.Errorf("findLatestTag() = %v, want %v", got, tt.want)
 			}
 		})
@@ -93,34 +93,36 @@ func Test_findLatestTag(t *testing.T) {
 
 func TestParseRawImgString(t *testing.T) {
 	tests := []struct {
-		name string
-		tag  string
-		want *ImageReference
+		name   string
+		rawImg string
+		want   *Repository
 	}{
 		{
 			"base",
 			"index.docker.io/sourcegraph/server:3.36.2@sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
-			&ImageReference{
-				Registry: "docker.io",
-				Name:     "sourcegraph/server",
-				Tag:      "3.36.2",
-				Digest:   "sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
+			&Repository{
+				registry: "docker.io",
+				org:      "sourcegraph",
+				name:     "server",
+				tag:      "3.36.2",
+				digest:   "sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
 			},
 		},
 		{
 			"base",
 			"index.docker.io/sourcegraph/server:3.36.2",
-			&ImageReference{
-				Registry: "docker.io",
-				Name:     "sourcegraph/server",
-				Tag:      "3.36.2",
-				Digest:   "",
+			&Repository{
+				registry: "docker.io",
+				org:      "sourcegraph",
+				name:     "server",
+				tag:      "3.36.2",
+				digest:   "",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := parseImgString(tt.tag); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := ParseRepository(tt.rawImg); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("parseImgString() got = %v, want %v", got, tt.want)
 			}
 		})

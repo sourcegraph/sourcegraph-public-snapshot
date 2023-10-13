@@ -7,16 +7,19 @@ import com.intellij.openapi.components.service
 
 @State(name = "CodyApplicationSettings", storages = [Storage("cody_application_settings.xml")])
 data class CodyApplicationSettings(
-    var isCodyEnabled: Boolean = false,
-    var isCodyAutocompleteEnabled: Boolean = false,
+    var isCodyEnabled: Boolean = true,
+    var isCodyAutocompleteEnabled: Boolean = true,
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
-    var isDefaultDotcomAccountNotificationDismissed: Boolean = false,
+    var isGetStartedNotificationDismissed: Boolean = false,
+    var isNotLoggedInNotificationDismissed: Boolean = false,
     var anonymousUserId: String? = null,
     var isInstallEventLogged: Boolean = false,
-    var lastUpdateNotificationPluginVersion: String? = null,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Int? = null,
+    var blacklistedLanguageIds: List<String> = listOf(),
+    var isOnboardingGuidanceDismissed: Boolean = false,
+    var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 
@@ -25,19 +28,21 @@ data class CodyApplicationSettings(
     this.isCodyAutocompleteEnabled = state.isCodyAutocompleteEnabled
     this.isCodyDebugEnabled = state.isCodyDebugEnabled
     this.isCodyVerboseDebugEnabled = state.isCodyVerboseDebugEnabled
-    this.isDefaultDotcomAccountNotificationDismissed =
-        state.isDefaultDotcomAccountNotificationDismissed
+    this.isGetStartedNotificationDismissed = state.isGetStartedNotificationDismissed
+    this.isNotLoggedInNotificationDismissed = state.isNotLoggedInNotificationDismissed
     this.anonymousUserId = state.anonymousUserId
     this.isInstallEventLogged = state.isInstallEventLogged
-    this.lastUpdateNotificationPluginVersion = state.lastUpdateNotificationPluginVersion
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled
     this.customAutocompleteColor = state.customAutocompleteColor
+    this.blacklistedLanguageIds = state.blacklistedLanguageIds
+    this.isOnboardingGuidanceDismissed = state.isOnboardingGuidanceDismissed
+    this.shouldAcceptNonTrustedCertificatesAutomatically =
+        state.shouldAcceptNonTrustedCertificatesAutomatically
   }
 
   companion object {
     @JvmStatic
-    fun getInstance(): CodyApplicationSettings {
-      return service<CodyApplicationSettings>()
-    }
+    val instance: CodyApplicationSettings
+      get() = service<CodyApplicationSettings>()
   }
 }

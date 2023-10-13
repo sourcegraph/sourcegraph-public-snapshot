@@ -30,11 +30,7 @@ import type { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 import { type OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
-function queryOrganization(args: {
-    name: string
-    // id: string
-    // flagName: string organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
-}): Observable<OrgAreaOrganizationFields> {
+function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
         gql`
             query Organization($name: String!) {
@@ -103,7 +99,7 @@ export interface OrgAreaProps
      */
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 
     location: H.Location
     navigate: NavigateFunction
@@ -138,7 +134,7 @@ export interface OrgAreaRouteContext
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
@@ -239,7 +235,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
-            isSourcegraphApp: this.props.isSourcegraphApp,
+            isCodyApp: this.props.isCodyApp,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,

@@ -21,10 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -36,8 +39,10 @@ func TestStatusMessages(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := NewStore(logtest.Scoped(t), db)
+
+	mockGitserverClient := gitserver.NewMockClient()
 
 	extSvc := &types.ExternalService{
 		ID:          1,
@@ -223,6 +228,56 @@ func TestStatusMessages(t *testing.T) {
 				},
 			},
 		},
+		{
+			testSetup: func() {
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						GitserverDiskUsageWarningThreshold: pointers.Ptr(10),
+					},
+				})
+
+				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]protocol.SystemInfo{
+					{
+						Address:     "gitserver-0",
+						PercentUsed: 75.10345,
+					},
+				}, nil)
+
+			},
+			name:        "site-admin: gitserver disk threshold reached (configured threshold)",
+			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
+			indexed:     []string{"foobar"},
+			repos:       []*types.Repo{{Name: "foobar"}},
+			res: []StatusMessage{
+				{
+					GitserverDiskThresholdReached: &GitserverDiskThresholdReached{
+						Message: "The disk usage on gitserver \"gitserver-0\" is over 10% (75.10% used).",
+					},
+				},
+			},
+		},
+		{
+			testSetup: func() {
+				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]protocol.SystemInfo{
+					{
+						Address:     "gitserver-0",
+						PercentUsed: 95.10345,
+					},
+				}, nil)
+
+			},
+			name:        "site-admin: gitserver disk threshold reached (default threshold)",
+			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
+			indexed:     []string{"foobar"},
+			repos:       []*types.Repo{{Name: "foobar"}},
+			res: []StatusMessage{
+				{
+					GitserverDiskThresholdReached: &GitserverDiskThresholdReached{
+						Message: "The disk usage on gitserver \"gitserver-0\" is over 90% (95.10% used).",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -353,7 +408,7 @@ func TestStatusMessages(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			res, err := FetchStatusMessages(ctx, mockDB)
+			res, err := FetchStatusMessages(ctx, mockDB, mockGitserverClient)
 			assert.Equal(t, tc.err, fmt.Sprint(err))
 			assert.Equal(t, tc.res, res)
 		})

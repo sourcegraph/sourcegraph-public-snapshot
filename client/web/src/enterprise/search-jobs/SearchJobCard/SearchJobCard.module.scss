@@ -1,0 +1,27 @@
+.card {
+    display: grid;
+    row-gap: 0.5rem;
+    column-gap: 1rem;
+    grid-template-rows: auto;
+    grid-template-columns: [label] min-content [value] auto;
+}
+
+.row {
+    display: contents;
+}
+
+.label {
+    white-space: nowrap;
+    font-weight: bold;
+}
+
+.creator {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.avatar {
+    width: 1.5rem;
+    height: 1.5rem;
+}

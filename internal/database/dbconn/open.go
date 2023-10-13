@@ -72,7 +72,7 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	startupDeadline := time.Now().Add(startupTimeout)
 	for {
 		if time.Now().After(startupDeadline) {
-			return nil, errors.Errorf("database did not start up within %s (%v)", startupTimeout, err)
+			return nil, errors.Wrapf(err, "database did not start up within %s", startupTimeout)
 		}
 		db, err = open(cfg)
 		if err == nil {

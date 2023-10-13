@@ -23,7 +23,7 @@ func TestRecordEncrypter(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	key := &base64Key{}
 	encrypter := NewRecordEncrypter(db)
 
@@ -34,14 +34,20 @@ func TestRecordEncrypter(t *testing.T) {
 	var writtenValues []string
 	var encodedValues []string
 	for i := 0; i < 20; i++ {
-		data := fmt.Sprintf("data-%d", i)
+		var data *string
+		if i%6 == 0 {
+			data = nil
+		} else {
+			payload := fmt.Sprintf("data-%02d", i)
+			data = &payload
+		}
 
 		if err := encrypter.Exec(ctx, sqlf.Sprintf("INSERT INTO test_encryptable VALUES (%s, '', %s)", i+1, data)); err != nil {
 			t.Fatalf("failed to insert test data: %s", err)
 		}
 
-		writtenValues = append(writtenValues, data)
-		encodedValues = append(encodedValues, base64.StdEncoding.EncodeToString([]byte(data)))
+		writtenValues = append(writtenValues, unwrap(data))
+		encodedValues = append(encodedValues, base64.StdEncoding.EncodeToString([]byte(unwrap(data))))
 	}
 	sort.Strings(writtenValues)
 	sort.Strings(encodedValues)
@@ -51,7 +57,8 @@ func TestRecordEncrypter(t *testing.T) {
 		IDFieldName:         "id",
 		KeyIDFieldName:      "encryption_key_id",
 		EncryptedFieldNames: []string{"data"},
-		Scan:                basestore.NewMapScanner(scanEncryptedString),
+		Scan:                basestore.NewMapScanner(scanNullableEncryptedString),
+		TreatEmptyAsNull:    true,
 		Key:                 func() encryption.Key { return key },
 		Limit:               5,
 	}
@@ -79,7 +86,7 @@ func TestRecordEncrypter(t *testing.T) {
 	}
 
 	// Expect data to be encoded
-	data, err := basestore.ScanStrings(encrypter.Query(ctx, sqlf.Sprintf("SELECT data FROM test_encryptable ORDER BY data")))
+	data, err := basestore.ScanNullStrings(encrypter.Query(ctx, sqlf.Sprintf("SELECT data FROM test_encryptable ORDER BY data NULLS FIRST")))
 	if err != nil {
 		t.Fatalf("failed to query data: %s", err)
 	}
@@ -119,7 +126,7 @@ func TestRecordEncrypter(t *testing.T) {
 	}
 
 	// Expect data to be decoded
-	data, err = basestore.ScanStrings(encrypter.Query(ctx, sqlf.Sprintf("SELECT data FROM test_encryptable ORDER BY data")))
+	data, err = basestore.ScanNullStrings(encrypter.Query(ctx, sqlf.Sprintf("SELECT data FROM test_encryptable ORDER BY data NULLS FIRST")))
 	if err != nil {
 		t.Fatalf("failed to query data: %s", err)
 	}
@@ -159,4 +166,12 @@ func (k *base64Key) Decrypt(ctx context.Context, cipherText []byte) (*encryption
 
 	secret := encryption.NewSecret(string(text))
 	return &secret, nil
+}
+
+func unwrap(v *string) string {
+	if v == nil {
+		return ""
+	}
+
+	return *v
 }

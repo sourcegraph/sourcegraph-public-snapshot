@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 
@@ -28,6 +28,11 @@ func newCacheItem[T any](value T) *cacheItem[T] {
 		Value:     value,
 		Timestamp: time.Now(),
 	}
+}
+
+type NotificationClient interface {
+	Send(info *BuildNotification) error
+	GetNotification(buildNumber int) *SlackNotification
 }
 
 type Client struct {
@@ -243,7 +248,6 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 		return nil, err
 	}
 	return result, nil
-
 }
 
 func (c *Client) createMessageBlocks(info *BuildNotification, author string) []slack.Block {

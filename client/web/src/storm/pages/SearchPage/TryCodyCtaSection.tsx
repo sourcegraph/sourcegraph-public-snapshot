@@ -171,7 +171,7 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
             ) : (
                 <>
                     <div className="d-flex flex-column justify-content-center p-4">
-                        <H3>Try Cody AI in the web application</H3>
+                        <H3>Try Cody in the web application</H3>
                         <Text>
                             Cody for Sourcegraph explains, generates, and translates code, right in the web interface.
                         </Text>

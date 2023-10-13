@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "scheduler",
+    srcs = [
+        "metrics.go",
+        "schedule.go",
+        "scheduler.go",
+        "updatequeue.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repos/scheduler",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/limiter",
+        "//internal/ratelimit",
+        "//internal/repoupdater/protocol",
+        "//internal/types",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "scheduler_test",
+    srcs = ["scheduler_test.go"],
+    embed = [":scheduler"],
+    deps = [
+        "//internal/api",
+        "//internal/conf",
+        "//internal/database/dbmocks",
+        "//internal/gitserver",
+        "//internal/gitserver/protocol",
+        "//internal/limiter",
+        "//internal/types",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_davecgh_go_spew//spew",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

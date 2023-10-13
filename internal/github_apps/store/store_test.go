@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/mock"
@@ -21,7 +21,7 @@ import (
 
 func newTestStore(t *testing.T) *gitHubAppsStore {
 	logger := logtest.Scoped(t)
-	return &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	return &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 
 }
 
@@ -73,7 +73,7 @@ func TestDeleteGitHubApp(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 	ctx := context.Background()
 
 	app := &ghtypes.GitHubApp{
@@ -107,7 +107,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 	ctx := context.Background()
 
 	app := &ghtypes.GitHubApp{
@@ -165,7 +165,7 @@ func TestGetByID(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 	ctx := context.Background()
 
 	app1 := &ghtypes.GitHubApp{
@@ -227,7 +227,7 @@ func TestGetByAppID(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 	ctx := context.Background()
 
 	app1 := &ghtypes.GitHubApp{
@@ -288,7 +288,7 @@ func TestGetBySlug(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 	ctx := context.Background()
 
 	app1 := &ghtypes.GitHubApp{
@@ -350,7 +350,7 @@ func TestGetByDomain(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 	ctx := context.Background()
 
 	repoApp := &ghtypes.GitHubApp{
@@ -807,7 +807,7 @@ func TestTrailingSlashesInBaseURL(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
 	ctx := context.Background()
 
 	app := &ghtypes.GitHubApp{

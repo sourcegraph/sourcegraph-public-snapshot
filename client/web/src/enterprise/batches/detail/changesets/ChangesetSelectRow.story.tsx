@@ -24,18 +24,20 @@ const config: Meta = {
         visibleChangesets: {
             name: 'Visible changesets',
             control: { type: 'range', min: 0, max: MAX_CHANGESETS },
-            defaultValue: 10,
         },
         selectableChangesets: {
             name: 'Selectable changesets',
             control: { type: 'range', min: 0, max: MAX_CHANGESETS },
-            defaultValue: 100,
         },
         selectedChangesets: {
             name: 'Selected changesets',
             control: { type: 'range', min: 0, max: MAX_CHANGESETS },
-            defaultValue: 0,
         },
+    },
+    args: {
+        visibleChangesets: 10,
+        selectableChangesets: 100,
+        selectedChangesets: 0,
     },
 }
 

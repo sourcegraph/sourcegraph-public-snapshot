@@ -14,8 +14,10 @@ const config: Meta = {
         libraryItemName: {
             name: 'Name',
             control: { type: 'text' },
-            defaultValue: 'my-batch-change',
         },
+    },
+    args: {
+        libraryItemName: 'my-batch-change',
     },
 }
 

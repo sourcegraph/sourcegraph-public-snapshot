@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.ui.jcef.JBCefBrowser;
+import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -16,15 +16,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class JavaToJSBridge {
-  private final JBCefBrowser browser;
+  private final JBCefBrowserBase browser;
   private final JBCefJSQuery query;
   private final Lock lock;
   private Function<String, JBCefJSQuery.Response> handler = null;
 
-  public JavaToJSBridge(JBCefBrowser browser) {
+  public JavaToJSBridge(JBCefBrowserBase browser) {
     this.browser = browser;
-    // Using a deprecated method because JBCefBrowserBase is not present in older JetBrains versions
-    //noinspection removal - Using this old method intentionally for backwards compatibility
     this.query = JBCefJSQuery.create(browser);
     this.lock = new ReentrantLock();
   }

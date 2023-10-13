@@ -14,7 +14,7 @@ import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import java.awt.Component
 import javax.swing.JComponent
 
-internal abstract class BaseLoginDialog(
+abstract class BaseLoginDialog(
     project: Project?,
     parent: Component?,
     executorFactory: SourcegraphApiRequestExecutor.Factory,
@@ -23,22 +23,28 @@ internal abstract class BaseLoginDialog(
 
   protected val loginPanel = CodyLoginPanel(executorFactory, isAccountUnique)
 
-  private var _login = ""
-  private var _token = ""
+  var login: String = ""
+    private set
 
-  val login: String
-    get() = _login
-  val token: String
-    get() = _token
+  var displayName: String? = null
+    private set
+
+  var token: String = ""
+    private set
 
   val server: SourcegraphServerPath
     get() = loginPanel.getServer()
 
   fun setToken(token: String?) = loginPanel.setToken(token)
+
   fun setLogin(login: String?) = loginPanel.setLogin(login, false)
-  fun setServer(path: String, editable: Boolean) = loginPanel.setServer(path, editable)
+
+  fun setServer(path: String) = loginPanel.setServer(path)
+
   fun setCustomRequestHeaders(customRequestHeaders: String) =
       loginPanel.setCustomRequestHeaders(customRequestHeaders)
+
+  fun setLoginButtonText(text: String) = setOKButtonText(text)
 
   fun setError(exception: Throwable) {
     loginPanel.setError(exception)
@@ -57,11 +63,12 @@ internal abstract class BaseLoginDialog(
 
     startGettingToken()
     loginPanel
-        .acquireLoginAndToken(emptyProgressIndicator)
+        .acquireDetailsAndToken(emptyProgressIndicator)
         .completionOnEdt(modalityState) { finishGettingToken() }
-        .successOnEdt(modalityState) { (login, token) ->
-          _login = login
-          _token = token
+        .successOnEdt(modalityState) { (details, newToken) ->
+          login = details.username
+          displayName = details.displayName
+          token = newToken
 
           close(OK_EXIT_CODE, true)
         }
@@ -71,5 +78,6 @@ internal abstract class BaseLoginDialog(
   }
 
   protected open fun startGettingToken() = Unit
+
   protected open fun finishGettingToken() = Unit
 }

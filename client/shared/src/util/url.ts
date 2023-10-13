@@ -560,7 +560,7 @@ export function buildSearchURLQuery(
 }
 
 /**
- * Takes an input URL and adds Sourcegraph App specific query parameters to it. This includes the UTM parameters and app_os.
+ * Takes an input URL and adds Cody App specific query parameters to it. This includes the UTM parameters and app_os.
  * @param url Original URL
  * @param campaign Optional utm_campaign value to add to the query params.
  * @returns URL string with appended query parameters

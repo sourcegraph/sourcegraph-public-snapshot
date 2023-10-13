@@ -1,0 +1,27 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "events",
+    srcs = ["events.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events",
+    visibility = ["//cmd/telemetry-gateway:__subpackages__"],
+    deps = [
+        "//internal/pubsub",
+        "//internal/telemetrygateway/v1:telemetrygateway",
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
+        "@org_golang_google_protobuf//encoding/protojson",
+    ],
+)
+
+go_test(
+    name = "events_test",
+    srcs = ["events_test.go"],
+    deps = [
+        ":events",
+        "//internal/pubsub/pubsubtest",
+        "//internal/telemetrygateway/v1:telemetrygateway",
+        "@com_github_stretchr_testify//require",
+    ],
+)

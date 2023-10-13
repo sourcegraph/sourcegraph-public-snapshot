@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -109,7 +111,7 @@ func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 			Password: config.AppPassword,
 		},
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.DefaultRegistry.Get(urn),
+		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketCloudClient", ""), urn)),
 	}, nil
 }
 
@@ -239,7 +241,9 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (code in
 	var resp *http.Response
 	sleepTime := 10 * time.Second
 	for {
-		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
+		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
+			return c.httpClient.Do(r)
+		})
 		if resp != nil {
 			code = resp.StatusCode
 		}

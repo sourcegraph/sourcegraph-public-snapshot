@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/log"
 	"time"
 
 	"github.com/lib/pq"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -684,7 +683,7 @@ GROUP BY argument;
 `
 
 // getDataExportClickCountSql depends on the InsightsDataExportRequest ping,
-// which is defined in enterprise/cmd/frontend/internal/insights/httpapi/export.go
+// which is defined in cmd/frontend/internal/insights/httpapi/export.go
 const getDataExportClickCountSql = `
 SELECT COUNT(*) FROM event_logs
 WHERE name = 'InsightsDataExportRequest' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP);

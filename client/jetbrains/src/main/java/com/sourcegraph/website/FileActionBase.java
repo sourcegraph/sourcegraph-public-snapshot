@@ -138,7 +138,7 @@ public abstract class FileActionBase extends DumbAwareAction {
     }
     e.getPresentation()
         .setEnabled(
-            CodyAuthenticationManager.getInstance().getDefaultAccountType(project)
+            CodyAuthenticationManager.getInstance().getActiveAccountType(project)
                 != AccountType.LOCAL_APP);
   }
 }

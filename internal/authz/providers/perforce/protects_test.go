@@ -5,13 +5,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,6 +19,8 @@ import (
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -229,11 +231,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/",
 		"//depot/training/",
@@ -244,7 +242,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -314,18 +312,14 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -375,6 +369,17 @@ func TestFullScanMatchRules(t *testing.T) {
 write       group       Dev2    *    //depot/dev/...
 read        group       Dev1    *    //depot/dev/productA/...
 write       group       Dev1    *    //depot/elm_proj/...
+`,
+			canReadAll: []string{"dev/productA/readme.txt"},
+		},
+		{
+			name:  "Rules that include a host are ignored",
+			depot: "//depot/",
+			protects: `
+write       group       Dev2    *    //depot/dev/...
+read        group       Dev1    *    //depot/dev/productA/...
+write       group       Dev1    *    //depot/elm_proj/...
+read		group		Dev1    192.168.10.1/24    -//depot/dev/productA/...
 `,
 			canReadAll: []string{"dev/productA/readme.txt"},
 		},
@@ -603,17 +608,15 @@ read    group   Dev1    *   //depot/main/.../*.go
 					t.Fatal(err)
 				}
 			})
-			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-				return rc, nil, nil
-			})
-			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+
+			p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 			p.depots = []extsvc.RepoID{
 				extsvc.RepoID(tc.depot),
 			}
 			perms := &authz.ExternalUserPermissions{
 				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 			}
-			if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+			if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), true); err != nil {
 				t.Fatal(err)
 			}
 			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(tc.depot)]
@@ -625,10 +628,8 @@ read    group   Dev1    *   //depot/main/.../*.go
 			} else if ok && tc.noRules {
 				t.Fatal("expected no rules")
 			}
-			checker, err := srp.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
-			if err != nil {
-				t.Fatal(err)
-			}
+			checker := srp.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
+
 			if len(tc.canReadAll) > 0 {
 				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(tc.depot), tc.canReadAll)
 				if err != nil {
@@ -669,18 +670,14 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/654/deploy/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -818,12 +815,9 @@ func TestScanAllUsers(t *testing.T) {
 	}
 
 	rc := io.NopCloser(bytes.NewReader(data))
-
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	gc := gitserver.NewStrictMockClient()
+	gc.PerforceGroupMembersFunc.SetDefaultReturn(nil, nil)
+	p := NewProvider(logger, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.cachedGroupMembers = map[string][]string{
 		"dev": {"user1", "user2"},
 	}
@@ -833,7 +827,7 @@ func TestScanAllUsers(t *testing.T) {
 	}
 
 	users := make(map[string]struct{})
-	if err := scanProtects(logger, rc, allUsersScanner(ctx, p, users)); err != nil {
+	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), allUsersScanner(ctx, p, users), false); err != nil {
 		t.Fatal(err)
 	}
 	want := map[string]struct{}{
@@ -843,4 +837,10 @@ func TestScanAllUsers(t *testing.T) {
 	if diff := cmp.Diff(want, users); diff != "" {
 		t.Fatal(diff)
 	}
+}
+
+func testParseP4ProtectsRaw(t *testing.T, rc io.Reader) []*p4types.Protect {
+	protects, err := parseP4ProtectsRaw(rc)
+	require.NoError(t, err)
+	return protects
 }

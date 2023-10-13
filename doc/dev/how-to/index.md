@@ -56,6 +56,7 @@
 ## Executors
 
 - [How to deploy a new executor image](deploy_executor_image.md)
+- [How to debug Firecracker executors](debug_executor.md)
 
 ## Access Control
 
@@ -69,6 +70,10 @@
 ## Cody Gateway
 
 - [How to set up Cody Gateway locally](cody_gateway.md)
+
+## Telemetry Gateway
+
+- [How to set up Telemetry Gateway locally](telemetry_gateway.md)
 
 ## Windows support
 

@@ -174,6 +174,13 @@ func EmbedRepo(
 
 	stats.TextIndexStats = textIndexStats
 
+	excluded := stats.CodeIndexStats.ChunksExcluded + stats.TextIndexStats.ChunksExcluded
+	embedded := stats.CodeIndexStats.ChunksEmbedded + stats.TextIndexStats.ChunksEmbedded
+	failureRatio := float64(excluded) / float64(excluded+embedded)
+	if failureRatio > opts.TolerableFailureRatio {
+		return nil, nil, nil, errors.Newf("embeddings failed at a rate (%0.2f) higher than acceptable (%0.2f)", failureRatio, opts.TolerableFailureRatio)
+	}
+
 	embeddingsModel := client.GetModelIdentifier()
 	index := &embeddings.RepoEmbeddingIndex{
 		RepoName:        opts.RepoName,
@@ -187,14 +194,15 @@ func EmbedRepo(
 }
 
 type EmbedRepoOpts struct {
-	RepoName          api.RepoName
-	Revision          api.CommitID
-	FileFilters       FileFilters
-	SplitOptions      codeintelContext.SplitOptions
-	MaxCodeEmbeddings int
-	MaxTextEmbeddings int
-	BatchSize         int
-	ExcludeChunks     bool
+	RepoName              api.RepoName
+	Revision              api.CommitID
+	FileFilters           FileFilters
+	SplitOptions          codeintelContext.SplitOptions
+	MaxCodeEmbeddings     int
+	MaxTextEmbeddings     int
+	BatchSize             int
+	ExcludeChunks         bool
+	TolerableFailureRatio float64
 
 	// If set, we already have an index for a previous commit.
 	IndexedRevision api.CommitID
@@ -251,8 +259,23 @@ func embedFiles(
 		}
 
 		batchEmbeddings, err := embeddingsClient.GetDocumentEmbeddings(ctx, batchChunks)
-		if err != nil {
+		if err != nil && !excludeChunksOnError {
 			return nil, errors.Wrap(err, "error while getting embeddings")
+		} else if err != nil {
+			// To avoid failing large jobs on a flaky API, just mark all files
+			// as failed and continue. This means we may have some missing
+			// files, but they will be logged as such below and some embeddings
+			// are better than no embeddings.
+			logger.Warn("error while getting embeddings", log.Error(err))
+			failed := make([]int, len(batchChunks))
+			for i := 0; i < len(batchChunks); i++ {
+				failed[i] = i
+			}
+			batchEmbeddings = &client.EmbeddingsResults{
+				Embeddings: make([]float32, len(batchChunks)*dimensions),
+				Failed:     failed,
+				Dimensions: dimensions,
+			}
 		}
 
 		if expected := len(batchChunks) * dimensions; len(batchEmbeddings.Embeddings) != expected {

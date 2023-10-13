@@ -73,7 +73,7 @@ const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): F
 }
 
 export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService }) => {
-    const isSourcegraphApp = window.context?.sourcegraphAppMode
+    const isCodyApp = window.context?.codyAppMode
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
@@ -231,12 +231,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embeddings jobs">
                         {connection?.nodes?.map(node => (
-                            <RepoEmbeddingJobNode
-                                key={node.id}
-                                {...node}
-                                onCancel={onCancel}
-                                isSourcegraphApp={isSourcegraphApp}
-                            />
+                            <RepoEmbeddingJobNode key={node.id} {...node} onCancel={onCancel} isCodyApp={isCodyApp} />
                         ))}
                     </ConnectionList>
                     {connection && (

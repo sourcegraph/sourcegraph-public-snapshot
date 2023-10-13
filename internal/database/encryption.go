@@ -151,7 +151,9 @@ func updatePairs(c EncryptionConfig, ev Encrypted) *sqlf.Query {
 
 	updates := make([]*sqlf.Query, 0, len(m))
 	for _, k := range keys {
-		if c.UpdateAsBytes {
+		if m[k] == "" && k != c.KeyIDFieldName && c.TreatEmptyAsNull {
+			updates = append(updates, updatePair(k, nil))
+		} else if c.UpdateAsBytes {
 			updates = append(updates, updatePair(k, []byte(m[k])))
 		} else {
 			updates = append(updates, updatePair(k, m[k]))

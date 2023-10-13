@@ -15,15 +15,17 @@ const config: Meta = {
         numberActive: {
             name: 'number of specs executing',
             control: { type: 'number' },
-            defaultValue: 1,
             min: 0,
         },
         numberComplete: {
             name: 'number of specs completed',
             control: { type: 'number' },
-            defaultValue: 1,
             min: 0,
         },
+    },
+    args: {
+        numberActive: 1,
+        numberComplete: 1,
     },
 }
 

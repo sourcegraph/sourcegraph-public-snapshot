@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "spec",
+    srcs = [
+        "build.go",
+        "environment.go",
+        "service.go",
+        "spec.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@io_k8s_sigs_yaml//:yaml",
+    ],
+)

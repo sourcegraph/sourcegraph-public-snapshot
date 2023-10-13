@@ -479,8 +479,8 @@ func TestLoggingMiddleware(t *testing.T) {
 
 		// Check log entries for logged fields about retries
 		logEntries := exportLogs()
-		require.Len(t, logEntries, 2) // should have a scope debug log, and the entry we want
-		entry := logEntries[1]
+		require.Len(t, logEntries, 1)
+		entry := logEntries[0]
 		assert.Contains(t, entry.Scope, "httpcli")
 		assert.NotEmpty(t, entry.Fields["error"])
 	})

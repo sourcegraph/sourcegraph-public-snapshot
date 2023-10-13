@@ -131,6 +131,7 @@ const barData: FetchOwnersAndHistoryResult = {
             },
             __typename: 'GitCommit',
         },
+        changelist: null,
         __typename: 'Repository',
     },
 }

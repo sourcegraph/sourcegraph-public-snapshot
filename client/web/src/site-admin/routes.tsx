@@ -98,6 +98,7 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     'SiteAdminWebhookUpdatePage'
 )
 const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
+const GitserversPageProps = lazyComponent(() => import('./SiteAdminGitserversPage'), 'SiteAdminGitserversPage')
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -253,11 +254,15 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/permissions-syncs',
         render: props => <PermissionsSyncJobsTable {...props} />,
     },
+    {
+        path: '/gitservers',
+        render: props => <GitserversPageProps {...props} />,
+    },
 ]
 
 const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
     path: '/users',
-    render: () => <UsersManagement isEnterprise={false} renderAssignmentModal={() => null} />,
+    render: () => <UsersManagement renderAssignmentModal={() => null} />,
 }
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [

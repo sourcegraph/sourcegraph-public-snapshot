@@ -33,6 +33,8 @@ interface UseShowMorePaginationConfig<TResult> {
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
+    /** Allows specifying the Apollo error policy */
+    errorPolicy?: 'all' | 'none' | 'ignore'
     /**
      * Set to enable polling of all the nodes currently loaded in the connection.
      *
@@ -43,6 +45,7 @@ interface UseShowMorePaginationConfig<TResult> {
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void
+    onError?: (error: ApolloError) => void
 
     // useAlternateAfterCursor is used to indicate that a custom field instead of the
     // standard "after" field is used to for pagination. This is typically a
@@ -137,6 +140,8 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
         skip: options?.skip,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
+        onError: options?.onError,
+        errorPolicy: options?.errorPolicy,
     })
 
     /**
@@ -210,7 +215,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
     }, [connection?.nodes.length, refetch, variables])
 
     // Refetch the first page. Use this function if the number of nodes in the
-    // connection might have changed have changed since the last refetch.
+    // connection might have changed since the last refetch.
     const refetchFirst = useCallback(async (): Promise<void> => {
         await refetch({
             ...variables,

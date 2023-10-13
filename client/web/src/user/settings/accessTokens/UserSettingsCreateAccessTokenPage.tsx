@@ -52,7 +52,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     }, [telemetryService])
 
     /** The contents of the note input field. */
-    const [note, setNote] = useState<string>('')
+    const defaultNoteValue = new URLSearchParams(location.search).get('description') || undefined
+    const [note, setNote] = useState<string>(defaultNoteValue ?? '')
     /** The selected scopes checkboxes. */
     const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
 
@@ -106,6 +107,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         required={true}
                         autoFocus={true}
                         placeholder="What's this token for?"
+                        defaultValue={defaultNoteValue}
                         className="form-group"
                         label="Token description"
                     />

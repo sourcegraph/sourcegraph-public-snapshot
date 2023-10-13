@@ -24,7 +24,7 @@ func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bs := basestore.NewWithHandle(db.Handle())
 

@@ -122,7 +122,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             const args = { platform, version }
             this.log('BrowserExtensionConnectedToServer', args, args)
 
-            if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+            if (debugEventLoggingEnabled()) {
                 logger.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
         })
@@ -201,7 +201,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
-        if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+        if (debugEventLoggingEnabled()) {
             logger.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
@@ -364,7 +364,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     public getClient(): string {
-        if (window.context?.sourcegraphAppMode) {
+        if (window.context?.codyAppMode) {
             return EventClient.APP_WEB
         }
         if (window.context?.sourcegraphDotComMode) {
@@ -459,6 +459,16 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
 export const eventLogger = new EventLogger()
 
+export function debugEventLoggingEnabled(): boolean {
+    return !!localStorage && localStorage.getItem('eventLogDebug') === 'true'
+}
+
+export function setDebugEventLoggingEnabled(enabled: boolean): void {
+    if (localStorage) {
+        localStorage.setItem('eventLogDebug', String(enabled))
+    }
+}
+
 /**
  * Log events associated with URL query string parameters, and remove those parameters as necessary
  * Note that this is a destructive operation (it changes the page URL and replaces browser state) by
@@ -466,12 +476,15 @@ export const eventLogger = new EventLogger()
  */
 function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
-    const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
-    if (isBadgeRedirect) {
-        eventLogger.log('RepoBadgeRedirected')
+    if (parsedUrl.searchParams.has('signup')) {
+        eventLogger.log('web:auth:signUpCompleted')
     }
 
-    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
+    if (parsedUrl.searchParams.has('signin')) {
+        eventLogger.log('web:auth:signInCompleted')
+    }
+
+    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
 }
 
 /**

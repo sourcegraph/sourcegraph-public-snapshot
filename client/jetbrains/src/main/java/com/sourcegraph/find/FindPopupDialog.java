@@ -11,8 +11,8 @@ import com.intellij.openapi.ui.DialogWrapperPeer;
 import com.intellij.openapi.ui.DialogWrapperPeerFactory;
 import com.intellij.openapi.util.DimensionService;
 import com.intellij.openapi.util.WindowStateService;
+import com.intellij.openapi.wm.IdeFrame;
 import com.intellij.openapi.wm.WindowManager;
-import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.intellij.openapi.wm.impl.IdeGlassPaneImpl;
 import com.intellij.ui.PopupBorder;
 import com.intellij.ui.WindowMoveListener;
@@ -108,8 +108,7 @@ public class FindPopupDialog extends DialogWrapper {
     }
     if (parent != null && showPoint == null) {
       int height = UISettings.getInstance().getShowNavigationBar() ? 135 : 115;
-      //noinspection UnstableApiUsage
-      if (parent instanceof IdeFrameImpl && ((IdeFrameImpl) parent).isInFullScreen()) {
+      if (parent instanceof IdeFrame && ((IdeFrame) parent).isInFullScreen()) {
         height -= 20;
       }
       showPoint =

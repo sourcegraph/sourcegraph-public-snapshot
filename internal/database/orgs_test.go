@@ -64,7 +64,7 @@ var orgnamesForTests = []struct {
 func TestOrgs_ValidNames(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	for _, test := range orgnamesForTests {
@@ -87,7 +87,7 @@ func TestOrgs_ValidNames(t *testing.T) {
 func TestOrgs_Count(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	org, err := db.Orgs().Create(ctx, "a", nil)
@@ -115,7 +115,7 @@ func TestOrgs_Count(t *testing.T) {
 func TestOrgs_Delete(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	displayName := "a"
@@ -152,7 +152,7 @@ func TestOrgs_Delete(t *testing.T) {
 func TestOrgs_HardDelete(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	displayName := "org1"
@@ -226,7 +226,7 @@ func TestOrgs_GetByID(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	createOrg(ctx, db, "org1", "org1")
@@ -250,7 +250,7 @@ func TestOrgs_GetByID(t *testing.T) {
 func TestOrgs_AddOrgsOpenBetaStats(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	userID := int32(42)
@@ -290,7 +290,7 @@ func TestOrgs_AddOrgsOpenBetaStats(t *testing.T) {
 func TestOrgs_UpdateOrgsOpenBetaStats(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	userID := int32(42)

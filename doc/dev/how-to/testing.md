@@ -169,7 +169,7 @@ Some common failure modes:
 - Page disconnected or browser session closed: another part of the test code might have called `page.close()` asynchronously, the browser crashed (check the video), or the build got canceled.
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
-- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `ENTERPRISE=1 pnpm build-web` or `ENTERPRISE=1 pnpm watch-web`
+- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `pnpm build-web` or `pnpm watch-web`
 
 Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
@@ -203,7 +203,7 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 
 To run integration tests for the web app:
 
-1. Run `INTEGRATION_TESTS=true ENTERPRISE=1 pnpm watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+1. Run `INTEGRATION_TESTS=true pnpm watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
     - Alternatively, `sg run web-integration-build` will only build a bundle once.
     - Alternatively, `sg run web-integration-build-prod` will only build a bundle once and will also mirror our CI setup where we use the production bundle of the web application for integration tests.
 1. Run `sg test web-integration` in the repository root to run the tests.
@@ -469,19 +469,6 @@ If, for whatever reason, we have to ignore some elements from an accessibility a
 ```
 
 **Tip:** Don't forget you'll need to rebuild the code if you want to see the tests pass locally after making this change.
-
-### Lighthouse tests
-
-We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
-
-#### Running the tests locally
-
-1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true pnpm --filter @sourcegraph/web build`
-2. Run the Lighthouse CI tests. `pnpm test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
-
-#### Running the tests in CI
-
-The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
 
 ### Bundlesize
 

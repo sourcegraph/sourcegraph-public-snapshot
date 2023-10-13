@@ -25,9 +25,9 @@ open class PanelWithGradientBorder(private val gradientWidth: Int, speaker: Spea
         BorderFactory.createMatteBorder(0, 0, 1, 0, ColorUtil.brighter(background, 3))
     val topAndBottomBorder: Border = BorderFactory.createCompoundBorder(topBorder, bottomBorder)
     isHuman = speaker == Speaker.HUMAN
-    this.setBorder(if (isHuman) emptyBorder else topAndBottomBorder)
-    this.setBackground(if (isHuman) ColorUtil.darker(background, 2) else background)
-    this.setLayout(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false))
+    this.border = if (isHuman) emptyBorder else topAndBottomBorder
+    this.background = if (isHuman) ColorUtil.darker(background, 2) else background
+    this.layout = VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false)
   }
 
   override fun paintComponent(g: Graphics) {

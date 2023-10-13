@@ -13,7 +13,6 @@ go_library(
         "//cmd/frontend/envvar",
         "//cmd/searcher/protocol",
         "//internal/api",
-        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/endpoint",
@@ -59,7 +58,6 @@ go_test(
     deps = [
         "//cmd/searcher/protocol",
         "//internal/api",
-        "//internal/authz",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
@@ -73,6 +71,7 @@ go_test(
         "//internal/search/streaming",
         "//internal/types",
         "//lib/errors",
+        "//lib/iterator",
         "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_grafana_regexp//:regexp",
@@ -80,5 +79,6 @@ go_test(
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//slices",
     ],
 )

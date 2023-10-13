@@ -25,21 +25,10 @@ commands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       # This needs to be set on `frontend` too so that `app.html` is rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - internal
       - cmd/frontend
-
-  enterprise-frontend:
-    cmd: .bin/enterprise-frontend
-    install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    env:
-      CONFIGURATION_MODE: server
-      USE_ENHANCED_LANGUAGE_DETECTION: false
-    watch:
-      - internal
-      - cmd/frontend
-      - enterprise/cmd/frontend
 
   gitserver:
     cmd: .bin/gitserver
@@ -87,7 +76,7 @@ commands:
     cmd: ./node_modules/.bin/gulp --silent --color dev
     install: pnpm install
     env:
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
       NODE_ENV: development
       NODE_OPTIONS: '--max_old_space_size=8192'
 

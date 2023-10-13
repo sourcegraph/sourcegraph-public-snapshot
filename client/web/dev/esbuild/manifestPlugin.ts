@@ -5,24 +5,24 @@ import type * as esbuild from 'esbuild'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
-import { type WebpackManifest, WEBPACK_MANIFEST_PATH } from '../utils'
+import { type WebBuildManifest, WEB_BUILD_MANIFEST_PATH } from '../utils'
 
 export const assetPathPrefix = '/.assets'
 
-export const getManifest = (jsEntrypoint?: string, cssEntrypoint?: string): WebpackManifest => ({
+export const getManifest = (jsEntrypoint?: string, cssEntrypoint?: string): WebBuildManifest => ({
     'app.js': path.join(assetPathPrefix, jsEntrypoint ?? 'scripts/app.js'),
     'app.css': path.join(assetPathPrefix, cssEntrypoint ?? 'scripts/app.css'),
     isModule: true,
 })
 
-const writeManifest = async (manifest: WebpackManifest): Promise<void> => {
-    await fs.promises.writeFile(WEBPACK_MANIFEST_PATH, JSON.stringify(manifest, null, 2))
+const writeManifest = async (manifest: WebBuildManifest): Promise<void> => {
+    await fs.promises.writeFile(WEB_BUILD_MANIFEST_PATH, JSON.stringify(manifest, null, 2))
 }
 
 const ENTRYPOINT_NAME = 'scripts/app'
 
 /**
- * An esbuild plugin to write a webpack.manifest.json file (just as Webpack does), for compatibility
+ * An esbuild plugin to write a web.manifest.json file (just as Webpack does), for compatibility
  * with our current Webpack build.
  */
 export const manifestPlugin: esbuild.Plugin = {

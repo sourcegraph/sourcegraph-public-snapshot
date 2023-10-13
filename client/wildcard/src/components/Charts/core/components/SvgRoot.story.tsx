@@ -14,8 +14,10 @@ const StoryConfig: Meta = {
     argTypes: {
         useMaxValuesForYScale: {
             type: 'boolean',
-            defaultValue: false,
         },
+    },
+    args: {
+        useMaxValuesForYScale: false,
     },
     parameters: { chromatic: { disableSnapshots: false } },
 }

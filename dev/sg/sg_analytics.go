@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,7 +19,7 @@ import (
 var analyticsCommand = &cli.Command{
 	Name:     "analytics",
 	Usage:    "Manage analytics collected by sg",
-	Category: CategoryUtil,
+	Category: category.Util,
 	Subcommands: []*cli.Command{
 		{
 			Name:        "submit",

@@ -34,13 +34,25 @@ func publicAccountDataFromJSON(ctx context.Context, account extsvc.Account) (*ex
 }
 
 func (r *externalAccountDataResolver) DisplayName() *string {
-	return r.data.DisplayName
+	if r.data.DisplayName == "" {
+		return nil
+	}
+
+	return &r.data.DisplayName
 }
 
 func (r *externalAccountDataResolver) Login() *string {
-	return r.data.Login
+	if r.data.Login == "" {
+		return nil
+	}
+
+	return &r.data.Login
 }
 
 func (r *externalAccountDataResolver) URL() *string {
-	return r.data.URL
+	if r.data.URL == "" {
+		return nil
+	}
+
+	return &r.data.URL
 }

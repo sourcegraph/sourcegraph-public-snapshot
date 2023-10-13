@@ -13,7 +13,7 @@ export const builtinAuthProvider = {
     authenticationURL: '',
 }
 
-// Create dummy JS context that will be added to index.html when `WEBPACK_SERVE_INDEX` is set to true.
+// Create dummy JS context that will be added to index.html when `WEB_BUILDER_SERVE_INDEX` is set to true.
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => {
     const siteConfig = getSiteConfig()
 
@@ -37,7 +37,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
         codeInsightsEnabled: true,
-        externalServicesUserMode: 'public',
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',
         deployType: 'dev',
@@ -59,7 +58,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteID: 'TestSiteID',
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
-        sourcegraphAppMode: false,
+        codyAppMode: false,
         srcServeGitUrl: 'http://127.0.0.1:3434',
         userAgentIsBot: false,
         version: '0.0.0',

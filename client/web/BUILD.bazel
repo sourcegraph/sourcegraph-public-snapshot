@@ -5,10 +5,9 @@ load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
-load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
+load("//dev:webpack.bzl", "webpack_bundle", "webpack_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -163,7 +162,6 @@ ts_project(
         "src/LegacyLayout.tsx",
         "src/LegacyRouteContext.tsx",
         "src/LegacySourcegraphWebApp.tsx",
-        "src/OpenSourceWebApp.tsx",
         "src/PageError.tsx",
         "src/SearchQueryStateObserver.tsx",
         "src/SourcegraphWebApp.tsx",
@@ -174,6 +172,7 @@ ts_project(
         "src/app/TauriLink.tsx",
         "src/app/tauriIcpUtils.ts",
         "src/auth.ts",
+        "src/auth/AuthPageWrapper.tsx",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
         "src/auth/PostSignUpPage.tsx",
@@ -237,6 +236,7 @@ ts_project(
         "src/cody/components/ScopeSelector/ScopeSelector.tsx",
         "src/cody/components/ScopeSelector/backend.ts",
         "src/cody/components/ScopeSelector/index.tsx",
+        "src/cody/components/ScopeSelector/useRepoSuggestions.ts",
         "src/cody/isCodyEnabled.tsx",
         "src/cody/search/CodySearchPage.tsx",
         "src/cody/search/api.ts",
@@ -285,6 +285,7 @@ ts_project(
         "src/components/CtaIcons.tsx",
         "src/components/DismissibleAlert/DismissibleAlert.tsx",
         "src/components/DismissibleAlert/index.ts",
+        "src/components/DownloadFileButton.tsx",
         "src/components/ErrorBoundary.tsx",
         "src/components/ExecutionLogEntry.tsx",
         "src/components/FilteredConnection/ConnectionNodes.tsx",
@@ -329,6 +330,7 @@ ts_project(
         "src/components/WebHoverOverlay/WebHoverOverlay.fixtures.ts",
         "src/components/WebHoverOverlay/WebHoverOverlay.tsx",
         "src/components/WebHoverOverlay/index.ts",
+        "src/components/ZeroStates/ListPageZeroState.tsx",
         "src/components/branding/BrandLogo.tsx",
         "src/components/diff/DiffBoundary.tsx",
         "src/components/diff/DiffHunk.tsx",
@@ -392,6 +394,10 @@ ts_project(
         "src/components/useScrollToLocationHash.ts",
         "src/components/useUserHistory.ts",
         "src/contributions.ts",
+        "src/devsettings/DeveloperDialog.tsx",
+        "src/devsettings/DeveloperSettingsGlobalNavItem.tsx",
+        "src/devsettings/settings/eventLoggingDebug.tsx",
+        "src/devsettings/utils.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
         "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
@@ -593,7 +599,6 @@ ts_project(
         "src/enterprise/batches/testData.ts",
         "src/enterprise/batches/useBatchChangesLicense.ts",
         "src/enterprise/batches/utils.ts",
-        "src/enterprise/batches/utils/size.ts",
         "src/enterprise/batches/workspaces-list/Descriptor.tsx",
         "src/enterprise/batches/workspaces-list/Header.tsx",
         "src/enterprise/batches/workspaces-list/Icons.tsx",
@@ -743,7 +748,6 @@ ts_project(
         "src/enterprise/insights/admin-ui/components/job-filters/CodeInsightsJobsFilters.tsx",
         "src/enterprise/insights/admin-ui/components/job-filters/index.ts",
         "src/enterprise/insights/admin-ui/query.ts",
-        "src/enterprise/insights/components/DownloadFileButton.tsx",
         "src/enterprise/insights/components/code-insights-page/CodeInsightsPage.tsx",
         "src/enterprise/insights/components/code-insights-page/limit-access-banner/CodeInsightsLimitAccessBanner.tsx",
         "src/enterprise/insights/components/creation-ui/CodeInsightDashboardsVisibility.tsx",
@@ -770,11 +774,11 @@ ts_project(
         "src/enterprise/insights/components/creation-ui/sanitizers/repositories.ts",
         "src/enterprise/insights/components/creation-ui/sanitizers/series.ts",
         "src/enterprise/insights/components/creation-ui/validators/validators.ts",
+        "src/enterprise/insights/components/form/field/Field.tsx",
+        "src/enterprise/insights/components/form/field/PreviewLink.tsx",
+        "src/enterprise/insights/components/form/field/index.ts",
         "src/enterprise/insights/components/form/form-radio-input/FormRadioInput.tsx",
         "src/enterprise/insights/components/form/index.ts",
-        "src/enterprise/insights/components/form/monaco-field/MonacoField.tsx",
-        "src/enterprise/insights/components/form/monaco-field/MonacoPreviewLink.tsx",
-        "src/enterprise/insights/components/form/monaco-field/index.ts",
         "src/enterprise/insights/components/form/query-input/InsightQueryInput.tsx",
         "src/enterprise/insights/components/form/query-input/utils/generate-repo-filters-query.ts",
         "src/enterprise/insights/components/form/repositories-field/RepositoriesField.tsx",
@@ -1024,6 +1028,12 @@ ts_project(
         "src/enterprise/repo/settings/sidebaritems.ts",
         "src/enterprise/repo/settings/utils.ts",
         "src/enterprise/routes.tsx",
+        "src/enterprise/search-jobs/SearchJobBadge/SearchJobBadge.tsx",
+        "src/enterprise/search-jobs/SearchJobCard/SearchJobCard.tsx",
+        "src/enterprise/search-jobs/SearchJobModal/SearchJobModal.tsx",
+        "src/enterprise/search-jobs/SearchJobsPage.tsx",
+        "src/enterprise/search-jobs/UsersPicker.tsx",
+        "src/enterprise/search-jobs/index.ts",
         "src/enterprise/searchContexts/CreateSearchContextPage.tsx",
         "src/enterprise/searchContexts/DeleteSearchContextModal.tsx",
         "src/enterprise/searchContexts/EditSearchContextPage.tsx",
@@ -1039,22 +1049,6 @@ ts_project(
         "src/enterprise/searchContexts/hooks/useDefaultContext.ts",
         "src/enterprise/searchContexts/hooks/useToggleSearchContextStar.ts",
         "src/enterprise/searchContexts/repositoryRevisionsConfigParser.ts",
-        "src/enterprise/sentinel/LandingImage.ts",
-        "src/enterprise/sentinel/SentinelAppRouter.tsx",
-        "src/enterprise/sentinel/SentinelLandingPage.tsx",
-        "src/enterprise/sentinel/SentinelRouter.tsx",
-        "src/enterprise/sentinel/SentinelView.tsx",
-        "src/enterprise/sentinel/components/SentinelBanner/SentinelBanner.tsx",
-        "src/enterprise/sentinel/components/SentinelBanner/ShieldImg.tsx",
-        "src/enterprise/sentinel/components/SummaryTable/SummaryTable.tsx",
-        "src/enterprise/sentinel/components/VulnerabilityCard/VulnerabilityCard.tsx",
-        "src/enterprise/sentinel/components/VulnerabilityList/VulnerabilityList.tsx",
-        "src/enterprise/sentinel/components/VulnerabilitySidebar/VulnerabilitySidebar.tsx",
-        "src/enterprise/sentinel/graphql/graphqlQueries.ts",
-        "src/enterprise/sentinel/graphql/useSentinelQuery.ts",
-        "src/enterprise/sentinel/graphql/useVulnerabilityMatchesCountByRepoQuery.ts",
-        "src/enterprise/sentinel/index.ts",
-        "src/enterprise/sentinel/utils/isSentinelEnabled.ts",
         "src/enterprise/site-admin/SiteAdminAuthenticationProvidersPage.tsx",
         "src/enterprise/site-admin/SiteAdminExternalAccountsPage.tsx",
         "src/enterprise/site-admin/SiteAdminPreciseIndexPage.tsx",
@@ -1130,7 +1124,6 @@ ts_project(
         "src/insights/types.ts",
         "src/insights/utils/use-series-toggle.ts",
         "src/jscontext.ts",
-        "src/main.tsx",
         "src/marketing/backend.ts",
         "src/marketing/components/SurveyRatingRadio.tsx",
         "src/marketing/components/SurveyUseCaseForm.tsx",
@@ -1207,6 +1200,14 @@ ts_project(
         "src/notebooks/notebookPage/ShareNotebookModal.tsx",
         "src/notebooks/serialize/convertMarkdownToBlocks.ts",
         "src/notebooks/serialize/index.ts",
+        "src/onboarding/LicenseModal.tsx",
+        "src/onboarding/OnboardingChecklist.content.ts",
+        "src/onboarding/OnboardingChecklist.tsx",
+        "src/onboarding/constants.tsx",
+        "src/onboarding/graphql-hooks.ts",
+        "src/onboarding/index.ts",
+        "src/onboarding/queries.ts",
+        "src/onboarding/types.ts",
         "src/open-in-editor/OpenInEditorActionItem.tsx",
         "src/open-in-editor/OpenInEditorPopover.tsx",
         "src/open-in-editor/build-url.ts",
@@ -1229,7 +1230,6 @@ ts_project(
         "src/org/settings/DeleteOrgModal.tsx",
         "src/org/settings/OrgSettingsArea.tsx",
         "src/org/settings/OrgSettingsSidebar.tsx",
-        "src/org/settings/codeHosts/InstallGitHubAppSuccessPage.tsx",
         "src/org/settings/members/InviteForm.tsx",
         "src/org/settings/members/OrgSettingsMembersPage.tsx",
         "src/org/settings/profile/OrgSettingsProfilePage.tsx",
@@ -1400,10 +1400,14 @@ ts_project(
         "src/savedSearches/SavedSearchListPage.tsx",
         "src/savedSearches/SavedSearchModal.tsx",
         "src/savedSearches/SavedSearchUpdateForm.tsx",
+        "src/search-jobs/utility.ts",
         "src/search/Notepad.tsx",
         "src/search/QuickLinks.tsx",
         "src/search/SearchConsolePage.tsx",
         "src/search/SearchPageWrapper.tsx",
+        "src/search/autocompletion/hooks.ts",
+        "src/search/autocompletion/source.ts",
+        "src/search/autocompletion/sources.ts",
         "src/search/backend.tsx",
         "src/search/helpers.tsx",
         "src/search/home/SearchPage.tsx",
@@ -1444,7 +1448,6 @@ ts_project(
         "src/search/suggestion/DidYouMean.tsx",
         "src/search/suggestion/SmartSearch.tsx",
         "src/search/useExperimentalSearchInput.ts",
-        "src/sentinel/types.ts",
         "src/settings/DynamicallyImportedMonacoSettingsEditor.tsx",
         "src/settings/EditorActionsGroup.tsx",
         "src/settings/MonacoSettingsEditor.tsx",
@@ -1499,8 +1502,10 @@ ts_project(
         "src/site-admin/SiteAdminFeatureFlagConfigurationPage.tsx",
         "src/site-admin/SiteAdminFeatureFlagsPage.tsx",
         "src/site-admin/SiteAdminGitHubAppsArea.tsx",
+        "src/site-admin/SiteAdminGitserversPage.tsx",
         "src/site-admin/SiteAdminMigrationsPage.tsx",
         "src/site-admin/SiteAdminOnboardingTourPage.tsx",
+        "src/site-admin/SiteAdminOnboardingTourPage/Preview.tsx",
         "src/site-admin/SiteAdminOrgsPage.tsx",
         "src/site-admin/SiteAdminOutboundRequestsPage.tsx",
         "src/site-admin/SiteAdminPackagesPage.tsx",
@@ -1611,6 +1616,7 @@ ts_project(
         "src/site/backend.ts",
         "src/site/index.ts",
         "src/staticAppConfig.ts",
+        "src/stores/devSettings.ts",
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
         "src/stores/notepad.ts",
@@ -1660,7 +1666,9 @@ ts_project(
         "src/team/new/team-select/ParentTeamSelect.tsx",
         "src/team/new/team-select/backend.ts",
         "src/tour/GettingStartedTour.tsx",
+        "src/tour/GettingStartedTourSetup.tsx",
         "src/tour/components/ItemPicker.tsx",
+        "src/tour/components/Tour/SearchTask.tsx",
         "src/tour/components/Tour/Tour.tsx",
         "src/tour/components/Tour/TourAgent.tsx",
         "src/tour/components/Tour/TourContent.tsx",
@@ -1668,10 +1676,12 @@ ts_project(
         "src/tour/components/Tour/TourNewTabLink.tsx",
         "src/tour/components/Tour/TourTask.tsx",
         "src/tour/components/Tour/context.tsx",
+        "src/tour/components/Tour/useDynamicQuery.ts",
         "src/tour/components/Tour/useTour.ts",
         "src/tour/components/Tour/utils.tsx",
         "src/tour/components/withErrorBoundary.tsx",
         "src/tour/data/index.tsx",
+        "src/tour/hooks.ts",
         "src/tracking/TelemetricLink.tsx",
         "src/tracking/eventLogger.ts",
         "src/tracking/services/serverAdminWrapper.tsx",
@@ -1724,6 +1734,7 @@ ts_project(
         "src/util/rbac.ts",
         "src/util/security.ts",
         "src/util/settings.ts",
+        "src/util/size.ts",
         "src/util/time.ts",
         "src/util/url.ts",
     ],
@@ -1772,7 +1783,6 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@sourcegraph/extension-api-classes",
-        "//:node_modules/@storybook/client-api",
         "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
@@ -1944,6 +1954,8 @@ ts_project(
         "src/nav/UserNavItem.test.tsx",
         "src/notebooks/serialize/convertMarkdownToBlocks.test.ts",
         "src/notebooks/serialize/index.test.ts",
+        "src/onboarding/OnboardingChecklist.mocks.ts",
+        "src/onboarding/OnboardingChecklist.test.tsx",
         "src/open-in-editor/build-url.test.ts",
         "src/open-in-editor/migrate-legacy-settings.test.ts",
         "src/person/PersonLink.test.tsx",
@@ -1982,12 +1994,14 @@ ts_project(
         "src/tracking/util.test.ts",
         "src/user/index.test.ts",
         "src/user/settings/auth/ExternalAccount.test.tsx",
+        "src/user/settings/auth/ExternalAccountsSignIn.test.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.test.tsx",
         "src/user/settings/research/ProductResearch.test.tsx",
         "src/util/checkRequestAccessAllowed.test.ts",
         "src/util/codeStatsUtils.test.ts",
         "src/util/getReactElements.test.tsx",
         "src/util/prettyBytesBigint.test.ts",
+        "src/util/size.test.ts",
         "src/util/time.test.ts",
         "src/util/url.test.ts",
     ],
@@ -2055,7 +2069,7 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 12,  # empirical
+    shard_count = 8,  # empirical
     tags = [
         "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
@@ -2087,6 +2101,7 @@ WEBPACK_CONFIG_DEPS = [
     "//:node_modules/react-refresh",
     "//client/web/dev",
     "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
+    "//:postcss_config_js",
 
     # HACKS: bundle-time css import
     "//:node_modules/open-color",
@@ -2097,9 +2112,6 @@ BUNDLE_DATA_DEPS = [
     ":module_styles",
     ":package_styles",
     "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
-]
-
-ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
@@ -2115,10 +2127,14 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "//:package_json",
         ],
         entry_points = {
-            "src/main.js": "app",
+            "src/enterprise/main.js": "app",
+            "src/enterprise/embed/main.js": "embed",
         },
         env = {
             "NODE_ENV": "production" if prod else "development",
+            "INTEGRATION_TESTS": "false",
+            "WEBPACK_BUNDLE_ANALYZER": "false",
+            "WEBPACK_USE_NAMED_CHUNKS": "false",
         },
         output_dir = True,
         visibility = ["//ui/assets:__subpackages__"],
@@ -2131,35 +2147,11 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     ]
 ]
 
-webpack_bundle(
-    name = "bundle-enterprise",
-    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
-        "//:babel_config",
-        "//:browserslist",
-        "//:package_json",
-    ],
-    entry_points = {
-        "src/enterprise/main.js": "app",
-        "src/enterprise/embed/main.js": "embed",
-    },
-    env = {
-        "NODE_ENV": "production",
-        "ENTERPRISE": "true",
-        "INTEGRATION_TESTS": "false",
-        "WEBPACK_BUNDLE_ANALYZER": "false",
-        "WEBPACK_USE_NAMED_CHUNKS": "false",
-    },
-    output_dir = True,
-    visibility = ["//ui/assets:__subpackages__"],
-    webpack_config = "webpack.bazel.config.js",
-    deps = WEBPACK_CONFIG_DEPS,
-)
-
 # Used for integration tests and has bigger bundle size
 # because of the inlined source-maps.
 webpack_web_app(
-    name = "app-enterprise",
-    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
+    name = "app",
+    srcs = BUNDLE_DATA_DEPS + [
         "//:babel_config",
         "//:browserslist",
         "//:package_json",
@@ -2169,7 +2161,6 @@ webpack_web_app(
     },
     env = {
         "NODE_ENV": "production",
-        "ENTERPRISE": "true",
         "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
@@ -2178,43 +2169,11 @@ webpack_web_app(
     deps = WEBPACK_CONFIG_DEPS,
 )
 
-# ibazel run //client/web:devserver
-# should make the web application available under http://localhost:3080/ by default.
-webpack_devserver(
-    name = "devserver",
-    data = BUNDLE_DATA_DEPS + WEBPACK_CONFIG_DEPS + [
-        "//:babel_config",
-        "//:browserslist",
-        "//:package_json",
-
-        # references from the devserver config
-        "webpack.bazel.config.js",
-    ],
-    entry_points = {
-        "src/main.js": "app",
-    },
-    env = {
-        "NODE_ENV": "development",
-        # TODO(bazel): make it dynamic or make multiple targets.
-        "SOURCEGRAPH_API_URL": "https://sourcegraph.sourcegraph.com",
-    },
-    webpack_config = "webpack.bazel.devserver.config.js",
-)
-
 build_test(
     name = "webpack_test",
     size = "enormous",
-    tags = ["manual"],  # avoid building the oss bundle
     targets = [
         ":bundle",
-    ],
-)
-
-build_test(
-    name = "webpack_test_enterprise",
-    size = "enormous",
-    targets = [
-        ":bundle-enterprise",
     ],
 )
 
@@ -2227,10 +2186,10 @@ bundlesize_bin.bundlesize_test(
     ],
     data = [
         "bundlesize.config.js",
-        ":bundle-enterprise",
+        ":bundle",
     ],
     env = {
         "INTERNAL_SKIP_CACHE": "true",
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle)",
     },
 )

@@ -432,7 +432,10 @@ func NewSchema(
 	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient)
-	schemas := []string{mainSchema, outboundWebhooksSchema}
+	schemas := []string{
+		mainSchema,
+		outboundWebhooksSchema,
+	}
 
 	for _, optional := range optionals {
 		if batchChanges := optional.BatchChangesResolver; batchChanges != nil {
@@ -618,6 +621,12 @@ func NewSchema(
 				resolver.nodeByIDFns[kind] = res
 			}
 		}
+
+		if telemetryResolver := optional.TelemetryRootResolver; telemetryResolver != nil {
+			EnterpriseResolvers.telemetryResolver = telemetryResolver
+			resolver.TelemetryRootResolver = telemetryResolver
+			schemas = append(schemas, telemetrySchema)
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
@@ -678,6 +687,7 @@ type OptionalResolver struct {
 	SearchContextsResolver
 	WebhooksResolver
 	ContentLibraryResolver
+	*TelemetryRootResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -797,6 +807,7 @@ var EnterpriseResolvers = struct {
 	searchContextsResolver      SearchContextsResolver
 	webhooksResolver            WebhooksResolver
 	contentLibraryResolver      ContentLibraryResolver
+	telemetryResolver           *TelemetryRootResolver
 }{}
 
 // Root returns a new schemaResolver.

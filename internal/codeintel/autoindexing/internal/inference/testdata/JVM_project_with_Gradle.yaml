@@ -1,0 +1,10 @@
+- steps: []
+  local_steps: []
+  root: ""
+  indexer: sourcegraph/scip-java@sha256:9f04445d3fc70f69a2db42b05964e20b22e716836eefaf1155de4a8b36e8ec19
+  indexer_args:
+    - scip-java
+    - index
+    - --build-tool=auto
+  outfile: index.scip
+  requestedEnvVars: []

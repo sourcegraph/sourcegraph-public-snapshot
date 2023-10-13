@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
+	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,7 +23,7 @@ type Authenticator struct {
 func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := trace.Logger(r.Context(), a.Logger)
-		token, err := ExtractBearer(r.Header)
+		token, err := authbearer.ExtractBearer(r.Header)
 		if err != nil {
 			response.JSONError(logger, w, http.StatusBadRequest, err)
 			return

@@ -33,6 +33,7 @@ import (
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -134,6 +135,8 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
+	github.SetupForTest(t)
 
 	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
 	gheToken := prepareGheToken(t, fixtureName)
@@ -191,6 +194,7 @@ func prepareGheToken(t *testing.T, fixtureName string) string {
 }
 
 func TestGithubSource_GetRepo(t *testing.T) {
+	github.SetupForTest(t)
 	testCases := []struct {
 		name          string
 		nameWithOwner string
@@ -291,16 +295,17 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
+	github.SetupForTest(t)
 	testCases := []struct {
 		name          string
 		nameWithOwner string
-		assert        func(*testing.T, *types.Repo)
+		assert        func(*testing.T, *types.Repo, bool)
 		err           string
 	}{
 		{
 			name:          "internal repo in github enterprise",
 			nameWithOwner: "admiring-austin-120/fluffy-enigma",
-			assert: func(t *testing.T, have *types.Repo) {
+			assert: func(t *testing.T, have *types.Repo, private bool) {
 				t.Helper()
 
 				want := &types.Repo{
@@ -308,7 +313,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 					Description: "Internal repo used in tests in sourcegraph code.",
 					URI:         "ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
 					Stars:       0,
-					Private:     true,
+					Private:     private,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
 						ServiceType: "github",
@@ -395,7 +400,38 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			}
 
 			if tc.assert != nil {
-				tc.assert(t, repo)
+				tc.assert(t, repo, true)
+			}
+
+			// Configure external service to mark internal repositories as public
+			// and sync again
+			svc = &types.ExternalService{
+				Kind: extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://ghe.sgdev.org",
+					Token: gheToken,
+					Authorization: &schema.GitHubAuthorization{
+						MarkInternalReposAsPublic: true,
+					},
+				})),
+			}
+
+			githubSrc, err = NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repo, err = githubSrc.GetRepo(context.Background(), tc.nameWithOwner)
+			if err != nil {
+				t.Fatalf("GetRepo failed: %v", err)
+			}
+
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repo, false)
 			}
 		})
 	}
@@ -406,6 +442,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	github.SetupForTest(t)
 
 	r := &github.Repository{
 		Description: "Fun nulls \x00\x00\x00",
@@ -427,6 +464,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
+	github.SetupForTest(t)
 	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -521,6 +559,7 @@ func TestMatchOrg(t *testing.T) {
 }
 
 func TestGitHubSource_doRecursively(t *testing.T) {
+	github.SetupForTest(t)
 	ctx := context.Background()
 
 	testCases := map[string]struct {
@@ -604,6 +643,7 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 }
 
 func TestGithubSource_ListRepos(t *testing.T) {
+	github.SetupForTest(t)
 	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -791,6 +831,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	github.SetupForTest(t)
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
@@ -825,6 +866,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	github.SetupForTest(t)
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
@@ -852,6 +894,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 }
 
 func TestGithubSource_GetVersion(t *testing.T) {
+	github.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	t.Run("github.com", func(t *testing.T) {
 		// The GitHubSource uses the github.Client under the hood, which
@@ -923,6 +966,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 }
 
 func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
+	github.SetupForTest(t)
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -990,6 +1034,7 @@ func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
 }
 
 func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
+	github.SetupForTest(t)
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -1062,6 +1107,7 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 }
 
 func TestGithubSource_SearchRepositories(t *testing.T) {
+	github.SetupForTest(t)
 	assertReposSearched := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -1267,6 +1313,7 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 // tests for GitHub App and non-GitHub App connections can be updated separately,
 // as setting up credentials for a GitHub App VCR test is significantly more effort.
 func TestGithubSource_ListRepos_GitHubApp(t *testing.T) {
+	github.SetupForTest(t)
 	// This private key is no longer valid. If this VCR test needs to be updated,
 	// a new GitHub App with new keys and secrets will have to be created
 	// and deleted afterwards.
@@ -1338,7 +1385,7 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.Default().GitHubAppKey)
 	_, err := ghAppsStore.Create(context.Background(), &ghtypes.GitHubApp{
 		AppID:        350528,

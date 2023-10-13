@@ -11,16 +11,15 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.components.panels.Wrapper
-import com.intellij.ui.layout.LayoutBuilder
+import com.intellij.ui.dsl.builder.Panel
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
-import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import java.util.concurrent.CompletableFuture
 import javax.swing.JComponent
 import javax.swing.JTextField
 
 internal typealias UniqueLoginPredicate = (login: String, server: SourcegraphServerPath) -> Boolean
 
-internal class CodyLoginPanel(
+class CodyLoginPanel(
     executorFactory: SourcegraphApiRequestExecutor.Factory,
     isAccountUnique: UniqueLoginPredicate
 ) : Wrapper() {
@@ -34,10 +33,12 @@ internal class CodyLoginPanel(
       CodyTokenCredentialsUi(
           serverTextField, customRequestHeadersField, executorFactory, isAccountUnique)
 
+  private var authUI = CodyAuthCredentialsUi(executorFactory, isAccountUnique)
+
   private val progressIcon = AnimatedIcon.Default()
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }
 
-  var footer: LayoutBuilder.() -> Unit
+  var footer: Panel.() -> Unit
     get() = tokenUi.footer
     set(value) {
       tokenUi.footer = value
@@ -61,28 +62,17 @@ internal class CodyLoginPanel(
 
   fun doValidateAll(): List<ValidationInfo> {
     val uiError =
-        notBlank(serverTextField, "Server url cannot be empty")
-            ?: validateServerPath(serverTextField)
-                ?: validateCustomRequestHeaders(customRequestHeadersField)
-                ?: currentUi.getValidator().invoke()
+        validateCustomRequestHeaders(customRequestHeadersField) ?: currentUi.getValidator().invoke()
 
     return listOfNotNull(uiError, tokenAcquisitionError)
   }
 
-  private fun validateServerPath(field: JTextField): ValidationInfo? =
-      try {
-        SourcegraphServerPath.from(field.text, "")
-        null
-      } catch (e: Exception) {
-        ValidationInfo("Invalid server url", field)
-      }
-
   private fun validateCustomRequestHeaders(field: JTextField): ValidationInfo? {
-    if (field.getText().isEmpty()) {
+    if (field.text.isEmpty()) {
       return null
     }
     val pairs: Array<String> =
-        field.getText().split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        field.text.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
     if (pairs.size % 2 != 0) {
       return ValidationInfo("Must be a comma-separated list of string pairs", field)
     }
@@ -106,9 +96,9 @@ internal class CodyLoginPanel(
     currentUi.setBusy(busy)
   }
 
-  fun acquireLoginAndToken(
+  fun acquireDetailsAndToken(
       progressIndicator: ProgressIndicator
-  ): CompletableFuture<Pair<String, String>> {
+  ): CompletableFuture<Pair<CodyAccountDetails, String>> {
     setBusy(true)
     tokenAcquisitionError = null
 
@@ -116,7 +106,7 @@ internal class CodyLoginPanel(
     val executor = currentUi.createExecutor()
 
     return service<ProgressManager>()
-        .submitIOTask(progressIndicator) { currentUi.acquireLoginAndToken(server, executor, it) }
+        .submitIOTask(progressIndicator) { currentUi.acquireDetailsAndToken(server, executor, it) }
         .completionOnEdt(progressIndicator.modalityState) { setBusy(false) }
         .errorOnEdt(progressIndicator.modalityState) { setError(it) }
   }
@@ -124,9 +114,8 @@ internal class CodyLoginPanel(
   fun getServer(): SourcegraphServerPath =
       SourcegraphServerPath.from(serverTextField.text.trim(), customRequestHeadersField.text.trim())
 
-  fun setServer(path: String, editable: Boolean) {
+  fun setServer(path: String) {
     serverTextField.text = path
-    serverTextField.isEditable = editable
   }
 
   fun setCustomRequestHeaders(customRequestHeaders: String) {
@@ -144,4 +133,6 @@ internal class CodyLoginPanel(
   }
 
   fun setTokenUi() = applyUi(tokenUi)
+
+  fun setAuthUI() = applyUi(authUI)
 }

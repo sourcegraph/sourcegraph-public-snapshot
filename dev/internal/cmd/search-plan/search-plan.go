@@ -46,7 +46,7 @@ func run(w io.Writer, args []string) error {
 	envvar.MockSourcegraphDotComMode(*dotCom)
 	logger := log.Scoped("search-plan", "")
 
-	cli := client.MockedZoekt(logger, nil, nil)
+	cli := client.Mocked(job.RuntimeClients{Logger: logger})
 
 	inputs, err := cli.Plan(
 		context.Background(),

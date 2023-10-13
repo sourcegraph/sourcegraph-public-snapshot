@@ -32,7 +32,7 @@ jobs:
       # set up correct version of node
       - name: Setup Node
         id: node-setup
-        run: echo "NODE_VERSION=16.18.1" >> ${GITHUB_OUTPUT}
+        run: echo "NODE_VERSION=18.17.1" >> ${GITHUB_OUTPUT}
       - uses: actions/setup-node@v2
         with: { node-version: "${{ steps.node-setup.outputs.NODE_VERSION }}" }
 

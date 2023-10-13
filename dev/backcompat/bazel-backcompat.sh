@@ -38,7 +38,10 @@ git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcom
 
 if [[ -d "dev/backcompat/patches/${tag}" ]]; then
   echo "--- :adhesive_bandage: apply patches from dev/backcompat/patches/${tag}"
-  git apply dev/backcompat/patches/${tag}/*.patch
+  for patch in dev/backcompat/patches/"${tag}"/*.patch; do
+    echo "applying patch '${patch}'"
+    git apply "${patch}"
+  done
 fi
 
 echo "--- :snowflake: patch flake for tag ${tag}"
@@ -52,5 +55,4 @@ bazel "${bazelrcs[@]}" \
   //internal/... \
   //enterprise/cmd/... \
   //enterprise/internal/...\
-  -//cmd/migrator/... \
-  -//enterprise/cmd/migrator/...
+  -//cmd/migrator/...

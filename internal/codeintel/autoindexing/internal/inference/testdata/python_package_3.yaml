@@ -1,0 +1,59 @@
+- steps:
+    - root: ""
+      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+      commands:
+        - pip install . || true
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: ""
+  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer_args:
+    - scip-python
+    - index
+    - .
+    - --project-name
+    - numpy-base
+    - --project-version
+    - 1.22.3
+    - --exclude
+    - nested/lib,src
+  outfile: index.scip
+  requestedEnvVars: []
+- steps:
+    - root: ""
+      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+      commands:
+        - pip install . || true
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: nested/lib
+  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer_args:
+    - scip-python
+    - index
+    - .
+    - --project-name
+    - numpy-proj-2
+    - --project-version
+    - 2.0.0
+  outfile: index.scip
+  requestedEnvVars: []
+- steps:
+    - root: ""
+      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+      commands:
+        - pip install . || true
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: src
+  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer_args:
+    - scip-python
+    - index
+    - .
+    - --project-name
+    - numpy
+    - --project-version
+    - 1.22.3
+  outfile: index.scip
+  requestedEnvVars: []

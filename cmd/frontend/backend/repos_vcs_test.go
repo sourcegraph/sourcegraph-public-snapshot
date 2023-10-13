@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -195,7 +194,7 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	var calledVCSRepoGetCommit bool
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	gsClient.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
 		calledVCSRepoGetCommit = true
 		return &gitdomain.Commit{ID: want}, nil
 	})

@@ -1,10 +1,10 @@
 package com.sourcegraph.cody.config
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.AuthData
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.sourcegraph.cody.localapp.LocalAppManager
 import java.awt.Component
 import org.jetbrains.annotations.CalledInAny
 
@@ -12,11 +12,13 @@ internal class CodyAuthData(val account: CodyAccount, login: String, token: Stri
     AuthData(login, token) {
   val server: SourcegraphServerPath
     get() = account.server
+
   val token: String
     get() = password!!
 }
 
 /** Entry point for interactions with Sourcegraph authentication subsystem */
+@Service
 class CodyAuthenticationManager internal constructor() {
   private val accountManager: CodyAccountManager
     get() = service()
@@ -28,7 +30,7 @@ class CodyAuthenticationManager internal constructor() {
       accountManager.findCredentials(account)
 
   internal fun isAccountUnique(name: String, server: SourcegraphServerPath) =
-      accountManager.accounts.none { it.name == name && it.server == server }
+      accountManager.accounts.none { it.name == name && it.server.url == server.url }
 
   @RequiresEdt
   internal fun login(
@@ -41,19 +43,22 @@ class CodyAuthenticationManager internal constructor() {
   internal fun updateAccountToken(account: CodyAccount, newToken: String) =
       accountManager.updateAccount(account, newToken)
 
-  fun getDefaultAccount(project: Project): CodyAccount? =
-      project.service<CodyProjectDefaultAccountHolder>().account
-
-  fun setDefaultAccount(project: Project, account: CodyAccount?) {
-    project.service<CodyProjectDefaultAccountHolder>().account = account
+  fun getActiveAccount(project: Project): CodyAccount? {
+    return if (!project.isDisposed) project.service<CodyProjectActiveAccountHolder>().account
+    else null
   }
 
-  fun getDefaultAccountType(project: Project): AccountType {
-    return getDefaultAccount(project)?.getAccountType()
-        ?: AccountType.DOTCOM
+  fun setActiveAccount(project: Project, account: CodyAccount?) {
+    if (!project.isDisposed) project.service<CodyProjectActiveAccountHolder>().account = account
+  }
+
+  fun getActiveAccountType(project: Project): AccountType {
+    return getActiveAccount(project)?.getAccountType() ?: AccountType.DOTCOM
   }
 
   companion object {
-    @JvmStatic fun getInstance(): CodyAuthenticationManager = service()
+    @JvmStatic
+    val instance: CodyAuthenticationManager
+      get() = service()
   }
 }

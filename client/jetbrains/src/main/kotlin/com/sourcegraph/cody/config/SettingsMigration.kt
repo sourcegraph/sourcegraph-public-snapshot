@@ -2,7 +2,6 @@ package com.sourcegraph.cody.config
 
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
-import com.intellij.collaboration.auth.Account
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -10,13 +9,13 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupActivity
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
+import com.sourcegraph.cody.auth.Account
+import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.AccessTokenStorage
 import com.sourcegraph.config.CodyApplicationService
 import com.sourcegraph.config.CodyProjectService
@@ -25,9 +24,10 @@ import com.sourcegraph.config.UserLevelConfig
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
-class SettingsMigration : StartupActivity, DumbAware {
+class SettingsMigration : Activity {
 
-  private val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
+  private val codyAuthenticationManager = CodyAuthenticationManager.instance
+
   override fun runActivity(project: Project) {
     RunOnceUtil.runOnceForProject(project, "CodyProjectSettingsMigration") {
       val customRequestHeaders = extractCustomRequestHeaders(project)
@@ -43,11 +43,11 @@ class SettingsMigration : StartupActivity, DumbAware {
   private fun toggleCodyToolbarWindow(project: Project) {
     val toolWindowManager = ToolWindowManager.getInstance(project)
     val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
-    toolWindow?.setAvailable(CodyApplicationSettings.getInstance().isCodyEnabled, null)
+    toolWindow?.setAvailable(CodyApplicationSettings.instance.isCodyEnabled, null)
   }
 
   private fun migrateAccounts(project: Project, customRequestHeaders: String) {
-    val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.getInstance()
+    val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.instance
     migrateDotcomAccount(project, requestExecutorFactory, customRequestHeaders)
     migrateEnterpriseAccount(project, requestExecutorFactory, customRequestHeaders)
   }
@@ -59,7 +59,7 @@ class SettingsMigration : StartupActivity, DumbAware {
   ) {
     val dotcomAccessToken = extractDotcomAccessToken(project)
     if (!dotcomAccessToken.isNullOrEmpty()) {
-      val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL, customRequestHeaders)
+      val server = SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, customRequestHeaders)
       val extractedAccountType = extractAccountType(project)
       val shouldSetAccountAsDefault =
           extractedAccountType == AccountType.DOTCOM ||
@@ -121,7 +121,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       id: String = UUID.randomUUID().toString(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(CodyAccount.create(it.name, server, id), accessToken)
+      addAccount(CodyAccount.create(it.name, it.displayName, server, id), accessToken)
     }
   }
 
@@ -134,11 +134,10 @@ class SettingsMigration : StartupActivity, DumbAware {
       id: String = Account.generateId(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      val codyAccount = CodyAccount.create(it.name, server, id)
+      val codyAccount = CodyAccount.create(it.name, it.displayName, server, id)
       addAccount(codyAccount, accessToken)
-      if (CodyAuthenticationManager.getInstance().getDefaultAccount(project) == null) {
-        CodyAuthenticationManager.getInstance().setDefaultAccount(project, codyAccount)
-      }
+      if (CodyAuthenticationManager.instance.getActiveAccount(project) == null)
+          CodyAuthenticationManager.instance.setActiveAccount(project, codyAccount)
     }
   }
 
@@ -156,8 +155,8 @@ class SettingsMigration : StartupActivity, DumbAware {
                   requestExecutorFactory.create(accessToken), progressIndicator, server)
             }
           }
-          .successOnEdt(progressIndicator.modalityState) {
-            it.fold(onSuccess) {
+          .successOnEdt(progressIndicator.modalityState) { accountDetailsResult ->
+            accountDetailsResult.fold(onSuccess) {
               LOG.warn("Unable to load user details for '${server.url}' account", it)
             }
           }
@@ -317,12 +316,8 @@ class SettingsMigration : StartupActivity, DumbAware {
     codyApplicationSettings.isCodyDebugEnabled = codyApplicationService.isCodyDebugEnabled ?: false
     codyApplicationSettings.isCodyVerboseDebugEnabled =
         codyApplicationService.isCodyVerboseDebugEnabled ?: false
-    codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed =
-        codyApplicationService.isUrlNotificationDismissed
     codyApplicationSettings.anonymousUserId = codyApplicationService.anonymousUserId
     codyApplicationSettings.isInstallEventLogged = codyApplicationService.isInstallEventLogged
-    codyApplicationSettings.lastUpdateNotificationPluginVersion =
-        codyApplicationService.lastUpdateNotificationPluginVersion
   }
 
   companion object {

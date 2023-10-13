@@ -24,7 +24,7 @@ func Test_archiveOldSeriesPoints(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mainDB := database.NewDB(logger, dbtest.NewDB(t))
 
 	insightStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))
@@ -84,7 +84,7 @@ func Test_archiveOldRecordingTimes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mainDB := database.NewDB(logger, dbtest.NewDB(t))
 
 	insightStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))
@@ -127,7 +127,7 @@ func TestHandle_ErrorDuringTransaction(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mainDB := database.NewDB(logger, dbtest.NewDB(t))
 
 	insightStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))

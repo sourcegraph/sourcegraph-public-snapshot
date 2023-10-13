@@ -64,9 +64,9 @@ type AppNotifications struct {
 	Key string `json:"key"`
 	// Message description: The Markdown message to display
 	Message string `json:"message"`
-	// VersionMax description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMax description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMax string `json:"version.max,omitempty"`
-	// VersionMin description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMin description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMin string `json:"version.min,omitempty"`
 }
 
@@ -682,6 +682,8 @@ type Embeddings struct {
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
+	// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+	Qdrant *Qdrant `json:"qdrant,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -838,7 +840,7 @@ type ExperimentalFeatures struct {
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// EnableGRPC description: Enables gRPC for communication between internal services
-	EnableGRPC bool `json:"enableGRPC,omitempty"`
+	EnableGRPC *bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
@@ -887,6 +889,8 @@ type ExperimentalFeatures struct {
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
 	// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
 	SearchSanitization *SearchSanitization `json:"search.sanitization,omitempty"`
+	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
+	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
@@ -953,6 +957,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "search.index.query.contexts")
 	delete(m, "search.index.revisions")
 	delete(m, "search.sanitization")
+	delete(m, "searchJobs")
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
@@ -1125,6 +1130,10 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	// GroupsCacheTTL description: Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).
 	GroupsCacheTTL float64 `json:"groupsCacheTTL,omitempty"`
+	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
+	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
+	// SyncInternalRepoPermissions description: If true, access to internal repositories will be synced as part of user permission syncs. This can lead to slower user permission syncs for organizations with many internal repositories. Defaults to false.
+	SyncInternalRepoPermissions bool `json:"syncInternalRepoPermissions,omitempty"`
 }
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
@@ -1385,6 +1394,20 @@ type Header struct {
 	Value     string `json:"value"`
 }
 
+// Hnsw description: Overrides for the HNSW index config.
+type Hnsw struct {
+	// EfConstruct description: Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.
+	EfConstruct *int `json:"efConstruct,omitempty"`
+	// FullScanThreshold description: Minimal size (in KiloBytes) of vectors for additional payload-based indexing.
+	FullScanThreshold *int `json:"fullScanThreshold,omitempty"`
+	// M description: Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.
+	M *int `json:"m,omitempty"`
+	// OnDisk description: Store HNSW index on disk.
+	OnDisk *bool `json:"onDisk,omitempty"`
+	// PayloadM description: Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.
+	PayloadM *int `json:"payloadM,omitempty"`
+}
+
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
@@ -1437,9 +1460,9 @@ type JVMPackagesConnection struct {
 
 // LinkStep description: Link step
 type LinkStep struct {
-	Type    any `json:"type"`
-	Value   any `json:"value"`
-	Variant any `json:"variant,omitempty"`
+	Type    any    `json:"type"`
+	Value   string `json:"value"`
+	Variant any    `json:"variant,omitempty"`
 }
 
 // LocalGitExternalService description: Configuration for integration local Git repositories.
@@ -1695,8 +1718,9 @@ type OnboardingStep struct {
 
 // OnboardingTask description: An onboarding task
 type OnboardingTask struct {
-	// DataAttributes description: Additional attributes to add to the task HTML element as data-* attributes
-	DataAttributes map[string]any `json:"dataAttributes,omitempty"`
+	Icon any `json:"icon,omitempty"`
+	// RequiredSteps description: Set this property if only a subset of steps are required for this task to complete.
+	RequiredSteps float64 `json:"requiredSteps,omitempty"`
 	// Steps description: Steps that need to be completed by the user
 	Steps []*OnboardingStep `json:"steps"`
 	// Title description: Title of this task
@@ -1705,7 +1729,8 @@ type OnboardingTask struct {
 
 // OnboardingTourConfiguration description: Configuration for a onboarding tour.
 type OnboardingTourConfiguration struct {
-	Tasks []*OnboardingTask `json:"tasks"`
+	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
+	Tasks           []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1740,6 +1765,12 @@ type OpenTelemetry struct {
 	// Endpoint description: OpenTelemetry tracing collector endpoint. By default, Sourcegraph's "/-/debug/otlp" endpoint forwards data to the configured collector backend.
 	Endpoint string `json:"endpoint,omitempty"`
 }
+type Optimizers struct {
+	// IndexingThreshold description: Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing
+	IndexingThreshold *int `json:"indexingThreshold,omitempty"`
+	// MemmapThreshold description: Maximum size (in kilobytes) of vectors to store in-memory per segment.
+	MemmapThreshold *int `json:"memmapThreshold,omitempty"`
+}
 
 // OrganizationInvitations description: Configuration for organization invitations.
 type OrganizationInvitations struct {
@@ -1758,7 +1789,9 @@ type OrganizationInvitations struct {
 type OtherExternalServiceConnection struct {
 	// Exclude description: A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({"name": "myrepo"}) or regular expression ({"pattern": ".*secret.*"}).
 	Exclude []*ExcludedOtherRepo `json:"exclude,omitempty"`
-	Repos   []string             `json:"repos"`
+	// MakeReposPublicOnDotCom description: Whether or not these repositories should be marked as public on Sourcegraph.com. Defaults to false.
+	MakeReposPublicOnDotCom bool     `json:"makeReposPublicOnDotCom,omitempty"`
+	Repos                   []string `json:"repos"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable "{base}" is replaced with the Git clone base URL host and path, and "{repo}" is replaced with the repository path taken from the `repos` field.
 	//
 	// For example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value "my/repo", then a repositoryPathPattern of "{base}/{repo}" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.
@@ -1767,7 +1800,7 @@ type OtherExternalServiceConnection struct {
 	//
 	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as ["src-serve-local"].
+	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Cody App and define the repos configuration property such as ["src-serve-local"].
 	Root string `json:"root,omitempty"`
 	Url  string `json:"url,omitempty"`
 }
@@ -1825,6 +1858,8 @@ type PasswordPolicy struct {
 
 // PerforceAuthorization description: If non-null, enforces Perforce depot permissions.
 type PerforceAuthorization struct {
+	// IgnoreRulesWithHost description: Ignore host-based protection rules (any rule with something other than a wildcard in the Host field).
+	IgnoreRulesWithHost bool `json:"ignoreRulesWithHost,omitempty"`
 	// SubRepoPermissions description: Experimental: infer sub-repository permissions from protection rules.
 	SubRepoPermissions bool `json:"subRepoPermissions,omitempty"`
 }
@@ -1908,6 +1943,24 @@ type PythonRateLimit struct {
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
+
+// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+type Qdrant struct {
+	Enabled bool `json:"enabled,omitempty"`
+	// Hnsw description: Overrides for the HNSW index config.
+	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
+	Optimizers *Optimizers `json:"optimizers,omitempty"`
+	// Quantization description: Overrides for quantization config.
+	Quantization *Quantization `json:"quantization,omitempty"`
+}
+
+// Quantization description: Overrides for quantization config.
+type Quantization struct {
+	// Enabled description: Whether to enable int8 scalar quantization
+	Enabled *bool `json:"enabled,omitempty"`
+	// Quantile description: Any values that lie outside the quantile range will be truncated
+	Quantile *float64 `json:"quantile,omitempty"`
+}
 type QuickLink struct {
 	// Description description: A description for this quick link
 	Description string `json:"description,omitempty"`
@@ -1923,13 +1976,13 @@ type Ranking struct {
 	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
 	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.
 	FlushWallTimeMS int `json:"flushWallTimeMS,omitempty"`
-	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
+	// MaxQueueMatchCount description: DEPRECATED: This setting has no effect.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
 	// MaxQueueSizeBytes description: The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.
 	MaxQueueSizeBytes *int `json:"maxQueueSizeBytes,omitempty"`
-	// MaxReorderDurationMS description: The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.
+	// MaxReorderDurationMS description: DEPRECATED: This setting has no effect.
 	MaxReorderDurationMS int `json:"maxReorderDurationMS,omitempty"`
-	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.
+	// MaxReorderQueueSize description: DEPRECATED: This setting has no effect.
 	MaxReorderQueueSize *int `json:"maxReorderQueueSize,omitempty"`
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
@@ -2077,7 +2130,7 @@ type SearchLimits struct {
 	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
 	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxRepos int `json:"maxRepos,omitempty"`
-	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
+	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Note: Experimental search jobs do not respect this limit. Defaults to 1 minute.
 	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
 
@@ -2105,6 +2158,15 @@ type SearchScope struct {
 	Name string `json:"name"`
 	// Value description: The query string of this search scope
 	Value string `json:"value"`
+}
+
+// SearchStep description: Search query step
+type SearchStep struct {
+	// Query description: The query template to use.
+	Query string `json:"query"`
+	// Snippets description: Possible code snippets for this query. Can also be a language -> code snippets map.
+	Snippets any `json:"snippets,omitempty"`
+	Type     any `json:"type"`
 }
 
 // SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
@@ -2278,8 +2340,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 
 // SettingsExperimentalFeatures description: Experimental features and settings.
 type SettingsExperimentalFeatures struct {
-	// ApplySearchQuerySuggestionOnEnter description: This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)
-	ApplySearchQuerySuggestionOnEnter *bool `json:"applySearchQuerySuggestionOnEnter,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
@@ -2318,8 +2378,6 @@ type SettingsExperimentalFeatures struct {
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
-	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
-	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// SearchQueryInput description: Specify which version of the search query input to use
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
@@ -2363,7 +2421,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "applySearchQuerySuggestionOnEnter")
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
 	delete(m, "codeInsightsCompute")
@@ -2383,7 +2440,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
-	delete(m, "searchJobs")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "showCodeMonitoringLogs")
@@ -2525,7 +2581,7 @@ type SiteConfiguration struct {
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
 	DebugSearchSymbolsParallelism int `json:"debug.search.symbolsParallelism,omitempty"`
 	// DefaultRateLimit description: The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.
-	DefaultRateLimit float64 `json:"defaultRateLimit,omitempty"`
+	DefaultRateLimit *int `json:"defaultRateLimit,omitempty"`
 	// DisableAutoCodeHostSyncs description: Disable periodic syncs of configured code host connections (repository metadata, permissions, batch changes changesets, etc)
 	DisableAutoCodeHostSyncs bool `json:"disableAutoCodeHostSyncs,omitempty"`
 	// DisableAutoGitUpdates description: Disable periodically fetching git contents for existing repositories.
@@ -2589,6 +2645,8 @@ type SiteConfiguration struct {
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
+	// GitserverDiskUsageWarningThreshold description: Disk usage threshold at which to display warning notification. Value is a percentage.
+	GitserverDiskUsageWarningThreshold *int `json:"gitserver.diskUsageWarningThreshold,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
@@ -2807,6 +2865,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitMaxConcurrentClones")
 	delete(m, "gitRecorder")
 	delete(m, "gitUpdateInterval")
+	delete(m, "gitserver.diskUsageWarningThreshold")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
 	delete(m, "htmlHeadBottom")
@@ -2974,8 +3033,8 @@ type UsernameIdentity struct {
 
 // VideoStep description: Video step
 type VideoStep struct {
-	Type  any `json:"type"`
-	Value any `json:"value"`
+	Type  any    `json:"type"`
+	Value string `json:"value"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.

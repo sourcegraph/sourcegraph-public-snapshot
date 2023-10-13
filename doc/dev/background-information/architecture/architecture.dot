@@ -68,7 +68,7 @@ digraph architecture {
         worker [
             label="worker"
             fillcolor="#22ffff"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/worker"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/worker"
         ]
 
         subgraph cluster_search {
@@ -133,12 +133,6 @@ digraph architecture {
             URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/repo-updater"
         ]
 
-        github_proxy [
-            label="github proxy"
-            fillcolor="#aaaaff"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/github-proxy"
-        ]
-
         syntect_server [
             label="syntect\nserver"
             fillcolor="#cc0085"
@@ -198,7 +192,6 @@ digraph architecture {
     web_app -> frontend[ltail=cluster_clients, fillcolor="#fff0d0"]
     gitserver -> {bitbucket_server} [lhead=cluster_codehosts, fillcolor="#cd5c5c"]
     repo_updater -> {bitbucket_server} [lhead=cluster_codehosts, fillcolor="#05a167"]
-    github_proxy -> github_dot_com [fillcolor="#aaaaff"]
 
     /* To databases */
     frontend -> {postgres, codeintel_db, codeinsights_db} [fillcolor="#7e78dc"]
@@ -217,7 +210,7 @@ digraph architecture {
 
     /* Unconstrained internal routes */
     codeintel_worker -> {blob_store} [fillcolor="#eac1c1", constraint=false]
-    gitserver -> {github_proxy} [fillcolor="#cd5c5c", constraint=false]
-    repo_updater -> {github_proxy} [fillcolor="#05a167"]
+    gitserver -> {github_dot_com} [fillcolor="#cd5c5c", constraint=false]
+    repo_updater -> {github_dot_com} [fillcolor="#05a167"]
     repo_updater -> {postgres} [fillcolor="#05a167", constraint=false]
 }

@@ -15,7 +15,7 @@ export const searchPanelAPI: SearchPanelAPI = {
     },
 }
 let focusSearchBox = (): void => {
-    // Initially a noop. Waiting for monaco init
+    // Initially a noop. Waiting for search box init.
 }
 
 // TODO move to api.ts file
