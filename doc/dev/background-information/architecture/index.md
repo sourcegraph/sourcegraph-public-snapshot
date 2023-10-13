@@ -139,7 +139,6 @@ If you want to learn more about code insights:
 - [Search](#search)
   - GraphQL API for text search, in particular `search()`, `matchCount`, `stats.languages`
   - Query syntax: Code insights "construct" search queries programmatically
-  - Exhaustive search (with `count:all`/`count:999999` operator)
   - Historical search (= unindexed search, currently)
   - Commit search to find historical commits to search over
 - [Repository Syncing](#repository-syncing)

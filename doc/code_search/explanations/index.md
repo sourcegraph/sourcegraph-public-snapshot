@@ -12,4 +12,5 @@
   - Curate [saved searches](features.md#saved-searches) for yourself or your org.
   - Use [code monitoring](../../code_monitoring/index.md) to set up notifications for code changes that match a query.
 - [Search details](search_details.md)
+- [Search limitations](limitations.md)
 - [Search tips](tips.md)

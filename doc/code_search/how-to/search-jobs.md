@@ -14,7 +14,7 @@ To enable Search Jobs, you need to configure a managed object storage service to
 
 ## Storing search results
 
-To target a managed object storage service, you must set a handful of environment variables for configuration and authentication to the target service. 
+To target a managed object storage service, you must set a handful of environment variables for configuration and authentication to the target service.
 
 - If you are running a `sourcegraph/server` deployment, set the environment variables on the server container
 - If you are running via Docker-compose or Kubernetes, set the environment variables on the `frontend` and `worker` containers
@@ -83,5 +83,3 @@ Search Jobs supports queries of `type:file` and it automatically appends this to
 - `.*` regexp search
 - Multiple `rev` filters
 - Queries with `index: filter`
-
->NOTE: Sourcegraph already offers an [Exhaustive Search](./../how-to/exhaustive.md) with the `count:all` operator. However, there are certain limitations when generating results within your codebase.

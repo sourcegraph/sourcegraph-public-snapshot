@@ -75,7 +75,6 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 - [Create a saved search](how-to/saved_searches.md)
 - [Create a custom search snippet](how-to/snippets.md)
 - [Using and creating search contexts](how-to/search_contexts.md)
-- [Exhaustive search](how-to/exhaustive.md)
 - [How to create a search context with the GraphQL API](how-to/create_search_context_graphql.md)
 
 

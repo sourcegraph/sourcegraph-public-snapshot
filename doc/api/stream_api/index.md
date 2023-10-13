@@ -9,8 +9,8 @@
 
 With the Stream API you can consume search results and related metadata as
 a stream of events. The Sourcegraph UI calls the Stream API for all interactive searches.
-Compared to our [GraphQL API](../graphql/index.md), it offers shorter times to first results and 
-supports running exhaustive searches returning a large volume of results without
+Compared to our [GraphQL API](../graphql/index.md), it offers shorter times to first results and
+supports running searches returning a large volume of results without
 putting pressure on the backend.
 
 ## Endpoint
@@ -36,7 +36,7 @@ curl --header "Accept: text/event-stream" \
 
 See [Example](#example-curl).
 
-## Event stream format 
+## Event stream format
 
 The API responds with a stream of events. Each event consists of exactly two
 fields, event and data, one per line. Events are separated by 2 newline
@@ -56,7 +56,7 @@ event: done // last event
 data: {}
 ```
 
-> NOTE: 
+> NOTE:
 > Our format is a subset of the event stream format for [server-sent
 > events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format). However, we do not guarantee compatibility with any third-party clients written for server-sent events.
 
@@ -72,9 +72,9 @@ Events can be of the following types:
 | alert | info, warning and error messages |
 | done | always the last event |
 
-Refer to the [interface definitions of our typescript client](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/search/stream.ts?L12) to learn about the schema of the event-types. 
+Refer to the [interface definitions of our typescript client](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/search/stream.ts?L12) to learn about the schema of the event-types.
 
-## Example (curl) 
+## Example (curl)
 
 On Sourcegraph.com we can run queries without authentication.
 
@@ -101,20 +101,6 @@ data: {}
 ```
 
 ## FAQ
-
-### Q: How can I run an exhaustive search directly against the Stream API?
-
-To search a pattern over all indexed repositories, add `count:all` and remove all repo filters. For example, to search all indexed repositories for the string "secret", you can run the following command
-
-```bash
-curl --header "Accept:text/event-stream" --get --url "https://sourcegraph.com/.api/search/stream" --data-urlencode "q=secret count:all"
-```
-
-If you don't want to write your own client, you can also use Sourcegraph's [src-cli](https://sourcegraph.com/github.com/sourcegraph/src-cli).
-
-```bash
-src search -stream "secret count:all"
-```
 
 ### Q: Are there plans for supporting a streaming client or interface with more functionality (e.g., parallelizing multiple streaming requests or aggregating results from multiple streams)?
 
