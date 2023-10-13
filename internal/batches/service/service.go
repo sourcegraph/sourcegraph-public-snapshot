@@ -1772,6 +1772,29 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	return availableBulkOperations, nil
 }
 
+func (s *Service) GetChangesetsByIDs(ctx context.Context, batchChange int64, ids []int64) ([]*btypes.Changeset, error) {
+	bc, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChange})
+	if err != nil {
+		return nil, errors.Wrap(err, "loading batch change")
+	}
+
+	if err := s.checkViewerCanAdminister(ctx, bc.NamespaceOrgID, bc.NamespaceUserID, true); err != nil {
+		return nil, err
+	}
+
+	// We fetch all changesets with the given ID and check that the current user is authorized to access those changesets.
+	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChange,
+		EnforceAuthz:  true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return changesets, nil
+}
+
 func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, id graphql.ID) {
 	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, id)
 }

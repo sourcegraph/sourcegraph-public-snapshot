@@ -1950,6 +1950,11 @@ extend type Query {
     Returns the max number of changesets are allowed for License that does not have the batch change feature.
     """
     maxUnlicensedChangesets: Int!
+
+    """
+    Get all changesets in the given batch change by IDs.
+    """
+    getChangesetsByIDs(batchChange: ID!, changesets: [ID!]!): [Changeset!]!
 }
 
 """

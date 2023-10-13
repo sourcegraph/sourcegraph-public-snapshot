@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react'
 
-import { Button, Modal, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, ErrorAlert, Select } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import { type Scalars } from '../../../../graphql-operations'
-import { useExportChangesets } from '../backend'
+import type { Scalars, GetChangesetsByIDsResult } from '../../../../graphql-operations'
+import { useGetChangesetsByIDs } from '../backend'
 
 export interface ExportChangesetsModalProps {
     onCancel: () => void
@@ -13,40 +13,119 @@ export interface ExportChangesetsModalProps {
     changesetIDs: Scalars['ID'][]
 }
 
+const exportOptions = {
+    CSV: 'CSV',
+    JSON: 'JSON',
+} as const
+
+const headers = ['title', 'externalURL', 'repository', 'reviewState', 'state'] as const
+
 export const ExportChangesetsModal: React.FunctionComponent<React.PropsWithChildren<ExportChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,
     changesetIDs,
 }) => {
-    const [exportChangesets, { loading, error }] = useExportChangesets(batchChangeID, changesetIDs)
+    const [getChangesetsByIDs, { loading, error }] = useGetChangesetsByIDs(batchChangeID, changesetIDs)
+    const [selectedDataExportType, setSelectedDataExportType] = React.useState<keyof typeof exportOptions>(
+        exportOptions.CSV
+    )
 
-    const onSubmit = useCallback<React.FormEventHandler>(async () => {
-        await exportChangesets({
-            onCompleted: data => {
-                const { data: csvData, batchChange } = data.exportChangesets
-                const blob = new Blob([csvData], { type: 'text/csv' })
+    const handleFormatChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(event => {
+        setSelectedDataExportType(event.target.value as keyof typeof exportOptions)
+    }, [])
 
-                const url = URL.createObjectURL(blob)
+    const constructCSVDataExport = useCallback((nodes: GetChangesetsByIDsResult['getChangesetsByIDs']): string => {
+        const csvRows: (string | null)[] = []
+        csvRows.push(headers.join(', '))
 
-                const element = document.createElement('a')
-                element.download = `${batchChange}.csv`
-                element.href = url
-                document.body.append(element)
-                element.click()
+        for (const node of nodes) {
+            if (node.__typename === 'ExternalChangeset') {
+                // the order is quite important here to ensure the items inserted into `csvRows`
+                // match the headers array above.
+                csvRows.push(
+                    [
+                        node.title || '',
+                        node.externalURL?.url || '',
+                        node.repository.name,
+                        node.reviewState,
+                        node.state,
+                    ].join(', ')
+                )
+            }
+        }
+        return csvRows.join('\n')
+    }, [])
 
-                // cleanup: free memory from the blob URL
-                URL.revokeObjectURL(url)
+    const constructJSONDataExport = useCallback((nodes: GetChangesetsByIDsResult['getChangesetsByIDs']): string => {
+        const jsonRows: Record<typeof headers[number], string | null>[] = []
+        for (const node of nodes) {
+            if (node.__typename === 'ExternalChangeset') {
+                jsonRows.push({
+                    title: node.title,
+                    externalURL: node.externalURL?.url || '',
+                    repository: node.repository.name,
+                    reviewState: node.reviewState,
+                    state: node.state,
+                })
+            }
+        }
+        return JSON.stringify(jsonRows, null, 2)
+    }, [])
 
-                afterCreate()
-            },
-        })
-    }, [exportChangesets, afterCreate])
+    const onSubmit = useCallback<React.FormEventHandler>(
+        () =>
+            getChangesetsByIDs({
+                onCompleted: node => {
+                    let exportData: string
+                    if (selectedDataExportType === exportOptions.CSV) {
+                        exportData = constructCSVDataExport(node.getChangesetsByIDs)
+                    } else {
+                        exportData = constructJSONDataExport(node.getChangesetsByIDs)
+                    }
+
+                    const blob = new Blob([exportData], {
+                        type: selectedDataExportType === exportOptions.CSV ? 'text/csv' : 'application/json',
+                    })
+
+                    const url = URL.createObjectURL(blob)
+
+                    const element = document.createElement('a')
+                    element.download = `batch_change_export_${batchChangeID}.${selectedDataExportType.toLowerCase()}`
+                    element.href = url
+                    document.body.append(element)
+                    element.click()
+
+                    // cleanup: free memory from the blob URL
+                    URL.revokeObjectURL(url)
+                    afterCreate()
+                },
+            }),
+        [
+            getChangesetsByIDs,
+            afterCreate,
+            selectedDataExportType,
+            batchChangeID,
+            constructCSVDataExport,
+            constructJSONDataExport,
+        ]
+    )
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
             <H3 id={MODAL_LABEL_ID}>Export changesets</H3>
-            <Text className="mb-4">Are you sure you want to export the selected changesets?</Text>
+
+            <Select
+                id="format"
+                label="What format would you like to export the changesets in?"
+                message="Only CSV and JSON formats are supported."
+                value={selectedDataExportType}
+                onChange={handleFormatChange}
+            >
+                <option value={exportOptions.CSV}>CSV</option>
+                <option value={exportOptions.JSON}>JSON</option>
+            </Select>
+
             {error && <ErrorAlert error={error} />}
             <div className="d-flex justify-content-end">
                 <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">

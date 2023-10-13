@@ -47,8 +47,8 @@ import type {
     AvailableBulkOperationsVariables,
     AvailableBulkOperationsResult,
     BulkOperationType,
-    ExportChangesetQueryResult,
-    ExportChangesetQueryVariables,
+    GetChangesetsByIDsResult,
+    GetChangesetsByIDsVariables,
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
@@ -829,20 +829,30 @@ export async function publishChangesets(
     dataOrThrowErrors(result)
 }
 
-export const EXPORT_CHANGESETS_QUERY = gql`
-    query ExportChangesetQuery($batchChange: ID!, $changesets: [ID!]!) {
-        exportChangesets(batchChange: $batchChange, changesets: $changesets) {
-            data
-            batchChange
+export const GET_CHANGESETS_BY_IDS_QUERY = gql`
+    query GetChangesetsByIDs($batchChange: ID!, $changesets: [ID!]!) {
+        getChangesetsByIDs(batchChange: $batchChange, changesets: $changesets) {
+            ... on ExternalChangeset {
+                id
+                title
+                state
+                reviewState
+                externalURL {
+                    url
+                }
+                repository {
+                    name
+                }
+            }
         }
     }
 `
 
-export const useExportChangesets = (
+export const useGetChangesetsByIDs = (
     batchChange: Scalars['ID'],
     changesets: Scalars['ID'][]
-): QueryTuple<ExportChangesetQueryResult, ExportChangesetQueryVariables> =>
-    useLazyQuery(EXPORT_CHANGESETS_QUERY, {
+): QueryTuple<GetChangesetsByIDsResult, GetChangesetsByIDsVariables> =>
+    useLazyQuery(GET_CHANGESETS_BY_IDS_QUERY, {
         variables: { batchChange, changesets },
     })
 
