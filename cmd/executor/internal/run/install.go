@@ -13,7 +13,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/internal/download"
@@ -220,16 +219,10 @@ func installSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) e
 		binDir = "/usr/local/bin"
 	}
 
-	copts := queueOptions(
-		config,
-		// We don't need telemetry here as we only use the client to talk to the Sourcegraph
-		// instance to see what src-cli version it recommends. This saves a few exec calls
-		// and confusing error messages.
-		queue.TelemetryOptions{},
-	)
+	copts := baseClientOptions(config, "")
 	srcVersion := srccli.MinimumVersion
-	if copts.BaseClientOptions.EndpointOptions.URL != "" {
-		client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
+	if copts.EndpointOptions.URL != "" {
+		client, err := apiclient.NewBaseClient(logger, copts)
 		if err != nil {
 			return err
 		}
