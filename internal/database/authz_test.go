@@ -71,25 +71,27 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	}
 
 	// Add two external accounts
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
-		extsvc.AccountSpec{
-			ServiceType: "gitlab",
-			ServiceID:   "https://gitlab.com/",
-			AccountID:   "alice_gitlab",
-		},
-		extsvc.AccountData{},
-	)
+	_, err = db.UserExternalAccounts().Upsert(ctx,
+		&extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.com/",
+				AccountID:   "alice_gitlab",
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID,
-		extsvc.AccountSpec{
-			ServiceType: "github",
-			ServiceID:   "https://github.com/",
-			AccountID:   "alice_github",
-		},
-		extsvc.AccountData{},
-	)
+	_, err = db.UserExternalAccounts().Upsert(ctx,
+		&extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+				AccountID:   "alice_github",
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}

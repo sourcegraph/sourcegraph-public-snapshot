@@ -567,7 +567,12 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		data := extsvc.AccountData{
 			Data: extsvc.NewUnencryptedData(serializedData),
 		}
-		_, err = db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data)
+		_, err = db.UserExternalAccounts().Insert(ctx,
+			&extsvc.Account{
+				UserID:      createdUser.ID,
+				AccountSpec: spec,
+				AccountData: data,
+			})
 		require.NoError(t, err)
 
 		// Confirm that the external account was added
