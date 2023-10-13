@@ -1276,7 +1276,7 @@ func TestUsers_CreateWithExternalAccount(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -1334,7 +1334,7 @@ func TestUsers_CreateWithExternalAccount_NilData(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
