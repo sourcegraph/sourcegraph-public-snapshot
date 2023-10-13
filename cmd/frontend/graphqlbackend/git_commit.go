@@ -129,12 +129,7 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 }
 
 func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceChangelistResolver, error) {
-	commit, err := r.resolveCommit(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return toPerforceChangelistResolver(ctx, r.repoResolver, commit)
+	return toPerforceChangelistResolver(ctx, r)
 }
 
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
@@ -202,11 +197,7 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	// TODO(tsenart): We can get the parent commits in batch from gitserver instead of doing
 	// N roundtrips. We already have a git.Commits method. Maybe we can use that.
 	for i, parent := range commit.Parents {
-		var err error
-		resolvers[i], err = r.repoResolver.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
-		if err != nil {
-			return nil, err
-		}
+		resolvers[i] = NewGitCommitResolver(r.db, r.gitserverClient, r.repoResolver, parent, nil)
 	}
 	return resolvers, nil
 }
