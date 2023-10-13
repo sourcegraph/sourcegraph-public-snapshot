@@ -2075,7 +2075,7 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 
 	perms := make([]*RepoPermission, 0)
 	for rows.Next() {
-		user, updatedAt, source, err := s.scanUsersPermissionsInfo(rows)
+		user, updatedAt, source, err := scanUsersPermissionsInfo(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -2097,7 +2097,7 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 	return perms, nil
 }
 
-func (s *permsStore) scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User, time.Time, authz.PermsSource, error) {
+func scanUsersPermissionsInfo(rows dbutil.Scanner) (*types.User, time.Time, authz.PermsSource, error) {
 	var u types.User
 	var updatedAt time.Time
 	var source *string
