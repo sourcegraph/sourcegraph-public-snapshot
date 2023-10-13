@@ -88,7 +88,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             aria-label="Hide sidebar"
                             variant="icon"
                             className={classNames(
-                                'position-absolute border mr-2',
+                                'position-absolute border mr-2 mb-1',
                                 styles.toggle
                             )}
                             onClick={() => props.handleSidebarToggle(false)}

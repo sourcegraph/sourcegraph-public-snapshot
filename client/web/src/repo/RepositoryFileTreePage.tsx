@@ -132,6 +132,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                     className={styles.pageContent}
                                     context={globalContext}
+                                    sidebarOpen={isVisible}
                                     handleSidebarToggle={handleSidebarToggle}
                                 />
                             </TraceSpanProvider>

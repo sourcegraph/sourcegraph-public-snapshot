@@ -23,8 +23,9 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     revision?: string
     filePath: string
     enableOwnershipPanel: boolean
+    sidebarOpen: boolean
     handleSidebarToggle: (value: boolean) => void
-}> = ({ repoID, revision, filePath, enableOwnershipPanel, handleSidebarToggle }) => {
+}> = ({ repoID, revision, filePath, enableOwnershipPanel, sidebarOpen, handleSidebarToggle }) => {
     const navigate = useNavigate()
 
     const openOwnershipPanel = useCallback(() => {
@@ -87,19 +88,22 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         <div className={styles.wrapper}>
             {history && (
                 <div className={styles.historyPanel}>
-                    <Tooltip content="Hide sidebar" placement="right">
-                        <Button
-                            aria-label="Hide sidebar"
-                            variant="icon"
-                            className={classNames(
-                                'border mr-2',
-                                // styles.toggle
-                            )}
-                            onClick={() => handleSidebarToggle(true)}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiPageLayoutSidebarLeft} />
-                        </Button>
-                    </Tooltip>
+                    {!sidebarOpen && (
+                        <Tooltip content="Hide sidebar" placement="right">
+                            <Button
+                                aria-label="Hide sidebar"
+                                variant="icon"
+                                className={classNames(
+                                    'p-2 border mr-2 hover:bg-gray',
+                                    // styles.toggle
+                                )}
+                                onClick={() => handleSidebarToggle(true)}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPageLayoutSidebarLeft} />
+                            </Button>
+                        </Tooltip>
+                    )}
+
                     <GitCommitNode
                         node={history}
                         extraCompact={true}
