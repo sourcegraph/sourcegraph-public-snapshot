@@ -2124,7 +2124,6 @@ func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.
 		cs[i] = NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo)
 	}
 
-	fmt.Println("cs is", len(cs))
 	return graphqlutil.NewSliceConnectionResolver(cs, len(cs), len(cs)), nil
 }
 
