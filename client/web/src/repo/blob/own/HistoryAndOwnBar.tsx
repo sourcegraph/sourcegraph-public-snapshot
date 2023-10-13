@@ -89,14 +89,12 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
             {history && (
                 <div className={styles.historyPanel}>
                     {!sidebarOpen && (
-                        <Tooltip content="Hide sidebar" placement="right">
+                        <Tooltip content="Show sidebar" placement="right">
                             <Button
-                                aria-label="Hide sidebar"
+                                aria-label="Show sidebar"
                                 variant="icon"
-                                className={classNames(
-                                    'p-2 border mr-2 hover:bg-gray',
-                                    // styles.toggle
-                                )}
+                                className={classNames(styles.toggle, 'border mr-2 mb-1')}
+                                display="inline"
                                 onClick={() => handleSidebarToggle(true)}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiPageLayoutSidebarLeft} />
@@ -108,13 +106,13 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                         node={history}
                         extraCompact={true}
                         hideExpandCommitMessageBody={true}
-                        className={styles.history}
+                        className={classNames(sidebarOpen ? '' : 'mb-1', styles.history)}
                     />
                     <Button
                         variant="link"
                         size="sm"
                         display="inline"
-                        className="pt-0 pb-0 border-0"
+                        className={styles.history}
                         onClick={openHistoryPanel}
                     >
                         Show history

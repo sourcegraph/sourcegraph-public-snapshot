@@ -2,13 +2,13 @@ import { FC, useCallback, useState } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
-import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useLocalStorage, useMatchMedia } from '@sourcegraph/wildcard'
 
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { SourcegraphContext } from '../jscontext'
 import type { NotebookProps } from '../notebooks'

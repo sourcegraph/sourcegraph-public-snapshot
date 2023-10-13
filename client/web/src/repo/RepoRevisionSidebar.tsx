@@ -87,10 +87,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                         <Button
                             aria-label="Hide sidebar"
                             variant="icon"
-                            className={classNames(
-                                'position-absolute border mr-2 mb-1',
-                                styles.toggle
-                            )}
+                            className={classNames('position-absolute border mr-2', styles.toggle)}
                             onClick={() => props.handleSidebarToggle(false)}
                         >
                             <Icon aria-hidden={true} svgPath={mdiPageLayoutSidebarRight} />
@@ -113,9 +110,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             // position, which tree is expanded)
                             behavior="memoize"
                         >
-                            <TabList
-                                wrapperClassName="mr-3 ml-5"
-                            >
+                            <TabList wrapperClassName="mr-3 ml-5">
                                 <Tab data-tab-content="files">
                                     <span className="tablist-wrapper--tab-label">Files</span>
                                 </Tab>
@@ -161,8 +156,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                         </Tabs>
                     </div>
                 </Panel>
-            )
-            }
+            )}
 
             {enableBlobPageSwitchAreasShortcuts && (
                 <>
