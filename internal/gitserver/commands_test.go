@@ -1157,9 +1157,7 @@ var (
 )
 
 func TestLogPartsPerCommitInSync(t *testing.T) {
-	require.Equal(t, 2*partsPerCommitBasic, strings.Count(logFormatWithoutRefs, "%"),
-		"Expected (2 * %0d) %% signs in log format string (%0d fields, %0d %%x00 separators)",
-		partsPerCommitBasic)
+	require.Equal(t, 2*partsPerCommit, strings.Count(logFormatWithoutRefs, "%"))
 }
 
 func TestRepository_GetCommit(t *testing.T) {

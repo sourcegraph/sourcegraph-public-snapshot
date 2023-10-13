@@ -1894,17 +1894,17 @@ func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdo
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
+var runCommitLog = func(ctx context.Context, cmd GitCommand, opts CommitsOptions) ([]*wrappedCommit, error) {
 	r, err := cmd.StdoutReader(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	return parseCommitLogOutput(r, opt.NameOnly)
+	return parseCommitLogOutput(r)
 }
 
-func parseCommitLogOutput(r io.Reader, nameOnly bool) ([]*wrappedCommit, error) {
+func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
 	commitScanner := bufio.NewScanner(r)
 	commitScanner.Split(commitSplitFunc)
 
@@ -2112,7 +2112,7 @@ func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.Re
 			return errors.Wrap(err, "failed to perform git log")
 		}
 
-		wrappedCommits, err := parseCommitLogOutput(strings.NewReader(rawResult.Stdout), true)
+		wrappedCommits, err := parseCommitLogOutput(strings.NewReader(rawResult.Stdout))
 		if err != nil {
 			if ignoreErrors {
 				// Treat as not-found
