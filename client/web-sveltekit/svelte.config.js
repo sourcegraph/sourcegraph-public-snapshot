@@ -18,6 +18,8 @@ if (process.env.BAZEL || process.env.DEPLOY_TYPE === 'dev') {
     out = '../../ui/assets/'
   }
 
+  out += OUTPUT_DIR
+
   adapter = sgAdapter({
     out,
     // Path from which the web server will serve the SvelteKit files
@@ -111,7 +113,7 @@ function sgAdapter(options) {
       const fallback = join(tmp, options.fallback)
 
       builder.rimraf(tmp)
-      //builder.rimraf(out)
+      builder.rimraf(out)
 
       builder.writeClient(out)
       builder.writePrerendered(out)

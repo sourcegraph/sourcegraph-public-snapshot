@@ -10,20 +10,20 @@ import (
 )
 
 var sveltekitEnabledRoutes = map[string]struct{}{
-	routeSearch:           struct{}{},
-	routeTree:             struct{}{},
-	routeBlob:             struct{}{},
-	routeRepo:             struct{}{},
-	routeRepoSettings:     struct{}{},
-	routeRepoCodeGraph:    struct{}{},
-	routeRepoCommit:       struct{}{},
-	routeRepoBranches:     struct{}{},
-	routeRepoBatchChanges: struct{}{},
-	routeRepoCommits:      struct{}{},
-	routeRepoTags:         struct{}{},
-	routeRepoCompare:      struct{}{},
-	routeRepoStats:        struct{}{},
-	routeRepoOwn:          struct{}{},
+	routeSearch:           {},
+	routeTree:             {},
+	routeBlob:             {},
+	routeRepo:             {},
+	routeRepoSettings:     {},
+	routeRepoCodeGraph:    {},
+	routeRepoCommit:       {},
+	routeRepoBranches:     {},
+	routeRepoBatchChanges: {},
+	routeRepoCommits:      {},
+	routeRepoTags:         {},
+	routeRepoCompare:      {},
+	routeRepoStats:        {},
+	routeRepoOwn:          {},
 }
 
 // useSvelteKit returns true if the route is configured to be supported by useSvelteKit
