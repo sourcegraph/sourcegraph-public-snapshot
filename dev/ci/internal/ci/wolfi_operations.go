@@ -101,8 +101,15 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 
 	return func(pipeline *bk.Pipeline) {
 
+		cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
 		opts := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)),
+			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					Type:            bk.AnnotationTypeInfo,
+					IncludeNames:    false,
+					MultiJobContext: "wolfi-images",
+				},
+			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			bk.Env("DOCKER_BAZEL", "true"),
