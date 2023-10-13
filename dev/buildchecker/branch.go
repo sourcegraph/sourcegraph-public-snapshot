@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/go-github/v55/github"
 
@@ -103,10 +104,17 @@ func (b *repoBranchLocker) Unlock(ctx context.Context) (func() error, error) {
 		// no restrictions in place, we are done
 		return nil, nil
 	}
+	// This removes restrictions but NOT THE BRANCH PROTECTION!
+	req, err := b.ghc.NewRequest(http.MethodDelete,
+		fmt.Sprintf("/repos/%s/%s/branches/%s/protection/restrictions",
+			b.owner, b.repo, b.branch),
+		nil)
+	if err != nil {
+		return nil, errors.Newf("deleteRestrictions: %w", err)
+	}
 
 	return func() error {
-		_, err := b.ghc.Repositories.RemoveBranchProtection(ctx, b.owner, b.repo, b.branch)
-		if err != nil {
+		if _, err := b.ghc.Do(ctx, req, nil); err != nil {
 			return errors.Newf("unlock: %w", err)
 		}
 		return nil
