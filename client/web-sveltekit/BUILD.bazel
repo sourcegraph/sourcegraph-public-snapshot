@@ -131,11 +131,9 @@ vite_bin.vite(
     chdir = package_name(),
     env = {
         "BAZEL": "1",
-        "JS_BINARY__LOG_DEBUG": "1",
     },
     visibility = ["//ui/assets/enterprise:__pkg__"],
-    silent_on_success = False,
-    # tags = ["no-sandbox"]
+    # silent_on_success = False,
 )
 
 # TODO: remove this once we have some tests.

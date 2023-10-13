@@ -1,11 +1,7 @@
 import { join } from 'path'
-import { readdirSync, readFileSync } from 'fs'
 
 import staticAdapter from '@sveltejs/adapter-static'
 import { vitePreprocess } from '@sveltejs/kit/vite'
-
-// Add characters below this line to trigger bazel changes
-// 111
 
 let adapter
 
@@ -109,8 +105,6 @@ function sgAdapter(options) {
   return {
     name: 'sg adapter',
     async adapt(builder) {
-      console.error('>>>>>>>> cwd', process.cwd())
-      console.error('>>>>>>>> files before', readdirSync(process.cwd()))
       const out = options.out || 'build'
       const appDir = builder.config.kit.appDir
       const tmp = builder.getBuildDirectory('sg-adapter')
@@ -130,9 +124,6 @@ function sgAdapter(options) {
       })
 
       builder.log(`Wrote site to "${out}"`)
-      console.error('>>>>>>>> files after', readdirSync(process.cwd()))
-      // Force failure
-      //process.exit(123)
     },
   }
 }
