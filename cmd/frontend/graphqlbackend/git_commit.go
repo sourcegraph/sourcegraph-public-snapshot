@@ -300,6 +300,9 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
 
+// rootTreeFileInfo is an implements FileInfo for the
+// root tree of a commit, which is guaranteed to be a directory
+// and is guaranteed to exist.
 type rootTreeFileInfo struct{}
 
 var _ os.FileInfo = (*rootTreeFileInfo)(nil)
