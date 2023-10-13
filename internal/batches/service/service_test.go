@@ -3199,6 +3199,36 @@ changesetTemplate:
 			}
 		})
 	})
+
+	t.Run("GetChangesetsByIDs", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+		if err := s.CreateChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		changesets, err := svc.GetChangesetsByIDs(ctx, batchChange.ID, []int64{changeset.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(changesets) != 1 {
+			t.Fatalf("expected 1 changeset but got %d", len(changesets))
+		}
+
+		if changesets[0].ID != changeset.ID {
+			t.Fatalf("expected changeset ID %d but got %d", changeset.ID, changesets[0].ID)
+		}
+	})
 }
 
 func createJob(t *testing.T, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
@@ -3396,14 +3426,6 @@ func assertOrgOrAuthError(t *testing.T, err error) {
 
 	if !errors.HasType(err, auth.ErrNotAnOrgMember) && !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 		t.Fatalf("expected authorization error, got %s", err.Error())
-	}
-}
-
-func assertNoOrgAuthError(t *testing.T, err error) {
-	t.Helper()
-
-	if errors.HasType(err, auth.ErrNotAnOrgMember) {
-		t.Fatal("got org authorization error")
 	}
 }
 

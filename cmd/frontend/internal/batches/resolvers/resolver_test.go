@@ -2936,6 +2936,11 @@ func TestGetChangesetsByIDs(t *testing.T) {
 	if len(response.GetChangesetsByIDs.Nodes) != 1 {
 		t.Fatalf("expected one changeset, got %d", len(response.GetChangesetsByIDs.Nodes))
 	}
+
+	firstChangeset := response.GetChangesetsByIDs.Nodes[0]
+	if firstChangeset.ID != string(bgql.MarshalChangesetID(changeset.ID)) {
+		t.Errorf("expected changeset ID %q, got %q", changeset.ID, firstChangeset.ID)
+	}
 }
 
 const queryGetChangesetsByIDs = `
