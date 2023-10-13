@@ -50,8 +50,8 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 	externalAccounts.TransactFunc.SetDefaultReturn(externalAccounts, nil)
 
 	externalAccounts.GetFunc.SetDefaultReturn(extAccts[0], nil)
-	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (int32, error) {
-		return 1, nil
+	externalAccounts.UpdateFunc.SetDefaultHook(func(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error) {
+		return &extsvc.Account{UserID: 1}, nil
 	})
 
 	doer := &mockDoer{
