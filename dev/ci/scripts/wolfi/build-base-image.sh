@@ -152,7 +152,7 @@ if [[ "$IS_MAIN" != "true" ]]; then
     file="${name} image.md"
     cat <<-EOF > "${REPO_DIR}/annotations/${file}"
 
-<strong>:octopus: ${name} image</strong>
+<strong>:octopus: ${name} image &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
 <br />
 <br />
 Run the \`${name}\` base image locally using:
