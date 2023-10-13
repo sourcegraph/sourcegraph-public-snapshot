@@ -364,18 +364,20 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 
 	logger.Info("Writing external account to the DB")
 
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(
+	_, err = db.UserExternalAccounts().Upsert(
 		ctx,
-		user.ID,
-		extsvc.AccountSpec{
-			ServiceType: strings.ToLower(service.Kind),
-			ServiceID:   serviceID,
-			ClientID:    clientID,
-			AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
-		},
-		extsvc.AccountData{
-			AuthData: authData,
-			Data:     nil,
+		&extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: strings.ToLower(service.Kind),
+				ServiceID:   serviceID,
+				ClientID:    clientID,
+				AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: authData,
+				Data:     nil,
+			},
 		},
 	)
 	return err

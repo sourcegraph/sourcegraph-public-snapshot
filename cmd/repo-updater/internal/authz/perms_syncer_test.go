@@ -784,7 +784,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{}, nil)
-	externalAccounts.AssociateUserAndSaveFunc.SetDefaultReturn(&extsvc.Account{
+	externalAccounts.UpsertFunc.SetDefaultReturn(&extsvc.Account{
 		ID: 1,
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.ServiceType(),
