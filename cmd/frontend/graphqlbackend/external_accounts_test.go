@@ -49,7 +49,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 			AccountID:   "xd",
 		}
 
-		_, err := db.UserExternalAccounts().CreateUserAndSave(ctx, database.NewUser{Username: "u"}, spec, extsvc.AccountData{})
+		_, err := db.Users().CreateWithExternalAccount(ctx, database.NewUser{Username: "u"}, &extsvc.Account{AccountSpec: spec})
 		require.NoError(t, err)
 
 		graphqlArgs := struct {
@@ -141,18 +141,18 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				},
 			}, nil)
 
-			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, uID int32, acctSpec extsvc.AccountSpec, acctData extsvc.AccountData) (*extsvc.Account, error) {
-				if uID != tc.user.ID {
-					t.Errorf("got userID %d, want %d", uID, tc.user.ID)
+			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error) {
+				if acct.UserID != tc.user.ID {
+					t.Errorf("got userID %d, want %d", acct.UserID, tc.user.ID)
 				}
-				if acctSpec.ServiceType != extsvc.TypeGerrit {
-					t.Errorf("got service type %q, want %q", acctSpec.ServiceType, extsvc.TypeGerrit)
+				if acct.AccountSpec.ServiceType != extsvc.TypeGerrit {
+					t.Errorf("got service type %q, want %q", acct.AccountSpec.ServiceType, extsvc.TypeGerrit)
 				}
-				if acctSpec.ServiceID != gerritURL {
-					t.Errorf("got service ID %q, want %q", acctSpec.ServiceID, "https://gerrit.example.com/")
+				if acct.AccountSpec.ServiceID != gerritURL {
+					t.Errorf("got service ID %q, want %q", acct.AccountSpec.ServiceID, "https://gerrit.example.com/")
 				}
-				if acctSpec.AccountID != "1234" {
-					t.Errorf("got account ID %q, want %q", acctSpec.AccountID, "alice")
+				if acct.AccountSpec.AccountID != "1234" {
+					t.Errorf("got account ID %q, want %q", acct.AccountSpec.AccountID, "alice")
 				}
 				return nil, nil
 			})

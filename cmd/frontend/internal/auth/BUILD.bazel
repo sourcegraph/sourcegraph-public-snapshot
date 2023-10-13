@@ -9,6 +9,7 @@ go_library(
         "//cmd/frontend/auth",
         "//cmd/frontend/external/app",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/auth/authutil",
         "//cmd/frontend/internal/auth/azureoauth",
         "//cmd/frontend/internal/auth/bitbucketcloudoauth",
         "//cmd/frontend/internal/auth/confauth",

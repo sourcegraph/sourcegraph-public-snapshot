@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/azureoauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/bitbucketcloudoauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/confauth"
@@ -45,6 +46,7 @@ func Init(logger log.Logger, db database.DB) {
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
+		authutil.ConnectOrSignOutMiddleware(db),
 		openidconnect.Middleware(db),
 		sourcegraphoperator.Middleware(db),
 		saml.Middleware(db),

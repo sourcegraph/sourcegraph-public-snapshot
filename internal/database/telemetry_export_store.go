@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -39,6 +40,9 @@ type TelemetryEventsExportQueueStore interface {
 	// QueueForExport caches a set of events for later export. It is currently
 	// feature-flagged, such that if the flag is not enabled for the given
 	// context, we do not cache the event for export.
+	//
+	// It does NOT respect context cancellation, as it is assumed that we never
+	// drop events once we attempt to queue it for export.
 	//
 	// 🚨 SECURITY: The implementation strips out sensitive contents from events
 	// that are not in sensitivemetadataallowlist.AllowedEventTypes().
@@ -91,7 +95,14 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 		return nil
 	}
 
-	err := batch.InsertValues(ctx,
+	// Create a cancel-free context to avoid interrupting the insert when
+	// the parent context is cancelled, and add our own timeout on the insert
+	// to make sure things don't get stuck in an unbounded manner.
+	insertCtx, cancel := context.WithTimeout(xcontext.Detach(ctx), 5*time.Minute)
+	defer cancel()
+
+	err := batch.InsertValues(
+		insertCtx,
 		s.Handle(),
 		"telemetry_events_export_queue",
 		batch.MaxNumPostgresParameters,

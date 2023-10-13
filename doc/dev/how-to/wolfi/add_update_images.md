@@ -16,16 +16,29 @@ These configuration files can be processed with apko, which will generate a base
 
 Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes.
 
-- Run `sg wolfi update-hashes` locally to update the base image hashes in `dev/oci_deps.bzl`. Commit these changes and merge to `main`.
-- Backport the PR to the release branch.
+- Review the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-autoupdate/main+is:open) opened by Buildkite, and merge it
 
 #### Automation
 
-This process is partially automated by Buildkite. A scheduled build runs daily to rebuild Wolfi base images - pulling in any updated dependencies - then push them to Docker Hub. When `sg wolfi update-hashes` is run, it pulls these latest image hashes from Docker Hub to update the references in `dev/oci_deps.bzl`.
+This process is automated by Buildkite, which runs a daily scheduled build to:
 
-To rebuild the images (perhaps to pick up a just-released package version), [find a scheduled build](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=main) in Buildkite named "Nightly Rebuild of Wolfi Base Images", and hit "Rebuild".
+- Rebuild Wolfi base images, pulling in any updated dependencies.
+- Push the updated base images to Docker Hub.
+- Update the base image hashes in `dev/oci_deps.bzl`.
+- Open, or update the already open pull request updating the hashes.
 
-It is also possible to manually rebuild individual images by running `wolfi-images/rebuild-images.sh` locally, then pushing and merging.
+To update the images (perhaps to pick up a just-released package version), [find a scheduled build](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=main) in Buildkite named "Nightly Rebuild of Wolfi Base Images", and hit "Rebuild".
+
+#### Manual image updates
+
+If the automation fails and a manual update is needed, follow these steps:
+
+- Run [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/wolfi-images/rebuild-images.sh) script, commit the updated YAML files, and merge to main.
+- Wait for the `main` branch's Buildkite run to complete.
+  - Buildkite will rebuild the base images and publish them to Dockerhub.
+- Run `sg wolfi update-hashes` locally to update the base image hashes in `dev/oci_deps.bzl`. Commit these changes and merge to `main`.
+  - This fetches the updated base image hashes from the images that were pushed to Dockerhub in the previous step.
+- Backport the PR that updated `dev/oci_deps.bzl` to the release branch.
 
 ### Modify an existing base image
 
