@@ -312,7 +312,7 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
     isInitialized: true,
-    searchQueryInput: 'experimental',
+    searchQueryInput: 'v2',
 }
 
 /**

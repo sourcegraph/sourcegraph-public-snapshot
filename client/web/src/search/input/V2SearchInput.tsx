@@ -85,7 +85,7 @@ const eventNameMap: Record<Action['type'], string> = {
     command: 'Command',
 }
 
-export interface ExperimentalSearchInputProps
+export interface V2SearchInputProps
     extends Omit<CodeMirrorQueryInputWrapperProps, 'suggestionSource' | 'extensions' | 'placeholder'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps,
@@ -94,9 +94,9 @@ export interface ExperimentalSearchInputProps
 }
 
 /**
- * Experimental search input component. Provides query and history suggestions.
+ * V2 search input component. Provides query and history suggestions.
  */
-export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInputProps>> = ({
+export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
     children,
     telemetryService,
     platformContext,
