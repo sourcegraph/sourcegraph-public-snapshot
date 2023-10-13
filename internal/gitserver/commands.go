@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -1894,36 +1895,69 @@ func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdo
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
 var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
-	data, stderr, err := cmd.DividedOutput(ctx)
+	r, err := cmd.StdoutReader(ctx)
 	if err != nil {
-		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
+		return nil, err
 	}
+	defer r.Close()
 
-	return parseCommitLogOutput(data, opt.NameOnly)
+	return parseCommitLogOutput(r, opt.NameOnly)
 }
 
-func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
-	allParts := bytes.Split(data, []byte{'\x00'})
-	partsPerCommit := partsPerCommitBasic
-	if nameOnly {
-		partsPerCommit = partsPerCommitWithFileNames
-	}
-	numCommits := len(allParts) / partsPerCommit
-	commits := make([]*wrappedCommit, 0, numCommits)
-	for len(data) > 0 {
-		var commit *wrappedCommit
-		var err error
-		commit, data, err = parseCommitFromLog(data, partsPerCommit)
+func parseCommitLogOutput(r io.Reader, nameOnly bool) ([]*wrappedCommit, error) {
+	commitScanner := bufio.NewScanner(r)
+	commitScanner.Split(commitSplitFunc)
+
+	var commits []*wrappedCommit
+	for commitScanner.Scan() {
+		rawCommit := commitScanner.Bytes()
+		parts := bytes.Split(rawCommit, []byte{'\x00'})
+		if len(parts) != partsPerCommit {
+			return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
+		}
+
+		commit, err := parseCommitFromLog(parts)
 		if err != nil {
 			return nil, err
 		}
 		commits = append(commits, commit)
 	}
 	return commits, nil
+}
+
+func commitSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	if data[0] != '\x00' {
+		return 0, nil, errors.New("internal error: data should always start with a nul byte")
+	}
+
+	// Each part starts with a nul byte.
+	nulByteCount := bytes.Count(data, []byte{'\x00'})
+	if nulByteCount < partsPerCommit {
+		return 0, nil, nil
+	} else if nulByteCount == partsPerCommit {
+		if atEOF {
+			return len(data), data[1:], bufio.ErrFinalToken
+		} else {
+			return 0, nil, nil
+		}
+	}
+
+	// If we're here, we have enough nul bytes in data to comprise a complete commit.
+	// Find the last one to return a complete commit.
+
+	n := 1 // points to the beginning of the field
+	for i := 0; i < partsPerCommit; i++ {
+		loc := bytes.IndexByte(data[n:], '\x00')
+		n += loc + 1
+	}
+
+	return n - 1, // do not advance past the trailing nul byte
+		data[1 : n-1], // do not include the first nul byte or the last nul byte
+		nil
 }
 
 type wrappedCommit struct {
@@ -2078,7 +2112,7 @@ func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.Re
 			return errors.Wrap(err, "failed to perform git log")
 		}
 
-		wrappedCommits, err := parseCommitLogOutput([]byte(rawResult.Stdout), true)
+		wrappedCommits, err := parseCommitLogOutput(strings.NewReader(rawResult.Stdout), true)
 		if err != nil {
 			if ignoreErrors {
 				// Treat as not-found
@@ -2157,22 +2191,16 @@ func checkError(err error) (string, bool, error) {
 }
 
 const (
-	partsPerCommitBasic         = 9  // number of \x00-separated fields per commit
-	partsPerCommitWithFileNames = 10 // number of \x00-separated fields per commit with names of modified files also returned
+	partsPerCommit = 10 // number of \x00-separated fields per commit
 
 	// don't include refs (faster, should be used if refs are not needed)
-	logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+	logFormatWithoutRefs = "--format=format:%x00%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, rest []byte, err error) {
-	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
-	if len(parts) < partsPerCommit {
-		return nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
-	}
-
+func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 	// log outputs are newline separated, so all but the 1st commit ID part
 	// has an erroneous leading newline.
 	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
@@ -2180,11 +2208,11 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 
 	authorTime, err := strconv.ParseInt(string(parts[3]), 10, 64)
 	if err != nil {
-		return nil, nil, errors.Errorf("parsing git commit author time: %s", err)
+		return nil, errors.Errorf("parsing git commit author time: %s", err)
 	}
 	committerTime, err := strconv.ParseInt(string(parts[6]), 10, 64)
 	if err != nil {
-		return nil, nil, errors.Errorf("parsing git commit committer time: %s", err)
+		return nil, errors.Errorf("parsing git commit committer time: %s", err)
 	}
 
 	var parents []api.CommitID
@@ -2196,9 +2224,9 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 		}
 	}
 
-	fileNames, nextCommit := parseCommitFileNames(partsPerCommit, parts)
+	fileNames := parseCommitFileNames(parts[9])
 
-	commit = &wrappedCommit{
+	return &wrappedCommit{
 		Commit: &gitdomain.Commit{
 			ID:        commitID,
 			Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
@@ -2206,39 +2234,23 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
 			Parents:   parents,
 		}, files: fileNames,
-	}
-
-	if len(parts) == partsPerCommit+1 {
-		rest = parts[partsPerCommit]
-		if string(nextCommit) != "" {
-			// Add the next commit ID with the rest to be processed
-			rest = append(append(nextCommit, '\x00'), rest...)
-		}
-	}
-
-	return commit, rest, nil
+	}, nil
 }
 
-// If the commit has filenames, parse those and return as a list. Also, in this case the next commit ID shows up in this
-// portion of the byte array, so it must be returned as well to be added to the rest of the commits to be processed.
-func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte) {
-	var fileNames []string
-	var nextCommit []byte
-	if partsPerCommit == partsPerCommitWithFileNames {
-		parts[9] = bytes.TrimPrefix(parts[9], []byte{'\n'})
-		fileNamesRaw := parts[9]
-		fileNameParts := bytes.Split(fileNamesRaw, []byte{'\n'})
-		for i, name := range fileNameParts {
-			// The last item contains the files modified, some empty space, and the commit ID for the next commit. Drop
-			// the empty space and the next commit ID (which will be processed in the next iteration).
-			if string(name) == "" || i == len(fileNameParts)-1 {
-				continue
-			}
+// If the commit has filenames, parse those and return as a list.
+func parseCommitFileNames(rawNames []byte) []string {
+	rawNames = bytes.TrimPrefix(rawNames, []byte{'\n'})
+	fileNameParts := bytes.Split(rawNames, []byte{'\n'})
+	fileNames := make([]string, 0, len(fileNameParts))
+	for _, name := range fileNameParts {
+		// Skip any files names that are empty strings.
+		// TODO(camdencheek): check if this is actually necessary. I'm just copying
+		// what the old code appeared to do.
+		if len(name) > 0 {
 			fileNames = append(fileNames, string(name))
 		}
-		nextCommit = fileNameParts[len(fileNameParts)-1]
 	}
-	return fileNames, nextCommit
+	return fileNames
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for
