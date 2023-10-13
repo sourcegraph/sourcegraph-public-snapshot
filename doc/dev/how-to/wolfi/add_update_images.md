@@ -16,7 +16,7 @@ These configuration files can be processed with apko, which will generate a base
 
 Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes.
 
-- Review the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-autoupdate/main+is:open) opened by Buildkite, and merge it
+- Review the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-auto-update/main+is:open) opened by Buildkite, and merge it
 
 #### Automation
 
