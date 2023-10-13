@@ -829,6 +829,9 @@ export async function publishChangesets(
     dataOrThrowErrors(result)
 }
 
+// We pass in the batchChange because this Query is configured to only fetch changesets with the given ID that
+// belong to a specific batch change. This is because we only use this for exporting changesets in a particular
+// batch change and we check if the user has permission to view/administer the Batch Change on the backend.
 export const GET_CHANGESETS_BY_IDS_QUERY = gql`
     query GetChangesetsByIDs($batchChange: ID!, $changesets: [ID!]!) {
         getChangesetsByIDs(batchChange: $batchChange, changesets: $changesets) {
