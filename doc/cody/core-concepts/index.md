@@ -5,6 +5,8 @@
 ## Cody Context
 
 - [Overview](./context/index.md)
+- [Context Selection](./context/context-selection.md)
+- [Usage and limits](./context/usage-and-limits.md)
 
 ## Embeddings
 
