@@ -120,11 +120,19 @@ td:first-child {
 
 </style>
 
-# Install Cody for Neovim <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Experimental</span>
+# Install Cody for Neovim
 
 <p class="subtitle">Learn how to use Cody and its features with the Neovim editor.</p>
 
-The Cody extension by Sourcegraph enhances your coding experience in your IDE by providing intelligent code suggestions, context-aware completions, and advanced code analysis.
+<aside class="experimental">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Cody support for Neovim is in the experimental stage.
+<br />
+For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+</p>
+</aside>
+
+The Cody extension for Neovim by Sourcegraph enhances your coding experience in your IDE by providing intelligent code suggestions, context-aware completions, and advanced code analysis.
 
 This guide will walk you through installing and setting up the Cody within your Neovim environment.
 
