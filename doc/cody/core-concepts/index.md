@@ -1,0 +1,19 @@
+# Core Concepts
+
+<p class="subtitle">Learn about all the core concepts and fundamentals that helps Cody provide codebase-aware answers. </p>
+
+## Cody Context
+
+- [Overview](./context/index.md)
+
+## Embeddings
+
+- [Overview](./embeddings/index.md)
+- [Generate an embeddings index](./embeddings/embedding-index.md)
+- [Configure embeddings](./embeddings/configure-embeddings.md)
+- [Manage embeddings](./embeddings/manage-embeddings.md)
+- [Usage and limits](./embeddings/usage-and-limits.md)
+
+## Code Graph Context
+
+- [Configuring code graph context](code_graph_context.md)
