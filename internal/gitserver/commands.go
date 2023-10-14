@@ -1894,14 +1894,17 @@ func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdo
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd GitCommand, opts CommitsOptions) ([]*wrappedCommit, error) {
-	r, err := cmd.StdoutReader(ctx)
+var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
+	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		return nil, err
+		data = bytes.TrimSpace(data)
+		if isBadObjectErr(string(stderr), opt.Range) {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
-	defer r.Close()
 
-	return parseCommitLogOutput(r)
+	return parseCommitLogOutput(bytes.NewReader(data))
 }
 
 func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
@@ -2224,7 +2227,7 @@ func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 		}
 	}
 
-	fileNames := strings.Split(string(bytes.TrimSpace(parts[0])), "\n")
+	fileNames := strings.Split(string(bytes.TrimSpace(parts[9])), "\n")
 
 	return &wrappedCommit{
 		Commit: &gitdomain.Commit{
