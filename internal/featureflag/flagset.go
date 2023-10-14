@@ -46,6 +46,7 @@ func (f *FlagSet) GetBool(flag string) (bool, bool) {
 	if ok {
 		setEvaluatedFlagToCache(f.actor, flag, v)
 	}
+	println(v, ok)
 	return v, ok
 }
 

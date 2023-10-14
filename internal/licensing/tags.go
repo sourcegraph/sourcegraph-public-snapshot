@@ -22,6 +22,12 @@ const (
 	// AllowAnonymousUsageTag denotes licenses that allow anonymous usage, a.k.a public access to the instance
 	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
 	AllowAnonymousUsageTag = "allow-anonymous-usage"
+
+	// TelemetryEventsExportDisabledTag disables telemery events export entirely.
+	TelemetryEventsExportDisabledTag = "disable-telemetry-events-export"
+	// TelemetryEventsExportCodyOnlyTag disables export of telemetry events, except
+	// for Cody-related ones.
+	TelemetryEventsExportCodyOnlyTag = "cody-only-telemetry-events-export"
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -92,4 +98,8 @@ var MiscTags = []string{
 	"starter",
 	"mau",
 	GPTLLMAccessTag,
+
+	// Telemetry events export tags
+	TelemetryEventsExportDisabledTag,
+	TelemetryEventsExportCodyOnlyTag,
 }
