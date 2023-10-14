@@ -1914,7 +1914,6 @@ func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
 	var commits []*wrappedCommit
 	for commitScanner.Scan() {
 		rawCommit := commitScanner.Bytes()
-
 		parts := bytes.Split(rawCommit, []byte{'\x00'})
 		if len(parts) != partsPerCommit {
 			return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
@@ -2189,7 +2188,22 @@ func checkError(err error) (string, bool, error) {
 const (
 	partsPerCommit = 10 // number of \x00-separated fields per commit
 
-	// don't include refs (faster, should be used if refs are not needed)
+	// This format string has 10 parts:
+	//  1) oid
+	//  2) author name
+	//  3) author email
+	//  4) author time
+	//  5) committer name
+	//  6) committer email
+	//  7) committer time
+	//  8) message body
+	//  9) parent hashes
+	// 10) modified files (optional)
+	//
+	// Each commit starts with an ASCII record separator byte (0x1E), and
+	// each field of the commit is separated by a null byte (0x00).
+	//
+	// Refs are slow, and are intentionally not included because they are usually not needed.
 	logFormatWithoutRefs = "--format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
