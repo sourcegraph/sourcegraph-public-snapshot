@@ -1157,7 +1157,7 @@ var (
 )
 
 func TestLogPartsPerCommitInSync(t *testing.T) {
-	require.Equal(t, partsPerCommit, strings.Count(logFormatWithoutRefs, "%x00"))
+	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
 }
 
 func TestRepository_GetCommit(t *testing.T) {
@@ -1879,7 +1879,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
-			wantErr := `git command [git log --format=format:%x00%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
+			wantErr := `git command [git log --format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
 			if subRepo != "" {
 				wantErr += " --name-only"
 			}

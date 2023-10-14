@@ -1914,6 +1914,7 @@ func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
 	var commits []*wrappedCommit
 	for commitScanner.Scan() {
 		rawCommit := commitScanner.Bytes()
+
 		parts := bytes.Split(rawCommit, []byte{'\x00'})
 		if len(parts) != partsPerCommit {
 			return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
@@ -1930,37 +1931,29 @@ func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
 
 func commitSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if len(data) == 0 {
+		// Request more data
 		return 0, nil, nil
 	}
 
-	if data[0] != '\x00' {
-		return 0, nil, errors.New("internal error: data should always start with a nul byte")
+	// Safety check: ensure we are always starting with a record separator
+	if data[0] != '\x1e' {
+		return 0, nil, errors.New("internal error: data should always start with an ASCII record separator")
 	}
 
-	// Each part starts with a nul byte.
-	nulByteCount := bytes.Count(data, []byte{'\x00'})
-	if nulByteCount < partsPerCommit {
-		return 0, nil, nil
-	} else if nulByteCount == partsPerCommit {
+	loc := bytes.IndexByte(data[1:], '\x1e')
+	if loc < 0 {
+		// We can't find the start of the next record
 		if atEOF {
+			// If we're at the end of the stream, just return the rest as the last record
 			return len(data), data[1:], bufio.ErrFinalToken
 		} else {
+			// If we're not at the end of the stream, request more data
 			return 0, nil, nil
 		}
 	}
+	nextStart := loc + 1 // correct for searching at an offset
 
-	// If we're here, we have enough nul bytes in data to comprise a complete commit.
-	// Find the last one to return a complete commit.
-
-	n := 1 // points to the beginning of the field
-	for i := 0; i < partsPerCommit; i++ {
-		loc := bytes.IndexByte(data[n:], '\x00')
-		n += loc + 1
-	}
-
-	return n - 1, // do not advance past the trailing nul byte
-		data[1 : n-1], // do not include the first nul byte or the last nul byte
-		nil
+	return nextStart, data[1:nextStart], nil
 }
 
 type wrappedCommit struct {
@@ -2197,7 +2190,7 @@ const (
 	partsPerCommit = 10 // number of \x00-separated fields per commit
 
 	// don't include refs (faster, should be used if refs are not needed)
-	logFormatWithoutRefs = "--format=format:%x00%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+	logFormatWithoutRefs = "--format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
