@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Text } from '../Typography/Text/Text'
 
 import { PageSwitcher } from './PageSwitcher'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 

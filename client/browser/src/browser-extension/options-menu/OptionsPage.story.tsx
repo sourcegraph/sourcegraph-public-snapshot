@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { type Observable, of } from 'rxjs'
 
@@ -17,7 +17,7 @@ const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrar
 
 const requestPermissionsHandler = action('requestPermission')
 
-const decorator: DecoratorFn = story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>
+const decorator: Decorator = story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>
 
 const config: Meta = {
     title: 'browser/Options/OptionsPage',

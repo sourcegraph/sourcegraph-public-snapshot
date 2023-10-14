@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 

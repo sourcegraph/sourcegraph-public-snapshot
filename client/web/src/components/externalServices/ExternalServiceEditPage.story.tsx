@@ -1,4 +1,4 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -11,7 +11,7 @@ import { WebStory, type WebStoryChildrenProps } from '../WebStory'
 import { FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container">
         <WebStory
             path="/site-admin/external-services/:externalServiceID/edit"

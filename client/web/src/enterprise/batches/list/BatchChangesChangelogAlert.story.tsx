@@ -1,10 +1,10 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
 
-const decorator: DecoratorFn = story => <div className="p-3 container web-content">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container web-content">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/BatchChangesChangelogAlert',

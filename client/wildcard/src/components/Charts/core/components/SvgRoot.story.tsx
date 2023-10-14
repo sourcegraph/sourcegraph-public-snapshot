@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import type { AxisScale } from '@visx/axis/lib/types'
 import { ParentSize } from '@visx/responsive'
 import { scaleBand, scaleLinear, scaleTime } from '@visx/scale'

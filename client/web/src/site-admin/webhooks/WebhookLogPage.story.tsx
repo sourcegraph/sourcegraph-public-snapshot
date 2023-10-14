@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { of } from 'rxjs'
 
@@ -11,7 +11,7 @@ import type { queryWebhookLogs, SelectedExternalService } from './backend'
 import { BODY_JSON, BODY_PLAIN, buildHeaderMock, HEADERS_JSON, HEADERS_PLAIN } from './story/fixtures'
 import { WebhookLogPage } from './WebhookLogPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/WebhookLogPage',

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import type { MockedResponse } from '@apollo/client/testing'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -13,7 +13,7 @@ import type { WebhookByIDLogPageHeaderResult } from '../graphql-operations'
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'
 import { type SelectedExternalService, WEBHOOK_BY_ID_LOG_PAGE_HEADER } from './webhooks/backend'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <Container>
         <div className="p-3 container">{story()}</div>
     </Container>

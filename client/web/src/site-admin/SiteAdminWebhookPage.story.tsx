@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { Route, Routes } from 'react-router-dom'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -17,7 +17,7 @@ import { SiteAdminWebhookPage } from './SiteAdminWebhookPage'
 import { WEBHOOK_BY_ID_LOG_PAGE_HEADER, WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
 import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './webhooks/story/fixtures'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/incoming/SiteAdminWebhookPage',

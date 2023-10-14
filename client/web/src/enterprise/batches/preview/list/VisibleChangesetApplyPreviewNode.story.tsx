@@ -1,4 +1,4 @@
-import type { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { of } from 'rxjs'
 
@@ -10,7 +10,7 @@ import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreview
 
 import styles from './PreviewList.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
 )
 

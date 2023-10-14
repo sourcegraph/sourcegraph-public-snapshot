@@ -1,11 +1,11 @@
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeState, type ChangesetsStatsFields } from '../../../graphql-operations'
 
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/BatchChangeStatsCard',

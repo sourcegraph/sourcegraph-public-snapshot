@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { Container } from '@sourcegraph/wildcard'
@@ -11,7 +11,7 @@ import type { SelectedExternalService } from './backend'
 import { buildHeaderMock } from './story/fixtures'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <Container>
         <div className="p-3 container">{story()}</div>
     </Container>

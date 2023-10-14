@@ -1,5 +1,5 @@
 import { type Args, useMemo } from '@storybook/addons'
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
 import { type Observable, of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -22,7 +22,7 @@ import { BATCH_SPEC_BY_ID } from './backend'
 import { BatchChangePreviewPage, NewBatchChangePreviewPage } from './BatchChangePreviewPage'
 import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './list/storyData'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/preview/BatchChangePreviewPage',

@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchSpecState } from '../../../graphql-operations'
 
 import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/details',
     decorators: [decorator],

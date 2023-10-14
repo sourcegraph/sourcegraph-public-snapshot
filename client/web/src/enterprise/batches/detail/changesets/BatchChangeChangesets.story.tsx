@@ -1,4 +1,4 @@
-import type { Story, Meta, DecoratorFn } from '@storybook/react'
+import type { StoryFn, Meta, Decorator } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
@@ -13,7 +13,7 @@ import { CHANGESETS, type queryExternalChangesetWithFileDiffs } from '../backend
 import { BatchChangeChangesets } from './BatchChangeChangesets'
 import { BATCH_CHANGE_CHANGESETS_RESULT, EMPTY_BATCH_CHANGE_CHANGESETS_RESULT } from './BatchChangeChangesets.mock'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/BatchChangeChangesets',

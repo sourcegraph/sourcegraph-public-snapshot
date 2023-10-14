@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -22,7 +22,7 @@ import { insertNameIntoLibraryItem } from '../yaml-util'
 import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3" style={{ height: '95vh', width: '100%' }}>
         <WebStory initialEntries={['/batch-changes/hello-world/edit']} path="/batch-changes/:batchChangeName/edit">
             {story}

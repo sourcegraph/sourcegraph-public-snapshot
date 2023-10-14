@@ -1,11 +1,11 @@
-import type { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { ChangesetReviewState } from '../../../../graphql-operations'
 
 import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/ChangesetReviewStatusCell',

@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { Series } from '@sourcegraph/wildcard'
 
@@ -72,7 +72,7 @@ const SERIES: Series<StandardDatum>[] = [
     },
 ]
 
-export const SeriesLineChart: Story = () => {
+export const SeriesLineChart: StoryFn = () => {
     const seriesToggleState = useSeriesToggle()
 
     return (

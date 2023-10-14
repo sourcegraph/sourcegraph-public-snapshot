@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 
 import { type Args, useMemo } from '@storybook/addons'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 

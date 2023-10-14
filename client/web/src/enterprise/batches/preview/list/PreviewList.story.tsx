@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { type Observable, of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -9,7 +9,7 @@ import { filterPublishableIDs } from '../utils'
 import { PreviewList } from './PreviewList'
 import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/preview/PreviewList',
