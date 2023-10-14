@@ -1797,6 +1797,7 @@ func TestRepository_Commits_options(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	ctx := context.Background()
+	ctx = actor.WithActor(ctx, actor.FromUser(42))
 
 	gitCommands := []string{
 		"git commit --allow-empty -m foo",
