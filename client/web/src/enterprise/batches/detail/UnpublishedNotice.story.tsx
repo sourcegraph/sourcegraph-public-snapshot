@@ -13,6 +13,8 @@ const config: Meta = {
 
 export default config
 
-export const NonePublished: StoryFn = () => <WebStory>{() => <UnpublishedNotice unpublished={10} total={10} />}</WebStory>
+export const NonePublished: StoryFn = () => (
+    <WebStory>{() => <UnpublishedNotice unpublished={10} total={10} />}</WebStory>
+)
 
 NonePublished.storyName = 'None published'

@@ -20,7 +20,9 @@ const mockUser = {
     completedPostSignup: false,
 } as AuthenticatedUser
 
-export const UnverifiedEmail: StoryFn = () => <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
+export const UnverifiedEmail: StoryFn = () => (
+    <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
+)
 
 export const VerifiedEmail: StoryFn = () => (
     <WebStory>{() => <PostSignUpPage authenticatedUser={{ ...mockUser, hasVerifiedEmail: true }} />}</WebStory>
