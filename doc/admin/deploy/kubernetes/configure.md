@@ -1160,7 +1160,7 @@ $ mkdir instances/$INSTANCE_NAME/patches
 $ cp components/patches/embeddings-backend.yaml instances/$INSTANCE_NAME/patches/embeddings-backend.yaml
 ```
 
-**Step 3**: Configure the external object store [backend](../../../cody/core-concepts/embeddings/manage-embeddings.mds#store-embedding-indexes)
+**Step 3**: Configure the external object store [backend](../../../cody/core-concepts/embeddings/manage-embeddings.md#store-embedding-indexes)
 
 **Step 4**: Include the patch file in your overlay under `patches`:
 
