@@ -46,7 +46,7 @@ The following diagram provides an overview of how it works.
 There are two distinct scenarios: 
 
 1. Normal builds 
-2. Release builds. 
+2. Release builds
 
 When doing a normal build, we simply use the schemas tarball that has been previously 
 set by the last release build. It contains all knowns schema descriptions that existed 
@@ -59,17 +59,17 @@ or cloud.
 Let's use a concrete example: 
 
 1. t=0 5.1.0 has been released publicly
-  - `main` branch is now considered to be 5.2.0
-  - `5.1` branch is the target for PRs for backports and bug fixes.
+   - `main` branch is now considered to be 5.2.0
+   - `5.1` branch is the target for PRs for backports and bug fixes.
 1. t=10 5.1.2222 has been released publicly 
-  - `5.1` branch is from where this release was cut.
+   - `5.1` branch is from where this release was cut.
 2. t=20 5.2.0 has been released publicly
-  - `main` branch is now considered to be 5.3.0
-  - `5.2` branch is the target for PRs for backports and bug fixes.
+   - `main` branch is now considered to be 5.3.0
+   - `5.2` branch is the target for PRs for backports and bug fixes.
 3. t=30 5.1.3333 has been released publicly
-  - `5.2` branch is from where this release was cut.
+   - `5.1` branch is from where this release was cut.
   
-So with that scenario, when 5.1.3333 has been released, we introduced a new version that the _migrator_ must be aware of, on both `main` and the `5.1` branch. Previously, this required to make a PR to port from the 5.1 branch the references 
+So with that scenario, when 5.1.3333 has been released, we introduced a new version that the _migrator_ must be aware of, on both `main` and the `5.1` branch. Previously, this required us to make a PR to port to main, the 5.1 branch references
 to the new 5.1.3333 schemas. See [this PR for a real example](https://github.com/sourcegraph/sourcegraph/pull/56405/files#diff-38f26d6e9cb950b24ced060cd86effd4363b313d880d1afad1850887eabaf238R79).
 
 Failing to do this, would mean the _migrator_ we're going to ship on the next 5.2 release will not cover the migration path from 5.1.3333 when doing multi-version upgrades. 
@@ -116,7 +116,7 @@ transactional, i.e it's not possible to list a file until it's fully uploaded.
 > What happens if a release build fails. Can it mess with ulterior release builds?
 
 It cannot, because the only time the schemas are finally added to `schemas/` is when the release build succeeds. This is why when we're regenerating the tarball, we are fetching 
-all the known schemas *and* adding the new one from the source tree at that point. Had we had uploaded the new schemas at the beginning of the build instead, to then fetch everything to  
+all the known schemas *and* adding the new one from the source tree at that point. Had we uploaded the new schemas at the beginning of the build instead, to then fetch everything to  
 build the tarball, including the new one, we would have had the problem.
 
 > How do we ensure that the `schema.*.json` in the source, at the revision we're cutting the release are correct? 
