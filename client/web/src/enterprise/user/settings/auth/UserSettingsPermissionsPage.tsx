@@ -55,7 +55,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
     const debouncedQuery = useDebounce(query, 300)
 
-    const { connection, data, loading, error, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
+    const { connection, data, loading, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
         UserPermissionsInfoResult,
         UserPermissionsInfoVariables,
         INode
@@ -188,10 +188,15 @@ const TableColumns: IColumn<INode>[] = [
         key: 'repository',
         header: 'Repository',
         render: ({ repository }: INode) =>
-            repository && (
+            repository ? (
                 <div key={repository.id} className="py-2">
                     <ExternalRepositoryIcon externalRepo={repository.externalRepository} />
                     <RepoLink repoName={repository.name} to={repository.url} />
+                </div>
+            ) : (
+                <div className="py-2">
+                    <ExternalRepositoryIcon externalRepo={{ serviceType: 'unknown' }} />
+                    Private repository
                 </div>
             ),
     },
