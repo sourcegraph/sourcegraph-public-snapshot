@@ -140,7 +140,7 @@ This requires site-admin privileges. To do so,
     }
 ```
 
-3. Finally, set up a policy to automatically [create  and configure embeddings](./../explanations/code_graph_context.md#configuring-embeddings) for your repositories.
+1. Finally, set up a policy to automatically [create and configure](./../core-concepts/embeddings/configure-embeddings) embeddings for your repositories.
 
 Cody is now fully enabled on your self-hosted Sourcegraph enterprise instance!
 
@@ -337,4 +337,4 @@ For the access token, you can either:
 - Set it to `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` if directly configuring the credentials
 - Set it to `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>:<SESSION_TOKEN>` if a session token is also required
 
-Similarly, you can also [use a third-party LLM provider directly for embeddings](./../explanations/code_graph_context.md#using-a-third-party-embeddings-provider-directly).
+Similarly, you can also [use a third-party LLM provider directly for embeddings](./../core-concepts/embeddings#third-party-embeddings-provider).
