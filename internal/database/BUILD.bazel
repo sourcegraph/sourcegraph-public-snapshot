@@ -372,5 +372,9 @@ write_generated_to_source_files(
 )
 
 exports_files(
-    srcs = ["schema.json", "schema.codeintel.json", "schema.codeinsights.json"],
+    srcs = [
+        "schema.codeinsights.json",
+        "schema.codeintel.json",
+        "schema.json",
+    ],
 )

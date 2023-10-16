@@ -32,7 +32,7 @@ go_binary(
 # See tools/release/README.md for details.
 genrule(
     name = "tar_schema_descriptions",
-    srcs = ["@schemas_archive//file:file"],
+    srcs = ["@schemas_archive//file"],
     outs = ["schema_descriptions.tar"],
     cmd = """\
     mkdir -p schema-descriptions/
@@ -43,7 +43,7 @@ genrule(
     else
         tar -cf $@ --owner=:0 --group=:0 --numeric-owner schema-descriptions/
     fi
-    """
+    """,
 )
 
 pkg_tar(
