@@ -141,7 +141,7 @@ There can be several reasons why your scheduled one-off embedding job isn't appe
 
 - The repository is already in the queue or currently being processed
 - The system has successfully completed a job for the same repository and revision
-- Another job for the same repository is in the queue, scheduled within the [`embeddings.MinimumInterval`](./explanations/code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
+- Another job for the same repository is in the queue, scheduled within the [`embeddings.MinimumInterval`](./core-concepts/embeddings.md#minimum-time-interval-between-automatically-scheduled-embeddings) time window
 
 ### How do I stop a running embeddings job?
 
@@ -155,8 +155,8 @@ A running embeddings job with the state `QUEUED` or `PROCESSING` can be stopped 
 Files may be skipped for the following reasons:
 
 - The file size exceeds 1 MB
-- The file path matches an [exclusion pattern](./explanations/code_graph_context.md#excluding-files-from-embeddings)
-- The repository has already reached the maximum limit for generated embeddings, as specified by [`embeddings.maxCodeEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated)
+- The file path matches an [exclusion pattern](./core-concepts/embeddings/manage-embeddings.md#filter-files-from-embeddings)
+- The repository has already reached the maximum limit for generated embeddings, as specified by [`embeddings.maxCodeEmbeddingsPerRepo`](./core-concepts/embeddings/usage-and-limits.md#limit-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./core-concepts/embeddings/usage-and-limits.md#limit-the-number-of-embeddings-that-can-be-generated)
 
 ## Third party dependencies
 
