@@ -12,7 +12,7 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
+import { getPreviousMonday, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -227,32 +227,22 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
-
         if (isSourcegraphWebSiteId) {
             cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
             return firstSourceURL
         }
-        {
-            const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
-            cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-            return redactedURL
-        }
+        return ''
     }
 
     public getLastSourceURL(): string {
         // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
         // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
-
         if (isSourcegraphWebSiteId) {
             cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
             return lastSourceURL
         }
-        {
-            const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
-            cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-            return redactedURL
-        }
+        return ''
     }
 
     public getOriginalReferrer(): string {
@@ -262,38 +252,30 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.get(ORIGINAL_REFERRER_KEY) ||
             cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
             document.referrer
-
-        cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
-        return originalReferrer
+        if (isSourcegraphWebSiteId) {
+            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+            return originalReferrer
+        }
+        return ''
     }
 
     public getSessionReferrer(): string {
         // Gets the session referrer from the cookie
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
-
         if (isSourcegraphWebSiteId) {
             cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
             return sessionReferrer
         }
-        {
-            const redactedURL = redactSensitiveInfoFromAppURL(sessionReferrer)
-            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
-            return redactedURL
-        }
+        return ''
     }
 
     public getSessionFirstURL(): string {
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
-
         if (isSourcegraphWebSiteId) {
             cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
             return sessionFirstURL
         }
-        {
-            const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
-            cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
-            return redactedURL
-        }
+        return ''
     }
 
     public getDeviceSessionID(): string {
@@ -332,7 +314,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getReferrer(): string {
         const referrer = document.referrer
-        return referrer
+        if (isSourcegraphWebSiteId) {
+            return referrer
+        }
+        return ''
     }
 
     public getClient(): string {

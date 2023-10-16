@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/url"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -195,54 +194,64 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if event.FirstSourceURL != nil {
 			firstSourceURL = *event.FirstSourceURL
 		}
+		saferFirstSourceURL, err := redactSensitiveInfoFromCloudURL(firstSourceURL)
+		if err != nil {
+			return nil, err
+		}
+
 		lastSourceURL := ""
 		if event.LastSourceURL != nil {
 			lastSourceURL = *event.LastSourceURL
 		}
+		saferLastSourceURL, err := redactSensitiveInfoFromCloudURL(lastSourceURL)
+		if err != nil {
+			return nil, err
+		}
+
 		referrer := ""
 		if event.Referrer != nil {
 			referrer = *event.Referrer
-		}
-		originalReferrer := ""
-		if event.OriginalReferrer != nil {
-			originalReferrer = *event.OriginalReferrer
-		}
-		sessionReferrer := ""
-		if event.SessionReferrer != nil {
-			sessionReferrer = *event.SessionReferrer
-		}
-		sessionFirstURL := ""
-		if event.SessionFirstURL != nil {
-			sessionFirstURL = *event.SessionFirstURL
-		}
-		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
-		if err != nil {
-			return nil, err
-		}
-		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
-		if err != nil {
-			return nil, err
 		}
 		saferReferrer, err := redactSensitiveInfoFromCloudURL(referrer)
 		if err != nil {
 			return nil, err
 		}
+
+		originalReferrer := ""
+		if event.OriginalReferrer != nil {
+			originalReferrer = *event.OriginalReferrer
+		}
 		saferOriginalReferrer, err := redactSensitiveInfoFromCloudURL(originalReferrer)
+
+		sessionReferrer := ""
+		if event.SessionReferrer != nil {
+			sessionReferrer = *event.SessionReferrer
+		}
+		saferSessionReferrer, err := redactSensitiveInfoFromCloudURL(sessionReferrer)
+
+		sessionFirstURL := ""
+		if event.SessionFirstURL != nil {
+			sessionFirstURL = *event.SessionFirstURL
+		}
+		saferSessionFirstURL, err := redactSensitiveInfoFromCloudURL(sessionFirstURL)
+
+		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return nil, err
 		}
+		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
 
 		pubsubEvent, err := json.Marshal(bigQueryEvent{
 			EventName:              event.EventName,
 			UserID:                 int(event.UserID),
 			AnonymousUserID:        event.UserCookieID,
 			URL:                    saferUrl,
-			FirstSourceURL:         firstSourceURL,
-			LastSourceURL:          lastSourceURL,
+			FirstSourceURL:         saferFirstSourceURL,
+			LastSourceURL:          saferLastSourceURL,
 			Referrer:               saferReferrer,
 			OriginalReferrer:       saferOriginalReferrer,
-			SessionReferrer:        sessionReferrer,
-			SessionFirstURL:        sessionFirstURL,
+			SessionReferrer:        saferSessionReferrer,
+			SessionFirstURL:        saferSessionFirstURL,
 			Source:                 event.Source,
 			Timestamp:              time.Now().UTC().Format(time.RFC3339),
 			Version:                version.Version(),
@@ -330,11 +339,11 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // and only maintain query parameters in a specified allowlist,
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
 
-// func redactSensitiveInfoFromCloudReferrer (rawURL string) (string, error) {
-// 	parsedURL, err := url.Parse(rawURL)
-// }
-
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
+	if envvar.SourcegraphDotComMode() {
+		return rawURL, nil
+	}
+
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
@@ -352,28 +361,23 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return rawURL, nil
 	}
 
-	// if url has regex of .sourcegraph.
-	var sourcegraphCloudRegex = regexp.MustCompile(`\.sourcegraph\.`)
+	// Define path prefixes to redact
+	redactPaths := []string{
+		"/github.com", "/gitlab.com", "/search", "/sign-in",
+		"/crates", "/npm", "/site-admin", "/api", "/extensions",
+		"/user", "/code-monitoring", "/organizations", "/post-sign-up",
+		"/.auth", "/cody", "/notebooks", "/sign-up", "/unlock-account",
+		"/batch_changes", "/code_insights", "/settings",
+	}
 
-	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
-	if strings.HasPrefix(parsedURL.Path, "/github.com") {
-		parsedURL.RawPath = "/github.com/redacted"
-		parsedURL.Path = "/github.com/redacted"
-	} else if strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
-		parsedURL.RawPath = "/gitlab.com/redacted"
-		parsedURL.Path = "/gitlab.com/redacted"
-	} else if strings.HasPrefix(parsedURL.Path, "/search") {
-		parsedURL.RawPath = "/search/redacted"
-		parsedURL.Path = "/search/redacted"
-	} else if strings.HasPrefix(parsedURL.Path, "/sign-in") {
-		parsedURL.RawPath = "/sign-in/redacted"
-		parsedURL.Path = "/sign-in/redacted"
-	} else if !sourcegraphCloudRegex.MatchString(parsedURL.Host) {
-		// if its not a cloud instance url, return rawURL so that referrers are not redacted
-		return rawURL, nil
-	} else {
-		parsedURL.RawPath = "redacted"
-		parsedURL.Path = "redacted"
+	redactedURL := false
+	for _, pathPrefix := range redactPaths {
+		if strings.HasPrefix(parsedURL.Path, pathPrefix) {
+			parsedURL.RawPath = pathPrefix + "/redacted"
+			parsedURL.Path = pathPrefix + "/redacted"
+			redactedURL = true
+			break
+		}
 	}
 
 	marketingQueryParameters := map[string]struct{}{
@@ -400,6 +404,12 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	}
 
 	parsedURL.RawQuery = urlQueryParams.Encode()
+
+	if !redactedURL {
+		// default case if redaction is not applied
+		parsedURL.RawPath = "/redacted"
+		parsedURL.Path = "/redacted"
+	}
 
 	return parsedURL.String(), nil
 }
