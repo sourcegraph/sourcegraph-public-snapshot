@@ -108,7 +108,8 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	logger := trace.Logger(ctx, s.logger)
 
 	// Check FeatureFlagTelemetryExport, defaulting to true if there are no
-	// flags or the export flag is not present.
+	// flags or the export flag is not present. This is currently only intended
+	// as an escape hatch.
 	// TODO(5.2.2): Remove this feature flag.
 	if flags := featureflag.FromContext(ctx); flags != nil && !flags.GetBoolOr(FeatureFlagTelemetryExport, true) {
 		tr.SetAttributes(attribute.Bool("flag-enabled", false))

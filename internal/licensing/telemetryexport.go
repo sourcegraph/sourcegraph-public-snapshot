@@ -1,6 +1,7 @@
 package licensing
 
 import (
+	"os"
 	"time"
 
 	"go.uber.org/atomic"
@@ -56,6 +57,13 @@ const (
 	TelemetryEventsExportCodyOnly
 )
 
+var (
+	// legacyExportUsageDataEnabled is the legacy 'EXPORT_USAGE_DATA_ENABLED'
+	// env var is set. Typically used in Cloud, if the legacy export is enabled,
+	// we can assume exports are enabled as well.
+	legacyExportUsageDataEnabled = os.Getenv("EXPORT_USAGE_DATA_ENABLED") == "true"
+)
+
 func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) TelemetryEventsExportMode {
 	if licenseKey == "" {
 		return TelemetryEventsExportAll // without licensing
@@ -73,6 +81,10 @@ func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) Telemetry
 
 	if slices.Contains(key.Tags, TelemetryEventsExportDisabledTag) {
 		return TelemetryEventsExportCodyOnly // license-based opt-out mechanism
+	}
+
+	if legacyExportUsageDataEnabled {
+		return TelemetryEventsExportAll // match legacy configuration
 	}
 
 	if key.CreatedAt.Before(telemetryEventsExportEnablementCutOffDate) {
