@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../stories'
 import { Link } from '../Link'
@@ -7,7 +7,7 @@ import { Code, Label, H1, H2, H3, H4, H5, H6, Text } from '.'
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
 import { Heading } from './Heading'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
@@ -258,7 +258,7 @@ Simple.args = {
     alignment: 'left',
 }
 
-export const CrossingStyles: Story = () => (
+export const CrossingStyles: StoryFn = () => (
     <>
         <H1>Crossing Header Styles</H1>
         <Text>
@@ -302,7 +302,7 @@ export const CrossingStyles: Story = () => (
 )
 
 const SEMANTIC_COLORS = ['primary', 'success', 'danger', 'warning', 'info', 'merged'] as const
-export const Prose: Story = () => (
+export const Prose: StoryFn = () => (
     <>
         <H2>Prose</H2>
         <Text>Text uses system fonts. The fonts should never be overridden.</Text>

@@ -97,9 +97,17 @@
 
 </style>
 
-# Install Cody for JetBrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Beta</span>
+# Install Cody for JetBrains
 
 <p class="subtitle">Learn how to use Cody and its features with the JetBrains IntelliJ editor.</p>
+
+<aside class="beta">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Cody support for JetBrains is in the Beta stage.
+<br />
+For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+</p>
+</aside>
 
 The Cody extension by Sourcegraph enhances your coding experience in your IDE by providing intelligent code suggestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your JetBrains environment.
 
@@ -195,7 +203,7 @@ The Cody plugin works with all JetBrains IDEs, including:
 - Rider
 - Android Studio
 
-## Enable code graph context for context-aware answers (Optional)
+## Enable code graph context for context-aware answers (optional)
 
 You can optionally configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if has context of a codebase's API schema.
 

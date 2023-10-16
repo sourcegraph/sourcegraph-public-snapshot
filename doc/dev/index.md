@@ -193,7 +193,6 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### Documentation
 
 - [Developing the product documentation](how-to/documentation_implementation.md)
-- [Architecture Decision Records (ADRs)](adr/index.md)
 
 ### Executors
 

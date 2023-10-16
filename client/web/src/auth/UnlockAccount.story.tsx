@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 import { SourcegraphContext } from '../jscontext'
@@ -41,7 +41,7 @@ const authProviders: SourcegraphContext['authProviders'] = [
     },
 ]
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {() => (
             <UnlockAccountPage

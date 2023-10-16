@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
@@ -33,7 +33,7 @@ const config: Meta = {
 
 export default config
 
-export const PositionSettingsGallery: Story = () => {
+export const PositionSettingsGallery: StoryFn = () => {
     const [position, setPosition] = useState(Position.top)
 
     return (
@@ -163,7 +163,7 @@ PositionSettingsGallery.parameters = {
     },
 }
 
-export const StandardExample: Story = () => (
+export const StandardExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -217,7 +217,7 @@ export const TargetPaddingExample: Story = () => (
     </ScrollCenterBox>
 )
 
-export const AbsoluteStrategyExample: Story = () => (
+export const AbsoluteStrategyExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -301,7 +301,7 @@ const FSM_TRANSITIONS: Record<FSM_STATES, Partial<Record<FSM_ACTIONS, FSM_STATES
     },
 }
 
-export const ShowOnFocus: Story = () => {
+export const ShowOnFocus: StoryFn = () => {
     const [state, setState] = useState<FSM_STATES>(FSM_STATES.Initial)
 
     const handleOpenChange = (event: PopoverOpenEvent): void => {

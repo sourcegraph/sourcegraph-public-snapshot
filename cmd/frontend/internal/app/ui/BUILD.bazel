@@ -12,6 +12,7 @@ go_library(
         "preview.go",
         "raw.go",
         "router.go",
+        "sveltekit.go",
         "tmpl.go",
     ],
     embedsrcs = [

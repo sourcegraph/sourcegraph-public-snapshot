@@ -1,12 +1,12 @@
 import { useState } from 'react'
 
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { TabBar, type TabsConfig, type TabKey } from './TabBar'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/TabBar',
@@ -17,13 +17,13 @@ export default config
 
 const CREATE_TABS: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
-export const CreateNewBatchChange: Story = () => (
+export const CreateNewBatchChange: StoryFn = () => (
     <WebStory>{props => <TabBar {...props} activeTabKey="configuration" tabsConfig={CREATE_TABS} />}</WebStory>
 )
 
 CreateNewBatchChange.storyName = 'creating a new batch change'
 
-export const EditUnexecutedBatchSpec: Story = () => {
+export const EditUnexecutedBatchSpec: StoryFn = () => {
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
 
     const tabsConfig: TabsConfig[] = [

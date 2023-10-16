@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -128,12 +129,7 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 }
 
 func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceChangelistResolver, error) {
-	commit, err := r.resolveCommit(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return toPerforceChangelistResolver(ctx, r.repoResolver, commit)
+	return toPerforceChangelistResolver(ctx, r)
 }
 
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
@@ -201,11 +197,7 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	// TODO(tsenart): We can get the parent commits in batch from gitserver instead of doing
 	// N roundtrips. We already have a git.Commits method. Maybe we can use that.
 	for i, parent := range commit.Parents {
-		var err error
-		resolvers[i], err = r.repoResolver.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
-		if err != nil {
-			return nil, err
-		}
+		resolvers[i] = NewGitCommitResolver(r.db, r.gitserverClient, r.repoResolver, parent, nil)
 	}
 	return resolvers, nil
 }
@@ -278,6 +270,16 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
+	if path == "" {
+		// This is referring to the root tree, will always exist, and will always be a directory,
+		// so we can skip the gitserver call to resolve the tree object. This is a common operation,
+		// so it's worth optimizing for.
+		return NewGitTreeEntryResolver(r.db, r.gitserverClient, GitTreeEntryResolverOpts{
+			Commit: r,
+			Stat:   &rootTreeFileInfo{},
+		}), nil
+	}
+
 	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
 	defer tr.EndWithErr(&err)
 
@@ -297,6 +299,20 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	}
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
+
+// rootTreeFileInfo implements the  FileInfo interface for the
+// root tree of a commit, which is guaranteed to be a directory
+// and is guaranteed to exist.
+type rootTreeFileInfo struct{}
+
+var _ os.FileInfo = (*rootTreeFileInfo)(nil)
+
+func (*rootTreeFileInfo) IsDir() bool        { return true }
+func (*rootTreeFileInfo) ModTime() time.Time { return time.Time{} }
+func (*rootTreeFileInfo) Mode() fs.FileMode  { return fs.ModeDir }
+func (*rootTreeFileInfo) Name() string       { return "" }
+func (*rootTreeFileInfo) Size() int64        { return 0 }
+func (*rootTreeFileInfo) Sys() any           { return nil }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
 	return r.gitserverClient.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
