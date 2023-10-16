@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { mdiBookOutline, mdiChartBar, mdiCogs, mdiMagnify } from '@mdi/js'
+    import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
 
     import { mark } from '$lib/images'
     import type { AuthenticatedUser } from '$lib/shared'
@@ -20,11 +20,6 @@
             <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
             <HeaderNavLink external href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
             <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
-            {#if authenticatedUser}
-                <HeaderNavLink external href="/users/{authenticatedUser.username}/settings" svgIconPath={mdiCogs}
-                    >Settings</HeaderNavLink
-                >
-            {/if}
         </ul>
     </nav>
     <div class="user">
