@@ -1,6 +1,7 @@
 # Melange-based replacement for Coursier
 # Previously packaged in the scip-java repo
 
+#comment
 package:
   name: jaeger
   version: 1.45.0 # Keep in sync with version in sg.config.yaml
