@@ -33,7 +33,8 @@ func GetFeature(ctx context.Context) codygateway.Feature {
 }
 
 // Handle extracts features from codygateway.FeatureHeaderName and uses it to
-// determine the appropriate per-feature rate limits applied for an actor.
+// determine the appropriate per-feature rate limits applied for an actor. It
+// only limits per-request.
 func Handle(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
@@ -48,7 +49,7 @@ func Handle(
 			return
 		}
 
-		HandleFeature(baseLogger, eventLogger, cache, rateLimitNotifier, feature, next).
+		HandleFeature(baseLogger, eventLogger, cache, rateLimitNotifier, feature, next, nil).
 			ServeHTTP(w, r)
 	})
 }
@@ -75,6 +76,10 @@ func HandleFeature(
 	rateLimitNotifier notify.RateLimitNotifier,
 	feature codygateway.Feature,
 	next http.Handler,
+
+	// extractUsage is optional - if a callback isn't provided, a consumption
+	// of 1 is always used. Usage is only evaluated on successful requests.
+	extractUsage func(responseHeaders http.Header) (int, error),
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
@@ -136,7 +141,14 @@ func HandleFeature(
 
 		// If response is healthy, consume the rate limit
 		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
-			if err := commit(r.Context(), 1); err != nil {
+			var usage = 1 // default to 1 for per-request limiting
+			if extractUsage != nil {
+				usage, err = extractUsage(w.Header())
+				if err != nil {
+					logger.Error("failed to extract usage", log.Error(err))
+				}
+			}
+			if err := commit(r.Context(), usage); err != nil {
 				logger.Error("failed to commit rate limit consumption", log.Error(err))
 			}
 		}
