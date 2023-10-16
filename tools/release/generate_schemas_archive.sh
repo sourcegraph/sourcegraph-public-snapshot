@@ -71,4 +71,15 @@ echo "--- Uploading tarball to ${bucket}/dist"
 gsutil cp "$output" "${bucket}/dist/"
 
 echo "--- Updating buildfiles"
+# Starlak is practically the same as Python, so we use that matcher.
+comby -matcher .py \
+  -in-place \
+  'urls = [":[1]"],' \
+  "urls = [\"https://storage.googleapis.com/schemas-migrations/dist/$output\"]," \
+  tools/release/schema_deps.bzl
 
+comby -matcher .py \
+  -in-place \
+  'sha256 = ":[1]",' \
+  "sha256 = \"$checksum\"," \
+  tools/release/schema_deps.bzl
