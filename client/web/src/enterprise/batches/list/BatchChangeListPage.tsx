@@ -36,6 +36,7 @@ import type {
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { eventRecorder } from '../../../tracking/eventRecorder'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -162,7 +163,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             as={Link}
                             to="https://about.sourcegraph.com"
                             variant="primary"
-                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })}
+                            onClick={() => {
+                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })
+                                eventRecorder.record('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })
+                            }}
                         >
                             Get Sourcegraph Enterprise
                         </Button>
@@ -343,6 +347,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                         onClick={event => {
                             onSelectGettingStarted(event)
                             eventLogger.log('batch_change_homepage:getting_started:clicked')
+                            eventRecorder.record('batch_change_homepage:getting_started:clicked')
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         aria-selected={selectedTab === 'gettingStarted'}
