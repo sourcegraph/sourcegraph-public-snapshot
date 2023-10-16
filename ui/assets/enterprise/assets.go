@@ -12,6 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
+// By default, `go:embed *` will ignore files that start with `.` or `_`. `all:*` on the other
+// hand will truly include all files.
+//
 //go:embed all:*
 var assetsFS embed.FS
 var afs fs.FS = assetsFS
