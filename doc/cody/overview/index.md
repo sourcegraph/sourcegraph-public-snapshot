@@ -133,6 +133,12 @@ To start using Cody, pick one of the following:
       <p>Install Cody's free and open source extension for JetBrains.</p>
     </a>
   </li>
+    <li>
+    <a class="card text-left" target="_blank" href="https://github.com/sourcegraph/sg.nvim">
+      <h3><img alt="Neovim" src="https://storage.googleapis.com/sourcegraph-assets/Docs/neovim-logo.png" />Neovim Extension (experimental)</h3>
+      <p>Install Cody's free and open source extension for Neovim.</p>
+    </a>
+  </li>
   <li>
      <a class="card text-left" target="_blank" href="https://sourcegraph.com/get-cody">
       <h3><img alt="Cody App" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/cody-logomark-default.svg"/>Cody App</h3>
