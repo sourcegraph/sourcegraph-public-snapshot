@@ -1197,14 +1197,18 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 			// syntax instead of JSONB literals so that we can use SQL
 			// variables for the user-provided topic names (don't want SQL
 			// injections here).
-			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			githubCond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			gitlabCond := `external_service_type = 'gitlab' AND metadata->'topics' @> jsonb_build_array(%s::text)`
+
 			if filter.Negated {
 				// Use Coalesce in case the JSON access evaluates to NULL.
 				// Since negating a NULL evaluates to NULL, we want to
 				// explicitly treat NULLs as false first
-				cond = `NOT COALESCE(` + cond + `, false)`
+				githubCond = `NOT COALESCE(` + githubCond + `, false)`
+				gitlabCond = `NOT COALESCE(` + gitlabCond + `, false)`
 			}
-			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
+			cond := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(githubCond, filter.Topic), sqlf.Sprintf(gitlabCond, filter.Topic)}, "OR")
+			ands = append(ands, cond)
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
