@@ -229,7 +229,7 @@ ts_project(
         "src/shared/repo/index.tsx",
         "src/shared/sentry/index.ts",
         "src/shared/tracking/eventLogger.tsx",
-        "src/shared/tracking/telemetryRecorder.tsx",
+        "src/shared/tracking/eventRecorder.tsx",
         "src/shared/util/context.tsx",
         "src/shared/util/dom.tsx",
         "src/shared/util/featureFlags.ts",

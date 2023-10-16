@@ -1684,6 +1684,7 @@ ts_project(
         "src/tour/hooks.ts",
         "src/tracking/TelemetricLink.tsx",
         "src/tracking/eventLogger.ts",
+        "src/tracking/eventRecorder.ts",
         "src/tracking/services/serverAdminWrapper.tsx",
         "src/tracking/util.ts",
         "src/types/fzy.js/index.d.ts",
