@@ -65,7 +65,7 @@ cp internal/database/schema.codeinsights.json "${tmp_dir}/${version}-internal_da
 output="${PWD}/schemas-${version}.tar.gz"
 echo "--- Creating tarball '$output'"
 pushd "$tmp_dir"
-tar cvzf "$output" *
+tar cvzf "$output" ./*
 popd
 checksum=$(sha256sum "$output")
 echo "Checksum: $checksum"
