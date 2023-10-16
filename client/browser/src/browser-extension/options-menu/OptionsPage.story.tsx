@@ -51,12 +51,12 @@ const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partia
     )
 }
 
-const Interactive: Story = args => {
+const Interactive: StoryFn = args => {
     const [isActivated, setIsActivated] = useState(false)
     return <OptionsPageWrapper isActivated={isActivated} onToggleActivated={setIsActivated} {...args} />
 }
 
-const WithAdvancedSettings: Story = args => {
+const WithAdvancedSettings: StoryFn = args => {
     const [optionFlagValues, setOptionFlagValues] = useState([
         { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
     ])
@@ -74,7 +74,7 @@ const WithAdvancedSettings: Story = args => {
     )
 }
 
-export const AllOptionsPages: Story = (args = {}) => (
+export const AllOptionsPages: StoryFn = (args = {}) => (
     <div>
         <H1 className="text-center mb-3">All Options Pages</H1>
         <Grid columnCount={3}>

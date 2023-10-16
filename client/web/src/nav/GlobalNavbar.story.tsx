@@ -87,7 +87,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story<GlobalNavbarProps> = props => (
+export const Default: StoryFn<GlobalNavbarProps> = props => (
     <Grid columnCount={1}>
         <div>
             <H3 className="ml-2">Anonymous viewer</H3>

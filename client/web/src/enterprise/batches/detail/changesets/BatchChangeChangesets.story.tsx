@@ -73,7 +73,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     }
 }
 
-export const ListOfChangesets: Story = args => (
+export const ListOfChangesets: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
@@ -93,7 +93,7 @@ export const ListOfChangesets: Story = args => (
 
 ListOfChangesets.storyName = 'List of changesets'
 
-export const ListOfExpandedChangesets: Story = args => (
+export const ListOfExpandedChangesets: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
@@ -114,7 +114,7 @@ export const ListOfExpandedChangesets: Story = args => (
 
 ListOfExpandedChangesets.storyName = 'List of expanded changesets'
 
-export const DraftWithoutChangesets: Story = args => {
+export const DraftWithoutChangesets: StoryFn = args => {
     const batchChangeState = args.batchChangeState
 
     return (

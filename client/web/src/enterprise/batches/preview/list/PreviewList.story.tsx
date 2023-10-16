@@ -29,7 +29,7 @@ export default config
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-export const DefaultStory: Story = args => {
+export const DefaultStory: StoryFn = args => {
     const publicationStateSet = args.publicationStateSet
 
     const nodes: ChangesetApplyPreviewFields[] = [

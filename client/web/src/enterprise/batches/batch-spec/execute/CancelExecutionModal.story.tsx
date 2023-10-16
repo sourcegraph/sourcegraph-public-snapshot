@@ -26,7 +26,7 @@ const config: Meta = {
 
 export default config
 
-export const CancelExecutionModalStory: Story = args => (
+export const CancelExecutionModalStory: StoryFn = args => (
     <WebStory>
         {props => (
             <CancelExecutionModal

@@ -30,7 +30,7 @@ const config: Meta = {
 
 export default config
 
-export const Overview: Story = args => (
+export const Overview: StoryFn = args => (
     <WebStory>
         {() => <GettingStarted isSourcegraphDotCom={args.isSourcegraphDotCom} canCreate={args.canCreateBatchChanges} />}
     </WebStory>

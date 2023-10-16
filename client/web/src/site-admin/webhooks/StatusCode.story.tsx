@@ -18,7 +18,7 @@ const config: Meta = {
 
 export default config
 
-export const Success: Story = args => <WebStory>{() => <StatusCode code={args.code} />}</WebStory>
+export const Success: StoryFn = args => <WebStory>{() => <StatusCode code={args.code} />}</WebStory>
 Success.argTypes = {
     code: {
         control: { type: 'number', min: 100, max: 399 },
@@ -28,7 +28,7 @@ Success.args = {
     code: 204,
 }
 
-export const Failure: Story = args => <WebStory>{() => <StatusCode code={args.code} />}</WebStory>
+export const Failure: StoryFn = args => <WebStory>{() => <StatusCode code={args.code} />}</WebStory>
 Failure.argTypes = {
     code: {
         control: { type: 'number', min: 400, max: 599 },

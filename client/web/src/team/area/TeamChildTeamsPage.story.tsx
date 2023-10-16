@@ -81,7 +81,7 @@ const mockResponse: MockedResponse<ListTeamsOfParentResult> = {
     },
 }
 
-export const Default: Story = function Default() {
+export const Default: StoryFn = function Default() {
     return (
         <WebStory mocks={[mockResponse]} initialEntries={['/teams/team-1/child-teams']}>
             {() => <TeamChildTeamsPage {...testContext} />}

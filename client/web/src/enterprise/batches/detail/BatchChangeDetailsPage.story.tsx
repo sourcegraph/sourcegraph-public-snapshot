@@ -86,7 +86,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const Template: Story<{
+const Template: StoryFn<{
     url: string
     supersedingBatchSpec?: boolean
     currentBatchSpec?: BatchChangeFields['currentSpec']
@@ -233,7 +233,7 @@ UnpublishableBatchSpec.argTypes = {
     supersedingBatchSpec: {},
 }
 
-export const EmptyChangesets: Story = args => {
+export const EmptyChangesets: StoryFn = args => {
     const mocks = new WildcardMockLink([
         {
             request: {

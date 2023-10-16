@@ -24,7 +24,7 @@ const config: Meta = {
 
 export default config
 
-export const WorkspaceStateIconStory: Story = args => (
+export const WorkspaceStateIconStory: StoryFn = args => (
     <WebStory>
         {props => (
             <>

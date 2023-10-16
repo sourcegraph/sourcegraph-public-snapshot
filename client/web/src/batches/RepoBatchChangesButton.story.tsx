@@ -20,7 +20,7 @@ export default config
 let openValue = 0
 let mergedValue = 0
 
-export const RepoButton: Story = args => (
+export const RepoButton: StoryFn = args => (
     <WebStory>
         {() => {
             openValue = args.open

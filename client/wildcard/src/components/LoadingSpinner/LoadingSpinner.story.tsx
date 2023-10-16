@@ -29,4 +29,4 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = (args = {}) => <LoadingSpinner inline={args.inline} />
+export const Simple: StoryFn = (args = {}) => <LoadingSpinner inline={args.inline} />

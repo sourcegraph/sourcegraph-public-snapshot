@@ -36,7 +36,7 @@ const config: Meta = {
 
 export default config
 
-const Template: Story /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => (
+const Template: StoryFn /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => (
     <WebStory>
         {props => (
             <BatchChangeNode

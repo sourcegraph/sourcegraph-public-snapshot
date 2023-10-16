@@ -13,6 +13,6 @@ const config: Meta = {
 }
 export default config
 
-export const Default: Story = function Default() {
+export const Default: StoryFn = function Default() {
     return <WebStory initialEntries={['/teams/team-1']}>{() => <TeamProfilePage {...testContext} />}</WebStory>
 }

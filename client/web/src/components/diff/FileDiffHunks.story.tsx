@@ -73,7 +73,7 @@ const config: Meta = {
 
 export default config
 
-export const OneDiffUnifiedHunk: Story = args => (
+export const OneDiffUnifiedHunk: StoryFn = args => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
@@ -91,7 +91,7 @@ export const OneDiffUnifiedHunk: Story = args => (
 
 OneDiffUnifiedHunk.storyName = 'One diff unified hunk'
 
-export const OneDiffSplitHunk: Story = args => (
+export const OneDiffSplitHunk: StoryFn = args => (
     <WebStory>
         {webProps => (
             <FileDiffHunks

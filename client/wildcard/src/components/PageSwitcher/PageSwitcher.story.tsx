@@ -29,7 +29,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = (args = {}) => {
+export const Simple: StoryFn = (args = {}) => {
     const totalPages = args.totalCount
 
     const [page, setPage] = useState(1)

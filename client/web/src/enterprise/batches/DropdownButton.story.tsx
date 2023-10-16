@@ -64,7 +64,7 @@ const config: Meta = {
 
 export default config
 
-export const NoActions: Story = args => <WebStory>{() => <DropdownButton actions={[]} {...args} />}</WebStory>
+export const NoActions: StoryFn = args => <WebStory>{() => <DropdownButton actions={[]} {...args} />}</WebStory>
 NoActions.argTypes = {
     disabled: {
         table: {
@@ -75,11 +75,11 @@ NoActions.argTypes = {
 
 NoActions.storyName = 'No actions'
 
-export const SingleAction: Story = args => <WebStory>{() => <DropdownButton actions={[action]} {...args} />}</WebStory>
+export const SingleAction: StoryFn = args => <WebStory>{() => <DropdownButton actions={[action]} {...args} />}</WebStory>
 
 SingleAction.storyName = 'Single action'
 
-export const MultipleActionsWithoutDefault: Story = args => (
+export const MultipleActionsWithoutDefault: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider
@@ -100,7 +100,7 @@ export const MultipleActionsWithoutDefault: Story = args => (
 
 MultipleActionsWithoutDefault.storyName = 'Multiple actions without default'
 
-export const MultipleActionsWithDefault: Story = args => (
+export const MultipleActionsWithDefault: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider
@@ -121,7 +121,7 @@ export const MultipleActionsWithDefault: Story = args => (
 
 MultipleActionsWithDefault.storyName = 'Multiple actions with default'
 
-export const PublishActionWithRolloutWindowConfigured: Story = args => (
+export const PublishActionWithRolloutWindowConfigured: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider

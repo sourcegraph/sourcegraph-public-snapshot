@@ -35,7 +35,7 @@ const calculatePercentComplete = <T extends MockStatsArgs>(stats: T, total: numb
 const calculateTotal = <T extends MockStatsArgs>(stats: T): number =>
     stats.closed + stats.deleted + stats.merged + stats.draft + stats.open + stats.archived + stats.unpublished
 
-export const Draft: Story<MockStatsArgs> = args => {
+export const Draft: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>
@@ -118,7 +118,7 @@ Draft.args = {
     processing: 0,
 }
 
-export const Open: Story<MockStatsArgs> = args => {
+export const Open: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>
@@ -201,7 +201,7 @@ Open.args = {
     processing: 0,
 }
 
-export const OpenAndComplete: Story<MockStatsArgs> = args => {
+export const OpenAndComplete: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>
@@ -286,7 +286,7 @@ OpenAndComplete.args = {
 
 OpenAndComplete.storyName = 'open and complete'
 
-export const Closed: Story<MockStatsArgs> = args => {
+export const Closed: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>

@@ -29,7 +29,7 @@ const config: Meta = {
 
 export default config
 
-export const MonacoBatchSpecEditorStory: Story = args => (
+export const MonacoBatchSpecEditorStory: StoryFn = args => (
     <WebStory>
         {props => (
             <MonacoBatchSpecEditor

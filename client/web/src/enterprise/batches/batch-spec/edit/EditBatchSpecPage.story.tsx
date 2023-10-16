@@ -108,7 +108,7 @@ const mockAuthenticatedUser = {
     },
 } as AuthenticatedUser
 
-export const EditFirstTime: Story<WebStoryChildrenProps> = props => (
+export const EditFirstTime: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={FIRST_TIME_MOCKS}>
         <EditBatchSpecPage
             {...props}
@@ -150,7 +150,7 @@ const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
     ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 ])
 
-export const EditLatestBatchSpec: Story<WebStoryChildrenProps> = props => (
+export const EditLatestBatchSpec: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={MULTIPLE_SPEC_MOCKS}>
         <EditBatchSpecPage
             {...props}
@@ -176,7 +176,7 @@ const NOT_FOUND_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
-export const BatchChangeNotFound: Story<WebStoryChildrenProps> = props => (
+export const BatchChangeNotFound: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={NOT_FOUND_MOCKS}>
         <EditBatchSpecPage
             {...props}
@@ -202,7 +202,7 @@ const INVALID_SPEC_MOCKS = new WildcardMockLink([
 
 BatchChangeNotFound.storyName = 'batch change not found'
 
-export const InvalidBatchSpec: Story<WebStoryChildrenProps> = props => (
+export const InvalidBatchSpec: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={INVALID_SPEC_MOCKS}>
         <EditBatchSpecPage
             {...props}
@@ -228,7 +228,7 @@ const NO_EXECUTORS_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
-export const ExecutorsNotActive: Story<WebStoryChildrenProps> = props => (
+export const ExecutorsNotActive: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={NO_EXECUTORS_MOCKS}>
         <EditBatchSpecPage
             {...props}

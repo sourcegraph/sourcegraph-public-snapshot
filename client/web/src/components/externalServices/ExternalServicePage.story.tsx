@@ -139,7 +139,7 @@ function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
     ])
 }
 
-export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
+export const ExternalServiceWithRepos: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServicePage
             queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}

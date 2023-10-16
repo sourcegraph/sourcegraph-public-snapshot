@@ -27,7 +27,7 @@ const config: Meta = {
 
 export default config
 
-export const HasOpenChangesets: Story = args => {
+export const HasOpenChangesets: StoryFn = args => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     return (
         <WebStory>
@@ -57,7 +57,7 @@ HasOpenChangesets.args = {
 
 HasOpenChangesets.storyName = 'Has open changesets'
 
-export const NoOpenChangesets: Story = args => {
+export const NoOpenChangesets: StoryFn = args => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     return (
         <WebStory>

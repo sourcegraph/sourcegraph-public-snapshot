@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-const Template: Story<{ checkState: ChangesetCheckState }> = ({ checkState }) => (
+const Template: StoryFn<{ checkState: ChangesetCheckState }> = ({ checkState }) => (
     <WebStory>{props => <ChangesetCheckStatusCell {...props} checkState={checkState} />}</WebStory>
 )
 

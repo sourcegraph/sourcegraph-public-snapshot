@@ -42,7 +42,7 @@ const config: Meta = {
 
 export default config
 
-export const AllStates: Story = args => {
+export const AllStates: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -136,7 +136,7 @@ export const AllStates: Story = args => {
 
 AllStates.storyName = 'All states'
 
-export const Unpublished: Story = args => {
+export const Unpublished: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -211,7 +211,7 @@ export const Unpublished: Story = args => {
     )
 }
 
-export const Importing: Story = args => {
+export const Importing: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -274,7 +274,7 @@ export const Importing: Story = args => {
     )
 }
 
-export const ImportingFailed: Story = args => {
+export const ImportingFailed: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -329,7 +329,7 @@ export const ImportingFailed: Story = args => {
 
 ImportingFailed.storyName = 'Importing failed'
 
-export const SyncFailed: Story = args => {
+export const SyncFailed: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>

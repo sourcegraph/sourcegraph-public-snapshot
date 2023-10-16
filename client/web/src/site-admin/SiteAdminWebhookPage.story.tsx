@@ -29,7 +29,7 @@ export default config
 const WEBHOOK_MOCK_DATA = buildWebhookLogs()
 const ERRORED_WEBHOOK_MOCK_DATA = WEBHOOK_MOCK_DATA.filter(webhook => webhook.statusCode !== 200)
 
-export const SiteAdminWebhookPageStory: Story = args => {
+export const SiteAdminWebhookPageStory: StoryFn = args => {
     const buildWebhookLogsMock = new WildcardMockLink([
         {
             request: {
@@ -125,7 +125,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
 
 SiteAdminWebhookPageStory.storyName = 'Incoming webhook'
 
-export const SiteAdminWebhookPageWithoutLogsStory: Story = args => {
+export const SiteAdminWebhookPageWithoutLogsStory: StoryFn = args => {
     const buildWebhookLogsMock = new WildcardMockLink([
         {
             request: {

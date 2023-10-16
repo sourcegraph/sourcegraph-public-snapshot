@@ -90,7 +90,7 @@ interface Args {
     isApp: boolean
 }
 
-export const ListOfBatchChanges: Story<Args> = args => {
+export const ListOfBatchChanges: StoryFn<Args> = args => {
     updateJSContextBatchChangesLicense('full')
 
     return (

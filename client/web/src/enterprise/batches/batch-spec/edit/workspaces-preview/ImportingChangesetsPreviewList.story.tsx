@@ -39,7 +39,7 @@ const config: Meta = {
 
 export default config
 
-export const ImportingChangesetsPreviewListStory: Story = args => {
+export const ImportingChangesetsPreviewListStory: StoryFn = args => {
     const count = args.count
     return (
         <WebStory>

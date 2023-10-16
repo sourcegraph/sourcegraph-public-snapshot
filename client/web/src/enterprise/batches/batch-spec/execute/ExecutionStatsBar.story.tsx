@@ -38,7 +38,7 @@ const config: Meta = {
 
 export default config
 
-export const ExecutionStatsBarStory: Story = args => (
+export const ExecutionStatsBarStory: StoryFn = args => (
     <WebStory>
         {props => (
             <ExecutionStatsBar

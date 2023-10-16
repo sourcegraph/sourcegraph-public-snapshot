@@ -13,7 +13,7 @@ const config: Meta = {
 
 export default config
 
-const Template: Story<{ state: ChangesetState }> = ({ state }) => (
+const Template: StoryFn<{ state: ChangesetState }> = ({ state }) => (
     <WebStory>{() => <ChangesetStatusCell state={state} className="d-flex text-muted" />}</WebStory>
 )
 

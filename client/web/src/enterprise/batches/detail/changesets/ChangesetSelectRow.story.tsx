@@ -52,7 +52,7 @@ const queryAll50ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_
 
 const allBulkOperations = Object.keys(BulkOperationType) as BulkOperationType[]
 
-export const AllStates: Story = args => {
+export const AllStates: StoryFn = args => {
     const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () =>
         of(CHANGESET_IDS.slice(0, args.selectableChangesets))
     const initialSelected = CHANGESET_IDS.slice(0, args.selectedChangesets)

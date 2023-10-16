@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-const Template: Story<{ reviewState: ChangesetReviewState }> = ({ reviewState }) => (
+const Template: StoryFn<{ reviewState: ChangesetReviewState }> = ({ reviewState }) => (
     <WebStory>{props => <ChangesetReviewStatusCell {...props} reviewState={reviewState} />}</WebStory>
 )
 

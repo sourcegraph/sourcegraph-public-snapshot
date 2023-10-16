@@ -23,7 +23,7 @@ const config: Meta = {
 
 export default config
 
-export const ReplaceSpecModalStory: Story = args => (
+export const ReplaceSpecModalStory: StoryFn = args => (
     <WebStory>
         {props => (
             <ReplaceSpecModal

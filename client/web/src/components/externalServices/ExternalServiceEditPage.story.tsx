@@ -79,7 +79,7 @@ function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
     ])
 }
 
-export const ViewConfig: Story<WebStoryChildrenProps> = props => (
+export const ViewConfig: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -92,7 +92,7 @@ export const ViewConfig: Story<WebStoryChildrenProps> = props => (
 
 ViewConfig.storyName = 'View external service config'
 
-export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
+export const ConfigWithInvalidUrl: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -105,7 +105,7 @@ export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
 
 ConfigWithInvalidUrl.storyName = 'External service config with invalid url'
 
-export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
+export const ConfigWithWarning: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -118,7 +118,7 @@ export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
 
 ConfigWithWarning.storyName = 'External service config with warning after update'
 
-export const EditingDisabled: Story<WebStoryChildrenProps> = props => (
+export const EditingDisabled: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}

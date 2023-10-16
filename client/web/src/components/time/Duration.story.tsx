@@ -26,7 +26,7 @@ const config: Meta = {
 
 export default config
 
-export const Fixed: Story = args => (
+export const Fixed: StoryFn = args => (
     <WebStory>{props => <Duration {...props} start={new Date(args.start)} end={new Date(args.end)} />}</WebStory>
 )
 Fixed.argTypes = {
@@ -39,7 +39,7 @@ Fixed.args = {
     end: now,
 }
 
-export const Active: Story = args => (
+export const Active: StoryFn = args => (
     <WebStory>
         {props => (
             <>

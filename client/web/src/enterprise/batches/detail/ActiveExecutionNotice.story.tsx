@@ -34,7 +34,7 @@ export default config
 const PROCESSING_BATCH_SPEC = { state: BatchSpecState.PROCESSING }
 const COMPLETE_BATCH_SPEC = { state: BatchSpecState.COMPLETED }
 
-export const ActiveExecutionNoticeStory: Story = args => {
+export const ActiveExecutionNoticeStory: StoryFn = args => {
     const numberActive = args.numberActive
     const numberComplete = args.numberComplete
 

@@ -45,7 +45,7 @@ const WebhookInfoLogPageHeaderContainer: React.FunctionComponent<
     return <WebhookInfoLogPageHeader webhookID="1" onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
 }
 
-export const ExternalServicesAndErrors: Story = args => (
+export const ExternalServicesAndErrors: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={buildHeaderMock(args.erroredWebhookCount)}>

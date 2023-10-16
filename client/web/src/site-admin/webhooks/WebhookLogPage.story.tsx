@@ -120,7 +120,7 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
     return logs
 }
 
-export const NoLogs: Story = args => (
+export const NoLogs: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
@@ -132,7 +132,7 @@ export const NoLogs: Story = args => (
 
 NoLogs.storyName = 'no logs'
 
-export const OnePageOfLogs: Story = args => (
+export const OnePageOfLogs: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
@@ -144,7 +144,7 @@ export const OnePageOfLogs: Story = args => (
 
 OnePageOfLogs.storyName = 'one page of logs'
 
-export const TwoPagesOfLogs: Story = args => (
+export const TwoPagesOfLogs: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>

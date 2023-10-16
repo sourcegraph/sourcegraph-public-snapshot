@@ -42,7 +42,7 @@ const config: Meta = {
 
 export default config
 
-export const EditorFeedbackPanelStory: Story = args => (
+export const EditorFeedbackPanelStory: StoryFn = args => (
     <WebStory>
         {props => (
             <EditorFeedbackPanel

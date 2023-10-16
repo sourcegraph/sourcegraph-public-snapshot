@@ -22,6 +22,6 @@ const config: Meta = {
 
 export default config
 
-export const Changelog: Story = args => (
+export const Changelog: StoryFn = args => (
     <WebStory>{() => <BatchChangesChangelogAlert viewerIsAdmin={args.viewerIsAdmin} />}</WebStory>
 )

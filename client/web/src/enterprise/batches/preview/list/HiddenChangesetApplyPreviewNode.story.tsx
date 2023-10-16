@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-const Template: Story<{ node: HiddenChangesetApplyPreviewFields }> = ({ node }) => (
+const Template: StoryFn<{ node: HiddenChangesetApplyPreviewFields }> = ({ node }) => (
     <WebStory>{props => <HiddenChangesetApplyPreviewNode {...props} node={node} />}</WebStory>
 )
 

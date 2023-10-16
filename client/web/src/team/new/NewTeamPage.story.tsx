@@ -12,6 +12,6 @@ const config: Meta = {
 }
 export default config
 
-export const Default: Story = function Default() {
+export const Default: StoryFn = function Default() {
     return <WebStory>{() => <NewTeamPage />}</WebStory>
 }

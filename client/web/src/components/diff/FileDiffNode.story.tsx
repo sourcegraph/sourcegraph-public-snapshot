@@ -213,7 +213,7 @@ const config: Meta = {
 
 export default config
 
-export const AllUnifiedFileNode: Story = args => (
+export const AllUnifiedFileNode: StoryFn = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -235,7 +235,7 @@ export const AllUnifiedFileNode: Story = args => (
 
 AllUnifiedFileNode.storyName = 'All unified file node states overview'
 
-export const AllSplitFileNode: Story = args => (
+export const AllSplitFileNode: StoryFn = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">

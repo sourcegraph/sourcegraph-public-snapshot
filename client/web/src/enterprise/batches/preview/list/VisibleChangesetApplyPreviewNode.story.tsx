@@ -25,7 +25,7 @@ const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: nul
 
 const stories = visibleChangesetApplyPreviewNodeStories(true)
 
-const Template: Story<{ node: VisibleChangesetApplyPreviewFields }> = ({ node }) => (
+const Template: StoryFn<{ node: VisibleChangesetApplyPreviewFields }> = ({ node }) => (
     <WebStory>
         {props => (
             <VisibleChangesetApplyPreviewNode
