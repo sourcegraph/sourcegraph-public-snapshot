@@ -12,6 +12,10 @@
     name: (identifier) @definition.type
 ) @scope
 
+(record_declaration
+    name: (identifier) @definition.type
+) @scope
+
 
 (for_statement) @scope
 

@@ -12,6 +12,8 @@ public class Text implements TextContainer {
         return new Text(this.chars + chars);
     }
 
+    public record Person (String name, String address) {}
+
     enum Flags {
         Flags() {
             this(1);

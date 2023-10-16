@@ -27,70 +27,75 @@ expression: dumped
 //                                     ^^^^^ reference local 2
       }
 
+      public record Person (String name, String address) {}
+//                  ^^^^^^ definition local 5
+//                                 ^^^^ definition local 6
+//                                              ^^^^^^^ definition local 7
+
       enum Flags {
-//         ^^^^^ definition local 16
+//         ^^^^^ definition local 19
           Flags() {
-//        ^^^^^ reference local 16
+//        ^^^^^ reference local 19
               this(1);
           }
 
           Flags(int bits) {
-//                  ^^^^ definition local 5
+//                  ^^^^ definition local 8
               this.bits = bits;
-//                 ^^^^ reference local 5
-//                        ^^^^ reference local 5
+//                 ^^^^ reference local 8
+//                        ^^^^ reference local 8
           }
       }
 
       protected String toStringAttributes() {
-//                     ^^^^^^^^^^^^^^^^^^ definition local 6
+//                     ^^^^^^^^^^^^^^^^^^ definition local 9
           return "text=" + getChars();
       }
 
       public void print(int i) {
-//                ^^^^^ definition local 7
-//                          ^ definition local 8
+//                ^^^^^ definition local 10
+//                          ^ definition local 11
           for (int i = 0; i < 5; i++) {
-//                 ^ definition local 17
-//                        ^ reference local 17
-//                               ^ reference local 17
+//                 ^ definition local 20
+//                        ^ reference local 20
+//                               ^ reference local 20
             System.out.println(i);
-//                             ^ reference local 17
+//                             ^ reference local 20
           }
           System.out.println(i);
-//                           ^ reference local 8
+//                           ^ reference local 11
       }
 
       public interface Hello {
-//                     ^^^^^ definition local 9
+//                     ^^^^^ definition local 12
 
           public void func1(Hello t) {
-//                    ^^^^^ definition local 10
-//                          ^^^^^ reference local 9
-//                                ^ definition local 11
+//                    ^^^^^ definition local 13
+//                          ^^^^^ reference local 12
+//                                ^ definition local 14
               var newT = t;
-//                ^^^^ definition local 12
-//                       ^ reference local 11
+//                ^^^^ definition local 15
+//                       ^ reference local 14
           }
 
       }
 
       public void test() {
-//                ^^^^ definition local 13
+//                ^^^^ definition local 16
           ArrayList<Integer> numbers = new ArrayList<Integer>();
-//                           ^^^^^^^ definition local 14
+//                           ^^^^^^^ definition local 17
           numbers.add(5);
-//        ^^^^^^^ reference local 14
+//        ^^^^^^^ reference local 17
           numbers.add(9);
-//        ^^^^^^^ reference local 14
+//        ^^^^^^^ reference local 17
           numbers.add(8);
-//        ^^^^^^^ reference local 14
+//        ^^^^^^^ reference local 17
           numbers.add(1);
-//        ^^^^^^^ reference local 14
+//        ^^^^^^^ reference local 17
           numbers.forEach( (n) -> { System.out.println(n); } );
-//        ^^^^^^^ reference local 14
-//                          ^ definition local 15
-//                                                     ^ reference local 15
+//        ^^^^^^^ reference local 17
+//                          ^ definition local 18
+//                                                     ^ reference local 18
 
       }
   }
