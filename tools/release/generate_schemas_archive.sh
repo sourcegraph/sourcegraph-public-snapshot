@@ -8,6 +8,12 @@ minor=""
 
 if [ "$#" -ne 1 ]; then
   echo "usage: [script] vX.Y.Z path/to/dir/to/store/tarball"
+  exit 1
+fi
+
+if ! [[ $version =~ ^v[0-9]\.[0-9]+\.[0-9]+ ]]; then
+  echo "version format is incorrect, usage: [script] vX.Y.Z"
+  exit 1
 fi
 
 bucket='gs://schemas-migrations'
