@@ -41,7 +41,7 @@ genrule(
     if tar --version | grep -q bsdtar; then
         tar -cf $@ --uid=0 --gid=0 --numeric-owner schema-descriptions/
     else
-        tar -cf $@ --owner=:0 --group=:0 --numeric-owner schema-descriptions/
+        tar -cf $@ --owner=0 --group=0 --numeric-owner schema-descriptions/
     fi
     """,
 )
