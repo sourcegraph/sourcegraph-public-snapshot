@@ -16,7 +16,7 @@ To embed your codebase and enable codebase-aware answers for Cody, you need to p
 
 - [Enable Cody](./../../overview/enable-cody-enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance) for your Sourcegraph Enterprise instance
 - Set up the [Code Graph Context](./../code_graph_context.md) from your **Site admin**
-- Embed your codebase by either [scheduling a one-off embeddings job](./configure-embeddings#schedule-embeddings-jobs) or [creating an embeddings policy](./configure-embeddings.md#policies) to keep your index up-to-date automatically
+- Embed your codebase by either [scheduling a one-off embeddings job](./configure-embeddings.md#schedule-embeddings-jobs) or [creating an embeddings policy](./configure-embeddings.md#policies) to keep your index up-to-date automatically
 
 ### Sourcegraph.com
 
