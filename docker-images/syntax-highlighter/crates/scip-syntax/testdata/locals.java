@@ -43,6 +43,15 @@ public class Text implements TextContainer {
 
     }
 
+    public void blocks(int num) {
+        {
+            var num = 25;
+            {
+                var num = 100;
+            }
+        }
+    }
+
     public void test() {
         ArrayList<Integer> numbers = new ArrayList<Integer>();
         numbers.add(5);
@@ -50,6 +59,10 @@ public class Text implements TextContainer {
         numbers.add(8);
         numbers.add(1);
         numbers.forEach( (n) -> { System.out.println(n); } );
+
+        for(Integer num: numbers) {
+            System.out.println(num);
+        }
 
     }
 }

@@ -16,8 +16,18 @@
     name: (identifier) @definition.type
 ) @scope
 
+(method_declaration
+    name: (identifier) @definition.function (#set! "scope" "parent")
+)
+
+(block) @scope
+
 
 (for_statement) @scope
+
+(enhanced_for_statement
+    name: (identifier) @definition.term
+) @scope
 
 (lambda_expression
 
@@ -29,10 +39,6 @@
     )
   ]
 ) @scope
-
-(method_declaration
-    name: (identifier) @definition.function
-)
 
 (formal_parameter
     name: (identifier) @definition.term
