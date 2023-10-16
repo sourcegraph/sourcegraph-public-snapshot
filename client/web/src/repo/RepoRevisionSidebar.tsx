@@ -1,6 +1,6 @@
 import { type FC, useCallback, useState } from 'react'
 
-import { mdiPageLayoutSidebarRight } from '@mdi/js'
+import { mdiChevronDoubleLeft, mdiPageLayoutSidebarRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -83,16 +83,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                     storageKey={SIZE_STORAGE_KEY}
                     ariaLabel="File sidebar"
                 >
-                    <Tooltip content="Hide sidebar" placement="right">
-                        <Button
-                            aria-label="Hide sidebar"
-                            variant="icon"
-                            className={classNames('position-absolute border mr-2', styles.toggle)}
-                            onClick={() => props.handleSidebarToggle(false)}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiPageLayoutSidebarRight} />
-                        </Button>
-                    </Tooltip>
                     <div className="d-flex flex-column h-100 w-100">
                         {showOnboardingTour && (
                             <GettingStartedTour
@@ -110,7 +100,24 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             // position, which tree is expanded)
                             behavior="memoize"
                         >
-                            <TabList wrapperClassName="mr-3 ml-5">
+                            <TabList
+                                wrapperClassName="mr-3"
+                                actions={
+                                    <Tooltip content="Hide sidebar" placement="right">
+                                        <Button
+                                            aria-label="Hide sidebar"
+                                            onClick={() => props.handleSidebarToggle(false)}
+                                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                        >
+                                            <Icon
+                                                className={styles.closeIcon}
+                                                aria-hidden={true}
+                                                svgPath={mdiChevronDoubleLeft}
+                                            />
+                                        </Button>
+                                    </Tooltip>
+                                }
+                            >
                                 <Tab data-tab-content="files">
                                     <span className="tablist-wrapper--tab-label">Files</span>
                                 </Tab>

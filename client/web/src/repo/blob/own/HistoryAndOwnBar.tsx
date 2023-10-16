@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiAccount, mdiPageLayoutSidebarLeft } from '@mdi/js'
+import { mdiAccount, mdiChevronDoubleRight, mdiPageLayoutSidebarLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -97,7 +97,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                                 display="inline"
                                 onClick={() => handleSidebarToggle(true)}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiPageLayoutSidebarLeft} />
+                                <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
                             </Button>
                         </Tooltip>
                     )}
