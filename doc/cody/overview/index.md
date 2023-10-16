@@ -129,7 +129,7 @@ To start using Cody, pick one of the following:
   </li>
   <li>
     <a class="card text-left" target="_blank" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph">
-      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (experimental)</h3>
+      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (beta)</h3>
       <p>Install Cody's free and open source extension for JetBrains.</p>
     </a>
   </li>
