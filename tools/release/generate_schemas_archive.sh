@@ -7,7 +7,7 @@ major=""
 minor=""
 
 if [ "$#" -ne 1 ]; then
-  echo "usage: [script] vX.Y path/to/dir/to/store/tarball"
+  echo "usage: [script] vX.Y.Z path/to/dir/to/store/tarball"
 fi
 
 bucket='gs://schemas-migrations'
