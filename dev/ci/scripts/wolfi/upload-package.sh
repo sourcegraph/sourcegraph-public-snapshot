@@ -74,7 +74,7 @@ if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
     mkdir -p ./annotations
     file="${package_name} package.md"
-    cat <<-EOF > "${REPO_DIR}/annotations/${file}"
+    cat <<-EOF > "./annotations/${file}"
 
 <strong>:package: ${package_name} package &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
 <br />
