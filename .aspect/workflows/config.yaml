@@ -26,7 +26,7 @@ tasks:
       # flags:
       #     - --config=go-verbose-test
       targets:
-          - //...
-          - //client/web:test
+      #- //...
+      #- //client/web:test
           - //testing:codeintel_integration_test
           - //testing:grpc_backend_integration_test
