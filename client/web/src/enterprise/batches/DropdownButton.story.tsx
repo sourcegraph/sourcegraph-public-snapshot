@@ -75,7 +75,9 @@ NoActions.argTypes = {
 
 NoActions.storyName = 'No actions'
 
-export const SingleAction: StoryFn = args => <WebStory>{() => <DropdownButton actions={[action]} {...args} />}</WebStory>
+export const SingleAction: StoryFn = args => (
+    <WebStory>{() => <DropdownButton actions={[action]} {...args} />}</WebStory>
+)
 
 SingleAction.storyName = 'Single action'
 
