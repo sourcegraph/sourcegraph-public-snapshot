@@ -1,4 +1,4 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 import { type Observable, of } from 'rxjs'
 
@@ -7,7 +7,7 @@ import { ExecutorCompatibility, type ExecutorConnectionFields } from '../../../g
 
 import { ExecutorsListPage } from './ExecutorsListPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/executors/instances/ExecutorsListPage',
@@ -60,7 +60,7 @@ const listExecutorsQuery: () => Observable<ExecutorConnectionFields> = () =>
         ],
     })
 
-export const List: Story = () => (
+export const List: StoryFn = () => (
     <WebStory>{props => <ExecutorsListPage {...props} queryExecutors={listExecutorsQuery} />}</WebStory>
 )
 
@@ -73,7 +73,7 @@ const emptyExecutorsQuery: () => Observable<ExecutorConnectionFields> = () =>
         nodes: [],
     })
 
-export const EmptyList: Story = () => (
+export const EmptyList: StoryFn = () => (
     <WebStory>{props => <ExecutorsListPage {...props} queryExecutors={emptyExecutorsQuery} />}</WebStory>
 )
 

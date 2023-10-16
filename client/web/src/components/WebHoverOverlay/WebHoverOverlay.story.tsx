@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { registerHighlightContributions } from '@sourcegraph/common'
 import {
@@ -22,7 +22,7 @@ import styles from './WebHoverOverlay.story.module.scss'
 
 registerHighlightContributions()
 
-const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => story()}</WebStory>
 
 const config: Meta = {
     title: 'web/WebHoverOverlay',
@@ -41,11 +41,11 @@ const config: Meta = {
 
 export default config
 
-export const Loading: Story = () => (
+export const Loading: StoryFn = () => (
     <WebHoverOverlay {...commonProps()} hoverOrError="loading" actionsOrError={FIXTURE_ACTIONS} />
 )
 
-export const _Error: Story = () => (
+export const _Error: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={
@@ -59,19 +59,19 @@ export const _Error: Story = () => (
 
 _Error.storyName = 'Error'
 
-export const NoHoverInformation: Story = () => (
+export const NoHoverInformation: StoryFn = () => (
     <WebHoverOverlay {...commonProps()} hoverOrError={null} actionsOrError={FIXTURE_ACTIONS} />
 )
 
 NoHoverInformation.storyName = 'No hover information'
 
-export const CommonContentWithoutActions: Story = () => (
+export const CommonContentWithoutActions: StoryFn = () => (
     <WebHoverOverlay {...commonProps()} hoverOrError={{ contents: [FIXTURE_CONTENT] }} />
 )
 
 CommonContentWithoutActions.storyName = 'Common content without actions'
 
-export const CommonContentWithActions: Story = () => (
+export const CommonContentWithActions: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -83,7 +83,7 @@ export const CommonContentWithActions: Story = () => (
 
 CommonContentWithActions.storyName = 'Common content with actions'
 
-export const AggregatedBadges: Story = () => (
+export const AggregatedBadges: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -94,7 +94,7 @@ export const AggregatedBadges: Story = () => (
     />
 )
 
-export const LongCode: Story = () => (
+export const LongCode: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -107,7 +107,7 @@ export const LongCode: Story = () => (
 
 LongCode.storyName = 'Long code'
 
-export const LongTextOnly: Story = () => (
+export const LongTextOnly: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -119,7 +119,7 @@ export const LongTextOnly: Story = () => (
 
 LongTextOnly.storyName = 'Long text only'
 
-export const LongMarkdownWithDiv: Story = () => (
+export const LongMarkdownWithDiv: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -131,7 +131,7 @@ export const LongMarkdownWithDiv: Story = () => (
 
 LongMarkdownWithDiv.storyName = 'Long markdown with <div>'
 
-export const MultipleMarkupContents: Story = () => (
+export const MultipleMarkupContents: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -144,7 +144,7 @@ export const MultipleMarkupContents: Story = () => (
 
 MultipleMarkupContents.storyName = 'Multiple MarkupContents'
 
-export const WithLongMarkdownTextIcon: Story = () => (
+export const WithLongMarkdownTextIcon: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
@@ -157,7 +157,7 @@ export const WithLongMarkdownTextIcon: Story = () => (
 
 WithLongMarkdownTextIcon.storyName = 'With long markdown text and icon.'
 
-export const MultipleMarkupContentsWithBadges: Story = () => (
+export const MultipleMarkupContentsWithBadges: StoryFn = () => (
     <div className={styles.container}>
         <WebHoverOverlay
             {...commonProps()}
@@ -172,7 +172,7 @@ export const MultipleMarkupContentsWithBadges: Story = () => (
 
 MultipleMarkupContentsWithBadges.storyName = 'Multiple MarkupContents with badges'
 
-export const WithCloseButton: Story = () => (
+export const WithCloseButton: StoryFn = () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{

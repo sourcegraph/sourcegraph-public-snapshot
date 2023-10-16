@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -13,7 +13,7 @@ import { WebStory } from '../components/WebStory'
 import { createExternalService } from './fixtures'
 import { SiteAdminWebhookCreatePage } from './SiteAdminWebhookCreatePage'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/incoming/SiteAdminWebhookCreatePage',
@@ -22,7 +22,7 @@ const config: Meta = {
 
 export default config
 
-export const WebhookCreatePage: Story = () => {
+export const WebhookCreatePage: StoryFn = () => {
     const mocks = new WildcardMockLink([
         {
             request: {
@@ -65,7 +65,7 @@ export const WebhookCreatePage: Story = () => {
 
 WebhookCreatePage.storyName = 'Create webhook'
 
-export const WebhookCreatePageWithError: Story = () => {
+export const WebhookCreatePageWithError: StoryFn = () => {
     const mockedResponse: MockedResponse[] = [
         {
             request: {
