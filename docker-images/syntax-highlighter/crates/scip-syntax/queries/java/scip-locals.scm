@@ -1,20 +1,24 @@
-; Scopes and type declarations
+(class_declaration) @scope
+(interface_declaration) @scope
+(enum_declaration) @scope
+(record_declaration) @scope
+(method_declaration) @scope
+
 (class_declaration
     name: (identifier) @definition.type
-) @scope
+)
 
 (interface_declaration
     name: (identifier) @definition.type
-) @scope
-(enum_declaration) @scope
+)
 
 (enum_declaration
     name: (identifier) @definition.type
-) @scope
+)
 
 (record_declaration
     name: (identifier) @definition.type
-) @scope
+)
 
 (method_declaration
     name: (identifier) @definition.function (#set! "scope" "parent")
