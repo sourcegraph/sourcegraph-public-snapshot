@@ -222,24 +222,36 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			originalReferrer = *event.OriginalReferrer
 		}
 		saferOriginalReferrer, err := redactSensitiveInfoFromCloudURL(originalReferrer)
+		if err != nil {
+			return nil, err
+		}
 
 		sessionReferrer := ""
 		if event.SessionReferrer != nil {
 			sessionReferrer = *event.SessionReferrer
 		}
 		saferSessionReferrer, err := redactSensitiveInfoFromCloudURL(sessionReferrer)
+		if err != nil {
+			return nil, err
+		}
 
 		sessionFirstURL := ""
 		if event.SessionFirstURL != nil {
 			sessionFirstURL = *event.SessionFirstURL
 		}
 		saferSessionFirstURL, err := redactSensitiveInfoFromCloudURL(sessionFirstURL)
+		if err != nil {
+			return nil, err
+		}
 
 		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return nil, err
 		}
 		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
+		if err != nil {
+			return nil, err
+		}
 
 		pubsubEvent, err := json.Marshal(bigQueryEvent{
 			EventName:              event.EventName,
