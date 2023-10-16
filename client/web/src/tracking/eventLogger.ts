@@ -477,11 +477,11 @@ export function setDebugEventLoggingEnabled(enabled: boolean): void {
 function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     if (parsedUrl.searchParams.has('signup')) {
-        eventLogger.log('web:auth:signUpCompleted')
+        eventLogger.log('web:auth:signUpCompleted', { serviceType: parsedUrl.searchParams.get('signup') || '' })
     }
 
     if (parsedUrl.searchParams.has('signin')) {
-        eventLogger.log('web:auth:signInCompleted')
+        eventLogger.log('web:auth:signInCompleted', { serviceType: parsedUrl.searchParams.get('signin') || '' })
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
