@@ -46,7 +46,7 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 		{
 			name: "referrer value test",
 			url:  "https://marketing.website.com/r/somepath?utm_source=test",
-			want: "https://marketing.website.com/r/somepath?utm_source=test",
+			want: "https://marketing.website.com/redacted?utm_source=test",
 		},
 	}
 
