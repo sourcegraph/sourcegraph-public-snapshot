@@ -364,7 +364,12 @@ func initUser(ctx context.Context, t *testing.T, db database.DB) (*types.User, e
 		AccountID:   "5C1M",
 	}
 	scimAccountData := extsvc.AccountData{Data: extsvc.NewUnencryptedData(json.RawMessage("{}"))}
-	_, err = db.UserExternalAccounts().Insert(ctx, user.ID, scimSpec, scimAccountData)
+	_, err = db.UserExternalAccounts().Insert(ctx,
+		&extsvc.Account{
+			UserID:      user.ID,
+			AccountSpec: scimSpec,
+			AccountData: scimAccountData,
+		})
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		providers.MockProviders = nil
@@ -388,7 +393,12 @@ func addMockExternalAccount(ctx context.Context, t *testing.T, db database.DB, u
 	accountData := extsvc.AccountData{
 		Data: extsvc.NewUnencryptedData(data),
 	}
-	_, err := db.UserExternalAccounts().Insert(ctx, userID, spec, accountData)
+	_, err := db.UserExternalAccounts().Insert(ctx,
+		&extsvc.Account{
+			UserID:      userID,
+			AccountSpec: spec,
+			AccountData: accountData,
+		})
 	require.NoError(t, err)
 	mockProvider := providers.MockAuthProvider{
 		MockConfigID:          providers.ConfigID{Type: serviceType},

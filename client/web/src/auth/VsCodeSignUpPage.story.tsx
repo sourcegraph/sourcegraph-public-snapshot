@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -48,7 +48,7 @@ const context: VsCodeSignUpPageProps['context'] = {
     authMinPasswordLength: 12,
 }
 
-export const WithoutEmailForm: Story = () => (
+export const WithoutEmailForm: StoryFn = () => (
     <WebStory>
         {() => (
             <VsCodeSignUpPage
@@ -62,7 +62,7 @@ export const WithoutEmailForm: Story = () => (
     </WebStory>
 )
 
-export const WithEmailForm: Story = () => (
+export const WithEmailForm: StoryFn = () => (
     <WebStory>
         {() => (
             <VsCodeSignUpPage

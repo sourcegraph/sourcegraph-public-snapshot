@@ -60,7 +60,7 @@ func externalAccountTokenRefresher(store database.UserExternalAccountsStore, ext
 		if err != nil {
 			return nil, errors.Wrap(err, "set auth data")
 		}
-		_, err = store.LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
+		_, err = store.Update(ctx, acct)
 		if err != nil {
 			return nil, errors.Wrap(err, "save refreshed token")
 		}

@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"testing/quick"
 	"time"
@@ -810,7 +811,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 			conf.Mock(nil)
 		})
 
-		called := false
+		var called atomic.Bool
 		source := gitserver.NewTestClientSource(t, []string{gitserverAddr1, gitserverAddr2}, func(o *gitserver.TestClientSourceOptions) {
 			responseByAddress := make(map[string]*proto.DiskInfoResponse, len(expectedResponses))
 			for _, response := range expectedResponses {
@@ -829,7 +830,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 						t.Fatalf("received unexpected address %q", address)
 					}
 
-					called = true
+					called.Store(true)
 					return response, nil
 				}
 				cli := gitserver.NewStrictMockGitserverServiceClient()
@@ -841,7 +842,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 		client := gitserver.NewTestClient(t).WithClientSource(source)
 
 		runTest(t, client)
-		if !called {
+		if !called.Load() {
 			t.Fatal("DiskInfo: grpc client not called")
 		}
 	})

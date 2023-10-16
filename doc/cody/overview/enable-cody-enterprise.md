@@ -269,9 +269,15 @@ Create your own key with OpenAI [here](https://beta.openai.com/account/api-keys)
 
 [Read and learn more about the supported OpenAI models here →](https://platform.openai.com/docs/models)
 
-### Azure OpenAI <span style="margin-left: 0.25rem" class="badge badge-experimental">Experimental</span>
+### Azure OpenAI
 
-> NOTE: Azure OpenAI support is in the experimental stage.
+<aside class="experimental">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Azure OpenAI support is in the experimental stage.
+<br />
+For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+</p>
+</aside>
 
 Create a project in the Azure OpenAI portal. Go to **Keys and Endpoint** from the project overview and get **one of the keys** on that page and the **endpoint**.
 
@@ -294,9 +300,15 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
 }
 ```
 
-### Anthropic Claude through AWS Bedrock <span style="margin-left: 0.25rem" class="badge badge-experimental">Experimental</span>
+### Anthropic Claude through AWS Bedrock
 
-> NOTE: AWS Bedrock support is in experimental stage.
+<aside class="experimental">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> AWS Bedrock support is in the experimental stage.
+<br />
+For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+</p>
+</aside>
 
 First, make sure you can access AWS Bedrock (currently in beta). Then, request access to the Anthropic Claude models in Bedrock.
 This may take some time to provision.

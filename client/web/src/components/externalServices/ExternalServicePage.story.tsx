@@ -1,4 +1,4 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subMinutes } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -13,7 +13,7 @@ import { WebStory, type WebStoryChildrenProps } from '../WebStory'
 import { FETCH_EXTERNAL_SERVICE, type queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
 import { ExternalServicePage } from './ExternalServicePage'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container">
         <WebStory
             path="/site-admin/external-services/:externalServiceID"
@@ -139,7 +139,7 @@ function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
     ])
 }
 
-export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
+export const ExternalServiceWithRepos: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServicePage
             queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}

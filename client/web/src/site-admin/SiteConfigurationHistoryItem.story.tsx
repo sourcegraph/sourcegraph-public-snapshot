@@ -1,4 +1,4 @@
-import type { Story, Meta } from '@storybook/react'
+import type { StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 
@@ -11,7 +11,7 @@ const config: Meta = {
 
 export default config
 
-export const HistoryItemWithNoAuthor: Story = () => (
+export const HistoryItemWithNoAuthor: StoryFn = () => (
     <WebStory>
         {() => (
             <SiteConfigurationHistoryItem
@@ -37,7 +37,7 @@ export const HistoryItemWithNoAuthor: Story = () => (
 
 HistoryItemWithNoAuthor.storyName = 'History item with no author'
 
-export const HistoryItemWithAuthor: Story = () => (
+export const HistoryItemWithAuthor: StoryFn = () => (
     <WebStory>
         {() => (
             <SiteConfigurationHistoryItem
@@ -69,7 +69,7 @@ export const HistoryItemWithAuthor: Story = () => (
 
 HistoryItemWithAuthor.storyName = 'History item with author'
 
-export const HistoryItemWithAuthorButNoDisplayName: Story = () => (
+export const HistoryItemWithAuthorButNoDisplayName: StoryFn = () => (
     <WebStory>
         {() => (
             <SiteConfigurationHistoryItem
@@ -101,7 +101,7 @@ export const HistoryItemWithAuthorButNoDisplayName: Story = () => (
 
 HistoryItemWithAuthorButNoDisplayName.storyName = 'History item with author without display name'
 
-export const HistoryItemWithAuthorWithAvatarURL: Story = () => (
+export const HistoryItemWithAuthorWithAvatarURL: StoryFn = () => (
     <WebStory>
         {() => (
             <SiteConfigurationHistoryItem

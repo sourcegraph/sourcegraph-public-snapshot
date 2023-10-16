@@ -74,104 +74,105 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	morgan, err := db.UserExternalAccounts().CreateUserAndSave(
+	morgan, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		database.NewUser{
 			Username: "morgan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "morgan",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceID:   "https://sourcegraph.com",
+				ClientID:    "soap",
+				AccountID:   "morgan",
+			},
+		})
 	require.NoError(t, err)
 	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
 		time.Now().Add(-61*time.Minute), morgan.ID)
 	require.NoError(t, err)
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(
+	_, err = db.UserExternalAccounts().Upsert(
 		ctx,
-		morgan.ID,
-		extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com",
-			ClientID:    "github",
-			AccountID:   "morgan",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			UserID: morgan.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com",
+				ClientID:    "github",
+				AccountID:   "morgan",
+			},
+		})
 	require.NoError(t, err)
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, morgan.ID, true))
 
-	jordan, err := db.UserExternalAccounts().CreateUserAndSave(
+	jordan, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		database.NewUser{
 			Username: "jordan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "jordan",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceID:   "https://sourcegraph.com",
+				ClientID:    "soap",
+				AccountID:   "jordan",
+			},
+		})
 	require.NoError(t, err)
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, jordan.ID, true))
 
-	riley, err := db.UserExternalAccounts().CreateUserAndSave(
+	riley, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		database.NewUser{
 			Username: "riley",
 		},
-		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "riley",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceID:   "https://sourcegraph.com",
+				ClientID:    "soap",
+				AccountID:   "riley",
+			},
+		})
 	require.NoError(t, err)
 	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
 		time.Now().Add(-61*time.Minute), riley.ID)
 	require.NoError(t, err)
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, riley.ID, true))
 
-	_, err = db.UserExternalAccounts().CreateUserAndSave(
+	_, err = db.Users().CreateWithExternalAccount(
 		ctx,
 		database.NewUser{
 			Username: "cris",
 		},
-		extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com",
-			ClientID:    "github",
-			AccountID:   "cris",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com",
+				ClientID:    "github",
+				AccountID:   "cris",
+			},
+		})
 	require.NoError(t, err)
 
 	accountData, err := sourcegraphoperator.MarshalAccountData(sourcegraphoperator.ExternalAccountData{
 		ServiceAccount: true,
 	})
 	require.NoError(t, err)
-	cami, err := db.UserExternalAccounts().CreateUserAndSave(
+	cami, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		database.NewUser{
 			Username: "cami",
 		},
-		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "cami",
-		},
-		accountData,
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceID:   "https://sourcegraph.com",
+				ClientID:    "soap",
+				AccountID:   "cami",
+			},
+			AccountData: accountData,
+		})
 	require.NoError(t, err)
 	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
 		time.Now().Add(-61*time.Minute), cami.ID)
@@ -185,19 +186,19 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	alex, err := db.UserExternalAccounts().CreateUserAndSave(
+	alex, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		database.NewUser{
 			Username: "alex",
 		},
-		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "alex",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceID:   "https://sourcegraph.com",
+				ClientID:    "soap",
+				AccountID:   "alex",
+			},
+		})
 	require.NoError(t, err)
 	// pretend it was made long ago
 	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
@@ -208,14 +209,16 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		UserID: alex.ID,
 	}))
 	// make another SOAP account, this one isn't expired
-	_, err = db.UserExternalAccounts().AssociateUserAndSave(ctx, alex.ID,
-		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "alex2",
-		},
-		extsvc.AccountData{})
+	_, err = db.UserExternalAccounts().Upsert(ctx,
+		&extsvc.Account{
+			UserID: alex.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceID:   "https://sourcegraph.com",
+				ClientID:    "soap",
+				AccountID:   "alex2",
+			},
+		})
 	require.NoError(t, err)
 	// make alex and admin, alex shouldn't be changed
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, alex.ID, true))

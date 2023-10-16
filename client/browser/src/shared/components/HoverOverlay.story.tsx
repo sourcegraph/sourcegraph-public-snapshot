@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
 
@@ -15,7 +15,7 @@ import browserExtensionStyles from '../../app.scss'
 import bitbucketCodeHostStyles from '../code-hosts/bitbucket/codeHost.module.scss'
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <>
         <style>{bitbucketStyles}</style>
         <style>{browserExtensionStyles}</style>
@@ -62,4 +62,4 @@ export const BitbucketStyles: Story = (props = {}) => (
 )
 BitbucketStyles.storyName = 'Bitbucket styles'
 
-export const Branded: Story = () => <BitbucketStyles useBrandedLogo={true} />
+export const Branded: StoryFn = () => <BitbucketStyles useBrandedLogo={true} />

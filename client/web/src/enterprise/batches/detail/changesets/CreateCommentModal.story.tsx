@@ -1,12 +1,12 @@
 import { action } from '@storybook/addon-actions'
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { CreateCommentModal } from './CreateCommentModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/details/CreateCommentModal',
@@ -20,7 +20,7 @@ const createChangesetCommentsAction = () => {
     return Promise.resolve()
 }
 
-export const Confirmation: Story = () => (
+export const Confirmation: StoryFn = () => (
     <WebStory>
         {props => (
             <CreateCommentModal

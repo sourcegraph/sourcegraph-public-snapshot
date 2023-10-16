@@ -4126,7 +4126,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		}
 	}
 
-	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (666, 1), (NULL, 3), (666, 4)`)
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (666, 1, 'api'), (NULL, 3, 'api'), (666, 4, 'user_sync')`)
 	if err := s.execute(ctx, q); err != nil {
 		t.Fatal(err)
 	}
@@ -4145,7 +4145,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 				{
 					// have access
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 				{
 					// have access
@@ -4184,7 +4184,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 			},
 		},
@@ -4197,7 +4197,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 			},
 		},
@@ -4290,7 +4290,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 				{
 					// have access
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 				{
 					// have access

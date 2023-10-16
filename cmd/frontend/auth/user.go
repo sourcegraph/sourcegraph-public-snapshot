@@ -66,7 +66,13 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 	}
 
 	externalAccountsStore := db.UserExternalAccounts()
+	users := db.Users()
 	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
+
+	acct := &extsvc.Account{
+		AccountSpec: op.ExternalAccount,
+		AccountData: op.ExternalAccountData,
+	}
 
 	userID, newUserSaved, extAcctSaved, safeErrMsg, err := func() (int32, bool, bool, string, error) {
 		// First, check if the user is already logged in. If so, return that user.
@@ -75,9 +81,9 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 
 		// Second, check if the user account already exists. If so, return that user.
-		uid, lookupByExternalErr := externalAccountsStore.LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
+		extsvcAcct, lookupByExternalErr := externalAccountsStore.Update(ctx, acct)
 		if lookupByExternalErr == nil {
-			return uid, false, true, "", nil
+			return extsvcAcct.UserID, false, true, "", nil
 		}
 		if !errcode.IsNotFound(lookupByExternalErr) {
 			return 0, false, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", lookupByExternalErr
@@ -113,7 +119,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 
 		act := &sgactor.Actor{
-			SourcegraphOperator: op.ExternalAccount.ServiceType == auth.SourcegraphOperatorProviderType,
+			SourcegraphOperator: acct.AccountSpec.ServiceType == auth.SourcegraphOperatorProviderType,
 		}
 
 		// Fourth and finally, create a new user account and return it.
@@ -125,7 +131,8 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
-		user, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		user, err := users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+
 		switch {
 		case database.IsUsernameExists(err):
 			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
@@ -160,7 +167,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		args, err := json.Marshal(map[string]any{
 			// NOTE: The conventional name should be "service_type", but keeping as-is for
 			// backwards capability.
-			"serviceType": op.ExternalAccount.ServiceType,
+			"serviceType": acct.AccountSpec.ServiceType,
 		})
 		if err != nil {
 			logger.Error(
@@ -196,7 +203,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 	}()
 	if err != nil {
 		const eventName = "ExternalAuthSignupFailed"
-		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
+		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, acct.AccountSpec.ServiceType))
 		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			logger.Error(
 				"failed to log event",
@@ -231,7 +238,8 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 
 	// Create/update the external account and ensure it's associated with the user ID
 	if !extAcctSaved {
-		_, err := externalAccountsStore.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
+		acct.UserID = userID
+		_, err := externalAccountsStore.Upsert(ctx, acct)
 		if err != nil {
 			return newUserSaved, 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}
