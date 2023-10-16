@@ -156,7 +156,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential)
+		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -23,8 +23,8 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
@@ -470,27 +470,26 @@ type SystemInfo struct {
 
 func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, error) {
 	addresses := c.clientSource.Addresses()
-	infos := make([]SystemInfo, 0, len(addresses))
-	wg := conc.NewWaitGroup()
-	var errs errors.MultiError
+
+	wg := pool.NewWithResults[SystemInfo]().WithErrors().WithContext(ctx)
+
 	for _, addr := range addresses {
 		addr := addr // capture addr
-		wg.Go(func() {
+		wg.Go(func(ctx context.Context) (SystemInfo, error) {
 			response, err := c.getDiskInfo(ctx, addr)
 			if err != nil {
-				errs = errors.Append(errs, err)
-				return
+				return SystemInfo{}, err
 			}
-			infos = append(infos, SystemInfo{
+			return SystemInfo{
 				Address:     addr.Address(),
 				FreeSpace:   response.GetFreeSpace(),
 				TotalSpace:  response.GetTotalSpace(),
 				PercentUsed: response.GetPercentUsed(),
-			})
+			}, nil
 		})
 	}
-	wg.Wait()
-	return infos, errs
+
+	return wg.Wait()
 }
 
 func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (SystemInfo, error) {
@@ -498,10 +497,12 @@ func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (System
 	if ac == nil {
 		return SystemInfo{}, errors.Newf("no client for address: %s", addr)
 	}
+
 	response, err := c.getDiskInfo(ctx, ac)
 	if err != nil {
 		return SystemInfo{}, nil
 	}
+
 	return SystemInfo{
 		Address:    ac.Address(),
 		FreeSpace:  response.FreeSpace,
@@ -531,10 +532,17 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 	if rs.StatusCode != http.StatusOK {
 		return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
 	}
-	var resp proto.DiskInfoResponse
-	if err := json.NewDecoder(rs.Body).Decode(&resp); err != nil {
-		return nil, err
+
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading read disk info response body")
 	}
+
+	var resp proto.DiskInfoResponse
+	if err := protojson.Unmarshal(body, &resp); err != nil {
+		return nil, errors.Wrap(err, "parsing disk info response body")
+	}
+
 	return &resp, nil
 }
 
