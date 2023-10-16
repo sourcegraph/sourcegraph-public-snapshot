@@ -52,7 +52,8 @@ for apk in "${apks[@]}"; do
   echo "   * Checking if this package version already exists in the production repo..."
   if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
     mkdir -p "./annotations"
-    file="${package_name} package-err.md"
+    # using AnnotationTypeAuto in wolfi_operations.go, makes it guess the type based on filename prefix
+    file="ERROR_${package_name} package.md"
     cat <<-EOF > "./annotations/${file}"
 
 <strong>:package: ${package_name} package &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
@@ -80,7 +81,8 @@ done
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
     mkdir -p ./annotations
-    file="${package_name} package-info.md"
+    # using AnnotationTypeAuto in wolfi_operations.go, makes it guess the type based on filename prefix
+    file="INFO_${package_name} package.md"
     cat <<-EOF > "./annotations/${file}"
 
 <strong>:package: ${package_name} package &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>

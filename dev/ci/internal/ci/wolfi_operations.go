@@ -77,7 +77,7 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
-					Type:            bk.AnnotationTypeInfo,
+					Type:            bk.AnnotationTypeAuto,
 					IncludeNames:    false,
 					MultiJobContext: "wolfi-packages",
 				},
