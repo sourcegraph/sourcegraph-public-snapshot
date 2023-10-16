@@ -23,6 +23,7 @@ fi
 echo "Generating an archive of all released database schemas for v$major.$minor"
 
 tmp_dir=$(mktemp -d)
+# shellcheck disable=SC2064
 trap "rm -Rf $tmp_dir" EXIT
 
 # Downloading everything at once is much much faster and simple than fetching individual files
@@ -30,7 +31,7 @@ trap "rm -Rf $tmp_dir" EXIT
 echo "--- Downloading all schemas from ${bucket}/schemas"
 gsutil -m cp "${bucket}/schemas/*" "$tmp_dir"
 
-pushd $tmp_dir
+pushd "$tmp_dir"
 echo "--- Filtering out migrations after ${major}.${minor}"
 for file in *; do
   if [[ $file =~ ^v([0-9])\.([0-9]+) ]]; then
@@ -61,9 +62,11 @@ cp internal/database/schema.json "${tmp_dir}/${version}-internal_database_schema
 cp internal/database/schema.codeintel.json "${tmp_dir}/${version}-internal_database_schema.codeintel.json"
 cp internal/database/schema.codeinsights.json "${tmp_dir}/${version}-internal_database_schema.codeinsights.json"
 
-output="schemas-${version}.tar.gz"
+output="${PWD}/schemas-${version}.tar.gz"
 echo "--- Creating tarball '$output'"
-tar cvzf "$output" -C "$tmp_dir" $(ls -A $tmp_dir)
+pushd "$tmp_dir"
+tar cvzf "$output" *
+popd
 checksum=$(sha256sum "$output")
 echo "Checksum: $checksum"
 
