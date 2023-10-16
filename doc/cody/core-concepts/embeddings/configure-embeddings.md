@@ -50,7 +50,7 @@ Let's walk through some examples to see how the pattern works.
 - Result: The pattern matches the original and any repository, from any code host, with the word `sourcegraph` in it.
 
 In all the above examples, the defined policy will be applied to all repositories that match the pattern.
-If you choose not to define a pattern, the policy will be applied to up to [embeddings.policyRepositoryMatchLimit](./code_graph_context.md#configuring-the-global-policy-match-limit) repositories.
+If you choose not to define a pattern, the policy will be applied to up to [embeddings.policyRepositoryMatchLimit](./usage-and-limits.md#configure-global-policy-match-limit) repositories.
 
 It's recommended embedding repositories that are only being actively developed,
 as embedding all repositories without discrimination can consume significant resources without necessarily providing better context for Cody.
@@ -64,7 +64,7 @@ A repository cannot be queued for processing if:
 
 - It is already queued or being processed
 - A job for the same repository and the same revision already completed successfully
-- If another job for the same repository has been queued for processing within the [embeddings.MinimumInterval](./code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
+- If another job for the same repository has been queued for processing within the [embeddings.MinimumInterval](./../embeddings.md#minimum-time-interval-between-automatically-scheduled-embeddings) time window
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/embeddings/embeddings-jobs.png" class="screenshot" alt="policy-saved">
 
@@ -80,6 +80,6 @@ The new jobs will be shown in the list of jobs below. The initial status of the 
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/embeddings/schedule-one-off-jobs.png" class="screenshot" alt="schedule one-off embeddings jobs">
 
-Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](#incremental-embeddings) are enabled.
+Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](./../embeddings.md#incremental-embeddings) are enabled.
 
 > NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).

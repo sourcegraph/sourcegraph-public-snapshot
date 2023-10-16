@@ -15,12 +15,12 @@ Embedding your codebase is recommended to enhance Cody's understanding of existi
 To embed your codebase and enable codebase-aware answers for Cody, you need to perform the following steps:
 
 - [Enable Cody](./../../overview/enable-cody-enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance) for your Sourcegraph Enterprise instance
-- Set up the [Code Graph Context](./../core-concepts/code_graph_context.md) from your **Site admin**
-- Embed your codebase by either [scheduling a one-off embeddings job](schedule_one_off_embeddings_jobs.md) or [creating an embeddings policy](policies.md) to keep your index up-to-date automatically
+- Set up the [Code Graph Context](./../code_graph_context.md) from your **Site admin**
+- Embed your codebase by either [scheduling a one-off embeddings job](./configure-embeddings#schedule-embeddings-jobs) or [creating an embeddings policy](./configure-embeddings.md#policies) to keep your index up-to-date automatically
 
 ### Sourcegraph.com
 
-For Sourcegraph.com users, view the current [list of repositories with code graph context available](../embedded-repos.md). If you'd like to add more repositories to this list, reach out to a Sourcegraph team member in the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) in the `#cody-embeddings` channel.
+For Sourcegraph.com users, view the current [list of repositories with code graph context available](./../../embedded-repos.md). If you'd like to add more repositories to this list, reach out to a Sourcegraph team member in the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) in the `#cody-embeddings` channel.
 
 > NOTE: Sourcegraph.com does not support connections to private repositories
 

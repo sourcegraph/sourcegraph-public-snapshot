@@ -52,7 +52,7 @@ Supported time units are h (hours), m ( minutes), and s (seconds).
 
 ## Third-party embeddings provider
 
-Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), admins can also use a third-party embeddings provider like:
+Instead of [Sourcegraph Cody Gateway](./../cody_gateway.md), admins can also use a third-party embeddings provider like:
 
 - OpenAI
 - Azure OpenAI <span style="margin-left:0.25rem" class="badge badge-experimental">Experimental</span>
@@ -77,7 +77,15 @@ To use embeddings with OpenAI:
 }
 ```
 
-### Azure OpenAI <span style="margin-left:0.25rem" class="badge badge-experimental">Experimental</span>
+### Azure OpenAI
+
+<aside class="experimental">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Azure OpenAI support is in the experimental stage.
+<br />
+For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+</p>
+</aside>
 
 To use embeddings with Azure OpenAI:
 
@@ -101,6 +109,8 @@ To use embeddings with Azure OpenAI:
   }
 }
 ```
+
+<br>
 
 > NOTE: Azure OpenAI is in experimental stage. It's not recommended to use in a production setting.
 
