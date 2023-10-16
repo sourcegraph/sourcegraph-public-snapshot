@@ -422,6 +422,20 @@ commands:
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
+  web-sveltekit-standalone:
+    description: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
+    cmd: pnpm --filter @sourcegraph/web-sveltekit run dev
+    install: |
+      pnpm install
+      pnpm generate
+
+  web-sveltekit-prod-watch:
+    description: Builds the prod version of the SvelteKit web app and rebuilds on changes
+    cmd: pnpm --filter @sourcegraph/web-sveltekit run build --watch
+    install: |
+      pnpm install
+      pnpm generate
+
   docsite:
     description: Docsite instance serving the docs
     cmd: bazel run --noshow_progress --noshow_loading_progress //doc:serve
@@ -1459,6 +1473,13 @@ commandsets:
       - web-standalone-http
       - caddy
 
+  web-sveltekit-standalone:
+    commands:
+      - web-sveltekit-standalone
+      - caddy
+    env:
+      SK_PORT: 3080
+
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
@@ -1532,6 +1553,15 @@ commandsets:
     env:
       QDRANT_ENDPOINT: 'localhost:6334'
 
+  enterprise-bazel-sveltekit:
+    <<: *enterprise_bazel_set
+    env:
+      SVELTEKIT: true
+
+  enterprise-sveltekit:
+    <<: *enterprise_set
+    env:
+      SVELTEKIT: true
 
 tests:
   # These can be run with `sg test [name]`

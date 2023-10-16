@@ -421,7 +421,7 @@ importers:
         version: 2.1.1
       ts-key-enum:
         specifier: ^2.0.7
-        version: 2.0.8
+        version: 2.0.12
       tslib:
         specifier: 2.1.0
         version: 2.1.0
@@ -1653,6 +1653,9 @@ importers:
       prismjs:
         specifier: ^1.29.0
         version: 1.29.0
+      ts-key-enum:
+        specifier: ^2.0.12
+        version: 2.0.12
     devDependencies:
       '@faker-js/faker':
         specifier: ^8.0.2
@@ -30188,8 +30191,8 @@ packages:
     dependencies:
       tslib: 2.1.0
 
-  /ts-key-enum@2.0.8:
-    resolution: {integrity: sha512-ccRzCVr98faP5pKYpX0IlrPvf2VcepEFSH115CWti0eM1anh774ndXf0RlBOFecTuM103gMwaHSo0tDPlQnyNQ==}
+  /ts-key-enum@2.0.12:
+    resolution: {integrity: sha512-Ety4IvKMaeG34AyXMp5r11XiVZNDRL+XWxXbVVJjLvq2vxKRttEANBE7Za1bxCAZRdH2/sZT6jFyyTWxXz28hw==}
     dev: false
 
   /ts-loader@9.4.2(typescript@5.0.2)(webpack@5.75.0):

@@ -7,5 +7,4 @@ export type {
     BUTTON_DISPLAY,
     BUTTON_VARIANTS,
 } from '@sourcegraph/wildcard/src/components/Button'
-export { default as styles } from '@sourcegraph/wildcard/src/components/Button/Button.module.scss'
 export { getButtonClassName } from '@sourcegraph/wildcard/src/components/Button/utils'
