@@ -13,6 +13,7 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -111,7 +112,9 @@ func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err err
 		return errors.Wrap(err, "marshaling metadata")
 	}
 	if err := l.tableInserter.Put(
-		backgroundContextWithSpan(spanCtx),
+		// Create a cancel-free context to avoid interrupting the log when
+		// the parent context is cancelled.
+		xcontext.Detach(spanCtx),
 		bigQueryEvent{
 			Name:       string(event.Name),
 			Source:     event.Source,
