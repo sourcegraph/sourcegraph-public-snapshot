@@ -604,7 +604,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		perms:        authz.Read,
 		syncedAt:     syncedAt,
 		updatedAt:    updatedAt,
-		source:       nil,
+		source:       "",
 		unrestricted: unrestricted,
 	}, nil
 }
@@ -646,7 +646,7 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		userID:    userID,
 		perms:     authz.Read,
 		updatedAt: updatedAt,
-		source:    &source,
+		source:    source,
 	}, nil
 }
 
