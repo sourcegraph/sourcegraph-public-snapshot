@@ -41,7 +41,9 @@ func GetTelemetryEventsExportMode(c conftypes.SiteConfigQuerier) TelemetryEvents
 }
 
 // TelemetryEventsExportMode is only used to gate whether an event is queued for
-// export, whicheffectively decides whether the event will be exported or not.
+// export, which effectively decides whether the event will be exported or not.
+//
+// See newTelemetryEventsExportMode for the conditions to enable each export mode.
 type TelemetryEventsExportMode int
 
 const (
@@ -61,20 +63,22 @@ func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) Telemetry
 
 	// Use parametrized pk for testing
 	key, _, err := license.ParseSignedKey(licenseKey, pk)
-	if err != nil {
+	if err != nil || key == nil {
 		return TelemetryEventsExportAll // without a valid license key
 	}
 
-	if slices.Contains(key.Tags, TelemetryEventsExportDisabledTag) {
-		return TelemetryEventsExportDisabled // license-based opt-out mechanism
+	if p := (&Info{Info: *key}).Plan(); p.isKnown() && p.HasFeature(FeatureAllowAirGapped, false) {
+		return TelemetryEventsExportDisabled // this is the only way to disable export entirely
 	}
-	if slices.Contains(key.Tags, TelemetryEventsExportCodyOnlyTag) {
+
+	if slices.Contains(key.Tags, TelemetryEventsExportDisabledTag) {
 		return TelemetryEventsExportCodyOnly // license-based opt-out mechanism
 	}
 
 	if key.CreatedAt.Before(telemetryEventsExportEnablementCutOffDate) {
 		return TelemetryEventsExportCodyOnly // pre-cutoff policy
 	}
+
 	return TelemetryEventsExportAll
 }
 

@@ -65,18 +65,18 @@ func TestNewTelemetryEventsExportMode(t *testing.T) {
 			wantMode:   TelemetryEventsExportAll,
 		},
 		{
-			name: "export disabled",
+			name: "export disabled (cody-only export)",
 			licenseKey: mustKey(license.Info{
 				Tags: []string{TelemetryEventsExportDisabledTag},
 			}),
-			wantMode: TelemetryEventsExportDisabled,
+			wantMode: TelemetryEventsExportCodyOnly, // cody export is allowed due to terms of use
 		},
 		{
-			name: "cody-only export",
+			name: "export completely disabled via airgapped plan",
 			licenseKey: mustKey(license.Info{
-				Tags: []string{TelemetryEventsExportCodyOnlyTag},
+				Tags: []string{PlanAirGappedEnterprise.tag()},
 			}),
-			wantMode: TelemetryEventsExportCodyOnly,
+			wantMode: TelemetryEventsExportDisabled,
 		},
 		{
 			name:       "no tags, unknown creation",

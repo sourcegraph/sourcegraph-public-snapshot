@@ -23,11 +23,12 @@ const (
 	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
 	AllowAnonymousUsageTag = "allow-anonymous-usage"
 
-	// TelemetryEventsExportDisabledTag disables telemery events export entirely.
+	// TelemetryEventsExportDisabledTag disables telemery events export EXCEPT
+	// for Cody-related events, which we are always allowed to export as part of
+	// Cody usage terms: https://about.sourcegraph.com/terms/cody-notice
+	//
+	// To completely disable telemetry events export, use PlanAirGappedEnterprise
 	TelemetryEventsExportDisabledTag = "disable-telemetry-events-export"
-	// TelemetryEventsExportCodyOnlyTag disables export of telemetry events, except
-	// for Cody-related ones.
-	TelemetryEventsExportCodyOnlyTag = "cody-only-telemetry-events-export"
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -98,8 +99,5 @@ var MiscTags = []string{
 	"starter",
 	"mau",
 	GPTLLMAccessTag,
-
-	// Telemetry events export tags
 	TelemetryEventsExportDisabledTag,
-	TelemetryEventsExportCodyOnlyTag,
 }
