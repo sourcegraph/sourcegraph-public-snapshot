@@ -51,9 +51,16 @@ for apk in "${apks[@]}"; do
   # Check whether this version of the package already exists in the main package repo
   echo "   * Checking if this package version already exists in the production repo..."
   if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
-    echo -e "The production package repository already contains the package '$package_name' version '$package_version' at '${dest_path_main}${apk}'.\n\n
-Resolve this issue by incrementing the 'epoch' field in the package's YAML file." |
-      ../../../dev/ci/scripts/annotate.sh -t "error"
+    mkdir -p "./annotations"
+    file="${package_name} package-err.md"
+    cat <<-EOF > "./annotations/${file}"
+
+<strong>:package: ${package_name} package &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
+<br />
+<br />
+The production package repository already contains the package '${package_name}' version '${package_version}' at '${dest_path_main}${apk}'.\n\n
+Resolve this issue by incrementing the 'epoch' field in the package's YAML file.
+EOF
 
     # Soft fail at the end - we still want to allow the package to be uploaded for cases like a Buildkite pipeline being rerun
     error="true"
@@ -73,7 +80,7 @@ done
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
     mkdir -p ./annotations
-    file="${package_name} package.md"
+    file="${package_name} package-info.md"
     cat <<-EOF > "./annotations/${file}"
 
 <strong>:package: ${package_name} package &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
