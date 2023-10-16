@@ -72,9 +72,16 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 func buildPackage(target string) (func(*bk.Pipeline), string) {
 	stepKey := sanitizeStepKey(fmt.Sprintf("package-dependency-%s", target))
 
+	cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
-			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)),
+			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					Type:            bk.AnnotationTypeInfo,
+					IncludeNames:    false,
+					MultiJobContext: "wolfi-packages",
+				},
+			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			bk.Key(stepKey),

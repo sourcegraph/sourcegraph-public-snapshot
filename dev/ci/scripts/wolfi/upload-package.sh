@@ -72,16 +72,25 @@ done
 # Show package usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
-    echo -e "Use this package locally by adding the following to your base image config under \`wolfi-images/\`:
-\`\`\`
+    mkdir -p ./annotations
+    file="${package_name} package.md"
+    cat <<-EOF > "${REPO_DIR}/annotations/${file}"
+
+<strong>:package: ${package_name} package &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
+<br />
+<br />
+Use this package locally by adding the following to your base image config under \`wolfi-images/\`:
+\`\`\`yaml
 contents:
   keyring:
     - https://packages.sgdev.org/sourcegraph-melange-dev.rsa.pub
   repositories:
     - '@branch https://packages.sgdev.org/${BRANCH_PATH}'
   packages:
-$package_usage_list
-  \`\`\`" | ../../../dev/ci/scripts/annotate.sh -m -t "info"
+${package_usage_list}
+  \`\`\`
+
+EOF
   fi
 fi
 
