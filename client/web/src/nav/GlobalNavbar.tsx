@@ -40,6 +40,7 @@ import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/Ac
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName, EventLocation } from '../util/constants'
+import { isDevEnvironment } from '../util/environment'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
@@ -298,7 +299,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
-                    {process.env.NODE_ENV === 'development' && <DeveloperSettingsGlobalNavItem />}
+                    {isDevEnvironment() && <DeveloperSettingsGlobalNavItem />}
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (

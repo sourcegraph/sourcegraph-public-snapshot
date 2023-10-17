@@ -1,5 +1,6 @@
 import {
     ApolloClient,
+    ApolloLink,
     createHttpLink,
     from,
     type HttpOptions,
@@ -9,12 +10,14 @@ import {
 import type { PersistenceMapperFunction } from 'apollo3-cache-persist/lib/types'
 import { once } from 'lodash'
 
+import { defined } from '@sourcegraph/common'
+
 import { checkOk } from '../../http-status-error'
 import { buildGraphQLUrl } from '../graphql'
 import { ConcurrentRequestsLink } from '../links/concurrent-requests-link'
 
 interface GetGraphqlClientOptions {
-    headers?: Record<string, string>
+    getHeaders?: () => Record<string, string>
     cache: InMemoryCache
     baseUrl?: string
     credentials?: 'include' | 'omit' | 'same-origin'
@@ -24,7 +27,7 @@ interface GetGraphqlClientOptions {
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
 
 export const getGraphQLClient = once(async (options: GetGraphqlClientOptions): Promise<GraphQLClient> => {
-    const { headers, baseUrl, credentials, cache } = options
+    const { getHeaders, baseUrl, credentials, cache } = options
     const uri = buildGraphQLUrl({ baseUrl })
 
     const apolloClient = new ApolloClient({
@@ -52,15 +55,29 @@ export const getGraphQLClient = once(async (options: GetGraphqlClientOptions): P
                 fetchPolicy: 'network-only',
             },
         },
-        link: from([
-            new ConcurrentRequestsLink(),
-            createHttpLink({
-                uri: ({ operationName }) => `${uri}?${operationName}`,
-                headers,
-                credentials,
-                fetch: customFetch,
-            }),
-        ]),
+        link: from(
+            defined([
+                new ConcurrentRequestsLink(),
+                getHeaders
+                    ? new ApolloLink((operation, forward) => {
+                          const context = operation.getContext()
+                          operation.setContext({
+                              ...context,
+                              headers: {
+                                  ...context.headers,
+                                  ...getHeaders(),
+                              },
+                          })
+                          return forward(operation)
+                      })
+                    : null,
+                createHttpLink({
+                    uri: ({ operationName }) => `${uri}?${operationName}`,
+                    credentials,
+                    fetch: customFetch,
+                }),
+            ])
+        ),
     })
 
     return Promise.resolve(apolloClient)
