@@ -117,8 +117,8 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 	cmd := exec.CommandContext(ctx, "p4", "login", "-s")
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+p4port,
-		"P4USER="+"william",
-		"P4PASSWD="+p4passwd,
+		"P4USER="+p4user,
+		"P4PASSWD="+"fakepassword",
 		"HOME="+p4home,
 	)
 
