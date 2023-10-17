@@ -53,7 +53,7 @@ type TelemetryEventsExportQueueStore interface {
 	// 🚨 SECURITY: The implementation strips out sensitive contents from events
 	// that are not in sensitivemetadataallowlist.AllowedEventTypes().
 	//
-	// 🚨 SECURITY: The implementation may drop events based on the export policy
+	// The implementation may drop events based on the export policy
 	// allowed on the instance - see licensing.TelemetryEventsExportMode
 	QueueForExport(context.Context, []*telemetrygatewayv1.Event) error
 
