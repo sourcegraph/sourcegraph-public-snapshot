@@ -204,27 +204,15 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if event.Referrer != nil {
 			referrer = *event.Referrer
 		}
-		saferReferrer, err := redactSensitiveInfoFromCloudURL(referrer)
-		if err != nil {
-			return nil, err
-		}
 
 		originalReferrer := ""
 		if event.OriginalReferrer != nil {
 			originalReferrer = *event.OriginalReferrer
 		}
-		saferOriginalReferrer, err := redactSensitiveInfoFromCloudURL(originalReferrer)
-		if err != nil {
-			return nil, err
-		}
 
 		sessionReferrer := ""
 		if event.SessionReferrer != nil {
 			sessionReferrer = *event.SessionReferrer
-		}
-		saferSessionReferrer, err := redactSensitiveInfoFromCloudURL(sessionReferrer)
-		if err != nil {
-			return nil, err
 		}
 
 		sessionFirstURL := ""
@@ -248,9 +236,9 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			URL:                    saferUrl,
 			FirstSourceURL:         firstSourceURL,
 			LastSourceURL:          lastSourceURL,
-			Referrer:               saferReferrer,
-			OriginalReferrer:       saferOriginalReferrer,
-			SessionReferrer:        saferSessionReferrer,
+			Referrer:               referrer,
+			OriginalReferrer:       originalReferrer,
+			SessionReferrer:        sessionReferrer,
 			SessionFirstURL:        sessionFirstURL,
 			Source:                 event.Source,
 			Timestamp:              time.Now().UTC().Format(time.RFC3339),
@@ -366,13 +354,15 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// Redact non-marketing query parameter values, while retaining keys for analytics.
+	// Allowlisted parameters remain unchanged to protect marketing data integrity.
 	for key := range urlQueryParams {
 		if _, ok := marketingQueryParameters[key]; !ok {
 			urlQueryParams[key] = []string{"redacted"}
 		}
 	}
 
-	// only keep the first path segment of the URL for security
+	// Retain only the first part of the URL's path segment for security.
 	parsedURL.Path = strings.Split(parsedURL.Path, "/")[1]
 
 	parsedURL.RawQuery = urlQueryParams.Encode()
