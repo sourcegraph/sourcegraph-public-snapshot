@@ -45,13 +45,6 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 	// Base set
 	ops := operations.NewSet()
 
-	// If the only thing that has change is the Client Jetbrains, then we skip:
-	// - BazelOperations
-	// - Sg Lint
-	if diff.Only(changed.ClientJetbrains) {
-		return ops
-	}
-
 	// Simple, fast-ish linter checks
 	ops.Append(BazelOperations(buildOpts, opts.IsMainBranch)...)
 	linterOps := operations.NewNamedSet("Linters and static analysis")
