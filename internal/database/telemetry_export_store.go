@@ -53,7 +53,7 @@ type TelemetryEventsExportQueueStore interface {
 	// 🚨 SECURITY: The implementation strips out sensitive contents from events
 	// that are not in sensitivemetadataallowlist.AllowedEventTypes().
 	//
-	// The implementation may drop events based on the export policy
+	// The implementation may also drop events based on the export policy
 	// allowed on the instance - see licensing.TelemetryEventsExportMode
 	QueueForExport(context.Context, []*telemetrygatewayv1.Event) error
 
@@ -99,11 +99,12 @@ func (s *telemetryEventsExportQueueStore) getExportMode() licensing.TelemetryEve
 }
 
 // See interface docstring.
-func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, events []*telemetrygatewayv1.Event) error {
+func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, events []*telemetrygatewayv1.Event) (err error) {
 	var tr trace.Trace
 	tr, ctx = trace.New(ctx, "telemetryevents.QueueForExport",
-		attribute.Int("submitted-events", len(events)))
-	defer tr.End()
+		// actually queued events may be different - final attribute is added later
+		attribute.Int("submitted_events", len(events)))
+	defer tr.EndWithErr(&err)
 
 	logger := trace.Logger(ctx, s.logger)
 
@@ -116,12 +117,14 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 		return nil
 	}
 
+	// 🚨 SECURITY: Respect export mode carefully.
 	switch s.getExportMode() {
 	case licensing.TelemetryEventsExportAll:
 		tr.SetAttributes(attribute.String("export-mode", "enabled"))
 
 	case licensing.TelemetryEventsExportCodyOnly:
-		// Only export Cody-related events - drop everything else from the set.
+		// 🚨 SECURITY: Only export Cody-related events in this mode - drop
+		// everything else from the set.
 		var dropped int
 		filtered := make([]*telemetrygatewayv1.Event, 0, len(events))
 		for _, e := range events {
@@ -136,9 +139,13 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 			attribute.String("export-mode", "cody-only"),
 			attribute.Int("dropped-events", dropped))
 
-	default:
+	case licensing.TelemetryEventsExportDisabled:
+		// 🚨 SECURITY: Do not export any events in this mode.
 		tr.SetAttributes(attribute.String("export-mode", "disabled"))
 		return nil // no-op
+
+	default:
+		return errors.Newf("telemetry: unknown export mode %+v", s.getExportMode())
 	}
 
 	if len(events) == 0 {
@@ -151,7 +158,7 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	insertCtx, cancel := context.WithTimeout(xcontext.Detach(ctx), 5*time.Minute)
 	defer cancel()
 
-	err := batch.InsertValues(
+	err = batch.InsertValues(
 		insertCtx,
 		s.Handle(),
 		"telemetry_events_export_queue",
@@ -162,9 +169,15 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 			"payload_pb",
 		},
 		insertTelemetryEventsChannel(logger, events))
-	counterQueuedEvents.
-		WithLabelValues(strconv.FormatBool(err != nil)).
-		Add(float64(len(events)))
+
+	// Record results
+	if err != nil {
+		counterQueuedEvents.
+			WithLabelValues(strconv.FormatBool(err != nil)).
+			Add(float64(len(events)))
+		tr.SetAttributes(attribute.Int("queued_events", len(events)))
+	}
+
 	return err
 }
 
