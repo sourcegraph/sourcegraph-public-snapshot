@@ -194,18 +194,10 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if event.FirstSourceURL != nil {
 			firstSourceURL = *event.FirstSourceURL
 		}
-		saferFirstSourceURL, err := redactSensitiveInfoFromCloudURL(firstSourceURL)
-		if err != nil {
-			return nil, err
-		}
 
 		lastSourceURL := ""
 		if event.LastSourceURL != nil {
 			lastSourceURL = *event.LastSourceURL
-		}
-		saferLastSourceURL, err := redactSensitiveInfoFromCloudURL(lastSourceURL)
-		if err != nil {
-			return nil, err
 		}
 
 		referrer := ""
@@ -239,10 +231,6 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if event.SessionFirstURL != nil {
 			sessionFirstURL = *event.SessionFirstURL
 		}
-		saferSessionFirstURL, err := redactSensitiveInfoFromCloudURL(sessionFirstURL)
-		if err != nil {
-			return nil, err
-		}
 
 		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
@@ -258,12 +246,12 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 			UserID:                 int(event.UserID),
 			AnonymousUserID:        event.UserCookieID,
 			URL:                    saferUrl,
-			FirstSourceURL:         saferFirstSourceURL,
-			LastSourceURL:          saferLastSourceURL,
+			FirstSourceURL:         firstSourceURL,
+			LastSourceURL:          lastSourceURL,
 			Referrer:               saferReferrer,
 			OriginalReferrer:       saferOriginalReferrer,
 			SessionReferrer:        saferSessionReferrer,
-			SessionFirstURL:        saferSessionFirstURL,
+			SessionFirstURL:        sessionFirstURL,
 			Source:                 event.Source,
 			Timestamp:              time.Now().UTC().Format(time.RFC3339),
 			Version:                version.Version(),
@@ -361,37 +349,6 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return "", err
 	}
 
-	// check if parsedURL is in approved hosts and if so return rawURL
-	approvedHostsMap := map[string]bool{
-		"sourcegraph.com":        true,
-		"about.sourcegraph.com":  true,
-		"docs.sourcegraph.com":   true,
-		"info.sourcegraph.com":   true,
-		"signup.sourcegraph.com": true,
-	}
-	if approvedHostsMap[parsedURL.Host] {
-		return rawURL, nil
-	}
-
-	// Define path prefixes to redact
-	redactPaths := []string{
-		"/github.com", "/gitlab.com", "/search", "/sign-in",
-		"/crates", "/npm", "/site-admin", "/api", "/extensions",
-		"/user", "/code-monitoring", "/organizations", "/post-sign-up",
-		"/.auth", "/cody", "/notebooks", "/sign-up", "/unlock-account",
-		"/batch_changes", "/code_insights", "/settings",
-	}
-
-	redactedURL := false
-	for _, pathPrefix := range redactPaths {
-		if strings.HasPrefix(parsedURL.Path, pathPrefix) {
-			parsedURL.RawPath = pathPrefix + "/redacted"
-			parsedURL.Path = pathPrefix + "/redacted"
-			redactedURL = true
-			break
-		}
-	}
-
 	marketingQueryParameters := map[string]struct{}{
 		"utm_source":   {},
 		"utm_campaign": {},
@@ -415,13 +372,10 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		}
 	}
 
-	parsedURL.RawQuery = urlQueryParams.Encode()
+	// only keep the first path segment of the URL for security
+	parsedURL.Path = strings.Split(parsedURL.Path, "/")[1]
 
-	if !redactedURL {
-		// default case if redaction is not applied
-		parsedURL.RawPath = "/redacted"
-		parsedURL.Path = "/redacted"
-	}
+	parsedURL.RawQuery = urlQueryParams.Encode()
 
 	return parsedURL.String(), nil
 }

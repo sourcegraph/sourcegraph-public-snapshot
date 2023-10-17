@@ -14,39 +14,39 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 		want string
 	}{
 		{
-			name: "path is not redacted from dotcom",
-			url:  "https://sourcegraph.com/github.com/test/test",
-			want: "https://sourcegraph.com/github.com/test/test",
-		},
-		{
-			name: "urls are not redacted from dotcom",
+			name: "URL path parameters are redacted",
 			url:  "https://sourcegraph.com/search?q=abcd",
-			want: "https://sourcegraph.com/search?q=abcd",
+			want: "https://sourcegraph.com/search?q=redacted",
 		},
 		{
-			name: "urls are redacted from cloud instances",
+			name: "URL path parameters are redacted -- managed instance url",
 			url:  "https://sourcegraph.sourcegraph.com/search?q=abcd",
-			want: "https://sourcegraph.sourcegraph.com/search/redacted?q=redacted",
+			want: "https://sourcegraph.sourcegraph.com/search?q=redacted",
 		},
 		{
-			name: "urls are not redacted from dotcom(marketing)",
-			url:  "https://about.sourcegraph.com/signup/cody",
-			want: "https://about.sourcegraph.com/signup/cody",
-		},
-		{
-			name: "path and non-approved query param redacted, approved params retained from cloud instances",
+			name: "path and non-approved query param redacted",
 			url:  "https://sourcegraph.sourcegraph.com/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
-			want: "https://sourcegraph.sourcegraph.com/search/redacted?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
+			want: "https://sourcegraph.sourcegraph.com/search?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
 		},
 		{
-			name: "path and query param not redacted from dotcom",
-			url:  "https://sourcegraph.com/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
-			want: "https://sourcegraph.com/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
+			name: "path and non-approved query param redacted, multi-page URL",
+			url:  "https://sourcegraph.com/first/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
+			want: "https://sourcegraph.com/first?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
 		},
 		{
-			name: "referrer value test",
-			url:  "https://marketing.website.com/r/somepath?utm_source=test",
-			want: "https://marketing.website.com/redacted?utm_source=test",
+			name: "url path redaction test",
+			url:  "https://sourcegraph.sourcegraph.com/sign-in?returnTo=%2custom.test.com",
+			want: "https://sourcegraph.sourcegraph.com/sign-in?returnTo=redacted",
+		},
+		{
+			name: "url path redaction test with multiple pages",
+			url:  "https://sourcegraph.sourcegraph.com/auth/sign-in?returnTo=fileName",
+			want: "https://sourcegraph.sourcegraph.com/auth?returnTo=redacted",
+		},
+		{
+			name: "url URL with multiple path segments",
+			url:  "https://sourcegraph.sourcegraph.com/first/second/third/fourth/fifth/sixth/",
+			want: "https://sourcegraph.sourcegraph.com/first",
 		},
 	}
 
