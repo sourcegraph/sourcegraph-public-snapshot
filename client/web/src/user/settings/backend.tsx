@@ -14,8 +14,12 @@ import type {
     LogEventsResult,
     LogEventsVariables,
     Event,
+    RecordEventsResult,
+    RecordEventsVariables,
+    TelemetryEventInput,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { eventRecorder } from '../../tracking/eventRecorder'
 
 export const UPDATE_PASSWORD = gql`
     mutation UpdatePassword($oldPassword: String!, $newPassword: String!) {
@@ -201,5 +205,91 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         client: eventLogger.getClient(),
         connectedSiteID: window.context?.siteID,
         hashedLicenseKey: window.context?.hashedLicenseKey,
+    }
+}
+
+// Log events in batches
+const batchedTelemetryEvents = new Subject<TelemetryEventInput>()
+
+// Mutation to record events
+export const recordEventsMutation = gql`
+    mutation RecordEvents($events: [TelemetryEventInput!]!) {
+        telemetry {
+            recordEvents(events: $events) {
+                alwaysNil
+            }
+        }
+    }
+`
+
+function sendTelemetryEvents(events: TelemetryEventInput[]): Promise<void> {
+    return requestGraphQL<RecordEventsResult, RecordEventsVariables>(recordEventsMutation, { events })
+        .toPromise()
+        .then(dataOrThrowErrors)
+        .then(() => {})
+}
+
+batchedTelemetryEvents
+    .pipe(
+        bufferTime(1000),
+        concatMap(events => {
+            if (events.length > 0) {
+                return sendTelemetryEvents(events)
+            }
+            return EMPTY
+        }),
+        // TODO: log errors to Sentry
+        catchError(() => [])
+    )
+    // eslint-disable-next-line rxjs/no-ignored-subscription
+    .subscribe()
+
+/**
+ * Log a raw user action (used to allow site admins on a Sourcegraph instance
+ * to see a count of unique users on a daily, weekly, and monthly basis).
+ *
+ * When invoked on a non-Sourcegraph.com instance, this data is stored in the
+ * instance's database, and not sent to Sourcegraph.com.
+ */
+export function recordEvent(
+    feature: string,
+    action: string,
+    source: unknown,
+    parameters?: unknown,
+    marketingTracking?: unknown
+): void {
+    batchedTelemetryEvents.next(createTelemetryEvent(feature, action, source, parameters, marketingTracking))
+}
+
+/**
+ * Log a raw user action and return a promise that resolves once the event has
+ * been sent. This method will not attempt to batch requests, so it should be
+ * used only when low event latency is necessary (e.g., on an external link).
+ *
+ * See logEvent for additional details.
+ */
+export function recordEventSynchronously(
+    feature: string,
+    action: string,
+    source: unknown,
+    parameters?: unknown,
+    marketingTracking?: unknown
+): Promise<void> {
+    return sendTelemetryEvents(createTelemetryEvent(feature, action, source, parameters, marketingTracking))
+}
+
+function createTelemetryEvent(
+    feature: string,
+    action: string,
+    source: unknown,
+    parameters?: unknown,
+    marketingTracking?: unknown
+): TelemetryEventInput {
+    return {
+        feature,
+        action,
+        source: EventSource.WEB,
+        parameters: parameters ? JSON.stringify(parameters) : null,
+        marketingTracking: marketingTracking ? JSON.stringify(marketingTracking) : null,
     }
 }
