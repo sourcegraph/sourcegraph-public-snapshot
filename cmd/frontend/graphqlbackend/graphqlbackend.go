@@ -264,6 +264,7 @@ var allowedPrometheusFieldNames = map[[2]string]struct{}{
 	{"Mutation", "configurationMutation"}:       {},
 	{"Mutation", "createOrganization"}:          {},
 	{"Mutation", "logEvent"}:                    {},
+	{"Mutation", "recordEvent"}:                 {},
 	{"Mutation", "logUserEvent"}:                {},
 	{"Query", "clientConfiguration"}:            {},
 	{"Query", "currentUser"}:                    {},
