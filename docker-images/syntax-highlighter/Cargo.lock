@@ -1756,6 +1756,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "scip-treesitter-cli"
+version = "0.1.0"
+dependencies = [
+ "clap 4.3.23",
+ "lazy_static",
+ "paste",
+ "protobuf",
+ "scip",
+ "scip-syntax",
+ "scip-treesitter",
+ "scip-treesitter-languages",
+ "sg-syntax",
+]
+
+[[package]]
 name = "scip-treesitter-languages"
 version = "0.1.0"
 dependencies = [
@@ -2019,6 +2034,7 @@ dependencies = [
  "scip",
  "scip-syntax",
  "scip-treesitter",
+ "scip-treesitter-cli",
  "scip-treesitter-languages",
  "serde",
  "serde_json",
