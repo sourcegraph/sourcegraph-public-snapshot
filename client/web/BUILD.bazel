@@ -1760,7 +1760,7 @@ ts_project(
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
-        "package.json",
+        ":package.json",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
