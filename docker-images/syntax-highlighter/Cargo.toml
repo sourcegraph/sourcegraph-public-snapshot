@@ -51,7 +51,7 @@ members = [
 
 [workspace.dependencies]
 anyhow = "1"
-clap = { version = "4.1.11", features = [ "derive" ] }
+clap = { version = "4.1.11", features = [ "derive", "cargo"] }
 itertools = "0.10.5"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 # See https://stackoverflow.com/questions/76905691/bazel-unable-to-build-external-rust-dependency-with-feature-serde1

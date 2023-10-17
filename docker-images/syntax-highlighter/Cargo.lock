@@ -301,6 +301,7 @@ dependencies = [
  "anstream",
  "anstyle",
  "clap_lex 0.5.0",
+ "once_cell",
  "strsim",
 ]
 
