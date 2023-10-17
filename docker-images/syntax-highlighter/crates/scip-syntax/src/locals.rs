@@ -540,7 +540,7 @@ mod test {
 
     #[test]
     fn test_can_do_go() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -552,7 +552,7 @@ mod test {
 
     #[test]
     fn test_can_do_nested_locals() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -564,7 +564,7 @@ mod test {
 
     #[test]
     fn test_can_do_functions() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -576,7 +576,7 @@ mod test {
 
     #[test]
     fn test_can_do_perl() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -588,7 +588,7 @@ mod test {
 
     #[test]
     fn test_can_do_matlab() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Matlab).unwrap();
         let source_code = include_str!("../testdata/locals.m");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 

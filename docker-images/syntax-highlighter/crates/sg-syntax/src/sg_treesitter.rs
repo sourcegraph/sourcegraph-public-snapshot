@@ -83,7 +83,7 @@ pub fn index_language_with_config(
         let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
         if let Some(parser) = parser {
             // TODO: Could probably write this in a much better way.
-            let mut local_occs = scip_syntax::get_locals(parser, code.as_bytes())
+            let mut local_occs = scip_syntax::get_locals(&parser, code.as_bytes())
                 .unwrap_or(Ok(vec![]))
                 .unwrap_or(vec![]);
 

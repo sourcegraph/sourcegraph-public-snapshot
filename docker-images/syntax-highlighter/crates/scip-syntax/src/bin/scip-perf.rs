@@ -18,7 +18,7 @@ struct ParseTiming {
 }
 
 fn parse_files(dir: &Path) -> Vec<ParseTiming> {
-    let config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
+    let config = scip_syntax::languages::get_local_configuration(&BundledParser::Go).unwrap();
     let extension = "go";
 
     let mut timings = vec![];

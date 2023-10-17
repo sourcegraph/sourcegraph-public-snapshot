@@ -287,7 +287,7 @@ mod locals {
     create_locals_configuration!(matlab, BundledParser::Matlab, "matlab");
     create_locals_configuration!(java, BundledParser::Java, "java");
 
-    pub fn get_local_configuration(parser: BundledParser) -> Option<&'static LocalConfiguration> {
+    pub fn get_local_configuration(parser: &BundledParser) -> Option<&'static LocalConfiguration> {
         match parser {
             BundledParser::Go => Some(go()),
             BundledParser::Perl => Some(perl()),
