@@ -253,7 +253,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if zsl != nil {
 		// the fields are mutually exclusive so we can just add them
-		event.AddField("repos", len(zsl.Repos)+len(zsl.Minimal)+len(zsl.ReposMap)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		event.AddField("repos", len(zsl.Repos)+len(zsl.ReposMap))
 		event.AddField("stats.crashes", zsl.Crashes)
 	}
 	if err != nil {
@@ -290,8 +290,6 @@ func listCategory(opts *zoekt.ListOptions) string {
 	switch field {
 	case zoekt.RepoListFieldRepos:
 		return "List"
-	case zoekt.RepoListFieldMinimal:
-		return "ListMinimal"
 	case zoekt.RepoListFieldReposMap:
 		return "ListReposMap"
 	default:
