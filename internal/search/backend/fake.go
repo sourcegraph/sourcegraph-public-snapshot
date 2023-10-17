@@ -75,15 +75,7 @@ func (ss *FakeStreamer) List(ctx context.Context, q zoektquery.Q, opt *zoekt.Lis
 	}
 
 	list := &zoekt.RepoList{}
-	if opt.Minimal || opt.Field == zoekt.RepoListFieldMinimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		list.Minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(ss.Repos)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		for _, r := range ss.Repos {
-			list.Minimal[r.Repository.ID] = &zoekt.MinimalRepoListEntry{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-				HasSymbols: r.Repository.HasSymbols,
-				Branches:   r.Repository.Branches,
-			}
-		}
-	} else if opt.Field == zoekt.RepoListFieldReposMap {
+	if opt.Field == zoekt.RepoListFieldReposMap {
 		list.ReposMap = make(zoekt.ReposMap)
 		for _, r := range ss.Repos {
 			list.ReposMap[r.Repository.ID] = zoekt.MinimalRepoListEntry{
