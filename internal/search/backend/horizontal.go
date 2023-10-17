@@ -167,7 +167,6 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	// does deduplication.
 
 	aggregate := zoekt.RepoList{
-		Minimal:  make(map[uint32]*zoekt.MinimalRepoListEntry),
 		ReposMap: make(zoekt.ReposMap),
 	}
 	for range clients {
