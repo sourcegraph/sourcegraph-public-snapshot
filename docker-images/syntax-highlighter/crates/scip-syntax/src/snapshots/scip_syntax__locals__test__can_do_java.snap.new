@@ -1,0 +1,122 @@
+---
+source: crates/scip-syntax/src/locals.rs
+assertion_line: 613
+expression: dumped
+---
+  package com.hello;
+
+  import com.hello1.TextContainer;
+  import java.util.ArrayList;
+
+  public class Text implements TextContainer {
+//             ^^^^ definition local 7
+      public Text(String chars) {
+//           ^^^^ reference local 7
+//                       ^^^^^ definition local 8
+          super(chars);
+//              ^^^^^ reference local 8
+      }
+
+      public Text append(String chars, int num) {
+//           ^^^^ reference local 7
+//                ^^^^^^ definition local 10
+//                              ^^^^^ definition local 11
+//                                         ^^^ definition local 12
+          return new Text(this.chars + chars);
+//                   ^^^^ reference local 7
+//                             ^^^^^ reference local 11
+//                                     ^^^^^ reference local 11
+      }
+
+      public record Person (String name, String address) {}
+//                  ^^^^^^ definition local 13
+//                                 ^^^^ definition local 14
+//                                              ^^^^^^^ definition local 15
+
+      enum Flags {
+//         ^^^^^ definition local 16
+          Flags() {
+//        ^^^^^ reference local 16
+              this(1);
+          }
+
+          Flags(int bits) {
+//                  ^^^^ definition local 9
+              this.bits = bits;
+//                 ^^^^ reference local 9
+//                        ^^^^ reference local 9
+          }
+      }
+
+      protected String toStringAttributes() {
+//                     ^^^^^^^^^^^^^^^^^^ definition local 1
+          return "text=" + getChars();
+      }
+
+      public void print(int i) {
+//                ^^^^^ definition local 2
+//                          ^ definition local 3
+          for (int i = 0; i < 5; i++) {
+//                 ^ definition local 17
+//                        ^ reference local 17
+//                               ^ reference local 17
+            System.out.println(i);
+//                             ^ reference local 17
+          }
+          System.out.println(i);
+//                           ^ reference local 3
+      }
+
+      public interface Hello {
+//                     ^^^^^ definition local 18
+
+          public void func1(Hello t) {
+//                    ^^^^^ definition local 19
+//                          ^^^^^ reference local 18
+//                                ^ definition local 20
+              var newT = t;
+//                ^^^^ definition local 21
+//                       ^ reference local 20
+          }
+
+      }
+
+      public void blocks(int num) {
+//                ^^^^^^ definition local 4
+//                           ^^^ definition local 5
+          {
+              var num = 25;
+//                ^^^ definition local 22
+              {
+                  var num = 100;
+//                    ^^^ definition local 23
+              }
+          }
+      }
+
+      public void test() {
+//                ^^^^ definition local 6
+          ArrayList<Integer> numbers = new ArrayList<Integer>();
+//                           ^^^^^^^ definition local 24
+          numbers.add(5);
+//        ^^^^^^^ reference local 24
+          numbers.add(9);
+//        ^^^^^^^ reference local 24
+          numbers.add(8);
+//        ^^^^^^^ reference local 24
+          numbers.add(1);
+//        ^^^^^^^ reference local 24
+          numbers.forEach( (n) -> { System.out.println(n); } );
+//        ^^^^^^^ reference local 24
+//                          ^ definition local 25
+//                                                     ^ reference local 25
+
+          for(Integer num: numbers) {
+//                    ^^^ definition local 26
+//                         ^^^^^^^ reference local 24
+              System.out.println(num);
+//                               ^^^ reference local 26
+          }
+
+      }
+  }
