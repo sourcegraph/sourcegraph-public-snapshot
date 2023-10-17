@@ -26,7 +26,7 @@ cp internal/database/schema.codeinsights.json "${tmp_dir}/${version}-internal_da
 
 echo "--- Uploading to GCS Bucket '${bucket}/schemas'"
 pushd "$tmp_dir"
-gsutil cp *.json "${bucket}/schemas/"
+gsutil cp ./*.json "${bucket}/schemas/"
 popd
 
 echo "--- ✅ Schemas for ${version} are now available for other releases"
