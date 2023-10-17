@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -42,7 +42,7 @@ const ownAnalyticsDisabled: MockedResponse<GetOwnSignalConfigurationsResult, Get
     },
 }
 
-export const AnalyticsDisabled: Story = () => (
+export const AnalyticsDisabled: StoryFn = () => (
     <WebStory mocks={[ownAnalyticsDisabled]}>{() => <OwnAnalyticsPage />}</WebStory>
 )
 AnalyticsDisabled.storyName = 'AnalyticsDisabled - need to enable own analytics in site admin'
@@ -84,7 +84,7 @@ const presentStats: MockedResponse<GetInstanceOwnStatsResult, GetInstanceOwnStat
     },
 }
 
-export const PresentStats: Story = () => (
+export const PresentStats: StoryFn = () => (
     <WebStory mocks={[ownAnalyticsEnabled, presentStats]}>{() => <OwnAnalyticsPage />}</WebStory>
 )
 PresentStats.storyName = 'PresentStats - statistics available'
@@ -107,7 +107,7 @@ const zeroStats: MockedResponse<GetInstanceOwnStatsResult, GetInstanceOwnStatsVa
     },
 }
 
-export const ZeroStats: Story = () => (
+export const ZeroStats: StoryFn = () => (
     <WebStory mocks={[ownAnalyticsEnabled, zeroStats]}>{() => <OwnAnalyticsPage />}</WebStory>
 )
 ZeroStats.storyName = 'ZeroStats - no statistics computed yet'

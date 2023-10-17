@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -60,7 +60,7 @@ const mockResponse: MockedResponse<ListTeamMembersResult> = {
     },
 }
 
-export const Default: Story = function Default() {
+export const Default: StoryFn = function Default() {
     return (
         <WebStory initialEntries={['/teams/team-1/members']} mocks={[mockResponse]}>
             {() => <TeamMembersPage {...testContext} />}

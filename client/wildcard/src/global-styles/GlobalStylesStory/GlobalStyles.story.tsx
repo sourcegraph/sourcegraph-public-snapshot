@@ -3,7 +3,7 @@
 // documentation for that. Its primary purpose is to show what Bootstrap's components look like with our styling
 // customizations.
 import { action } from '@storybook/addon-actions'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import '@storybook/addon-designs'
 
@@ -18,7 +18,7 @@ import { preventDefault } from './utils'
 
 registerHighlightContributions()
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
 )
 const config: Meta = {
@@ -33,7 +33,7 @@ const config: Meta = {
 
 export default config
 
-export const CodeTypography: Story = () => (
+export const CodeTypography: StoryFn = () => (
     <>
         <H1>Code</H1>
 
@@ -95,7 +95,7 @@ export const CodeTypography: Story = () => (
     </>
 )
 
-export const Colors: Story = () => (
+export const Colors: StoryFn = () => (
     <>
         <H1>Colors</H1>
 
@@ -113,7 +113,7 @@ Colors.parameters = {
     },
 }
 
-export const Layout: Story = () => (
+export const Layout: StoryFn = () => (
     <>
         <H1>Layout</H1>
 
@@ -208,7 +208,7 @@ export const Layout: Story = () => (
     </>
 )
 
-export const InputGroups: Story = () => (
+export const InputGroups: StoryFn = () => (
     <>
         <H1>Input groups</H1>
 
@@ -234,7 +234,7 @@ export const InputGroups: Story = () => (
 
 InputGroups.storyName = 'Input groups'
 
-export const Forms: Story = () => (
+export const Forms: StoryFn = () => (
     <>
         <H1>Forms</H1>
         <Text>
@@ -341,7 +341,7 @@ Forms.parameters = {
     },
 }
 
-export const ListGroups: Story = () => (
+export const ListGroups: StoryFn = () => (
     <>
         <H1>List groups</H1>
         <Text>

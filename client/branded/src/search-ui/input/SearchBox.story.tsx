@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
@@ -49,7 +49,7 @@ const defaultProps: SearchBoxProps = {
     platformContext: NOOP_PLATFORM_CONTEXT,
 }
 
-export const SearchBoxStory: Story = () => (
+export const SearchBoxStory: StoryFn = () => (
     <BrandedStory>
         {props => (
             <div>
