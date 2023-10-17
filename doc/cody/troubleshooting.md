@@ -35,7 +35,7 @@ If you're connected to the Cody app, you can trigger indexing for a repository b
 
 If you've completed the above and still seeing your codebase showing up as `NOT INDEXED`, try updating the `Cody: Codebase` (`cody.codebase`) setting in VS Code to the repository name as listed on your Sourcegraph instance.
 
-For more information, see [Generate Index to Enable Codebase-Aware Answers](core-concepts/embeddings/embedding-index).
+For more information, see [Generate Index to Enable Codebase-Aware Answers](core-concepts/embeddings/embedding-index.md).
 
 ### Signin fails on each VS Code restart
 
