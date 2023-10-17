@@ -36,7 +36,7 @@ const getHeaders = (): { [header: string]: string } => {
  *
  * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
-export const –requestGraphQL = <TResult, TVariables = object>(
+export const requestGraphQL = <TResult, TVariables = object>(
     request: string,
     variables?: TVariables
 ): Observable<GraphQLResult<TResult>> =>
