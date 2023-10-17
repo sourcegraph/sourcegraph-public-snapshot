@@ -171,10 +171,7 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 
 	var isDevInstance bool
 	licenseInfo, err := licensing.GetConfiguredProductLicenseInfo()
-	if err != nil {
-		return 0, "", err
-	}
-	if licenseInfo == nil {
+	if err != nil || licenseInfo == nil {
 		isDevInstance = true
 	} else {
 		isDevInstance = licenseInfo.HasTag("dev")
