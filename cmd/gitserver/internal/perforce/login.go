@@ -122,7 +122,7 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 		"HOME="+p4home,
 	)
 
-	fmt.Printf("🚨 ENV: %v", strings.Join(os.Environ(), " "))
+	fmt.Printf(">>>>>>> ENV: %v <<<<<<<", strings.Join(cmd.Env, " "))
 
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
