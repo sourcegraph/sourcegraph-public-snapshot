@@ -76,6 +76,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Defining file filters for embeddings jobs no longer causes all files to be skipped if `MaxFileSizeBytes` isn't defined. [#58262](https://github.com/sourcegraph/sourcegraph/pull/58262)
+- Drilling down into an insights query no longer mangles `content:` fields in your query. [#57679](https://github.com/sourcegraph/sourcegraph/pull/57679)
 
 ### Removed
 
