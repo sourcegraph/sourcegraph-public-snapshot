@@ -19,7 +19,7 @@ const LocalInstanceIdentifier = "local"
 const InstanceIdentifierLength = 16
 const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public, as we are not relying on HMAC for authentication
 
-var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{16}_)?([a-fA-F0-9]{40})$")
+var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{16}_|local_)?([a-fA-F0-9]{40})$")
 
 // ParseAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
 // Personal access tokens can take several forms:

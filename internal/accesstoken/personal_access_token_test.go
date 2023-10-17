@@ -39,6 +39,12 @@ func TestParsePersonalAccessToken(t *testing.T) {
 			want:    "abcdef1234abcdef1234abcdef1234abcdef1234",
 			wantErr: false,
 		},
+		{
+			name:    "sgph_ prefix and local instance-identifier",
+			args:    args{token: "sgph_local_abcdef1234abcdef1234abcdef1234abcdef1234"},
+			want:    "abcdef1234abcdef1234abcdef1234abcdef1234",
+			wantErr: false,
+		},
 		// Error cases
 		{
 			name:    "no prefix, invalid length",
