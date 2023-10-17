@@ -114,7 +114,7 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 	//
 	// p4 login -s checks the connection and the credentials,
 	// so it seems like the perfect alternative to `p4 ping`.
-	cmd := exec.CommandContext(ctx, "p4", "-v", "debug", "login", "-s")
+	cmd := exec.CommandContext(ctx, "p4", "-v", "3", "login", "-s")
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+p4port,
 		"P4USER="+p4user,
