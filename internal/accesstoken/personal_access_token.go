@@ -14,7 +14,7 @@ import (
 // personalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
 // is to make it easier to identify that a given string (in a file, document, etc.) is a secret
 // Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
-const PersonalAccessTokenPrefix = "sgph_"
+const PersonalAccessTokenPrefix = "sgp_"
 const LocalInstanceIdentifier = "local"
 const InstanceIdentifierLength = 16
 const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public, as we are not relying on HMAC for authentication
@@ -25,7 +25,7 @@ var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{16
 // Personal access tokens can take several forms:
 //   - <token>
 //   - sgp_<token>
-//   - sgph_<instance-identifier>_<token>
+//   - sgp_<instance-identifier>_<token>
 func ParsePersonalAccessToken(token string) (string, error) {
 	tokenMatches := personalAccessTokenRegex.FindStringSubmatch(token)
 	if len(tokenMatches) <= 1 {
