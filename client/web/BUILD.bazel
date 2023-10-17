@@ -14,6 +14,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
+# gazelle:js_resolve @sourcegraph/telemetry //client/web/package.json
 
 # Non-ts imports
 # gazelle:js_ignore_imports **/*.batch.yaml
