@@ -83,7 +83,7 @@ func TestGetSeries(t *testing.T) {
 func Test_HandleWithTerminalError(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	metadataStore := store.NewInsightStore(insightsDB)
 	metadataStore.Now = func() time.Time {

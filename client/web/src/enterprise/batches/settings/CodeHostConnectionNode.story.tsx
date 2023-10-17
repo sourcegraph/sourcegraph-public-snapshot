@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -13,7 +13,7 @@ import {
 import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/settings/CodeHostConnectionNode',
@@ -35,7 +35,7 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider

@@ -25,17 +25,18 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier              notify.RateLimitNotifier
-	AnthropicAccessToken           string
-	AnthropicAllowedModels         []string
-	AnthropicAllowedPromptPatterns []string
-	AnthropicMaxTokensToSample     int
-	OpenAIAccessToken              string
-	OpenAIOrgID                    string
-	OpenAIAllowedModels            []string
-	FireworksAccessToken           string
-	FireworksAllowedModels         []string
-	EmbeddingsAllowedModels        []string
+	RateLimitNotifier               notify.RateLimitNotifier
+	AnthropicAccessToken            string
+	AnthropicAllowedModels          []string
+	AnthropicAllowedPromptPatterns  []string
+	AnthropicRequestBlockingEnabled bool
+	AnthropicMaxTokensToSample      int
+	OpenAIAccessToken               string
+	OpenAIOrgID                     string
+	OpenAIAllowedModels             []string
+	FireworksAccessToken            string
+	FireworksAllowedModels          []string
+	EmbeddingsAllowedModels         []string
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -82,6 +83,7 @@ func NewHandler(
 			config.AnthropicMaxTokensToSample,
 			promptRecorder,
 			config.AnthropicAllowedPromptPatterns,
+			config.AnthropicRequestBlockingEnabled,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")

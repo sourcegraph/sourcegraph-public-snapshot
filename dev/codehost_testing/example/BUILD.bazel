@@ -1,0 +1,10 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "example_test",
+    srcs = ["example_test.go"],
+    deps = [
+        "//dev/codehost_testing",
+        "//dev/codehost_testing/config",
+    ],
+)

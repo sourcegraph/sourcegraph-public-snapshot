@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"html/template"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -14,9 +13,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -30,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -141,7 +138,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has a nil Repo.
 func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
-	logger := sglog.Scoped("commonHandler", "")
+	logger := log.Scoped("commonHandler", "")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
@@ -263,7 +260,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			ctx := context.Background()
 			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, common.Repo.Name)
 			if err != nil {
-				log15.Error("EnqueueRepoUpdate", "error", err)
+				logger.Error("EnqueueRepoUpdate", log.Error(err))
 			}
 		}()
 	}
@@ -278,9 +275,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
 			defer cancel()
 
-			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
+			if symbolMatch, _ := symbol.DefaultZoektSymbolsClient().GetMatchAtLineCharacter(
 				ctx,
-				authz.DefaultSubRepoPermsChecker,
 				types.MinimalRepo{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
 				strings.TrimLeft(blobPath, "/"),
@@ -326,6 +322,11 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 			return nil // request was handled
 		}
 		common.Title = title(common, r)
+
+		if useSvelteKit(r) {
+			return renderSvelteKit(w)
+		}
+
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -475,6 +476,11 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 		}
 
 		common.Title = title(common, r)
+
+		if useSvelteKit(r) {
+			return renderSvelteKit(w)
+		}
+
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -527,6 +533,11 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 			return nil
 		}
+
+		if useSvelteKit(r) {
+			return renderSvelteKit(w)
+		}
+
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -540,7 +551,6 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 			r.URL.Host = "search-badger"
 			r.URL.Path = "/"
 		},
-		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
 	}
 }
 

@@ -162,7 +162,7 @@ func TestUsers_Pagination_Integration(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	schema := mustParseGraphQLSchema(t, db)
@@ -345,7 +345,7 @@ func TestUsers_InactiveSince(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	schema := mustParseGraphQLSchema(t, db)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
@@ -16,7 +16,7 @@ const config: Meta = {
 
 export default config
 
-export const Interactive: Story = () => {
+export const Interactive: StoryFn = () => {
     const [value, setValue] = useState(false)
 
     const onToggle = (value: boolean) => setValue(value)
@@ -34,12 +34,12 @@ Interactive.parameters = {
     },
 }
 
-export const On: Story = () => <ToggleBig value={true} onToggle={onToggle} />
-export const Off: Story = () => <ToggleBig value={false} onToggle={onToggle} />
-export const DisabledOn: Story = () => <ToggleBig value={true} disabled={true} onToggle={onToggle} />
+export const On: StoryFn = () => <ToggleBig value={true} onToggle={onToggle} />
+export const Off: StoryFn = () => <ToggleBig value={false} onToggle={onToggle} />
+export const DisabledOn: StoryFn = () => <ToggleBig value={true} disabled={true} onToggle={onToggle} />
 
 DisabledOn.storyName = 'Disabled & on'
 
-export const DisabledOff: Story = () => <ToggleBig value={false} disabled={true} onToggle={onToggle} />
+export const DisabledOff: StoryFn = () => <ToggleBig value={false} disabled={true} onToggle={onToggle} />
 
 DisabledOff.storyName = 'Disabled & off'

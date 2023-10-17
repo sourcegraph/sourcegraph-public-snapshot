@@ -18,7 +18,7 @@ import (
 func TestCreation(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	p, err := db.Phabricator().Create(ctx, "callsign", "repo", "url")
@@ -49,7 +49,7 @@ func TestCreation(t *testing.T) {
 func TestCreateIfNotExistsAndGetByName(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	config := &schema.PhabricatorConnection{

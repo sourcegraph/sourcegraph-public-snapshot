@@ -62,7 +62,7 @@ var (
 )
 
 func (h *handler) Handle(ctx context.Context) error {
-	indexed, err := search.ListAllIndexed(ctx)
+	indexed, err := search.ListAllIndexed(ctx, search.Indexed())
 	if err != nil {
 		return err
 	}

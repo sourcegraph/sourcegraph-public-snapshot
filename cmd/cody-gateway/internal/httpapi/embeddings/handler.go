@@ -164,7 +164,18 @@ func NewHandler(
 				resolvedStatusCode = 200
 			}
 			_, _ = w.Write(data)
-		}))
+		}),
+		func(responseHeaders http.Header) (int, error) {
+			uh := responseHeaders.Get(usageHeaderName)
+			if uh == "" {
+				return 0, errors.New("no usage header set on response")
+			}
+			usage, err := strconv.Atoi(uh)
+			if err != nil {
+				return 0, errors.Wrap(err, "failed to parse usage header as number")
+			}
+			return usage, nil
+		})
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {

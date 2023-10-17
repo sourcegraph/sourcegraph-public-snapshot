@@ -183,7 +183,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             onChange={setQueryState}
             onSubmit={onSubmit}
             autoFocus={!isTouchOnlyDevice}
-            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
             structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             showSearchHistory={true}
             recentSearches={recentSearches}

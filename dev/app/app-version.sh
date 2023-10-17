@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")"/../.. || exit 1
 
 create_version() {
     local sha

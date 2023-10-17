@@ -1385,7 +1385,7 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.Default().GitHubAppKey)
 	_, err := ghAppsStore.Create(context.Background(), &ghtypes.GitHubApp{
 		AppID:        350528,

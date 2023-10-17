@@ -157,6 +157,10 @@ type openaiRequest struct {
 	User             string                 `json:"user,omitempty"`
 }
 
+func (r openaiRequest) GetModel() string {
+	return r.Model
+}
+
 type openaiUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`

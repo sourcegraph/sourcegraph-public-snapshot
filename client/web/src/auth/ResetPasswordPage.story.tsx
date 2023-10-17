@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {() => (
             <ResetPasswordPage
@@ -25,7 +25,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const WithCode: Story = () => (
+export const WithCode: StoryFn = () => (
     <WebStory initialEntries={[{ pathname: '/reset-password', search: '?code=123123&userID=123' }]}>
         {() => (
             <ResetPasswordPage
@@ -36,7 +36,7 @@ export const WithCode: Story = () => (
     </WebStory>
 )
 
-export const LoggedInUser: Story = () => (
+export const LoggedInUser: StoryFn = () => (
     <WebStory>
         {() => (
             <ResetPasswordPage
@@ -47,7 +47,7 @@ export const LoggedInUser: Story = () => (
     </WebStory>
 )
 
-export const Disabled: Story = () => (
+export const Disabled: StoryFn = () => (
     <WebStory>
         {() => (
             <ResetPasswordPage
@@ -58,7 +58,7 @@ export const Disabled: Story = () => (
     </WebStory>
 )
 
-export const Dotcom: Story = () => (
+export const Dotcom: StoryFn = () => (
     <WebStory>
         {() => (
             <ResetPasswordPage

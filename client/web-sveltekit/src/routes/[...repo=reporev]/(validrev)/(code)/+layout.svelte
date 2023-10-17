@@ -24,7 +24,9 @@
             }
         },
         restore(data) {
-            bottomPanel.restore(data.bottomPanel)
+            if (data) {
+                bottomPanel.restore(data.bottomPanel)
+            }
         },
     }
 

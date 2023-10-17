@@ -1,4 +1,4 @@
-import type { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -9,7 +9,7 @@ import { hiddenChangesetApplyPreviewStories } from './storyData'
 
 import styles from './PreviewList.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
 )
 const config: Meta = {
@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-const Template: Story<{ node: HiddenChangesetApplyPreviewFields }> = ({ node }) => (
+const Template: StoryFn<{ node: HiddenChangesetApplyPreviewFields }> = ({ node }) => (
     <WebStory>{props => <HiddenChangesetApplyPreviewNode {...props} node={node} />}</WebStory>
 )
 
