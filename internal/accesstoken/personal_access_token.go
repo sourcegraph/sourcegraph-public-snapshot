@@ -17,7 +17,7 @@ import (
 const PersonalAccessTokenPrefix = "sgp_"
 const LocalInstanceIdentifier = "local"
 const InstanceIdentifierLength = 16
-const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public, as we are not relying on HMAC for authentication
+const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public as we are using HMAC for key derivation, not for authentication
 
 var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{16}_|local_)?([a-fA-F0-9]{40})$")
 
@@ -38,7 +38,7 @@ func ParsePersonalAccessToken(token string) (string, error) {
 
 // GeneratePersonalAccessToken generates a new personal access token.
 // It returns the full token string, and the byte representation of the access token.
-// Personal access tokens have the form: sgph_<instance-identifier>_<token>
+// Personal access tokens have the form: sgp_<instance-identifier>_<token>
 func GeneratePersonalAccessToken(licenseKey string, isDevInstance bool) (string, [20]byte, error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
