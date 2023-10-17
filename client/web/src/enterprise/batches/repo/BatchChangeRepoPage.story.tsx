@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -89,7 +89,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof _queryExternalChangesetWi
         },
     })
 
-const decorator: DecoratorFn = story => <div className="p-3 container web-content">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container web-content">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/repo/BatchChangeRepoPage',
@@ -104,7 +104,7 @@ const config: Meta = {
 
 export default config
 
-export const ListOfBatchChanges: Story = () => (
+export const ListOfBatchChanges: StoryFn = () => (
     <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage
@@ -122,7 +122,7 @@ export const ListOfBatchChanges: Story = () => (
 
 ListOfBatchChanges.storyName = 'List of batch changes'
 
-export const NoBatchChanges: Story = () => (
+export const NoBatchChanges: StoryFn = () => (
     <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage

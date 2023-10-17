@@ -1,4 +1,4 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -23,7 +23,7 @@ import {
     getLicenseAndUsageInfoResult,
 } from './testData'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/list/BatchChangeListPage',
@@ -90,7 +90,7 @@ interface Args {
     isApp: boolean
 }
 
-export const ListOfBatchChanges: Story<Args> = args => {
+export const ListOfBatchChanges: StoryFn<Args> = args => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -127,7 +127,7 @@ ListOfBatchChanges.args = {
 
 ListOfBatchChanges.storyName = 'List of batch changes'
 
-export const ListOfBatchChangesSpecificNamespace: Story = () => {
+export const ListOfBatchChangesSpecificNamespace: StoryFn = () => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -151,7 +151,7 @@ export const ListOfBatchChangesSpecificNamespace: Story = () => {
 
 ListOfBatchChangesSpecificNamespace.storyName = 'List of batch changes, for a specific namespace'
 
-export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => {
+export const ListOfBatchChangesServerSideExecutionEnabled: StoryFn = () => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -179,7 +179,7 @@ export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => {
 
 ListOfBatchChangesServerSideExecutionEnabled.storyName = 'List of batch changes, server-side execution enabled'
 
-export const LicensingNotEnforced: Story = () => {
+export const LicensingNotEnforced: StoryFn = () => {
     updateJSContextBatchChangesLicense('limited')
 
     return (
@@ -202,7 +202,7 @@ export const LicensingNotEnforced: Story = () => {
 
 LicensingNotEnforced.storyName = 'Licensing not enforced'
 
-export const NoBatchChanges: Story = () => {
+export const NoBatchChanges: StoryFn = () => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -225,7 +225,7 @@ export const NoBatchChanges: Story = () => {
 
 NoBatchChanges.storyName = 'No batch changes'
 
-export const AllBatchChangesTabEmpty: Story = () => {
+export const AllBatchChangesTabEmpty: StoryFn = () => {
     updateJSContextBatchChangesLicense('full')
 
     return (

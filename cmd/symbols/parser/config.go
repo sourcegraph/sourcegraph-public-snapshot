@@ -27,7 +27,7 @@ func init() {
 	// Validation only: Do NOT set any values in the configuration in this function.
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		configuration := c.SiteConfig().SyntaxHighlighting
-		if configuration == nil {
+		if configuration == nil || configuration.Symbols == nil {
 			return nil
 		}
 
