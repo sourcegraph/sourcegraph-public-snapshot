@@ -47,6 +47,7 @@ code-intel-extensions.json
 pnpm-lock.yaml
 node_modules/
 client/web-sveltekit/.svelte-kit
+client/web-sveltekit/build
 *.module.scss.d.ts
 .vscode-test
 

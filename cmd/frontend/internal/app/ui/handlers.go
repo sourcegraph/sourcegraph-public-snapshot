@@ -322,6 +322,11 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 			return nil // request was handled
 		}
 		common.Title = title(common, r)
+
+		if useSvelteKit(r) {
+			return renderSvelteKit(w)
+		}
+
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -471,6 +476,11 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 		}
 
 		common.Title = title(common, r)
+
+		if useSvelteKit(r) {
+			return renderSvelteKit(w)
+		}
+
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -523,6 +533,11 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 			return nil
 		}
+
+		if useSvelteKit(r) {
+			return renderSvelteKit(w)
+		}
+
 		return renderTemplate(w, "app.html", common)
 	}
 }
