@@ -1684,6 +1684,7 @@ ts_project(
         "src/tour/hooks.ts",
         "src/tracking/TelemetricLink.tsx",
         "src/tracking/eventLogger.ts",
+        "src/tracking/eventRecorder.ts",
         "src/tracking/services/serverAdminWrapper.tsx",
         "src/tracking/util.ts",
         "src/types/fzy.js/index.d.ts",
@@ -1783,6 +1784,7 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/@sourcegraph/telemetry",
         "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep

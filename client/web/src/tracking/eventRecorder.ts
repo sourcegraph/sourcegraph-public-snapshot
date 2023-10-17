@@ -1,4 +1,3 @@
-import { f } from '@tauri-apps/api/event-2a9960e7'
 import cookies, { type CookieAttributes } from 'js-cookie'
 import { EMPTY, fromEvent, merge, type Observable } from 'rxjs'
 import { catchError, map, publishReplay, refCount, take } from 'rxjs/operators'
