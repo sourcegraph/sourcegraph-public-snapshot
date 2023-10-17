@@ -1191,7 +1191,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 		for _, filter := range opt.TopicFilters {
 			// This condition checks that the requested topics are contained in
 			// the repo's metadata. This is designed to work with the
-			// idx_repo_github_topics index.
+			// idx_repo_github_topics and idx_repo_gitlab_topics index
 			//
 			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
 			// syntax instead of JSONB literals so that we can use SQL
