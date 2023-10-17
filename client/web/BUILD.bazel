@@ -14,7 +14,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
-# gazelle:js_resolve @sourcegraph/telemetry package.json
 
 # Non-ts imports
 # gazelle:js_ignore_imports **/*.batch.yaml
@@ -27,7 +26,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 # gazelle:js_ignore_imports src/jscontext
 # gazelle:js_ignore_imports src/stores/navbarSearchQueryState
 # gazelle:js_ignore_imports ../../schema.json
-# gazelle:js_ignore_imports ../../package.json
 
 npm_link_all_packages(name = "node_modules")
 
@@ -1760,8 +1758,8 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
-        ":package.json",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
