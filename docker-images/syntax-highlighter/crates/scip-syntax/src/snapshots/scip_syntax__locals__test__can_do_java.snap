@@ -3,10 +3,10 @@ source: crates/scip-syntax/src/locals.rs
 expression: dumped
 ---
   package com.hello;
-
+  
   import com.hello1.TextContainer;
   import java.util.ArrayList;
-
+  
   public class Text implements TextContainer {
 //             ^^^^ definition local 7
       public Text(String chars) {
@@ -15,7 +15,7 @@ expression: dumped
           super(chars);
 //              ^^^^^ reference local 8
       }
-
+  
       public Text append(String chars, int num) {
 //           ^^^^ reference local 7
 //                ^^^^^^ definition local 10
@@ -26,19 +26,19 @@ expression: dumped
 //                             ^^^^^ reference local 11
 //                                     ^^^^^ reference local 11
       }
-
+  
       public record Person (String name, String address) {}
 //                  ^^^^^^ definition local 13
 //                                 ^^^^ definition local 14
 //                                              ^^^^^^^ definition local 15
-
+  
       enum Flags {
 //         ^^^^^ definition local 16
           Flags() {
 //        ^^^^^ reference local 16
               this(1);
           }
-
+  
           Flags(int bits) {
 //                  ^^^^ definition local 9
               this.bits = bits;
@@ -46,12 +46,12 @@ expression: dumped
 //                        ^^^^ reference local 9
           }
       }
-
+  
       protected String toStringAttributes() {
 //                     ^^^^^^^^^^^^^^^^^^ definition local 1
           return "text=" + getChars();
       }
-
+  
       public void print(int i) {
 //                ^^^^^ definition local 2
 //                          ^ definition local 3
@@ -65,10 +65,10 @@ expression: dumped
           System.out.println(i);
 //                           ^ reference local 3
       }
-
+  
       public interface Hello {
 //                     ^^^^^ definition local 18
-
+  
           public void func1(Hello t) {
 //                    ^^^^^ definition local 19
 //                          ^^^^^ reference local 18
@@ -77,9 +77,9 @@ expression: dumped
 //                ^^^^ definition local 21
 //                       ^ reference local 20
           }
-
+  
       }
-
+  
       public void blocks(int num) {
 //                ^^^^^^ definition local 4
 //                           ^^^ definition local 5
@@ -92,7 +92,7 @@ expression: dumped
               }
           }
       }
-
+  
       public void test() {
 //                ^^^^ definition local 6
           ArrayList<Integer> numbers = new ArrayList<Integer>();
@@ -109,13 +109,14 @@ expression: dumped
 //        ^^^^^^^ reference local 24
 //                          ^ definition local 25
 //                                                     ^ reference local 25
-
+  
           for(Integer num: numbers) {
 //                    ^^^ definition local 26
 //                         ^^^^^^^ reference local 24
               System.out.println(num);
 //                               ^^^ reference local 26
           }
-
+  
       }
   }
+
