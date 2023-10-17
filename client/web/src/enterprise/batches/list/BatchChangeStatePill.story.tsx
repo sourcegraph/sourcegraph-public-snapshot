@@ -1,6 +1,6 @@
 import React from 'react'
 
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { upperFirst } from 'lodash'
 
 import { H3 } from '@sourcegraph/wildcard'
@@ -10,7 +10,7 @@ import { BatchChangeState, BatchSpecState } from '../../../graphql-operations'
 
 import { BatchChangeStatePill, type BatchChangeStatePillProps } from './BatchChangeStatePill'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/list',
@@ -44,7 +44,7 @@ const STATE_COMBINATIONS: BatchChangeStatePillProps[] = Object.values(BatchChang
     ])
 )
 
-export const BatchChangeStatePillStory: Story = () => (
+export const BatchChangeStatePillStory: StoryFn = () => (
     <WebStory>
         {props => (
             <div className="d-flex flex-column align-items-start">

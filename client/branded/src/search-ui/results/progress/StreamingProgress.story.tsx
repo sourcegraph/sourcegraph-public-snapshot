@@ -1,6 +1,7 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { spy } from 'sinon'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H2 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
@@ -33,6 +34,7 @@ const render = () => (
                     skipped: [],
                 }}
                 state="loading"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -48,6 +50,7 @@ const render = () => (
                     trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
                 }}
                 state="loading"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
                 showTrace={true}
             />
@@ -64,6 +67,7 @@ const render = () => (
                     skipped: [],
                 }}
                 state="loading"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -79,6 +83,7 @@ const render = () => (
                     skipped: [],
                 }}
                 state="complete"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -95,6 +100,7 @@ const render = () => (
                     trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
                 }}
                 state="complete"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
                 showTrace={true}
             />
@@ -132,6 +138,7 @@ const render = () => (
                     ],
                 }}
                 state="complete"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -168,6 +175,7 @@ const render = () => (
                     ],
                 }}
                 state="loading"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -214,6 +222,7 @@ const render = () => (
                     ],
                 }}
                 state="complete"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
             />
         </div>
@@ -262,6 +271,7 @@ const render = () => (
                 }}
                 state="complete"
                 onSearchAgain={onSearchAgain}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 showTrace={true}
             />
         </div>
@@ -308,12 +318,13 @@ const render = () => (
                     ],
                 }}
                 state="loading"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 onSearchAgain={onSearchAgain}
             />
         </div>
     </>
 )
 
-export const StreamingProgressStory: Story = () => <BrandedStory>{() => <>{render()}</>}</BrandedStory>
+export const StreamingProgressStory: StoryFn = () => <BrandedStory>{() => <>{render()}</>}</BrandedStory>
 
 StreamingProgressStory.storyName = 'StreamingProgress'

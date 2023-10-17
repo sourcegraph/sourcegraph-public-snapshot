@@ -23,12 +23,12 @@ const formatTimeOptions = {
 
 function createHistorySuggestionSource(
     source: () => RecentSearch[],
-    submitQuery: (query: string) => void
+    submitQuery: (query: string, view: EditorView) => void
 ): Source['query'] {
     const applySuggestion = (option: Option, view: EditorView): void => {
         setMode(view, null)
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: option.label } })
-        submitQuery(option.label)
+        submitQuery(option.label, view)
     }
 
     return state => {
@@ -64,7 +64,7 @@ function createHistorySuggestionSource(
 export function searchHistoryExtension(config: {
     mode: ModeDefinition
     source: () => RecentSearch[]
-    submitQuery: (query: string) => void
+    submitQuery: (query: string, view: EditorView) => void
 }): Extension {
     return [
         modesFacet.of([config.mode]),

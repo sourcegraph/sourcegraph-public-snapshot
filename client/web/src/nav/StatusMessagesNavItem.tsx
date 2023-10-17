@@ -338,6 +338,20 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                             />
                         )
                     }
+                    if (status.__typename === 'GitserverDiskThresholdReached') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="disk-threshold-reached"
+                                title="Gitserver disk threshold reached"
+                                message={status.message}
+                                messageHint="Search and cloning may be impacted until disk usage is reduced."
+                                linkTo="/site-admin/gitservers"
+                                linkText="Manage Gitservers"
+                                linkOnClick={toggleIsOpen}
+                                entryType="warning"
+                            />
+                        )
+                    }
                     return null
                 })}
             </>

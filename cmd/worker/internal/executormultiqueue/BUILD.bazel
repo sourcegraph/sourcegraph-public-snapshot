@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "executormultiqueue",
+    srcs = ["multiqueue_metrics_reporter.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/executormultiqueue",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/internal/batches",
+        "//cmd/worker/internal/executorqueue",
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/codeintel/autoindexing",
+        "//internal/env",
+        "//internal/executor/types",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/workerutil/dbworker/store",
+    ],
+)

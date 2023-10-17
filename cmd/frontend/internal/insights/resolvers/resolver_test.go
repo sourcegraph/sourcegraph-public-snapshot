@@ -23,7 +23,7 @@ func TestResolver_Insights(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	resolver := newWithClock(insightsDB, postgres, clock)
 
 	insightsConnection, err := resolver.InsightViews(ctx, nil)

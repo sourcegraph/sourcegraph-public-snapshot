@@ -149,17 +149,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			redis: redispool.Cache,
 		},
 		&httpapi.Config{
-			RateLimitNotifier:              rateLimitNotifier,
-			AnthropicAccessToken:           config.Anthropic.AccessToken,
-			AnthropicAllowedModels:         config.Anthropic.AllowedModels,
-			AnthropicMaxTokensToSample:     config.Anthropic.MaxTokensToSample,
-			AnthropicAllowedPromptPatterns: config.Anthropic.AllowedPromptPatterns,
-			OpenAIAccessToken:              config.OpenAI.AccessToken,
-			OpenAIOrgID:                    config.OpenAI.OrgID,
-			OpenAIAllowedModels:            config.OpenAI.AllowedModels,
-			FireworksAccessToken:           config.Fireworks.AccessToken,
-			FireworksAllowedModels:         config.Fireworks.AllowedModels,
-			EmbeddingsAllowedModels:        config.AllowedEmbeddingsModels,
+			RateLimitNotifier:               rateLimitNotifier,
+			AnthropicAccessToken:            config.Anthropic.AccessToken,
+			AnthropicAllowedModels:          config.Anthropic.AllowedModels,
+			AnthropicMaxTokensToSample:      config.Anthropic.MaxTokensToSample,
+			AnthropicAllowedPromptPatterns:  config.Anthropic.AllowedPromptPatterns,
+			AnthropicRequestBlockingEnabled: config.Anthropic.RequestBlockingEnabled,
+			OpenAIAccessToken:               config.OpenAI.AccessToken,
+			OpenAIOrgID:                     config.OpenAI.OrgID,
+			OpenAIAllowedModels:             config.OpenAI.AllowedModels,
+			FireworksAccessToken:            config.Fireworks.AccessToken,
+			FireworksAllowedModels:          config.Fireworks.AllowedModels,
+			EmbeddingsAllowedModels:         config.AllowedEmbeddingsModels,
 		})
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
@@ -300,8 +301,8 @@ type dotcomPromptRecorder struct {
 var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
-	// Only log prompts from Sourcegraph.com: https://sourcegraph.com/site-admin/dotcom/product/subscriptions/d3d2b638-d0a2-4539-a099-b36860b09819
-	if actor.FromContext(ctx).ID != "d3d2b638-d0a2-4539-a099-b36860b09819" {
+	// Only log prompts from Sourcegraph.com
+	if !actor.FromContext(ctx).IsDotComActor() {
 		return errors.New("attempted to record prompt from non-dotcom actor")
 	}
 	// Must expire entries

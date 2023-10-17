@@ -31,16 +31,7 @@ export interface SearchBoxProps
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
-        Pick<
-            LazyQueryInputProps,
-            | 'autoFocus'
-            | 'onFocus'
-            | 'onSubmit'
-            | 'interpretComments'
-            | 'onChange'
-            | 'onCompletionItemSelected'
-            | 'applySuggestionsOnEnter'
-        > {
+        Pick<LazyQueryInputProps, 'autoFocus' | 'onFocus' | 'onSubmit' | 'interpretComments' | 'onChange'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
@@ -54,9 +45,6 @@ export interface SearchBoxProps
 
     /** Don't show search help button */
     hideHelpButton?: boolean
-
-    /** Set in JSContext only available to the web app. */
-    isExternalServicesUserModeAll?: boolean
 
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void
@@ -188,13 +176,11 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         interpretComments={props.interpretComments}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
-                        onCompletionItemSelected={props.onCompletionItemSelected}
                         onFocus={props.onFocus}
                         onSubmit={props.onSubmit}
                         patternType={props.patternType}
                         queryState={queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                         searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
                     />

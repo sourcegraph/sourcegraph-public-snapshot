@@ -160,10 +160,10 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ### Other
 
-- [Telemetry](background-information/telemetry.md)
+- [Telemetry](background-information/telemetry/index.md)
 - [Adding, changing and debugging pings](background-information/adding_ping_data.md)
-- [Event level data usage pipeline](background-information/data-usage-pipeline.md)
-- [Adding, changing and debugging user event data](background-information/adding_event_level_data.md)
+- [DEPRECATED: Event level data usage pipeline](background-information/data-usage-pipeline.md)
+- [DEPRECATED: Adding, changing and debugging user event data](background-information/adding_event_level_data.md)
 - [Deploy Sourcegraph with Helm chart (BETA)](../../../admin/deploy/kubernetes/helm.md)
 - [GitHub API oddities](background-information/github-api-oddities.md)
 
@@ -193,7 +193,6 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### Documentation
 
 - [Developing the product documentation](how-to/documentation_implementation.md)
-- [Architecture Decision Records (ADRs)](adr/index.md)
 
 ### Executors
 

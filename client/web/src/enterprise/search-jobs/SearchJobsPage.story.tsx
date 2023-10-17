@@ -1,21 +1,24 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
 import {
-    GetUsersListResult,
-    GetUsersListVariables,
+    type GetUsersListResult,
+    type GetUsersListVariables,
     SearchJobsOrderBy,
-    SearchJobsResult,
+    type SearchJobsResult,
     SearchJobState,
-    SearchJobsVariables,
+    type SearchJobsVariables,
 } from '../../graphql-operations'
 
 import { SEARCH_JOBS_QUERY, SearchJobsPage } from './SearchJobsPage'
 import { GET_USERS_QUERY } from './UsersPicker'
+
+type SearchJob = SearchJobsResult['searchJobs']['nodes'][number]
 
 const defaultStory: Meta = {
     title: 'web/search-jobs',
@@ -169,10 +172,10 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                             avatarURL: null,
                         },
                     },
-                ],
+                ] as SearchJob[],
                 totalCount: 5,
                 pageInfo: {
-                    __typename: 'PageInfo',
+                    __typename: 'BidirectionalPageInfo',
                     hasNextPage: false,
                     endCursor: null,
                     startCursor: null,
@@ -268,8 +271,8 @@ const USER_PICKER_QUERY_MOCK: MockedResponse<GetUsersListResult, GetUsersListVar
     },
 }
 
-export const SearchJobsListPage: Story = () => (
+export const SearchJobsListPage: StoryFn = () => (
     <MockedTestProvider mocks={[SEARCH_JOBS_MOCK, USER_PICKER_QUERY_MOCK]}>
-        <SearchJobsPage isAdmin={false} />
+        <SearchJobsPage isAdmin={false} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </MockedTestProvider>
 )

@@ -370,3 +370,7 @@
 /cody/overview/install-vscode#requirements /cody/overview/install-vscode#prerequisites 308
 /cody/overview/install-vscode#optional-enable-code-graph-context-for-context-aware-answers /cody/overview/install-vscode#enable-code-graph-context-for-context-aware-answers-optional 308
 
+# Cody for Enterprise redirects
+/cody/overview/enable-cody-enterprise#using-a-third-party-llm-provider-directly /cody/overview/enable-cody-enterprise#using-a-third-party-llm-provider 308
+/cody/overview/enable-cody-enterprise#turning-cody-on-only-for-some-users /cody/overview/enable-cody-enterprise#enable-cody-only-for-some-users 308
+/cody/overview/enable-cody-enterprise#turning-cody-off /cody/overview/enable-cody-enterprise#disable-cody 308

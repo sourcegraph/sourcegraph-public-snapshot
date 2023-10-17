@@ -24,7 +24,7 @@ func TestExecutorsList(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
@@ -147,7 +147,7 @@ func TestExecutorsGetByID(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
@@ -211,7 +211,7 @@ func TestExecutorsGetByHostname(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
@@ -277,7 +277,7 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
@@ -325,7 +325,7 @@ func TestExecutorsUpsertHeartbeat(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	tests := []struct {

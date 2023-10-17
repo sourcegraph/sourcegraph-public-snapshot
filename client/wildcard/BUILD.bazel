@@ -109,6 +109,12 @@ copy_to_bin(
     visibility = ["//visibility:public"],
 )
 
+copy_to_bin(
+    name = "global-style-sources",
+    srcs = glob(["src/global-styles/**/*.scss"]),
+    visibility = ["//client/web-sveltekit:__pkg__"],
+)
+
 ts_project(
     name = "wildcard_lib",
     srcs = [
@@ -430,6 +436,7 @@ ts_project(
         "//:node_modules/@reach/tabs",
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@react-aria/live-announcer",
+        "//:node_modules/@storybook/addon-designs",
         "//:node_modules/@testing-library/react",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/d3-format",
@@ -473,7 +480,6 @@ ts_project(
         "//:node_modules/react-router-dom",
         "//:node_modules/react-spring",
         "//:node_modules/rxjs",
-        "//:node_modules/storybook-addon-designs",
         "//:node_modules/storybook-dark-mode",
         "//:node_modules/ts-key-enum",
         "//:node_modules/use-callback-ref",

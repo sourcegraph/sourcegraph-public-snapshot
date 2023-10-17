@@ -19,7 +19,7 @@ import (
 func Test_Handle(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	err := db.Repos().Create(ctx, &types.Repo{Name: "fakerepo", ID: 1})
@@ -58,7 +58,7 @@ func Test_Handle(t *testing.T) {
 func Test_JanitorTable(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := basestore.NewWithHandle(db.Handle())

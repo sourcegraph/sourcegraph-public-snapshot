@@ -6,7 +6,7 @@ import shallow from 'zustand/shallow'
 import { SearchBox, Toggles } from '@sourcegraph/branded'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Form } from '@sourcegraph/wildcard'
 
@@ -27,7 +27,6 @@ interface Props
     isSourcegraphDotCom: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    isLightTheme: boolean
 }
 
 const selectQueryState = ({
@@ -53,8 +52,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         useNavbarQueryState(selectQueryState, shallow)
 
     const [experimentalQueryInput] = useExperimentalQueryInput()
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const { recentSearches } = useRecentSearches()
 
@@ -95,7 +92,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     queryState={queryState}
                     onChange={setQueryState}
                     onSubmit={onSubmit}
-                    isLightTheme={props.isLightTheme}
                     platformContext={props.platformContext}
                     authenticatedUser={props.authenticatedUser}
                     fetchSearchContexts={props.fetchSearchContexts}
@@ -130,7 +126,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             <SearchBox
                 {...props}
                 autoFocus={false}
-                applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={props.searchContextsEnabled}
                 showSearchContextManagement={true}
                 caseSensitive={searchCaseSensitivity}
@@ -144,7 +139,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 onSubmit={onSubmit}
                 submitSearchOnToggle={submitSearchOnChange}
                 submitSearchOnSearchContextChange={submitSearchOnChange}
-                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                 hideHelpButton={false}
                 showSearchHistory={true}

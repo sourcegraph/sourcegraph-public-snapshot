@@ -25,7 +25,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -57,7 +57,7 @@ func TestSubRepoPermsDeleteByUser(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -92,7 +92,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -133,7 +133,7 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -181,7 +181,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -264,7 +264,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -342,7 +342,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -396,8 +396,8 @@ func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 	qs := []string{
 		`INSERT INTO users(username ) VALUES ('alice')`,
 
-		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
-		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
+		`INSERT INTO external_services(id, display_name, kind, config,  last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', NOW() + INTERVAL '10min')`,
+		`INSERT INTO external_services(id, display_name, kind, config,  last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', NOW() + INTERVAL '10min')`,
 
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(1, 'github.com/foo/bar', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==', 'github', 'https://github.com/')`,
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(2, 'github.com/foo/baz', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`,

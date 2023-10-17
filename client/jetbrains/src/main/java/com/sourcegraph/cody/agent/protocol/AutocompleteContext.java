@@ -1,7 +1,9 @@
 package com.sourcegraph.cody.agent.protocol;
 
+import org.jetbrains.annotations.Nullable;
+
 public class AutocompleteContext {
-  public String triggerKind;
+  @Nullable public String triggerKind;
 
   public AutocompleteContext withInvokeTriggerKind() {
     this.triggerKind = "invoke";

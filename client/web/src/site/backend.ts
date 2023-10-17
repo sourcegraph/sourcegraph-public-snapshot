@@ -5,6 +5,6 @@ import type { ApolloClient } from '@apollo/client'
  */
 export async function refreshSiteFlags(client: ApolloClient<{}>): Promise<void> {
     await client.refetchQueries({
-        include: ['GlobalAlertsSiteFlags', 'UserSettingsEmailsSiteFlags'],
+        include: ['GlobalAlertsSiteFlags', 'UserSettingsEmailsSiteFlags', 'SiteConfig'],
     })
 }

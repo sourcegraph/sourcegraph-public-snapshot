@@ -22,7 +22,7 @@ class CodyAccountListModel(private val project: Project) :
 
   override fun addAccount(parentComponent: JComponent, point: RelativePoint?) {
     val group = actionManager.getAction("Cody.Accounts.AddAccount") as ActionGroup
-    val popup = actionManager.createActionPopupMenu("AddCodyAccountWithToken", group)
+    val popup = actionManager.createActionPopupMenu("LogInToSourcegraphAction", group)
 
     val actualPoint = point ?: RelativePoint.getCenterOf(parentComponent)
     popup.setTargetComponent(parentComponent)
@@ -33,18 +33,17 @@ class CodyAccountListModel(private val project: Project) :
     val authData =
         if (!account.isCodyApp()) {
           val token = newCredentials[account] ?: getOldToken(account)
-          CodyAuthenticationManager.getInstance()
-              .login(
-                  project,
-                  parentComponent,
-                  CodyLoginRequest(
-                      login = account.name,
-                      server = account.server,
-                      token = token,
-                      customRequestHeaders = account.server.customRequestHeaders,
-                      title = "Edit Sourcegraph Account",
-                      loginButtonText = "Save account",
-                  ))
+          CodyAuthenticationManager.instance.login(
+              project,
+              parentComponent,
+              CodyLoginRequest(
+                  login = account.name,
+                  server = account.server,
+                  token = token,
+                  customRequestHeaders = account.server.customRequestHeaders,
+                  title = "Edit Sourcegraph Account",
+                  loginButtonText = "Save account",
+              ))
         } else {
           val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
           if (localAppAccessToken != null) {
@@ -64,10 +63,18 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   private fun getOldToken(account: CodyAccount) =
-      CodyAuthenticationManager.getInstance().getTokenForAccount(account)
+      CodyAuthenticationManager.instance.getTokenForAccount(account)
 
-  override fun addAccount(server: SourcegraphServerPath, login: String, token: String) {
-    val account = CodyAccount.create(login, server)
+  override fun addAccount(
+      server: SourcegraphServerPath,
+      login: String,
+      displayName: String?,
+      token: String
+  ) {
+    val account = CodyAccount.create(login, displayName, server)
+    if (accountsListModel.isEmpty) {
+      activeAccount = account
+    }
     accountsListModel.add(account)
     newCredentials[account] = token
     notifyCredentialsChanged(account)

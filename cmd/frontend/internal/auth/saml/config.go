@@ -148,7 +148,7 @@ func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 
 		// Derive default issuer from externalURL.
 		tmp := *pc
-		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().ExternalURL, "/") + path.Join(authPrefix, "metadata")
+		tmp.ServiceProviderIssuer = strings.TrimSuffix(externalURL, "/") + path.Join(authPrefix, "metadata")
 		return &tmp
 	}
 	return pc

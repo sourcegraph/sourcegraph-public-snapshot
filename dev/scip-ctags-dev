@@ -2,7 +2,8 @@
 
 # This script is a wrapper around `scip-ctags`.
 #
-# It checks if scip-ctags has been installed through ./dev/scip-ctags-install.sh or falls back to a dockerized version.
+# It checks if scip-ctags has been installed through ./dev/scip-ctags-install.sh or prints an error and explain
+# how to install it.
 #
 # To use your own `scip-ctags` binary instead of this wrapper in your local dev server, use
 # `SCIP_CTAGS_COMMAND=path/to/ctags sg start`.
@@ -10,13 +11,10 @@
 root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 TARGET=$("$root/dev/scip-ctags-install.sh" which)
 
-if [ ! -f "${TARGET}" ]; then 
-  exec docker run --rm -i \
-    -a stdin -a stdout -a stderr \
-    --user guest \
-    --name=scip-ctags-$$ \
-    --entrypoint /usr/local/bin/scip-ctags \
-    scip-ctags "$@"
-else 
+if [ ! -f "${TARGET}" ]; then
+    echo "scip-ctags is not installed, please run ./dev/scip-ctags-install."
+    echo "Alternatively you can use SCIP_CTAGS_COMMAND=path/to/scip-ctags to use your own binary."
+    exit 1
+else
   ${TARGET} "$@"
 fi

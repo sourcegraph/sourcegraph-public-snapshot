@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { Subject } from 'rxjs'
 
 import { ExternalServiceSyncJobState } from '../../graphql-operations'
@@ -6,7 +6,7 @@ import { WebStory } from '../WebStory'
 
 import { ExternalServiceSyncJobNode } from './ExternalServiceSyncJobNode'
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
 
 const config: Meta = {
     title: 'web/External services/ExternalServiceSyncJobNode',
@@ -18,7 +18,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <div>
         {Object.values(ExternalServiceSyncJobState).map(state => (
             <ExternalServiceSyncJobNode

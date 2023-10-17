@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { type Observable, of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -9,7 +9,7 @@ import { filterPublishableIDs } from '../utils'
 import { PreviewList } from './PreviewList'
 import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/preview/PreviewList',
@@ -18,8 +18,10 @@ const config: Meta = {
         publicationStateSet: {
             name: 'publication state set by spec file',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        publicationStateSet: false,
     },
 }
 
@@ -27,7 +29,7 @@ export default config
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-export const DefaultStory: Story = args => {
+export const DefaultStory: StoryFn = args => {
     const publicationStateSet = args.publicationStateSet
 
     const nodes: ChangesetApplyPreviewFields[] = [

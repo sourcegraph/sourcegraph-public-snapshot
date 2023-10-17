@@ -20,7 +20,7 @@ import (
 func TestTopRepositoriesToConfigure(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
@@ -71,7 +71,7 @@ func TestTopRepositoriesToConfigure(t *testing.T) {
 func TestRepositoryIDsWithConfiguration(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
@@ -118,7 +118,7 @@ func TestRepositoryIDsWithConfiguration(t *testing.T) {
 func TestGetLastIndexScanForRepository(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	ts, err := store.GetLastIndexScanForRepository(ctx, 50)

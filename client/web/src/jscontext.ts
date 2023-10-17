@@ -51,7 +51,6 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'settingsURL'
     | 'viewerCanAdminister'
     | 'tosAccepted'
-    | 'searchable'
     | 'organizations'
     | 'session'
     | 'emails'
@@ -206,9 +205,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * in Cody App.
      */
     srcServeGitUrl: string
-
-    /** Whether users are allowed to add their own code and at what permission level. */
-    externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]

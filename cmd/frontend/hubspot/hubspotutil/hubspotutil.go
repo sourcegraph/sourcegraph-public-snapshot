@@ -41,6 +41,9 @@ var SelfHostedSiteInitEventID = "000010399089"
 // CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
 var CodyClientInstalledEventID = "000018021981"
 
+// NewCodyClientInstalledEventID is the HubSpot ID for the new event which support custom properties.
+var NewCodyClientInstalledEventID = "pe2762526_codyinstall"
+
 // AppDownloadButtonClickedEventID is the HubSpot Event ID for when a user clicks on a button to download Cody App.
 var AppDownloadButtonClickedEventID = "000019179879"
 
@@ -78,13 +81,34 @@ func SyncUser(email, eventID string, contactParams *hubspot.ContactProperties) {
 
 	// Update or create user contact information in HubSpot, and we want to sync the
 	// contact independent of the request lifecycle.
-	err := syncHubSpotContact(context.Background(), email, eventID, contactParams)
+	err := syncHubSpotContact(context.Background(), email, eventID, contactParams, map[string]string{})
 	if err != nil {
 		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
 	}
 }
 
-func syncHubSpotContact(ctx context.Context, email, eventID string, contactParams *hubspot.ContactProperties) error {
+// SyncUserWithEventParams handles creating or syncing a user profile in HubSpot, and if provided,
+// logs a user event along with the event params.
+func SyncUserWithEventParams(email, eventID string, contactParams *hubspot.ContactProperties, eventParams map[string]string) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("panic in tracking.SyncUser: %s", err)
+		}
+	}()
+	// If the user no API token present or on-prem environment, don't do any tracking
+	if !HasAPIKey() || !envvar.SourcegraphDotComMode() {
+		return
+	}
+
+	// Update or create user contact information in HubSpot, and we want to sync the
+	// contact independent of the request lifecycle.
+	err := syncHubSpotContact(context.Background(), email, eventID, contactParams, eventParams)
+	if err != nil {
+		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
+	}
+}
+
+func syncHubSpotContact(ctx context.Context, email, eventID string, contactParams *hubspot.ContactProperties, eventParams map[string]string) error {
 	if email == "" {
 		return errors.New("user must have a valid email address")
 	}
@@ -105,7 +129,7 @@ func syncHubSpotContact(ctx context.Context, email, eventID string, contactParam
 
 	// Log the user event
 	if eventID != "" {
-		err = c.LogEvent(ctx, email, eventID, map[string]string{})
+		err = c.LogEvent(ctx, email, eventID, eventParams)
 		if err != nil {
 			return errors.Wrap(err, "LogEvent")
 		}

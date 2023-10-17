@@ -44,10 +44,7 @@ All client tests (of all types such as jest and mocha) can be invoked by `bazel 
 The primary `client/web` bundle targets are:
 * `//client/web:bundle`
 * `//client/web:bundle-dev`
-* `//client/web:bundle-enterprise`
 See `client/web/BUILD`.
-
-The `client/web` devserver can be run using `bazel run //client/web:devserver`
 
 ## Rule configuration
 

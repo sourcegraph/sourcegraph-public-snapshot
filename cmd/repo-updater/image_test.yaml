@@ -6,12 +6,13 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-  - name: "p4 is runnable"
-    command: "p4"
-    args:
-      - -h
   - name: "coursier is runnable"
     command: "coursier"
+  # TODO: This test can be removed after the 5.3 release
+  # - name: "p4 is runnable"
+  #   command: "p4"
+  #   args:
+  #     - -h
 
   - name: "not running as root"
     command: "/usr/bin/id"

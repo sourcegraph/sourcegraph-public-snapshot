@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -12,6 +12,6 @@ const config: Meta = {
 }
 export default config
 
-export const Default: Story = function Default() {
+export const Default: StoryFn = function Default() {
     return <WebStory>{() => <NewTeamPage />}</WebStory>
 }

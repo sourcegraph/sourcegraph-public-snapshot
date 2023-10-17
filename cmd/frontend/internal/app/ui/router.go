@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -13,7 +12,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -46,6 +45,7 @@ const (
 	routeRepoStats               = "repo-stats"
 	routeRepoOwn                 = "repo-own"
 	routeInsights                = "insights"
+	routeSearchJobs              = "search-jobs"
 	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
 	routeWelcome                 = "welcome"
@@ -138,25 +138,21 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
-	homeRouteMethods := []string{"GET"}
-	if envvar.SourcegraphDotComMode() {
-		homeRouteMethods = append(homeRouteMethods, "HEAD")
-	}
-
 	// Top-level routes.
-	r.Path("/").Methods(homeRouteMethods...).Name(routeHome)
+	r.Path("/").Methods(http.MethodGet, http.MethodHead).Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/search/cody").Methods("GET").Name(routeCodySearch)
-	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
+	r.Path("/sign-in").Methods(http.MethodGet, http.MethodHead).Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
 	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
+	r.PathPrefix("/search-jobs").Methods("GET").Name(routeSearchJobs)
 	r.PathPrefix("/setup").Methods("GET").Name(routeSetup)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
@@ -249,6 +245,8 @@ func brandNameSubtitle(titles ...string) string {
 }
 
 func initRouter(db database.DB, router *mux.Router) {
+	logger := log.Scoped("router", "")
+
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
@@ -263,6 +261,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeHome).Handler(handler(db, serveHome(db)))
 	router.Get(routeThreads).Handler(brandedNoIndex("Threads"))
 	router.Get(routeInsights).Handler(brandedIndex("Insights"))
+	router.Get(routeSearchJobs).Handler(brandedIndex("Search Jobs"))
 	router.Get(routeSetup).Handler(brandedIndex("Setup"))
 	router.Get(routeBatchChanges).Handler(brandedIndex("Batch Changes"))
 	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
@@ -398,7 +397,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient())))
+	router.Get(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient())))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -506,6 +505,8 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
+	logger := log.Scoped("ui", "logger for serveErrorNoDebug")
+
 	// Determine trace URL and log the error.
 	var traceURL string
 	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
@@ -513,15 +514,26 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
-	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
+	logger.Error(
+		"ui HTTP handler error response",
+		log.String("method", r.Method),
+		log.String("request_uri", r.URL.RequestURI()),
+		log.Int("status_code", statusCode),
+		log.Error(err),
+		log.String("error_id", errorID),
+		log.String("trace", traceURL),
+	)
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it
-	// separately (since log15 prints the escaped sequence).
+	// separately.
 	var e recoverError
 	if errors.As(err, &e) {
-		err = errors.Errorf("ui: recovered from panic %v\n\n%s", e.recover, e.stack)
-		log.Println(err)
+		err = errors.Errorf("%v\n\n%s", e.recover, e.stack)
+		logger.Error(
+			"recovered from panic",
+			log.Error(err),
+		)
 	}
 
 	var errorIfDebug string
@@ -558,7 +570,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 			Common: common,
 		})
 		if fancyErr != nil {
-			log15.Error("ui: error while serving fancy error template", "error", fancyErr)
+			logger.Error("ui: error while serving fancy error template", log.Error(fancyErr))
 			// continue onto fallback below..
 		} else {
 			return
@@ -568,7 +580,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	// Fallback to ugly / reliable error template.
 	stdErr := renderTemplate(w, "error.html", pageErrorContext)
 	if stdErr != nil {
-		log15.Error("ui: error while serving final error template", "error", stdErr)
+		logger.Error("error while serving final error template", log.Error(stdErr))
 	}
 }
 

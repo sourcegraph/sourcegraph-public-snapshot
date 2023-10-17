@@ -5,7 +5,6 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { type RouteObject, useLocation } from 'react-router-dom'
 
 import { isMacPlatform } from '@sourcegraph/common'
@@ -27,15 +26,16 @@ import { CodyLogo } from '../cody/components/CodyLogo'
 import { UpdateGlobalNav } from '../cody/update/UpdateGlobalNav'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
+import { DeveloperSettingsGlobalNavItem } from '../devsettings/DeveloperSettingsGlobalNavItem'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
+import { OnboardingChecklist } from '../onboarding'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import type { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
@@ -54,7 +54,6 @@ export interface GlobalNavbarProps
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
-        SentinelProps,
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps,
@@ -128,7 +127,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isCodyApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
-    sentinelEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
@@ -153,11 +151,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const isLicensed = !!window.context?.licenseInfo || isCodyApp // Assume licensed when running as a native app
     const showBatchChanges = props.batchChangesEnabled && isLicensed && !isCodyApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
-
-    const [isSentinelEnabled] = useFeatureFlag('sentinel')
-    // TODO: Include isSourcegraphDotCom in subsequent PR
-    // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
-    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin && !isCodyApp
+    const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -243,7 +237,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         ))}
                     <NavItem icon={CodyLogo}>
                         <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
-                            Cody AI
+                            Cody
                         </NavLink>
                     </NavItem>
                     {showSearchNotebook && (
@@ -268,13 +262,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {showSentinel && (
-                        <NavItem icon={ShieldHalfFullIcon}>
-                            <NavLink variant={navLinkVariant} to="/sentinel">
-                                Sentinel
                             </NavLink>
                         </NavItem>
                     )}
@@ -311,6 +298,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
+                    {process.env.NODE_ENV === 'development' && <DeveloperSettingsGlobalNavItem />}
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
@@ -326,9 +314,16 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && !isCodyApp && (
-                        <NavAction>
-                            <StatusMessagesNavItem isCodyApp={isCodyApp} />
-                        </NavAction>
+                        <>
+                            {isAdminOnboardingEnabled && (
+                                <NavAction>
+                                    <OnboardingChecklist />
+                                </NavAction>
+                            )}
+                            <NavAction>
+                                <StatusMessagesNavItem isCodyApp={isCodyApp} />
+                            </NavAction>
+                        </>
                     )}
                     {!props.authenticatedUser ? (
                         <>
@@ -372,7 +367,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 <div className={styles.searchNavBar}>
                     <SearchNavbarItem
                         {...props}
-                        isLightTheme={isLightTheme}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}
                         isRepositoryRelatedPage={isRepositoryRelatedPage}

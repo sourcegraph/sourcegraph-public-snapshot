@@ -20,7 +20,7 @@ public class GraphQlLogger {
 
   public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project) {
     CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
-    if (codyApplicationSettings.getAnonymousUserId() != null && project.isDisposed()) {
+    if (codyApplicationSettings.getAnonymousUserId() != null && !project.isDisposed()) {
       var event = createEvent(ConfigUtil.getServerPath(project), "CodyInstalled", new JsonObject());
       return logEvent(project, event);
     }

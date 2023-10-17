@@ -10,18 +10,21 @@ import (
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
-type Event struct {
-	Feature    eventFeature
-	Action     eventAction
-	Parameters EventParameters
-}
-
 // constString effectively requires strings to be statically defined constants.
 type constString string
 
 // EventMetadata is secure, PII-free metadata that can be attached to events.
 // Keys must be const strings.
 type EventMetadata map[constString]int64
+
+// MetadataBool returns 1 for true and 0 for false, for use in EventMetadata's
+// restricted int64 values.
+func MetadataBool(value bool) int64 {
+	if value {
+		return 1 // true
+	}
+	return 0 // 0
+}
 
 // EventBillingMetadata records metadata that attributes the event to product
 // billing categories.
@@ -62,11 +65,20 @@ func NewEventRecorder(store EventsStore) *EventRecorder {
 }
 
 // Record records a single telemetry event with the context's Sourcegraph
-// actor.
-func (r *EventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters EventParameters) error {
+// actor. Parameters are optional.
+func (r *EventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters *EventParameters) error {
 	return r.store.StoreEvents(ctx, []*telemetrygatewayv1.Event{
 		newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, feature, action, parameters),
 	})
+}
+
+type Event struct {
+	// Feature is required.
+	Feature eventFeature
+	// Action is required.
+	Action eventAction
+	// Parameters are optional.
+	Parameters EventParameters
 }
 
 // BatchRecord records a set of telemetry events with the context's
@@ -77,7 +89,7 @@ func (r *EventRecorder) BatchRecord(ctx context.Context, events ...Event) error 
 	}
 	rawEvents := make([]*telemetrygatewayv1.Event, len(events))
 	for i, e := range events {
-		rawEvents[i] = newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, e.Feature, e.Action, e.Parameters)
+		rawEvents[i] = newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, e.Feature, e.Action, &e.Parameters)
 	}
 	return r.store.StoreEvents(ctx, rawEvents)
 }

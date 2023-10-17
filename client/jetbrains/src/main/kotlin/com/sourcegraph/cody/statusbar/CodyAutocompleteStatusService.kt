@@ -2,12 +2,19 @@ package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.config.CodySignedOutNotification
+import com.sourcegraph.config.ConfigUtil
 import javax.annotation.concurrent.GuardedBy
 
+@Service
 class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable {
 
-  @GuardedBy("this") private var status: CodyAutocompleteStatus = CodyAutocompleteStatus.Ready
+  @GuardedBy("this") private var status: CodyAutocompleteStatus = CodyAutocompleteStatus.CodyUninit
 
   init {
     ApplicationManager.getApplication()
@@ -17,12 +24,38 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
   }
 
   override fun onCodyAutocompleteStatus(codyAutocompleteStatus: CodyAutocompleteStatus) {
-    var notify: Boolean
-    synchronized(this) {
-      val oldStatus = status
-      notify = oldStatus != codyAutocompleteStatus
-      status = codyAutocompleteStatus
+    val notify =
+        synchronized(this) {
+          val oldStatus = status
+          status = codyAutocompleteStatus
+          return@synchronized oldStatus != codyAutocompleteStatus
+        }
+    if (notify) {
+      updateCodyStatusBarIcons()
     }
+  }
+
+  override fun onCodyAutocompleteStatusReset(project: Project) {
+    val notify =
+        synchronized(this) {
+          val oldStatus = status
+          ApplicationManager.getApplication()
+          status =
+              if (!ConfigUtil.isCodyEnabled()) {
+                CodyAutocompleteStatus.CodyDisabled
+              } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {
+                CodyAutocompleteStatus.AutocompleteDisabled
+              } else if (!CodyAgent.isConnected(project)) {
+                CodyAutocompleteStatus.CodyAgentNotRunning
+              } else if (CodyAuthenticationManager.instance.getActiveAccount(project) == null) {
+                CodySignedOutNotification.show(project)
+                CodyAutocompleteStatus.CodyNotSignedIn
+              } else {
+                CodySignedOutNotification.expire()
+                CodyAutocompleteStatus.Ready
+              }
+          return@synchronized oldStatus != status
+        }
     if (notify) {
       updateCodyStatusBarIcons()
     }
@@ -31,7 +64,9 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
   private fun updateCodyStatusBarIcons() {
     val action = Runnable {
       val openProjects = ProjectManager.getInstance().openProjects
-      openProjects.forEach { it.takeIf { !it.isDisposed }?.let { CodyStatusBarWidget.update(it) } }
+      openProjects.forEach { project ->
+        project.takeIf { !it.isDisposed }?.let { CodyStatusBarWidget.update(it) }
+      }
     }
     val application = ApplicationManager.getApplication()
     if (application.isDispatchThread) {
@@ -47,7 +82,7 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
     }
   }
 
-  override fun dispose() {}
+  override fun dispose() = Unit
 
   companion object {
 
@@ -63,6 +98,14 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
           .messageBus
           .syncPublisher(CodyAutocompleteStatusListener.TOPIC)
           .onCodyAutocompleteStatus(status)
+    }
+
+    @JvmStatic
+    fun resetApplication(project: Project) {
+      ApplicationManager.getApplication()
+          .messageBus
+          .syncPublisher(CodyAutocompleteStatusListener.TOPIC)
+          .onCodyAutocompleteStatusReset(project)
     }
   }
 }

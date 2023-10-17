@@ -2,6 +2,84 @@
 
 ## [Unreleased]
 
+### Highlights
+
+### Merged PRs
+
+## [3.3.0]
+
+### Highlights
+
+- New: setting to accept non-trusted SSL certificates
+- New: button to stop generation of a chat reply
+- New: Cody icon in the status bar to indicate you're not logged in
+
+### Merged PRs
+
+- Total [6 PRs](https://github.com/sourcegraph/sourcegraph/milestone/234?closed=1) merged since last release
+- JetBrains: add the client value to telemetry events,
+  by [@chwarwick](https://github.com/chwarwick) ([#57015](https://github.com/sourcegraph/sourcegraph/pull/57015))
+- JetBrains: show icon & notification when user is not logged in,
+  by [@Strum355](https://github.com/Strum355) ([#57006](https://github.com/sourcegraph/sourcegraph/pull/57006))
+- JetBrains: Cody: Only enable the verbose debug setting if regular debug is also enabled,
+  by [@Gedochao](https://github.com/Gedochao) ([#57000](https://github.com/sourcegraph/sourcegraph/pull/57000))
+- JetBrains: Cody: Add a setting for accepting non-trusted certificates automatically,
+  by [@Gedochao](https://github.com/Gedochao) ([#56999](https://github.com/sourcegraph/sourcegraph/pull/56999))
+- JetBrains: add "Stop" button to cancel pending chat message,
+  by [@szymonprz](https://github.com/szymonprz) ([#56998](https://github.com/sourcegraph/sourcegraph/pull/56998))
+- JetBrains: Cody: Improve autocomplete custom color setting,
+  by [@Gedochao](https://github.com/Gedochao) ([#56997](https://github.com/sourcegraph/sourcegraph/pull/56997))
+
+## [3.2.0]
+
+### Highlights
+
+- Bugfix: autocomplete was not working in some cases
+- Bugfix: chat was not working in some cases
+- New: improved onboarding in the Cody sidebar after signing in for the first time
+- New: simpler login to sourcegraph.com through settings UI
+- Changed: Cody sidebar now defaults to the right instead of left allowing you to keep the "Project" file tree open
+  alongside the Cody sidebar. You can drag the sidebar to the left if you don't like the new default.
+- Changed: Cody icon in the sidebar is now monochromatic (grey)
+
+### Merged PRs
+
+- Total [17 PRs](https://github.com/sourcegraph/sourcegraph/milestone/233?closed=1) merged since the last release
+- JetBrains: Cody: Fix the rendering of language table header in Cody settings,
+  by [@Gedochao](https://github.com/Gedochao) ([#56956](https://github.com/sourcegraph/sourcegraph/pull/56956))
+- JetBrains: add restarting logic for agent,
+  by [@olafurpg](https://github.com/olafurpg) ([#56954](https://github.com/sourcegraph/sourcegraph/pull/56954))
+- JetBrains: Cody: Check if the project wasn't disposed when getting the active account,
+  by [@Gedochao](https://github.com/Gedochao) ([#56945](https://github.com/sourcegraph/sourcegraph/pull/56945))
+- JetBrains: Fix: don't try to display inlays on not supported editor instances,
+  by [@szymonprz](https://github.com/szymonprz) ([#56951](https://github.com/sourcegraph/sourcegraph/pull/56951))
+- JetBrains: Cody: Improve the languages table in Cody settings,
+  by [@Gedochao](https://github.com/Gedochao) ([#56939](https://github.com/sourcegraph/sourcegraph/pull/56939))
+- JetBrains: Sign in to sourcegraph.com with a webflow from action on settings page,
+  by [@szymonprz](https://github.com/szymonprz) ([#56941](https://github.com/sourcegraph/sourcegraph/pull/56941))
+- JetBrains: fix bug for access token description,
+  by [@olafurpg](https://github.com/olafurpg) ([#56897](https://github.com/sourcegraph/sourcegraph/pull/56897))
+- nix: wrap gradle with x11 libs for intellij plugin,
+  by [@Strum355](https://github.com/Strum355) ([#56890](https://github.com/sourcegraph/sourcegraph/pull/56890))
+- JetBrains: display icon only instead of a button for embedding status,
+  by [@szymonprz](https://github.com/szymonprz) ([#56884](https://github.com/sourcegraph/sourcegraph/pull/56884))
+- JetBrains: Cody: Fix/remove code at risk of compatibility issues with the JetBrains platform,
+  by [@Gedochao](https://github.com/Gedochao) ([#56885](https://github.com/sourcegraph/sourcegraph/pull/56885))
+- call it "Cody" not "Cody AI",
+  by [@sqs](https://github.com/sqs) ([#56863](https://github.com/sourcegraph/sourcegraph/pull/56863))
+- JetBrains: use monochromatic icon in sidebar,
+  by [@szymonprz](https://github.com/szymonprz) ([#56881](https://github.com/sourcegraph/sourcegraph/pull/56881))
+- JetBrains: bump kotlin to 1.9.10,
+  by [@Strum355](https://github.com/Strum355) ([#56828](https://github.com/sourcegraph/sourcegraph/pull/56828))
+- JetBrains: improve design for redirect page when authorizing through web flow,
+  by [@danielmarquespt](https://github.com/danielmarquespt) ([#56829](https://github.com/sourcegraph/sourcegraph/pull/56829))
+- JetBrains: Display onboarding guidance after successful account creation,
+  by [@szymonprz](https://github.com/szymonprz) ([#56824](https://github.com/sourcegraph/sourcegraph/pull/56824))
+- JetBrains: Cody: Placing cody sidebar on the right side by default,
+  by [@Sa1to](https://github.com/Sa1to) ([#56822](https://github.com/sourcegraph/sourcegraph/pull/56822))
+
+## [3.1.0]
+
 The Cody functionality of this plugin remains **experimental**. Don't hesitate to report
 a [new issue](https://github.com/sourcegraph/sourcegraph/issues/new/?title=JetBrains:) on GitHub if you encounter
 problems.
@@ -22,8 +100,7 @@ problems.
 
 ### Merged PRs
 
-Total 99 pull requests got merged since the last release.
-
+- Total [99 PRs](https://github.com/sourcegraph/sourcegraph/milestone/232?closed=1) merged since the last release
 - JetBrains: Cody: Bump Jetbrains platform compat to `221.5080.210`,
   by [@Gedochao](https://github.com/Gedochao) ([#56625](https://github.com/sourcegraph/sourcegraph/pull/56625))
 - JetBrains: fix capitalization,
@@ -222,22 +299,6 @@ Total 99 pull requests got merged since the last release.
   by [@burmudar](https://github.com/burmudar) ([#56061](https://github.com/sourcegraph/sourcegraph/pull/56061))
 - ci: fix pipeline,
   by [@jhchabran](https://github.com/jhchabran) ([#56274](https://github.com/sourcegraph/sourcegraph/pull/56274))
-
-### Security
-
-## [3.0.9]
-
-### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [3.0.9]
 

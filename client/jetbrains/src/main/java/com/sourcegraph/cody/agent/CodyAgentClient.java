@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Implementation of the client part of the Cody agent protocol. */
@@ -21,6 +22,7 @@ public class CodyAgentClient {
   @Nullable public CodyAgentCodebase codebase;
   // Callback that is invoked when the agent sends a "chat/updateMessageInProgress" notification.
   @Nullable public Consumer<ChatMessage> onChatUpdateMessageInProgress;
+  @NotNull public Runnable onFinishedProcessing = () -> {};
   @Nullable public Editor editor;
 
   /**
@@ -51,6 +53,9 @@ public class CodyAgentClient {
     if (onChatUpdateMessageInProgress != null && params != null) {
       ApplicationManager.getApplication()
           .invokeLater(() -> onChatUpdateMessageInProgress.accept(params));
+    }
+    if (params == null) {
+      onFinishedProcessing.run();
     }
   }
 

@@ -39,10 +39,10 @@ import (
 // User hooks
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	BeforeCreateUser func(ctx context.Context, db DB, spec *extsvc.AccountSpec) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
 	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
@@ -59,6 +59,12 @@ type UserStore interface {
 	Count(context.Context, *UsersListOptions) (int, error)
 	CountForSCIM(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
+	// CreateWithExternalAccount is used to create a new Sourcegraph user account from an external account
+	// (e.g., "signup from SAML").
+	//
+	// It creates a new user and associates it with the specified external account. If the user to
+	// create already exists, it returns an error.
+	CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
 	Delete(context.Context, int32) error
@@ -258,6 +264,26 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	return newUser, err
 }
 
+func (u *userStore) CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (_ *types.User, err error) {
+	tx, err := u.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	createdUser, err := tx.CreateInTransaction(ctx, newUser, &acct.AccountSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	acct.UserID = createdUser.ID
+	acct, err = ExternalAccountsWith(u.logger, tx).Insert(ctx, acct)
+	if err == nil {
+		logAccountCreatedEvent(ctx, NewDBWith(u.logger, tx), createdUser, acct.AccountSpec.ServiceType)
+	}
+	return createdUser, err
+}
+
 // CheckPassword returns an error depending on the method used for validation
 func CheckPassword(pw string) error {
 	return security.ValidatePassword(pw)
@@ -281,7 +307,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		return nil, errors.New("no email verification code provided for new user with unverified email")
 	}
 
-	searchable := true
 	createdAt := timeutil.Now()
 	updatedAt := createdAt
 	invalidatedSessionsAt := createdAt
@@ -326,8 +351,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 	var siteAdmin bool
 	err = u.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin, searchable",
-			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin, &searchable)
+		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin)
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) {
@@ -386,7 +411,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		SiteAdmin:             siteAdmin,
 		BuiltinAuth:           info.Password != "",
 		InvalidatedSessionsAt: invalidatedSessionsAt,
-		Searchable:            searchable,
 	}
 
 	{
@@ -529,7 +553,6 @@ type UserUpdate struct {
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
 	TosAccepted            *bool
-	Searchable             *bool
 	CompletedPostSignup    *bool
 }
 
@@ -570,9 +593,6 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	}
 	if update.TosAccepted != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
-	}
-	if update.Searchable != nil {
-		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("searchable=%s", *update.Searchable))
 	}
 	if update.CompletedPostSignup != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("completed_post_signup=%s", *update.CompletedPostSignup))
@@ -1297,7 +1317,6 @@ SELECT u.id,
        u.invalidated_sessions_at,
        u.tos_accepted,
        u.completed_post_signup,
-       u.searchable,
        EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
 FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
@@ -1310,7 +1329,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.Searchable, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
@@ -1345,7 +1364,6 @@ SELECT u.id,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
        u.tos_accepted,
-       u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
        sa.account_id AS scim_external_id,
        sa.account_data AS scim_account_data
@@ -1366,7 +1384,7 @@ func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
 	var deletedAt sql.NullTime
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}

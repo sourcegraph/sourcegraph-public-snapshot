@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -675,6 +676,8 @@ func TestSubRepoFiltering(t *testing.T) {
 			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
 				return dbmocks.NewMockEventLogStore()
 			})
+			db.TelemetryEventsExportQueueFunc.SetDefaultReturn(
+				telemetrytest.NewMockEventsExportQueueStore())
 
 			literalPatternType := "literal"
 			cli := client.Mocked(job.RuntimeClients{

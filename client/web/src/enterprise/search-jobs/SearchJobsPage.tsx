@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 
 import { mdiDelete, mdiDownload, mdiRefresh, mdiStop } from '@mdi/js'
 import classNames from 'classnames'
@@ -10,6 +10,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchJobsOrderBy, SearchJobState } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
@@ -37,12 +38,13 @@ import {
 import { DownloadFileButton } from '../../components/DownloadFileButton'
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
-import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
+import type { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
 import { SearchJobBadge } from './SearchJobBadge/SearchJobBadge'
 import { CancelSearchJobModal, RerunSearchJobModal, SearchJobDeleteModal } from './SearchJobModal/SearchJobModal'
-import { User, UsersPicker } from './UsersPicker'
+import { type User, UsersPicker } from './UsersPicker'
 
 import styles from './SearchJobsPage.module.scss'
 
@@ -117,12 +119,12 @@ export const SEARCH_JOBS_QUERY = gql`
     }
 `
 
-interface SearchJobsPageProps {
+interface SearchJobsPageProps extends TelemetryProps {
     isAdmin: boolean
 }
 
 export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
-    const { isAdmin } = props
+    const { isAdmin, telemetryService } = props
 
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [searchStateTerm, setSearchStateTerm] = useState('')
@@ -160,6 +162,10 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
         },
     })
 
+    useEffect(() => {
+        telemetryService.logViewEvent('SearchJobsListPage')
+    }, [telemetryService])
+
     const handleSearchJobCreate = (): void => {
         setJobToRestart(null)
         refetch()
@@ -172,13 +178,17 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
     return (
         <Page>
+            <PageTitle title="Search jobs" />
             <PageHeader
                 annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 path={[{ icon: LayersSearchOutlineIcon, text: 'Search Jobs' }]}
                 description={
                     <>
-                        Run search queries over all repositories, branches, commit and revisions.{' '}
-                        <Link to="">Learn more</Link> about search jobs.
+                        Manage Sourcegraph queries that have been run exhaustively to return all results.{' '}
+                        <Link to="/help/code_search/how-to/search-jobs" target="_blank" rel="noopener noreferrer">
+                            Learn more
+                        </Link>{' '}
+                        about search jobs.
                     </>
                 }
             />
@@ -262,6 +272,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                                 key={searchJob.id}
                                 job={searchJob}
                                 withCreatorColumn={isAdmin}
+                                telemetryService={telemetryService}
                                 onRerun={setJobToRestart}
                                 onCancel={setJobToCancel}
                                 onDelete={setJobToDelete}
@@ -292,7 +303,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 const formatDate = timeFormat('%Y-%m-%d %H:%M:%S')
 const formatDateSlim = timeFormat('%Y-%m-%d')
 
-interface SearchJobProps {
+interface SearchJobProps extends TelemetryProps {
     job: SearchJobNode
     withCreatorColumn: boolean
     onRerun: (job: SearchJobNode) => void
@@ -301,7 +312,7 @@ interface SearchJobProps {
 }
 
 const SearchJob: FC<SearchJobProps> = props => {
-    const { job, withCreatorColumn, onRerun, onCancel, onDelete } = props
+    const { job, withCreatorColumn, telemetryService, onRerun, onCancel, onDelete } = props
     const { repoStats } = job
 
     const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
@@ -319,7 +330,7 @@ const SearchJob: FC<SearchJobProps> = props => {
             <span className={styles.jobQuery}>
                 {job.state !== SearchJobState.COMPLETED && (
                     <Text className="m-0 text-muted">
-                        {repoStats.completed} out of {repoStats.total} repositories
+                        {repoStats.completed} out of {repoStats.total} tasks
                     </Text>
                 )}
 
@@ -328,25 +339,27 @@ const SearchJob: FC<SearchJobProps> = props => {
 
             {withCreatorColumn && (
                 <span className={styles.jobCreator}>
-                    <UserAvatar user={job.creator!} />
+                    <UserAvatar user={job.creator!} className={styles.jobAvatar} />
                     {job.creator?.displayName ?? job.creator?.username}
                 </span>
             )}
 
-            <span className={styles.jobActions}>
-                <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
-                    <DownloadFileButton
-                        variant="link"
-                        disabled={!job.logURL}
-                        fileUrl={job.logURL ?? ''}
-                        fileName={`search-job-logs-${getFileNameFromURL(job.logURL)}`}
-                        withLoading={false}
-                        className={styles.jobViewLogs}
-                    >
-                        View logs
-                    </DownloadFileButton>
-                </Tooltip>
+            <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
+                <DownloadFileButton
+                    variant="link"
+                    disabled={!job.logURL}
+                    fileUrl={job.logURL ?? ''}
+                    debounceTime={1000}
+                    className={styles.jobViewLogs}
+                    onClick={() => {
+                        telemetryService.log('SearchJobsResultViewLogsClick', {}, {})
+                    }}
+                >
+                    View logs
+                </DownloadFileButton>
+            </Tooltip>
 
+            <span className={styles.jobActions}>
                 <Tooltip content="Rerun search job">
                     <Button
                         variant="secondary"
@@ -385,18 +398,21 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </Tooltip>
             </span>
 
-            {job.URL && (
+            <Tooltip content={!job.URL ? 'Results are not available yet' : ''}>
                 <DownloadFileButton
-                    fileUrl={job.URL}
-                    fileName={`search-job-results-${getFileNameFromURL(job.URL)}`}
+                    fileUrl={job.URL ?? ''}
                     variant="secondary"
-                    withLoading={false}
+                    debounceTime={1000}
+                    disabled={job.URL === null}
                     className={styles.jobDownload}
+                    onClick={() => {
+                        telemetryService.log('SearchJobsResultDownloadClick', {}, {})
+                    }}
                 >
                     <Icon svgPath={mdiDownload} aria-hidden={true} />
                     Download
                 </DownloadFileButton>
-            )}
+            </Tooltip>
         </li>
     )
 }
@@ -456,7 +472,12 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
                     limit.
                 </Text>
 
-                <Text>Learn more in the search jobs documentation page.</Text>
+                <Text>
+                    Learn more in the search jobs{' '}
+                    <Link to="/help/code_search/how-to/search-jobs" target="_blank" rel="noopener noreferrer">
+                        documentation page
+                    </Link>
+                </Text>
             </div>
         </div>
     )
@@ -465,12 +486,3 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
 const formatJobState = (state: SearchJobState): string => upperFirst(state.toLowerCase())
 const hasFiltersValues = (states: SearchJobState[], users: User[], searchTerm: string): boolean =>
     states.length > 0 || users.length > 0 || searchTerm.trim().length > 0
-
-const getFileNameFromURL = (url: string | null): string => {
-    if (url === null) {
-        return ''
-    }
-
-    const parts = url.split('/')
-    return parts[parts.length - 1]
-}

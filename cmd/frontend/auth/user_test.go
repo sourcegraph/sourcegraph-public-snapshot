@@ -33,9 +33,10 @@ func TestGetAndSaveUser(t *testing.T) {
 		createIfNotExistIrrelevant bool
 
 		// expected return values
-		expUserID  int32
-		expSafeErr string
-		expErr     error
+		expUserID         int32
+		expSafeErr        string
+		expErr            error
+		expNewUserCreated bool
 
 		// expected side effects
 		expSavedExtAccts                 map[int32][]extsvc.AccountSpec
@@ -107,6 +108,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct exists, username and email don't exist",
@@ -121,6 +123,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct exists, email belongs to another user",
@@ -135,6 +138,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct doesn't exist, user with username and email exists",
@@ -149,6 +153,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
@@ -175,6 +180,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should create user",
@@ -192,6 +198,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                true,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
@@ -200,8 +207,9 @@ func TestGetAndSaveUser(t *testing.T) {
 					UserProps:        userProps("u-new", "u-new@example.com"),
 					CreateIfNotExist: false,
 				},
-				expSafeErr: "User account with verified email \"u-new@example.com\" does not exist. Ask a site admin to create your account and then verify your email.",
-				expErr:     database.MockUserNotFoundErr,
+				expSafeErr:        "User account with verified email \"u-new@example.com\" does not exist. Ask a site admin to create your account and then verify your email.",
+				expErr:            database.MockUserNotFoundErr,
+				expNewUserCreated: false,
 			},
 			{
 				description: "ext acct exists, (ignore username and email), authenticated",
@@ -217,6 +225,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, email and username match, authenticated",
@@ -232,6 +241,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, email matches but username doesn't, authenticated",
@@ -248,6 +258,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, email doesn't match existing user, authenticated",
@@ -267,6 +278,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 			{
 				description: "ext acct doesn't exist, user has same username, lookupByUsername=true",
@@ -282,13 +294,14 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				expCalledGrantPendingPermissions: true,
 				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
 			},
 		},
 	}
 	errorCases := []outerCase{
 		{
-			description: "lookupUserAndSaveErr",
-			mock:        mockParams{lookupUserAndSaveErr: unexpectedErr, userInfos: oneUser},
+			description: "externalAccountUpdateErr",
+			mock:        mockParams{externalAccountUpdateErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
 				op:                         getOneUserOp,
 				createIfNotExistIrrelevant: true,
@@ -298,7 +311,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		},
 		{
 			description: "createUserAndSaveErr",
-			mock:        mockParams{createUserAndSaveErr: unexpectedErr, userInfos: oneUser},
+			mock:        mockParams{createWithExternalAccountErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
 				op:         getNonExistentUserCreateIfNotExistOp,
 				expSafeErr: "Unable to create a new user account due to a unexpected error. Ask a site admin for help.",
@@ -306,8 +319,8 @@ func TestGetAndSaveUser(t *testing.T) {
 			}},
 		},
 		{
-			description: "associateUserAndSaveErr",
-			mock:        mockParams{associateUserAndSaveErr: unexpectedErr, userInfos: oneUser},
+			description: "upsertErr",
+			mock:        mockParams{upsertErr: unexpectedErr, userInfos: oneUser},
 			innerCases: []innerCase{{
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
@@ -396,7 +409,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
-						userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
+						newUserCreated, userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
 
 						if userID != c.expUserID {
 							t.Errorf("mismatched userID, want: %v, but got %v", c.expUserID, userID)
@@ -429,6 +442,10 @@ func TestGetAndSaveUser(t *testing.T) {
 						if c.expCalledGrantPendingPermissions != m.calledGrantPendingPermissions {
 							t.Fatalf("calledGrantPendingPermissions: want %v but got %v", c.expCalledGrantPendingPermissions, m.calledGrantPendingPermissions)
 						}
+
+						if newUserCreated != c.expNewUserCreated {
+							t.Errorf("mismatched newUserCreated, want %v but got %v", c.expNewUserCreated, newUserCreated)
+						}
 					})
 				}
 			}
@@ -445,12 +462,12 @@ func TestGetAndSaveUser(t *testing.T) {
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 		usersStore := dbmocks.NewMockUserStore()
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
-		externalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
-		externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
-		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
+		usersStore.CreateWithExternalAccountFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ *extsvc.Account) (*types.User, error) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return &types.User{ID: 1}, nil
 		})
+		externalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
+		externalAccountsStore.UpdateFunc.SetDefaultReturn(nil, errNotFound)
 		eventLogsStore := dbmocks.NewMockEventLogStore()
 		eventLogsStore.BulkInsertFunc.SetDefaultHook(func(ctx context.Context, _ []*database.Event) error {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
@@ -465,7 +482,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
-		_, _, err := GetAndSaveUser(
+		_, _, _, err := GetAndSaveUser(
 			ctx,
 			db,
 			GetAndSaveUserOp{
@@ -480,7 +497,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
-		mockrequire.Called(t, externalAccountsStore.CreateUserAndSaveFunc)
+		mockrequire.Called(t, usersStore.CreateWithExternalAccountFunc)
 	})
 }
 
@@ -548,7 +565,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 	})
 
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.LookupUserAndSaveFunc.SetDefaultReturn(user.ID, nil)
+	externalAccounts.UpdateFunc.SetDefaultReturn(&extsvc.Account{UserID: user.ID}, nil)
 
 	db := dbmocks.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
@@ -588,7 +605,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
 				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
 			}
-			if _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
+			if _, _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
 				t.Fatal(err)
 			}
 			if user.DisplayName != test.wantDisplayName {
@@ -602,14 +619,14 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 }
 
 type mockParams struct {
-	userInfos               []userInfo
-	lookupUserAndSaveErr    error
-	createUserAndSaveErr    error
-	associateUserAndSaveErr error
-	getByVerifiedEmailErr   error
-	getByUsernameErr        error //nolint:structcheck
-	getByIDErr              error
-	updateErr               error
+	userInfos                    []userInfo
+	externalAccountUpdateErr     error
+	createWithExternalAccountErr error
+	upsertErr                    error
+	getByVerifiedEmailErr        error
+	getByUsernameErr             error //nolint:structcheck
+	getByIDErr                   error
+	updateErr                    error
 }
 
 // mocks provide mocking. It should only be used for one call of auth.GetAndSaveUser, because saves
@@ -643,15 +660,15 @@ func (m *mocks) DB() database.DB {
 	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
-	externalAccounts.AssociateUserAndSaveFunc.SetDefaultHook(m.AssociateUserAndSave)
-	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
+	externalAccounts.UpdateFunc.SetDefaultHook(m.ExternalAccountUpdate)
+	externalAccounts.UpsertFunc.SetDefaultHook(m.Upsert)
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(m.GetByID)
 	users.GetByVerifiedEmailFunc.SetDefaultHook(m.GetByVerifiedEmail)
 	users.GetByUsernameFunc.SetDefaultHook(m.GetByUsername)
 	users.UpdateFunc.SetDefaultHook(m.Update)
+	users.CreateWithExternalAccountFunc.SetDefaultHook(m.CreateWithExternalAccountFunc)
 
 	authzStore := dbmocks.NewMockAuthzStore()
 	authzStore.GrantPendingPermissionsFunc.SetDefaultHook(m.GrantPendingPermissions)
@@ -669,27 +686,28 @@ func (m *mocks) DB() database.DB {
 	return db
 }
 
-// LookupUserAndSave mocks database.ExternalAccounts.LookupUserAndSave
-func (m *mocks) LookupUserAndSave(_ context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	if m.lookupUserAndSaveErr != nil {
-		return 0, m.lookupUserAndSaveErr
+// ExternalAccountUpdate mocks database.ExternalAccounts.Update
+func (m *mocks) ExternalAccountUpdate(_ context.Context, acct *extsvc.Account) (*extsvc.Account, error) {
+	if m.externalAccountUpdateErr != nil {
+		return nil, m.externalAccountUpdateErr
 	}
 
 	for _, u := range m.userInfos {
 		for _, a := range u.extAccts {
-			if a == spec {
-				m.savedExtAccts[u.user.ID] = append(m.savedExtAccts[u.user.ID], spec)
-				return u.user.ID, nil
+			if a == acct.AccountSpec {
+				m.savedExtAccts[u.user.ID] = append(m.savedExtAccts[u.user.ID], acct.AccountSpec)
+				acct.UserID = u.user.ID
+				return acct, nil
 			}
 		}
 	}
-	return 0, &errcode.Mock{IsNotFound: true}
+	return nil, &errcode.Mock{IsNotFound: true}
 }
 
-// CreateUserAndSave mocks database.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
-	if m.createUserAndSaveErr != nil {
-		return &types.User{}, m.createUserAndSaveErr
+// CreateWithExternalACcountFunc mocks database.Users.CreateWithExternalAccountFunc
+func (m *mocks) CreateWithExternalAccountFunc(_ context.Context, newUser database.NewUser, acct *extsvc.Account) (createdUser *types.User, err error) {
+	if m.createWithExternalAccountErr != nil {
+		return &types.User{}, m.createWithExternalAccountErr
 	}
 
 	// Check if username already exists
@@ -716,28 +734,28 @@ func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, s
 	m.createdUsers[userID] = newUser
 
 	// Save ext acct
-	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
+	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], acct.AccountSpec)
 
 	return &types.User{ID: userID}, nil
 }
 
-// AssociateUserAndSave mocks database.ExternalAccounts.AssociateUserAndSave
-func (m *mocks) AssociateUserAndSave(_ context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	if m.associateUserAndSaveErr != nil {
-		return m.associateUserAndSaveErr
+// Upsert mocks database.ExternalAccounts.Upsert
+func (m *mocks) Upsert(_ context.Context, acct *extsvc.Account) (_ *extsvc.Account, err error) {
+	if m.upsertErr != nil {
+		return nil, m.upsertErr
 	}
 
 	// Check if ext acct is associated with different user
 	for _, u := range m.userInfos {
 		for _, a := range u.extAccts {
-			if a == spec && u.user.ID != userID {
-				return errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, userID)
+			if a == acct.AccountSpec && u.user.ID != acct.UserID {
+				return nil, errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, acct.UserID)
 			}
 		}
 	}
 
-	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
-	return nil
+	m.savedExtAccts[acct.UserID] = append(m.savedExtAccts[acct.UserID], acct.AccountSpec)
+	return acct, nil
 }
 
 // GetByVerifiedEmail mocks database.Users.GetByVerifiedEmail

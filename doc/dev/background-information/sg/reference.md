@@ -41,18 +41,22 @@ Available comamndsets in `sg.config.yaml`:
 * dotcom
 * enterprise
 * enterprise-bazel
+* enterprise-bazel-sveltekit
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
 * enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
+* enterprise-sveltekit
 * iam
 * monitoring
 * monitoring-alerts
 * otel
 * qdrant
+* single-program
 * web-standalone
 * web-standalone-prod
+* web-sveltekit-standalone
 
 ```sh
 # Run default environment, Sourcegraph enterprise:
@@ -105,6 +109,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor-firecracker
 * codeintel-executor-kubernetes
 * codeintel-worker
+* cody-app: Cody App
 * cody-gateway
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
@@ -130,7 +135,7 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
-* sourcegraph: Single program (Go static binary) distribution
+* sourcegraph: Single-program distribution
 * storybook
 * symbols
 * syntax-highlighter
@@ -140,6 +145,8 @@ Available commands in `sg.config.yaml`:
 * web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
+* web-sveltekit-prod-watch: Builds the prod version of the SvelteKit web app and rebuilds on changes
+* web-sveltekit-standalone: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
 * worker
 * zoekt-index-0
@@ -253,8 +260,6 @@ Flags:
 Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types).
 
 
-Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
-
 Optionally provide a run type to build with.
 
 This command is useful when:
@@ -325,8 +330,6 @@ Flags:
 
 Render reference documentation for build pipeline types.
 
-An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.
-
 
 Flags:
 
@@ -352,6 +355,7 @@ Available testsuites in `sg.config.yaml`:
 
 * backend
 * backend-integration
+* bazel-e2e
 * bext
 * bext-build
 * bext-e2e
@@ -1527,75 +1531,6 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--type="<value>"`: the type of the RFC to create (valid: solution) (default: solution)
 
-## sg adr
-
-List, search, view, and create Sourcegraph Architecture Decision Records (ADRs).
-
-We use Architecture Decision Records (ADRs) only for logging decisions that have notable
-architectural impact on our codebase. Since we're a high-agency company, we encourage any
-contributor to commit an ADR if they've made an architecturally significant decision.
-
-ADRs are not meant to replace our current RFC process but to complement it by capturing
-decisions made in RFCs. However, ADRs do not need to come out of RFCs only. GitHub issues
-or pull requests, PoCs, team-wide discussions, and similar processes may result in an ADR
-as well.
-
-Learn more about ADRs here: https://docs.sourcegraph.com/dev/adr
-
-```sh
-# List all ADRs
-$ sg adr list
-
-# Search for an ADR
-$ sg adr search "search terms"
-
-# Open a specific index
-$ sg adr view 420
-
-# Create a new ADR!
-$ sg adr create my ADR title
-```
-
-### sg adr list
-
-List all ADRs.
-
-
-Flags:
-
-* `--asc`: List oldest ADRs first
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg adr search
-
-Search ADR titles and content.
-
-Arguments: `[terms...]`
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg adr view
-
-View an ADR.
-
-Arguments: `[number]`
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg adr create
-
-Create an ADR!.
-
-Arguments: `<title>`
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
 ## sg live
 
 Reports which version of Sourcegraph is currently live in the given environment.
@@ -1641,23 +1576,6 @@ Commands used by operations teams to perform common tasks.
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
 
-### sg ops update-images
-
-Updates images in given directory to latest published image.
-
-Updates images in given directory to latest published image.
-Ex: in deploy-sourcegraph-cloud, run `sg ops update-images base/.`
-
-Arguments: `<dir>`
-
-Flags:
-
-* `--cr-password="<value>"`: `password` or access token for the container registry
-* `--cr-username="<value>"`: `username` for the container registry
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
-* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
-
 ### sg ops inspect-tag
 
 Inspect main branch tag details from a image or tag.
@@ -1677,6 +1595,22 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--property, -p="<value>"`: only output a specific `property` (one of: 'build', 'date', 'commit')
+
+### sg ops update-images
+
+Update images across a sourcegraph/deploy-sourcegraph/* manifests.
+
+Arguments: `<dir>`
+
+Flags:
+
+* `--docker-password, --cr-password="<value>"`: dockerhub password
+* `--docker-username, --cr-username="<value>"`: dockerhub username
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
+* `--registry="<value>"`: Sets the registry we want images to update to, public or internal. (default: public)
+* `--skip, --skip-images="<value>"`: List of comma separated images to skip updating, ex: --skip 'gitserver,indexed-server'
 
 ## sg page
 
@@ -1713,6 +1647,34 @@ Install or upgrade local `mi2` CLI (for Cloud V2).
 
 To learn more about Cloud V2, see https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/
 
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg managed-services-platform
+
+EXPERIMENTAL: Generate and manage services deployed on the Sourcegraph Managed Services Platform.
+
+WARNING: This is currently still an experimental project.
+To learm more, refer to go/rfc-msp and go/msp (https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform)
+
+MSP commands are currently build-flagged to avoid increasing 'sg' binary sizes. To install a build of 'sg' that includes 'sg msp', run:
+
+	go build -tags=msp -o=./sg ./dev/sg && ./sg install -f -p=false
+
+MSP commands should then be available under 'sg msp --help'.
+
+```sh
+# Create a service specification
+$ sg msp init $SERVICE
+
+# Provision Terraform Cloud workspaces
+$ sg msp tfc sync $SERVICE $ENVIRONMENT
+
+# Generate Terraform manifests
+$ sg msp generate $SERVICE $ENVIRONMENT
+```
 
 Flags:
 

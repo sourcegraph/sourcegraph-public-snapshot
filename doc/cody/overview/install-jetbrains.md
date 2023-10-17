@@ -97,16 +97,24 @@
 
 </style>
 
-# Install Cody for JetBrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Experimental</span>
+# Install Cody for JetBrains
 
 <p class="subtitle">Learn how to use Cody and its features with the JetBrains IntelliJ editor.</p>
+
+<aside class="beta">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Cody support for JetBrains is in the Beta stage.
+<br />
+For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+</p>
+</aside>
 
 The Cody extension by Sourcegraph enhances your coding experience in your IDE by providing intelligent code suggestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your JetBrains environment.
 
 <ul class="limg">
   <li>
     <a class="card text-left" target="_blank" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph">
-      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (experimental)</h3>
+      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (Beta)</h3>
       <p>Install Cody's free and open source extension for JetBrains.</p>
     </a>
   </li>
@@ -127,21 +135,27 @@ Follow these steps to install the Cody extension for JetBrains IntelliJ:
 
 Alternatively, you can also [Download and install the extension from the Jetbrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
 
-> NOTE: Cody works well equally on other JetBrains IDEs like PyCharm, RubyMine, WebStorm etc. The installation steps remain the same.
-
 ## Connect the extension to Sourcegraph
 
-After a successful installation, Cody's icon appears in the side bar. When you click it, you're asked to configure and add your Sourcegraph Access Token that helps you connect to a Sourcegraph instance (either an enterprise instance or Sourcegraph.com).
+After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
+
+Cody fully understands your codebase context based on the project opened in your workspace. However, at any point, you can override the automatic “codebase detection” by clicking on the repo name below the Cody chat and then adding the Git URL.
+
+![override-codebase-context](https://storage.googleapis.com/sourcegraph-assets/Docs/override-code-context.png)
 
 ### For Sourcegraph enterprise users
 
-Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). From here, generate a new access token.
+Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`). From here, generate a new access token.
 
 Then, you select the option to `Use an enterprise instance` and you will paste your access token and instance URL address in to the Cody extension.
 
 ### For Sourcegraph.com users
 
 Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll be taken to Sourcegraph.com, which will authenticate your extension.
+
+## Embeddings
+
+For free users, embeddings are supported for the open source repos on Sourcegraph.com. Enterprise users are guided to contact their admin for a more customized embeddings experience.
 
 ## Verifying the installation
 
@@ -163,7 +177,33 @@ The Cody JetBrains IntelliJ extension also supports pre-built reusable prompts c
 - Detect code smells
 - Generate release notes
 
-## Enable code graph context for context-aware answers (Optional)
+## Autocomplete
+
+Autocomplete suggestions appear as inlay suggestions. Press `Option+\` (for macOS) or `Alt+\` (for Windows) to manually trigger the autocomplete. Press `tab` to accept a suggestion and `Escape` to reject it.
+
+Autocomplete is triggered by default. You can disable the automatic trigger optionally through the Cody icon in the status bar or from the Cody Settings.
+
+In addition, autocomplete suggestions use the same color as inline parameter hints according to your configured theme. You can optionally customize this color from the Cody settings.
+
+## Supported JetBrains IDEs
+
+The Cody plugin works with all JetBrains IDEs, including:
+
+- IntelliJ IDEA
+- IntelliJ IDEA Community Edition
+- PhpStorm
+- WebStorm
+- PyCharm
+- PyCharm Community Edition
+- RubyMine
+- AppCode
+- CLion
+- GoLand
+- DataGrip
+- Rider
+- Android Studio
+
+## Enable code graph context for context-aware answers (optional)
 
 You can optionally configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if has context of a codebase's API schema.
 

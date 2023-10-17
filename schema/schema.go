@@ -682,6 +682,8 @@ type Embeddings struct {
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
+	// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+	Qdrant *Qdrant `json:"qdrant,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -1128,6 +1130,10 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	// GroupsCacheTTL description: Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).
 	GroupsCacheTTL float64 `json:"groupsCacheTTL,omitempty"`
+	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
+	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
+	// SyncInternalRepoPermissions description: If true, access to internal repositories will be synced as part of user permission syncs. This can lead to slower user permission syncs for organizations with many internal repositories. Defaults to false.
+	SyncInternalRepoPermissions bool `json:"syncInternalRepoPermissions,omitempty"`
 }
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
@@ -1386,6 +1392,20 @@ type Header struct {
 	Key       string `json:"key"`
 	Sensitive bool   `json:"sensitive,omitempty"`
 	Value     string `json:"value"`
+}
+
+// Hnsw description: Overrides for the HNSW index config.
+type Hnsw struct {
+	// EfConstruct description: Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.
+	EfConstruct *int `json:"efConstruct,omitempty"`
+	// FullScanThreshold description: Minimal size (in KiloBytes) of vectors for additional payload-based indexing.
+	FullScanThreshold *int `json:"fullScanThreshold,omitempty"`
+	// M description: Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.
+	M *int `json:"m,omitempty"`
+	// OnDisk description: Store HNSW index on disk.
+	OnDisk *bool `json:"onDisk,omitempty"`
+	// PayloadM description: Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.
+	PayloadM *int `json:"payloadM,omitempty"`
 }
 
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
@@ -1692,8 +1712,6 @@ type OnboardingStep struct {
 	Info string `json:"info,omitempty"`
 	// Label description: Label of the step shown to the user
 	Label string `json:"label"`
-	// RequriredSteps description: Set this property if only a subset of steps are required for this task to complete.
-	RequriredSteps float64 `json:"requriredSteps,omitempty"`
 	// Tooltip description: More information about this step
 	Tooltip string `json:"tooltip,omitempty"`
 }
@@ -1701,6 +1719,8 @@ type OnboardingStep struct {
 // OnboardingTask description: An onboarding task
 type OnboardingTask struct {
 	Icon any `json:"icon,omitempty"`
+	// RequiredSteps description: Set this property if only a subset of steps are required for this task to complete.
+	RequiredSteps float64 `json:"requiredSteps,omitempty"`
 	// Steps description: Steps that need to be completed by the user
 	Steps []*OnboardingStep `json:"steps"`
 	// Title description: Title of this task
@@ -1709,7 +1729,8 @@ type OnboardingTask struct {
 
 // OnboardingTourConfiguration description: Configuration for a onboarding tour.
 type OnboardingTourConfiguration struct {
-	Tasks []*OnboardingTask `json:"tasks"`
+	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
+	Tasks           []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1743,6 +1764,12 @@ type OpenIDConnectAuthProvider struct {
 type OpenTelemetry struct {
 	// Endpoint description: OpenTelemetry tracing collector endpoint. By default, Sourcegraph's "/-/debug/otlp" endpoint forwards data to the configured collector backend.
 	Endpoint string `json:"endpoint,omitempty"`
+}
+type Optimizers struct {
+	// IndexingThreshold description: Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing
+	IndexingThreshold *int `json:"indexingThreshold,omitempty"`
+	// MemmapThreshold description: Maximum size (in kilobytes) of vectors to store in-memory per segment.
+	MemmapThreshold *int `json:"memmapThreshold,omitempty"`
 }
 
 // OrganizationInvitations description: Configuration for organization invitations.
@@ -1916,6 +1943,24 @@ type PythonRateLimit struct {
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
+
+// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+type Qdrant struct {
+	Enabled bool `json:"enabled,omitempty"`
+	// Hnsw description: Overrides for the HNSW index config.
+	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
+	Optimizers *Optimizers `json:"optimizers,omitempty"`
+	// Quantization description: Overrides for quantization config.
+	Quantization *Quantization `json:"quantization,omitempty"`
+}
+
+// Quantization description: Overrides for quantization config.
+type Quantization struct {
+	// Enabled description: Whether to enable int8 scalar quantization
+	Enabled *bool `json:"enabled,omitempty"`
+	// Quantile description: Any values that lie outside the quantile range will be truncated
+	Quantile *float64 `json:"quantile,omitempty"`
+}
 type QuickLink struct {
 	// Description description: A description for this quick link
 	Description string `json:"description,omitempty"`
@@ -1931,13 +1976,13 @@ type Ranking struct {
 	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
 	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.
 	FlushWallTimeMS int `json:"flushWallTimeMS,omitempty"`
-	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
+	// MaxQueueMatchCount description: DEPRECATED: This setting has no effect.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
 	// MaxQueueSizeBytes description: The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.
 	MaxQueueSizeBytes *int `json:"maxQueueSizeBytes,omitempty"`
-	// MaxReorderDurationMS description: The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.
+	// MaxReorderDurationMS description: DEPRECATED: This setting has no effect.
 	MaxReorderDurationMS int `json:"maxReorderDurationMS,omitempty"`
-	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.
+	// MaxReorderQueueSize description: DEPRECATED: This setting has no effect.
 	MaxReorderQueueSize *int `json:"maxReorderQueueSize,omitempty"`
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
@@ -2085,7 +2130,7 @@ type SearchLimits struct {
 	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
 	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxRepos int `json:"maxRepos,omitempty"`
-	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
+	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Note: Experimental search jobs do not respect this limit. Defaults to 1 minute.
 	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
 
@@ -2295,8 +2340,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 
 // SettingsExperimentalFeatures description: Experimental features and settings.
 type SettingsExperimentalFeatures struct {
-	// ApplySearchQuerySuggestionOnEnter description: This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)
-	ApplySearchQuerySuggestionOnEnter *bool `json:"applySearchQuerySuggestionOnEnter,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
@@ -2378,7 +2421,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "applySearchQuerySuggestionOnEnter")
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
 	delete(m, "codeInsightsCompute")
@@ -2603,6 +2645,8 @@ type SiteConfiguration struct {
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
+	// GitserverDiskUsageWarningThreshold description: Disk usage threshold at which to display warning notification. Value is a percentage.
+	GitserverDiskUsageWarningThreshold *int `json:"gitserver.diskUsageWarningThreshold,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
@@ -2821,6 +2865,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitMaxConcurrentClones")
 	delete(m, "gitRecorder")
 	delete(m, "gitUpdateInterval")
+	delete(m, "gitserver.diskUsageWarningThreshold")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
 	delete(m, "htmlHeadBottom")
@@ -2933,7 +2978,7 @@ type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
 	Languages SyntaxHighlightingLanguage `json:"languages"`
 	// Symbols description: Configure symbol generation
-	Symbols SymbolConfiguration `json:"symbols"`
+	Symbols *SymbolConfiguration `json:"symbols,omitempty"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use

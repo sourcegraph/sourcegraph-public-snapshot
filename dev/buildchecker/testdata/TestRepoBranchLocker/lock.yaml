@@ -8,11 +8,13 @@ interactions:
       Accept:
       - application/vnd.github.luke-cage-preview+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: GET
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":0},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -28,9 +30,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:20 GMT
+      - Fri, 13 Oct 2023 08:46:29 GMT
       Etag:
-      - W/"5c7dc02324604e7a9d932ec2f2d408d3fb139a25a075d6379e2472fafd3c4e6b"
+      - W/"fe109c089833c10f89b8d0aea2457c018cffce6071fb2e2bda19fa8ffbfd33c6"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -40,30 +42,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126D15:3DFEEF5:61BB7824
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99D82:D8AE4:652903E5
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4999"
+      - "4871"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "1"
+      - "129"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -76,93 +74,9 @@ interactions:
       Accept:
       - application/vnd.github.v3+json
       User-Agent:
-      - go-github
-    url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb
-    method: GET
-  response:
-    body: '{"sha":"be7f0f51b73b1966254db4aac65b656daa36e2fb","node_id":"C_kwDOAnYEBNoAKGJlN2YwZjUxYjczYjE5NjYyNTRkYjRhYWM2NWI2NTZkYWEzNmUyZmI","commit":{"author":{"name":"davejrt","email":"2067825+davejrt@users.noreply.github.com","date":"2021-12-09T20:11:15Z"},"committer":{"name":"GitHub","email":"noreply@github.com","date":"2021-12-09T20:11:15Z"},"message":"use
-      force when cleaning up images (#28814)\n\n* force image removal","tree":{"sha":"f83fb4d1d08cab1a2ebc6b892c3e80507902f277","url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees/f83fb4d1d08cab1a2ebc6b892c3e80507902f277"},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb","comment_count":0,"verification":{"verified":true,"reason":"valid","signature":"-----BEGIN
-      PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJhsmLjCRBK7hj4Ov3rIwAAnP0IAAcVuv0pIKNhNk3HNr+cxw8s\nVpe2RUE+Y7U90BstbonLRkHnO/06Cu9jSnIQSmoAMDyinuNEtkksvGYtQygUFDeQ\nOwyvngg68fUC0OEbX72wGq9dZx7sBziAjNrHsnFL/U0ceVCEq2C+fmfkjIDKq6GO\naYBszXdJ2odRlXlWr/+ATxzw8MtU3dIyc7fSFvn8Mk30fBYIbYh6GTd3UMt4w0WS\nA6SeKWIfssg7exCiVekAr0+9sy+6MxRM10pS5jPtZNXtmlNGRisVVANrpWjgOsGr\ncUnZtncCf4HLaZ+mmIiOut0bzJAenwp7UbzVfZgQ7WAKeFzucHM4dd44l7hk7WA=\n=Z69R\n-----END
-      PGP SIGNATURE-----\n","payload":"tree f83fb4d1d08cab1a2ebc6b892c3e80507902f277\nparent
-      0ab0edb43fdf7fef7edbe93e5aa99340467bd50f\nauthor davejrt <2067825+davejrt@users.noreply.github.com>
-      1639080675 -0500\ncommitter GitHub <noreply@github.com> 1639080675 -0500\n\nuse
-      force when cleaning up images (#28814)\n\n* force image removal"}},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb","html_url":"https://github.com/sourcegraph/sourcegraph/commit/be7f0f51b73b1966254db4aac65b656daa36e2fb","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb/comments","author":{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","site_admin":false},"parents":[{"sha":"0ab0edb43fdf7fef7edbe93e5aa99340467bd50f","url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/0ab0edb43fdf7fef7edbe93e5aa99340467bd50f","html_url":"https://github.com/sourcegraph/sourcegraph/commit/0ab0edb43fdf7fef7edbe93e5aa99340467bd50f"}],"stats":{"total":6,"additions":3,"deletions":3},"files":[{"sha":"52b9fb3f813b8b73eef9028c0a55ccf53e5e74d8","filename":"dev/ci/test/e2e/test.sh","status":"modified","additions":1,"deletions":1,"changes":2,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/e2e/test.sh","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/e2e/test.sh","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/dev/ci/test/e2e/test.sh?ref=be7f0f51b73b1966254db4aac65b656daa36e2fb","patch":"@@
-      -17,7 +17,7 @@ cleanup() {\n   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then\n     docker
-      rm -f \"$(docker ps -aq)\"\n   fi\n-  docker rmi \"$(docker images -q)\"\n+  docker
-      rmi -f \"$(docker images -q)\"\n }\n trap cleanup EXIT\n "},{"sha":"061010cf6a1ac0629e816ed24591916d81c31683","filename":"dev/ci/test/qa/test.sh","status":"modified","additions":1,"deletions":1,"changes":2,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/qa/test.sh","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/qa/test.sh","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/dev/ci/test/qa/test.sh?ref=be7f0f51b73b1966254db4aac65b656daa36e2fb","patch":"@@
-      -22,7 +22,7 @@ cleanup() {\n   docker_logs\n   cd \"$root_dir\"\n   docker rm
-      -f \"$CONTAINER\"\n-  docker rmi \"$(docker images -q)\"\n+  docker rmi -f \"$(docker
-      images -q)\"\n \n }\n "},{"sha":"91acb06378d5509da4a2cddf6ac68984bf6f767c","filename":"dev/ci/test/upgrade/test.sh","status":"modified","additions":1,"deletions":1,"changes":2,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/upgrade/test.sh","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/upgrade/test.sh","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/dev/ci/test/upgrade/test.sh?ref=be7f0f51b73b1966254db4aac65b656daa36e2fb","patch":"@@
-      -25,7 +25,7 @@ cleanup() {\n   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then\n     docker
-      rm -f \"$(docker ps -aq)\"\n   fi\n-  docker rmi \"$(docker images -q)\"\n+  docker
-      rmi -f \"$(docker images -q)\"\n }\n \n # Run and initialize an old Sourcegraph
-      release"}]}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Thu, 16 Dec 2021 17:32:20 GMT
-      Etag:
-      - W/"db5b16e414a79604e046694d0f6fd9bab144d48bd416720caf4e74309bcc9612"
-      Last-Modified:
-      - Thu, 09 Dec 2021 20:11:15 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; format=json
-      X-Github-Request-Id:
-      - E826:16A2:2126D37:3DFEF2E:61BB7824
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4998"
-      X-Ratelimit-Reset:
-      - "1639679540"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "2"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.v3+json
-      User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172
     method: GET
   response:
@@ -181,19 +95,19 @@ interactions:
       LABEL: my-label -->` that allows you to add labels on a tracking issue that
       _do not_ need to be present on child issues for them to be considered part of
       this tracking issue. This is useful for making tracking issues easier to find
-      without adding labels to every single issue within the tracking issue.\"}},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/fac6d4973acad43fcd2f7579a3b496cd92619172\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172/comments\",\"author\":{\"login\":\"bobheadxi\",\"id\":23356519,\"node_id\":\"MDQ6VXNlcjIzMzU2NTE5\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/23356519?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/bobheadxi\",\"html_url\":\"https://github.com/bobheadxi\",\"followers_url\":\"https://api.github.com/users/bobheadxi/followers\",\"following_url\":\"https://api.github.com/users/bobheadxi/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/bobheadxi/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/bobheadxi/subscriptions\",\"organizations_url\":\"https://api.github.com/users/bobheadxi/orgs\",\"repos_url\":\"https://api.github.com/users/bobheadxi/repos\",\"events_url\":\"https://api.github.com/users/bobheadxi/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/bobheadxi/received_events\",\"type\":\"User\",\"site_admin\":false},\"committer\":{\"login\":\"web-flow\",\"id\":19864447,\"node_id\":\"MDQ6VXNlcjE5ODY0NDQ3\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/19864447?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/web-flow\",\"html_url\":\"https://github.com/web-flow\",\"followers_url\":\"https://api.github.com/users/web-flow/followers\",\"following_url\":\"https://api.github.com/users/web-flow/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/web-flow/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/web-flow/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/web-flow/subscriptions\",\"organizations_url\":\"https://api.github.com/users/web-flow/orgs\",\"repos_url\":\"https://api.github.com/users/web-flow/repos\",\"events_url\":\"https://api.github.com/users/web-flow/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/web-flow/received_events\",\"type\":\"User\",\"site_admin\":false},\"parents\":[{\"sha\":\"be7f0f51b73b1966254db4aac65b656daa36e2fb\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/be7f0f51b73b1966254db4aac65b656daa36e2fb\"}],\"stats\":{\"total\":10551,\"additions\":5897,\"deletions\":4654},\"files\":[{\"sha\":\"a841a98899df57f8c08e615e6ca2b7017c85d8ba\",\"filename\":\"internal/cmd/tracking-issue/api.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/api.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/api.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/api.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      without adding labels to every single issue within the tracking issue.\"}},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/fac6d4973acad43fcd2f7579a3b496cd92619172\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172/comments\",\"author\":{\"login\":\"bobheadxi\",\"id\":23356519,\"node_id\":\"MDQ6VXNlcjIzMzU2NTE5\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/23356519?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/bobheadxi\",\"html_url\":\"https://github.com/bobheadxi\",\"followers_url\":\"https://api.github.com/users/bobheadxi/followers\",\"following_url\":\"https://api.github.com/users/bobheadxi/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/bobheadxi/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/bobheadxi/subscriptions\",\"organizations_url\":\"https://api.github.com/users/bobheadxi/orgs\",\"repos_url\":\"https://api.github.com/users/bobheadxi/repos\",\"events_url\":\"https://api.github.com/users/bobheadxi/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/bobheadxi/received_events\",\"type\":\"User\",\"site_admin\":false},\"committer\":{\"login\":\"web-flow\",\"id\":19864447,\"node_id\":\"MDQ6VXNlcjE5ODY0NDQ3\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/19864447?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/web-flow\",\"html_url\":\"https://github.com/web-flow\",\"followers_url\":\"https://api.github.com/users/web-flow/followers\",\"following_url\":\"https://api.github.com/users/web-flow/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/web-flow/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/web-flow/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/web-flow/subscriptions\",\"organizations_url\":\"https://api.github.com/users/web-flow/orgs\",\"repos_url\":\"https://api.github.com/users/web-flow/repos\",\"events_url\":\"https://api.github.com/users/web-flow/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/web-flow/received_events\",\"type\":\"User\",\"site_admin\":false},\"parents\":[{\"sha\":\"be7f0f51b73b1966254db4aac65b656daa36e2fb\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/be7f0f51b73b1966254db4aac65b656daa36e2fb\"}],\"stats\":{\"total\":10551,\"additions\":5897,\"deletions\":4654},\"files\":[{\"sha\":\"a841a98899df57f8c08e615e6ca2b7017c85d8ba\",\"filename\":\"internal/cmd/tracking-issue/api.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fapi.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fapi.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Fapi.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -58,7 +58,7 @@ func makeQueries(org string, trackingIssues []*Issue) (queries
       []string) {\\n \\tvar rawTerms [][]string\\n \\tfor _, trackingIssue := range
       trackingIssues {\\n \\t\\tvar labelTerms []string\\n-\\t\\tfor _, label := range
       nonTrackingLabels(trackingIssue.Labels) {\\n+\\t\\tfor _, label := range trackingIssue.IdentifyingLabels()
       {\\n \\t\\t\\tlabelTerms = append(labelTerms, fmt.Sprintf(\\\"label:%q\\\",
-      label))\\n \\t\\t}\\n \"},{\"sha\":\"1f42ca389f954c1c5573f7cf5ad9ca33ae8b40e6\",\"filename\":\"internal/cmd/tracking-issue/context.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/context.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/context.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/context.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      label))\\n \\t\\t}\\n \"},{\"sha\":\"1f42ca389f954c1c5573f7cf5ad9ca33ae8b40e6\",\"filename\":\"internal/cmd/tracking-issue/context.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fcontext.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fcontext.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Fcontext.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -77,7 +77,7 @@ func matchingTrackingIssues(trackingIssue *Issue, issues []*Issue,
       pullRequests\\n \\t\\tvar top *Issue\\n \\t\\ttop, stack = stack[0], stack[1:]\\n
       \\n-\\t\\tif len(top.Labels) != 2 || !strings.HasPrefix(nonTrackingLabels(top.Labels)[0],
       \\\"team/\\\") {\\n+\\t\\tif len(top.Labels) != 2 || !strings.HasPrefix(top.IdentifyingLabels()[0],
       \\\"team/\\\") {\\n \\t\\t\\tmatchingTrackingIssues = append(matchingTrackingIssues,
-      top)\\n \\t\\t}\\n \"},{\"sha\":\"c0731a8de1b05b4bf613e1692e936d707c6c0216\",\"filename\":\"internal/cmd/tracking-issue/issue.go\",\"status\":\"modified\",\"additions\":33,\"deletions\":0,\"changes\":33,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/issue.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/issue.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/issue.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      top)\\n \\t\\t}\\n \"},{\"sha\":\"c0731a8de1b05b4bf613e1692e936d707c6c0216\",\"filename\":\"internal/cmd/tracking-issue/issue.go\",\"status\":\"modified\",\"additions\":33,\"deletions\":0,\"changes\":33,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fissue.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fissue.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Fissue.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -1,7 +1,9 @@\\n package main\\n \\n import (\\n+\\t\\\"regexp\\\"\\n \\t\\\"strings\\\"\\n+\\t\\\"sync\\\"\\n
       \\t\\\"time\\\"\\n )\\n \\n@@ -27,12 +29,43 @@ type Issue struct {\\n \\tTrackedIssues
       \      []*Issue       `json:\\\"-\\\"`\\n \\tTrackedPullRequests []*PullRequest
@@ -212,14 +126,14 @@ interactions:
       \\\"tracking\\\" {\\n+\\t\\t\\t\\tissue.identifyingLabels = append(issue.identifyingLabels,
       label)\\n+\\t\\t\\t}\\n+\\t\\t}\\n+\\t})\\n+\\n+\\treturn issue.identifyingLabels\\n+}\\n+\\n
       func (issue *Issue) SafeTitle() string {\\n \\tif issue.Private {\\n \\t\\treturn
-      issue.Repository\"},{\"sha\":\"ee6c86124518a14f3aec3ee8ebe9cee62a88290b\",\"filename\":\"internal/cmd/tracking-issue/labels.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":10,\"changes\":10,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/labels.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/labels.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/labels.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      issue.Repository\"},{\"sha\":\"ee6c86124518a14f3aec3ee8ebe9cee62a88290b\",\"filename\":\"internal/cmd/tracking-issue/labels.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":10,\"changes\":10,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Flabels.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Flabels.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Flabels.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -12,16 +12,6 @@ func contains(haystack []string, needle string) bool {\\n \\treturn
       false\\n }\\n \\n-func nonTrackingLabels(labels []string) (filtered []string)
       {\\n-\\tfor _, label := range labels {\\n-\\t\\tif label != \\\"tracking\\\"
       {\\n-\\t\\t\\tfiltered = append(filtered, label)\\n-\\t\\t}\\n-\\t}\\n-\\n-\\treturn
       filtered\\n-}\\n-\\n func redactLabels(labels []string) (redacted []string)
       {\\n \\tfor _, label := range labels {\\n \\t\\tif strings.HasPrefix(label,
-      \\\"estimate/\\\") || strings.HasPrefix(label, \\\"planned/\\\") {\"},{\"sha\":\"01c786ae4d33e637bab48f1c10048c4dce7ab763\",\"filename\":\"internal/cmd/tracking-issue/main.go\",\"status\":\"modified\",\"additions\":5,\"deletions\":4,\"changes\":9,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/main.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      \\\"estimate/\\\") || strings.HasPrefix(label, \\\"planned/\\\") {\"},{\"sha\":\"01c786ae4d33e637bab48f1c10048c4dce7ab763\",\"filename\":\"internal/cmd/tracking-issue/main.go\",\"status\":\"modified\",\"additions\":5,\"deletions\":4,\"changes\":9,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fmain.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fmain.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Fmain.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -15,10 +15,11 @@ import (\\n )\\n \\n const (\\n-\\tbeginWorkMarker        =
       \\\"<!-- BEGIN WORK -->\\\"\\n-\\tendWorkMarker          = \\\"<!-- END WORK
       -->\\\"\\n-\\tbeginAssigneeMarkerFmt = \\\"<!-- BEGIN ASSIGNEE: %s -->\\\"\\n-\\tendAssigneeMarker
@@ -227,11 +141,11 @@ interactions:
       BEGIN WORK -->\\\"\\n+\\tendWorkMarker             = \\\"<!-- END WORK -->\\\"\\n+\\tbeginAssigneeMarkerFmt
       \   = \\\"<!-- BEGIN ASSIGNEE: %s -->\\\"\\n+\\tendAssigneeMarker         =
       \\\"<!-- END ASSIGNEE -->\\\"\\n+\\toptionalLabelMarkerRegexp = \\\"<!-- OPTIONAL
-      LABEL: (.*) -->\\\"\\n )\\n \\n func main() {\"},{\"sha\":\"4541ff49d21a31719285a37820b51d5bafed3578\",\"filename\":\"internal/cmd/tracking-issue/main_test.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":0,\"changes\":1,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main_test.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main_test.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/main_test.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      LABEL: (.*) -->\\\"\\n )\\n \\n func main() {\"},{\"sha\":\"4541ff49d21a31719285a37820b51d5bafed3578\",\"filename\":\"internal/cmd/tracking-issue/main_test.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":0,\"changes\":1,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fmain_test.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fmain_test.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Fmain_test.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -25,6 +25,7 @@ var (\\n \\t\\t13987, // Code Intelligence 3.21 Tracking issue\\n
       \\t\\t13988, // Cloud 2020-09-23 Tracking issue\\n \\t\\t14166, // RFC-214:
       Tracking issue\\n+\\t\\t25768, // RFC 496: Continuous integration observability\\n
-      \\t}\\n )\\n \"},{\"sha\":\"271ab32f1fe7494d35cfc8c6468e3a1b41d4cde9\",\"filename\":\"internal/cmd/tracking-issue/render.go\",\"status\":\"modified\",\"additions\":2,\"deletions\":2,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/render.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/render.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/render.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      \\t}\\n )\\n \"},{\"sha\":\"271ab32f1fe7494d35cfc8c6468e3a1b41d4cde9\",\"filename\":\"internal/cmd/tracking-issue/render.go\",\"status\":\"modified\",\"additions\":2,\"deletions\":2,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Frender.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Frender.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Frender.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -11,7 +11,7 @@ import (\\n // RenderTrackingIssue renders the work section of
       the given tracking issue.\\n func RenderTrackingIssue(context IssueContext)
       string {\\n \\tassignees := findAssignees(context.Match(NewMatcher(\\n-\\t\\tnonTrackingLabels(context.trackingIssue.Labels),\\n+\\t\\tcontext.trackingIssue.IdentifyingLabels(),\\n
@@ -239,12 +153,12 @@ interactions:
       -21,7 +21,7 @@ func RenderTrackingIssue(context IssueContext) string {\\n \\n
       \\tfor _, assignee := range assignees {\\n \\t\\tassigneeContext := context.Match(NewMatcher(\\n-\\t\\t\\tnonTrackingLabels(context.trackingIssue.Labels),\\n+\\t\\t\\tcontext.trackingIssue.IdentifyingLabels(),\\n
       \\t\\t\\tcontext.trackingIssue.Milestone,\\n \\t\\t\\tassignee,\\n \\t\\t\\tassignee
-      == \\\"\\\",\"},{\"sha\":\"2f8c3f7df1d7519fadfad0741eb39fd9875ee832\",\"filename\":\"internal/cmd/tracking-issue/resolve.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/resolve.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/resolve.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/resolve.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      == \\\"\\\",\"},{\"sha\":\"2f8c3f7df1d7519fadfad0741eb39fd9875ee832\",\"filename\":\"internal/cmd/tracking-issue/resolve.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fresolve.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Fresolve.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Fresolve.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -44,7 +44,7 @@ func linkPullRequestsAndIssues(trackingIssues, issues []*Issue,
       pullRequests []*\\n func linkTrackingIssues(trackingIssues, issues []*Issue,
       pullRequests []*PullRequest) {\\n \\tfor _, trackingIssue := range trackingIssues
       {\\n \\t\\tmatcher := NewMatcher(\\n-\\t\\t\\tnonTrackingLabels(trackingIssue.Labels),\\n+\\t\\t\\ttrackingIssue.IdentifyingLabels(),\\n
-      \\t\\t\\ttrackingIssue.Milestone,\\n \\t\\t\\t\\\"\\\",\\n \\t\\t\\tfalse,\"},{\"sha\":\"25b56f3b646ce1bec2b037521507543e4823b683\",\"filename\":\"internal/cmd/tracking-issue/testdata/fixtures.json\",\"status\":\"modified\",\"additions\":5721,\"deletions\":4511,\"changes\":10232,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/fixtures.json\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/fixtures.json\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/fixtures.json?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\"},{\"sha\":\"9f0022de17d8a6719791a2a59271d618c892da93\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13675.md\",\"status\":\"modified\",\"additions\":48,\"deletions\":48,\"changes\":96,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13675.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13675.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-13675.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      \\t\\t\\ttrackingIssue.Milestone,\\n \\t\\t\\t\\\"\\\",\\n \\t\\t\\tfalse,\"},{\"sha\":\"25b56f3b646ce1bec2b037521507543e4823b683\",\"filename\":\"internal/cmd/tracking-issue/testdata/fixtures.json\",\"status\":\"modified\",\"additions\":5721,\"deletions\":4511,\"changes\":10232,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Ffixtures.json\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Ffixtures.json\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Ffixtures.json?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\"},{\"sha\":\"9f0022de17d8a6719791a2a59271d618c892da93\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13675.md\",\"status\":\"modified\",\"additions\":48,\"deletions\":48,\"changes\":96,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13675.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13675.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13675.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -45,103 +45,103 @@ Period is from **September 20th** to **October 19th (21 working
       days)**. Please\\n \\n \\n Completed: __5.00d__\\n-- [x] (\U0001F3C1 605 days
       ago) https://github.com/sourcegraph/sourcegraph/issues/9253  __5.00d__\\n--
@@ -403,7 +317,7 @@ interactions:
       [x] (\U0001F3C1 357 days ago) https://github.com/sourcegraph/sourcegraph/issues/16087
       \ __4.00d__   \U0001F3F3️ [Dist: 2020.11.30](https://github.com/sourcegraph/sourcegraph/milestone/67)\\n+-
       [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
-      \ __7.00d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"6c559a227ad53e621c2ca64e896716152ba8ac3c\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13987.md\",\"status\":\"modified\",\"additions\":52,\"deletions\":52,\"changes\":104,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13987.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13987.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-13987.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      \ __7.00d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"6c559a227ad53e621c2ca64e896716152ba8ac3c\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13987.md\",\"status\":\"modified\",\"additions\":52,\"deletions\":52,\"changes\":104,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13987.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13987.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13987.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -22,83 +22,83 @@ Period is from 2020-09-20 to 2020-10-20. Please write the days
       you won't be work\\n @unassigned\\n \\n - [ ] https://github.com/sourcegraph/sourcegraph/issues/26230
       \\n-  - [x] (\U0001F3C1 188 days ago) https://github.com/sourcegraph/sourcegraph/issues/12501
@@ -580,7 +494,7 @@ interactions:
       \ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/lsif-clang/milestone/4)\\n+-
       [x] (\U0001F3C1 238 days ago) https://github.com/sourcegraph/sourcegraph/issues/12349
       \ __4.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
-      <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"76332db5be22695c723fd8ac8ca038151dc12e74\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13988.md\",\"status\":\"modified\",\"additions\":18,\"deletions\":18,\"changes\":36,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13988.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13988.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-13988.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"76332db5be22695c723fd8ac8ca038151dc12e74\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13988.md\",\"status\":\"modified\",\"additions\":18,\"deletions\":18,\"changes\":36,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13988.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13988.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-13988.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -34,59 +34,59 @@ If you have planned unavailability this iteration (e.g., vacation),
       you can note\\n \\n \\n Completed: __7.00d__\\n-- [x] (\U0001F3C1 435 days ago)
       https://github.com/sourcegraph/sourcegraph/issues/13401 (PRs: ~[#14094](https://github.com/sourcegraph/sourcegraph/pull/14094)~)
@@ -637,7 +551,7 @@ interactions:
       \ __1.50d__\\n+- [x] (\U0001F3C1 438 days ago) https://github.com/sourcegraph/sourcegraph/issues/14046
       \ __0.50d__   \U0001F3F3️ [Cloud 2020-09-23](https://github.com/sourcegraph/sourcegraph/milestone/50)\\n+-
       [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
-      \ __1.50d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"d3d4a901a5468ede99eac25effe2cc7062a7f027\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-14166.md\",\"status\":\"modified\",\"additions\":5,\"deletions\":5,\"changes\":10,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-14166.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-14166.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-14166.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      \ __1.50d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"d3d4a901a5468ede99eac25effe2cc7062a7f027\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-14166.md\",\"status\":\"modified\",\"additions\":5,\"deletions\":5,\"changes\":10,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-14166.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-14166.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-14166.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -10,38 +10,38 @@ RFC-214: https://docs.google.com/document/d/1ajVQ11Vyi0Wz67DN15W3girJ5kyB5Zb7vk0\\n
       \\n \\n Completed\\n-- [x] (\U0001F3C1 281 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
       \\n+- [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
@@ -657,11 +571,11 @@ interactions:
       @unknwon: __6.50d__\\n \\n \\n Completed: __6.50d__\\n-- [x] (\U0001F3C1 281
       days ago) https://github.com/sourcegraph/sourcegraph/issues/14166  __6.50d__\\n+-
       [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
-      \ __6.50d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\"},{\"sha\":\"a009ac013ead09aebf6caa07ecb0704946cceca2\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-25768.md\",\"status\":\"added\",\"additions\":8,\"deletions\":0,\"changes\":8,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-25768.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-25768.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-25768.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      \ __6.50d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\"},{\"sha\":\"a009ac013ead09aebf6caa07ecb0704946cceca2\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-25768.md\",\"status\":\"added\",\"additions\":8,\"deletions\":0,\"changes\":8,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-25768.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-25768.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Fissue-25768.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -0,0 +1,8 @@\\n+This is a tracking issue for [RFC 496](https://docs.google.com/document/d/1fknr3NQGmwbKCfnF3Bcr-tYzV-TeuAGq-_Tm2-z_09M/edit#),
       a sub-RFC of #25348 \\r\\n+\\r\\n+<!-- OPTIONAL LABEL: okr/ci-stability -->\\r\\n+\\r\\n+###
       Tracked issues\\r\\n+\\r\\n+<!-- BEGIN WORK -->\\n+<!-- END WORK -->\\n\\\\
-      No newline at end of file\"},{\"sha\":\"ab60e8cf430ae1807d45c02b7c7fe020ae854369\",\"filename\":\"internal/cmd/tracking-issue/testdata/last-update.txt\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/last-update.txt\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/last-update.txt\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/last-update.txt?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      No newline at end of file\"},{\"sha\":\"ab60e8cf430ae1807d45c02b7c7fe020ae854369\",\"filename\":\"internal/cmd/tracking-issue/testdata/last-update.txt\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Flast-update.txt\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Flast-update.txt\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fcmd%2Ftracking-issue%2Ftestdata%2Flast-update.txt?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
       -1 +1 @@\\n-2021-12-03T11:23:08Z\\n\\\\ No newline at end of file\\n+2021-12-07T06:57:42Z\\n\\\\
       No newline at end of file\"}]}"
     headers:
@@ -679,9 +593,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:20 GMT
+      - Fri, 13 Oct 2023 08:46:30 GMT
       Etag:
-      - W/"86b3bc249dc9e3d24a896bb333efa4e30a0b8e8fdd3b42e6ebbf6607f1f61eef"
+      - W/"555f345ba461142d38535f859ba59dbdf4a5b5b937460e77fb9e53b66c700396"
       Last-Modified:
       - Thu, 09 Dec 2021 20:19:54 GMT
       Referrer-Policy:
@@ -693,30 +607,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126D59:3DFEF88:61BB7824
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99D92:D8AF8:652903E5
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4997"
+      - "4870"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "3"
+      - "130"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -729,7 +639,9 @@ interactions:
       Accept:
       - application/vnd.github.v3+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a
     method: GET
   response:
@@ -760,7 +672,7 @@ interactions:
       all existing usage of `X-Sourcegraph-User-ID`. The header is also renamed to
       `X-Sourcegraph-Actor-UID` to more accurately reflect `actor.UID`, though backcompat
       is retained mostly with the existing behaviour (though drops support for setting
-      the ID to 0 to imply an internal user)\"}},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/06a8636c2e0bea69944d8419aafa03ff3992527a\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a/comments\",\"author\":{\"login\":\"bobheadxi\",\"id\":23356519,\"node_id\":\"MDQ6VXNlcjIzMzU2NTE5\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/23356519?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/bobheadxi\",\"html_url\":\"https://github.com/bobheadxi\",\"followers_url\":\"https://api.github.com/users/bobheadxi/followers\",\"following_url\":\"https://api.github.com/users/bobheadxi/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/bobheadxi/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/bobheadxi/subscriptions\",\"organizations_url\":\"https://api.github.com/users/bobheadxi/orgs\",\"repos_url\":\"https://api.github.com/users/bobheadxi/repos\",\"events_url\":\"https://api.github.com/users/bobheadxi/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/bobheadxi/received_events\",\"type\":\"User\",\"site_admin\":false},\"committer\":{\"login\":\"web-flow\",\"id\":19864447,\"node_id\":\"MDQ6VXNlcjE5ODY0NDQ3\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/19864447?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/web-flow\",\"html_url\":\"https://github.com/web-flow\",\"followers_url\":\"https://api.github.com/users/web-flow/followers\",\"following_url\":\"https://api.github.com/users/web-flow/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/web-flow/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/web-flow/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/web-flow/subscriptions\",\"organizations_url\":\"https://api.github.com/users/web-flow/orgs\",\"repos_url\":\"https://api.github.com/users/web-flow/repos\",\"events_url\":\"https://api.github.com/users/web-flow/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/web-flow/received_events\",\"type\":\"User\",\"site_admin\":false},\"parents\":[{\"sha\":\"5750e75469f89ee776a1ffcb9ca0ebf3c758941d\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/5750e75469f89ee776a1ffcb9ca0ebf3c758941d\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/5750e75469f89ee776a1ffcb9ca0ebf3c758941d\"}],\"stats\":{\"total\":332,\"additions\":304,\"deletions\":28},\"files\":[{\"sha\":\"8c3f85d3cc12daeb4bd2adc00842b043c1170d61\",\"filename\":\"cmd/frontend/internal/cli/http.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":24,\"changes\":25,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/frontend/internal/cli/http.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/frontend/internal/cli/http.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/cli/http.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      the ID to 0 to imply an internal user)\"}},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/06a8636c2e0bea69944d8419aafa03ff3992527a\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a/comments\",\"author\":{\"login\":\"bobheadxi\",\"id\":23356519,\"node_id\":\"MDQ6VXNlcjIzMzU2NTE5\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/23356519?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/bobheadxi\",\"html_url\":\"https://github.com/bobheadxi\",\"followers_url\":\"https://api.github.com/users/bobheadxi/followers\",\"following_url\":\"https://api.github.com/users/bobheadxi/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/bobheadxi/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/bobheadxi/subscriptions\",\"organizations_url\":\"https://api.github.com/users/bobheadxi/orgs\",\"repos_url\":\"https://api.github.com/users/bobheadxi/repos\",\"events_url\":\"https://api.github.com/users/bobheadxi/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/bobheadxi/received_events\",\"type\":\"User\",\"site_admin\":false},\"committer\":{\"login\":\"web-flow\",\"id\":19864447,\"node_id\":\"MDQ6VXNlcjE5ODY0NDQ3\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/19864447?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/web-flow\",\"html_url\":\"https://github.com/web-flow\",\"followers_url\":\"https://api.github.com/users/web-flow/followers\",\"following_url\":\"https://api.github.com/users/web-flow/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/web-flow/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/web-flow/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/web-flow/subscriptions\",\"organizations_url\":\"https://api.github.com/users/web-flow/orgs\",\"repos_url\":\"https://api.github.com/users/web-flow/repos\",\"events_url\":\"https://api.github.com/users/web-flow/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/web-flow/received_events\",\"type\":\"User\",\"site_admin\":false},\"parents\":[{\"sha\":\"5750e75469f89ee776a1ffcb9ca0ebf3c758941d\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/5750e75469f89ee776a1ffcb9ca0ebf3c758941d\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/5750e75469f89ee776a1ffcb9ca0ebf3c758941d\"}],\"stats\":{\"total\":332,\"additions\":304,\"deletions\":28},\"files\":[{\"sha\":\"8c3f85d3cc12daeb4bd2adc00842b043c1170d61\",\"filename\":\"cmd/frontend/internal/cli/http.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":24,\"changes\":25,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd%2Ffrontend%2Finternal%2Fcli%2Fhttp.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd%2Ffrontend%2Finternal%2Fcli%2Fhttp.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd%2Ffrontend%2Finternal%2Fcli%2Fhttp.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -2,7 +2,6 @@ package cli\\n \\n import (\\n \\t\\\"net/http\\\"\\n-\\t\\\"strconv\\\"\\n
       \\t\\\"strings\\\"\\n \\n \\t\\\"github.com/NYTimes/gziphandler\\\"\\n@@ -123,7
       +122,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {\\n func
@@ -784,23 +696,23 @@ interactions:
       := r.WithContext(actor.WithActor(r.Context(), &a))\\n-\\t\\th.ServeHTTP(w, rWithActor)\\n-\\t})\\n-}\\n-\\n
       // corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware
       is\\n // used), indicates that the incoming HTTP request is either same-origin
-      or is from an allowed\\n // origin. See\"},{\"sha\":\"0137e8ca28fa498c1c4ecdf5d44f6870fa2f582d\",\"filename\":\"cmd/searcher/main.go\",\"status\":\"modified\",\"additions\":3,\"deletions\":1,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/searcher/main.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/searcher/main.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/searcher/main.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      or is from an allowed\\n // origin. See\"},{\"sha\":\"0137e8ca28fa498c1c4ecdf5d44f6870fa2f582d\",\"filename\":\"cmd/searcher/main.go\",\"status\":\"modified\",\"additions\":3,\"deletions\":1,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd%2Fsearcher%2Fmain.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd%2Fsearcher%2Fmain.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd%2Fsearcher%2Fmain.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -74,7 +74,9 @@ func main() {\\n \\t}\\n \\tservice.Store.Start()\\n \\n-\\thandler
       := ot.Middleware(trace.HTTPTraceMiddleware(service, conf.DefaultClient()))\\n+\\t//
       Set up handler middleware\\n+\\thandler := trace.HTTPTraceMiddleware(service,
       conf.DefaultClient())\\n+\\thandler = ot.Middleware(handler)\\n \\n \\thost
-      := \\\"\\\"\\n \\tif env.InsecureDev {\"},{\"sha\":\"f7e3dd3836e892f549fed21a7186cb0fcde898ab\",\"filename\":\"enterprise/internal/batches/service/workspace_resolver.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":1,\"changes\":1,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/batches/service/workspace_resolver.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/batches/service/workspace_resolver.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/enterprise/internal/batches/service/workspace_resolver.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      := \\\"\\\"\\n \\tif env.InsecureDev {\"},{\"sha\":\"f7e3dd3836e892f549fed21a7186cb0fcde898ab\",\"filename\":\"enterprise/internal/batches/service/workspace_resolver.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":1,\"changes\":1,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise%2Finternal%2Fbatches%2Fservice%2Fworkspace_resolver.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise%2Finternal%2Fbatches%2Fservice%2Fworkspace_resolver.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/enterprise%2Finternal%2Fbatches%2Fservice%2Fworkspace_resolver.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -381,7 +381,6 @@ func (wr *workspaceResolver) runSearch(ctx context.Context,
       query string, onMatc\\n \\tif !a.IsAuthenticated() {\\n \\t\\treturn errors.New(\\\"no
       user set in workspaceResolver.runSearch\\\")\\n \\t}\\n-\\treq.Header.Set(\\\"X-Sourcegraph-User-ID\\\",
       a.UIDString())\\n \\n \\tresp, err := httpcli.InternalClient.Do(req)\\n \\tif
-      err != nil {\"},{\"sha\":\"7dee97b0b7b239b208c64d4b8c9fb9d1bf2e6f83\",\"filename\":\"enterprise/internal/codemonitors/background/graphql.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":2,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/codemonitors/background/graphql.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/codemonitors/background/graphql.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/enterprise/internal/codemonitors/background/graphql.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      err != nil {\"},{\"sha\":\"7dee97b0b7b239b208c64d4b8c9fb9d1bf2e6f83\",\"filename\":\"enterprise/internal/codemonitors/background/graphql.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":2,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise%2Finternal%2Fcodemonitors%2Fbackground%2Fgraphql.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise%2Finternal%2Fcodemonitors%2Fbackground%2Fgraphql.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/enterprise%2Finternal%2Fcodemonitors%2Fbackground%2Fgraphql.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -8,7 +8,6 @@ import (\\n \\t\\\"net/http\\\"\\n \\t\\\"net/url\\\"\\n \\t\\\"runtime\\\"\\n-\\t\\\"strconv\\\"\\n
       \\t\\\"time\\\"\\n \\n \\t\\\"github.com/sourcegraph/sourcegraph/internal/api\\\"\\n@@
       -143,7 +142,6 @@ func search(ctx context.Context, query string, userID int32)
       (*gqlSearchResponse\\n \\t}\\n \\n \\treq.Header.Set(\\\"Content-Type\\\", \\\"application/json\\\")\\n-\\treq.Header.Set(\\\"X-Sourcegraph-User-ID\\\",
       strconv.FormatInt(int64(userID), 10))\\n \\tresp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))\\n
-      \\tif err != nil {\\n \\t\\treturn nil, errors.Wrap(err, \\\"Post\\\")\"},{\"sha\":\"2ae2659b9aa4dc576a2c54d6c349b8cc20d3b1b3\",\"filename\":\"internal/actor/actor.go\",\"status\":\"modified\",\"additions\":4,\"deletions\":0,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/actor.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/actor.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/actor/actor.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      \\tif err != nil {\\n \\t\\treturn nil, errors.Wrap(err, \\\"Post\\\")\"},{\"sha\":\"2ae2659b9aa4dc576a2c54d6c349b8cc20d3b1b3\",\"filename\":\"internal/actor/actor.go\",\"status\":\"modified\",\"additions\":4,\"deletions\":0,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Factor%2Factor.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Factor%2Factor.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Factor%2Factor.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -16,6 +16,10 @@ import (\\n \\n // Actor represents an agent that accesses resources.
       It can represent an anonymous user, an\\n // authenticated user, or an internal
       Sourcegraph service.\\n+//\\n+// Actor can be propagated across services by
@@ -808,7 +720,7 @@ interactions:
       actor.HTTPMiddleware. Before assuming this, ensure\\n+// that actor propagation
       is enabled on both ends of the request.\\n type Actor struct {\\n \\t// UID
       is the unique ID of the authenticated user, or 0 for anonymous actors.\\n \\tUID
-      int32 `json:\\\",omitempty\\\"`\"},{\"sha\":\"ad4924c7aaea2bca74cc8d27d0a3aa260f8e2692\",\"filename\":\"internal/actor/http.go\",\"status\":\"added\",\"additions\":147,\"deletions\":0,\"changes\":147,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/actor/http.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      int32 `json:\\\",omitempty\\\"`\"},{\"sha\":\"ad4924c7aaea2bca74cc8d27d0a3aa260f8e2692\",\"filename\":\"internal/actor/http.go\",\"status\":\"added\",\"additions\":147,\"deletions\":0,\"changes\":147,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Factor%2Fhttp.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Factor%2Fhttp.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Factor%2Fhttp.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -0,0 +1,147 @@\\n+package actor\\n+\\n+import (\\n+\\t\\\"fmt\\\"\\n+\\t\\\"net/http\\\"\\n+\\t\\\"strconv\\\"\\n+\\n+\\t\\\"github.com/inconshreveable/log15\\\"\\n+\\t\\\"github.com/prometheus/client_golang/prometheus\\\"\\n+\\t\\\"github.com/prometheus/client_golang/prometheus/promauto\\\"\\n+)\\n+\\n+const
       (\\n+\\t// headerKeyActorUID is the header key for the actor's user ID.\\n+\\theaderKeyActorUID
       = \\\"X-Sourcegraph-Actor-UID\\\"\\n+\\t// headerKeyLegacyActorUID is the old
@@ -871,7 +783,7 @@ interactions:
       headerKeyActorUID)))\\n+\\t\\t\\t\\treturn\\n+\\t\\t\\t}\\n+\\n+\\t\\t\\t//
       Valid user, add to context\\n+\\t\\t\\tactor := FromUser(int32(uid))\\n+\\t\\t\\tctx
       = WithActor(ctx, actor)\\n+\\t\\t\\tmetricIncomingActors.WithLabelValues(metricActorTypeUser).Inc()\\n+\\t\\t}\\n+\\n+\\t\\tnext.ServeHTTP(rw,
-      req.WithContext(ctx))\\n+\\t})\\n+}\"},{\"sha\":\"72fbc89dc27253648de4ddd689da091bbf005c02\",\"filename\":\"internal/actor/http_test.go\",\"status\":\"added\",\"additions\":133,\"deletions\":0,\"changes\":133,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http_test.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http_test.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/actor/http_test.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      req.WithContext(ctx))\\n+\\t})\\n+}\"},{\"sha\":\"72fbc89dc27253648de4ddd689da091bbf005c02\",\"filename\":\"internal/actor/http_test.go\",\"status\":\"added\",\"additions\":133,\"deletions\":0,\"changes\":133,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Factor%2Fhttp_test.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Factor%2Fhttp_test.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Factor%2Fhttp_test.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -0,0 +1,133 @@\\n+package actor\\n+\\n+import (\\n+\\t\\\"context\\\"\\n+\\t\\\"net/http\\\"\\n+\\t\\\"net/http/httptest\\\"\\n+\\t\\\"testing\\\"\\n+\\n+\\t\\\"github.com/google/go-cmp/cmp\\\"\\n+)\\n+\\n+type
       roundTripFunc func(req *http.Request) *http.Response\\n+\\n+func (f roundTripFunc)
       RoundTrip(req *http.Request) (*http.Response, error) {\\n+\\treturn f(req),
@@ -920,7 +832,7 @@ interactions:
       diff)\\n+\\t\\t\\t\\t}\\n+\\t\\t\\t}))\\n+\\t\\t\\treq, err := http.NewRequest(http.MethodGet,
       \\\"/test\\\", nil)\\n+\\t\\t\\tif err != nil {\\n+\\t\\t\\t\\tt.Fatal(err)\\n+\\t\\t\\t}\\n+\\t\\t\\tfor
       k, v := range tt.headers {\\n+\\t\\t\\t\\treq.Header.Set(k, v)\\n+\\t\\t\\t}\\n+\\t\\t\\thandler.ServeHTTP(httptest.NewRecorder(),
-      req)\\n+\\t\\t})\\n+\\t}\\n+}\"},{\"sha\":\"490bf147e2bb8552501ec2580fc1aca52bc7f93b\",\"filename\":\"internal/httpcli/client.go\",\"status\":\"modified\",\"additions\":16,\"deletions\":0,\"changes\":16,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/httpcli/client.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/httpcli/client.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/httpcli/client.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      req)\\n+\\t\\t})\\n+\\t}\\n+}\"},{\"sha\":\"490bf147e2bb8552501ec2580fc1aca52bc7f93b\",\"filename\":\"internal/httpcli/client.go\",\"status\":\"modified\",\"additions\":16,\"deletions\":0,\"changes\":16,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Fhttpcli%2Fclient.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal%2Fhttpcli%2Fclient.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal%2Fhttpcli%2Fclient.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
       -25,6 +25,7 @@ import (\\n \\t\\\"github.com/prometheus/client_golang/prometheus\\\"\\n
       \\t\\\"github.com/prometheus/client_golang/prometheus/promauto\\\"\\n \\n+\\t\\\"github.com/sourcegraph/sourcegraph/internal/actor\\\"\\n
       \\t\\\"github.com/sourcegraph/sourcegraph/internal/env\\\"\\n \\t\\\"github.com/sourcegraph/sourcegraph/internal/lazyregexp\\\"\\n
@@ -950,9 +862,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:21 GMT
+      - Fri, 13 Oct 2023 08:46:30 GMT
       Etag:
-      - W/"1cb372f1f238fca3e593c23ce5d0e6539142267ef08726719ab5d349fbdcb137"
+      - W/"7ec038f4ba8af329633812f23e225d5b0b4e701be27035ffd9113a2af86d1c1c"
       Last-Modified:
       - Wed, 01 Dec 2021 17:46:07 GMT
       Referrer-Policy:
@@ -964,30 +876,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126D91:3DFEFF4:61BB7824
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99D9F:D8B08:652903E6
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4996"
+      - "4869"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "4"
+      - "131"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1000,7 +908,9 @@ interactions:
       Accept:
       - application/vnd.github.v3+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4
     method: GET
   response:
@@ -1011,7 +921,7 @@ interactions:
       PGP SIGNATURE-----\n","payload":"tree 6c5c0dc34da2d33e2cbfdb27e3ac8cf1e023d5d4\nparent
       06b6f3b80bcc8dabb64283403192b261f57cd819\nauthor Jean-Hadrien Chabran <jh@chabran.fr>
       1639146088 +0100\ncommitter GitHub <noreply@github.com> 1639146088 +0100\n\nDrop
-      code related to deprecated /go/* routes (#28844)\n\n"}},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4","html_url":"https://github.com/sourcegraph/sourcegraph/commit/93971fa0b036b3e258cbb9a3eb7098e4032eefc4","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/comments","author":{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","site_admin":false},"parents":[{"sha":"06b6f3b80bcc8dabb64283403192b261f57cd819","url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06b6f3b80bcc8dabb64283403192b261f57cd819","html_url":"https://github.com/sourcegraph/sourcegraph/commit/06b6f3b80bcc8dabb64283403192b261f57cd819"}],"stats":{"total":722,"additions":1,"deletions":721},"files":[{"sha":"c7775eab5592c4e76d1c7fcd17e04f1c8bb09684","filename":"cmd/frontend/internal/app/app.go","status":"modified","additions":0,"deletions":6,"changes":6,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/app.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/app.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/app.go?ref=93971fa0b036b3e258cbb9a3eb7098e4032eefc4","patch":"@@
+      code related to deprecated /go/* routes (#28844)\n\n"}},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4","html_url":"https://github.com/sourcegraph/sourcegraph/commit/93971fa0b036b3e258cbb9a3eb7098e4032eefc4","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/comments","author":{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","site_admin":false},"parents":[{"sha":"06b6f3b80bcc8dabb64283403192b261f57cd819","url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06b6f3b80bcc8dabb64283403192b261f57cd819","html_url":"https://github.com/sourcegraph/sourcegraph/commit/06b6f3b80bcc8dabb64283403192b261f57cd819"}],"stats":{"total":722,"additions":1,"deletions":721},"files":[{"sha":"c7775eab5592c4e76d1c7fcd17e04f1c8bb09684","filename":"cmd/frontend/internal/app/app.go","status":"modified","additions":0,"deletions":6,"changes":6,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd%2Ffrontend%2Finternal%2Fapp%2Fapp.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd%2Ffrontend%2Finternal%2Fapp%2Fapp.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd%2Ffrontend%2Finternal%2Fapp%2Fapp.go?ref=93971fa0b036b3e258cbb9a3eb7098e4032eefc4","patch":"@@
       -5,7 +5,6 @@ import (\n \n \t\"github.com/NYTimes/gziphandler\"\n \n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar\"\n
       \t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd\"\n
       \tregistry \"github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api\"\n
@@ -1024,7 +934,7 @@ interactions:
       \n-\tr.Get(router.GDDORefs).Handler(trace.Route(errorutil.Handler(serveGDDORefs)))\n
       \tr.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))\n
       \n \tr.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w
-      http.ResponseWriter, r *http.Request) {"},{"sha":"0b0e9bd79ed725d1aae4254fa6cd8892625834ad","filename":"cmd/frontend/internal/app/gddo.go","status":"removed","additions":0,"deletions":71,"changes":71,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/gddo.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/gddo.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/gddo.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
+      http.ResponseWriter, r *http.Request) {"},{"sha":"0b0e9bd79ed725d1aae4254fa6cd8892625834ad","filename":"cmd/frontend/internal/app/gddo.go","status":"removed","additions":0,"deletions":71,"changes":71,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd%2Ffrontend%2Finternal%2Fapp%2Fgddo.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd%2Ffrontend%2Finternal%2Fapp%2Fgddo.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd%2Ffrontend%2Finternal%2Fapp%2Fgddo.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
       -1,71 +0,0 @@\n-package app\n-\n-import (\n-\t\"fmt\"\n-\t\"net/http\"\n-\t\"path\"\n-\t\"strings\"\n-\n-\t\"github.com/cockroachdb/errors\"\n-\n-\t\"github.com/sourcegraph/sourcegraph/internal/errcode\"\n-)\n-\n-//
       isGoRepoPath returns whether pkg is (likely to be) a Go stdlib\n-// package
       import path.\n-func isGoRepoPath(pkg string) bool {\n-\t// If no path components
@@ -1051,7 +961,7 @@ interactions:
       repo == \"\" || pkg == \"\" || def == \"\" {\n-\t\treturn &errcode.HTTPErr{Status:
       http.StatusBadRequest, Err: errors.New(\"repo, pkg, and def must be specified
       in query string\")}\n-\t}\n-\n-\thttp.Redirect(w, r, fmt.Sprintf(\"/go/%s/-/%s\",
-      pkg, def), http.StatusMovedPermanently)\n-\treturn nil\n-}"},{"sha":"e797c70a9da2ccbeea1b4b61e146398c55143ab0","filename":"cmd/frontend/internal/app/go_symbol_url.go","status":"removed","additions":0,"deletions":446,"changes":446,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/go_symbol_url.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
+      pkg, def), http.StatusMovedPermanently)\n-\treturn nil\n-}"},{"sha":"e797c70a9da2ccbeea1b4b61e146398c55143ab0","filename":"cmd/frontend/internal/app/go_symbol_url.go","status":"removed","additions":0,"deletions":446,"changes":446,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd%2Ffrontend%2Finternal%2Fapp%2Fgo_symbol_url.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd%2Ffrontend%2Finternal%2Fapp%2Fgo_symbol_url.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd%2Ffrontend%2Finternal%2Fapp%2Fgo_symbol_url.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
       -1,446 +0,0 @@\n-package app\n-\n-import (\n-\t\"context\"\n-\t\"fmt\"\n-\t\"go/ast\"\n-\t\"go/build\"\n-\t\"go/doc\"\n-\t\"go/token\"\n-\t\"io\"\n-\t\"io/fs\"\n-\t\"log\"\n-\t\"net/http\"\n-\t\"net/url\"\n-\t\"path\"\n-\t\"path/filepath\"\n-\t\"runtime\"\n-\t\"strings\"\n-\n-\t\"github.com/cockroachdb/errors\"\n-\t\"github.com/hashicorp/go-multierror\"\n-\t\"github.com/sourcegraph/ctxvfs\"\n-\t\"github.com/sourcegraph/go-lsp\"\n-\t\"golang.org/x/tools/go/buildutil\"\n-\n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/backend\"\n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/gosrc\"\n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/api\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/database\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/errcode\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/httpcli\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/lazyregexp\"\n-)\n-\n-//
       serveGoSymbolURL handles Go symbol URLs (e.g.,\n-// https://sourcegraph.com/go/github.com/gorilla/mux/-/Vars)
       by\n-// redirecting them to the file and line/column URL of the definition.\n-func
@@ -1200,7 +1110,7 @@ interactions:
       Same as net/http\n-\t\tconst size = 64 << 10\n-\t\tbuf := make([]byte, size)\n-\t\tbuf
       = buf[:runtime.Stack(buf, false)]\n-\t\tid := fmt.Sprintf(format, v...)\n-\t\tlog.Printf(\"panic
       serving %s: %v\\n%s\", id, r, string(buf))\n-\t\treturn errors.Errorf(\"unexpected
-      panic: %v\", r)\n-\t}\n-\treturn nil\n-}"},{"sha":"d24b21e4d6051fc86006f07a6dbcb9b2212c4321","filename":"cmd/frontend/internal/app/go_symbol_url_test.go","status":"removed","additions":0,"deletions":188,"changes":188,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url_test.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url_test.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/go_symbol_url_test.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
+      panic: %v\", r)\n-\t}\n-\treturn nil\n-}"},{"sha":"d24b21e4d6051fc86006f07a6dbcb9b2212c4321","filename":"cmd/frontend/internal/app/go_symbol_url_test.go","status":"removed","additions":0,"deletions":188,"changes":188,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd%2Ffrontend%2Finternal%2Fapp%2Fgo_symbol_url_test.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd%2Ffrontend%2Finternal%2Fapp%2Fgo_symbol_url_test.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd%2Ffrontend%2Finternal%2Fapp%2Fgo_symbol_url_test.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
       -1,188 +0,0 @@\n-package app\n-\n-import (\n-\t\"context\"\n-\t\"strings\"\n-\t\"testing\"\n-\n-\t\"github.com/google/go-cmp/cmp\"\n-\t\"github.com/sourcegraph/ctxvfs\"\n-\t\"github.com/sourcegraph/go-langserver/pkg/lsp\"\n-\n-\t\"github.com/sourcegraph/sourcegraph/internal/api\"\n-)\n-\n-func
       TestParseGoSymbolURLPath(t *testing.T) {\n-\tvalid := map[string]*goSymbolSpec{\n-\t\t\"/go/github.com/gorilla/mux/-/Router/Match\":
       {\n-\t\t\tPkg:      \"github.com/gorilla/mux\",\n-\t\t\tReceiver: strptr(\"Router\"),\n-\t\t\tSymbol:   \"Match\",\n-\t\t},\n-\n-\t\t\"/go/github.com/gorilla/mux/-/Router\":
@@ -1255,7 +1165,7 @@ interactions:
       k)\n-\t}\n-\treturn &stringMapFS{\n-\t\tFileSystem: ctxvfs.Map(m2),\n-\t\tfilenames:  filenames,\n-\t}\n-}\n-\n-type
       stringMapFS struct {\n-\tctxvfs.FileSystem\n-\tfilenames []string\n-}\n-\n-func
       (fs *stringMapFS) ListAllFiles(ctx context.Context) ([]string, error) {\n-\treturn
-      fs.filenames, nil\n-}"},{"sha":"09d80dc18f25f441000e235d6ca0fe8eac637ec0","filename":"cmd/frontend/internal/app/router/router.go","status":"modified","additions":1,"deletions":10,"changes":11,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/router/router.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/router/router.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/router/router.go?ref=93971fa0b036b3e258cbb9a3eb7098e4032eefc4","patch":"@@
+      fs.filenames, nil\n-}"},{"sha":"09d80dc18f25f441000e235d6ca0fe8eac637ec0","filename":"cmd/frontend/internal/app/router/router.go","status":"modified","additions":1,"deletions":10,"changes":11,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd%2Ffrontend%2Finternal%2Fapp%2Frouter%2Frouter.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd%2Ffrontend%2Finternal%2Fapp%2Frouter%2Frouter.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd%2Ffrontend%2Finternal%2Fapp%2Frouter%2Frouter.go?ref=93971fa0b036b3e258cbb9a3eb7098e4032eefc4","patch":"@@
       -7,7 +7,6 @@ package router\n import (\n \t\"github.com/gorilla/mux\"\n \n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar\"\n
       \t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar\"\n )\n
       \n@@ -41,16 +40,13 @@ const (\n \tOldToolsRedirect = \"old-tools-redirect\"\n
@@ -1285,9 +1195,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:21 GMT
+      - Fri, 13 Oct 2023 08:46:30 GMT
       Etag:
-      - W/"4ab341e8639e3fa42f53d5cc0c43b6d40be9fef9de779c483d51f6ed8bc7f438"
+      - W/"49cb5cd379b515592a5f6e60493cdaa14fef9cb0a1a09e0c313efe37648bb1dd"
       Last-Modified:
       - Fri, 10 Dec 2021 14:21:28 GMT
       Referrer-Policy:
@@ -1299,30 +1209,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126DB4:3DFF02A:61BB7825
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99DAA:D8B12:652903E6
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4995"
+      - "4868"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "5"
+      - "132"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1335,81 +1241,14 @@ interactions:
       Accept:
       - application/vnd.github.v3+json
       User-Agent:
-      - go-github
-    url: https://api.github.com/orgs/sourcegraph/memberships/davejrt
-    method: GET
-  response:
-    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/davejrt","state":"active","role":"admin","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
-      search and navigation for teams (self-hosted, OSS)"}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Thu, 16 Dec 2021 17:32:21 GMT
-      Etag:
-      - W/"7964001d34149e9eb970f9326e675dddb1b0d3b4931d9814e8605f9248367161"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; format=json
-      X-Github-Request-Id:
-      - E826:16A2:2126DD4:3DFF05F:61BB7825
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4994"
-      X-Ratelimit-Reset:
-      - "1639679540"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "6"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.v3+json
-      User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/orgs/sourcegraph/memberships/bobheadxi
     method: GET
   response:
-    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/bobheadxi","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
-      search and navigation for teams (self-hosted, OSS)"}}'
+    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/bobheadxi","state":"active","role":"admin","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
+      AI platform: Cody and Code Search"}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1425,9 +1264,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:21 GMT
+      - Fri, 13 Oct 2023 08:46:31 GMT
       Etag:
-      - W/"4a26a02b3c974222a385bc2ddb9f7729aa04d13b4482223d172777709b11981d"
+      - W/"192e71f434bd76d8e1e426ea28fd349e753ff920820c69029d95f8796b9212b3"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1437,30 +1276,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126DE9:3DFF073:61BB7825
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99DB5:D8B26:652903E6
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4993"
+      - "4867"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "7"
+      - "133"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1473,12 +1308,14 @@ interactions:
       Accept:
       - application/vnd.github.v3+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/orgs/sourcegraph/memberships/bobheadxi
     method: GET
   response:
-    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/bobheadxi","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
-      search and navigation for teams (self-hosted, OSS)"}}'
+    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/bobheadxi","state":"active","role":"admin","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
+      AI platform: Cody and Code Search"}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1494,9 +1331,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:21 GMT
+      - Fri, 13 Oct 2023 08:46:31 GMT
       Etag:
-      - W/"4a26a02b3c974222a385bc2ddb9f7729aa04d13b4482223d172777709b11981d"
+      - W/"192e71f434bd76d8e1e426ea28fd349e753ff920820c69029d95f8796b9212b3"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1506,30 +1343,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126DFE:3DFF089:61BB7825
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99DC1:D8B2F:652903E7
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4992"
+      - "4866"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "8"
+      - "134"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1542,12 +1375,14 @@ interactions:
       Accept:
       - application/vnd.github.v3+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/orgs/sourcegraph/memberships/jhchabran
     method: GET
   response:
-    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/jhchabran","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
-      search and navigation for teams (self-hosted, OSS)"}}'
+    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/jhchabran","state":"active","role":"admin","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
+      AI platform: Cody and Code Search"}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1563,9 +1398,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:22 GMT
+      - Fri, 13 Oct 2023 08:46:31 GMT
       Etag:
-      - W/"52151cdc5e9488ec1eaed4b041a684db072d1290a35132213ef4d10c07d4347b"
+      - W/"a869c2200a0f7942efe004fe66448ae7a48ceb0d0a918acf020490bee8c1b175"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1575,30 +1410,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126E0D:3DFF096:61BB7825
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99DD0:D8B44:652903E7
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4991"
+      - "4865"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "9"
+      - "135"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1606,7 +1437,7 @@ interactions:
     duration: ""
 - request:
     body: |
-      {"required_status_checks":{"strict":false,"contexts":["buildkite/sourcegraph"]},"required_pull_request_reviews":{"dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"enforce_admins":false,"restrictions":{"users":["davejrt","bobheadxi","bobheadxi","jhchabran"],"teams":["dev-experience"]},"required_linear_history":true}
+      {"required_status_checks":{"strict":false,"checks":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks"},"required_pull_request_reviews":{"dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"enforce_admins":true,"restrictions":{"users":["bobheadxi","bobheadxi","jhchabran"],"teams":["dev-experience"],"apps":[]},"required_linear_history":true}
     form: {}
     headers:
       Accept:
@@ -1614,14 +1445,16 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: PUT
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
-      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
-      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
-      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"The
+      Sourcegraph dev experience team: https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Engineering","id":6133235,"node_id":"T_kwDOADy5QM4AXZXz","slug":"engineering","description":"Sourcegraph
+      Engineering Department","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/6133235","html_url":"https://github.com/orgs/sourcegraph/teams/engineering","members_url":"https://api.github.com/organizations/3979584/team/6133235/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/6133235/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1637,9 +1470,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:23 GMT
+      - Fri, 13 Oct 2023 08:46:33 GMT
       Etag:
-      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      - W/"8d6d17674d2929b4e4234149dd9bdb27bc0db5cd5759162b2352c2e381d1283f"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1649,30 +1482,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126E22:3DFF0B4:61BB7826
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99DDD:D8B4D:652903E8
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4990"
+      - "4864"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "10"
+      - "136"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1685,14 +1514,16 @@ interactions:
       Accept:
       - application/vnd.github.luke-cage-preview+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: GET
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
-      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
-      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
-      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"The
+      Sourcegraph dev experience team: https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Engineering","id":6133235,"node_id":"T_kwDOADy5QM4AXZXz","slug":"engineering","description":"Sourcegraph
+      Engineering Department","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/6133235","html_url":"https://github.com/orgs/sourcegraph/teams/engineering","members_url":"https://api.github.com/organizations/3979584/team/6133235/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/6133235/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1708,9 +1539,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:23 GMT
+      - Fri, 13 Oct 2023 08:46:33 GMT
       Etag:
-      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      - W/"8d6d17674d2929b4e4234149dd9bdb27bc0db5cd5759162b2352c2e381d1283f"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1720,30 +1551,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126EC4:3DFF177:61BB7826
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99DFC:D8B85:652903E9
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4989"
+      - "4863"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "11"
+      - "137"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1756,14 +1583,16 @@ interactions:
       Accept:
       - application/vnd.github.luke-cage-preview+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: GET
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
-      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
-      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
-      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"The
+      Sourcegraph dev experience team: https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Engineering","id":6133235,"node_id":"T_kwDOADy5QM4AXZXz","slug":"engineering","description":"Sourcegraph
+      Engineering Department","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/6133235","html_url":"https://github.com/orgs/sourcegraph/teams/engineering","members_url":"https://api.github.com/organizations/3979584/team/6133235/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/6133235/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1779,9 +1608,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:23 GMT
+      - Fri, 13 Oct 2023 08:46:34 GMT
       Etag:
-      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      - W/"8d6d17674d2929b4e4234149dd9bdb27bc0db5cd5759162b2352c2e381d1283f"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1791,30 +1620,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126EE3:3DFF19C:61BB7827
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99E06:D8B94:652903E9
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4988"
+      - "4862"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "12"
+      - "138"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1827,14 +1652,16 @@ interactions:
       Accept:
       - application/vnd.github.luke-cage-preview+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: GET
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
-      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
-      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
-      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"The
+      Sourcegraph dev experience team: https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Engineering","id":6133235,"node_id":"T_kwDOADy5QM4AXZXz","slug":"engineering","description":"Sourcegraph
+      Engineering Department","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/6133235","html_url":"https://github.com/orgs/sourcegraph/teams/engineering","members_url":"https://api.github.com/organizations/3979584/team/6133235/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/6133235/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -1850,9 +1677,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:24 GMT
+      - Fri, 13 Oct 2023 08:46:34 GMT
       Etag:
-      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      - W/"8d6d17674d2929b4e4234149dd9bdb27bc0db5cd5759162b2352c2e381d1283f"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1862,30 +1689,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126F01:3DFF1BA:61BB7827
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99E12:D8BA2:652903EA
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4987"
+      - "4861"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "13"
+      - "139"
       X-Xss-Protection:
       - "0"
     status: 200 OK

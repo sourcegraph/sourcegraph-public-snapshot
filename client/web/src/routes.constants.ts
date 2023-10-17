@@ -21,7 +21,6 @@ export enum PageRoutes {
     Debug = '/-/debug/*',
     RepoContainer = '/*',
     SetupWizard = '/setup',
-    InstallGitHubAppSuccess = '/install-github-app-success',
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
     GetCody = '/get-cody',
@@ -44,6 +43,5 @@ export enum EnterprisePageRoutes {
     Cody = '/cody',
     Own = '/own',
     AppAuthCallback = '/app/auth/callback',
-    Sentinel = '/sentinel/*',
     AppSetup = '/app-setup',
 }

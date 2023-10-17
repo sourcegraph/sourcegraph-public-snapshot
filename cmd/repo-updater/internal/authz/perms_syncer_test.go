@@ -762,13 +762,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		authz.SetProviders(true, nil)
 	})
 
-	extAccount := extsvc.Account{
-		AccountSpec: extsvc.AccountSpec{
-			ServiceType: p.ServiceType(),
-			ServiceID:   p.ServiceID(),
-		},
-	}
-
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
@@ -790,7 +783,14 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	userEmails := dbmocks.NewMockUserEmailsStore()
 
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
+	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{}, nil)
+	externalAccounts.UpsertFunc.SetDefaultReturn(&extsvc.Account{
+		ID: 1,
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: p.ServiceType(),
+			ServiceID:   p.ServiceID(),
+		},
+	}, nil)
 
 	subRepoPerms := dbmocks.NewMockSubRepoPermsStore()
 
@@ -814,7 +814,12 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := dbmocks.NewMockPermsStore()
-	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
+	perms.SetUserExternalAccountPermsFunc.PushHook(func(ctx context.Context, ids authz.UserIDWithExternalAccountID, i []int32, ps authz.PermsSource) (*database.SetPermissionsResult, error) {
+		if ids.ExternalAccountID == 0 {
+			t.Fatal("ExternalAccountID should not be 0")
+		}
+		return &database.SetPermissionsResult{}, nil
+	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
@@ -830,6 +835,14 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 				"def": {
 					Paths: []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
 				},
+			},
+		}, nil
+	}
+	p.fetchAccount = func(ctx context.Context, user *types.User, accounts []*extsvc.Account, emails []string) (*extsvc.Account, error) {
+		return &extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: p.ServiceType(),
+				ServiceID:   p.ServiceID(),
 			},
 		}, nil
 	}

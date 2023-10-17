@@ -54,7 +54,7 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+func NewTestClientSource(t testing.TB, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
 	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {

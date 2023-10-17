@@ -71,7 +71,6 @@ func Search(
 		},
 		Indexed:      indexed,
 		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
 	}
 
 	body, err := json.Marshal(r)

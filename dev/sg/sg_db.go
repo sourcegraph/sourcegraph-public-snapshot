@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -364,18 +364,20 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 
 	logger.Info("Writing external account to the DB")
 
-	err = db.UserExternalAccounts().AssociateUserAndSave(
+	_, err = db.UserExternalAccounts().Upsert(
 		ctx,
-		user.ID,
-		extsvc.AccountSpec{
-			ServiceType: strings.ToLower(service.Kind),
-			ServiceID:   serviceID,
-			ClientID:    clientID,
-			AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
-		},
-		extsvc.AccountData{
-			AuthData: authData,
-			Data:     nil,
+		&extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: strings.ToLower(service.Kind),
+				ServiceID:   serviceID,
+				ClientID:    clientID,
+				AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: authData,
+				Data:     nil,
+			},
 		},
 	)
 	return err
@@ -411,7 +413,7 @@ func githubClient(ctx context.Context, baseurl string, token string) (*github.Cl
 	}
 	baseURL.Path = "/api/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 	if err != nil {
 		return nil, err
 	}
