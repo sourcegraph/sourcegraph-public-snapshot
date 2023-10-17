@@ -456,7 +456,7 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 func tokenSHA256Hash(token string) ([]byte, error) {
 	token, err := accesstoken.ParsePersonalAccessToken(token)
 	if err != nil {
-		return nil, err
+		return nil, InvalidTokenError{err}
 	}
 
 	value, err := hex.DecodeString(token)
