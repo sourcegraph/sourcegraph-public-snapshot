@@ -5,7 +5,6 @@ plugin](https://plugins.jetbrains.com/plugin/9682-sourcegraph-cody--code-search/
 The JetBrains plugin lives in the
 [sourcegraph/jetbrains](https://github.com/sourcegraph/jetbrains) repository.
 
-
 ## Building the assets
 
 Run the following commands to build the assets.
@@ -19,7 +18,6 @@ pnpm build
 The assets get generated to `src/main/resources/dist`, which are ignored by
 git. The JetBrains plugin embeds the contents of that directory into the
 plugin.
-
 
 ## Previewing the assets locally
 
