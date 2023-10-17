@@ -19,7 +19,7 @@ import (
 
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
@@ -63,7 +63,7 @@ func TestIsQueued(t *testing.T) {
 
 func TestIsQueuedRootIndexer(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	now := time.Now()
@@ -105,7 +105,7 @@ func TestIsQueuedRootIndexer(t *testing.T) {
 func TestInsertIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
@@ -230,7 +230,7 @@ func TestInsertIndexes(t *testing.T) {
 
 func TestInsertIndexWithActor(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")

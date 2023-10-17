@@ -416,10 +416,9 @@ type Features struct {
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
-	// HybridSearch when true will consult the Zoekt index when running
-	// unindexed searches. Searcher (unindexed search) will the only search
-	// what has changed since the indexed commit.
-	HybridSearch bool `json:"search-hybrid"`
+	// Keyword when true will use a new way to interpret queries optimized for
+	// keyword search. This is currently just supported by Zoekt.
+	Keyword bool `json:"search-new-keyword"`
 
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.

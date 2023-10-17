@@ -26,7 +26,7 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 		t.Skip()
 	}
 
-	raw := dbtest.NewDB(logtest.Scoped(t), t)
+	raw := dbtest.NewDB(t)
 	db := database.NewDB(logtest.Scoped(t), raw)
 
 	opts := IndexWorkerStoreOptions

@@ -81,7 +81,7 @@ func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize, workerCoun
 // LogEvent implements event.Logger by submitting the event to a buffer for processing.
 func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 	// Track whether or not the event buffered, and how long it took.
-	_, span := tracer.Start(backgroundContextWithSpan(spanCtx), "bufferedLogger.LogEvent",
+	_, span := tracer.Start(spanCtx, "bufferedLogger.LogEvent",
 		trace.WithAttributes(
 			attribute.String("source", event.Source),
 			attribute.String("event.name", string(event.Name))))

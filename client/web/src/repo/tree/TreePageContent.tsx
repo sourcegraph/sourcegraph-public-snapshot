@@ -751,6 +751,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
             after,
             filePath,
         },
+        errorPolicy: 'all',
     })
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null

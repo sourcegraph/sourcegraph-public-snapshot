@@ -66,7 +66,7 @@ func TestScopedRepoIteratorForEach(t *testing.T) {
 
 func TestScopedRepoIterator_PrivateRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := db.Repos()

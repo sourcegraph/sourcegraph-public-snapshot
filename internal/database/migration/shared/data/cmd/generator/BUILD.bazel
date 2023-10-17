@@ -13,6 +13,7 @@ go_library(
         "//internal/database/migration/shared",
         "//internal/database/migration/stitch",
         "//internal/oobmigration",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

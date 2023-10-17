@@ -27,7 +27,7 @@ func TestRepositoryMetadata(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.Scoped(t)
-	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(t)))
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)

@@ -19,7 +19,7 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := db.Users().Create(ctx, NewUser{
@@ -110,7 +110,6 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err.Error() != want {
 		t.Fatalf("Want %q, got %q", want, err.Error())
 	}
-
 }
 
 func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
@@ -119,7 +118,7 @@ func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -146,7 +145,7 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	oldPasswordResetRateLimit := passwordResetRateLimit
@@ -187,7 +186,7 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usr, err := db.Users().Create(ctx, NewUser{
@@ -236,7 +235,7 @@ func TestUsers_CreatePassword(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// User without a password
@@ -271,23 +270,24 @@ func TestUsers_CreatePassword(t *testing.T) {
 	}
 
 	// A new user with an external account should be able to create a password
-	newUser, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{
+	newUser, err := db.Users().CreateWithExternalAccount(ctx, NewUser{
 		Email:                 "usr3@bar.com",
 		Username:              "usr3",
 		Password:              "",
 		EmailVerificationCode: "c",
 	},
-		extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "123",
-			ClientID:    "456",
-			AccountID:   "789",
-		},
-		extsvc.AccountData{
-			AuthData: nil,
-			Data:     nil,
-		},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "123",
+				ClientID:    "456",
+				AccountID:   "789",
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: nil,
+				Data:     nil,
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,7 +303,7 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// We setup the configuration so that password reset links are valid for 60s

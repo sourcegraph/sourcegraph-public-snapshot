@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -19,7 +19,7 @@ export default {
     },
 } as Meta
 
-export const CaptureGroupCreationPage: Story = () => {
+export const CaptureGroupCreationPage: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (

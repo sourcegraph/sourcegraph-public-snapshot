@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
 function cleanup() {

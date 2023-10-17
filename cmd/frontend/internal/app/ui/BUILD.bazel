@@ -12,6 +12,7 @@ go_library(
         "preview.go",
         "raw.go",
         "router.go",
+        "sveltekit.go",
         "tmpl.go",
     ],
     embedsrcs = [
@@ -36,7 +37,6 @@ go_library(
         "//cmd/frontend/internal/search",
         "//internal/api",
         "//internal/auth/userpasswd",
-        "//internal/authz",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/cookie",
@@ -104,6 +104,7 @@ go_test(
         "//schema",
         "//ui/assets",
         "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
     ],
 )

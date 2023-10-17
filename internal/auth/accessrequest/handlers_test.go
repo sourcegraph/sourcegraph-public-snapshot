@@ -26,7 +26,7 @@ func TestRequestAccess(t *testing.T) {
 	}
 
 	logger := logtest.NoOp(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	handler := HandleRequestAccess(logger, db)
 
 	t.Run("accessRequest feature is disabled", func(t *testing.T) {

@@ -1,4 +1,4 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -7,7 +7,7 @@ import { WebStory } from '../WebStory'
 import { AddExternalServicesPage } from './AddExternalServicesPage'
 import { codeHostExternalServices, nonCodeHostExternalServices } from './externalServices'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/External services/AddExternalServicesPage',
@@ -22,7 +22,7 @@ const config: Meta = {
 
 export default config
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <WebStory>
         {webProps => (
             <AddExternalServicesPage
@@ -39,7 +39,7 @@ export const Overview: Story = () => (
     </WebStory>
 )
 
-export const OverviewWithBusinessLicense: Story = () => {
+export const OverviewWithBusinessLicense: StoryFn = () => {
     window.context.licenseInfo = { currentPlan: 'business-0' }
     return (
         <WebStory>
@@ -59,7 +59,7 @@ export const OverviewWithBusinessLicense: Story = () => {
     )
 }
 
-export const AddConnectionBykind: Story = () => (
+export const AddConnectionBykind: StoryFn = () => (
     <WebStory initialEntries={['/page?id=github']}>
         {webProps => (
             <AddExternalServicesPage

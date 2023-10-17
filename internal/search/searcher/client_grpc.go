@@ -60,7 +60,6 @@ func SearchGRPC(
 		},
 		Indexed:      indexed,
 		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
 	}).ToProto()
 
 	// Searcher caches the file contents for repo@commit since it is

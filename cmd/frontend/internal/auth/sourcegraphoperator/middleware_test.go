@@ -256,7 +256,7 @@ func TestMiddleware(t *testing.T) {
 				CreatedAt: time.Now(),
 			}, nil
 		})
-		mocks.externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
+		mocks.usersStore.CreateWithExternalAccountFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ *extsvc.Account) (*types.User, error) {
 			assert.True(t, strings.HasPrefix(user.Username, usernamePrefix), "%q does not have prefix %q", user.Username, usernamePrefix)
 			return &types.User{ID: 1}, nil
 		})

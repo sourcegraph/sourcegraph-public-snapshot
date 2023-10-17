@@ -46,7 +46,7 @@ func TestPermissionLevels(t *testing.T) {
 	bt.MockRSAKeygen(t)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	key := et.TestKey{}
 
 	bstore := store.New(db, &observation.TestContext, key)
@@ -1359,7 +1359,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	gitserverClient := gitserver.NewMockClient()

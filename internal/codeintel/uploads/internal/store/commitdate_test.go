@@ -17,7 +17,7 @@ import (
 
 func TestGetOldestCommitDate(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -101,7 +101,7 @@ func TestGetOldestCommitDate(t *testing.T) {
 
 func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()

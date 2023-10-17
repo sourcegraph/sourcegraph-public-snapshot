@@ -71,7 +71,7 @@ func TestAuthzQueryConds(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("When permissions user mapping is enabled", func(t *testing.T) {
 		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
@@ -288,7 +288,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	alice, unrestrictedRepo := setupUnrestrictedDB(t, ctx, db)
 
@@ -357,7 +357,7 @@ func TestRepoStore_userCanSeePublicRepo(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	alice, publicRepo := setupPublicRepo(t, db)
@@ -476,7 +476,11 @@ VALUES (%s, %s, '')
 
 	// Set up external accounts for alice and bob
 	for _, user := range []*types.User{alice, bob} {
-		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, extsvc.AccountSpec{ServiceType: extsvc.TypeGitHub, ServiceID: "https://github.com/", AccountID: user.Username}, extsvc.AccountData{})
+		_, err = db.UserExternalAccounts().Upsert(ctx,
+			&extsvc.Account{
+				UserID:      user.ID,
+				AccountSpec: extsvc.AccountSpec{ServiceType: extsvc.TypeGitHub, ServiceID: "https://github.com/", AccountID: user.Username},
+			})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -513,7 +517,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	users, repos := setupDB(t, ctx, db)
@@ -596,7 +600,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
@@ -821,7 +825,7 @@ func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	})
 
 	logger := logtest.Scoped(b)
-	db := NewDB(logger, dbtest.NewDB(logger, b))
+	db := NewDB(logger, dbtest.NewDB(b))
 	ctx := context.Background()
 
 	b.Logf("Creating %d repositories...", numRepos)

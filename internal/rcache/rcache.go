@@ -3,6 +3,7 @@ package rcache
 import (
 	"fmt"
 	"os"
+	"testing"
 	"time"
 	"unicode/utf8"
 
@@ -168,7 +169,7 @@ type TB interface {
 
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
 // conflicts if you do `t.Parallel()`
-func SetupForTest(t TB) {
+func SetupForTest(t testing.TB) {
 	t.Helper()
 
 	pool := &redis.Pool{
