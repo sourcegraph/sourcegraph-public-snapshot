@@ -2065,6 +2065,8 @@ npm_package(
     ],
 )
 
+package(default_visibility = ["//visibility:public"])
+
 jest_test(
     name = "test",
     size = "enormous",  # make sure bazel reserves enough RAM for this.
