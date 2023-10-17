@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/telemetrygateway"
@@ -18,9 +19,10 @@ import (
 )
 
 type exporterJob struct {
-	logger       log.Logger
-	store        database.TelemetryEventsExportQueueStore
-	exporter     telemetrygateway.Exporter
+	logger           log.Logger
+	exportQueueStore database.TelemetryEventsExportQueueStore
+	globalStateStore database.GlobalStateStore
+
 	maxBatchSize int
 
 	// batchSizeHistogram records real batch sizes of each export.
@@ -31,15 +33,16 @@ type exporterJob struct {
 
 func newExporterJob(
 	obctx *observation.Context,
-	store database.TelemetryEventsExportQueueStore,
-	exporter telemetrygateway.Exporter,
+	db database.DB,
 	cfg config,
 ) goroutine.BackgroundRoutine {
 	job := &exporterJob{
-		logger:       obctx.Logger,
-		store:        store,
+		logger: obctx.Logger,
+
+		exportQueueStore: db.TelemetryEventsExportQueue(),
+		globalStateStore: db.GlobalState(),
+
 		maxBatchSize: cfg.MaxExportBatchSize,
-		exporter:     exporter,
 
 		batchSizeHistogram: promauto.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "src",
@@ -68,21 +71,34 @@ func newExporterJob(
 	)
 }
 
-var _ goroutine.Finalizer = (*exporterJob)(nil)
-
-func (j *exporterJob) OnShutdown() { _ = j.exporter.Close() }
-
 func (j *exporterJob) Handle(ctx context.Context) error {
 	logger := trace.Logger(ctx, j.logger).
 		With(log.Int("maxBatchSize", j.maxBatchSize))
 
-	if conf.Get().LicenseKey == "" {
-		logger.Debug("license key not set, skipping export")
+	// Check the current licensing mode.
+	if licensing.GetTelemetryEventsExportMode(conf.DefaultClient()) ==
+		licensing.TelemetryEventsExportDisabled {
+		logger.Debug("export is currently disabled entirely via licensing")
 		return nil
 	}
 
+	// Create a new connection in each handle execution. This helps us recover
+	// from any potential Telemetry Gateway downtime, in case a connection fails,
+	// as each worker run will create a new one.
+	exporter, err := telemetrygateway.NewExporter(
+		ctx,
+		j.logger.Scoped("exporter", "exporter client"),
+		conf.DefaultClient(),
+		j.globalStateStore,
+		ConfigInst.ExportAddress,
+	)
+	if err != nil {
+		return errors.Wrap(err, "connect to Telemetry Gateway")
+	}
+	defer exporter.Close()
+
 	// Get events from the queue
-	batch, err := j.store.ListForExport(ctx, j.maxBatchSize)
+	batch, err := j.exportQueueStore.ListForExport(ctx, j.maxBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "ListForExport")
 	}
@@ -92,14 +108,14 @@ func (j *exporterJob) Handle(ctx context.Context) error {
 		return nil
 	}
 
-	logger.Info("exporting events", log.Int("count", len(batch)))
+	logger.Debug("exporting events", log.Int("count", len(batch)))
 
 	// Send out events
-	succeeded, exportErr := j.exporter.ExportEvents(ctx, batch)
+	succeeded, exportErr := exporter.ExportEvents(ctx, batch)
 
 	// Mark succeeded events
 	j.exportedEventsCounter.Add(float64(len(succeeded)))
-	if err := j.store.MarkAsExported(ctx, succeeded); err != nil {
+	if err := j.exportQueueStore.MarkAsExported(ctx, succeeded); err != nil {
 		logger.Error("failed to mark exported events as exported",
 			log.Strings("succeeded", succeeded),
 			log.Error(err))
