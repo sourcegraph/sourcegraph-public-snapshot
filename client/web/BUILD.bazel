@@ -27,6 +27,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 # gazelle:js_ignore_imports src/jscontext
 # gazelle:js_ignore_imports src/stores/navbarSearchQueryState
 # gazelle:js_ignore_imports ../../schema.json
+# gazelle:js_ignore_imports ../../package.json
 
 npm_link_all_packages(name = "node_modules")
 
