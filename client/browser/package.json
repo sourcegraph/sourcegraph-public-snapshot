@@ -42,6 +42,7 @@
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*"
+    "@sourcegraph/codeintellify": "workspace:*",
+    "@sourcegraph/telemetry": "^0.5.0"
   }
 }

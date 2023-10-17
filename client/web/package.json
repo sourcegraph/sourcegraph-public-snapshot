@@ -51,6 +51,6 @@
     "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*",
-    "@sourcegraph/telemetry": "0.0.1^"
+    "@sourcegraph/telemetry": "^0.5.0"
   }
 }
