@@ -63,7 +63,10 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = all_crate_deps(
         normal = True,
-    ),
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+    ],
 )
 
 pkg_tar(
