@@ -23,7 +23,7 @@ type TelemetryEventInput struct {
 	Feature           string                                `json:"feature"`
 	Action            string                                `json:"action"`
 	Source            TelemetryEventSourceInput             `json:"source"`
-	Parameters        TelemetryEventParametersInput         `json:"parameters"`
+	Parameters        *TelemetryEventParametersInput        `json:"parameters"`
 	MarketingTracking *TelemetryEventMarketingTrackingInput `json:"marketingTracking,omitempty"`
 }
 

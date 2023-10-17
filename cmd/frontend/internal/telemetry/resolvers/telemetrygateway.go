@@ -7,11 +7,90 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func RecordEvent(ctx context.Context, args *graphqlbackend.RecordEventArgs) (*graphqlbackend.EmptyResponse, error) {
+
+	// Create telemetry events
+	events, err := createTelemetryEvents(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	// Record gateway events
+	err = recordGatewayEvents(ctx, events)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+func createTelemetryEvents(ctx context.Context, args *graphqlbackend.RecordEventArgs) ([]*telemetrygatewayv1.Event, error) {
+	// func RecordEvent(ctx context.Context, args *graphqlbackend.RecordEventArgs) (*graphqlbackend.EmptyResponse, error) {
+	var metadata []graphqlbackend.TelemetryEventMetadataInput
+	if args.Event.Parameters.Metadata != nil {
+		for _, m := range *args.Event.Parameters.Metadata {
+			metadata = append(metadata, graphqlbackend.TelemetryEventMetadataInput{
+				Key:   m.Key,
+				Value: m.Value,
+			})
+		}
+	}
+
+	// Translate args to events
+	events := []graphqlbackend.TelemetryEventInput{
+		{
+			Feature: args.Event.Feature,
+			Action:  args.Event.Action,
+			Source: graphqlbackend.TelemetryEventSourceInput{
+				Client:        args.Event.Source.Client,
+				ClientVersion: args.Event.Source.ClientVersion,
+			},
+			Parameters: &graphqlbackend.TelemetryEventParametersInput{
+				Version:         args.Event.Parameters.Version,
+				Metadata:        &metadata,
+				PrivateMetadata: args.Event.Parameters.PrivateMetadata,
+				BillingMetadata: &graphqlbackend.TelemetryEventBillingMetadataInput{
+					Product:  args.Event.Parameters.BillingMetadata.Product,
+					Category: args.Event.Parameters.BillingMetadata.Category,
+				},
+			},
+			MarketingTracking: &graphqlbackend.TelemetryEventMarketingTrackingInput{
+				Url:             args.Event.MarketingTracking.Url,
+				FirstSourceURL:  args.Event.MarketingTracking.FirstSourceURL,
+				CohortID:        args.Event.MarketingTracking.CohortID,
+				Referrer:        args.Event.MarketingTracking.Referrer,
+				LastSourceURL:   args.Event.MarketingTracking.LastSourceURL,
+				DeviceSessionID: args.Event.MarketingTracking.DeviceSessionID,
+				SessionReferrer: args.Event.MarketingTracking.SessionReferrer,
+				SessionFirstURL: args.Event.MarketingTracking.SessionFirstURL,
+			},
+		},
+	}
+
+	// Call newTelemetryGatewayEvents
+	gatewayEvents, err := newTelemetryGatewayEvents(ctx, time.Now(), uuid.NewString, events)
+	if err != nil {
+		return nil, err
+	}
+
+	return gatewayEvents, nil
+}
+
+func recordGatewayEvents(ctx context.Context, events []*telemetrygatewayv1.Event) error {
+
+	// Store events
+
+	// Export events
+
+	return nil
+}
 
 func newTelemetryGatewayEvents(
 	ctx context.Context,
