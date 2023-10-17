@@ -107,7 +107,7 @@ func P4Trust(ctx context.Context, p4home, host string) error {
 
 // P4Test uses `p4 login -s` to test the Perforce connection: port, user, passwd.
 func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error {
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	// `p4 ping` requires extra-special access, so we want to avoid using it
@@ -117,8 +117,9 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 	cmd := exec.CommandContext(ctx, "p4", "login", "-s")
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+p4port,
-		"P4USER="+p4user,
+		"P4USER="+"william",
 		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
 	)
 
 	fmt.Printf(">>>>>>> ENV: %v <<<<<<<", strings.Join(cmd.Env, " "))
