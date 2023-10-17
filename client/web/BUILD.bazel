@@ -2058,7 +2058,7 @@ ts_project(
 npm_package(
     name = "web_pkg",
     srcs = [
-        ":package.json",
+        "package.json",
         ":module_styles",  #keep
         ":package_styles",  #keep
         ":web_lib",
