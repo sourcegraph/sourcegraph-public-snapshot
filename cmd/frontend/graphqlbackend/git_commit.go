@@ -224,8 +224,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
-	Path      string
-	Recursive bool
+	Path string
 }) (*GitTreeEntryResolver, error) {
 	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
@@ -238,10 +237,6 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Note: args.Recursive is deprecated
-	if treeEntry != nil {
-		treeEntry.isRecursive = args.Recursive
-	}
 	return treeEntry, nil
 }
 

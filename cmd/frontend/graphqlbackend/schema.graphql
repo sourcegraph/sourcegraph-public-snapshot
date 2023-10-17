@@ -5305,12 +5305,6 @@ type GitCommit implements Node {
         The path of the tree.
         """
         path: String = ""
-        """
-        Whether to recurse into sub-trees. If true, it overrides the value of the "recursive" parameter on all of
-        GitTree's fields.
-        DEPRECATED: Use the "recursive" parameter on GitTree's fields instead.
-        """
-        recursive: Boolean = false
     ): GitTree
     """
     A list of file names in this repository.
@@ -5525,20 +5519,7 @@ interface TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
 }
 
 """
@@ -5595,7 +5576,7 @@ type GitTree implements TreeEntry {
     """
     directories(
         """
-        Returns the first n files in the tree.
+        Returns the first n directories in the tree.
         """
         first: Int
         """
@@ -5663,20 +5644,7 @@ type GitTree implements TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
 }
 
 """
@@ -6083,20 +6051,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Always false, since a blob is a file, not directory.
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
     """
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
