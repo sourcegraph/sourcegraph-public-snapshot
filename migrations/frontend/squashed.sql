@@ -6080,6 +6080,8 @@ COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos b
 
 CREATE INDEX idx_repo_gitlab_topics ON repo USING gin (((metadata -> 'topics'::text))) WHERE (external_service_type = 'gitlab'::text);
 
+COMMENT ON INDEX idx_repo_gitlab_topics IS 'An index to speed up listing repos by gitlab topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 
 CREATE INDEX insights_query_runner_jobs_dependencies_job_id_fk_idx ON insights_query_runner_jobs_dependencies USING btree (job_id);
