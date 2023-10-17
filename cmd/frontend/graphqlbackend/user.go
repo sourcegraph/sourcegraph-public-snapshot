@@ -105,6 +105,10 @@ func UserByID(ctx context.Context, db database.DB, id graphql.ID) (*UserResolver
 // it returns a non-nil error.
 func UserByIDInt32(ctx context.Context, db database.DB, id int32) (*UserResolver, error) {
 	user, err := db.Users().GetByID(ctx, id)
+	if errcode.IsNotFound(err) {
+		// User no longer exists, which could be expected.
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
