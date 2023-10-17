@@ -114,16 +114,21 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 	//
 	// p4 login -s checks the connection and the credentials,
 	// so it seems like the perfect alternative to `p4 ping`.
-	cmd := exec.CommandContext(ctx, "p4", "login", "-s")
+	cmd := exec.CommandContext(ctx, "p4", "-v", "debug", "login", "-s")
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+p4port,
 		"P4USER="+p4user,
-		"P4PASSWD="+"fakepassword",
+		"P4PASSWD="+p4passwd,
 		"HOME="+p4home,
 	)
 
 	fmt.Printf(">>>>>>> ENV: %v <<<<<<<", strings.Join(cmd.Env, " "))
 
+	ping := exec.CommandContext(ctx, "ping", "-c", "4", "perforce.sgdev.org")
+	o, e := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), ping))
+	if e != nil {
+		fmt.Printf(">>>> PING ERR: %v\n>>>> OUT: %v\n", e, string(o))
+	}
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
