@@ -29,7 +29,10 @@ export class ConditionalTelemetryService implements TelemetryService {
     /** The enabled state set by an observable, provided upon instantiation */
     private isEnabled = false
 
-    constructor(private innerTelemetryService: TelemetryService, isEnabled: Observable<boolean>) {
+    constructor(
+        private innerTelemetryService: TelemetryService,
+        isEnabled: Observable<boolean>
+    ) {
         this.subscription.add(
             isEnabled.subscribe(value => {
                 this.isEnabled = value
@@ -86,7 +89,10 @@ export class EventLogger implements TelemetryService {
      * Buffered Observable for the latest Sourcegraph URL
      */
 
-    constructor(private requestGraphQL: PlatformContext['requestGraphQL'], private sourcegraphURL: string) {
+    constructor(
+        private requestGraphQL: PlatformContext['requestGraphQL'],
+        private sourcegraphURL: string
+    ) {
         // Fetch user ID on initial load.
         this.getAnonUserID().catch(noop)
     }

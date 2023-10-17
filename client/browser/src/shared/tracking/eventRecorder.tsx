@@ -23,7 +23,10 @@ export class ConditionalTelemetryService implements TelemetryServiceV2 {
     /** The enabled state set by an observable, provided upon instantiation */
     private isEnabled = false
 
-    constructor(private innerTelemetryService: TelemetryServiceV2, isEnabled: Observable<boolean>) {
+    constructor(
+        private innerTelemetryService: TelemetryServiceV2,
+        isEnabled: Observable<boolean>
+    ) {
         this.subscription.add(
             isEnabled.subscribe(value => {
                 this.isEnabled = value
