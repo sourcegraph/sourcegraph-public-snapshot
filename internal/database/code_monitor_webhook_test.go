@@ -22,7 +22,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CreateThenGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -39,7 +39,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CreateUpdateGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -60,7 +60,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("ErrorOnUpdateNonexistent", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 
@@ -71,7 +71,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CreateDeleteGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -95,7 +95,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CountCreateCount", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -115,7 +115,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("ListCreateList", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -146,6 +146,8 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 		ctx1 := actor.WithActor(ctx, actor.FromUser(uid1))
 		uid2 := insertTestUser(ctx, t, db, "u2", false)
 		ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
+		uid3 := insertTestUser(ctx, t, db, "u3", true)
+		ctx3 := actor.WithActor(ctx, actor.FromUser(uid3))
 		fixtures := s.insertTestMonitor(ctx1, t)
 		_ = s.insertTestMonitor(ctx2, t)
 
@@ -159,6 +161,10 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 		// User2 cannot update it
 		_, err = s.UpdateWebhookAction(ctx2, wa.ID, true, true, "https://truer.com")
 		require.Error(t, err)
+
+		// User3 can update it
+		_, err = s.UpdateWebhookAction(ctx3, wa.ID, true, true, "https://false.com")
+		require.NoError(t, err)
 
 		wa, err = s.GetWebhookAction(ctx1, wa.ID)
 		require.NoError(t, err)

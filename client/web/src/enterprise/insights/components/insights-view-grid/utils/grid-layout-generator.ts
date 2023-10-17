@@ -1,15 +1,15 @@
-import { Layout, Layouts as ReactGridLayouts } from 'react-grid-layout'
+import type { Layout, Layouts as ReactGridLayouts } from 'react-grid-layout'
 
 import {
-    CaptureGroupInsight,
-    Insight,
+    type CaptureGroupInsight,
+    type Insight,
     isCaptureGroupInsight,
     isComputeInsight,
     isSearchBasedInsight,
-    SearchBasedInsight,
+    type SearchBasedInsight,
 } from '../../../core'
 import {
-    BreakpointName,
+    type BreakpointName,
     BREAKPOINTS_NAMES,
     COLUMNS,
     DEFAULT_HEIGHT,

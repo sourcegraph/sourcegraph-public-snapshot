@@ -2,7 +2,7 @@ import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import type { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreePage'), 'RepositoryFileTreePage')

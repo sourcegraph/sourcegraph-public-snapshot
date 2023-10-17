@@ -4,7 +4,7 @@ import { mdiOpenInNew } from '@mdi/js'
 
 import { Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { ExternalChangesetFields } from '../../../../graphql-operations'
+import type { ExternalChangesetFields } from '../../../../graphql-operations'
 
 interface Props extends Pick<ExternalChangesetFields, 'externalID' | 'externalURL' | 'title'> {
     /** Optionally, any class names to forward as a prop to the inner `LinkOrSpan` */

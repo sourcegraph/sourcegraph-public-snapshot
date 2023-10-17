@@ -2,25 +2,35 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
+import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { Text } from '@sourcegraph/wildcard'
 
-import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
+import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
 
 import { ReposStatusQuery } from './backend'
-import { RepositoriesSelectorPopover, getFileName, IRepo } from './RepositoriesSelectorPopover'
+import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
 
 import styles from './ScopeSelector.module.scss'
 
-interface ScopeSelectorProps {
+export interface ScopeSelectorProps {
     scope: CodyClientScope
     setScope: (scope: CodyClientScope) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
-    isSourcegraphApp: boolean
+    isCodyApp?: boolean
+    logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
+    transcriptHistory: TranscriptJSON[]
+    className?: string
+    renderHint?: (repos: IRepo[]) => React.ReactNode
+    // Whether to encourage the selector popover to overlap its trigger if necessary,
+    // rather than collapsing or flipping position.
+    encourageOverlap?: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -29,7 +39,13 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     toggleIncludeInferredRepository,
     toggleIncludeInferredFile,
     fetchRepositoryNames,
-    isSourcegraphApp,
+    isCodyApp,
+    logTranscriptEvent,
+    transcriptHistory,
+    className,
+    renderHint,
+    encourageOverlap,
+    authenticatedUser,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -52,10 +68,10 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         }
 
         loadReposStatus({
-            variables: { repoNames, first: repoNames.length, includeJobs: !!window.context.currentUser?.siteAdmin },
-            pollInterval: 5000,
+            variables: { repoNames, first: repoNames.length, includeJobs: !!authenticatedUser?.siteAdmin },
+            pollInterval: 2000,
         }).catch(() => null)
-    }, [activeEditor, scope.repositories, loadReposStatus])
+    }, [activeEditor, scope.repositories, loadReposStatus, authenticatedUser?.siteAdmin])
 
     const allRepositories = useMemo(() => reposStatusData?.repositories.nodes || [], [reposStatusData])
 
@@ -83,53 +99,58 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
-                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
+                logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
-        [scope, setScope]
+        [scope, setScope, logTranscriptEvent]
     )
 
     const removeRepository = useCallback(
         (repoName: string) => {
-            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
+            logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
-        [scope, setScope]
+        [scope, setScope, logTranscriptEvent]
     )
 
     const resetScope = useCallback(async (): Promise<void> => {
-        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET)
-        if (!isSourcegraphApp) {
+        logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET)
+        if (!isCodyApp) {
             return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
         }
 
         const repositories = await fetchRepositoryNames(10)
         return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
+    }, [scope, setScope, fetchRepositoryNames, isCodyApp, logTranscriptEvent])
 
     return (
-        <div className={styles.wrapper}>
-            <div className="d-flex text-truncate">
-                <RepositoriesSelectorPopover
-                    includeInferredRepository={scope.includeInferredRepository}
-                    includeInferredFile={scope.includeInferredFile}
-                    inferredRepository={inferredRepository}
-                    inferredFilePath={activeEditor?.filePath || null}
-                    additionalRepositories={additionalRepositories}
-                    addRepository={addRepository}
-                    resetScope={!isSourcegraphApp ? resetScope : null}
-                    removeRepository={removeRepository}
-                    toggleIncludeInferredRepository={toggleIncludeInferredRepository}
-                    toggleIncludeInferredFile={toggleIncludeInferredFile}
-                />
-                {scope.includeInferredFile && activeEditor?.filePath && (
-                    <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                        <div className={styles.separator} />
-                        {getFileName(activeEditor.filePath)}
-                    </div>
-                )}
+        <>
+            <div className={classNames(styles.wrapper, className)}>
+                <div className="d-flex text-truncate w-100">
+                    <RepositoriesSelectorPopover
+                        includeInferredRepository={scope.includeInferredRepository}
+                        includeInferredFile={scope.includeInferredFile}
+                        inferredRepository={inferredRepository}
+                        inferredFilePath={activeEditor?.filePath || null}
+                        additionalRepositories={additionalRepositories}
+                        addRepository={addRepository}
+                        resetScope={!isCodyApp ? resetScope : null}
+                        removeRepository={removeRepository}
+                        toggleIncludeInferredRepository={toggleIncludeInferredRepository}
+                        toggleIncludeInferredFile={toggleIncludeInferredFile}
+                        encourageOverlap={encourageOverlap}
+                        transcriptHistory={transcriptHistory}
+                        authenticatedUser={authenticatedUser}
+                    />
+                    {scope.includeInferredFile && activeEditor?.filePath && (
+                        <Text size="small" className="ml-2 mb-0 align-self-center">
+                            {getFileName(activeEditor.filePath)}
+                        </Text>
+                    )}
+                </div>
             </div>
-        </div>
+            {renderHint?.(additionalRepositories)}
+        </>
     )
 })

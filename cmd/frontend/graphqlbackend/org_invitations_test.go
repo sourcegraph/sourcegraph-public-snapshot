@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
-	"math"
 	"strings"
 	"testing"
 	"time"
@@ -18,8 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -164,14 +161,14 @@ func TestInviteUserToOrganization(t *testing.T) {
 	defer func() {
 		timeNow = time.Now
 	}()
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", false, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
@@ -180,19 +177,19 @@ func TestInviteUserToOrganization(t *testing.T) {
 		return nil, &database.ErrOrgMemberNotFound{}
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, ExpiresAt: pointers.Ptr(timeNow().Add(DefaultExpiryDuration))}, nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
@@ -268,7 +265,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 			{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $username: String) {
+				mutation InviteUserToOrganization($organization: ID!, $username: String!) {
 					inviteUserToOrganization(organization: $organization, username: $username) {
 						sentInvitationEmail
 						invitationURL
@@ -290,172 +287,14 @@ func TestInviteUserToOrganization(t *testing.T) {
 			},
 		})
 	})
-
-	t.Run("Fails for email invitation if feature flag is not enabled", func(t *testing.T) {
-		mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $email: String) {
-					inviteUserToOrganization(organization: $organization, email: $email) {
-						sentInvitationEmail
-						invitationURL
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-					"email":        "foo@bar.baz",
-				},
-				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
-					{
-						Message: "inviting by email is not supported for this organization",
-						Path:    []any{"inviteUserToOrganization"},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("Returns invitation URL in the response for email invitation", func(t *testing.T) {
-		mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
-
-		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
-		defer func() {
-			featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
-		}()
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $email: String) {
-					inviteUserToOrganization(organization: $organization, email: $email) {
-						sentInvitationEmail
-						invitationURL
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-					"email":        "foo@bar.baz",
-				},
-				ExpectedResult: `
-				{
-					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfaWQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.26FeOWbKQJ0uZ6_aeCmbYoIb2mnP0e96hiSYrw1gd91CKyVvuZQRvbzDnUf4D2gOPnwBl4GLovBjByy6xgN1ow",
-						"sentInvitationEmail": false
-					}
-				}
-				`,
-			},
-		})
-	})
-}
-
-func TestPendingInvitations(t *testing.T) {
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-
-	orgMembers := database.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{}, nil)
-
-	//orgs := database.NewMockOrgStore()
-	//orgName := "acme"
-	//mockedOrg := types.Org{ID: 1, Name: orgName}
-	//orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	//orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
-
-	invitations := []*database.OrgInvitation{
-		{
-			ID: 1,
-		},
-		{
-			ID: 2,
-		},
-		{
-			ID: 3,
-		},
-	}
-	orgInvitations := database.NewMockOrgInvitationStore()
-	orgInvitations.GetPendingByOrgIDFunc.SetDefaultReturn(invitations, nil)
-
-	db := database.NewMockDB()
-	//db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
-
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-	t.Run("Returns invitations in the response", func(t *testing.T) {
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				query PendingInvitations($organization: ID!) {
-					pendingInvitations(organization: $organization) {
-						id
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-				},
-				ExpectedResult: fmt.Sprintf(`{
-					"pendingInvitations": [
-						{ "id": "%s" },
-						{ "id": "%s" },
-						{ "id": "%s" }
-					]
-				}`,
-					string(MarshalOrgInvitationID(invitations[0].ID)),
-					string(MarshalOrgInvitationID(invitations[1].ID)),
-					string(MarshalOrgInvitationID(invitations[2].ID))),
-			},
-		})
-	})
-
-	t.Run("Returns invitations in the response", func(t *testing.T) {
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				query PendingInvitations($organization: ID!) {
-					pendingInvitations(organization: $organization) {
-						id
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-				},
-				ExpectedResult: fmt.Sprintf(`{
-					"pendingInvitations": [
-						{ "id": "%s" },
-						{ "id": "%s" },
-						{ "id": "%s" }
-					]
-				}`,
-					string(MarshalOrgInvitationID(invitations[0].ID)),
-					string(MarshalOrgInvitationID(invitations[1].ID)),
-					string(MarshalOrgInvitationID(invitations[2].ID))),
-			},
-		})
-	})
 }
 
 func TestInvitationByToken(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
@@ -464,16 +303,16 @@ func TestInvitationByToken(t *testing.T) {
 		return nil, &database.ErrOrgMemberNotFound{}
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 1}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -548,11 +387,11 @@ func TestInvitationByToken(t *testing.T) {
 }
 
 func TestRespondToOrganizationInvitation(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
@@ -561,19 +400,19 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		return nil, &database.ErrOrgMemberNotFound{}
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
 	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
 		return int32(id), nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -587,7 +426,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -635,7 +474,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -685,12 +524,12 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		email := "foo@bar.baz"
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: strings.ToUpper(email)}, nil)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := dbmocks.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -740,12 +579,12 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		email := "foo@bar.baz"
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := dbmocks.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "something@else.invalid", UserID: 2}}, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {
 			called = true
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
@@ -778,201 +617,5 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		if called {
 			t.Fatal("permission sync scheduled, but should not have been")
 		}
-	})
-}
-
-func TestResendOrganizationInvitationNotification(t *testing.T) {
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
-
-	userEmails := database.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", true, nil)
-
-	orgMembers := database.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
-		if userID == 1 {
-			return &types.OrgMembership{}, nil
-		}
-
-		return nil, &database.ErrOrgMemberNotFound{}
-	})
-
-	orgs := database.NewMockOrgStore()
-	orgName := "acme"
-	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
-
-	orgInvitations := database.NewMockOrgInvitationStore()
-	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
-	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
-		return int32(id), nil
-	})
-
-	db := database.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
-
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 2})
-
-	expiryTime := newExpiryTime()
-
-	trueVal := true
-	mockSiteConfigSigningKey(&trueVal)
-
-	t.Run("Can resend a user invitation", func(t *testing.T) {
-		invitationID := int64(2)
-		orgID := int32(2)
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
-		emailSent := false
-		txemail.MockSend = func(ctx context.Context, msg txemail.Message) error {
-			emailSent = true
-			return nil
-		}
-
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
-				},
-				ExpectedResult: `{
-					"resendOrganizationInvitationNotification": {
-						"alwaysNil": null
-					}
-				}`,
-			},
-		})
-
-		updateExpiryCalls := orgInvitations.UpdateExpiryTimeFunc.History()
-		lastUpdateExpiryCall := updateExpiryCalls[len(updateExpiryCalls)-1]
-		if lastUpdateExpiryCall.Arg1 != invitationID || math.Round(lastUpdateExpiryCall.Arg2.Sub(timeNow()).Hours()) != math.Round(DefaultExpiryDuration.Hours()) {
-			t.Fatalf("db.OrgInvitations.ResendOrganizationInvitationNotification was not called with right args: %v", lastUpdateExpiryCall.Args())
-		}
-
-		if !emailSent {
-			t.Fatalf("email not sent")
-		}
-	})
-
-	t.Run("Can resend an email invitation", func(t *testing.T) {
-		invitationID := int64(3)
-		orgID := int32(3)
-		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &expiryTime}, nil)
-		emailSent := false
-		txemail.MockSend = func(ctx context.Context, msg txemail.Message) error {
-			emailSent = true
-			return nil
-		}
-
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
-				},
-				ExpectedResult: `{
-					"resendOrganizationInvitationNotification": {
-						"alwaysNil": null
-					}
-				}`,
-			},
-		})
-
-		updateExpiryCalls := orgInvitations.UpdateExpiryTimeFunc.History()
-		lastUpdateExpiryCall := updateExpiryCalls[len(updateExpiryCalls)-1]
-		if lastUpdateExpiryCall.Arg1 != invitationID || math.Round(lastUpdateExpiryCall.Arg2.Sub(timeNow()).Hours()) != math.Round(DefaultExpiryDuration.Hours()) {
-			t.Fatalf("db.OrgInvitations.ResendOrganizationInvitationNotification was not called with right args: %v", lastUpdateExpiryCall.Args())
-		}
-
-		if !emailSent {
-			t.Fatalf("email not sent")
-		}
-	})
-
-	t.Run("Fails if invitation is expired", func(t *testing.T) {
-		invitationID := int64(3)
-		orgID := int32(3)
-		email := "foo@bar.baz"
-		yesterday := timeNow().Add(-24 * time.Hour)
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &yesterday}, nil)
-		wantErr := database.NewOrgInvitationExpiredErr(invitationID)
-
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
-				},
-				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
-					{
-						Message: wantErr.Error(),
-						Path:    []any{"resendOrganizationInvitationNotification"},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("Fails if user invitation email is not verified", func(t *testing.T) {
-		invitationID := int64(4)
-		orgID := int32(4)
-		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
-		userEmails.GetPrimaryEmailFunc.SetDefaultReturn(email, false, nil)
-
-		RunTests(t, []*Test{
-			{
-				Schema:  mustParseGraphQLSchema(t, db),
-				Context: ctx,
-				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
-					}
-				}
-				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
-				},
-				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
-					{
-						Message: "refusing to send notification because recipient has no verified email address",
-						Path:    []any{"resendOrganizationInvitationNotification"},
-					},
-				},
-			},
-		})
 	})
 }

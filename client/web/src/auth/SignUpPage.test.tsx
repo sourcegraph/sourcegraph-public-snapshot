@@ -4,8 +4,8 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { AuthenticatedUser } from '../auth'
-import { SourcegraphContext } from '../jscontext'
+import type { AuthenticatedUser } from '../auth'
+import type { SourcegraphContext } from '../jscontext'
 
 import { SignUpPage } from './SignUpPage'
 

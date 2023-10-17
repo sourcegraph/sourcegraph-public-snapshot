@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-import { ChangesetLabelFields } from '../../../../graphql-operations'
+import type { ChangesetLabelFields } from '../../../../graphql-operations'
 
 interface Props {
     label: ChangesetLabelFields

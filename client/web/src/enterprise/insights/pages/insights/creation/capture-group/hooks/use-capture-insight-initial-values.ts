@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { CaptureGroupFormFields } from '../types'
+import type { CaptureGroupFormFields } from '../types'
 import { decodeCaptureInsightURL } from '../utils/capture-insigh-url-parsers/capture-insight-url-parsers'
 
 type UseCaptureInsightInitialValuesResult = [

@@ -1,6 +1,6 @@
-import { ReactElement, useEffect } from 'react'
+import { type ReactElement, useEffect } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Text } from '@sourcegraph/wildcard'
 
 import { SiteAdminRepositoriesContainer } from '../../site-admin/SiteAdminRepositoriesContainer'

@@ -1,8 +1,8 @@
 import { useLayoutEffect, useEffect, useState, useMemo, useCallback } from 'react'
 
-import { Observable, Observer, Subject } from 'rxjs'
+import { type Observable, type Observer, Subject } from 'rxjs'
 
-import { ObservableStatus } from '../types'
+import type { ObservableStatus } from '../types'
 
 /**
  * React hook to get the latest value of an Observable.

@@ -5,7 +5,7 @@ import { NavLink } from 'react-router-dom'
 
 import { Alert, Badge, Link, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { TeamAreaRouteContext } from './TeamArea'
+import type { TeamAreaRouteContext } from './TeamArea'
 
 interface Props extends Pick<TeamAreaRouteContext, 'team'> {
     className?: string

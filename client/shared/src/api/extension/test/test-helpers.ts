@@ -1,12 +1,12 @@
-import { Remote } from 'comlink'
+import type { Remote } from 'comlink'
 import { BehaviorSubject } from 'rxjs'
 
-import { ClientAPI } from '../../client/api/api'
-import { FlatExtensionHostAPI } from '../../contract'
+import type { ClientAPI } from '../../client/api/api'
+import type { FlatExtensionHostAPI } from '../../contract'
 import { pretendRemote } from '../../util'
 import { setActiveLoggers } from '../api/logging'
 import { createExtensionAPIFactory } from '../extensionApi'
-import { InitData } from '../extensionHost'
+import type { InitData } from '../extensionHost'
 import { createExtensionHostAPI } from '../extensionHostApi'
 import { createExtensionHostState } from '../extensionHostState'
 

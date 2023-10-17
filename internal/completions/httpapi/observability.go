@@ -17,7 +17,7 @@ import (
 //
 // Family identifies the endpoint being used, while model is the model we pass
 // to GetCompletionClient.
-func Trace(ctx context.Context, family, model string) *traceBuilder {
+func Trace(ctx context.Context, family, model string, maxTokensToSample int) *traceBuilder {
 	// TODO consider integrating a wrapper in GetCompletionClient. Only issue
 	// is we need to somehow make it cleaner to access fields from the
 	// request.
@@ -28,6 +28,7 @@ func Trace(ctx context.Context, family, model string) *traceBuilder {
 		ev = honey.NewEvent("completions")
 		ev.AddField("family", family)
 		ev.AddField("model", model)
+		ev.AddField("maxTokensToSample", maxTokensToSample)
 		ev.AddField("actor", actor.FromContext(ctx).UIDString())
 		if req := requestclient.FromContext(ctx); req != nil {
 			ev.AddField("connecting_ip", req.ForwardedFor)

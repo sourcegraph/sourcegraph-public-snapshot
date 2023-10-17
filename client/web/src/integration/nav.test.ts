@@ -3,14 +3,14 @@ import expect from 'expect'
 import { test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
+import type { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createResolveRepoRevisionResult,
     createFileExternalLinksResult,

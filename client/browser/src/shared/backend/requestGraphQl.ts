@@ -1,11 +1,16 @@
 import { print } from 'graphql'
 import { once } from 'lodash'
-import { from, Observable } from 'rxjs'
+import { from, type Observable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 
-import { GraphQLResult, getGraphQLClient, GraphQLClient, requestGraphQLCommon } from '@sourcegraph/http-client'
+import {
+    type GraphQLResult,
+    getGraphQLClient,
+    type GraphQLClient,
+    requestGraphQLCommon,
+} from '@sourcegraph/http-client'
 import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'

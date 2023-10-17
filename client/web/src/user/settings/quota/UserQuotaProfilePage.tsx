@@ -6,7 +6,7 @@ import { ErrorAlert, Text, H3, LoadingSpinner, PageHeader, Input, Container } fr
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { PageTitle } from '../../../components/PageTitle'
-import { Scalars } from '../../../graphql-operations'
+import type { Scalars } from '../../../graphql-operations'
 
 import { SET_USER_CODE_COMPLETIONS_QUOTA, SET_USER_COMPLETIONS_QUOTA, USER_REQUEST_QUOTAS } from './backend'
 

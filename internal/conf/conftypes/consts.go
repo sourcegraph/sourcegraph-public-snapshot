@@ -24,7 +24,10 @@ type CompletionsProviderName string
 const (
 	CompletionsProviderNameAnthropic   CompletionsProviderName = "anthropic"
 	CompletionsProviderNameOpenAI      CompletionsProviderName = "openai"
+	CompletionsProviderNameAzureOpenAI CompletionsProviderName = "azure-openai"
 	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
+	CompletionsProviderNameFireworks   CompletionsProviderName = "fireworks"
+	CompletionsProviderNameAWSBedrock  CompletionsProviderName = "aws-bedrock"
 )
 
 type EmbeddingsConfig struct {
@@ -39,12 +42,40 @@ type EmbeddingsConfig struct {
 	MaxCodeEmbeddingsPerRepo   int
 	MaxTextEmbeddingsPerRepo   int
 	PolicyRepositoryMatchLimit *int
+	ExcludeChunkOnError        bool
+	Qdrant                     QdrantConfig
+}
+
+type QdrantConfig struct {
+	Enabled                  bool
+	QdrantHNSWConfig         QdrantHNSWConfig
+	QdrantOptimizersConfig   QdrantOptimizersConfig
+	QdrantQuantizationConfig QdrantQuantizationConfig
+}
+
+type QdrantHNSWConfig struct {
+	EfConstruct       *uint64
+	FullScanThreshold *uint64
+	M                 *uint64
+	OnDisk            bool
+	PayloadM          *uint64
+}
+
+type QdrantOptimizersConfig struct {
+	IndexingThreshold uint64
+	MemmapThreshold   uint64
+}
+
+type QdrantQuantizationConfig struct {
+	Enabled  bool
+	Quantile float32
 }
 
 type EmbeddingsProviderName string
 
 const (
 	EmbeddingsProviderNameOpenAI      EmbeddingsProviderName = "openai"
+	EmbeddingsProviderNameAzureOpenAI EmbeddingsProviderName = "azure-openai"
 	EmbeddingsProviderNameSourcegraph EmbeddingsProviderName = "sourcegraph"
 )
 

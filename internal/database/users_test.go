@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"sort"
 	"strconv"
@@ -19,10 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames.
@@ -82,7 +85,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -105,7 +108,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 
 func TestUsers_Create_SiteAdmin(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := db.GlobalState().Get(ctx); err != nil {
@@ -217,7 +220,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -268,7 +271,7 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -362,16 +365,16 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 
 	// Create a Sourcegraph Operator user and should be excluded when desired
-	_, err = db.UserExternalAccounts().CreateUserAndSave(
+	_, err = db.Users().CreateWithExternalAccount(
 		ctx,
 		NewUser{
 			Username: "sourcegraph-operator-logan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "sourcegraph-operator",
+			},
+		})
 	require.NoError(t, err)
 	count, err := db.Users().Count(
 		ctx,
@@ -399,7 +402,7 @@ func TestUsers_List_Query(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	users := map[string]int32{}
@@ -475,7 +478,7 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	userToSoftDelete := NewUserForSCIM{NewUser: NewUser{Email: "notactive@example.com", Username: "notactive", EmailIsVerified: true}, SCIMExternalID: "notactive"}
@@ -487,7 +490,10 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 		userToSoftDelete,
 	}
 	for _, newUser := range newUsers {
-		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
+		user, err := db.Users().CreateWithExternalAccount(ctx, newUser.NewUser,
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID},
+			})
 		for _, email := range newUser.AdditionalVerifiedEmails {
 			verificationCode := "x"
 			err := db.UserEmails().Add(ctx, user.ID, email, &verificationCode)
@@ -533,7 +539,7 @@ func TestUsers_Update(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -548,8 +554,8 @@ func TestUsers_Update(t *testing.T) {
 
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
 		Username:    "u1",
-		DisplayName: strptr("d1"),
-		AvatarURL:   strptr("a1"),
+		DisplayName: pointers.Ptr("d1"),
+		AvatarURL:   pointers.Ptr("a1"),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -571,7 +577,7 @@ func TestUsers_Update(t *testing.T) {
 	}
 
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
-		DisplayName: strptr(""),
+		DisplayName: pointers.Ptr(""),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -591,7 +597,7 @@ func TestUsers_Update(t *testing.T) {
 
 	// Update CompletedPostSignUp
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
-		CompletedPostSignup: boolptr(true),
+		CompletedPostSignup: pointers.Ptr(true),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -630,7 +636,7 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -666,7 +672,7 @@ func TestUsers_GetByUsername(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -704,7 +710,6 @@ func TestUsers_GetByUsername(t *testing.T) {
 			t.Errorf("got %s, but want %s", have.Username, want)
 		}
 	}
-
 }
 
 func TestUsers_GetByUsernames(t *testing.T) {
@@ -713,7 +718,7 @@ func TestUsers_GetByUsernames(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -754,13 +759,14 @@ func TestUsers_Delete(t *testing.T) {
 	t.Skip() // Flaky
 
 	for name, hard := range map[string]bool{"soft": false, "hard": true} {
+		hard := hard // fix for loop closure
 		t.Run(name, func(t *testing.T) {
 			if testing.Short() {
 				t.Skip()
 			}
 			t.Parallel()
 			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(logger, t))
+			db := NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -915,7 +921,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -934,19 +940,20 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = db.UserExternalAccounts().AssociateUserAndSave(ctx, otherUser.ID,
-		extsvc.AccountSpec{
-			ServiceType: "github",
-			ServiceID:   "https://github.com/",
-			AccountID:   "alice_github",
-		},
-		extsvc.AccountData{},
-	)
+	_, err = db.UserExternalAccounts().Upsert(ctx,
+		&extsvc.Account{
+			UserID: otherUser.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+				AccountID:   "alice_github",
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	//Test reviving a user that does not exist
+	// Test reviving a user that does not exist
 	t.Run("fails on nonexistent user", func(t *testing.T) {
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{65})
 		if err != nil {
@@ -956,7 +963,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 			t.Errorf("got %d recovered users, want 0", len(ru))
 		}
 	})
-	//Test reviving a user that does exist and hasn't not been deleted
+	// Test reviving a user that does exist and hasn't not been deleted
 	t.Run("fails on non-deleted user", func(t *testing.T) {
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
 		if err == nil {
@@ -967,7 +974,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		}
 	})
 
-	//Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
+	// Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
 	t.Run("revives user with no additional resources", func(t *testing.T) {
 		err := db.Users().Delete(ctx, user.ID)
 		if err != nil {
@@ -975,10 +982,10 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		}
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
 		if err != nil {
-			t.Errorf("got err %v, want nil", err)
+			t.Fatalf("got err %v, want nil", err)
 		}
 		if len(ru) != 1 {
-			t.Errorf("got %d users, want 1", len(ru))
+			t.Fatalf("got %d users, want 1", len(ru))
 		}
 		if ru[0] != user.ID {
 			t.Errorf("got user %d, want %d", ru[0], user.ID)
@@ -993,7 +1000,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 			t.Errorf("got %d users, want 1", len(users))
 		}
 	})
-	//Test reviving a user that does exist and does have additional resources deleted in the same timeframe
+	// Test reviving a user that does exist and does have additional resources deleted in the same timeframe
 	t.Run("revives user and additional resources", func(t *testing.T) {
 		err := db.Users().Delete(ctx, otherUser.ID)
 		if err != nil {
@@ -1040,7 +1047,7 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -1084,7 +1091,7 @@ func TestUsers_SetIsSiteAdmin(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	adminUser, err := db.Users().Create(ctx, NewUser{Username: "u"})
@@ -1152,7 +1159,7 @@ func TestUsers_GetSetChatCompletionsQuota(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -1211,7 +1218,7 @@ func TestUsers_GetSetCodeCompletionsQuota(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -1260,6 +1267,108 @@ func TestUsers_GetSetCodeCompletionsQuota(t *testing.T) {
 			t.Fatal(err)
 		}
 		require.Nil(t, quota, "expected unconfigured quota to be nil")
+	}
+}
+
+func TestUsers_CreateWithExternalAccount(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+
+	authData := json.RawMessage(`"authData"`)
+	data := json.RawMessage(`"data"`)
+	accountData := extsvc.AccountData{
+		AuthData: extsvc.NewUnencryptedData(authData),
+		Data:     extsvc.NewUnencryptedData(data),
+	}
+	user, err := db.Users().CreateWithExternalAccount(ctx, NewUser{Username: "u"}, &extsvc.Account{AccountSpec: spec, AccountData: accountData})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "u"; user.Username != want {
+		t.Errorf("got %q, want %q", user.Username, want)
+	}
+
+	accounts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(accounts) != 1 {
+		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+	}
+	account := accounts[0]
+	simplifyExternalAccount(account)
+	account.ID = 0
+
+	want := &extsvc.Account{
+		UserID:      user.ID,
+		AccountSpec: spec,
+		AccountData: accountData,
+	}
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	userRoles, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{
+		UserID: user.ID,
+	})
+	require.NoError(t, err)
+	// Both USER and SITE_ADMINISTRATOR role have been assigned.
+	require.Len(t, userRoles, 2)
+}
+
+func TestUsers_CreateWithExternalAccount_NilData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+
+	user, err := db.Users().CreateWithExternalAccount(ctx, NewUser{Username: "u"}, &extsvc.Account{AccountSpec: spec})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "u"; user.Username != want {
+		t.Errorf("got %q, want %q", user.Username, want)
+	}
+
+	accounts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(accounts) != 1 {
+		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+	}
+	account := accounts[0]
+	simplifyExternalAccount(account)
+	account.ID = 0
+
+	want := &extsvc.Account{
+		UserID:      user.ID,
+		AccountSpec: spec,
+	}
+	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 

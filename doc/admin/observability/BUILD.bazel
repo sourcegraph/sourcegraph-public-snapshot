@@ -1,0 +1,20 @@
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+filegroup(
+    name = "doc_files",
+    srcs = glob(
+        ["**/*"],
+        [".gitattributes"],
+    ),
+    visibility = ["//doc:__pkg__"],
+)
+
+write_generated_to_source_files(
+    name = "write_monitoring_docs",
+    output_files = {
+        "alerts.md": "monitoring/outputs/docs/alerts.md",
+        "dashboards.md": "monitoring/outputs/docs/dashboards.md",
+    },
+    tags = ["go_generate"],
+    target = "//monitoring:generate_config",
+)

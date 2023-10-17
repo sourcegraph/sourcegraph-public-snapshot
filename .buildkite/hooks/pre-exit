@@ -16,10 +16,12 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
   for db in $(psql -c '\l' | grep "sourcegraph-" | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
 
   # Remove any hanging containers and/or volumes to ensure the next tests are able to run.
-  if $(docker ps -aq | wc -l) -gt 0; then
-    docker rm -f "$(docker ps -aq)"
+  if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+    echo "Removing docker containers..."
+    mapfile -t containers < <(docker ps -aq)
+    for c in "${containers[@]}"; do docker rm -f "$c"; done
   fi
-  if $(docker volume ls -q) -gt 0; then
+  if [[ $(docker volume ls -q) -gt 0 ]]; then
     docker volume rm "$(docker volume ls -q)"
   fi
 
@@ -55,10 +57,10 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
   done
 
   # Please see: https://github.com/sourcegraph/sourcegraph/issues/43934
-  echo "--- ⚠️A TEMPORARILY DISABLED: Logs will not be uploaded to Grafana. Please reach out to #discuss-dev-experience"
+  echo "--- ⚠️A TEMPORARILY DISABLED: Logs will not be uploaded to Grafana. Please reach out to #discuss-dev-infra"
   # Non-zero exit code and not a soft fail: upload the logs.
   # echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
-  # ./enterprise/dev/ci/scripts/upload-build-logs.sh
+  # ./dev/ci/scripts/upload-build-logs.sh
 fi
 
 # upload raw annotations as artifacts if they are available for easier access

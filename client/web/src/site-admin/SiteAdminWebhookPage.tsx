@@ -1,11 +1,11 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
 import { mdiWebhook, mdiDelete, mdiPencil } from '@mdi/js'
 import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     ButtonLink,
@@ -30,7 +30,7 @@ import {
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
-import { DeleteWebhookResult, DeleteWebhookVariables, WebhookFields } from '../graphql-operations'
+import type { DeleteWebhookResult, DeleteWebhookVariables, WebhookFields } from '../graphql-operations'
 
 import { DELETE_WEBHOOK, useWebhookLogsConnection, useWebhookQuery } from './backend'
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -18,7 +19,7 @@ import (
 
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
@@ -62,7 +63,7 @@ func TestIsQueued(t *testing.T) {
 
 func TestIsQueuedRootIndexer(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	now := time.Now()
@@ -104,7 +105,7 @@ func TestIsQueuedRootIndexer(t *testing.T) {
 func TestInsertIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "")
@@ -224,5 +225,35 @@ func TestInsertIndexes(t *testing.T) {
 
 	if diff := cmp.Diff(expected, indexes); diff != "" {
 		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+	}
+}
+
+func TestInsertIndexWithActor(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	store := New(&observation.TestContext, db)
+
+	insertRepo(t, db, 50, "")
+
+	for i, ctx := range []context.Context{
+		actor.WithActor(context.Background(), actor.FromMockUser(100)),
+		actor.WithInternalActor(context.Background()),
+		context.Background(),
+	} {
+		indexes, err := store.InsertIndexes(ctx, []uploadsshared.Index{
+			{ID: i, RepositoryID: 50, Commit: makeCommit(i), State: "queued"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(indexes) == 0 {
+			t.Fatalf("no indexes returned")
+		}
+
+		act := actor.FromContext(ctx)
+		if indexes[0].EnqueuerUserID != act.UID {
+			t.Fatalf("unexpected user id (got=%d,want=%d)", indexes[0].EnqueuerUserID, act.UID)
+		}
 	}
 }

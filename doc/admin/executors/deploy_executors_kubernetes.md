@@ -8,7 +8,7 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-> NOTE: This feature is available in Sourcegraph 5.1.3 and later.
+> NOTE: This feature is available in Sourcegraph 5.2.0 and later.
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph-k8s) are provided to deploy Sourcegraph Executors on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
@@ -40,7 +40,7 @@ Additional RBAC Roles are needed for single pod + pvc executors. Hidden for now 
 -->
 
 See
-the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes/executor-batches.Role.yml)
+the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes/batches/executor-batches.Role.yml)
 for details.
 
 ### Docker Image
@@ -53,27 +53,30 @@ at [`sourcegraph/executor-kubernetes`](https://hub.docker.com/r/sourcegraph/exec
 The following are Environment Variables that are specific to the Kubernetes runtime. These environment variables can be
 set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 
-| Name                                                         | Default Value     | Description                                                                                                                            |
-|--------------------------------------------------------------|:------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| EXECUTOR_KUBERNETES_CONFIG_PATH                              | N/A               | The path to the Kubernetes configuration file. If not specified, the in cluster config is used.                                        |
-| EXECUTOR_KUBERNETES_NODE_NAME                                | N/A               | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node.                 |
-| EXECUTOR_KUBERNETES_NODE_SELECTOR                            | N/A               | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`                              |
-| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS | N/A               | The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]` |
-| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A               | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`      |
-| EXECUTOR_KUBERNETES_POD_AFFINITY                             | N/A               | The JSON encoded pod affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}] |
+| Name                                                         | Default Value     | Description                                                                                                                                                                                            |
+|--------------------------------------------------------------|:------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| EXECUTOR_KUBERNETES_CONFIG_PATH                              | N/A               | The path to the Kubernetes configuration file. If not specified, the in cluster config is used.                                                                                                        |
+| EXECUTOR_KUBERNETES_NODE_NAME                                | N/A               | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node.                                                                                 |
+| EXECUTOR_KUBERNETES_NODE_SELECTOR                            | N/A               | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`                                                                                              |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS | N/A               | The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`                                                                 |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A               | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`                                                                      |
+| EXECUTOR_KUBERNETES_POD_AFFINITY                             | N/A               | The JSON encoded pod affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]      |
 | EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY                        | N/A               | The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}] |
-| EXECUTOR_KUBERNETES_NODE_TOLERATIONS                         | N/A               | The JSON encoded tolerations for Kubernetes Jobs. e.g. [{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]   |
-| EXECUTOR_KUBERNETES_NAMESPACE                                | `default`         | The namespace to create the Jobs in.                                                                                                   |
-| EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME                  | `sg-executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.                       |
-| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU                       | N/A               | The maximum CPU resource for Kubernetes Jobs.                                                                                          |
-| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `12Gi`            | The maximum memory resource for Kubernetes Jobs.                                                                                       |
-| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | N/A               | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
-| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`            | The minimum memory resource for Kubernetes Jobs.                                                                                       |
-| KUBERNETES_JOB_DEADLINE                                      | `1200`             | The number of seconds after which a Kubernetes job will be terminated.                                                                 |
-| KUBERNETES_RUN_AS_USER                                       | N/A               | The user ID to run Kubernetes jobs as.                                                                                                 |
-| KUBERNETES_RUN_AS_GROUP                                      | N/A               | The group ID to run Kubernetes jobs as.                                                                                                |
-| KUBERNETES_FS_GROUP                                          | `1000`            | The group ID to run all containers in the Kubernetes jobs as.                                                                          |
-| KUBERNETES_KEEP_JOBS                                         | `false`           | If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.                                                |
+| EXECUTOR_KUBERNETES_NODE_TOLERATIONS                         | N/A               | The JSON encoded tolerations for Kubernetes Jobs. e.g. [{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]                                                                   |
+| EXECUTOR_KUBERNETES_NAMESPACE                                | `default`         | The namespace to create the Jobs in.                                                                                                                                                                   |
+| EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME                  | `sg-executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.                                                                                       |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU                       | N/A               | The maximum CPU resource for Kubernetes Jobs.                                                                                                                                                          |
+| EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `12Gi`            | The maximum memory resource for Kubernetes Jobs.                                                                                                                                                       |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | N/A               | The minimum CPU resource for Kubernetes Jobs.                                                                                                                                                          |
+| EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`            | The minimum memory resource for Kubernetes Jobs.                                                                                                                                                       |
+| KUBERNETES_JOB_DEADLINE                                      | `1200`            | The number of seconds after which a Kubernetes job will be terminated.                                                                                                                                 |
+| KUBERNETES_RUN_AS_USER                                       | N/A               | The user ID to run Kubernetes jobs as.                                                                                                                                                                 |
+| KUBERNETES_RUN_AS_GROUP                                      | N/A               | The group ID to run Kubernetes jobs as.                                                                                                                                                                |
+| KUBERNETES_FS_GROUP                                          | `1000`            | The group ID to run all containers in the Kubernetes jobs as.                                                                                                                                          |
+| KUBERNETES_KEEP_JOBS                                         | `false`           | If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.                                                                                                                |
+| KUBERNETES_JOB_ANNOTATIONS                                   | N/A               | The JSON encoded annotations to add to the Kubernetes Jobs. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                        |
+| KUBERNETES_JOB_POD_ANNOTATIONS                               | N/A               | The JSON encoded annotations to add to the Kubernetes Job Pods. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                    |
+| KUBERNETES_IMAGE_PULL_SECRETS                                | N/A               | The names of Kubernetes image pull secrets to use for pulling images. e.g. my-secret,my-other-secret                                                                                                   |
 
 <!--
 
@@ -130,7 +133,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `5.1.3.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `5.2.0.254` (AWS / GCP Instance Metadata Service).
 
 ### Batch Changes
 
@@ -140,7 +143,7 @@ Kubernetes, [Native Server-Side Batch Changes](./native_execution.md) must be en
 ### Example Configuration YAML
 
 See
-the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes)
+the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes)
 for an example of how to configure the Executor in Kubernetes.
 
 ## Deployment

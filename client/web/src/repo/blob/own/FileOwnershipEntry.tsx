@@ -7,7 +7,7 @@ import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Button, ButtonLink, Icon, LinkOrSpan, Tooltip } from '@sourcegraph/wildcard'
 
-import {
+import type {
     AssignedOwnerFields,
     CodeownersFileEntryFields,
     OwnerFields,

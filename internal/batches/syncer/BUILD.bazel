@@ -48,6 +48,7 @@ go_test(
         "//internal/batches/store",
         "//internal/batches/types",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/github_apps/store",
         "//internal/observation",

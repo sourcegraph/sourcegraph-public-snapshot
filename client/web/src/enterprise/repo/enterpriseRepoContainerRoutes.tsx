@@ -1,7 +1,7 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { RedirectRoute } from '../../components/RedirectRoute'
-import { RepoContainerRoute } from '../../repo/RepoContainer'
+import type { RepoContainerRoute } from '../../repo/RepoContainer'
 import { repoContainerRoutes } from '../../repo/repoContainerRoutes'
 
 const RepositoryCodeIntelArea = lazyComponent(

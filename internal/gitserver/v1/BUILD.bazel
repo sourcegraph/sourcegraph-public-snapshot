@@ -29,17 +29,22 @@ go_proto_library(
 
 go_library(
     name = "gitserver",
+    srcs = ["errors.go"],
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1",
     visibility = [
-        "//cmd/gitserver/server:__pkg__",
-        "//cmd/gitserver/shared:__pkg__",
+        "//cmd/gitserver:__subpackages__",
         "//internal/api:__pkg__",
         "//internal/extsvc/gitolite:__pkg__",
         "//internal/gitserver:__pkg__",
         "//internal/gitserver/gitdomain:__pkg__",
-        "//internal/gitserver/integration_tests:__pkg__",
         "//internal/gitserver/protocol:__pkg__",
+        "//internal/perforce:__pkg__",
+    ],
+    deps = [
+        "//lib/errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )
 

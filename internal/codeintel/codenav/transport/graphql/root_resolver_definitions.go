@@ -13,12 +13,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const DefaultDefinitionsPageSize = 100
+
 // Definitions returns the list of source locations that define the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
 	requestArgs := codenav.PositionalRequestArgs{
 		RequestArgs: codenav.RequestArgs{
 			RepositoryID: r.requestState.RepositoryID,
 			Commit:       r.requestState.Commit,
+			Limit:        DefaultDefinitionsPageSize,
 		},
 		Path:      r.requestState.Path,
 		Line:      int(args.Line),

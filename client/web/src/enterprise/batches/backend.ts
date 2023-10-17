@@ -1,15 +1,15 @@
 import { useMemo } from 'react'
 
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 import * as jsonc from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
-import { BatchChangeRolloutWindow, SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { BatchChangeRolloutWindow, SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     BatchSpecsVariables,
     BatchSpecsResult,
     Scalars,

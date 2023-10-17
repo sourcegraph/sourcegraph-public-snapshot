@@ -81,7 +81,7 @@ func pipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 		// We start a goroutine here to make sure that our pipes are closed
 		// when the context is canceled.
 		//
-		// See enterprise/cmd/executor/internal/command/run.go for more details.
+		// See cmd/executor/internal/command/run.go for more details.
 		<-ctx.Done()
 		stdoutPipe.Close()
 		stderrPipe.Close()

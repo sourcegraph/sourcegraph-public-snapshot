@@ -83,7 +83,7 @@ func (s Set[T]) Intersect(b Set[T]) Set[T] {
 	return Intersection(s, b)
 }
 
-// Contains returns true if a has all the elements in b.
+// Contains returns true if s has all the elements in b.
 func (s Set[T]) Contains(b Set[T]) bool {
 	// do not waste time on loop if b is bigger than s
 	if len(b) > len(s) {

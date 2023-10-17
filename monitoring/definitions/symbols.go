@@ -8,9 +8,12 @@ import (
 )
 
 func Symbols() *monitoring.Dashboard {
-	const containerName = "symbols"
+	const (
+		containerName   = "symbols"
+		grpcServiceName = "symbols.v1.SymbolsService"
+	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+	grpcMethodVariable := shared.GRPCMethodVariable("symbols", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "symbols",
@@ -27,7 +30,7 @@ func Symbols() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
-			shared.GRPCMethodVariable(containerName),
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewSymbolsAPIGroup(containerName),
@@ -38,16 +41,19 @@ func Symbols() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:    containerName,
-					MetricNamespace:     containerName,
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${instance:regex}`,
+					HumanServiceName:   containerName,
+					RawGRPCServiceName: grpcServiceName,
+
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${instance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerCodeIntel),
 
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   containerName,
-					RawGRPCServiceName: "symbols.v1.SymbolsService",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerCodeIntel),

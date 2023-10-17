@@ -26,7 +26,7 @@ go_test(
     srcs = ["outbound_test.go"],
     embed = [":outbound"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/types",
         "//lib/errors",
         "@com_github_derision_test_go_mockgen//testutil/assert",

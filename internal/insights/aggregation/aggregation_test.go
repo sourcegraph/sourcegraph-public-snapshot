@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -19,7 +20,7 @@ import (
 
 func newTestSearchResultsAggregator(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, mode types.SearchAggregationMode, db database.DB) SearchResultsAggregator {
 	if db == nil {
-		db = database.NewMockDB()
+		db = dbmocks.NewMockDB()
 	}
 	return &searchAggregationResults{
 		db:        db,
@@ -690,8 +691,8 @@ func TestRepoMetadataAggregation(t *testing.T) {
 			autogold.Expect(map[string]int{"open-source": 1, "No metadata": 1, "team:sourcegraph": 1}),
 		},
 	}
-	db := database.NewMockDB()
-	repos := database.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
+	repos := dbmocks.NewMockRepoStore()
 	sgString := "sourcegraph"
 	repos.ListFunc.SetDefaultReturn([]*dTypes.Repo{
 		{Name: "myRepo", ID: 1},

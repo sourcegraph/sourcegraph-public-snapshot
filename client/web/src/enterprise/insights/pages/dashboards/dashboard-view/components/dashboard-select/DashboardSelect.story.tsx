@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
+import { type CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
 
 import { DashboardSelect } from './DashboardSelect'
 
-const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => story()}</WebStory>
 
 const config: Meta = {
     title: 'web/insights/DashboardSelect',
@@ -67,7 +67,7 @@ const DASHBOARDS: CustomInsightDashboard[] = [
     },
 ]
 
-export const DashboardSelectStory: Story = () => {
+export const DashboardSelectStory: StoryFn = () => {
     const [dashboard, setDashboard] = useState<CustomInsightDashboard | undefined>()
 
     return (

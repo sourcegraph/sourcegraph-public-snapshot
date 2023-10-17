@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { RepositoriesProgressResult } from '../../../../graphql-operations'
+import type { RepositoriesProgressResult } from '../../../../graphql-operations'
 
 import styles from './AppSetupProgressBar.module.scss'
 

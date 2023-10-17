@@ -1,4 +1,4 @@
-import { KeyboardShortcut } from '../keyboardShortcuts'
+import type { KeyboardShortcut } from '../keyboardShortcuts'
 import { useTemporarySetting } from '../settings/temporary'
 
 import { KEYBOARD_SHORTCUTS } from './keyboardShortcuts'

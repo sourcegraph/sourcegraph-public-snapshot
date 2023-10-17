@@ -6,9 +6,9 @@ import { of } from 'rxjs'
 import { pluralize } from '@sourcegraph/common'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
-import { AllChangesetIDsVariables, Scalars, BulkOperationType } from '../../../../graphql-operations'
+import { type AllChangesetIDsVariables, type Scalars, BulkOperationType } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { Action, DropdownButton } from '../../DropdownButton'
+import { type Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import {
     queryAllChangesetIDs as _queryAllChangesetIDs,

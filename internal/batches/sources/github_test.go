@@ -11,13 +11,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -115,6 +115,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 }
 
 func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
+	github.SetupForTest(t)
 	cli := new(mockDoer)
 	// Version lookup
 	versionMatchedBy := func(req *http.Request) bool {
@@ -493,7 +494,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGitHubSource(ctx, svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -887,11 +888,9 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 	// The GithubSource uses the github.Client under the hood, which uses rcache, a
 	// caching layer that uses Redis. We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	github.SetupForTest(t)
 
 	cf, save := newClientFactory(t, tName)
-
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
@@ -901,7 +900,7 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 		})),
 	}
 
-	src, err := NewGitHubSource(ctx, svc, cf)
+	src, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

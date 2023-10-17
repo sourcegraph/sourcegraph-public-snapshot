@@ -2,20 +2,20 @@ import React, { useCallback } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
 import { Navigate, useLocation } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import {
+import type {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
     SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'

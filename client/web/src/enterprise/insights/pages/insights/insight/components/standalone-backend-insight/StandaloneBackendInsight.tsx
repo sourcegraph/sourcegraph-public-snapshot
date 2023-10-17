@@ -4,10 +4,10 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, CardBody, useDebounce, useDeepMemo, FormChangeEvent } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Card, CardBody, useDebounce, useDeepMemo, type FormChangeEvent } from '@sourcegraph/wildcard'
 
-import {
+import type {
     GetInsightViewResult,
     GetInsightViewVariables,
     InsightViewFiltersInput,
@@ -23,13 +23,13 @@ import {
     BackendInsightChart,
     BackendInsightErrorAlert,
     InsightIncompleteAlert,
-    DrillDownFiltersFormValues,
-    DrillDownInsightCreationFormValues,
+    type DrillDownFiltersFormValues,
+    type DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import {
-    BackendInsight,
+    type BackendInsight,
     CodeInsightsBackendContext,
-    InsightFilters,
+    type InsightFilters,
     useSaveInsightAsNewView,
     isComputeInsight,
 } from '../../../../../core'

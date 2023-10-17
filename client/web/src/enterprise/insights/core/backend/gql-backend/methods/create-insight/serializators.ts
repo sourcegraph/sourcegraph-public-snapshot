@@ -1,11 +1,11 @@
 import {
-    LineChartSearchInsightDataSeriesInput,
-    LineChartSearchInsightInput,
-    PieChartSearchInsightInput,
+    type LineChartSearchInsightDataSeriesInput,
+    type LineChartSearchInsightInput,
+    type PieChartSearchInsightInput,
     TimeIntervalStepUnit,
 } from '../../../../../../../graphql-operations'
 import { InsightType } from '../../../../types'
-import {
+import type {
     CreationInsightInput,
     MinimalCaptureGroupInsightData,
     MinimalComputeInsightData,

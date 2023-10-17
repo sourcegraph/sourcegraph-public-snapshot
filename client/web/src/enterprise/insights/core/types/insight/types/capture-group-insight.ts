@@ -1,6 +1,6 @@
-import { Duration } from 'date-fns'
+import type { Duration } from 'date-fns'
 
-import { BaseInsight, InsightFilters, InsightType } from '../common'
+import type { BaseInsight, InsightFilters, InsightType } from '../common'
 
 export interface CaptureGroupInsight extends BaseInsight {
     type: InsightType.CaptureGroup

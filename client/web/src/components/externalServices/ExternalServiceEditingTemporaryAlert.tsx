@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Alert, H4, Code, Text } from '@sourcegraph/wildcard'
 

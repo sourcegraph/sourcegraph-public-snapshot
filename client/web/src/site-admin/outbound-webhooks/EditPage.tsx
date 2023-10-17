@@ -1,15 +1,15 @@
-import { FC, useCallback, useEffect, useState } from 'react'
+import { type FC, useCallback, useEffect, useState } from 'react'
 
 import { mdiWebhook } from '@mdi/js'
 import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, Form, Input, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     OutboundWebhookByIDResult,
     OutboundWebhookByIDVariables,
     OutboundWebhookFields,

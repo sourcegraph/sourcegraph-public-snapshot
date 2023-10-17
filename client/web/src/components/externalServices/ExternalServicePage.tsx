@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, type FC } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
@@ -24,7 +24,7 @@ import {
     queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
     deleteExternalService,
     useExternalServiceCheckConnectionByIdLazyQuery,
-    ExternalServiceFieldsWithConfig,
+    type ExternalServiceFieldsWithConfig,
     useFetchExternalService,
 } from './backend'
 import { getBreadCrumbs } from './breadCrumbs'
@@ -97,9 +97,7 @@ export const ExternalServicePage: FC<Props> = props => {
         [externalService, syncExternalService, syncJobUpdates]
     )
 
-    const externalServiceCategory = resolveExternalServiceCategory(externalService)
-
-    const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
+    const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const client = useApolloClient()
@@ -129,42 +127,171 @@ export const ExternalServicePage: FC<Props> = props => {
 
     const checkConnectionNode = data?.node?.__typename === 'ExternalService' ? data.node.checkConnection : null
 
-    let externalServiceAvailabilityStatus
-    if (loading) {
-        externalServiceAvailabilityStatus = (
-            <Alert className="mt-2" variant="waiting">
-                Checking code host connection status...
-            </Alert>
-        )
-    } else if (!error) {
-        if (checkConnectionNode?.__typename === 'ExternalServiceAvailable') {
-            externalServiceAvailabilityStatus = (
-                <Alert className="mt-2" variant="success">
-                    Code host is reachable.
-                </Alert>
-            )
-        } else if (checkConnectionNode?.__typename === 'ExternalServiceUnavailable') {
-            externalServiceAvailabilityStatus = (
-                <ErrorAlert
-                    className="mt-2"
-                    prefix="Error during code host connection check"
-                    error={checkConnectionNode.suspectedReason}
-                />
-            )
-        }
-    } else {
-        externalServiceAvailabilityStatus = (
-            <ErrorAlert
-                className="mt-2"
-                prefix="Unexpected error during code host connection check"
-                error={error.message}
-            />
-        )
-    }
-
     const path = useMemo(() => getBreadCrumbs(externalService), [externalService])
 
     const mergedError = fetchError || fetchGHAppError
+
+    const renderExternalService = (externalService: ExternalServiceFieldsWithConfig): JSX.Element => {
+        let externalServiceAvailabilityStatus
+        if (loading) {
+            externalServiceAvailabilityStatus = (
+                <Alert className="mt-2" variant="waiting">
+                    Checking code host connection status...
+                </Alert>
+            )
+        } else if (!error) {
+            if (checkConnectionNode?.__typename === 'ExternalServiceAvailable') {
+                externalServiceAvailabilityStatus = (
+                    <Alert className="mt-2" variant="success">
+                        Code host is reachable.
+                    </Alert>
+                )
+            } else if (checkConnectionNode?.__typename === 'ExternalServiceUnavailable') {
+                externalServiceAvailabilityStatus = (
+                    <ErrorAlert
+                        className="mt-2"
+                        prefix="Error during code host connection check"
+                        error={checkConnectionNode.suspectedReason}
+                    />
+                )
+            }
+        } else {
+            externalServiceAvailabilityStatus = (
+                <ErrorAlert
+                    className="mt-2"
+                    prefix="Unexpected error during code host connection check"
+                    error={error.message}
+                />
+            )
+        }
+        const externalServiceCategory = resolveExternalServiceCategory(externalService)
+        return (
+            <Container className="mb-3">
+                <PageHeader
+                    path={path}
+                    byline={
+                        <CreatedByAndUpdatedByInfoByline
+                            createdAt={externalService.createdAt}
+                            updatedAt={externalService.updatedAt}
+                            noAuthor={true}
+                        />
+                    }
+                    className="mb-3"
+                    headingElement="h2"
+                    actions={
+                        <div className="d-flex align-items-center justify-content-between">
+                            <div className="align-self-start">
+                                <Tooltip
+                                    content={
+                                        externalService.hasConnectionCheck
+                                            ? 'Test if code host is reachable from Sourcegraph'
+                                            : 'Connection check unavailable'
+                                    }
+                                >
+                                    <LoaderButton
+                                        className="test-connection-external-service-button"
+                                        variant="secondary"
+                                        onClick={() => doCheckConnection()}
+                                        disabled={!externalService.hasConnectionCheck || loading}
+                                        size="sm"
+                                        loading={loading}
+                                        alwaysShowLabel={true}
+                                        icon={<Icon aria-hidden={true} svgPath={mdiConnection} />}
+                                        label="Test connection"
+                                    />
+                                </Tooltip>
+                            </div>
+                            {!editingDisabled && (
+                                <div className="flex-grow-1 ml-1">
+                                    <Tooltip content="Edit code host connection settings">
+                                        <Button
+                                            className="test-edit-external-service-button"
+                                            to={`/site-admin/external-services/${encodeURIComponent(
+                                                externalService.id
+                                            )}/edit`}
+                                            variant="primary"
+                                            size="sm"
+                                            as={Link}
+                                        >
+                                            <Icon aria-hidden={true} svgPath={mdiCog} />
+                                            {' Edit'}
+                                        </Button>
+                                    </Tooltip>
+                                </div>
+                            )}
+                            <div className="flex-shrink-0 ml-1">
+                                <Tooltip
+                                    content={
+                                        editingDisabled
+                                            ? 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                            : 'Delete code host connection'
+                                    }
+                                >
+                                    <Button
+                                        aria-label="Delete"
+                                        className="test-delete-external-service-button"
+                                        onClick={onDelete}
+                                        disabled={isDeleting === true || editingDisabled}
+                                        variant="danger"
+                                        size="sm"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                        {' Delete'}
+                                    </Button>
+                                </Tooltip>
+                            </div>
+                        </div>
+                    }
+                />
+                {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
+                {externalServiceAvailabilityStatus}
+                <H2>Information</H2>
+                {externalServiceCategory && (
+                    <ExternalServiceInformation
+                        displayName={externalService.displayName}
+                        codeHostID={externalService.id}
+                        rateLimiterState={externalService.rateLimiterState}
+                        reposNumber={numberOfRepos === 0 ? externalService.repoCount : numberOfRepos}
+                        syncInProgress={syncInProgress}
+                        gitHubApp={ghApp}
+                        {...externalServiceCategory}
+                    />
+                )}
+                <H2>Configuration</H2>
+                {externalServiceCategory && (
+                    <DynamicallyImportedMonacoSettingsEditor
+                        value={externalService.config}
+                        jsonSchema={externalServiceCategory.jsonSchema}
+                        canEdit={false}
+                        loading={fetchLoading}
+                        height={350}
+                        readOnly={true}
+                        isLightTheme={isLightTheme}
+                        className="test-external-service-editor"
+                        telemetryService={telemetryService}
+                    />
+                )}
+                <ExternalServiceWebhook externalService={externalService} className="mt-3" />
+                <LoaderButton
+                    label="Trigger manual sync"
+                    className="mt-3 mb-2 float-right"
+                    alwaysShowLabel={true}
+                    variant="secondary"
+                    onClick={triggerSync}
+                    loading={syncExternalServiceLoading}
+                    disabled={syncExternalServiceLoading}
+                />
+                {syncExternalServiceError && <ErrorAlert error={syncExternalServiceError} />}
+                <ExternalServiceSyncJobsList
+                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+                    updateSyncInProgress={updateSyncInProgress}
+                    updateNumberOfRepos={updateNumberOfRepos}
+                    externalServiceID={externalService.id}
+                    updates={syncJobUpdates}
+                />
+            </Container>
+        )
+    }
 
     return (
         <div className={styles.externalServicePage}>
@@ -175,125 +302,7 @@ export const ExternalServicePage: FC<Props> = props => {
             )}
             {mergedError && <ErrorAlert className="mb-3" error={fetchError} />}
             {!fetchLoading && !externalService && !fetchError && <NotFoundPage />}
-            {externalService && (
-                <Container className="mb-3">
-                    <PageHeader
-                        path={path}
-                        byline={
-                            <CreatedByAndUpdatedByInfoByline
-                                createdAt={externalService.createdAt}
-                                updatedAt={externalService.updatedAt}
-                                noAuthor={true}
-                            />
-                        }
-                        className="mb-3"
-                        headingElement="h2"
-                        actions={
-                            <div className="d-flex align-items-center justify-content-between">
-                                <div className="align-self-start">
-                                    <Tooltip
-                                        content={
-                                            externalService.hasConnectionCheck
-                                                ? 'Test if code host is reachable from Sourcegraph'
-                                                : 'Connection check unavailable'
-                                        }
-                                    >
-                                        <LoaderButton
-                                            className="test-connection-external-service-button"
-                                            variant="secondary"
-                                            onClick={() => doCheckConnection()}
-                                            disabled={!externalService.hasConnectionCheck || loading}
-                                            size="sm"
-                                            loading={loading}
-                                            alwaysShowLabel={true}
-                                            icon={<Icon aria-hidden={true} svgPath={mdiConnection} />}
-                                            label="Test connection"
-                                        />
-                                    </Tooltip>
-                                </div>
-                                {editingEnabled && (
-                                    <div className="flex-grow-1 ml-1">
-                                        <Tooltip content="Edit code host connection settings">
-                                            <Button
-                                                className="test-edit-external-service-button"
-                                                to={`/site-admin/external-services/${encodeURIComponent(
-                                                    externalService.id
-                                                )}/edit`}
-                                                variant="primary"
-                                                size="sm"
-                                                as={Link}
-                                            >
-                                                <Icon aria-hidden={true} svgPath={mdiCog} />
-                                                {' Edit'}
-                                            </Button>
-                                        </Tooltip>
-                                    </div>
-                                )}
-                                <div className="flex-shrink-0 ml-1">
-                                    <Tooltip content="Delete code host connection">
-                                        <Button
-                                            aria-label="Delete"
-                                            className="test-delete-external-service-button"
-                                            onClick={onDelete}
-                                            disabled={isDeleting === true}
-                                            variant="danger"
-                                            size="sm"
-                                        >
-                                            <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                            {' Delete'}
-                                        </Button>
-                                    </Tooltip>
-                                </div>
-                            </div>
-                        }
-                    />
-                    {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
-                    {externalServiceAvailabilityStatus}
-                    <H2>Information</H2>
-                    {externalServiceCategory && (
-                        <ExternalServiceInformation
-                            displayName={externalService.displayName}
-                            codeHostID={externalService.id}
-                            reposNumber={numberOfRepos === 0 ? externalService.repoCount : numberOfRepos}
-                            syncInProgress={syncInProgress}
-                            gitHubApp={ghApp}
-                            {...externalServiceCategory}
-                        />
-                    )}
-                    <H2>Configuration</H2>
-                    {externalServiceCategory && (
-                        <DynamicallyImportedMonacoSettingsEditor
-                            value={externalService.config}
-                            jsonSchema={externalServiceCategory.jsonSchema}
-                            canEdit={false}
-                            loading={fetchLoading}
-                            height={350}
-                            readOnly={true}
-                            isLightTheme={isLightTheme}
-                            className="test-external-service-editor"
-                            telemetryService={telemetryService}
-                        />
-                    )}
-                    <ExternalServiceWebhook externalService={externalService} className="mt-3" />
-                    <LoaderButton
-                        label="Trigger manual sync"
-                        className="mt-3 mb-2 float-right"
-                        alwaysShowLabel={true}
-                        variant="secondary"
-                        onClick={triggerSync}
-                        loading={syncExternalServiceLoading}
-                        disabled={syncExternalServiceLoading}
-                    />
-                    {syncExternalServiceError && <ErrorAlert error={syncExternalServiceError} />}
-                    <ExternalServiceSyncJobsList
-                        queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
-                        updateSyncInProgress={updateSyncInProgress}
-                        updateNumberOfRepos={updateNumberOfRepos}
-                        externalServiceID={externalService.id}
-                        updates={syncJobUpdates}
-                    />
-                </Container>
-            )}
+            {externalService && renderExternalService(externalService)}
         </div>
     )
 }

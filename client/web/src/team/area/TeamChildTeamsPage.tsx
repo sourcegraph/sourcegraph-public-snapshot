@@ -1,5 +1,5 @@
 import { Page } from '../../components/Page'
-import { TeamAreaTeamFields } from '../../graphql-operations'
+import type { TeamAreaTeamFields } from '../../graphql-operations'
 import { ChildTeamListPage } from '../list/TeamListPage'
 
 import { TeamHeader } from './TeamHeader'

@@ -44,7 +44,7 @@ func RunOutOfBandMigrations(
 		if err != nil {
 			return err
 		}
-		registerMigrators := registerMigratorsWithStore(store.BasestoreExtractor{r})
+		registerMigrators := registerMigratorsWithStore(store.BasestoreExtractor{Runner: r})
 
 		if err := multiversion.RunOutOfBandMigrations(
 			ctx,

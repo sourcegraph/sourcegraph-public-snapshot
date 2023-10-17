@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { invalidateClient } from '../backend/requestGraphQl'
-import { VSCEStateMachine } from '../state'
+import type { VSCEStateMachine } from '../state'
 
 /**
  * Listens for Sourcegraph URL and invalidates the GraphQL client

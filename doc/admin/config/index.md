@@ -26,6 +26,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 - [Disabling user invitations](./user_invitations.md)
 - [Configuring webhooks](./webhooks/index.md)
 - [Configuring rate limits](../external_service/rate_limits.md)
+- [Configuring command recording](../repo/recording.md)
 
 ## Advanced tasks
 

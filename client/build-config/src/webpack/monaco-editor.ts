@@ -1,5 +1,5 @@
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
-import { WebpackPluginInstance, RuleSetRule } from 'webpack'
+import type { WebpackPluginInstance, RuleSetRule } from 'webpack'
 
 import { MONACO_EDITOR_PATH } from '../paths'
 

@@ -1,8 +1,8 @@
-import { ApolloError, FetchResult, MutationFunctionOptions, OperationVariables } from '@apollo/client'
+import type { ApolloError, FetchResult, MutationFunctionOptions, OperationVariables } from '@apollo/client'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 
-import { UpdateCodeGraphInferenceScriptResult } from '../../../../graphql-operations'
+import type { UpdateCodeGraphInferenceScriptResult } from '../../../../graphql-operations'
 
 const UPDATE_INFERENCE_SCRIPT = gql`
     mutation UpdateCodeGraphInferenceScript($script: String!) {

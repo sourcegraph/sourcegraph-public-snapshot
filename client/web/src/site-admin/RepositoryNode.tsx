@@ -4,6 +4,7 @@ import {
     mdiBrain,
     mdiClose,
     mdiCog,
+    mdiConnection,
     mdiDatabaseRefresh,
     mdiDotsVertical,
     mdiInformation,
@@ -15,7 +16,7 @@ import {
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useMutation } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     Alert,
@@ -38,16 +39,14 @@ import {
     Position,
 } from '@sourcegraph/wildcard'
 
-import {
+import type {
     RecloneRepositoryResult,
     RecloneRepositoryVariables,
-    SettingsAreaRepositoryResult,
-    SettingsAreaRepositoryVariables,
     SiteAdminRepositoryFields,
     UpdateMirrorRepositoryResult,
     UpdateMirrorRepositoryVariables,
 } from '../graphql-operations'
-import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from '../repo/settings/backend'
+import { LogsPageTabs } from '../repo/constants'
 
 import { RECLONE_REPOSITORY_MUTATION, UPDATE_MIRROR_REPOSITORY } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
@@ -81,20 +80,13 @@ const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
+    refetchAllRepos: () => Promise<void>
 }
 
-const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined): void => {
-    if (data?.repository && data.repository?.mirrorInfo) {
-        node.mirrorInfo.lastError = data.repository.mirrorInfo.lastError
-        node.mirrorInfo.cloned = data.repository.mirrorInfo.cloned
-        node.mirrorInfo.cloneInProgress = data.repository.mirrorInfo.cloneInProgress
-        node.mirrorInfo.updatedAt = data.repository.mirrorInfo.updatedAt
-        node.mirrorInfo.isCorrupted = data.repository.mirrorInfo.isCorrupted
-        node.mirrorInfo.corruptionLogs = data.repository.mirrorInfo.corruptionLogs
-    }
-}
-
-export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
+    node,
+    refetchAllRepos,
+}) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const navigate = useNavigate()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
@@ -107,17 +99,10 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         UPDATE_MIRROR_REPOSITORY,
         { variables: { repository: node.id } }
     )
-    const { data, refetch } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
-        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
-        {
-            variables: { name: node.name },
-            pollInterval: 3000,
-        }
-    )
+
     const recloneAndFetch = async (): Promise<void> => {
         await recloneRepository()
-        await refetch()
-        updateNodeFromData(node, data)
+        await refetchAllRepos()
     }
 
     return (
@@ -219,7 +204,9 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoCloned(node)}
-                                    onSelect={() => navigate(`/${node.name}/-/settings/mirror`)}
+                                    onSelect={() =>
+                                        navigate(`/${node.name}/-/settings/logs?activeTab=${LogsPageTabs.SYNCLOGS}`)
+                                    }
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiListStatus} className="mr-1" />
@@ -234,7 +221,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
                                     Code graph data
                                 </MenuItem>
-
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
@@ -244,7 +230,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
                                     Embeddings policies
                                 </MenuItem>
-
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
@@ -256,7 +241,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
                                     Embeddings jobs
                                 </MenuItem>
-
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
@@ -268,7 +252,14 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
-                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => navigate(`/site-admin/external-services?repoID=${node.id}`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
+                                    Code host connections
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
                                     onSelect={() => navigate(`/${node.name}/-/settings`)}
                                     className="p-2"
                                 >

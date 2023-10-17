@@ -1,12 +1,12 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { RepositoryFields, Scalars } from '../../graphql-operations'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { RepositoryFields, Scalars } from '../../graphql-operations'
 
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'

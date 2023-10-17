@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, Link } from '@sourcegraph/wildcard'

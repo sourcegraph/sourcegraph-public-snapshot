@@ -2,7 +2,7 @@ import path from 'path'
 
 import StatoscopeWebpackPlugin from '@statoscope/webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import webpack, { StatsOptions } from 'webpack'
+import webpack, { type StatsOptions } from 'webpack'
 
 import { STATIC_ASSETS_PATH } from '../paths'
 

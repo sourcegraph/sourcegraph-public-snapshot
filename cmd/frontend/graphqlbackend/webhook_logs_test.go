@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -100,10 +101,10 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 	// We'll test everything else below, but let's just make sure the admin
 	// check occurs.
 	t.Run("unauthenticated user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
@@ -111,10 +112,10 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("regular user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
@@ -122,10 +123,10 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("admin user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsAllExternalServices)
@@ -142,8 +143,8 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		logs = append(logs, &types.WebhookLog{})
 	}
 
-	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
-		store := database.NewMockWebhookLogStore()
+	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *dbmocks.MockWebhookLogStore {
+		store := dbmocks.NewMockWebhookLogStore()
 		store.ListFunc.SetDefaultReturn(logs, next, err)
 		store.HandleFunc.SetDefaultReturn(nil)
 
@@ -239,7 +240,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		store := database.NewMockWebhookLogStore()
+		store := dbmocks.NewMockWebhookLogStore()
 		store.CountFunc.SetDefaultReturn(40, nil)
 
 		r := &WebhookLogConnectionResolver{
@@ -269,7 +270,7 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		want := errors.New("error")
-		store := database.NewMockWebhookLogStore()
+		store := dbmocks.NewMockWebhookLogStore()
 		store.CountFunc.SetDefaultReturn(0, want)
 
 		r := &WebhookLogConnectionResolver{
@@ -286,11 +287,11 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 }
 
 func TestListWebhookLogs(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookLogsStore := database.NewMockWebhookLogStore()
+	webhookLogsStore := dbmocks.NewMockWebhookLogStore()
 	webhookLogs := []*types.WebhookLog{
 		{ID: 1, WebhookID: pointers.Ptr(int32(1)), StatusCode: 200},
 		{ID: 2, WebhookID: pointers.Ptr(int32(1)), StatusCode: 500},
@@ -341,7 +342,7 @@ func TestListWebhookLogs(t *testing.T) {
 		return int64(len(logs)), err
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WebhookLogsFunc.SetDefaultReturn(webhookLogsStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	schema := mustParseGraphQLSchema(t, db)

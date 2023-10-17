@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -109,7 +110,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 		return nil, nil
 	}
 
-	var glUser *gitlab.User
+	var glUser *gitlab.AuthUser
 	if p.useNativeUsername {
 		glUser, err = p.fetchAccountByUsername(ctx, user.Username)
 	} else {
@@ -154,7 +155,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 	return &glExternalAccount, nil
 }
 
-func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string) (*gitlab.User, error) {
+func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string) (*gitlab.AuthUser, error) {
 	q := make(url.Values)
 	q.Add("extern_uid", uid)
 	q.Add("provider", p.gitlabProvider)
@@ -172,7 +173,7 @@ func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string
 	return glUsers[0], nil
 }
 
-func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username string) (*gitlab.User, error) {
+func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username string) (*gitlab.AuthUser, error) {
 	q := make(url.Values)
 	q.Add("username", username)
 	q.Add("per_page", "2")
@@ -219,9 +220,14 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
+	flags := featureflag.FromContext(ctx)
+	experimentalVisibility := flags.GetBoolOr("gitLabProjectVisibilityExperimental", false)
+
 	q := make(url.Values)
-	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
-	q.Add("per_page", "100")        // 100 is the maximum page size
+	q.Add("per_page", "100") // 100 is the maximum page size
+	if !experimentalVisibility {
+		q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
+	}
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -243,6 +249,12 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUs
 			}
 
 			for _, p := range projects {
+				if experimentalVisibility && !p.ContentsVisible() {
+					// If feature flag is enabled and user cannot see the contents
+					// of the project, skip the project
+					continue
+				}
+
 				projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
 			}
 

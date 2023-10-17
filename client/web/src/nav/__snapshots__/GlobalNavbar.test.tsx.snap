@@ -120,7 +120,7 @@ exports[`GlobalNavbar default 1`] = `
               <span
                 class="text iconIncluded"
               >
-                Cody AI
+                Cody
               </span>
             </span>
           </a>
@@ -195,16 +195,6 @@ exports[`GlobalNavbar default 1`] = `
     <ul
       class="actions"
     >
-      <li
-        class="action"
-      >
-        <a
-          class="anchorLink link"
-          href="https://about.sourcegraph.com"
-        >
-          About Sourcegraph
-        </a>
-      </li>
       <li
         class="action"
       >

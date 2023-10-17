@@ -1,10 +1,10 @@
-import { Story, DecoratorFn, Meta } from '@storybook/react'
+import type { StoryFn, Decorator, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { ChangesetLabel } from './ChangesetLabel'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/ChangesetLabel',
@@ -13,7 +13,7 @@ const config: Meta = {
 
 export default config
 
-export const VariousLabels: Story = () => (
+export const VariousLabels: StoryFn = () => (
     <WebStory>
         {() => (
             <>

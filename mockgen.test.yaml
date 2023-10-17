@@ -35,8 +35,8 @@
   path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
   interfaces:
     - ReleaseCache
-- filename: cmd/gitserver/server/vcs_syncer_mock_test.go
-  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/server
+- filename: cmd/gitserver/internal/vcssyncer/mock.go
+  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer
   interfaces:
     - VCSSyncer
 - filename: cmd/symbols/fetcher/mocks_test.go
@@ -47,96 +47,96 @@
   path: github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver
   interfaces:
     - GitServerClient
-- filename: enterprise/cmd/executor/internal/worker/workspace/mocks_test.go
+- filename: cmd/executor/internal/worker/workspace/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command
       interfaces:
         - Command
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger
       interfaces:
         - Logger
         - LogEntry
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/util
       interfaces:
         - CmdRunner
-- filename: enterprise/cmd/executor/internal/worker/runner/mocks_test.go
+- filename: cmd/executor/internal/worker/runner/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command
       interfaces:
         - Command
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger
       interfaces:
         - Logger
         - LogEntry
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files
       interfaces:
         - Store
-- filename: enterprise/cmd/executor/internal/worker/files/mocks_test.go
+- filename: cmd/executor/internal/worker/files/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files
       interfaces:
         - Store
-- filename: enterprise/cmd/executor/internal/worker/command/mocks_test.go
+- filename: cmd/executor/internal/worker/command/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command
       interfaces:
         - Command
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger
       interfaces:
         - Logger
         - LogEntry
         - ExecutionLogEntryStore
-- filename: enterprise/cmd/executor/internal/worker/cmdlogger/mocks_test.go
+- filename: cmd/executor/internal/worker/cmdlogger/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger
       interfaces:
         - Logger
         - LogEntry
         - ExecutionLogEntryStore
-- filename: enterprise/cmd/executor/internal/worker/mocks_test.go
+- filename: cmd/executor/internal/worker/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command
       interfaces:
         - Command
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger
       interfaces:
         - Logger
         - LogEntry
         - ExecutionLogEntryStore
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/util
       interfaces:
         - CmdRunner
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime
       interfaces:
         - Runtime
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner
       interfaces:
         - Runner
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace
       interfaces:
         - Workspace
-- filename: enterprise/cmd/executor/internal/worker/runtime/mocks_test.go
+- filename: cmd/executor/internal/worker/runtime/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command
       interfaces:
         - Command
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger
       interfaces:
         - Logger
         - LogEntry
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace
       interfaces:
         - Workspace
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util
+    - path: github.com/sourcegraph/sourcegraph/cmd/executor/internal/util
       interfaces:
         - CmdRunner
 - filename: internal/codeintel/uploads/transport/http/mocks_test.go
@@ -151,12 +151,12 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth
   interfaces:
     - GitHubClient
-- filename: enterprise/cmd/frontend/internal/executorqueue/queues/batches/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
+- filename: cmd/frontend/internal/executorqueue/queues/batches/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:
     - BatchesStore
-- filename: enterprise/cmd/frontend/internal/executorqueue/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue
+- filename: cmd/frontend/internal/executorqueue/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue
   interfaces:
     - GitserverClient
 - filename: internal/batches/syncer/mocks_test.go
@@ -339,8 +339,8 @@
   path: github.com/sourcegraph/zoekt
   interfaces:
     - Streamer
-- filename: enterprise/cmd/worker/internal/telemetry/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry
+- filename: cmd/worker/internal/telemetry/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry
   interfaces:
     - bookmarkStore
 - filename: internal/codeintel/ranking/mocks_test.go
@@ -398,3 +398,9 @@
   path: github.com/sourcegraph/sourcegraph/internal/redispool
   interfaces:
     - KeyValue
+- filename: internal/telemetry/telemetrytest/mocks.go
+  package: telemetrytest
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/telemetry
+      interfaces:
+        - EventsStore

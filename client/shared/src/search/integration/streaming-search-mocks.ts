@@ -1,11 +1,11 @@
 /* eslint-disable no-template-curly-in-string */
-import {
+import type {
     SymbolKind,
     HighlightedFileResult,
     SharedGraphQlOperations,
     HighlightedFileVariables,
 } from '../../graphql-operations'
-import { SearchEvent } from '../stream'
+import type { SearchEvent } from '../stream'
 
 export const diffSearchStreamEvents: SearchEvent[] = [
     {

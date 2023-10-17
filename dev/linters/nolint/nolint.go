@@ -139,7 +139,7 @@ func respectNolintDirectives(analyzer *analysis.Analyzer) {
 					// we use the Directive Slash position, since that gives us the exact line where the directive is used
 					ignorePos := report.DisplayPosition(pass.Fset, dir.Directive.Slash)
 					nodePos := report.DisplayPosition(pass.Fset, diag.Pos)
-					if ignorePos.Filename != nodePos.Filename || ignorePos.Line != nodePos.Line {
+					if ignorePos.Filename != nodePos.Filename || (ignorePos.Line != nodePos.Line && ignorePos.Line+1 != nodePos.Line) {
 						// we're either in the wrong file for where this directive applies
 						// OR
 						// the line we're currently looking at does not match where this directive is defined

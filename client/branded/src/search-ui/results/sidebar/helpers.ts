@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
-import { Filter } from '@sourcegraph/shared/src/search/stream'
+import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 /**
  * Given a search query and filters from query results, this hook will return

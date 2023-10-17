@@ -1,6 +1,6 @@
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
-import { CompletionRequest, getCodyCompletionOneShot } from './api'
+import { type CompletionRequest, getCodyCompletionOneShot } from './api'
 
 export async function translateToQuery(input: string, user: AuthenticatedUser | null): Promise<string | null> {
     const messages = getCompletionRequestMessages(input, user)

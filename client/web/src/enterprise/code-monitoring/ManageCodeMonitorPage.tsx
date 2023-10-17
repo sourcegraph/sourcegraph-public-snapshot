@@ -2,17 +2,17 @@ import React, { useEffect } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { useParams } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { CodeMonitorFields } from '../../graphql-operations'
+import type { CodeMonitorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { convertActionsForUpdate } from './action-converters'
@@ -54,6 +54,11 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
         enabled: true,
         trigger: { id: '', query: '' },
         actions: { nodes: [] },
+        owner: {
+            id: '',
+            namespaceName: '',
+            url: '',
+        },
     })
 
     const codeMonitorOrError = useObservable(
@@ -79,7 +84,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                 {
                     id: id!,
                     update: {
-                        namespace: authenticatedUser.id,
+                        namespace: codeMonitor.owner.id,
                         description: codeMonitor.description,
                         enabled: codeMonitor.enabled,
                     },

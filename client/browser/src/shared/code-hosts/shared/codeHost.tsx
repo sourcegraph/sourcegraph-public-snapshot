@@ -3,18 +3,18 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { Renderer } from 'react-dom'
+import type { Renderer } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import {
     asyncScheduler,
     combineLatest,
     EMPTY,
     from,
-    Observable,
+    type Observable,
     of,
     Subject,
     Subscription,
-    Unsubscribable,
+    type Unsubscribable,
     concat,
     BehaviorSubject,
     fromEvent,
@@ -37,14 +37,14 @@ import {
     take,
 } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
+import type { HoverMerged } from '@sourcegraph/client-api'
 import {
-    ContextResolver,
+    type ContextResolver,
     createHoverifier,
     findPositionsFromEvents,
-    Hoverifier,
-    HoverState,
-    MaybeLoadingResult,
+    type Hoverifier,
+    type HoverState,
+    type MaybeLoadingResult,
 } from '@sourcegraph/codeintellify'
 import {
     asError,
@@ -54,67 +54,71 @@ import {
     property,
     registerHighlightContributions,
     isExternalLink,
-    LineOrPositionOrRange,
+    type LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
-import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import type { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
+import type { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
-import { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import type { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
-import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import {
+    type HoverContext,
+    HoverOverlay,
+    type HoverOverlayClassProps,
+} from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
-    FileSpec,
-    UIPositionSpec,
-    RawRepoSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
+    type FileSpec,
+    type UIPositionSpec,
+    type RawRepoSpec,
+    type RepoSpec,
+    type ResolvedRevisionSpec,
+    type RevisionSpec,
     toRootURI,
     toURIWithPath,
-    ViewStateSpec,
+    type ViewStateSpec,
 } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
-import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
-import { UserSettingsURLResult } from '../../../graphql-operations'
+import type { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
+import type { UserSettingsURLResult } from '../../../graphql-operations'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
-import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
+import { CodeViewToolbar, type CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
 import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
-import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import type { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
-import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
+import { type MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
-import { GithubCodeHost, githubCodeHost, isGithubCodeHost } from '../github/codeHost'
+import { type GithubCodeHost, githubCodeHost, isGithubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
-import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
+import { type CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { initializeExtensions } from './extensions'
 import { SignInButton } from './SignInButton'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import {
-    ViewOnSourcegraphButtonClassProps,
+    type ViewOnSourcegraphButtonClassProps,
     ViewOnSourcegraphButton,
     ConfigureSourcegraphButton,
 } from './ViewOnSourcegraphButton'
-import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
+import { delayUntilIntersecting, trackViews, type ViewResolver } from './views'
 
 import styles from './codeHost.module.scss'
 

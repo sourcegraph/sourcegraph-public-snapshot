@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'

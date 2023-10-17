@@ -1,19 +1,21 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Label, Tooltip } from '@sourcegraph/wildcard'
+import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { GettingStartedTour } from '../../../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../../../tour/hooks'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
@@ -60,8 +62,12 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         }
     }, [experimentalQueryInput, selectedSearchContextSpec])
 
-    const [simpleSearch, setSimpleSearch] = useState<boolean>(true)
+    const defaultSimpleSearchToggle = true
+    const [simpleSearch, setSimpleSearch] = useLocalStorage('simple.search.toggle', defaultSimpleSearchToggle)
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
+
+    const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
+    const showCodyCTA = !showOnboardingTour
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -78,7 +84,15 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <Label htmlFor="simpleSearchToggle" className="mr-2">
                             Simple search
                         </Label>
-                        <Toggle id="simpleSearchToggle" value={simpleSearch} onToggle={setSimpleSearch} />
+                        <Toggle
+                            id="simpleSearchToggle"
+                            value={simpleSearch}
+                            onToggle={val => {
+                                const arg = { state: val }
+                                telemetryService.log('SimpleSearchToggle', arg, arg)
+                                setSimpleSearch(val)
+                            }}
+                        />
                     </div>
                 )}
 
@@ -105,26 +119,34 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             queryState={queryState}
                             setQueryState={setQueryState}
                         />
-                        {authenticatedUser ? (
-                            <TryCodyCtaSection
-                                className="mx-auto my-5"
+                        {authenticatedUser && showOnboardingTour && (
+                            <GettingStartedTour
+                                className="mt-5"
                                 telemetryService={telemetryService}
-                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                variant="horizontal"
+                                authenticatedUser={authenticatedUser}
                             />
-                        ) : (
-                            <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
                         )}
+                        {showCodyCTA ? (
+                            authenticatedUser ? (
+                                <TryCodyCtaSection
+                                    className="mx-auto my-5"
+                                    telemetryService={telemetryService}
+                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                />
+                            ) : (
+                                <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
+                            )
+                        ) : null}
                     </>
                 )}
             </div>
-            {!simpleSearch && (
+            {(!simpleSearchEnabled || !simpleSearch) && (
                 <div className={classNames(styles.panelsContainer)}>
                     {(!!authenticatedUser || isSourcegraphDotCom) && (
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
-                            queryState={queryState}
-                            setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     )}

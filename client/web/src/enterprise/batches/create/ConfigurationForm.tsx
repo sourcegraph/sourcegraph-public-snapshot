@@ -6,11 +6,11 @@ import { noop } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import {
+import type { AuthenticatedUser } from '../../../auth'
+import type {
     BatchChangeFields,
     CreateBatchSpecFromRawResult,
     CreateBatchSpecFromRawVariables,

@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes } from 'react'
+import type { FC, HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 import { useDebouncedCallback } from 'use-debounce'
@@ -7,7 +7,7 @@ import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operation
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../../../../../featureFlags/useFeatureFlag'
-import { SearchAggregationModeAvailability } from '../../../../../../graphql-operations'
+import type { SearchAggregationModeAvailability } from '../../../../../../graphql-operations'
 
 import styles from './AggregationModeControls.module.scss'
 

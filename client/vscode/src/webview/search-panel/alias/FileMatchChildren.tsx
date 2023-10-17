@@ -1,26 +1,31 @@
-import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
+import React, { type MouseEvent, type KeyboardEvent, useCallback } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
-import { Observable } from 'rxjs'
+import type * as H from 'history'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
+import type { HoverMerged } from '@sourcegraph/client-api'
+import type { Hoverifier } from '@sourcegraph/codeintellify'
 import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import type { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import type { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import {
+    type ContentMatch,
+    type SymbolMatch,
+    type PathMatch,
+    getFileMatchUrl,
+} from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code } from '@sourcegraph/wildcard'
 
-import { HighlightLineRange } from '../../../graphql-operations'
+import type { HighlightLineRange } from '../../../graphql-operations'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {

@@ -1,19 +1,19 @@
-import React, { FC } from 'react'
+import React, { type FC } from 'react'
 
-import { useLocation, useNavigate, NavigateFunction, Location } from 'react-router-dom'
+import { useLocation, useNavigate, type NavigateFunction, type Location } from 'react-router-dom'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { NamespaceProps } from '../namespaces'
+import type { AuthenticatedUser } from '../auth'
+import type { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
+import { type SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
 interface Props extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null

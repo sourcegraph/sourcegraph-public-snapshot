@@ -1,4 +1,4 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { subDays } from 'date-fns'
 
@@ -11,7 +11,7 @@ import { nodes, now } from './testData'
 
 import styles from './BatchChangeListPage.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className={classNames(styles.grid, styles.narrow, 'p-3 container')}>{story()}</div>
 )
 
@@ -22,7 +22,6 @@ const config: Meta = {
         displayNamespace: {
             name: 'Display namespace',
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         node: {
             table: {
@@ -30,11 +29,14 @@ const config: Meta = {
             },
         },
     },
+    args: {
+        displayNamespace: true,
+    },
 }
 
 export default config
 
-const Template: Story /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => (
+const Template: StoryFn /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => (
     <WebStory>
         {props => (
             <BatchChangeNode

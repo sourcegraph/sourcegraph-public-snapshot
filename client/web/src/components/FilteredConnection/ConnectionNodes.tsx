@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Connection } from './ConnectionType'
+import type { Connection } from './ConnectionType'
 import { ConnectionList, ConnectionSummary, ShowMoreButton, SummaryContainer } from './ui'
 import { hasDisplayName, hasID, hasNextPage } from './utils'
 

@@ -16,7 +16,7 @@ import format from 'date-fns/format'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Container,
@@ -32,7 +32,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { BackgroundJobsResult, BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
+import { type BackgroundJobsResult, type BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
 import { formatDurationLong } from '../util/time'
 
 import { ValueLegendList } from './analytics/components/ValueLegendList'

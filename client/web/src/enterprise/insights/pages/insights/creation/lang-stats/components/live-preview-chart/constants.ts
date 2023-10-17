@@ -1,4 +1,4 @@
-import { CategoricalChartContent } from '../../../../../../core'
+import type { CategoricalChartContent } from '../../../../../../core'
 
 export interface PreviewDatum {
     name: string

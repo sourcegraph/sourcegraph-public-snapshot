@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { mockPreviewWorkspace } from '../batch-spec/batch-spec.mock'
@@ -9,7 +9,7 @@ import { Descriptor } from './Descriptor'
 import { CachedIcon, ExcludeIcon } from './Icons'
 import { ListItem } from './ListItem'
 
-const decorator: DecoratorFn = story => <div className="list-group w-100">{story()}</div>
+const decorator: Decorator = story => <div className="list-group w-100">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/workspaces-list/ListItem',
@@ -23,7 +23,7 @@ const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.Props
     ['exclude', ExcludeIcon],
 ]
 
-export const Basic: Story = () => (
+export const Basic: StoryFn = () => (
     <WebStory>
         {props => (
             <>
@@ -50,7 +50,7 @@ export const Basic: Story = () => (
     </WebStory>
 )
 
-export const NonRootPath: Story = () => (
+export const NonRootPath: StoryFn = () => (
     <WebStory>
         {props => (
             <>
@@ -71,7 +71,7 @@ export const NonRootPath: Story = () => (
 
 NonRootPath.storyName = 'non-root path'
 
-export const WithStatusIndicator: Story = () => (
+export const WithStatusIndicator: StoryFn = () => (
     <WebStory>
         {props => (
             <>
@@ -87,7 +87,7 @@ export const WithStatusIndicator: Story = () => (
 
 WithStatusIndicator.storyName = 'with status indicator'
 
-export const WithClickHandler: Story = () => (
+export const WithClickHandler: StoryFn = () => (
     <WebStory>
         {props => (
             <>

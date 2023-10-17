@@ -2,7 +2,7 @@ extend type Query {
     """
     Returns a string of completion responses
     """
-    completions(input: CompletionsInput!): String!
+    completions(input: CompletionsInput!, fast: Boolean = false): String!
 }
 
 """

@@ -1,11 +1,11 @@
 import { Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 
-import { EndpointPair, ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
+import type { EndpointPair, ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
 
 import { isInPage } from '../context'
 
-import { SourcegraphIntegrationURLs } from './context'
+import type { SourcegraphIntegrationURLs } from './context'
 import { browserPortToMessagePort } from './ports'
 
 function createInPageExtensionHost({

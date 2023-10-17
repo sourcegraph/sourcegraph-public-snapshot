@@ -5,8 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, Label, Link, LoadingSpinner, Select, Text } from '@sourcegraph/wildcard'
 
-import { GitHubAppsWithInstallsResult, GitHubAppsWithInstallsVariables } from '../../graphql-operations'
-import { GitHubAppDetails } from '../externalServices/backend'
+import type { GitHubAppsWithInstallsResult, GitHubAppsWithInstallsVariables } from '../../graphql-operations'
+import type { GitHubAppDetails } from '../externalServices/backend'
 
 import { GITHUB_APPS_WITH_INSTALLATIONS_QUERY } from './backend'
 

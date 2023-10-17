@@ -107,10 +107,27 @@ to Sourcegraph is the same as the [lag-time](#lag-time) defined below. So as lon
 
 ## Checking permissions sync state
 
-The state of an user or repository's permissions can be checked in the UI by:
+### Verify via UI
 
-- For users: navigating to `/users/$USER/settings/permissions`
-- For repositories: navigating to `/$CODEHOST/$REPO/-/settings/permissions`
+<span class="badge badge-note">Sourcegraph 5.0+</span>
+
+The state of user or repository permissions can be checked directly in the Sourcegraph UI.
+
+**User permissions**
+
+1. Click on your avatar in top right corner of the page
+1. Navigate to **Settings > Permissions** (Or URL path `/users/$USER/settings/permissions`)
+1. The permissions page should look similar to: ![User permissions page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/permissions/user-permissions-page.png)
+
+**Repository permissions**
+
+1. Navigate to the repository page
+1. Open **Settings > Permissions** (Or URL path `/$CODEHOST/$REPO/-/settings/permissions`)
+1. The permissions page should look similar to: ![Repo permissions page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/permissions/repo-permissions-page.png)
+
+### Verify the state via API calls
+
+<span class="badge badge-note">before Sourcegraph 5.0</span>
 
 The GraphQL API can also be used:
 

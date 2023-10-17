@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -48,6 +50,8 @@ type GitHubSource struct {
 	originalHostname string
 
 	logger log.Logger
+
+	markInternalReposAsPublic bool
 }
 
 var (
@@ -58,7 +62,7 @@ var (
 )
 
 // NewGitHubSource returns a new GitHubSource from the given external service.
-func NewGitHubSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGitHubSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -67,7 +71,7 @@ func NewGitHubSource(ctx context.Context, logger log.Logger, svc *types.External
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(ctx, logger, svc, &c, cf)
+	return newGitHubSource(ctx, logger, db, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -84,6 +88,7 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 func newGitHubSource(
 	ctx context.Context,
 	logger log.Logger,
+	db database.DB,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,
@@ -149,7 +154,7 @@ func newGitHubSource(
 	if err != nil {
 		return nil, err
 	}
-	auther, err := ghauth.FromConnection(ctx, c)
+	auther, err := ghauth.FromConnection(ctx, c, db.GitHubApps(), keyring.Default().GitHubAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -185,15 +190,16 @@ func newGitHubSource(
 	}
 
 	return &GitHubSource{
-		svc:              svc,
-		config:           c,
-		exclude:          exclude,
-		baseURL:          baseURL,
-		githubDotCom:     githubDotCom,
-		v3Client:         v3Client,
-		v4Client:         v4Client,
-		searchClient:     searchClient,
-		originalHostname: originalHostname,
+		svc:                       svc,
+		config:                    c,
+		exclude:                   exclude,
+		baseURL:                   baseURL,
+		githubDotCom:              githubDotCom,
+		v3Client:                  v3Client,
+		v4Client:                  v4Client,
+		searchClient:              searchClient,
+		originalHostname:          originalHostname,
+		markInternalReposAsPublic: (c.Authorization != nil) && c.Authorization.MarkInternalReposAsPublic,
 		logger: logger.With(
 			log.Object("GitHubSource",
 				log.Bool("excludeForks", excludeForks),
@@ -228,10 +234,14 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
-func (s *GitHubSource) CheckConnection(ctx context.Context) error {
-	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+func (s *GitHubSource) CheckConnection(ctx context.Context) (err error) {
+	if s.config.GitHubAppDetails == nil {
+		_, err = s.v3Client.GetAuthenticatedUser(ctx)
+	} else {
+		_, _, _, err = s.v3Client.ListInstallationRepositories(ctx, 1)
+	}
 	if err != nil {
-		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+		return errors.Wrap(err, "connection check failed")
 	}
 	return nil
 }
@@ -356,7 +366,7 @@ func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNa
 			return
 		}
 		var pageOrgs []*github.Org
-		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
+		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgs(ctx, page)
 		if err != nil {
 			results <- SourceNamespaceResult{Source: s, Err: err}
 			continue
@@ -389,6 +399,11 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	// so we don't want to store it.
 	metadata.ViewerPermission = ""
 	metadata.Description = sanitizeToUTF8(metadata.Description)
+
+	if github.Visibility(strings.ToLower(string(r.Visibility))) == github.VisibilityInternal && s.markInternalReposAsPublic {
+		r.IsPrivate = false
+	}
+
 	return &types.Repo{
 		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,
@@ -451,7 +466,7 @@ type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, c
 // paginate returns all the repositories from the given repositoryPager.
 // It repeatedly calls `pager` with incrementing page count until it
 // returns false for hasNext.
-func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
+func paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
 	hasNext := true
 	for page := 1; hasNext; page++ {
 		if err := ctx.Err(); err != nil {
@@ -497,7 +512,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 	getReposByType := func(tp string) error {
 		var oerr error
 
-		s.paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 			defer func() {
 				if page == 1 {
 					var e *github.APIError
@@ -569,7 +584,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 //
 // It returns an error if the request fails on the first page.
 func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			if err != nil && page == 1 {
 				fail, err = err, nil
@@ -595,7 +610,7 @@ func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *
 //
 // It returns an error if the request fails on the first page.
 func (s *GitHubSource) listAppInstallation(ctx context.Context, results chan *githubResult) (fail error) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			if err != nil && page == 1 {
 				fail, err = err, nil
@@ -713,9 +728,6 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
 			return
 		}
-		if !hasNextPage {
-			return
-		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
 		for _, r := range repos {
 			_, isArchived := archivedRepos[r.ID]
@@ -729,6 +741,9 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			if sinceRepoID < r.DatabaseID {
 				sinceRepoID = r.DatabaseID
 			}
+		}
+		if !hasNextPage {
+			return
 		}
 	}
 }
@@ -747,7 +762,7 @@ func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan
 // Affiliation is present if the user: (1) owns the repo, (2) is a part of an org that
 // the repo belongs to, or (3) is a collaborator.
 func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 			s.logger.Debug(

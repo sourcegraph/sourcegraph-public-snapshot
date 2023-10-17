@@ -12,10 +12,9 @@ import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/theme'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import { ExtensionCoreAPI } from '../../contract'
+import type { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
-import { createPlatformContext, WebviewPageContext, WebviewPageProps } from '../platform/context'
-import { adaptMonacoThemeToEditorTheme } from '../theming/monacoTheme'
+import { createPlatformContext, WebviewPageContext, type WebviewPageProps } from '../platform/context'
 import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 
 import { searchPanelAPI } from './api'
@@ -33,7 +32,6 @@ Comlink.expose(searchPanelAPI, expose)
 export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(proxy)
 
 const themes = adaptSourcegraphThemeToEditorTheme()
-adaptMonacoThemeToEditorTheme()
 
 extensionCoreAPI.panelInitialized(document.documentElement.dataset.panelId!).catch(() => {
     // noop (TODO?)

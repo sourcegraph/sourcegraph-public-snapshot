@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
+
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     useDebounce,
@@ -12,22 +14,25 @@ import {
     Input,
     Link,
     Badge,
-    BadgeProps,
+    type BadgeProps,
+    Icon,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../../components/PageTitle'
 import {
-    UserPermissionsInfoResult,
-    UserPermissionsInfoVariables,
-    PermissionsInfoRepositoryFields as INode,
-    UserPermissionsInfoUserNode as IUser,
+    type UserPermissionsInfoResult,
+    type UserPermissionsInfoVariables,
+    type PermissionsInfoRepositoryFields as INode,
+    type UserPermissionsInfoUserNode as IUser,
+    PermissionSource,
 } from '../../../../graphql-operations'
 import { useURLSyncedState } from '../../../../hooks'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
 import { PermissionsSyncJobsTable } from '../../../../site-admin/permissions-center/PermissionsSyncJobsTable'
-import { Table, IColumn } from '../../../../site-admin/UserManagement/components/Table'
+import { Table, type IColumn } from '../../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { scheduleUserPermissionsSync, UserPermissionsInfoQuery } from './backend'
@@ -50,7 +55,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
     const debouncedQuery = useDebounce(query, 300)
 
-    const { connection, data, loading, error, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
+    const { connection, data, loading, refetch, variables, ...paginationProps } = usePageSwitcherPagination<
         UserPermissionsInfoResult,
         UserPermissionsInfoVariables,
         INode
@@ -98,38 +103,40 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
             />
             <Container className="mb-3">
                 <>
-                    <table className="table">
-                        <tbody>
-                            <tr>
-                                <th className="border-0">Last complete sync</th>
-                                <td className="border-0">
-                                    {permissionsInfo.syncedAt ? <Timestamp date={permissionsInfo.syncedAt} /> : 'Never'}
-                                </td>
-                                <td className="text-muted border-0">Updated by user permissions syncing</td>
-                            </tr>
-                            <tr>
-                                <th>Last incremental sync</th>
-                                <td>
-                                    {permissionsInfo.updatedAt === null ? (
-                                        'Never'
-                                    ) : (
+                    <div className="d-flex">
+                        <b>Last update to permissions </b>
+                        <span className="d-flex flex-grow-1">
+                            {permissionsInfo.updatedAt ? (
+                                <>
+                                    <span className="flex-grow-1 text-center">
                                         <Timestamp date={permissionsInfo.updatedAt} />
-                                    )}
-                                </td>
-                                <td className="text-muted">Updated by repository permissions syncing</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </span>
+                                    <span>
+                                        by <PermsSource source={permissionsInfo.source} />
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="flex-grow-1 pl-2">Never</span>
+                            )}
+                        </span>
+                    </div>
+                    <Text className="text-muted mt-2 mb-4">
+                        <Icon aria-label="more-info text-normal" svgPath={mdiInformationOutline} /> The timestamp
+                        indicates the last update made to the repository permissions of this user. If the value{' '}
+                        <i>never</i> is displayed, it means we currently do not have any permission records for the
+                        user. However, please note that the user may have had permissions stored in Sourcegraph in the
+                        past.
+                    </Text>
                     <ScheduleUserPermissionsSyncActionContainer user={user} />
                 </>
             </Container>
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Permissions Sync Jobs' }]}
+                path={[{ text: 'Sync Jobs' }]}
                 description={
                     <>
-                        List of permissions sync jobs. A permission sync job fetches the newest permissions for the
-                        given user.
+                        List of permission sync jobs that fetch which <i>private</i> repositories the user can access on
+                        the code host.
                     </>
                 }
                 className="my-3 pt-3"
@@ -140,7 +147,11 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Accessible Repositories' }]}
-                description="List of repositories which are accessible to the user."
+                description={
+                    <>
+                        List of <i>all</i> repositories the user can access on Sourcegraph.
+                    </>
+                }
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
@@ -177,10 +188,15 @@ const TableColumns: IColumn<INode>[] = [
         key: 'repository',
         header: 'Repository',
         render: ({ repository }: INode) =>
-            repository && (
+            repository ? (
                 <div key={repository.id} className="py-2">
                     <ExternalRepositoryIcon externalRepo={repository.externalRepository} />
                     <RepoLink repoName={repository.name} to={repository.url} />
+                </div>
+            ) : (
+                <div className="py-2">
+                    <ExternalRepositoryIcon externalRepo={{ serviceType: 'unknown' }} />
+                    Private repository
                 </div>
             ),
     },
@@ -205,6 +221,10 @@ const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
     },
     Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
     'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
+    'Explicit API': {
+        variant: 'success',
+        tooltip: 'The permission was granted through explicit permissions API.',
+    },
 }
 
 interface ScheduleUserPermissionsSyncActionContainerProps {
@@ -216,7 +236,12 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
         return (
             <ActionContainer
                 title="Manually schedule a permissions sync"
-                description={<div>Schedule a permissions sync for user: {this.props.user.username}.</div>}
+                description={
+                    <div>
+                        Schedules a high priority permissions sync job for the current user. This action will cancel all
+                        previously queued user sync jobs.
+                    </div>
+                }
                 buttonLabel="Schedule now"
                 flashText="Added to queue"
                 run={this.scheduleUserPermissions}
@@ -228,4 +253,30 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
     private scheduleUserPermissions = async (): Promise<void> => {
         await scheduleUserPermissionsSync({ user: this.props.user.id }).toPromise()
     }
+}
+
+const permsSourceMap = {
+    USER_SYNC: 'user-centric permission sync',
+    REPO_SYNC: 'repo-centric permission sync',
+    API: 'explicit permissions API',
+}
+
+interface PermsSourceProps {
+    source: PermissionSource | null
+}
+
+const PermsSource: React.FunctionComponent<PermsSourceProps> = ({ source }) => {
+    if (!source) {
+        return <>unknown</>
+    }
+    let href = '/help/admin/permissions/syncing#permission-syncing'
+    if (source === PermissionSource.API) {
+        href = '/help/admin/permissions/api'
+    }
+
+    return (
+        <Link to={href} target="_blank" rel="noopener">
+            {permsSourceMap[source]}
+        </Link>
+    )
 }

@@ -1,4 +1,4 @@
-import { FunctionComponent, useCallback, useEffect } from 'react'
+import { type FunctionComponent, useCallback, useEffect } from 'react'
 
 import { mdiTrashCan } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,7 +6,7 @@ import { format, formatDistance, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
-import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Badge,
     Button,
@@ -21,7 +21,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
-import {
+import type {
     BumpDerivativeGraphKeyResult,
     BumpDerivativeGraphKeyVariables,
     DeleteRankingProgressResult,

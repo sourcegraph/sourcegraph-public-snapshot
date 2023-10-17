@@ -4,8 +4,8 @@ import { mdiCheckCircle } from '@mdi/js'
 import ReactDOM from 'react-dom'
 import { useLocation } from 'react-router-dom'
 
-import { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { GETTING_STARTED_TOUR_MARKER } from './TourInfo'

@@ -1,9 +1,9 @@
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
+import { render, type RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
-import { PageSwitcher, PageSwitcherProps } from './PageSwitcher'
+import { PageSwitcher, type PageSwitcherProps } from './PageSwitcher'
 
 describe('PageSwitcher', () => {
     const renderWithProps = (props: PageSwitcherProps): RenderResult => render(<PageSwitcher {...props} />)

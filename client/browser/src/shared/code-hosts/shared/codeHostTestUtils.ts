@@ -1,13 +1,13 @@
 import assert from 'assert'
 
 import { readFile } from 'mz/fs'
-import Simmer, { Options as SimmerOptions } from 'simmerjs'
-import { SetIntersection } from 'utility-types'
+import Simmer, { type Options as SimmerOptions } from 'simmerjs'
+import type { SetIntersection } from 'utility-types'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
+import type { DiffPart } from '@sourcegraph/codeintellify'
 
-import { CodeHost, MountGetter } from './codeHost'
-import { CodeView, DOMFunctions } from './codeViews'
+import type { CodeHost, MountGetter } from './codeHost'
+import type { CodeView, DOMFunctions } from './codeViews'
 
 const mountGetterKeys = ['getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = typeof mountGetterKeys[number]

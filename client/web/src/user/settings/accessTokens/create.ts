@@ -1,11 +1,11 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
+import type { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 export function createAccessToken(

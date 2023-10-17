@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../../types'
+import type { ForwardReferenceComponent } from '../../../types'
 import { getFontWeightStyle } from '../utils'
 
 import typographyStyles from '../Typography.module.scss'

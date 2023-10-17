@@ -2,7 +2,7 @@ import { of } from 'rxjs'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 
-import { SearchPanelAPI } from '../../contract'
+import type { SearchPanelAPI } from '../../contract'
 
 export const searchPanelAPI: SearchPanelAPI = {
     ping: () => {
@@ -15,7 +15,7 @@ export const searchPanelAPI: SearchPanelAPI = {
     },
 }
 let focusSearchBox = (): void => {
-    // Initially a noop. Waiting for monaco init
+    // Initially a noop. Waiting for search box init.
 }
 
 // TODO move to api.ts file

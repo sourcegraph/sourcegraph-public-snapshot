@@ -10,7 +10,7 @@
  */
 
 import { Observable } from 'rxjs'
-import { UseBoundStore } from 'zustand'
+import type { UseBoundStore } from 'zustand'
 
 export {
     useNavbarQueryState,
@@ -22,6 +22,7 @@ export {
 } from './navbarSearchQueryState'
 
 export { useNotepadState, useNotepad } from './notepad'
+export * from './devSettings'
 
 /**
  * observeStore converts a zustand store to an observable. The observable emits

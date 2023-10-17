@@ -1,11 +1,11 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { Link } from '@sourcegraph/wildcard'
 
 import { Breadcrumbs } from './Breadcrumbs'
 import { WebStory } from './WebStory'
 
-const decorator: DecoratorFn = story => <div className="container mt-3">{story()}</div>
+const decorator: Decorator = story => <div className="container mt-3">{story()}</div>
 
 const config: Meta = {
     title: 'web/Breadcrumbs',
@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const Example: Story = () => (
+export const Example: StoryFn = () => (
     <WebStory>
         {webProps => (
             <Breadcrumbs

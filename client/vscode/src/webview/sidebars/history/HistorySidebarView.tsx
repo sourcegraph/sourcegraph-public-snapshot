@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
-import { WebviewPageProps } from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
 import { RecentFilesSection } from './components/RecentFilesSection'
 import { RecentRepositoriesSection } from './components/RecentRepositoriesSection'

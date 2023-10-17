@@ -1,0 +1,77 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitlaboauth",
+    srcs = [
+        "config.go",
+        "login.go",
+        "middleware.go",
+        "provider.go",
+        "session.go",
+        "user.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gitlaboauth",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/hubspot",
+        "//cmd/frontend/hubspot/hubspotutil",
+        "//cmd/frontend/internal/auth/oauth",
+        "//internal/actor",
+        "//internal/auth/providers",
+        "//internal/collections",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/gitlab",
+        "//internal/licensing",
+        "//lib/errors",
+        "//schema",
+        "@com_github_dghubble_gologin_v2//:gologin",
+        "@com_github_dghubble_gologin_v2//oauth2",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_test(
+    name = "gitlaboauth_test",
+    timeout = "short",
+    srcs = [
+        "config_test.go",
+        "login_test.go",
+        "middleware_test.go",
+        "session_test.go",
+    ],
+    embed = [":gitlaboauth"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/external/session",
+        "//cmd/frontend/internal/auth/oauth",
+        "//internal/actor",
+        "//internal/auth/providers",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/extsvc",
+        "//internal/extsvc/gitlab",
+        "//lib/errors",
+        "//schema",
+        "@com_github_davecgh_go_spew//spew",
+        "@com_github_dghubble_gologin_v2//oauth2",
+        "@com_github_dghubble_gologin_v2//testutils",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sergi_go_diff//diffmatchpatch",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

@@ -1,16 +1,16 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import { useQuery } from '@apollo/client'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import {
+import type {
     GetExternalServiceByIdResult,
     GetExternalServiceByIdVariables,
     UpdateRemoteCodeHostResult,
@@ -19,7 +19,7 @@ import {
 import { UPDATE_CODE_HOST } from '../../../../queries'
 import { GET_CODE_HOST_BY_ID } from '../../queries'
 
-import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
+import { type CodeHostConnectFormFields, CodeHostJSONForm, type CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
 
 import styles from './CodeHostCreation.module.scss'

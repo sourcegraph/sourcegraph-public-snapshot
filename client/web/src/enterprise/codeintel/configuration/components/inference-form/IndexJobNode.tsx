@@ -19,7 +19,7 @@ import {
 
 import { CommandInput } from './CommandInput'
 import { IndexJobLabel } from './IndexJobLabel'
-import { InferenceArrayValue, InferenceFormJob, InferenceFormJobStep } from './types'
+import type { InferenceArrayValue, InferenceFormJob, InferenceFormJobStep } from './types'
 import { sanitizeIndexer, sanitizeRoot } from './util'
 
 import styles from './IndexJobNode.module.scss'

@@ -4,7 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, H4, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { LimitedAccessBanner } from '../components/LimitedAccessBanner'
@@ -14,13 +14,13 @@ import { refreshSiteFlags } from '../site/backend'
 import { SiteAdminRepositoriesContainer } from './SiteAdminRepositoriesContainer'
 
 interface Props extends TelemetryProps {
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /** A page displaying the repositories on this site */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const location = useLocation()
 
@@ -68,7 +68,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 className="mb-3"
             />
 
-            {isSourcegraphApp && (
+            {isCodyApp && (
                 <LimitedAccessBanner
                     storageKey="app.manage-repositories-with-new-settings"
                     badgeText="Repositories"

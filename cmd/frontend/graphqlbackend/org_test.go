@@ -17,24 +17,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestOrganization(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -98,13 +98,13 @@ func TestOrganization(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 
-		orgMembers := database.NewMockOrgMemberStore()
+		orgMembers := dbmocks.NewMockOrgMemberStore()
 		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
 
-		db := database.NewMockDBFrom(db)
+		db := dbmocks.NewMockDBFrom(db)
 		db.UsersFunc.SetDefaultReturn(users)
 		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
@@ -137,16 +137,16 @@ func TestOrganization(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 
-		orgMembers := database.NewMockOrgMemberStore()
+		orgMembers := dbmocks.NewMockOrgMemberStore()
 		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 
-		orgInvites := database.NewMockOrgInvitationStore()
+		orgInvites := dbmocks.NewMockOrgInvitationStore()
 		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
 
-		db := database.NewMockDBFrom(db)
+		db := dbmocks.NewMockDBFrom(db)
 		db.OrgsFunc.SetDefaultReturn(orgs)
 		db.UsersFunc.SetDefaultReturn(users)
 		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -181,16 +181,16 @@ func TestOrganization(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 
-		orgMembers := database.NewMockOrgMemberStore()
+		orgMembers := dbmocks.NewMockOrgMemberStore()
 		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 
-		orgInvites := database.NewMockOrgInvitationStore()
+		orgInvites := dbmocks.NewMockOrgInvitationStore()
 		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
 
-		db := database.NewMockDBFrom(db)
+		db := dbmocks.NewMockDBFrom(db)
 		db.OrgsFunc.SetDefaultReturn(orgs)
 		db.UsersFunc.SetDefaultReturn(users)
 		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -227,17 +227,17 @@ func TestOrganization(t *testing.T) {
 func TestCreateOrganization(t *testing.T) {
 	userID := int32(1)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: false}, nil)
 
 	mockedOrg := types.Org{ID: 42, Name: "acme"}
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgs.CreateFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: mockedOrg.ID, UserID: userID}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -365,28 +365,28 @@ func TestAddOrganizationMember(t *testing.T) {
 	orgID := int32(1)
 	orgIDString := string(MarshalOrgID(orgID))
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: orgID, Name: "acme"}, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: userName}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: orgID, UserID: userID}, nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
 
 	// tests below depend on config being there
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
 
 	// mock permission sync scheduling
-	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {}
 	defer func() { permssync.MockSchedulePermsSync = nil }()
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -480,7 +480,7 @@ func TestAddOrganizationMember(t *testing.T) {
 }
 
 func TestOrganizationRepositories_OSS(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	RunTests(t, []*Test{
@@ -509,10 +509,10 @@ func TestOrganizationRepositories_OSS(t *testing.T) {
 }
 
 func TestNode_Org(t *testing.T) {
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgs.GetByIDFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 
 	RunTests(t, []*Test{

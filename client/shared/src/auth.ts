@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { CurrentAuthStateResult } from './graphql-operations'
+import type { CurrentAuthStateResult } from './graphql-operations'
 
 /**
  * This GraphQL should be in sync with server-side current user preloading
@@ -41,8 +41,8 @@ export const currentAuthStateQuery = gql`
             }
             viewerCanAdminister
             tosAccepted
-            searchable
             hasVerifiedEmail
+            completedPostSignup
             emails {
                 email
                 verified

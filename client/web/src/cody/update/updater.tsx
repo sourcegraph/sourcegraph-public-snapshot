@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 
 import { getVersion } from '@tauri-apps/api/app'
 import { TauriEvent, listen } from '@tauri-apps/api/event'
-import { UpdateManifest, UpdateStatus, UpdateStatusResult, checkUpdate, installUpdate } from '@tauri-apps/api/updater'
+import {
+    type UpdateManifest,
+    type UpdateStatus,
+    type UpdateStatusResult,
+    checkUpdate,
+    installUpdate,
+} from '@tauri-apps/api/updater'
 import { SemVer } from 'semver'
 
 const StartUpdateCheckDelayMs = 3 * 1000 // time to wait to start check

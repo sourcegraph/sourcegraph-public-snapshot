@@ -3,20 +3,20 @@ import { SearchPatternType } from '../../graphql-operations'
 import { filterTypeKeysWithAliases } from './filters'
 import { scanPredicate } from './predicates'
 import {
-    Token,
-    Whitespace,
-    OpeningParen,
-    ClosingParen,
-    Keyword,
-    Comment,
-    Literal,
-    Pattern,
-    Filter,
+    type Token,
+    type Whitespace,
+    type OpeningParen,
+    type ClosingParen,
+    type Keyword,
+    type Comment,
+    type Literal,
+    type Pattern,
+    type Filter,
     KeywordKind,
     PatternKind,
-    CharacterRange,
+    type CharacterRange,
     createLiteral,
-    Separator,
+    type Separator,
 } from './token'
 
 /**

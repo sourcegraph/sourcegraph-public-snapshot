@@ -1,10 +1,10 @@
-import React, { MouseEvent } from 'react'
+import React, { type MouseEvent } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { ForwardReferenceComponent } from '../../../types'
-import { TypographyProps } from '../utils'
+import type { ForwardReferenceComponent } from '../../../types'
+import type { TypographyProps } from '../utils'
 
 import { getLabelClassName } from './utils'
 

@@ -21,7 +21,7 @@ By default, JetBrains IDEs such as GoLand will try and index the files in your p
 
 There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process.
 
-### My local `bazel configure` or `./dev/ci/bazel-configure.sh` run has diff with a result of Bazel CI step
+### My local `bazel configure` or `./dev/ci/bazel-prechecks.sh` run has diff with a result of Bazel CI step
 
 This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
 
@@ -189,6 +189,21 @@ Solution: run `bazel configure` to update the buildfiles automatically.
 ### My go tests complains about missing testdata
 
 In the case where your testdata lives in `../**`, Gazelle cannot see those on its own, and you need to create a filegroup manually, see https://github.com/sourcegraph/sourcegraph/pull/47605/commits/93c838aad5436dc69f6695cec933bfb84b8ba59a
+
+### My go tests are timing out in CI but there is no output telling me where exactly it failed
+
+By defaults, Go tests are run without the `-v` flag, which means that Go will only print a summary when the testing is complete or has failed. But in the case of Bazel timeouts, i.e. when the test target 
+has a time out on the Bazel side (`short` by default, so 60 seconds) Bazel will kill the Go test binary before it had the chance to flush out its outputs. As a result, you'll see empty logs, which is 
+very incovenient for debugging. 
+
+Solution: run `bazel test --config go-verbose-test` to force Bazel to run the tests with the verbose flag on for any `go_test` rule it encounters. If this only happens in CI, you can combine this solution with the _bazel-do_ feature of `sg` 
+which enables to fire a build running a single, specific test that you provide: 
+
+```
+sg ci bazel test --config go-verbose-test //my/timing-out:target 
+```
+
+This will print out the URL of the newly created build and the logs will show you exactly where the tests were when they timed out. 
 
 ### Manually adding a `go_repository`
 

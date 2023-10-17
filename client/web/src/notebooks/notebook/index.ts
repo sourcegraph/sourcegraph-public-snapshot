@@ -1,8 +1,8 @@
 import { escapeRegExp } from 'lodash'
 // We're using marked import here to access the `marked` package type definitions.
 // eslint-disable-next-line no-restricted-imports
-import { marked, Renderer } from 'marked'
-import { Observable, forkJoin, of } from 'rxjs'
+import { type marked, Renderer } from 'marked'
+import { type Observable, forkJoin, of } from 'rxjs'
 import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
@@ -11,12 +11,12 @@ import {
     aggregateStreamingSearch,
     emptyAggregateResults,
     LATEST_VERSION,
-    SymbolMatch,
+    type SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
-import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
-import { NotebookFields, SearchPatternType } from '../../graphql-operations'
+import type { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
+import { type NotebookFields, SearchPatternType } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'

@@ -7,10 +7,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, H3, H1, Icon, Text, Code, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { BatchSpecExecutionFields, BatchSpecSource } from '../../../../../graphql-operations'
-import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
-import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
-import {
+import { type BatchSpecExecutionFields, BatchSpecSource } from '../../../../../graphql-operations'
+import type { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
+import { type BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
+import type {
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
     queryWorkspacesList as _queryWorkspacesList,
 } from '../backend'

@@ -26,6 +26,7 @@ go_library(
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/env",
         "//internal/extsvc",
         "//internal/goroutine",
@@ -60,6 +61,7 @@ go_test(
     deps = [
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/license",
         "//internal/licensing",
         "//internal/observation",

@@ -6,22 +6,22 @@
  * more information.
  */
 
-import { Extension } from '@codemirror/state'
-import { PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { Remote } from 'comlink'
-import { combineLatest, EMPTY, from, Observable, Subject, Subscription } from 'rxjs'
+import type { Extension } from '@codemirror/state'
+import { type PluginValue, ViewPlugin, type ViewUpdate } from '@codemirror/view'
+import type { Remote } from 'comlink'
+import { combineLatest, EMPTY, from, type Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, shareReplay, switchMap } from 'rxjs/operators'
 
-import { LineOrPositionOrRange, logger, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { type LineOrPositionOrRange, logger, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
+import type { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import type { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import type { BlobInfo } from '../CodeMirrorBlob'
 
-import { SelectedLineRange, selectedLines } from './linenumbers'
+import { type SelectedLineRange, selectedLines } from './linenumbers'
 
 /**
  * Context holds all the information needed for CodeMirror extensions to

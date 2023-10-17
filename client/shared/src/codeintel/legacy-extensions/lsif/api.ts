@@ -1,4 +1,4 @@
-import { QueryGraphQLFn } from '../util/graphql'
+import type { QueryGraphQLFn } from '../util/graphql'
 import { parseGitURI } from '../util/uri'
 
 /** The response envelope for all LSIF queries. */

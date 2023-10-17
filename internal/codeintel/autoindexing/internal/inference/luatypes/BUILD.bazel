@@ -4,7 +4,6 @@ go_library(
     name = "luatypes",
     srcs = [
         "index_job.go",
-        "index_job_hint.go",
         "path_patterns.go",
         "recognizers.go",
     ],

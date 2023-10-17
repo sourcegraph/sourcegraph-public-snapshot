@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -68,8 +69,6 @@ func (m gitlabAuthzProviderParams) FetchUserPermsByToken(context.Context, string
 func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	panic("should never be called")
 }
-
-var errPermissionsUserMappingConflict = errors.New("The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when bitbucketServer authorization provider is in use. Blocking access to all repositories until the conflict is resolved.")
 
 func TestAuthzProvidersFromConfig(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
@@ -449,7 +448,9 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			externalServices := database.NewMockExternalServiceStore()
+			db := dbmocks.NewMockDB()
+			externalServices := dbmocks.NewMockExternalServiceStore()
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				mustMarshalJSONString := func(v any) string {
 					str, err := jsoniter.MarshalToString(v)
@@ -484,8 +485,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
-				database.NewMockDB(),
+				db,
 			)
 			assert.Equal(t, test.expAuthzAllowAccessByDefault, allowAccessByDefault)
 			if test.expAuthzProviders != nil {
@@ -661,7 +661,9 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			externalServices := database.NewMockExternalServiceStore()
+			db := dbmocks.NewMockDB()
+			externalServices := dbmocks.NewMockExternalServiceStore()
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				mustMarshalJSONString := func(v any) string {
 					str, err := jsoniter.MarshalToString(v)
@@ -729,8 +731,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
-				database.NewMockDB(),
+				db,
 			)
 
 			assert.Equal(t, test.expSeriousProblems, seriousProblems)
@@ -2111,8 +2112,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				tc.ps = conf.Get().AuthProviders
 			}
 
-			s := database.NewMockExternalServiceStore()
-			_, err := ValidateExternalServiceConfig(context.Background(), s, database.ValidateExternalServiceConfigOptions{
+			_, err := ValidateExternalServiceConfig(context.Background(), dbmocks.NewMockDB(), database.ValidateExternalServiceConfigOptions{
 				Kind:          tc.kind,
 				Config:        tc.config,
 				AuthProviders: tc.ps,

@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-param-names */
 import { flatten } from 'lodash'
 
-import { BlockCommentStyle } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import type { BlockCommentStyle } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { Position, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { syntaxHighlight } from '../repo/blob/codemirror/highlight'

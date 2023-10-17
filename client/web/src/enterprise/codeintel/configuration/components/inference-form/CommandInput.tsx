@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { defaultKeymap, history } from '@codemirror/commands'
 import { StreamLanguage, syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { shell } from '@codemirror/legacy-modes/mode/shell'
-import { EditorState, Extension } from '@codemirror/state'
+import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 import classNames from 'classnames'
@@ -67,6 +67,7 @@ export const CommandInput: React.FunctionComponent<CommandInputProps> = React.me
     const extensions = useMemo(
         () => [
             staticExtensions,
+            readOnly ? [EditorView.lineWrapping] : [],
             EditorState.readOnly.of(readOnly),
             EditorView.updateListener.of(update => {
                 if (update.docChanged) {

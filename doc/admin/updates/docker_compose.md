@@ -17,33 +17,70 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 
 <!-- Add changes changes to this section before release. -->
 
+## v5.1.9 ➔ v5.2.0
+
+#### Notes:
+
+## v5.1.8 ➔ v5.1.9
+
+#### Notes:
+
+## v5.1.7 ➔ v5.1.8
+
+#### Notes:
+
+## v5.1.6 ➔ v5.1.7
+
+#### Notes:
+
+## v5.1.5 ➔ v5.1.6
+
+#### Notes:
+
+## v5.1.4 ➔ v5.1.5
+
+#### Notes:
+- Upgrades from versions `v5.0.3`, `v5.0.4`, `v5.0.5`, and `v5.0.6` to `v5.1.5` are affected by an ordering error in the `frontend` databases migration tree. Learn more from the [PR which resolves this bug](https://github.com/sourcegraph/sourcegraph/pull/55650). **For admins who have already attempted an upgrade to this release from one of the effected versions, see this issue which provides a description of [how to manually fix the frontend db](https://github.com/sourcegraph/sourcegraph/issues/55658).**
+  
+## v5.1.3 ➔ v5.1.4
+
+#### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
+
 ## v5.1.2 ➔ v5.1.3
 
 #### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
 
 ## v5.1.1 ➔ v5.1.2
 
 #### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
 
 ## v5.1.0 ➔ v5.1.1
 
 #### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
 
 ## v5.0.6 ➔ v5.1.0
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.5 ➔ v5.0.6
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.4 ➔ v5.0.5
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.3 ➔ v5.0.4
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.2 ➔ v5.0.3
 

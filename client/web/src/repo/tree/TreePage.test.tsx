@@ -6,10 +6,10 @@ import sinon from 'sinon'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { AuthenticatedUser } from '../../auth'
-import { RepositoryFields, RepositoryType } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import { type RepositoryFields, RepositoryType } from '../../graphql-operations'
 
-import { Props, TreePage } from './TreePage'
+import { type Props, TreePage } from './TreePage'
 
 describe('TreePage', () => {
     afterEach(cleanup)
@@ -116,7 +116,7 @@ describe('TreePage', () => {
                 </MockedProvider>
             )
 
-            expect(screen.getByText('Try Cody AI assist on this repo')).toBeVisible()
+            expect(screen.getByText('Try Cody on this repository')).toBeVisible()
             expect(screen.getByText('Click the Ask Cody button above and to the right of this banner')).toBeVisible()
             expect(
                 screen.getByText('Ask Cody a question like “Explain the structure of this repository”')

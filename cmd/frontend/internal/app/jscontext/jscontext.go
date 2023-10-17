@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -106,8 +106,8 @@ type CurrentUser struct {
 	SettingsURL         string     `json:"settingsURL"`
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
 	TosAccepted         bool       `json:"tosAccepted"`
-	Searchable          bool       `json:"searchable"`
 	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
+	CompletedPostSignUp bool       `json:"completedPostSignup"`
 
 	Organizations  *UserOrganizationsConnection `json:"organizations"`
 	Session        *UserSession                 `json:"session"`
@@ -150,7 +150,8 @@ type JSContext struct {
 	DeployType        string                   `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
-	SourcegraphAppMode    bool `json:"sourcegraphAppMode"`
+
+	CodyAppMode bool `json:"codyAppMode"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -159,8 +160,6 @@ type JSContext struct {
 	AllowSignup bool `json:"allowSignup"`
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
-
-	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
 	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
@@ -207,6 +206,8 @@ type JSContext struct {
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
+	HashedLicenseKey string `json:"hashedLicenseKey"`
+
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
@@ -239,7 +240,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		headers["Cache-Control"] = "no-cache"
 	}
 
-	siteID := siteid.Get()
+	siteID := siteid.Get(db)
 
 	// Show the site init screen?
 	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
@@ -344,7 +345,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		SourcegraphAppMode:    deploy.IsApp(),
+		CodyAppMode:           deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -353,8 +354,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AccessTokensAllow: conf.AccessTokensAllow(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
-
-		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 
@@ -389,6 +388,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
 		LicenseInfo: licenseInfo,
+
+		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics(),
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
@@ -437,6 +438,11 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
+	completedPostSignup, err := userResolver.CompletedPostSignup(ctx)
+	if err != nil {
+		return nil
+	}
+
 	return &CurrentUser{
 		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
@@ -447,7 +453,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		ID:                  userResolver.ID(),
 		LatestSettings:      resolveLatestSettings(ctx, userResolver),
 		Organizations:       resolveUserOrganizations(ctx, userResolver),
-		Searchable:          userResolver.Searchable(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
 		TosAccepted:         userResolver.TosAccepted(ctx),
@@ -456,6 +461,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		ViewerCanAdminister: canAdminister,
 		Permissions:         resolveUserPermissions(ctx, userResolver),
 		HasVerifiedEmail:    hasVerifiedEmail,
+		CompletedPostSignUp: completedPostSignup,
 	}
 }
 
@@ -553,13 +559,9 @@ func resolveLatestSettings(ctx context.Context, user *graphqlbackend.UserResolve
 // configuration that is necessary for the web app and is not sensitive/secret.
 func publicSiteConfiguration() schema.SiteConfiguration {
 	c := conf.Get()
-	updateChannel := c.UpdateChannel
-	if updateChannel == "" {
-		updateChannel = "release"
-	}
 	return schema.SiteConfiguration{
 		AuthPublic:                  c.AuthPublic,
-		UpdateChannel:               updateChannel,
+		UpdateChannel:               conf.UpdateChannel(),
 		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
 		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
 	}

@@ -1,11 +1,11 @@
 import React, { createContext, useContext } from 'react'
 
-import { StoreApi, UseBoundStore } from 'zustand'
+import type { StoreApi, UseBoundStore } from 'zustand'
 
-import { SearchPatternType } from '../graphql-operations'
+import type { SearchPatternType } from '../graphql-operations'
 
-import { QueryState, SubmitSearchParameters, toggleSubquery } from './helpers'
-import { FilterType } from './query/filters'
+import { type QueryState, type SubmitSearchParameters, toggleSubquery } from './helpers'
+import type { FilterType } from './query/filters'
 import { appendFilter, updateFilter } from './query/transformer'
 import { filterExists } from './query/validate'
 
@@ -68,8 +68,8 @@ export interface SearchQueryState {
 
     // DATA
     /**
-     * The current seach query and auxiliary information needed by the
-     * MonacoQueryInput component. You most likely don't have to read this value
+     * The current search query and auxiliary information needed by the
+     * query input component. You most likely don't have to read this value
      * directly.
      * See {@link QueryState} for more information.
      */

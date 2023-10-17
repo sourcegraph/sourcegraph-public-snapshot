@@ -1,4 +1,4 @@
-import { Navigate, RouteObject } from 'react-router-dom'
+import { Navigate, type RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -59,6 +59,7 @@ export const APP_ROUTES: RouteObject[] = [
                         routes={props.siteAdminAreaRoutes}
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
+                        codeInsightsEnabled={!!props.codeInsightsEnabled}
                     />
                 )}
             />

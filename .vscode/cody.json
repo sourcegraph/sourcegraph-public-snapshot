@@ -1,0 +1,23 @@
+{
+  "title": "[Experimental] Custom Workspace Commands",
+  "description": "This file showcases how to build custom commandss for Cody by Sourcegraph in VS Code.",
+  "doc": "For more information, see https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MzA1NQ==",
+  "commands": {
+    "example-generate-readme": {
+      "description": "(example) Generate README.md for Current Directory",
+      "prompt": "Write a detailed README.md file to document the code in the same directory as my current selection. Summarize what the code in this directory is meant to accomplish. Explain the key files, functions, classes, and features. Use Markdown formatting for headings, code blocks, lists, etc. to make it organized and readable. Aim for a beginner-friendly explanation that gives a developer unfamiliar with the code a good starting point to understand it. Ensure to include: - Overview of directory purpose - Functionality explanations - Relevant diagrams or visuals if helpful. Write the README content clearly and concisely using complete sentences and paragraphs based on the shared context. Use proper spelling, grammar, and punctuation throughout. Surround your full README text with triple backticks so it renders properly as a code block. Do not make assumptions or fabricate additional details.",
+      "context": {
+        "currentDir": true,
+        "selection": true
+      }
+    },
+    "commit-message-suggestion": {
+      "description": "Commit Message Suggestion",
+      "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
+      "context": {
+        "selection": false,
+        "command": "git diff"
+      }
+    }
+  }
+}

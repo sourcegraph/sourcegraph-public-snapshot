@@ -3,13 +3,13 @@ import assert from 'assert'
 import { subDays } from 'date-fns'
 
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { UserSettingsAreaUserFields } from '../graphql-operations'
+import type { UserSettingsAreaUserFields } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 

@@ -1,25 +1,29 @@
 import { proxy } from 'comlink'
 import { castArray, isEqual } from 'lodash'
-import { combineLatest, concat, Observable, of, Subscribable } from 'rxjs'
+import { combineLatest, concat, type Observable, of, type Subscribable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { ProviderResult } from 'sourcegraph'
+import type { ProviderResult } from 'sourcegraph'
 
-import { fromHoverMerged, TextDocumentIdentifier, TextDocumentPositionParameters } from '@sourcegraph/client-api'
-import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import {
+    fromHoverMerged,
+    type TextDocumentIdentifier,
+    type TextDocumentPositionParameters,
+} from '@sourcegraph/client-api'
+import { LOADING, type MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault, isDefined, isExactly, isNot, logger } from '@sourcegraph/common'
-import * as clientType from '@sourcegraph/extension-api-types'
-import { Context } from '@sourcegraph/template-parser'
+import type * as clientType from '@sourcegraph/extension-api-types'
+import type { Context } from '@sourcegraph/template-parser'
 
 import type { ReferenceContext, DocumentSelector } from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { match } from '../client/types/textDocument'
-import { FlatExtensionHostAPI } from '../contract'
-import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
+import type { FlatExtensionHostAPI } from '../contract'
+import type { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, proxySubscribable } from './api/common'
-import { computeContext, ContributionScope } from './api/context/context'
+import { computeContext, type ContributionScope } from './api/context/context'
 import {
     evaluateContributions,
     filterContributions,
@@ -31,7 +35,7 @@ import { ExtensionDocument } from './api/textDocument'
 import { fromLocation, toPosition } from './api/types'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { updateContext } from './extensionHost'
-import { ExtensionHostState } from './extensionHostState'
+import type { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {

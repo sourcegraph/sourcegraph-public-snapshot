@@ -27,7 +27,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -121,8 +121,8 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			Reason:             ReasonGitHubRepoEvent,
 			FinishedAt:         finishedTime,
 			CodeHostStates:     codeHostStates[1:],
-			FailureMessage:     strptr("imma failure"),
-			CancellationReason: strptr("i tried to cancel but it already failed"),
+			FailureMessage:     pointers.Ptr("imma failure"),
+			CancellationReason: pointers.Ptr("i tried to cancel but it already failed"),
 			IsPartialSuccess:   false,
 		},
 		{
@@ -293,7 +293,7 @@ func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
@@ -396,7 +396,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user1, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -553,7 +553,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -602,7 +602,7 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -663,7 +663,7 @@ func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -699,7 +699,7 @@ func TestPermissionSyncJobs_CascadeOnUserDelete(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -735,7 +735,7 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -754,12 +754,12 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 	}{
 		{
 			name:           "After",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: strptr("1")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
 			wantJobs:       []*PermissionSyncJob{},
 		},
 		{
 			name:           "Before",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: strptr("2")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
 			wantJobs:       jobs,
 		},
 		{
@@ -797,7 +797,7 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -841,7 +841,7 @@ func TestPermissionSyncJobs_CountUsersWithFailingSyncJob(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
@@ -915,7 +915,7 @@ func TestPermissionSyncJobs_CountReposWithFailingSyncJob(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	reposStore := ReposWith(logger, db)

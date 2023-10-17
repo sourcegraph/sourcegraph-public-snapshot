@@ -1,33 +1,33 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { FileDiffNode, type FileDiffNodeProps } from '../../components/diff/FileDiffNode'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import {
-    ExternalLinkFields,
-    GitCommitFields,
-    RepositoryCommitResult,
-    RepositoryCommitVariables,
-    RepositoryFields,
-    FileDiffFields,
-    RepositoryChangelistResult,
-    RepositoryChangelistVariables,
+    type ExternalLinkFields,
+    type GitCommitFields,
+    type RepositoryCommitResult,
+    type RepositoryCommitVariables,
+    type RepositoryFields,
+    type FileDiffFields,
+    type RepositoryChangelistResult,
+    type RepositoryChangelistVariables,
     RepositoryType,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
-import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
+import { queryRepositoryComparisonFileDiffs, type RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
 
 import { CHANGELIST_QUERY, COMMIT_QUERY } from './backend'
 
@@ -53,6 +53,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
             repo: props.repo.id,
             revspec: params.revspec,
         },
+        errorPolicy: 'all',
     })
 
     const commit = useMemo(
@@ -87,6 +88,7 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
                 repo: props.repo.id,
                 changelistID: params.changelistID,
             },
+            errorPolicy: 'all',
         }
     )
 
@@ -163,43 +165,44 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
             <PageTitle title={pageTitle} />
+            {error && <ErrorAlert className="mt-2" error={error ?? new Error(pageError)} />}
             {loading ? (
                 <LoadingSpinner className="mt-2" />
-            ) : error || !commit ? (
-                <ErrorAlert className="mt-2" error={error ?? new Error(pageError)} />
             ) : (
-                <>
-                    <div className="border-bottom pb-2">
-                        <div>
-                            <GitCommitNode
-                                node={commit}
-                                expandCommitMessageBody={true}
-                                showSHAAndParentsRow={true}
-                                diffMode={diffMode}
-                                onHandleDiffMode={setDiffMode}
-                                className={styles.gitCommitNode}
-                            />
+                commit && (
+                    <>
+                        <div className="border-bottom pb-2">
+                            <div>
+                                <GitCommitNode
+                                    node={commit}
+                                    expandCommitMessageBody={true}
+                                    showSHAAndParentsRow={true}
+                                    diffMode={diffMode}
+                                    onHandleDiffMode={setDiffMode}
+                                    className={styles.gitCommitNode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
-                        listClassName="list-group list-group-flush"
-                        noun="changed file"
-                        pluralNoun="changed files"
-                        queryConnection={queryDiffs}
-                        nodeComponent={FileDiffNode}
-                        nodeComponentProps={{
-                            ...props,
-                            lineNumbers: true,
-                            diffMode,
-                        }}
-                        updateOnChange={`${repo.id}:${commit.oid}`}
-                        defaultFirst={15}
-                        hideSearch={true}
-                        noSummaryIfAllNodesVisible={true}
-                        withCenteredSummary={true}
-                        cursorPaging={true}
-                    />
-                </>
+                        <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
+                            listClassName="list-group list-group-flush"
+                            noun="changed file"
+                            pluralNoun="changed files"
+                            queryConnection={queryDiffs}
+                            nodeComponent={FileDiffNode}
+                            nodeComponentProps={{
+                                ...props,
+                                lineNumbers: true,
+                                diffMode,
+                            }}
+                            updateOnChange={`${repo.id}:${commit.oid}`}
+                            defaultFirst={15}
+                            hideSearch={true}
+                            noSummaryIfAllNodesVisible={true}
+                            withCenteredSummary={true}
+                            cursorPaging={true}
+                        />
+                    </>
+                )
             )}
         </div>
     )

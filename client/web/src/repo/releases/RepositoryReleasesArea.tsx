@@ -1,9 +1,9 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { RepositoryFields } from '../../graphql-operations'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { RepositoryFields } from '../../graphql-operations'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
-import { RepoContainerContext } from '../RepoContainer'
+import type { RepoContainerContext } from '../RepoContainer'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 

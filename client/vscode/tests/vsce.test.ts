@@ -4,11 +4,11 @@ import {
     mixedSearchStreamEvents,
     highlightFileResult,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import { createVSCodeIntegrationTestContext, VSCodeIntegrationTestContext } from './context'
+import { createVSCodeIntegrationTestContext, type VSCodeIntegrationTestContext } from './context'
 import { getVSCodeWebviewFrames } from './getWebview'
-import { launchVsCode, VSCodeTestDriver } from './launch'
+import { launchVsCode, type VSCodeTestDriver } from './launch'
 
 describe('VS Code extension', () => {
     let vsCodeDriver: VSCodeTestDriver
@@ -90,8 +90,8 @@ describe('VS Code extension', () => {
         const { searchPanelFrame, sidebarFrame } = await getVSCodeWebviewFrames(vsCodeDriver.page)
 
         // Focus search box
-        await searchPanelFrame.waitForSelector('.monaco-editor .view-lines')
-        await searchPanelFrame.click('.monaco-editor .view-lines')
+        await searchPanelFrame.waitForSelector('..cm-editor')
+        await searchPanelFrame.click('.cm-editor')
 
         await vsCodeDriver.page.keyboard.type('test', {
             delay: 50,

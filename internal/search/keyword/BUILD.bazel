@@ -5,7 +5,6 @@ go_library(
     name = "keyword",
     srcs = [
         "keyword_search_job.go",
-        "keywords.go",
         "query_transformer.go",
         "stop_words.go",
         "string_set.go",

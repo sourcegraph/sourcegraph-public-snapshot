@@ -14,16 +14,16 @@ const (
 	// RunTypes should be defined by order of precedence.
 
 	PullRequest       RunType = iota // pull request build
-	WolfiExpBranch                   // branch that only builds wolfi images
 	ManuallyTriggered                // build that is manually triggred - typically used to start CI for external contributions
 
 	// Nightly builds - must be first because they take precedence
 
-	ReleaseNightly // release branch nightly healthcheck builds
-	BextNightly    // browser extension nightly build
-	VsceNightly    // vs code extension nightly build
-	AppRelease     // app release build
-	AppInsiders    // app insiders build
+	ReleaseNightly   // release branch nightly healthcheck builds
+	BextNightly      // browser extension nightly build
+	VsceNightly      // vs code extension nightly build
+	AppRelease       // app release build
+	AppInsiders      // app insiders build
+	WolfiBaseRebuild // wolfi base image build
 
 	// Release branches
 
@@ -42,6 +42,7 @@ const (
 	ImagePatch          // build a patched image after testing
 	ImagePatchNoTest    // build a patched image without testing
 	ExecutorPatchNoTest // build executor image without testing
+	CandidatesNoTest    // build one or all candidate images without testing
 
 	// Special test branches
 
@@ -108,6 +109,12 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			Branch:      "vsce/release",
 			BranchExact: true,
 		}
+	case WolfiBaseRebuild:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"WOLFI_BASE_REBUILD": "true",
+			},
+		}
 
 	case AppRelease:
 		return &RunTypeMatcher{
@@ -148,10 +155,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "_manually_triggered_external/",
 		}
-	case WolfiExpBranch:
-		return &RunTypeMatcher{
-			Branch: "wolfi/",
-		}
 	case ImagePatch:
 		return &RunTypeMatcher{
 			Branch:                 "docker-images-patch/",
@@ -171,6 +174,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "backend-integration/",
 		}
+	case CandidatesNoTest:
+		return &RunTypeMatcher{
+			Branch: "docker-images-candidates-notest/",
+		}
 	case BazelDo:
 		return &RunTypeMatcher{
 			Branch: "bazel-do/",
@@ -184,8 +191,6 @@ func (t RunType) String() string {
 	switch t {
 	case PullRequest:
 		return "Pull request"
-	case WolfiExpBranch:
-		return "Wolfi Exp Branch"
 	case ManuallyTriggered:
 		return "Manually Triggered External Build"
 	case ReleaseNightly:
@@ -194,6 +199,8 @@ func (t RunType) String() string {
 		return "Browser extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
+	case WolfiBaseRebuild:
+		return "Wolfi base images rebuild"
 	case AppRelease:
 		return "App release build"
 	case AppInsiders:
@@ -206,19 +213,18 @@ func (t RunType) String() string {
 		return "Browser extension release build"
 	case VsceReleaseBranch:
 		return "VS Code extension release build"
-
 	case MainBranch:
 		return "Main branch"
 	case MainDryRun:
 		return "Main dry run"
-
 	case ImagePatch:
 		return "Patch image"
 	case ImagePatchNoTest:
 		return "Patch image without testing"
+	case CandidatesNoTest:
+		return "Build all candidates without testing"
 	case ExecutorPatchNoTest:
 		return "Build executor without testing"
-
 	case BackendIntegrationTests:
 		return "Backend integration tests"
 	case BazelDo:

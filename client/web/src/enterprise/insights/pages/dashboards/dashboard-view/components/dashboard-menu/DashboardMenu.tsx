@@ -16,7 +16,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { CustomInsightDashboard } from '../../../../../core'
+import type { CustomInsightDashboard } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 
 import styles from './DashboardMenu.module.scss'

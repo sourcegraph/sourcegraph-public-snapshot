@@ -216,7 +216,7 @@ type Options[T workerutil.Record] struct {
 
 	// MaxNumResets is the maximum number of times a record can be implicitly reset back to the queued
 	// state (via `ResetStalled`). If a record's reset attempts counter reaches this threshold, it will
-	// be moved into the errored state rather than queued on its next reset to prevent an infinite retry
+	// be moved into the "failed" state rather than queued on its next reset to prevent an infinite retry
 	// cycle of the same input.
 	MaxNumResets int
 

@@ -8,31 +8,50 @@ Wolfi base images are built _from scratch_ using [apko](https://github.com/chain
 
 Base images are defined using an apko YAML configuration file, found under [wolfi-images](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/wolfi-images).
 
-These configuration files can be processed with apko, which will generate a base image. You can build these locally using [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
+These configuration files can be processed with apko, which will generate a base image. You can build these locally using `sg wolfi image <image-name>`.
 
 ## How to...
 
-### Update base image packages
+### Update base images for a new release
 
-In order to pull in updated packages with new features or fixed vulnerabilities, we need to periodically rebuild the base images.
+Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes. To update the images:
 
-This is currently a two-step process, but will be automated in the future:
+- Review the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-auto-update/main+is:open) opened by Buildkite, and merge it
 
-- Run the [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@588463afbb0904c125cdcf78c7b182f43328504e/-/blob/wolfi-images/rebuild-images.sh) script (with an optional argument to just update one base image), commit the updated YAML files, and merge to main.
-  - This will trigger Buildkite to rebuild the base images and publish them.
-- Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
-  - NOTE: Currently we use the `latest` label, but we will switch to using a `sha256` tag once deployed in production.
+#### Automation
+
+This process is automated by Buildkite, which runs a daily scheduled build to:
+
+- Rebuild Wolfi base images, pulling in any updated dependencies.
+- Push the updated base images to Docker Hub.
+- Update the base image hashes in `dev/oci_deps.bzl`.
+- Open, or update the already open pull request updating the hashes.
+
+To rerun the automation (perhaps to pick up a just-released package version), click the Buildkite run link in the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-autoupdate/main+is:open) and hit "Rebuild". Alternatively, look for the latest "Nightly Rebuild of Wolfi Base Images" run [on Buildkite](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=main).
+
+#### Manual image updates
+
+If the automation fails and a manual update is needed, follow these steps:
+
+- Run [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/wolfi-images/rebuild-images.sh) script, commit the updated YAML files, and merge to main.
+- Wait for the `main` branch's Buildkite run to complete.
+  - Buildkite will rebuild the base images and publish them to Dockerhub.
+- Run `sg wolfi update-hashes` locally to update the base image hashes in `dev/oci_deps.bzl`. Commit these changes and merge to `main`.
+  - This fetches the updated base image hashes from the images that were pushed to Dockerhub in the previous step.
+- Backport the PR that updated `dev/oci_deps.bzl` to the release branch.
 
 ### Modify an existing base image
 
 To modify a base image to add packages, users, or directories:
 
 - Update its apko YAML configuration file, which can be found under [`wolfi-images/`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/)
-- Build and testing it locally using [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
-  - You can use this local image in your Dockerfiles, or exec into it directly.
-- Once happy with changes, create a PR and merge to main. Buildkite will detect the changes and rebuild the base image.
-- Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
-  - NOTE: Currently we use the `latest` label, but we will switch to using a `sha256` tag once deployed in production.
+- Build the image
+  - To build locally, use `sg wolfi image <image-name>`.
+  - To build on CI, push your changes and Buildkite will build your image and push it to our `us.gcr.io/sourcegraph-dev/` dev repository. Instructions for pulling this image will be shown at the top of the Buildkite page.
+- Test your changes by exec-ing into the image, or update `dev/oci_deps.bzl` to point at your dev base image and build the full image with Bazel.
+- Once happy, merge your changes and wait for the `main` branch's Buildkite run to complete.
+  - Buildkite will rebuild the base image and publish it to Dockerhub.
+- Run `sg wolfi update-hashes <image-name>` to update the hashes for the changed image in `dev/oci_deps.bzl`. Commit and merge these changes.
 
 ### Create a new base image
 
@@ -44,7 +63,10 @@ Otherwise, you can create a new base image configuration file:
 - Add any required packages, users, directory structure, or metadata.
   - See [apko file format](https://github.com/chainguard-dev/apko/blob/main/docs/apko_file.md) for a full list of supported configuration.
   - See the other images under [`wolfi-images/`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/) and [`chainguard-images/images`](https://github.com/chainguard-images/images/tree/main/images) for examples and best practices.
-- Build your image locally with [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
-- Commit your updated YAML file and merge it to main. Buildkite will build and publish your new image.
+- Build the image:
+  - To build locally, use `sg wolfi image <image-name>`.
+  - To build on CI, push your changes and Buildkite will build your image and push it to our `us.gcr.io/sourcegraph-dev/` dev repository.
+- Test your changes by exec-ing into the image, or update `dev/oci_deps.bzl` to point at your dev base image and build the full image with Bazel.
+- Commit your updated YAML file and merge it to main. Buildkite will build and publish your new image to Dockerhub.
 
-Once complete, treat the published image it as a standard base image, and use it in your Dockerfile.
+Once complete, treat the published image it as a standard Docker image, and add it to `dev/oci_deps.bzl`.

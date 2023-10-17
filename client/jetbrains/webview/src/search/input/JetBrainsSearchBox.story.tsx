@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER } from 'rxjs'
 import { useDarkMode } from 'storybook-dark-mode'
@@ -20,7 +20,7 @@ import { JetBrainsSearchBox } from './JetBrainsSearchBox'
 
 import globalStyles from '../../index.scss'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'jetbrains/JetBrainsSearchBox',
@@ -29,7 +29,7 @@ const config: Meta = {
 
 export default config
 
-export const JetBrainsSearchBoxStory: Story = () => {
+export const JetBrainsSearchBoxStory: StoryFn = () => {
     const rootElementRef = useRef<HTMLDivElement>(null)
     const isDarkTheme = useDarkMode()
 

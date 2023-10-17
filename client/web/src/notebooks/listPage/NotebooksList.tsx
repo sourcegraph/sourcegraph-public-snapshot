@@ -1,13 +1,18 @@
-import { FC, useCallback, useEffect } from 'react'
+import { type FC, useCallback, useEffect } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H2 } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
-import { ListNotebooksResult, ListNotebooksVariables, NotebookFields, NotebooksOrderBy } from '../../graphql-operations'
-import { fetchNotebooks as _fetchNotebooks } from '../backend'
+import { FilteredConnection, type FilteredConnectionFilter } from '../../components/FilteredConnection'
+import type {
+    ListNotebooksResult,
+    ListNotebooksVariables,
+    NotebookFields,
+    NotebooksOrderBy,
+} from '../../graphql-operations'
+import type { fetchNotebooks as _fetchNotebooks } from '../backend'
 
-import { NotebookNode, NotebookNodeProps } from './NotebookNode'
+import { NotebookNode, type NotebookNodeProps } from './NotebookNode'
 
 import styles from './NotebooksList.module.scss'
 

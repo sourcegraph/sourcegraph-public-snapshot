@@ -1,5 +1,5 @@
-import { AuthenticatedUser } from '../../auth'
-import { SharedGraphQlOperations } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { SharedGraphQlOperations } from '../../graphql-operations'
 
 export const testUserID = 'TestUserID'
 export const settingsID = 123
@@ -18,10 +18,10 @@ export const currentUserMock = {
     organizations: { nodes: [] },
     session: { canSignOut: true },
     viewerCanAdminister: true,
-    searchable: true,
     emails: [{ email: 'felix@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
     hasVerifiedEmail: true,
+    completedPostSignup: true,
     permissions: {
         __typename: 'PermissionConnection',
         nodes: [

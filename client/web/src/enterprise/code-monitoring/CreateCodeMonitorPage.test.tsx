@@ -8,8 +8,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { AuthenticatedUser } from '../../auth'
-import { CreateCodeMonitorVariables } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { CreateCodeMonitorVariables } from '../../graphql-operations'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 import { mockCodeMonitor } from './testing/util'

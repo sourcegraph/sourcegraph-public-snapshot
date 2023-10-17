@@ -4,7 +4,7 @@ import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Alert,
     Button,
@@ -20,7 +20,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import {
+import type {
     GenerateProductLicenseForSubscriptionResult,
     GenerateProductLicenseForSubscriptionVariables,
     ProductLicenseFields,
@@ -60,7 +60,7 @@ const getEmptyFormData = (account: string, latestLicense: License | undefined): 
     salesforceOpportunityID: latestLicense?.info?.salesforceOpportunityID ?? '',
     plan: 'enterprise-1',
     userCount: 1,
-    expiresAt: endOfDay(addDays(Date.now(), 366)),
+    expiresAt: endOfDay(Date.now()),
 })
 
 const DURATION_LINKS = [

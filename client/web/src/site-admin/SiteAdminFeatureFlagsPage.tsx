@@ -2,17 +2,17 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { of, Observable, forkJoin } from 'rxjs'
+import { of, type Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
-import { aggregateStreamingSearch, ContentMatch, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, type ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
+import { aggregateStreamingSearch, type ContentMatch, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader, Container, Code, H3, Text, Icon, Tooltip, ButtonLink } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { FeatureFlagFields, SearchPatternType } from '../graphql-operations'
+import { type FeatureFlagFields, SearchPatternType } from '../graphql-operations'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 

@@ -1,5 +1,5 @@
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting, UseTemporarySettingsReturnType } from '@sourcegraph/shared/src/settings/temporary'
+import { useTemporarySetting, type UseTemporarySettingsReturnType } from '@sourcegraph/shared/src/settings/temporary'
 
 /**
  * Whether or not to use the experimental search input. Defaults to true if the experimental

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -14,7 +14,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
-import {
+import type {
     RepositoriesForPopoverResult,
     RepositoriesForPopoverVariables,
     RepositoryPopoverFields,

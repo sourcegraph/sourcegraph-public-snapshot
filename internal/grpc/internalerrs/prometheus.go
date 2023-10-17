@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -26,7 +27,7 @@ var metricGRPCMethodStatus = promauto.NewCounterVec(prometheus.CounterOpts{
 // PrometheusUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that observes the result of
 // the RPC and records it as a Prometheus metric ("src_grpc_method_status").
 func PrometheusUnaryClientInterceptor(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	serviceName, methodName := splitMethodName(fullMethod)
+	serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
 
 	err := invoker(ctx, fullMethod, req, reply, cc, opts...)
 	doObservation(serviceName, methodName, err)
@@ -39,7 +40,7 @@ func PrometheusUnaryClientInterceptor(ctx context.Context, fullMethod string, re
 // If any errors are encountered during the stream, the first error is recorded. Otherwise, the
 // final status of the stream is recorded.
 func PrometheusStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	serviceName, methodName := splitMethodName(fullMethod)
+	serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
 
 	s, err := streamer(ctx, desc, cc, fullMethod, opts...)
 	if err != nil {

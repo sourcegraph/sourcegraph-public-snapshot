@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { gql } from '@sourcegraph/http-client'
 import { Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { PersonLinkFields } from '../graphql-operations'
+import type { PersonLinkFields } from '../graphql-operations'
 
 export const personLinkFieldsFragment = gql`
     fragment PersonLinkFields on Person {

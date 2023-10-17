@@ -6,7 +6,6 @@ go_library(
     embedsrcs = [
         ".stylua.toml",
         "README.md",
-        "clang.lua",
         "config.lua",
         "embed.go",
         "go.lua",

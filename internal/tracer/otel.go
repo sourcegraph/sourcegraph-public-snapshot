@@ -42,7 +42,7 @@ func newOtelSpanProcessor(logger log.Logger, opts options, debug bool) (oteltrac
 	var err error
 	switch opts.TracerType {
 	case OpenTelemetry:
-		exporter, err = exporters.NewOTLPExporter(context.Background(), logger)
+		exporter, err = exporters.NewOTLPTraceExporter(context.Background(), logger)
 
 	case Jaeger:
 		exporter, err = exporters.NewJaegerExporter()

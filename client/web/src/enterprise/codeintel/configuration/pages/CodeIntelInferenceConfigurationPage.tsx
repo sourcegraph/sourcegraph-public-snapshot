@@ -1,9 +1,9 @@
-import { FunctionComponent, useState } from 'react'
+import { type FunctionComponent, useState } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
 import { InferenceScriptEditor } from '../components/inference-script/InferenceScriptEditor'
 import { InferenceScriptPreview } from '../components/inference-script/InferenceScriptPreview'

@@ -10,10 +10,10 @@ import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/grap
 import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     InvitationByTokenResult,
     InvitationByTokenVariables,
     RespondToOrgInvitationResult,

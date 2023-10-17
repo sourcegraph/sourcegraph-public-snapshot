@@ -5,7 +5,7 @@ import { escapeRegExp, groupBy } from 'lodash'
 
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
@@ -17,7 +17,7 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
-import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import type { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 
 import { RepoRevisionSidebarSymbolTree } from './RepoRevisionSidebarSymbolTree'
 

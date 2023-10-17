@@ -7,7 +7,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
-import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
+import { HoverOverlay, type HoverOverlayProps } from './HoverOverlay'
 
 describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }

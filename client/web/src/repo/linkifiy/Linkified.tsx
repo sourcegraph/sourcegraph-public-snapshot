@@ -1,8 +1,8 @@
 import React, { useMemo, forwardRef } from 'react'
 
-import { ForwardReferenceComponent, Link } from '@sourcegraph/wildcard'
+import { type ForwardReferenceComponent, Link } from '@sourcegraph/wildcard'
 
-import { ExternalServiceKind } from '../../graphql-operations'
+import type { ExternalServiceKind } from '../../graphql-operations'
 
 import { getLinksFromString } from './get-links'
 

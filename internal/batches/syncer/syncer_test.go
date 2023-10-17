@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -182,11 +183,11 @@ func TestSyncerRun(t *testing.T) {
 		}, nil)
 		syncStore.GetChangesetFunc.SetDefaultReturn(&btypes.Changeset{RepoID: 1, OwnedByBatchChangeID: 1}, nil)
 
-		rstore := database.NewMockRepoStore()
+		rstore := dbmocks.NewMockRepoStore()
 		syncStore.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/u/r"}, nil)
 
-		ess := database.NewMockExternalServiceStore()
+		ess := dbmocks.NewMockExternalServiceStore()
 		ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 			return []*types.ExternalService{{
 				ID:          1,

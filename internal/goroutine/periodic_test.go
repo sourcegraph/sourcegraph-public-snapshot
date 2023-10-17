@@ -10,6 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func withClock(clock glock.Clock) Option {
+	return func(p *PeriodicGoroutine) { p.clock = clock }
+}
+
+func withConcurrencyClock(clock glock.Clock) Option {
+	return func(p *PeriodicGoroutine) { p.concurrencyClock = clock }
+}
+
 func TestPeriodicGoroutine(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := NewMockHandler()

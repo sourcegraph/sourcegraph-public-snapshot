@@ -1,7 +1,7 @@
 import { isDefined } from '@sourcegraph/common'
-import { TreeNode as WTreeNode } from '@sourcegraph/wildcard'
+import type { TreeNode as WTreeNode } from '@sourcegraph/wildcard'
 
-import { PreciseIndexFields } from '../../../../../graphql-operations'
+import type { PreciseIndexFields } from '../../../../../graphql-operations'
 
 // Strip leading/trailing slashes and add a single leading slash
 export function sanitizePath(root: string): string {

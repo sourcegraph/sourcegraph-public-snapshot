@@ -12,7 +12,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -26,7 +26,7 @@ func userCtx(userID int32) context.Context {
 
 func TestTeamNode(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{Username: "bob", SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -68,7 +68,7 @@ func TestTeamNode(t *testing.T) {
 
 func TestTeamNodeURL(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -100,7 +100,7 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 	for _, isAdmin := range []bool{true, false} {
 		t.Run(fmt.Sprintf("viewer is admin = %v", isAdmin), func(t *testing.T) {
 			fs := fakedb.New()
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			fs.Wire(db)
 			ctx := userCtx(fs.AddUser(types.User{SiteAdmin: isAdmin}))
 			if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
@@ -136,7 +136,7 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 	for _, member := range []bool{true, false} {
 		t.Run(fmt.Sprintf("viewer is member = %v", member), func(t *testing.T) {
 			fs := fakedb.New()
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			fs.Wire(db)
 			userID := fs.AddUser(types.User{SiteAdmin: false})
 			ctx := userCtx(userID)
@@ -178,7 +178,7 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 
 	t.Run("Non-site admin is not member but creator", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
@@ -200,12 +200,12 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 					}
 				}
 			}`,
-			ExpectedResult: fmt.Sprintf(`{
+			ExpectedResult: `{
 				"node": {
 					"__typename": "Team",
 					"viewerCanAdminister": true
 				}
-			}`),
+			}`,
 			Variables: map[string]any{
 				"id": string(relay.MarshalID("Team", team.ID)),
 			},
@@ -215,7 +215,7 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 
 func TestCreateTeamBare(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -248,7 +248,7 @@ func TestCreateTeamBare(t *testing.T) {
 
 func TestCreateTeamDisplayName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -274,7 +274,7 @@ func TestCreateTeamDisplayName(t *testing.T) {
 
 func TestCreateTeamReadOnlyDefault(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -300,7 +300,7 @@ func TestCreateTeamReadOnlyDefault(t *testing.T) {
 func TestCreateTeamReadOnlyTrue(t *testing.T) {
 	t.Run("admin can create read-only team", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 		RunTest(t, &Test{
@@ -324,7 +324,7 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 	})
 	t.Run("non-siteadmin cannot create read-only team", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
@@ -354,7 +354,7 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 func TestCreateTeamParentByID(t *testing.T) {
 	t.Run("parent is writable by actor", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
@@ -368,7 +368,10 @@ func TestCreateTeamParentByID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fs.TeamStore.CreateTeamMember(ctx, &types.TeamMember{TeamID: parentTeam.ID, UserID: userID})
+		err = fs.TeamStore.CreateTeamMember(ctx, &types.TeamMember{TeamID: parentTeam.ID, UserID: userID})
+		if err != nil {
+			t.Fatalf("failed to add user to team: %s", err)
+		}
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -394,7 +397,7 @@ func TestCreateTeamParentByID(t *testing.T) {
 	})
 	t.Run("parent is not writable by actor", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
@@ -436,7 +439,7 @@ func TestCreateTeamParentByID(t *testing.T) {
 
 func TestCreateTeamParentByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	if _, err := fs.TeamStore.CreateTeam(context.Background(), &types.Team{Name: "team-name-parent"}); err != nil {
 		t.Fatal(err)
@@ -476,7 +479,7 @@ func TestCreateTeamParentByName(t *testing.T) {
 
 func TestUpdateTeamByID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -525,7 +528,7 @@ func TestUpdateTeamByID(t *testing.T) {
 
 func TestUpdateTeamByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -574,7 +577,7 @@ func TestUpdateTeamByName(t *testing.T) {
 
 func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -616,7 +619,7 @@ func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 
 func TestUpdateParentByID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -663,7 +666,7 @@ func TestUpdateParentByID(t *testing.T) {
 
 func TestUpdateParentByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -710,7 +713,7 @@ func TestUpdateParentByName(t *testing.T) {
 
 func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -751,7 +754,7 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 
 func TestUpdateParentCircular(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
@@ -783,7 +786,7 @@ func TestUpdateParentCircular(t *testing.T) {
 
 func TestTeamMakeRoot(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
@@ -812,7 +815,7 @@ func TestTeamMakeRoot(t *testing.T) {
 
 func TestDeleteTeamByID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -850,7 +853,7 @@ func TestDeleteTeamByID(t *testing.T) {
 
 func TestDeleteTeamByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -888,7 +891,7 @@ func TestDeleteTeamByName(t *testing.T) {
 
 func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -925,7 +928,7 @@ func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
 
 func TestDeleteTeamNoIdentifierGiven(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -951,7 +954,7 @@ func TestDeleteTeamNoIdentifierGiven(t *testing.T) {
 
 func TestDeleteTeamNotFound(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -980,7 +983,7 @@ func TestDeleteTeamNotFound(t *testing.T) {
 
 func TestDeleteTeamUnauthorized(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1047,7 +1050,7 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 
 func TestTeamByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1075,7 +1078,7 @@ func TestTeamByName(t *testing.T) {
 
 func TestTeamByNameNotFound(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1098,7 +1101,7 @@ func TestTeamByNameNotFound(t *testing.T) {
 
 func TestTeamsPaginated(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1164,7 +1167,7 @@ func TestTeamsPaginated(t *testing.T) {
 // Skip testing DisplayName search as this is the same except the fake behavior.
 func TestTeamsNameSearch(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1197,7 +1200,7 @@ func TestTeamsNameSearch(t *testing.T) {
 
 func TestTeamsExceptAncestorID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
@@ -1288,7 +1291,7 @@ func TestTeamsExceptAncestorID(t *testing.T) {
 
 func TestTeamsCount(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1326,7 +1329,7 @@ func TestTeamsCount(t *testing.T) {
 
 func TestChildTeams(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1379,7 +1382,7 @@ func TestChildTeams(t *testing.T) {
 
 func TestMembersPaginated(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1475,7 +1478,7 @@ func TestMembersPaginated(t *testing.T) {
 
 func TestMembersSearch(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
@@ -1535,7 +1538,7 @@ func TestMembersSearch(t *testing.T) {
 func TestMembersAdd(t *testing.T) {
 	t.Run("with write access", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: true})
 		ctx := userCtx(userID)
@@ -1589,7 +1592,7 @@ func TestMembersAdd(t *testing.T) {
 	})
 	t.Run("without write access", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
@@ -1623,7 +1626,7 @@ func TestMembersAdd(t *testing.T) {
 
 func TestMembersRemove(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
@@ -1682,7 +1685,7 @@ func TestMembersRemove(t *testing.T) {
 
 func TestMembersSet(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)

@@ -14,7 +14,6 @@ go_library(
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
-        "//internal/env",
         "//internal/errcode",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",
@@ -38,7 +37,7 @@ go_test(
     deps = [
         "//cmd/frontend/internal/app/router",
         "//internal/actor",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/featureflag",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",

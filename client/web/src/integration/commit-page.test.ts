@@ -4,15 +4,15 @@ import {
     DiffHunkLineType,
     ExternalServiceKind,
     RepositoryType,
-    SharedGraphQlOperations,
+    type SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 

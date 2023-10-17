@@ -22,13 +22,13 @@ import {
     Label,
     H5,
     LineChart,
-    Series,
+    type Series,
     Modal,
     Alert,
 } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
-import {
+import type {
     CodyGatewayAccessFields,
     Scalars,
     UpdateCodyGatewayConfigResult,

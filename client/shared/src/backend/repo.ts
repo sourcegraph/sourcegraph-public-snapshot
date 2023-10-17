@@ -1,12 +1,12 @@
-import { from, Observable } from 'rxjs'
+import { from, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import { ResolveRawRepoNameResult, TreeEntriesResult, TreeFields } from '../graphql-operations'
-import { PlatformContext } from '../platform/context'
-import { AbsoluteRepoFile, makeRepoURI, RepoSpec } from '../util/url'
+import type { ResolveRawRepoNameResult, TreeEntriesResult, TreeFields } from '../graphql-operations'
+import type { PlatformContext } from '../platform/context'
+import { type AbsoluteRepoFile, makeRepoURI, type RepoSpec } from '../util/url'
 
 import { CloneInProgressError, RepoNotFoundError } from './errors'
 

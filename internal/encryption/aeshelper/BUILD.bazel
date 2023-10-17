@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "aeshelper",
+    srcs = ["aeshelper.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/aeshelper",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "aeshelper_test",
+    srcs = ["aeshelper_test.go"],
+    embed = [":aeshelper"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

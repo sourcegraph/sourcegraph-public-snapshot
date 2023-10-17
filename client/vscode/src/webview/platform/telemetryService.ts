@@ -1,6 +1,6 @@
 import { noop } from 'lodash'
 
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 /**
  * Props interface that can be extended by React components depending on the TelemetryService.

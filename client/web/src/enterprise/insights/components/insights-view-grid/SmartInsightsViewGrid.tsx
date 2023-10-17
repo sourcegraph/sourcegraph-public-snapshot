@@ -1,12 +1,12 @@
-import { memo, RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { isEqual } from 'lodash'
-import { Layout, Layouts } from 'react-grid-layout'
+import type { Layout, Layouts } from 'react-grid-layout'
 
-import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { Insight } from '../../core'
+import type { Insight } from '../../core'
 import { getTrackingTypeByInsightType } from '../../pings'
 
 import { SmartInsight } from './components/SmartInsight'

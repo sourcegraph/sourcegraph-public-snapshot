@@ -1,20 +1,20 @@
-import { FunctionComponent, useCallback, useMemo, useState } from 'react'
+import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import { editor } from 'monaco-editor'
+import type { editor } from 'monaco-editor'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, screenReaderAnnounce, ErrorAlert, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
-import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
+import type { AuthenticatedUser } from '../../../../auth'
+import type { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { useInferredConfig } from '../hooks/useInferredConfig'
 import { useRepositoryConfig } from '../hooks/useRepositoryConfig'
 import { useUpdateConfigurationForRepository } from '../hooks/useUpdateConfigurationForRepository'
 import allConfigSchema from '../schema.json'
 
-import { IndexConfigurationSaveToolbar, IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
+import { IndexConfigurationSaveToolbar, type IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
 
 export interface ConfigurationEditorProps extends TelemetryProps {
     repoId: string

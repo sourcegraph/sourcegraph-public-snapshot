@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 import { RequestAccessPage } from './RequestAccessPage'
 

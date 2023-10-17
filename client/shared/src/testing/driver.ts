@@ -8,23 +8,23 @@ import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
 import puppeteer, {
-    PageEventObject,
-    Page,
-    Serializable,
-    LaunchOptions,
-    ConsoleMessage,
-    Target,
-    BrowserLaunchArgumentOptions,
-    BrowserConnectOptions,
+    type PageEventObject,
+    type Page,
+    type Serializable,
+    type LaunchOptions,
+    type ConsoleMessage,
+    type Target,
+    type BrowserLaunchArgumentOptions,
+    type BrowserConnectOptions,
 } from 'puppeteer'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { isDefined, logger } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, type GraphQLResult } from '@sourcegraph/http-client'
 
-import {
+import type {
     ExternalServiceKind,
     ExternalServicesForTestsResult,
     OverwriteSettingsForTestsResult,
@@ -33,7 +33,7 @@ import {
     UpdateSiteConfigurationForTestsResult,
     UserSettingsForTestsResult,
 } from '../graphql-operations'
-import { Settings } from '../settings/settings'
+import type { Settings } from '../settings/settings'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
@@ -290,7 +290,6 @@ export class Driver {
              */
             if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
                 logger.log('Failed to use the signin form. Trying the signup form...')
-
                 await this.page.waitForSelector('.test-signup-form')
                 if (email) {
                     await this.page.type('input[name=email]', email)
@@ -852,7 +851,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
 
     // Chrome
     args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
-    if (process.getuid() === 0) {
+    if (process.getuid?.() === 0) {
         // TODO don't run as root in CI
         logger.warn('Running as root, disabling sandbox')
         args.push('--no-sandbox', '--disable-setuid-sandbox')

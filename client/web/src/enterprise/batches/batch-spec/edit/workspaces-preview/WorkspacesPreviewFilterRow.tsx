@@ -1,10 +1,10 @@
-import React, { FC, useCallback, useRef, useState } from 'react'
+import React, { type FC, useCallback, useRef, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Input, Form } from '@sourcegraph/wildcard'
 
-import { WorkspacePreviewFilters } from './useWorkspaces'
+import type { WorkspacePreviewFilters } from './useWorkspaces'
 
 export interface WorkspacePreviewFilterRowProps {
     /** Whether or not the filter form should be disabled. */

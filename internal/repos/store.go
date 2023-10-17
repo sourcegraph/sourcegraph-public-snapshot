@@ -277,10 +277,16 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 	}(time.Now())
 
 	if !s.InTransaction() {
-		s, err = s.transact(ctx)
+		tx, err := s.transact(ctx)
 		if err != nil {
 			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
+
+		// We replace the current store with the transactional store for the rest of the method.
+		// We don't assign the store return value from `s.transact` so as to avoid nil panics when
+		// executing the deferred functions that utilize the store since `s.transact` returns a nil
+		// store when there's an error.
+		s = tx
 		defer func() { err = s.Done(err) }()
 	}
 
@@ -362,7 +368,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 	src := r.Sources[svc.URN()]
 	if src == nil {
-		return errors.New("CreateExternalServiceRepo: repo missing source info for external service")
+		return errors.Newf("CreateExternalServiceRepo: repo %q missing source info for external service", r.Name)
 	} else if src.CloneURL == "" {
 		return errors.Newf("CreateExternalServiceRepo: repo (ID=%q) missing CloneURL for external service", src.ID)
 	}
@@ -527,7 +533,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 	src := r.Sources[svc.URN()]
 	if src == nil || src.CloneURL == "" {
-		return errors.New("UpdateExternalServiceRepo: repo missing source info for external service")
+		return errors.Newf("UpdateExternalServiceRepo: repo %q missing source info for external service", r.Name)
 	}
 
 	if !s.InTransaction() {
@@ -594,7 +600,7 @@ WHERE NOT EXISTS (
 	return s.Exec(ctx, q)
 }
 
-func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
+func (s *store) EnqueueSyncJobs(ctx context.Context, isDotCom bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
 	defer func(began time.Time) {
@@ -605,9 +611,9 @@ func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	}(time.Now())
 
 	filter := "TRUE"
-	// On Cloud we don't sync our default sources in the background, they are synced
+	// On Sourcegraph.com we don't sync our default sources in the background, they are synced
 	// on demand instead.
-	if isCloud {
+	if isDotCom {
 		filter = "cloud_default = false"
 	}
 	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))

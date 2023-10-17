@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = {
-  extends: '@sourcegraph/eslint-config',
+  extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
     browser: true,
     node: true,
@@ -31,14 +31,27 @@ const config = {
       },
     ],
   },
-  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard'],
+  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard', 'storybook'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
     'no-console': 'error',
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
+    // This rule doesn't understand type imports and we already have
+    // import/no-duplicates enabled as well, which does understand type imports
+    'no-duplicate-imports': 'off',
+    'id-length': 'off',
     '@typescript-eslint/consistent-type-exports': 'warn',
+    '@typescript-eslint/consistent-type-imports': [
+      'warn',
+      {
+        fixStyle: 'inline-type-imports',
+        disallowTypeAnnotations: false,
+      },
+    ],
+    // This converts 'import {type foo} from ...' to 'import type {foo} from ...'
+    '@typescript-eslint/no-import-type-side-effects': ['warn'],
     'no-restricted-imports': [
       'error',
       {
@@ -225,6 +238,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         css: 'always',
         yaml: 'always',
         svg: 'always',
+        cjs: 'always',
       },
     ],
     'import/order': 'off',

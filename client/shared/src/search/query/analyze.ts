@@ -1,7 +1,7 @@
 import { isDefined } from '@sourcegraph/common'
 
-import { Node, OperatorKind } from './parser'
-import { CharacterRange, KeywordKind, Token } from './token'
+import { type Node, OperatorKind } from './parser'
+import { type CharacterRange, KeywordKind, type Token } from './token'
 
 // Empty range to create valid nodes
 const placeholderRange: CharacterRange = { start: 0, end: 0 }

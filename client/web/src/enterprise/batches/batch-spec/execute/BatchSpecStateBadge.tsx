@@ -2,7 +2,7 @@ import React from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 
-import { Badge, BadgeVariantType } from '@sourcegraph/wildcard'
+import { Badge, type BadgeVariantType } from '@sourcegraph/wildcard'
 
 import { BatchSpecState } from '../../../../graphql-operations'
 

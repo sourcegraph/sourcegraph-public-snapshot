@@ -1,12 +1,12 @@
 import { startCase } from 'lodash'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
-import { AuthenticatedUser } from '../auth'
-import { LegacyLayoutProps } from '../LegacyLayout'
+import type { AuthenticatedUser } from '../auth'
+import type { LegacyLayoutProps } from '../LegacyLayout'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 export function siteSubjectNoAdmin(): SettingsSubjectCommonFields {

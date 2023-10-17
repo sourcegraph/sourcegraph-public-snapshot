@@ -1,12 +1,12 @@
 import assert from 'assert'
 
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { settingsID, testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, isElementDisabled, percySnapshotWithVariants } from './utils'
 

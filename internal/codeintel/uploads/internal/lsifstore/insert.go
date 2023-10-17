@@ -10,6 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
@@ -27,11 +28,32 @@ import (
 )
 
 // TODO - move
-type ProcessedSCIPData struct {
-	Metadata          ProcessedMetadata
-	Documents         <-chan ProcessedSCIPDocument
-	Packages          <-chan precise.Package
-	PackageReferences <-chan precise.PackageReference
+type SCIPDataStream struct {
+	Metadata         ProcessedMetadata
+	DocumentIterator SCIPDocumentVisitor
+}
+
+type SCIPDocumentVisitor interface {
+	VisitAllDocuments(
+		ctx context.Context,
+		logger log.Logger,
+		p *ProcessedPackageData,
+		doIt func(ProcessedSCIPDocument) error,
+	) error
+}
+
+type ProcessedPackageData struct {
+	Packages          []precise.Package
+	PackageReferences []precise.PackageReference
+}
+
+func (p *ProcessedPackageData) Normalize() {
+	sort.Slice(p.Packages, func(i, j int) bool {
+		return p.Packages[i].LessThan(&p.Packages[j])
+	})
+	sort.Slice(p.PackageReferences, func(i, j int) bool {
+		return p.PackageReferences[i].Package.LessThan(&p.PackageReferences[j].Package)
+	})
 }
 
 type ProcessedMetadata struct {

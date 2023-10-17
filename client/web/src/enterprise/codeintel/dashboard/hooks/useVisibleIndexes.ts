@@ -1,8 +1,8 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
 
-import { VisibleIndexesResult, VisibleIndexesVariables } from '../../../../graphql-operations'
+import type { VisibleIndexesResult, VisibleIndexesVariables } from '../../../../graphql-operations'
 import { visibleIndexesQuery } from '../backend'
 
 export interface UseVisibleIndexesResult {

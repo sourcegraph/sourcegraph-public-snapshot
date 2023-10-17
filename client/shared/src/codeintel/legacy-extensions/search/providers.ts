@@ -1,11 +1,11 @@
 /* eslint-disable jsdoc/check-param-names */
 import { flatten, sortBy } from 'lodash'
-import { from, isObservable, Observable } from 'rxjs'
+import { from, isObservable, type Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
 
 import * as sourcegraph from '../api'
-import { FilterDefinitions, LanguageSpec } from '../language-specs/language-spec'
-import { Providers } from '../providers'
+import type { FilterDefinitions, LanguageSpec } from '../language-specs/language-spec'
+import type { Providers } from '../providers'
 import { cache } from '../util'
 import { API } from '../util/api'
 import { asArray, isDefined } from '../util/helpers'
@@ -14,7 +14,7 @@ import { raceWithDelayOffset } from '../util/promise'
 import { parseGitURI } from '../util/uri'
 
 import { getConfig } from './config'
-import { Result, resultToLocation, searchResultToResults } from './conversion'
+import { type Result, resultToLocation, searchResultToResults } from './conversion'
 import { findDocstring } from './docstrings'
 import { wrapIndentationInCodeBlocks } from './markdown'
 import { definitionQuery, referencesQuery } from './queries'

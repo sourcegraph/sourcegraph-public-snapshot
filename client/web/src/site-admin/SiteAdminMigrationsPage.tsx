@@ -2,13 +2,13 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiAlert, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
 import classNames from 'classnames'
-import { Observable, of, timer } from 'rxjs'
+import { type Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
-import { parse as _parseVersion, SemVer } from 'semver'
+import { parse as _parseVersion, type SemVer } from 'semver'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     LoadingSpinner,
     useObservable,
@@ -24,9 +24,9 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
-import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionFilter, type Connection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { OutOfBandMigrationFields } from '../graphql-operations'
+import type { OutOfBandMigrationFields } from '../graphql-operations'
 
 import {
     fetchAllOutOfBandMigrations as defaultFetchAllMigrations,

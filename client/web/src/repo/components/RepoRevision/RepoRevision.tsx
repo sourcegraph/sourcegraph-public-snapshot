@@ -1,9 +1,9 @@
-import React, { HTMLAttributes } from 'react'
+import React, { type HTMLAttributes } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, IconProps } from '@sourcegraph/wildcard'
+import { Icon, type IconProps } from '@sourcegraph/wildcard'
 
 import styles from './RepoRevision.module.scss'
 

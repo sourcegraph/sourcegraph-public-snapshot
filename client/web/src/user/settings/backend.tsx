@@ -1,12 +1,12 @@
-import { EMPTY, Observable, Subject } from 'rxjs'
+import { EMPTY, type Observable, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, type Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
     UpdatePasswordResult,
@@ -198,5 +198,8 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         deviceID: eventLogger.getDeviceID(),
         eventID: eventLogger.getEventID(),
         insertID: eventLogger.getInsertID(),
+        client: eventLogger.getClient(),
+        connectedSiteID: window.context?.siteID,
+        hashedLicenseKey: window.context?.hashedLicenseKey,
     }
 }

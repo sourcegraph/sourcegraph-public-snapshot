@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { type FC } from 'react'
 
 import { useParams } from 'react-router-dom'
 import { concat, of, Subject, Subscription } from 'rxjs'
@@ -14,16 +14,16 @@ import {
     tap,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { SavedSearchFields } from '../graphql-operations'
-import { NamespaceProps } from '../namespaces'
+import type { AuthenticatedUser } from '../auth'
+import type { SavedSearchFields } from '../graphql-operations'
+import type { NamespaceProps } from '../namespaces'
 import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
+import { type SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
 interface Props extends NamespaceProps {
     authenticatedUser: AuthenticatedUser | null

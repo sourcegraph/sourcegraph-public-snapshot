@@ -1,11 +1,11 @@
-import { GraphQLError } from 'graphql'
+import type { GraphQLError } from 'graphql'
 import type { Location } from 'history'
 
 import { hasProperty } from '@sourcegraph/common'
-import { GraphQLResult } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { GraphQLResult } from '@sourcegraph/http-client'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { Connection } from './ConnectionType'
+import type { Connection } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 

@@ -1,4 +1,4 @@
-import DOMPurify, { Config as DOMPurifyConfig } from 'dompurify'
+import DOMPurify, { type Config as DOMPurifyConfig } from 'dompurify'
 import { highlight, highlightAuto } from 'highlight.js/lib/core'
 // This is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
 // eslint-disable-next-line no-restricted-imports

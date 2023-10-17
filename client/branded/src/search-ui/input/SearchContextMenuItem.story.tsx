@@ -1,11 +1,11 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { Combobox } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="dropdown-menu show" style={{ position: 'static' }}>
         {story()}
     </div>
@@ -21,7 +21,7 @@ const config: Meta = {
 
 export default config
 
-export const SelectedDefaultItem: Story = () => (
+export const SelectedDefaultItem: StoryFn = () => (
     <BrandedStory>
         {() => (
             <Combobox>
@@ -40,7 +40,7 @@ export const SelectedDefaultItem: Story = () => (
 
 SelectedDefaultItem.storyName = 'selected default item'
 
-export const StarredItem: Story = () => (
+export const StarredItem: StoryFn = () => (
     <BrandedStory>
         {() => (
             <Combobox>

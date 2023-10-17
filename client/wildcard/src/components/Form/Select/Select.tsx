@@ -1,9 +1,9 @@
-import React, { ReactNode } from 'react'
+import React, { type ReactNode } from 'react'
 
 import classNames from 'classnames'
 
 import { InputDescription } from '../Input'
-import { AccessibleFieldProps } from '../internal/AccessibleFieldType'
+import type { AccessibleFieldProps } from '../internal/AccessibleFieldType'
 import { FormFieldLabel } from '../internal/FormFieldLabel'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'

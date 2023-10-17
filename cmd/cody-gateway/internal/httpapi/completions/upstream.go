@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,36 +25,57 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type bodyTransformer[T UpstreamRequest] func(*T, *actor.Actor)
-type requestTransformer func(*http.Request)
-type requestValidator[T UpstreamRequest] func(T) error
-type requestMetadataRetriever[T UpstreamRequest] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
-type responseParser[T UpstreamRequest] func(T, io.Reader) (completionCharacterCount int)
-
-// upstreamHandlerMethods declares a set of methods that are used throughout the
-// lifecycle of a request to an upstream API. All methods are required.
-type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
-	// transformBody can be used to modify the request body before it is sent
-	// upstream. To manipulate the HTTP request, use transformRequest.
-	transformBody bodyTransformer[ReqT]
-	// transformRequest can be used to modify the HTTP request before it is sent
-	// upstream. To manipulate the body, use transformBody.
-	transformRequest requestTransformer
-	// getRequestMetadata should extract details about the request we are sending
-	// upstream for validation and tracking purposes.
-	getRequestMetadata requestMetadataRetriever[ReqT]
-	// parseResponse should extract details from the response we get back from
-	// upstream for tracking purposes.
-	parseResponse responseParser[ReqT]
-	// validateRequest can be used to validate the HTTP request before it is sent upstream. Returning a non-nil error will stop further processing and return a 400 HTTP error code
-	validateRequest requestValidator[ReqT]
+type usageStats struct {
+	// characters is the number of characters in the input or response.
+	characters int
+	// tokens is the number of tokens consumed in the input or response.
+	tokens int
 }
 
-type UpstreamRequest interface{}
+// upstreamHandlerMethods declares a set of methods that are used throughout the
+// lifecycle of a request to an upstream API. All methods are required, and called
+// in the order they are defined here.
+//
+// Methods do not need to be concurrency-safe, as they are only called sequentially.
+type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
+	// validateRequest can be used to validate the HTTP request before it is sent upstream.
+	// Returning a non-nil error will stop further processing and return the given error
+	// code, or a 400.
+	// Second return value is a boolean indicating whether the request was flagged during validation.
+	//
+	// The provided logger already contains actor context.
+	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (int, *flaggingResult, error)
+	// transformBody can be used to modify the request body before it is sent
+	// upstream. To manipulate the HTTP request, use transformRequest.
+	//
+	// If the upstream supports it, the given identifier string should be
+	// provided to assist in abuse detection.
+	transformBody func(_ *ReqT, identifier string)
+	// transformRequest can be used to modify the HTTP request before it is sent
+	// upstream. To manipulate the body, use transformBody.
+	transformRequest func(*http.Request)
+	// getRequestMetadata should extract details about the request we are sending
+	// upstream for validation and tracking purposes. Usage data does not need
+	// to be reported here - instead, use parseResponseAndUsage to extract usage,
+	// which for some providers we can only know after the fact based on what
+	// upstream tells us.
+	getRequestMetadata func(ReqT) (model string, additionalMetadata map[string]any)
+	// parseResponseAndUsage should extract details from the response we get back from
+	// upstream as well as overall usage for tracking purposes.
+	//
+	// If data is unavailable, implementations should set relevant usage fields
+	// to -1 as a sentinel value.
+	parseResponseAndUsage func(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
+}
+
+type UpstreamRequest interface {
+	GetModel() string
+}
 
 func makeUpstreamHandler[ReqT UpstreamRequest](
 	baseLogger log.Logger,
@@ -70,16 +92,14 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
+
+	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
+	// limit events in case a retry-after is not provided by the upstream
+	// response.
+	defaultRetryAfterSeconds int,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
 		With(log.String("upstream.url", upstreamAPIURL))
-
-	var (
-		transformBody      = methods.transformBody
-		transformRequest   = methods.transformRequest
-		getRequestMetadata = methods.getRequestMetadata
-		parseResponse      = methods.parseResponse
-	)
 
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
@@ -95,7 +115,22 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		rateLimitNotifier,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
-			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+
+			// TODO: Investigate using actor propagation handler for extracting
+			// this. We had some issues before getting that to work, so for now
+			// just stick with what we've seen working so far.
+			sgActorID := r.Header.Get("X-Sourcegraph-Actor-UID")
+			sgActorAnonymousUID := r.Header.Get("X-Sourcegraph-Actor-Anonymous-UID")
+
+			// Build logger for lifecycle of this request with lots of details.
+			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger)).With(
+				append(
+					requestclient.FromContext(r.Context()).LogFields(),
+					// Sourcegraph actor details
+					log.String("sg.actorID", sgActorID),
+					log.String("sg.anonymousID", sgActorAnonymousUID),
+				)...,
+			)
 
 			feature := featurelimiter.GetFeature(r.Context())
 			if feature == "" {
@@ -129,13 +164,51 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 				return
 			}
+			status, flaggingResult, err := methods.validateRequest(r.Context(), logger, feature, body)
+			if err != nil {
+				if status == 0 {
+					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
+				}
+				if flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
+					requestMetadata := getFlaggingMetadata(flaggingResult, act)
+					err := eventLogger.LogEvent(
+						r.Context(),
+						events.Event{
+							Name:       codygateway.EventNameRequestBlocked,
+							Source:     act.Source.Name(),
+							Identifier: act.ID,
+							Metadata: mergeMaps(requestMetadata, map[string]any{
+								codygateway.CompletionsEventFeatureMetadataField: feature,
+								"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
+								"provider": upstreamName,
 
-			if err := methods.validateRequest(body); err != nil {
-				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
+								// Response details
+								"resolved_status_code": status,
+
+								// Request metadata
+								"prompt_token_count":   flaggingResult.promptTokenCount,
+								"max_tokens_to_sample": flaggingResult.maxTokensToSample,
+
+								// Actor details, specific to the actor Source
+								"sg_actor_id":            sgActorID,
+								"sg_actor_anonymous_uid": sgActorAnonymousUID,
+							}),
+						},
+					)
+					if err != nil {
+						logger.Error("failed to log event", log.Error(err))
+					}
+				}
+
+				response.JSONError(logger, w, status, err)
 				return
 			}
 
-			transformBody(&body, act)
+			// identifier that can be provided to upstream for abuse detection
+			// has the format '$ACTOR_ID:$SG_ACTOR_ID'. The latter is anonymized
+			// (specific per-instance)
+			identifier := fmt.Sprintf("%s:%s", act.ID, sgActorID)
+			methods.transformBody(&body, identifier)
 
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
@@ -153,10 +226,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 
 			// Run the request transformer.
-			transformRequest(req)
+			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			promptCharacterCount, model, requestMetadata := getRequestMetadata(body)
+			model, requestMetadata := methods.getRequestMetadata(body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -178,8 +251,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				// client - in most case it is the same as upstreamStatusCode,
 				// but sometimes we write something different.
 				resolvedStatusCode int = -1
-				// completionCharacterCount is extracted from parseResponse.
-				completionCharacterCount int = -1
+				// promptUsage and completionUsage are extracted from parseResponseAndUsage.
+				promptUsage, completionUsage usageStats
 			)
 			defer func() {
 				if span := oteltrace.SpanFromContext(r.Context()); span.IsRecording() {
@@ -187,13 +260,30 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						attribute.Int("upstreamStatusCode", upstreamStatusCode),
 						attribute.Int("resolvedStatusCode", resolvedStatusCode))
 				}
+				if flaggingResult.IsFlagged() {
+					requestMetadata = mergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
+				}
+				usageData := map[string]any{
+					"prompt_character_count":     promptUsage.characters,
+					"prompt_token_count":         promptUsage.tokens,
+					"completion_character_count": completionUsage.characters,
+					"completion_token_count":     completionUsage.tokens,
+				}
+				for k, v := range usageData {
+					// Drop usage fields that are invalid/unimplemented. All
+					// usageData fields are ints - we use map[string]any for
+					// convenience with mergeMaps utility.
+					if n, _ := v.(int); n < 0 {
+						delete(usageData, k)
+					}
+				}
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
 						Name:       codygateway.EventNameCompletionsFinished,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: mergeMaps(requestMetadata, map[string]any{
+						Metadata: mergeMaps(requestMetadata, usageData, map[string]any{
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"model":    gatewayModel,
 							"provider": upstreamName,
@@ -203,9 +293,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							"upstream_status_code":         upstreamStatusCode,
 							"resolved_status_code":         resolvedStatusCode,
 
-							// Usage details
-							"prompt_character_count":     promptCharacterCount,
-							"completion_character_count": completionCharacterCount,
+							// Actor details, specific to the actor Source
+							"sg_actor_id":            sgActorID,
+							"sg_actor_anonymous_uid": sgActorAnonymousUID,
 						}),
 					},
 				)
@@ -253,14 +343,22 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if upstreamStatusCode == http.StatusTooManyRequests {
 				// Rewrite 429 to 503 because we share a quota when talking to upstream,
 				// and a 429 from upstream should NOT indicate to the client that they
-				// should retry. To ensure we are notified when this happens, log this
-				// as an error and record the headers that are provided to us.
+				// should liberally retry until the rate limit is lifted. To ensure we are
+				// notified when this happens, log this as an error and record the headers
+				// that are provided to us.
 				var headers bytes.Buffer
 				_ = resp.Header.Write(&headers)
 				logger.Error("upstream returned 429, rewriting to 503",
 					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
+				// Propagate retry-after in case it is handle-able by the client,
+				// or write our default. 503 errors can have retry-after as well.
+				if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {
+					w.Header().Set("retry-after", upstreamRetryAfter)
+				} else {
+					w.Header().Set("retry-after", strconv.Itoa(defaultRetryAfterSeconds))
+				}
 			}
 
 			// Write the resolved status code.
@@ -274,13 +372,28 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.
-				completionCharacterCount = parseResponse(body, &responseBuf)
-
+				promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf)
 			} else if upstreamStatusCode >= 500 {
 				logger.Error("error from upstream",
 					log.Int("status_code", upstreamStatusCode))
 			}
 		}))
+}
+
+func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[string]any {
+	requestMetadata := map[string]any{}
+
+	requestMetadata["flagged"] = true
+	flaggingMetadata := map[string]any{
+		"reason":       flaggingResult.reasons,
+		"should_block": flaggingResult.shouldBlock,
+	}
+
+	if act.IsDotComActor() {
+		flaggingMetadata["prompt_prefix"] = flaggingResult.promptPrefix
+	}
+	requestMetadata["flagging_result"] = flaggingMetadata
+	return requestMetadata
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {
@@ -301,9 +414,23 @@ func intersection(a, b []string) (c []string) {
 	return c
 }
 
-func mergeMaps(dst, src map[string]any) map[string]any {
-	for k, v := range src {
-		dst[k] = v
+func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
+	for _, src := range srcs {
+		for k, v := range src {
+			dst[k] = v
+		}
 	}
 	return dst
+}
+
+type flaggingResult struct {
+	shouldBlock       bool
+	reasons           []string
+	promptPrefix      string
+	maxTokensToSample int
+	promptTokenCount  int
+}
+
+func (f *flaggingResult) IsFlagged() bool {
+	return f != nil
 }

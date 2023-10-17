@@ -1,16 +1,16 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 
 import {
-    HighlightedFileResult,
-    HighlightedFileVariables,
-    HighlightLineRange,
+    type HighlightedFileResult,
+    type HighlightedFileVariables,
+    type HighlightLineRange,
     HighlightResponseFormat,
 } from '../graphql-operations'
-import { PlatformContext } from '../platform/context'
+import type { PlatformContext } from '../platform/context'
 import { makeRepoURI } from '../util/url'
 
 /*

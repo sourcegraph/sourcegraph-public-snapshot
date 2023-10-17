@@ -44,7 +44,7 @@
             <Icon svgPath={mdiChevronDown} inline />
         </button>
     </Button>
-    <div slot="content" class="popover">
+    <div slot="content" class="streaming-popover">
         <p>
             Found {limitHit(progress) ? 'more than ' : ''}
             {progress.matchCount}
@@ -112,7 +112,7 @@
 </Popover>
 
 <style lang="scss">
-    div.popover {
+    div.streaming-popover {
         width: 20rem;
 
         p,

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import '@sourcegraph/wildcard/src/global-styles/highlight.scss'
+    import '$lib/highlight.scss'
 
     import range from 'lodash/range'
 
@@ -67,7 +67,7 @@
                 </tbody>
             </table>
         {:then blobLines}
-            {#key blobLines}
+            {#key matches}
                 <table use:highlightMatches={matches}>
                     {@html blobLines.join('')}
                 </table>

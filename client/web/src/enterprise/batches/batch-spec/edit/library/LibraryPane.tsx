@@ -6,7 +6,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../../../graphql-operations'
+import type { Scalars } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { createRenderTemplate } from '../../../create/useSearchTemplate'
 import { insertNameIntoLibraryItem } from '../../yaml-util'

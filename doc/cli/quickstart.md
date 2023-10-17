@@ -56,7 +56,7 @@ Once complete, you should have two new environment variables set: `SRC_ENDPOINT`
 Searching is performed using the [`src search`](references/search.md) command. For example, to search for `ResolveRepositories` in the `src` repository, you can run:
 
 ```sh
-src search 'r:github.com/sourcegraph/src-cli ResolveRepositories'
+src search 'r:github.com/sourcegraph/src-cli NewArchiveRegistry'
 ```
 
 This should result in this output:

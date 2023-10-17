@@ -1,15 +1,15 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import { noop } from 'lodash'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { useField, FormChangeEvent, SubmissionErrors, useForm } from '@sourcegraph/wildcard'
+import { useField, type FormChangeEvent, type SubmissionErrors, useForm } from '@sourcegraph/wildcard'
 
 import { CreationUiLayout, CreationUIForm, CreationUIPreview, useRepoFields } from '../../../../../components'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
-import { CaptureGroupFormFields } from '../types'
+import type { CaptureGroupFormFields } from '../types'
 
-import { CaptureGroupCreationForm, RenderPropertyInputs } from './CaptureGoupCreationForm'
+import { CaptureGroupCreationForm, type RenderPropertyInputs } from './CaptureGoupCreationForm'
 import { QUERY_VALIDATORS, STEP_VALIDATORS, TITLE_VALIDATORS } from './validators'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {

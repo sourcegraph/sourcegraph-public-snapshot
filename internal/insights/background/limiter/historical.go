@@ -21,13 +21,14 @@ func HistoricalWorkRate() *ratelimit.InstrumentedLimiter {
 		defaultRateLimit := rate.Limit(20.0)
 		defaultBurst := 20
 		getRateLimit := getHistoricalWorkerRateLimit(defaultRateLimit, defaultBurst)
-		historicalLimiter = ratelimit.NewInstrumentedLimiter("HistoricalInsight", rate.NewLimiter(getRateLimit()))
+		limiter := rate.NewLimiter(getRateLimit())
+		historicalLimiter = ratelimit.NewInstrumentedLimiter("HistoricalInsight", limiter)
 
 		go conf.Watch(func() {
 			limit, burst := getRateLimit()
 			historicalLogger.Info("Updating insights/historical rate limit", log.Int("rate limit", int(limit)), log.Int("burst", burst))
-			historicalLimiter.SetLimit(limit)
-			historicalLimiter.SetBurst(burst)
+			limiter.SetLimit(limit)
+			limiter.SetBurst(burst)
 		})
 	})
 

@@ -12,7 +12,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import { ExecutorSecretAccessLogFields, Scalars } from '../../../graphql-operations'
+import type { ExecutorSecretAccessLogFields, Scalars } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
 import { useExecutorSecretAccessLogsConnection } from './backend'

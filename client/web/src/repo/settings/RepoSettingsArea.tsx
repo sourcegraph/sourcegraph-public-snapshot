@@ -7,18 +7,18 @@ import { Routes, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { AuthenticatedUser } from '../../auth'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage, NotFoundPage } from '../../components/HeroPage'
-import { SettingsAreaRepositoryFields } from '../../graphql-operations'
-import { RouteV6Descriptor } from '../../util/contributions'
+import type { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import type { RouteV6Descriptor } from '../../util/contributions'
 
 import { fetchSettingsAreaRepository } from './backend'
-import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
+import { RepoSettingsSidebar, type RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 
 import styles from './RepoSettingsArea.module.scss'
 

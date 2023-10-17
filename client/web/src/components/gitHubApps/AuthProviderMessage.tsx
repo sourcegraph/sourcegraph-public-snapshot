@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react'
+import { type FC, useMemo, useState } from 'react'
 
 import { mdiEye, mdiEyeOffOutline } from '@mdi/js'
 import { parse as parseJSONC } from 'jsonc-parser'
@@ -6,7 +6,7 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { useQuery } from '@sourcegraph/http-client'
 import { Icon, Button, Alert, Text, Link, Code } from '@sourcegraph/wildcard'
 
-import {
+import type {
     GitHubAppByIDResult,
     GitHubAppClientSecretResult,
     GitHubAppClientSecretVariables,

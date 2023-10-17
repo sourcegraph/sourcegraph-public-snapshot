@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "config.go",
+        "main.go",
+        "metrics.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/pings/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/hubspot/hubspotutil",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/httpserver",
+        "//internal/observation",
+        "//internal/profiler",
+        "//internal/pubsub",
+        "//internal/service",
+        "//internal/tracer/oteldefaults/exporters",
+        "//internal/updatecheck",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric//:metric",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//semconv/v1.4.0:v1_4_0",
+        "@io_opentelemetry_go_otel_metric//:metric",
+        "@io_opentelemetry_go_otel_sdk//resource",
+        "@io_opentelemetry_go_otel_sdk_metric//:metric",
+    ],
+)

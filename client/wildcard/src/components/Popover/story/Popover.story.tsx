@@ -1,13 +1,13 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger, Position } from '..'
+import { Popover, PopoverContent, type PopoverOpenEvent, PopoverTail, PopoverTrigger, Position } from '..'
 import { BrandedStory } from '../../../stories/BrandedStory'
 import { Button } from '../../Button'
-import { createRectangle, Point, Strategy } from '../tether'
+import { createRectangle, type Point, Strategy } from '../tether'
 
 import styles from './Popover.story.module.scss'
 
@@ -33,7 +33,7 @@ const config: Meta = {
 
 export default config
 
-export const PositionSettingsGallery: Story = () => {
+export const PositionSettingsGallery: StoryFn = () => {
     const [position, setPosition] = useState(Position.top)
 
     return (
@@ -163,7 +163,7 @@ PositionSettingsGallery.parameters = {
     },
 }
 
-export const StandardExample: Story = () => (
+export const StandardExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -217,7 +217,7 @@ export const TargetPaddingExample: Story = () => (
     </ScrollCenterBox>
 )
 
-export const AbsoluteStrategyExample: Story = () => (
+export const AbsoluteStrategyExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -301,7 +301,7 @@ const FSM_TRANSITIONS: Record<FSM_STATES, Partial<Record<FSM_ACTIONS, FSM_STATES
     },
 }
 
-export const ShowOnFocus: Story = () => {
+export const ShowOnFocus: StoryFn = () => {
     const [state, setState] = useState<FSM_STATES>(FSM_STATES.Initial)
 
     const handleOpenChange = (event: PopoverOpenEvent): void => {
@@ -440,8 +440,10 @@ export const WithNestedScrollParents: Story = (args = {}) => {
 WithNestedScrollParents.argTypes = {
     constrainToScrollParents: {
         control: { type: 'boolean' },
-        defaultValue: true,
     },
+}
+WithNestedScrollParents.args = {
+    constrainToScrollParents: true,
 }
 
 export const WithVirtualTarget: Story = () => {
@@ -521,8 +523,10 @@ WithTail.argTypes = {
     size: {
         control: 'radio',
         options: ['sm', 'md', 'lg'],
-        defaultValue: 'sm',
     },
+}
+WithTail.args = {
+    size: 'sm',
 }
 
 interface ScrollCenterBoxProps extends React.HTMLAttributes<HTMLDivElement> {

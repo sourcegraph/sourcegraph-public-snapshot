@@ -8,6 +8,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// withClock sets the clock to be used by the cache. This is useful for testing.
+func withClock[K comparable, V any](clock clock) Option[K, V] {
+	return func(c *Cache[K, V]) {
+		c.clock = clock
+	}
+}
+
 func TestGet(t *testing.T) {
 	callCount := 0
 	newEntryFunc := func(k string) int {

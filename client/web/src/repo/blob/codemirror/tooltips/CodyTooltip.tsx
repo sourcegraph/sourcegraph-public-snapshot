@@ -1,8 +1,8 @@
-import { EditorState, Extension, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, PluginValue, Tooltip, ViewPlugin, showTooltip } from '@codemirror/view'
+import { type EditorState, type Extension, StateEffect, StateField } from '@codemirror/state'
+import { type EditorView, type PluginValue, type Tooltip, ViewPlugin, showTooltip } from '@codemirror/view'
 import ReactDOM from 'react-dom/client'
 
-import { CodeMirrorEditor } from '../../../../cody/components/CodeMirrorEditor'
+import type { CodeMirrorEditor } from '../../../../cody/components/CodeMirrorEditor'
 import { CodyRecipesWidget } from '../../../../cody/widgets/CodyRecipesWidget'
 
 export const codyTooltip = StateField.define<Tooltip | null>({

@@ -57,10 +57,22 @@ func cleanup(t *testing.T, db DB) func() {
 	}
 }
 
+func setupClearRedisCacheTest(t *testing.T, expectedFlagName string) *bool {
+	clearRedisCacheCalled := false
+	oldClearRedisCache := clearRedisCache
+	clearRedisCache = func(flagName string) {
+		if flagName == expectedFlagName {
+			clearRedisCacheCalled = true
+		}
+	}
+	t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
+	return &clearRedisCacheCalled
+}
+
 func testNewFeatureFlagRoundtrip(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	flagStore := NewDB(logger, dbtest.NewDB(logger, t)).FeatureFlags()
+	flagStore := NewDB(logger, dbtest.NewDB(t)).FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
 	cases := []struct {
@@ -117,7 +129,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -153,7 +165,7 @@ func testListFeatureFlags(t *testing.T) {
 func testNewOverrideRoundtrip(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
@@ -203,7 +215,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
@@ -283,7 +295,7 @@ func testListUserOverrides(t *testing.T) {
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	users := db.Users()
 	orgs := db.Orgs()
@@ -369,7 +381,7 @@ func testListOrgOverrides(t *testing.T) {
 func testUserFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	users := db.Users()
 	orgs := db.Orgs()
@@ -531,19 +543,11 @@ func testUserFlags(t *testing.T) {
 		u1 := mkUser("u", o1.ID)
 		f1 := mkFFBool("f1", true)
 		mkUserOverride(u1.ID, "f1", false)
-
-		called := false
-		oldClearRedisCache := clearRedisCache
-		clearRedisCache = func(flagName string) {
-			if flagName == f1.Name {
-				called = true
-			}
-		}
-		t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, f1.Name)
 
 		err := flagStore.DeleteFeatureFlag(ctx, f1.Name)
 		require.NoError(t, err)
-		require.True(t, called)
+		require.True(t, *clearRedisCacheCalled)
 
 		flags, err := flagStore.GetFeatureFlags(ctx)
 		require.NoError(t, err)
@@ -554,7 +558,7 @@ func testUserFlags(t *testing.T) {
 func testAnonymousUserFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -599,7 +603,7 @@ func testAnonymousUserFlags(t *testing.T) {
 func testUserlessFeatureFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -648,7 +652,7 @@ func testUserlessFeatureFlags(t *testing.T) {
 func testOrgFeatureFlag(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	orgs := db.Orgs()
 	ctx := actor.WithInternalActor(context.Background())
@@ -724,7 +728,7 @@ func testOrgFeatureFlag(t *testing.T) {
 func testGetFeatureFlag(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := context.Background()
 	t.Run("no value", func(t *testing.T) {
@@ -751,7 +755,7 @@ func testGetFeatureFlag(t *testing.T) {
 func testUpdateFeatureFlag(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := context.Background()
 	t.Run("invalid input", func(t *testing.T) {
@@ -763,8 +767,10 @@ func testUpdateFeatureFlag(t *testing.T) {
 		boolFlag, err := flagStore.CreateBool(ctx, "update-test-true-flag", true)
 		require.NoError(t, err)
 		boolFlag.Bool.Value = false
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, boolFlag.Name)
 		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, boolFlag)
 		require.NoError(t, err)
+		require.True(t, *clearRedisCacheCalled)
 		assert.False(t, updatedFlag.Bool.Value)
 		assert.Greater(t, updatedFlag.UpdatedAt, boolFlag.UpdatedAt)
 	})
@@ -773,8 +779,10 @@ func testUpdateFeatureFlag(t *testing.T) {
 		require.NoError(t, err)
 		const expectedValue = int32(1337)
 		rolloutFlag.Rollout.Rollout = expectedValue
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, rolloutFlag.Name)
 		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, rolloutFlag)
 		require.NoError(t, err)
+		require.True(t, *clearRedisCacheCalled)
 		assert.Equal(t, expectedValue, updatedFlag.Rollout.Rollout)
 		assert.Greater(t, updatedFlag.UpdatedAt, rolloutFlag.UpdatedAt)
 	})

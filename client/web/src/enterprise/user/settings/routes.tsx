@@ -2,11 +2,11 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { canWriteBatchChanges } from '../../../batches/utils'
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
-import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
+import type { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 import type { ExecutorsUserAreaProps } from '../../executors/ExecutorsUserArea'
 
-import { UserEventLogsPageProps } from './UserEventLogsPage'
+import type { UserEventLogsPageProps } from './UserEventLogsPage'
 
 const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
     () => import('../../executors/ExecutorsUserArea'),

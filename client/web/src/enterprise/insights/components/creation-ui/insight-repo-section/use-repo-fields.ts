@@ -1,13 +1,22 @@
 import { useMemo } from 'react'
 
-import { ApolloClient, gql, useApolloClient } from '@apollo/client'
+import { type ApolloClient, gql, useApolloClient } from '@apollo/client'
 
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { FormAPI, AsyncValidator, useField, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
+import {
+    type FormAPI,
+    type AsyncValidator,
+    useField,
+    type useFieldAPI,
+    type ValidationResult,
+} from '@sourcegraph/wildcard'
 
-import { ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables } from '../../../../../graphql-operations'
-import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
+import type {
+    ValidateInsightRepoQueryResult,
+    ValidateInsightRepoQueryVariables,
+} from '../../../../../graphql-operations'
+import type { RepoMode } from '../../../pages/insights/creation/search-insight/types'
 import { insightRepositoriesValidator } from '../validators/validators'
 
 interface RepositoriesFields {

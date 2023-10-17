@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 
 import copy from 'copy-to-clipboard'
-import { merge, Observable, of } from 'rxjs'
+import { merge, type Observable, of } from 'rxjs'
 import { delay, startWith, switchMapTo, tap } from 'rxjs/operators'
 
 import { useEventObservable } from '@sourcegraph/wildcard'

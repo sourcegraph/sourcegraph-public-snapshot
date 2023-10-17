@@ -1,6 +1,6 @@
 import { gql, requestGraphQLCommon } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
 export type SiteVersionAndCurrentAuthStateResult = CurrentAuthStateResult & {
     site: {

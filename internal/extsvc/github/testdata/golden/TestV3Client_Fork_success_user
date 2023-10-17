@@ -10,7 +10,12 @@
   "IsLocked": false,
   "IsDisabled": false,
   "ViewerPermission": "ADMIN",
+  "visibility": "public",
   "RepositoryTopics": {
    "Nodes": []
+  },
+  "Parent": {
+   "NameWithOwner": "sourcegraph/automation-testing",
+   "IsFork": false
   }
  }

@@ -1,14 +1,14 @@
 import { subDays } from 'date-fns'
 
 import {
-    BatchChangeFields,
+    type BatchChangeFields,
     BulkOperationState,
     BulkOperationType,
-    BatchChangeBulkOperationsResult,
+    type BatchChangeBulkOperationsResult,
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
-    BatchChangeChangesetsResult,
+    type BatchChangeChangesetsResult,
     ChangesetCheckState,
     BatchSpecState,
     BatchChangeState,

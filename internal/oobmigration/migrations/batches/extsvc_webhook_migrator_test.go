@@ -134,7 +134,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	}
 
 	t.Run("Progress", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 		store := basestore.NewWithHandle(db.Handle())
 		createExternalServices(t, ctx, store)
 
@@ -155,7 +155,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	})
 
 	t.Run("Up", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 		store := basestore.NewWithHandle(db.Handle())
 		createExternalServices(t, ctx, store)
 		// Count the invalid JSON, not the deleted one

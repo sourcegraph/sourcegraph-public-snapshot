@@ -1,6 +1,7 @@
-import React, { MouseEvent, KeyboardEvent } from 'react'
+import type { MouseEvent, KeyboardEvent } from 'react'
+import type React from 'react'
 
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 
 /**
  * A helper function to replicate browser behavior when clicking on links.

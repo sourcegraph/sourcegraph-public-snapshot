@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import { fake } from 'sinon'
 
@@ -15,7 +15,7 @@ export default config
 
 window.context.emailEnabled = true
 
-export const ManageCodeMonitorPageStory: Story = () => (
+export const ManageCodeMonitorPageStory: StoryFn = () => (
     <WebStory>
         {props => (
             <ManageCodeMonitorPage

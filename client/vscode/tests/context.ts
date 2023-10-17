@@ -1,14 +1,14 @@
-import puppeteer from 'puppeteer'
+import type puppeteer from 'puppeteer'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import {
     createSharedIntegrationTestContext,
-    IntegrationTestContext,
-    IntegrationTestOptions,
+    type IntegrationTestContext,
+    type IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
-import { VSCodeGraphQlOperations } from '../src/graphql-operations'
+import type { VSCodeGraphQlOperations } from '../src/graphql-operations'
 
 import { commonVSCodeGraphQlResults } from './graphql'
 

@@ -1,28 +1,21 @@
 import { useEffect } from 'react'
 
-import {
-    mdiEmailOutline,
-    mdiMicrosoftVisualStudioCode,
-    mdiChevronRight,
-    mdiApple,
-    mdiLinux,
-    mdiMicrosoftWindows,
-} from '@mdi/js'
+import { mdiMicrosoftVisualStudioCode, mdiChevronRight, mdiApple, mdiLinux, mdiMicrosoftWindows } from '@mdi/js'
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { ExternalsAuth } from '../auth/components/ExternalsAuth'
-import { CodyLetsWorkIcon, CodyStartCoding } from '../cody/chat/CodyPageIcon'
+import { CodyLetsWorkIcon } from '../cody/chat/CodyPageIcon'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
 import { DownloadAppButton } from './DownloadAppButton'
-import { BackgroundImage, IntellijIcon, EmacsIcon, NeovimIcon } from './GetCodyPageIcon'
+import { IntellijIcon, EmacsIcon, NeovimIcon } from './GetCodyPageIcon'
 
 import styles from './GetCodyPage.module.scss'
 
@@ -94,26 +87,12 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                         context={context}
                                         githubLabel="GitHub"
                                         gitlabLabel="Gitlab"
+                                        googleLabel="Google"
                                         withCenteredText={true}
                                         onClick={onClickCTAButton}
                                         ctaClassName={styles.authButton}
-                                        iconClassName={styles.buttonIcon}
-                                        redirect="/get-cody"
                                     />
                                 </div>
-                                <Link
-                                    to="https://sourcegraph.com/sign-up?showEmail=true&returnTo=get-cody"
-                                    className={classNames('text-decoration-none', styles.emailAuthButton)}
-                                    onClick={() => onClickCTAButton('builtin')}
-                                >
-                                    <Icon
-                                        className="mr-1"
-                                        svgPath={mdiEmailOutline}
-                                        inline={false}
-                                        aria-hidden={true}
-                                    />
-                                    Continue with email
-                                </Link>
                             </div>
                             <Text className={styles.terms}>
                                 By registering, you agree to our{' '}
@@ -138,10 +117,81 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </div>
                     )}
 
+                    {/* Install cody extension section */}
+                    <div className={classNames(styles.card, 'get-cody-step')}>
+                        <H2 className={styles.cardTitle}>
+                            Install the Cody extension for your IDE(s) and start using Cody
+                        </H2>
+                        <div className={classNames(styles.downloadBtnWrapper)}>
+                            <div>
+                                <Link
+                                    to="vscode:extension/sourcegraph.cody-ai"
+                                    className={classNames('text-decoration-none', styles.downloadForIde)}
+                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'VS Code')}
+                                >
+                                    <Icon
+                                        className={styles.ideIcon}
+                                        svgPath={mdiMicrosoftVisualStudioCode}
+                                        inline={false}
+                                        aria-hidden={true}
+                                    />{' '}
+                                    <span className={styles.downloadForIdeText}>Install Cody for VS Code</span>
+                                </Link>
+                                <Link
+                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai#:~:text=Cody%20for%20VS%20Code%20is,no%20problem%20for%20Cody."
+                                    className={classNames('text-decoration-none', styles.vscodeMarketplace)}
+                                >
+                                    Or download on the VS Code Marketplace
+                                    <Icon
+                                        className="ml-2"
+                                        svgPath={mdiChevronRight}
+                                        inline={false}
+                                        aria-hidden={true}
+                                    />
+                                </Link>
+                            </div>
+                            <div>
+                                <Link
+                                    to="https://plugins.jetbrains.com/plugin/9682-sourcegraph"
+                                    className={classNames('text-decoration-none', styles.downloadForIde)}
+                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'IntelliJ')}
+                                >
+                                    <span className={styles.ideIcon}>
+                                        <IntellijIcon className={styles.joinWaitlistButtonIcon} />
+                                    </span>
+                                    <span className={styles.downloadForIdeText}>Cody for IntelliJ </span>
+                                </Link>
+                            </div>
+                            <div>
+                                <Link
+                                    to="https://github.com/sourcegraph/sg.nvim"
+                                    className={classNames('text-decoration-none', styles.downloadForIde)}
+                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'Neovim')}
+                                >
+                                    <span className={styles.ideIcon}>
+                                        <NeovimIcon className={styles.joinWaitlistButtonIcon} />
+                                    </span>
+                                    <span className={styles.downloadForIdeText}>Cody for Neovim </span>
+                                    <Badge className={classNames(styles.badge, 'px-2 py-1')}>Experimental</Badge>
+                                </Link>
+                            </div>
+                        </div>
+                        <div className={styles.comingSoonWrapper}>
+                            <Text className={styles.comingSoonWrapperText}>Coming soon:</Text>
+                            <div className={styles.joinWaitlistButtonWrapper}>
+                                <WaitListButton
+                                    to="https://info.sourcegraph.com/waitlist"
+                                    icon={<EmacsIcon className={styles.joinWaitlistButtonIcon} />}
+                                    title="Emacs"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Install cody desktop app section */}
                     <div className={classNames(styles.card, 'get-cody-step')}>
                         <H2 className={classNames(styles.cardTitle, 'mb-4')}>
-                            Install the <span className={styles.installCodyTitle}>Cody desktop app</span>
+                            Optional: Install the Cody desktop app for higher quality responses
                         </H2>
                         <Text className={styles.cardDescription}>
                             The Cody app, when combined with a Cody IDE extension, enables context fetching for all of
@@ -226,85 +276,14 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </div>
                     </div>
 
-                    {/* Install cody extension section */}
-                    <div className={classNames(styles.card, 'get-cody-step')}>
-                        <H2 className={classNames(styles.cardTitle, 'mb-4')}>
-                            Install the Cody extension for your IDE(s)
-                        </H2>
-                        <Text className={styles.cardDescription}>
-                            If you’ve downloaded the app, it will prompt you to sign in to your Sourcegraph.com account,
-                            connect your repositories, and connect your IDE extensions.
-                        </Text>
-                        <div className={classNames(styles.downloadBtnWrapper)}>
-                            <div className={classNames(styles.downloadBtn)}>
-                                <Link
-                                    to="vscode:extension/sourcegraph.cody-ai"
-                                    className={classNames('text-decoration-none', styles.downloadForVscode)}
-                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'VS Code')}
-                                >
-                                    <Icon
-                                        className={styles.vscodeIcon}
-                                        svgPath={mdiMicrosoftVisualStudioCode}
-                                        inline={false}
-                                        aria-hidden={true}
-                                    />{' '}
-                                    <span className={styles.downloadForVscodeText}>Install Cody for VS Code</span>
-                                </Link>
-                                <Link
-                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai#:~:text=Cody%20for%20VS%20Code%20is,no%20problem%20for%20Cody."
-                                    className={classNames('text-decoration-none', styles.vscodeMarketplace)}
-                                >
-                                    Or download on the VS Code Marketplace
-                                    <Icon
-                                        className="ml-2"
-                                        svgPath={mdiChevronRight}
-                                        inline={false}
-                                        aria-hidden={true}
-                                    />
-                                </Link>
-                            </div>
-                            <div className={classNames(styles.downloadBtn)}>
-                                <Link
-                                    to="https://plugins.jetbrains.com/plugin/9682-sourcegraph"
-                                    className={classNames('text-decoration-none', styles.downloadForVscode)}
-                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'IntelliJ')}
-                                >
-                                    <span className={styles.vscodeIcon}>
-                                        <IntellijIcon className={styles.joinWaitlistButtonIcon} />
-                                    </span>
-                                    <span className={styles.downloadForVscodeText}>Install Cody for Intellij</span>
-                                </Link>
-                            </div>
-                        </div>
-                        <div className={styles.comingSoonWrapper}>
-                            <Text className={styles.comingSoonWrapperText}>Coming soon:</Text>
-                            <div className={styles.joinWaitlistButtonWrapper}>
-                                <WaitListButton
-                                    to="https://info.sourcegraph.com/waitlist"
-                                    icon={<NeovimIcon className={styles.joinWaitlistButtonIcon} />}
-                                    title="Neovim"
-                                />
-                                <WaitListButton
-                                    to="https://info.sourcegraph.com/waitlist"
-                                    icon={<EmacsIcon className={styles.joinWaitlistButtonIcon} />}
-                                    title="Emacs"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className={classNames(styles.card, styles.startCodingWithMeImgWrapper, 'get-cody-step')}>
-                        <CodyStartCoding className={styles.startCodingWithMeImg} />
-                    </div>
-
                     {/* cody for enterprise section */}
                     <div className={styles.codyForEnterprise}>
                         <H2 className={classNames(styles.cardTitle, styles.title)}>
-                            Interested in Cody for Sourcegraph Enterprise?
+                            Interested in Cody for Enterprise?
                         </H2>
                         <Text className={styles.cardDescription}>
-                            If you’ve downloaded the app, it will prompt you to sign in to your Sourcegraph.com account,
-                            connect your repositories, and connect your IDE extensions.
+                            Cody for Enterprise uses the code graph for context fetching and higher accuracy answers
+                            based on your entire codebase.
                         </Text>
                         <Text className={classNames(styles.cardDescription, styles.getInTouchText)}>
                             Get in touch with our team to try Cody for Sourcegraph Enterprise.
@@ -317,7 +296,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 Get Cody for Enterprise
                             </Link>
                             <Link
-                                to="https://info.sourcegraph.com/talk-to-a-developer"
+                                to="https://about.sourcegraph.com/demo"
                                 className={classNames('text-decoration-none', styles.talkToEngineerButton)}
                             >
                                 Talk to an engineer
@@ -325,8 +304,6 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </div>
                     </div>
                 </div>
-
-                <BackgroundImage className={styles.backgroundImage} />
 
                 {/* footer section */}
                 <div className={styles.footer}>

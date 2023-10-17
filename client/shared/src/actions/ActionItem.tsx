@@ -2,27 +2,27 @@ import * as React from 'react'
 
 import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import type * as H from 'history'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
-import { asError, ErrorLike, isExternalLink, logger } from '@sourcegraph/common'
+import type { ActionContribution, Evaluated } from '@sourcegraph/client-api'
+import { asError, type ErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import {
     LoadingSpinner,
     Button,
     ButtonLink,
-    ButtonLinkProps,
+    type ButtonLinkProps,
     WildcardThemeContext,
     Icon,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { ExecuteCommandParameters } from '../api/client/mainthread-api'
+import type { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
 import type { ExtensionsControllerProps } from '../extensions/controller'
-import { PlatformContextProps } from '../platform/context'
-import { TelemetryProps } from '../telemetry/telemetryService'
+import type { PlatformContextProps } from '../platform/context'
+import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import styles from './ActionItem.module.scss'
 

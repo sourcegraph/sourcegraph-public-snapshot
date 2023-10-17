@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -37,7 +36,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	var branches []*gitdomain.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = gitserver.NewClient(r.db).ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
+		branches, err = gitserver.NewClient().ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
 			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to
@@ -104,7 +103,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	var tags []*gitdomain.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = gitserver.NewClient(r.db).ListTags(ctx, r.RepoName())
+		tags, err = gitserver.NewClient().ListTags(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +157,7 @@ func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client,
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, branch.Head, gitserver.ResolveRevisionOptions{})
+		branch.Commit, err = gitserverClient.GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout

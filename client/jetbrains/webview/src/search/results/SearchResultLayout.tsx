@@ -1,7 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import { MdiReactIconComponentType } from 'mdi-react'
+import type { MdiReactIconComponentType } from 'mdi-react'
 
 import { CodeHostIcon, isValidCodeHost } from '@sourcegraph/branded'
 import { Icon } from '@sourcegraph/wildcard'

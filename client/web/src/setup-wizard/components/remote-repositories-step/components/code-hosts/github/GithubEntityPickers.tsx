@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { type FC, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { mdiGithub } from '@mdi/js'
@@ -15,7 +15,7 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import {
+import type {
     GetGitHubOrganizationsResult,
     GetGitHubOrganizationsVariables,
     GetGitHubRepositoriesResult,

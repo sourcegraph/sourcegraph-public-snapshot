@@ -10,12 +10,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/goware/urlx"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -111,7 +113,7 @@ func TestProvider_NewAuthzProviders(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			licensing.MockCheckFeature = tc.mockCheckFeature
@@ -162,7 +164,9 @@ func TestProvider_NewAuthzProviders(t *testing.T) {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
-	db := database.NewMockDB()
+	ratelimit.SetupForTest(t)
+
+	db := dbmocks.NewMockDB()
 
 	// Ignore the error. Confident that the value of this will parse successfully.
 	baseURL, _ := urlx.Parse("https://dev.azure.com")
@@ -872,7 +876,7 @@ func Test_ValidateConnection(t *testing.T) {
 	licensing.MockCheckFeature = func(_ licensing.Feature) error { return nil }
 	rcache.SetupForTest(t)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	result := NewAuthzProviders(db, []*types.AzureDevOpsConnection{
 		{
 			URN: "1",

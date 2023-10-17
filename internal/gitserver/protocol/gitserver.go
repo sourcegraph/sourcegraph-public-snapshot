@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -254,6 +253,9 @@ func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
+	// ensureRevision is the revision to ensure is present in the repository before running the git command.
+	//
+	// 🚨Warning🚨: EnsureRevision might not be a utf 8 encoded string.
 	EnsureRevision string   `json:"ensureRevision"`
 	Args           []string `json:"args"`
 	Stdin          []byte   `json:"stdin,omitempty"`
@@ -361,60 +363,25 @@ func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
 	}
 }
 
-// P4ExecRequest is a request to execute a p4 command with given arguments.
-//
-// Note that this request is deserialized by both gitserver and the frontend's
-// internal proxy route and any major change to this structure will need to be
-// reconciled in both places.
-type P4ExecRequest struct {
-	P4Port   string   `json:"p4port"`
-	P4User   string   `json:"p4user"`
-	P4Passwd string   `json:"p4passwd"`
-	Args     []string `json:"args"`
-}
-
-func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
-	return &proto.P4ExecRequest{
-		P4Port:   r.P4Port,
-		P4User:   r.P4User,
-		P4Passwd: r.P4Passwd,
-		Args:     r.Args,
-	}
-}
-
-func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
-	*r = P4ExecRequest{
-		P4Port:   p.GetP4Port(),
-		P4User:   p.GetP4User(),
-		P4Passwd: p.GetP4Passwd(),
-		Args:     p.GetArgs(),
-	}
-}
-
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
-	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
-
-	// CloneFromShard is the hostname of the gitserver instance that is the current owner of the
-	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
-	// that gitserver instance to the new home of the repo.
-	CloneFromShard string `json:"cloneFromShard"`
+	// Repo identifies URL for repo.
+	Repo api.RepoName `json:"repo"`
+	// Since is a debounce interval for queries, used only with request-repo-update.
+	Since time.Duration `json:"since"`
 }
 
 func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
 	return &proto.RepoUpdateRequest{
-		Repo:           string(r.Repo),
-		Since:          durationpb.New(r.Since),
-		CloneFromShard: r.CloneFromShard,
+		Repo:  string(r.Repo),
+		Since: durationpb.New(r.Since),
 	}
 }
 
 func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
 	*r = RepoUpdateRequest{
-		Repo:           api.RepoName(p.GetRepo()),
-		Since:          p.GetSince().AsDuration(),
-		CloneFromShard: p.GetCloneFromShard(),
+		Repo:  api.RepoName(p.GetRepo()),
+		Since: p.GetSince().AsDuration(),
 	}
 }
 
@@ -531,34 +498,6 @@ type RepoDeleteRequest struct {
 	Repo api.RepoName
 }
 
-// ReposStats is an aggregation of statistics from a gitserver.
-type ReposStats struct {
-	// UpdatedAt is the time these statistics were computed. If UpdateAt is
-	// zero, the statistics have not yet been computed. This can happen on a
-	// new gitserver.
-	UpdatedAt time.Time
-
-	// GitDirBytes is the amount of bytes stored in .git directories.
-	GitDirBytes int64
-}
-
-func (rs *ReposStats) FromProto(x *proto.ReposStatsResponse) {
-	protoGitDirBytes := x.GetGitDirBytes()
-	protoUpdatedAt := x.GetUpdatedAt().AsTime()
-
-	*rs = ReposStats{
-		UpdatedAt:   protoUpdatedAt,
-		GitDirBytes: int64(protoGitDirBytes),
-	}
-}
-
-func (rs *ReposStats) ToProto() *proto.ReposStatsResponse {
-	return &proto.ReposStatsResponse{
-		GitDirBytes: uint64(rs.GitDirBytes),
-		UpdatedAt:   timestamppb.New(rs.UpdatedAt),
-	}
-}
-
 // RepoCloneProgressRequest is a request for information about the clone progress of multiple
 // repositories on gitserver.
 type RepoCloneProgressRequest struct {
@@ -647,11 +586,10 @@ type CreateCommitFromPatchRequest struct {
 	PushRef *string
 }
 
-func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
-	cc := &proto.CreateCommitFromPatchBinaryRequest{
+func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFromPatchBinaryRequest_Metadata {
+	cc := &proto.CreateCommitFromPatchBinaryRequest_Metadata{
 		Repo:         string(c.Repo),
 		BaseCommit:   string(c.BaseCommit),
-		Patch:        c.Patch,
 		TargetRef:    c.TargetRef,
 		UniqueRef:    c.UniqueRef,
 		CommitInfo:   c.CommitInfo.ToProto(),
@@ -666,7 +604,7 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 	return cc
 }
 
-func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata, patch []byte) {
 	gp := p.GetPush()
 	var pushConfig *PushConfig
 	if gp != nil {
@@ -677,9 +615,9 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 	*c = CreateCommitFromPatchRequest{
 		Repo:         api.RepoName(p.GetRepo()),
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
-		Patch:        p.GetPatch(),
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
+		Patch:        patch,
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
@@ -781,29 +719,28 @@ type CreateCommitFromPatchResponse struct {
 	ChangelistId string
 }
 
-func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBinaryResponse {
-	var err *proto.CreateCommitFromPatchError
-	if r.Error != nil {
-		err = r.Error.ToProto()
-	} else {
-		err = nil
-	}
-	return &proto.CreateCommitFromPatchBinaryResponse{
+func (r *CreateCommitFromPatchResponse) ToProto() (*proto.CreateCommitFromPatchBinaryResponse, *proto.CreateCommitFromPatchError) {
+	res := &proto.CreateCommitFromPatchBinaryResponse{
 		Rev:          r.Rev,
-		Error:        err,
 		ChangelistId: r.ChangelistId,
 	}
+
+	if r.Error != nil {
+		return res, r.Error.ToProto()
+	}
+
+	return res, nil
 }
 
-func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatchBinaryResponse) {
-	if p.GetError() == nil {
+func (r *CreateCommitFromPatchResponse) FromProto(res *proto.CreateCommitFromPatchBinaryResponse, err *proto.CreateCommitFromPatchError) {
+	if err == nil {
 		r.Error = nil
 	} else {
 		r.Error = &CreateCommitFromPatchError{}
-		r.Error.FromProto(p.GetError())
+		r.Error.FromProto(err)
 	}
-	r.Rev = p.GetRev()
-	r.ChangelistId = p.ChangelistId
+	r.Rev = res.GetRev()
+	r.ChangelistId = res.ChangelistId
 }
 
 // SetError adds the supplied error related details to e.
@@ -895,36 +832,132 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 
 }
 
-type PerforceChangelist struct {
-	ID           string
-	CreationDate time.Time
-	State        PerforceChangelistState
-	Author       string
-	Title        string
-	Message      string
+// IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
+type IsPerforcePathCloneableRequest struct {
+	P4Port    string `json:"p4port"`
+	P4User    string `json:"p4user"`
+	P4Passwd  string `json:"p4passwd"`
+	DepotPath string `json:"depotPath"`
 }
 
-type PerforceChangelistState string
+// IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
+type IsPerforcePathCloneableResponse struct{}
 
-const (
-	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
-	PerforceChangelistStatePending   PerforceChangelistState = "pending"
-	PerforceChangelistStateShelved   PerforceChangelistState = "shelved"
-	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
-	PerforceChangelistStateClosed PerforceChangelistState = "closed"
-)
+// CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
+type CheckPerforceCredentialsRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
 
-func ParsePerforceChangelistState(state string) (PerforceChangelistState, error) {
-	switch strings.ToLower(strings.TrimSpace(state)) {
-	case "submitted":
-		return PerforceChangelistStateSubmitted, nil
-	case "pending":
-		return PerforceChangelistStatePending, nil
-	case "shelved":
-		return PerforceChangelistStateShelved, nil
-	case "closed":
-		return PerforceChangelistStateClosed, nil
-	default:
-		return "", errors.Newf("invalid Perforce changelist state: %s", state)
+// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+type CheckPerforceCredentialsResponse struct{}
+
+// PerforceConnectionDetails holds all the details required to talk to a Perforce server.
+type PerforceConnectionDetails struct {
+	P4Port   string
+	P4User   string
+	P4Passwd string
+}
+
+func (c PerforceConnectionDetails) ToProto() *proto.PerforceConnectionDetails {
+	return &proto.PerforceConnectionDetails{
+		P4Port:   c.P4Port,
+		P4User:   c.P4User,
+		P4Passwd: c.P4Passwd,
 	}
+}
+
+// SystemInfo holds info on a Gitserver instance.
+type SystemInfo struct {
+	Address     string
+	FreeSpace   uint64
+	TotalSpace  uint64
+	PercentUsed float32
+}
+
+type PerforceUsersRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+type PerforceUsersResponse struct {
+	Users []PerforceUser `json:"users"`
+}
+
+type PerforceUser struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+type PerforceProtectsForUserRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Username string `json:"username"`
+}
+
+type PerforceProtectsForUserResponse struct {
+	Protects []PerforceProtect `json:"protects"`
+}
+
+type PerforceProtect struct {
+	Level       string `json:"level"`
+	EntityType  string `json:"entityType"`
+	EntityName  string `json:"entityName"`
+	Match       string `json:"match"`
+	IsExclusion bool   `json:"isExclusion"`
+	Host        string `json:"host"`
+}
+
+type PerforceProtectsForDepotRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Depot    string `json:"depot"`
+}
+
+type PerforceProtectsForDepotResponse struct {
+	Protects []PerforceProtect `json:"protects"`
+}
+
+type PerforceGroupMembersRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Group    string `json:"group"`
+}
+
+type PerforceGroupMembersResponse struct {
+	Usernames []string `json:"usernames"`
+}
+
+type IsPerforceSuperUserRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+type IsPerforceSuperUserResponse struct {
+}
+
+type PerforceGetChangelistRequest struct {
+	P4Port       string `json:"p4port"`
+	P4User       string `json:"p4user"`
+	P4Passwd     string `json:"p4passwd"`
+	ChangelistID string `json:"changelistID"`
+}
+
+type PerforceGetChangelistResponse struct {
+	Changelist PerforceChangelist `json:"changelist"`
+}
+
+type PerforceChangelist struct {
+	ID           string    `json:"id"`
+	CreationDate time.Time `json:"creationDate"`
+	State        string    `json:"state"`
+	Author       string    `json:"author"`
+	Title        string    `json:"title"`
+	Message      string    `json:"message"`
 }

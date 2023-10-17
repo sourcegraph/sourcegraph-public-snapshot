@@ -27,6 +27,7 @@ type DB interface {
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
 	CodeMonitors() CodeMonitorStore
+	CodeHosts() CodeHostStore
 	Codeowners() CodeownersStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
@@ -63,6 +64,7 @@ type DB interface {
 	Settings() SettingsStore
 	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
+	TelemetryEventsExportQueue() TelemetryEventsExportQueueStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
@@ -152,15 +154,16 @@ func (d *db) CodeMonitors() CodeMonitorStore {
 	return CodeMonitorsWith(d.Store)
 }
 
+func (d *db) CodeHosts() CodeHostStore {
+	return CodeHostsWith(d.Store)
+}
+
 func (d *db) Codeowners() CodeownersStore {
 	return CodeownersWith(basestore.NewWithHandle(d.Handle()))
 }
 
 func (d *db) Conf() ConfStore {
-	return &confStore{
-		Store:  basestore.NewWithHandle(d.Handle()),
-		logger: log.Scoped("confStore", "database confStore"),
-	}
+	return ConfStoreWith(d.Store)
 }
 
 func (d *db) EventLogs() EventLogStore {
@@ -297,6 +300,13 @@ func (d *db) SubRepoPerms() SubRepoPermsStore {
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
 	return TemporarySettingsWith(d.Store)
+}
+
+func (d *db) TelemetryEventsExportQueue() TelemetryEventsExportQueueStore {
+	return TelemetryEventsExportQueueWith(
+		d.logger.Scoped("telemetry_events", "telemetry events export queue store"),
+		d.Store,
+	)
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {

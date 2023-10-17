@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -111,8 +110,6 @@ func (s *repoKVPStore) ListKeys(ctx context.Context, options RepoKVPListKeysOpti
 	q := sqlf.Sprintf(`SELECT key FROM repo_kvps WHERE (%s) GROUP BY key`, sqlf.Join(where, ") AND ("))
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
-	fmt.Println(q.Query(sqlf.PostgresBindVar))
-	fmt.Println(q.Args())
 	return basestore.ScanStrings(s.Query(ctx, q))
 }
 
@@ -144,8 +141,6 @@ func (s *repoKVPStore) ListValues(ctx context.Context, options RepoKVPListValues
 	q := sqlf.Sprintf(`SELECT DISTINCT value FROM repo_kvps WHERE (%s)`, sqlf.Join(where, ") AND ("))
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
-	fmt.Println(q.Query(sqlf.PostgresBindVar))
-	fmt.Println(q.Args())
 	return basestore.ScanStrings(s.Query(ctx, q))
 }
 

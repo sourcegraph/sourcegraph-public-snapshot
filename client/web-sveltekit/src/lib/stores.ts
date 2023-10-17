@@ -1,22 +1,26 @@
 import { getContext } from 'svelte'
 import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
-import type { GraphQLClient } from '$lib/http-client'
 import type { SettingsCascade, AuthenticatedUser, TemporarySettingsStorage } from '$lib/shared'
-import { getWebGraphQLClient } from '$lib/web'
+
+import type { FeatureFlag } from './featureflags'
+import type { GraphQLClient } from './graphql'
+
+export { isLightTheme } from './theme'
 
 export interface SourcegraphContext {
     settings: Readable<SettingsCascade['final'] | null>
     user: Readable<AuthenticatedUser | null>
-    isLightTheme: Readable<boolean>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>
+    featureFlags: Readable<FeatureFlag[]>
+    client: Readable<GraphQLClient>
 }
 
 export const KEY = '__sourcegraph__'
 
 export function getStores(): SourcegraphContext {
-    const { settings, user, isLightTheme, temporarySettingsStorage } = getContext<SourcegraphContext>(KEY)
-    return { settings, user, isLightTheme, temporarySettingsStorage }
+    const { settings, user, temporarySettingsStorage, featureFlags, client } = getContext<SourcegraphContext>(KEY)
+    return { settings, user, temporarySettingsStorage, featureFlags, client }
 }
 
 export const user = {
@@ -33,10 +37,10 @@ export const settings = {
     },
 }
 
-export const isLightTheme = {
-    subscribe(subscriber: (isLightTheme: boolean) => void) {
-        const { isLightTheme } = getStores()
-        return isLightTheme.subscribe(subscriber)
+export const graphqlClient = {
+    subscribe(subscriber: (client: GraphQLClient) => void) {
+        const { client } = getStores()
+        return client.subscribe(subscriber)
     },
 }
 
@@ -44,14 +48,9 @@ export const isLightTheme = {
  * A store that updates every second to return the current time.
  */
 export const currentDate: Readable<Date> = readable(new Date(), set => {
+    set(new Date())
     const interval = setInterval(() => set(new Date()), 1000)
     return () => clearInterval(interval)
-})
-
-export const graphqlClient = readable<GraphQLClient | null>(null, set => {
-    // no-void conflicts with no-floating-promises
-    // eslint-disable-next-line no-void
-    void getWebGraphQLClient().then(client => set(client))
 })
 
 /**

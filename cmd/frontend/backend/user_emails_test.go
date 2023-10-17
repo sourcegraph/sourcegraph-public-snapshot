@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
@@ -115,13 +116,13 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.CheckAndDecrementInviteQuotaFunc.SetDefaultReturn(test.hasQuote, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := dbmocks.NewMockUserEmailsStore()
 			userEmails.ListByUserFunc.SetDefaultReturn(test.mockEmails, nil)
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -176,13 +177,13 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 	logger := logtest.Scoped(t)
@@ -224,13 +225,13 @@ func TestSendUserEmailOnTokenChange(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 	logger := logtest.Scoped(t)
@@ -287,7 +288,7 @@ func TestSendUserEmailOnTokenChange(t *testing.T) {
 
 func TestUserEmailsAddRemove(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -356,7 +357,7 @@ func TestUserEmailsAddRemove(t *testing.T) {
 
 func TestUserEmailsSetPrimary(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -397,7 +398,7 @@ func TestUserEmailsSetPrimary(t *testing.T) {
 
 func TestUserEmailsSetVerified(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -446,7 +447,7 @@ func TestUserEmailsSetVerified(t *testing.T) {
 
 func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -519,7 +520,7 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 
 func TestRemoveStalePerforceAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -566,7 +567,13 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		data := extsvc.AccountData{
 			Data: extsvc.NewUnencryptedData(serializedData),
 		}
-		require.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
+		_, err = db.UserExternalAccounts().Insert(ctx,
+			&extsvc.Account{
+				UserID:      createdUser.ID,
+				AccountSpec: spec,
+				AccountData: data,
+			})
+		require.NoError(t, err)
 
 		// Confirm that the external account was added
 		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{

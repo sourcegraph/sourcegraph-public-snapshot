@@ -1,15 +1,15 @@
 import * as React from 'react'
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { ApolloClient, useApolloClient } from '@apollo/client'
+import { type ApolloClient, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
@@ -25,7 +25,7 @@ import {
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
-import { SiteResult } from '../graphql-operations'
+import type { SiteResult } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
@@ -215,7 +215,7 @@ const quickConfigureActions: {
 interface Props extends TelemetryProps {
     isLightTheme: boolean
     client: ApolloClient<{}>
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 interface State {
@@ -231,7 +231,7 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: FC<TelemetryProps & { isSourcegraphApp: boolean }> = props => {
+export const SiteAdminConfigurationPage: FC<TelemetryProps & { isCodyApp: boolean }> = props => {
     const client = useApolloClient()
     return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
 }
@@ -435,7 +435,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                                 height={600}
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
-                                actions={this.props.isSourcegraphApp ? [] : quickConfigureActions}
+                                actions={this.props.isCodyApp ? [] : quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

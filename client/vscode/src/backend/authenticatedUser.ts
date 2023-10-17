@@ -1,9 +1,9 @@
-import { Observable, ReplaySubject } from 'rxjs'
-import * as vscode from 'vscode'
+import { type Observable, ReplaySubject } from 'rxjs'
+import type * as vscode from 'vscode'
 
 import { gql } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
 import { scretTokenKey } from '../webview/platform/AuthProvider'
 

@@ -14,8 +14,8 @@ import (
 	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
 )
 
@@ -83,7 +83,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	}
 	clock := func() time.Time { return now }
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	workerBaseStore := basestore.NewWithHandle(db.Handle())
 	ie := NewInsightEnqueuer(clock, workerBaseStore, logtest.Scoped(t))
 	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob

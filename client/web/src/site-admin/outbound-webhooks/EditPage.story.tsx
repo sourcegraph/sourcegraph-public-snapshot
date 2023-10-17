@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,7 +9,7 @@ import { WebStory } from '../../components/WebStory'
 import { EditPage } from './EditPage'
 import { logConnectionLink, buildOutboundWebhookMock, eventTypesMock } from './mocks'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/outgoing/EditPage',
@@ -18,7 +18,7 @@ const config: Meta = {
 
 export default config
 
-export const Page: Story = () => (
+export const Page: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider

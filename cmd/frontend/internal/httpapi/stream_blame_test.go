@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -28,7 +28,6 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 	gsClient := gitserver.NewMockClient()
 	gsClient.GetCommitFunc.SetDefaultHook(
 		func(_ context.Context,
-			checker authz.SubRepoPermissionChecker,
 			repoName api.RepoName,
 			commit api.CommitID,
 			opts gitserver.ResolveRevisionOptions,
@@ -40,7 +39,6 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 	gsClient.StreamBlameFileFunc.SetDefaultHook(
 		func(
 			ctx context.Context,
-			checker authz.SubRepoPermissionChecker,
 			repo api.RepoName,
 			path string,
 			opts *gitserver.BlameOptions,
@@ -84,7 +82,7 @@ func TestStreamBlame(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		if name == "github.com/bob/foo" {
 			return &types.Repo{Name: name}, nil
@@ -113,7 +111,7 @@ func TestStreamBlame(t *testing.T) {
 			return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name}
 		}
 	}
-	usersStore := database.NewMockUserStore()
+	usersStore := dbmocks.NewMockUserStore()
 	errNotFound := &errcode.Mock{
 		IsNotFound: true,
 	}

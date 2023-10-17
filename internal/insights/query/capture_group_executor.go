@@ -27,11 +27,11 @@ type CaptureGroupExecutor struct {
 	logger log.Logger
 }
 
-func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
+func NewCaptureGroupExecutor(db database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
-		gitserverClient: internalGitserver.NewClient(postgres),
+		gitserverClient: internalGitserver.NewClient(),
 		previewExecutor: previewExecutor{
-			repoStore: postgres.Repos(),
+			repoStore: db.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 			filter: &compression.NoopFilter{},
 			clock:  clock,

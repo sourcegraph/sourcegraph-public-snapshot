@@ -8,7 +8,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner, H4, Text, Link, ErrorAlert, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     UserAreaUserFields,
     UserProductSubscriptionResult,
     UserProductSubscriptionVariables,

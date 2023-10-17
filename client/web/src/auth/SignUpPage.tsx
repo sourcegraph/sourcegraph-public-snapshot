@@ -1,25 +1,24 @@
 import React, { useEffect } from 'react'
 
-import classNames from 'classnames'
 import { Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Link, Text } from '@sourcegraph/wildcard'
+import { Container, Link, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { HeroPage } from '../components/HeroPage'
+import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { AuthPageWrapper } from './AuthPageWrapper'
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
-import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
-import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { type SignUpArguments, SignUpForm } from './SignUpForm'
 import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import styles from './SignUpPage.module.scss'
 
 export interface SignUpPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -81,7 +80,8 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            window.location.replace(returnTo)
+            // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
+            window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
 
             return Promise.resolve()
         })
@@ -91,7 +91,6 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             <VsCodeSignUpPage
                 source={query.get('src')}
                 onSignUp={handleSignUp}
-                isLightTheme={isLightTheme}
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
@@ -114,26 +113,24 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     }
 
     return (
-        <div className={signInSignUpCommonStyles.signinSignupPage}>
+        <>
             <PageTitle title="Sign up" />
-            <HeroPage
-                icon={SourcegraphIcon}
-                iconLinkTo={context.sourcegraphDotComMode ? '/search' : undefined}
-                iconClassName="bg-transparent"
-                title={context.sourcegraphDotComMode ? 'Sign up for Sourcegraph.com' : 'Sign up for Sourcegraph Server'}
-                lessPadding={true}
-                body={
-                    <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
-                        {context.sourcegraphDotComMode && (
-                            <Text className="pt-1 pb-2">Start searching public code now</Text>
-                        )}
-                        <SignUpForm context={context} onSignUp={handleSignUp} />
-                        <Text className="mt-3">
-                            Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
-                        </Text>
-                    </div>
+            <AuthPageWrapper
+                title="Welcome to Sourcegraph"
+                description={
+                    context.sourcegraphDotComMode ? 'Sign up for Sourcegraph.com' : 'Sign up for Sourcegraph Server'
                 }
-            />
-        </div>
+                sourcegraphDotComMode={context.sourcegraphDotComMode}
+                className={styles.wrapper}
+            >
+                {context.sourcegraphDotComMode && <Text className="pt-1 pb-2">Start searching public code now</Text>}
+                <Container>
+                    <SignUpForm context={context} onSignUp={handleSignUp} />
+                </Container>
+                <Text className="text-center mt-3">
+                    Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
+                </Text>
+            </AuthPageWrapper>
+        </>
     )
 }

@@ -3,8 +3,8 @@ import classNames from 'classnames'
 import { pluralize } from '@sourcegraph/common'
 import { Text } from '@sourcegraph/wildcard'
 
-import { ConnectionNodesState, ConnectionProps, getTotalCount } from '../ConnectionNodes'
-import { Connection } from '../ConnectionType'
+import { type ConnectionNodesState, type ConnectionProps, getTotalCount } from '../ConnectionNodes'
+import type { Connection } from '../ConnectionType'
 
 import styles from './ConnectionSummary.module.scss'
 

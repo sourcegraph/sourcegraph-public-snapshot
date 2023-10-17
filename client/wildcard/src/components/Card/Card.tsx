@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent, useWildcardTheme } from '../..'
+import { type ForwardReferenceComponent, useWildcardTheme } from '../..'
 
 import styles from './Card.module.scss'
 

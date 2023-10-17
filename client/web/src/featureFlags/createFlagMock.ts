@@ -1,8 +1,8 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 
-import { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
+import type { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
 
-import { FeatureFlagName } from './featureFlags'
+import type { FeatureFlagName } from './featureFlags'
 import { EVALUATE_FEATURE_FLAG_QUERY } from './useFeatureFlag'
 
 type FlagMock = MockedResponse<EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables>

@@ -90,7 +90,7 @@ var rbacSchema string
 //go:embed own.graphql
 var ownSchema string
 
-// appSchema is the Sourcegraph App local raw graqhql schema.
+// appSchema is the Cody App local raw graqhql schema.
 //
 //go:embed app.graphql
 var appSchema string
@@ -109,3 +109,18 @@ var gitHubAppsSchema string
 //
 //go:embed guardrails.graphql
 var guardrailsSchema string
+
+// contentLibrary is the Sourcegraph Content Library raw graphql schema.
+//
+//go:embed content_library.graphql
+var contentLibrary string
+
+// searchJobSchema is the Sourcegraph Search Job raw graphql schema.
+//
+//go:embed search_jobs.graphql
+var searchJobSchema string
+
+// telemetrySchema is the Sourcegraph Telemetry V2 raw graphql schema.
+//
+//go:embed telemetry.graphql
+var telemetrySchema string

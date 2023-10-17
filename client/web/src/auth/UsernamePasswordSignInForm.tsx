@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { asError, logger } from '@sourcegraph/common'
 import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
 
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'

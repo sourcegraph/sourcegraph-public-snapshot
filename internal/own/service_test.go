@@ -15,8 +15,8 @@ import (
 	types2 "github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
@@ -43,7 +43,7 @@ type repoPath struct {
 // repoFiles is a fake git client mapping a file
 type repoFiles map[repoPath]string
 
-func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (fs repoFiles) ReadFile(_ context.Context, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
 	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
 	if !ok {
 		return nil, os.ErrNotExist
@@ -72,11 +72,11 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
 
-			reposStore := database.NewMockRepoStore()
+			reposStore := dbmocks.NewMockRepoStore()
 			reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
-			codeownersStore := database.NewMockCodeownersStore()
+			codeownersStore := dbmocks.NewMockCodeownersStore()
 			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(reposStore)
 			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
 
@@ -105,11 +105,11 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
 
-	codeownersStore := database.NewMockCodeownersStore()
+	codeownersStore := dbmocks.NewMockCodeownersStore()
 	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-	reposStore := database.NewMockRepoStore()
+	reposStore := dbmocks.NewMockRepoStore()
 	reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 	db.ReposFunc.SetDefaultReturn(reposStore)
 	got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
@@ -131,13 +131,13 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 
 		git := gitserver.NewMockClient()
 
-		codeownersStore := database.NewMockCodeownersStore()
+		codeownersStore := dbmocks.NewMockCodeownersStore()
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(&types.CodeownersFile{
 			Proto: codeownersProto,
 		}, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-		reposStore := database.NewMockRepoStore()
+		reposStore := dbmocks.NewMockRepoStore()
 		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 		db.ReposFunc.SetDefaultReturn(reposStore)
 
@@ -149,11 +149,11 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 		git := gitserver.NewMockClient()
 		git.ReadFileFunc.SetDefaultReturn(nil, nil)
 
-		codeownersStore := database.NewMockCodeownersStore()
+		codeownersStore := dbmocks.NewMockCodeownersStore()
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-		reposStore := database.NewMockRepoStore()
+		reposStore := dbmocks.NewMockRepoStore()
 		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 		db.ReposFunc.SetDefaultReturn(reposStore)
 
@@ -170,7 +170,7 @@ func TestAssignedOwners(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating 2 users.
@@ -346,7 +346,7 @@ func TestAssignedTeams(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating a user and 2 teams.

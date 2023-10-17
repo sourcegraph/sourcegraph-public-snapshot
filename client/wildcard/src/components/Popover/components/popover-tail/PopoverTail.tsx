@@ -1,4 +1,4 @@
-import { forwardRef, HTMLAttributes, useContext } from 'react'
+import { forwardRef, type HTMLAttributes, useContext } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'

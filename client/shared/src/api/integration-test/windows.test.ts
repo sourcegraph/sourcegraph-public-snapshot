@@ -4,7 +4,7 @@ import { switchMap, take, toArray } from 'rxjs/operators'
 import type { ViewComponent, Window } from 'sourcegraph'
 
 import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
-import { TextDocumentData } from '../viewerTypes'
+import type { TextDocumentData } from '../viewerTypes'
 
 describe('Windows (integration)', () => {
     describe('app.activeWindow', () => {

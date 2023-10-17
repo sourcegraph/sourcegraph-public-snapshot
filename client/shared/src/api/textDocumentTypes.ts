@@ -1,7 +1,7 @@
-import { Selection } from '@sourcegraph/extension-api-types'
+import type { Selection } from '@sourcegraph/extension-api-types'
 
-import { ExtensionCodeEditor } from './extension/api/codeEditor'
-import { ExtensionDirectoryViewer } from './extension/api/directoryViewer'
+import type { ExtensionCodeEditor } from './extension/api/codeEditor'
+import type { ExtensionDirectoryViewer } from './extension/api/directoryViewer'
 
 export type ExtensionViewer = ExtensionCodeEditor | ExtensionDirectoryViewer
 

@@ -1,4 +1,4 @@
-import compression, { CompressionFilter } from 'compression'
+import compression, { type CompressionFilter } from 'compression'
 
 export const STREAMING_ENDPOINTS = ['/search/stream', '/.api/compute/stream', '/.api/completions/stream']
 

@@ -1,11 +1,19 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
+import {
+    Observable,
+    fromEvent,
+    Subscription,
+    type OperatorFunction,
+    pipe,
+    type Subscriber,
+    type Notification,
+} from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
-import { SearchPatternType, SymbolKind } from '../graphql-operations'
+import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
 

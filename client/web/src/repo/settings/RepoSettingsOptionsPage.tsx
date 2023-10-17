@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react'
+import { type FC, useCallback, useEffect, useState } from 'react'
 
 import { noop } from 'lodash'
 
@@ -7,7 +7,7 @@ import { Button, Container, ErrorAlert, H2, LoadingSpinner, PageHeader, renderEr
 
 import { CopyableText } from '../../components/CopyableText'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     ExcludeRepoFromExternalServicesResult,
     ExcludeRepoFromExternalServicesVariables,
     SettingsAreaRepositoryFields,

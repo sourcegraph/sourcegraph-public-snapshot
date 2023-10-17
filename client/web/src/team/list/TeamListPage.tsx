@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Button, Link, Icon, PageHeader, Container, useDebounce, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import type { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -18,7 +18,7 @@ import {
 } from '../../components/FilteredConnection/ui'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '../../graphql-operations'
+import type { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '../../graphql-operations'
 
 import { useChildTeams, useTeams } from './backend'
 import { TeamNode } from './TeamNode'

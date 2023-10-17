@@ -73,7 +73,7 @@ WHERE
 	AND EXISTS (
 		SELECT 1 FROM cm_monitors
 		WHERE cm_monitors.id = cm_queries.monitor
-			AND cm_monitors.namespace_user_id = %s
+			AND %s
 	)
 RETURNING %s;
 `
@@ -81,6 +81,12 @@ RETURNING %s;
 func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, id int64, query string) error {
 	now := s.Now()
 	a := actor.FromContext(ctx)
+
+	user, err := a.User(ctx, s.userStore)
+	if err != nil {
+		return err
+	}
+
 	q := sqlf.Sprintf(
 		updateTriggerQueryFmtStr,
 		query,
@@ -88,11 +94,11 @@ func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, id int64, que
 		now,
 		now,
 		id,
-		a.UID,
+		namespaceScopeQuery(user),
 		sqlf.Join(queryColumns, ", "),
 	)
 	row := s.QueryRow(ctx, q)
-	_, err := scanTriggerQuery(row)
+	_, err = scanTriggerQuery(row)
 	return err
 }
 

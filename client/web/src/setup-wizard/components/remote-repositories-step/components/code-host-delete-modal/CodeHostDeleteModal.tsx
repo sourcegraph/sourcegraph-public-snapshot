@@ -1,12 +1,12 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { ApolloCache } from '@apollo/client/cache'
+import type { ApolloCache } from '@apollo/client/cache'
 import { useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, ErrorAlert, H2, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'

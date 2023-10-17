@@ -2,8 +2,9 @@ package jobutil
 
 import (
 	"context"
-	"github.com/grafana/regexp"
 	"testing"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"

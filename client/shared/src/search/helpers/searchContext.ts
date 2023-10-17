@@ -1,17 +1,17 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 
 import type { PlatformContext } from '../../platform/context'
 import {
-    fetchSearchContexts,
-    getUserSearchContextNamespaces,
-    fetchSearchContext,
-    fetchSearchContextBySpec,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
+    type fetchSearchContexts,
+    type getUserSearchContextNamespaces,
+    type fetchSearchContext,
+    type fetchSearchContextBySpec,
+    type createSearchContext,
+    type updateSearchContext,
+    type deleteSearchContext,
     isSearchContextAvailable,
     fetchDefaultSearchContextSpec,
 } from '../backend'

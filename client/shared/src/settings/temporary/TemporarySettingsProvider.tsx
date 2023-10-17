@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, createContext, useEffect } from 'react'
+import { type FC, type PropsWithChildren, createContext, useEffect } from 'react'
 
 import { logger } from '@sourcegraph/common'
 

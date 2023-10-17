@@ -2,30 +2,39 @@
   description = "The Sourcegraph developer environment & packages Nix Flake";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "nixpkgs/nixpkgs-unstable";
+    # separate nixpkgs pin for more stable changes to binaries we build
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/e78d25df6f1036b3fa76750ed4603dd9d5fe90fc";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, nixpkgs-stable, flake-utils }:
+    let
+      xcompileTargets = with nixpkgs-stable.lib.systems.examples; {
+        "aarch64-darwin" = nixpkgs-stable.legacyPackages.aarch64-darwin.pkgsx86_64Darwin;
+        "x86_64-darwin" = import nixpkgs-stable { system = "x86_64-darwin"; crossSystem = aarch64-darwin; };
+      };
+      inherit (import ./dev/nix/util.nix { inherit (nixpkgs) lib; }) xcompilify;
+    in
     flake-utils.lib.eachDefaultSystem
       (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          pkgsBins = nixpkgs-stable.legacyPackages.${system};
           pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
+          pkgsX = xcompileTargets.${system} or null;
         in
         {
-          # We set legacyPackages to our custom static binaries so command
-          # like "nix build .#p4-fusion" work.
           legacyPackages = pkgs';
 
-          packages = {
-            ctags = pkgs.callPackage ./dev/nix/ctags.nix { };
-            comby = pkgs.callPackage ./dev/nix/comby.nix { };
-            nodejs-16_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
-          }
-          # so we don't get `packages.aarch64-linux.p4-fusion` in nix `flake show` output
-          // pkgs.lib.optionalAttrs (pkgs.targetPlatform.system != "aarch64-linux") {
-            p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
+          packages = xcompilify { inherit pkgsX; pkgs = pkgsBins; }
+            (p: {
+              ctags = p.callPackage ./dev/nix/ctags.nix { };
+              comby = p.callPackage ./dev/nix/comby.nix { };
+              p4-fusion = p.callPackage ./dev/nix/p4-fusion.nix { };
+            }) // {
+            # doesnt need the same stability as those above
+            nodejs-18_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
           };
 
           # We use pkgs (not pkgs') intentionally to avoid doing extra work of
@@ -38,7 +47,7 @@
       overlays = {
         ctags = final: prev: { universal-ctags = self.packages.${prev.system}.ctags; };
         comby = final: prev: { comby = self.packages.${prev.system}.comby; };
-        nodejs-16_x = final: prev: { nodejs-16_x = self.packages.${prev.system}.nodejs-16_x; };
+        nodejs-18_x = final: prev: { nodejs-16_x = self.packages.${prev.system}.nodejs-18_x; };
         p4-fusion = final: prev: { p4-fusion = self.packages.${prev.system}.p4-fusion; };
       };
     };

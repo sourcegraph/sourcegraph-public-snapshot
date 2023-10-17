@@ -106,9 +106,12 @@ type RepoEmbeddingJobsStore interface {
 	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
+	RescheduleAllRepos(ctx context.Context) error
 
 	UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error
 	GetRepoEmbeddingJobStats(ctx context.Context, jobID int) (EmbedRepoStats, error)
+
+	CountRepoEmbeddings(ctx context.Context) (int, error)
 }
 
 var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
@@ -253,17 +256,40 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 	return id, err
 }
 
+func (s *repoEmbeddingJobsStore) RescheduleAllRepos(ctx context.Context) error {
+	const rescheduleAllQuery = `
+	INSERT INTO repo_embedding_jobs (repo_id, revision)
+	SELECT * FROM (
+		SELECT
+			DISTINCT repo_id,
+			(
+				SELECT r2.revision
+				FROM repo_embedding_jobs r2
+				WHERE r2.repo_id = r1.repo_id
+					AND state = 'completed'
+				ORDER BY finished_at DESC
+				LIMIT 1
+			) latest_successful_revision
+		FROM repo_embedding_jobs r1
+	) subquery
+	WHERE latest_successful_revision IS NOT NULL
+	`
+	return s.Store.Exec(ctx, sqlf.Sprintf(rescheduleAllQuery))
+}
+
 var repoEmbeddingJobStatsColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_embedding_job_stats.job_id"),
 	sqlf.Sprintf("repo_embedding_job_stats.is_incremental"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_files_total"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_files_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_chunks_excluded"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_files_skipped"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_bytes_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_files_total"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_files_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_chunks_excluded"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_files_skipped"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_bytes_embedded"),
 }
@@ -277,11 +303,13 @@ func scanRepoEmbeddingStats(s dbutil.Scanner) (EmbedRepoStats, error) {
 		&stats.CodeIndexStats.FilesScheduled,
 		&stats.CodeIndexStats.FilesEmbedded,
 		&stats.CodeIndexStats.ChunksEmbedded,
+		&stats.CodeIndexStats.ChunksExcluded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
 		&stats.CodeIndexStats.BytesEmbedded,
 		&stats.TextIndexStats.FilesScheduled,
 		&stats.TextIndexStats.FilesEmbedded,
 		&stats.TextIndexStats.ChunksEmbedded,
+		&stats.TextIndexStats.ChunksExcluded,
 		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
 		&stats.TextIndexStats.BytesEmbedded,
 	)
@@ -317,17 +345,20 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		code_files_total,
 		code_files_embedded,
 		code_chunks_embedded,
+		code_chunks_excluded,
 		code_files_skipped,
 		code_bytes_embedded,
 		text_files_total,
 		text_files_embedded,
 		text_chunks_embedded,
+		text_chunks_excluded,
 		text_files_skipped,
 		text_bytes_embedded
 	) VALUES (
 		%s, %s, %s, %s,
 		%s, %s, %s, %s,
-		%s, %s, %s, %s
+		%s, %s, %s, %s,
+	    %s, %s
 	)
 	ON CONFLICT (job_id) DO UPDATE
 	SET
@@ -335,11 +366,13 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		code_files_total = %s,
 		code_files_embedded = %s,
 		code_chunks_embedded = %s,
+		code_chunks_excluded = %s,
 		code_files_skipped = %s,
 		code_bytes_embedded = %s,
 		text_files_total = %s,
 		text_files_embedded = %s,
 		text_chunks_embedded = %s,
+		text_chunks_excluded = %s,
 		text_files_skipped = %s,
 		text_bytes_embedded = %s
 	`
@@ -352,11 +385,13 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		stats.CodeIndexStats.FilesScheduled,
 		stats.CodeIndexStats.FilesEmbedded,
 		stats.CodeIndexStats.ChunksEmbedded,
+		stats.CodeIndexStats.ChunksExcluded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
 		stats.CodeIndexStats.BytesEmbedded,
 		stats.TextIndexStats.FilesScheduled,
 		stats.TextIndexStats.FilesEmbedded,
 		stats.TextIndexStats.ChunksEmbedded,
+		stats.TextIndexStats.ChunksExcluded,
 		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
 		stats.TextIndexStats.BytesEmbedded,
 
@@ -364,11 +399,13 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		stats.CodeIndexStats.FilesScheduled,
 		stats.CodeIndexStats.FilesEmbedded,
 		stats.CodeIndexStats.ChunksEmbedded,
+		stats.CodeIndexStats.ChunksExcluded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
 		stats.CodeIndexStats.BytesEmbedded,
 		stats.TextIndexStats.FilesScheduled,
 		stats.TextIndexStats.FilesEmbedded,
 		stats.TextIndexStats.ChunksEmbedded,
+		stats.TextIndexStats.ChunksExcluded,
 		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
 		stats.TextIndexStats.BytesEmbedded,
 	)
@@ -544,3 +581,13 @@ WHERE
 	AND
 	state IN ('queued', 'processing')
 `
+
+const countRepoEmbeddingsQuery = `
+SELECT COUNT(DISTINCT repo_id) AS count
+FROM repo_embedding_jobs
+WHERE state = 'completed';
+`
+
+func (s *repoEmbeddingJobsStore) CountRepoEmbeddings(ctx context.Context) (int, error) {
+	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(countRepoEmbeddingsQuery)))
+}

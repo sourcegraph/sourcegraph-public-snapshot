@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -19,10 +19,10 @@ func TestToPerforceChangelistResolver(t *testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(repo, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	repoResolver := NewRepositoryResolver(db, nil, repo)
@@ -77,7 +77,8 @@ foo bar`,
 	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotResolver, gotErr := toPerforceChangelistResolver(ctx, repoResolver, tc.inputCommit)
+			gcr := NewGitCommitResolver(db, nil, repoResolver, tc.inputCommit.ID, tc.inputCommit)
+			gotResolver, gotErr := toPerforceChangelistResolver(ctx, gcr)
 
 			if !errors.Is(gotErr, tc.expectedErr) {
 				t.Fatalf("mismatched errors, \nwant: %v\n got: %v", tc.expectedErr, gotErr)

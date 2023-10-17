@@ -1,15 +1,15 @@
-import { applyEdits, JSONPath, modify } from 'jsonc-parser'
+import { applyEdits, type JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { ExternalServiceKind } from '../graphql-operations'
 
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
-import { GraphQLClient } from './util/GraphQlClient'
+import type { GraphQLClient } from './util/GraphQlClient'
 import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'

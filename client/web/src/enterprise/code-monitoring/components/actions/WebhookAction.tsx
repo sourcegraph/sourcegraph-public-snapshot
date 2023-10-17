@@ -5,8 +5,8 @@ import { noop } from 'lodash'
 
 import { Alert, Input, Link, ProductStatusBadge, Label } from '@sourcegraph/wildcard'
 
-import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
-import { ActionProps } from '../FormActionArea'
+import type { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
+import type { ActionProps } from '../FormActionArea'
 
 import { ActionEditor } from './ActionEditor'
 

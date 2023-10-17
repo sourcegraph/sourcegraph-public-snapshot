@@ -1,14 +1,14 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import {
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
     useShowMorePagination,
 } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     ProductLicensesResult,
     ProductLicenseFields,
     ProductLicensesVariables,

@@ -33,17 +33,17 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
-import {
+import type {
     BatchSpecListFields,
     Scalars,
     PartialBatchSpecWorkspaceFileFields,
     BatchSpecWorkspaceFileResult,
     BatchSpecWorkspaceFileVariables,
 } from '../../graphql-operations'
+import { humanizeSize } from '../../util/size'
 
 import { BATCH_SPEC_WORKSPACE_FILE, generateFileDownloadLink } from './backend'
 import { BatchSpec } from './BatchSpec'
-import { humanizeSize } from './utils/size'
 
 import styles from './BatchSpecNode.module.scss'
 

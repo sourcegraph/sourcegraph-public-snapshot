@@ -1,4 +1,12 @@
-import { ChangeEvent, FC, MutableRefObject, PropsWithChildren, ReactElement, ReactNode, useRef } from 'react'
+import {
+    type ChangeEvent,
+    type FC,
+    type MutableRefObject,
+    type PropsWithChildren,
+    type ReactElement,
+    type ReactNode,
+    useRef,
+} from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import classNames from 'classnames'
@@ -6,7 +14,7 @@ import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { EditorHint, QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
@@ -19,16 +27,19 @@ import {
     useDebounce,
     Link,
     FormGroup,
-    useFieldAPI,
+    type useFieldAPI,
     getDefaultInputProps,
     getDefaultInputStatus,
     getDefaultInputError,
 } from '@sourcegraph/wildcard'
 
-import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
-import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
-import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
-import { MonacoPreviewLink } from '../../form/monaco-field'
+import type {
+    InsightRepositoriesCountResult,
+    InsightRepositoriesCountVariables,
+} from '../../../../../graphql-operations'
+import type { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
+import { getRepoQueryPreview, RepositoriesField, Field } from '../../form'
+import { PreviewLink } from '../../form/field'
 
 import styles from './InsightRepoSection.module.scss'
 
@@ -192,7 +203,7 @@ function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): Re
     )
 }
 
-const EMPTY_QUERY_STATA: QueryState = { query: '' }
+const EMPTY_QUERY_STATE: QueryState = { query: '' }
 
 interface SmartSearchQueryRepoFieldProps {
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
@@ -224,7 +235,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
         }
     }
 
-    const queryState = disabled ? EMPTY_QUERY_STATA : value
+    const queryState = disabled ? EMPTY_QUERY_STATE : value
     const previewQuery = value.query ? getRepoQueryPreview(value.query) : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
@@ -240,7 +251,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                 )}
 
                 <InputElement
-                    as={MonacoField}
+                    as={Field}
                     queryState={queryState}
                     status={fieldStatus}
                     placeholder="Example: repo:sourcegraph/*"
@@ -253,14 +264,14 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     {...attributes}
                 />
 
-                <MonacoPreviewLink
+                <PreviewLink
                     query={previewQuery}
                     patternType={SearchPatternType.standard}
                     className={styles.repoLabelPreviewLink}
                     tabIndex={disabled ? -1 : 0}
                 >
                     <LinkExternalIcon size={18} />
-                </MonacoPreviewLink>
+                </PreviewLink>
             </LabelComponent>
 
             <SmartRepoQueryChips disabled={disabled} onChipClick={handleChipSuggestions} />

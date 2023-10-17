@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { useMutation } from '@sourcegraph/http-client'
 import { ErrorAlert } from '@sourcegraph/wildcard'
 
-import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
+import type { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
-    AddPackageRepoFilterResult,
-    AddPackageRepoFilterVariables,
+    type AddPackageRepoFilterResult,
+    type AddPackageRepoFilterVariables,
     PackageMatchBehaviour,
-    PackageRepoReferenceKind,
-    SiteAdminPackageFields,
+    type PackageRepoReferenceKind,
+    type SiteAdminPackageFields,
 } from '../../../graphql-operations'
 import { addPackageRepoFilterMutation } from '../backend'
 import { BehaviourSelect } from '../components/BehaviourSelect'

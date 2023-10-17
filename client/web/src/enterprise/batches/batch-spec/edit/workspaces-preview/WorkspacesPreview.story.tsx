@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -24,7 +24,7 @@ import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>
 )
 
@@ -54,8 +54,10 @@ Unstarted.argTypes = {
     batchSpec: {
         name: 'Valid batch spec?',
         control: { type: 'boolean' },
-        defaultValue: true,
     },
+}
+Unstarted.args = {
+    batchSpec: true,
 }
 
 export const UnstartedWithCachedConnectionResult: Story = args => (
@@ -77,8 +79,10 @@ UnstartedWithCachedConnectionResult.argTypes = {
     batchSpec: {
         name: 'Valid batch spec?',
         control: { type: 'boolean' },
-        defaultValue: true,
     },
+}
+UnstartedWithCachedConnectionResult.args = {
+    batchSpec: true,
 }
 
 UnstartedWithCachedConnectionResult.storyName = 'unstarted, with cached connection result'
@@ -137,12 +141,14 @@ QueuedInProgress.argTypes = {
             type: 'select',
             options: [BatchSpecWorkspaceResolutionState.QUEUED, BatchSpecWorkspaceResolutionState.PROCESSING],
         },
-        defaultValue: BatchSpecWorkspaceResolutionState.QUEUED,
     },
     batchSpec: {
         control: { type: 'boolean' },
-        defaultValue: true,
     },
+}
+QueuedInProgress.args = {
+    inProgressResolution: BatchSpecWorkspaceResolutionState.QUEUED,
+    batchSpec: true,
 }
 
 QueuedInProgress.storyName = 'queued/in progress'
@@ -201,8 +207,10 @@ QueuedInProgressWithCachedConnectionResult.argTypes = {
             type: 'select',
             options: [BatchSpecWorkspaceResolutionState.QUEUED, BatchSpecWorkspaceResolutionState.PROCESSING],
         },
-        defaultValue: BatchSpecWorkspaceResolutionState.QUEUED,
     },
+}
+QueuedInProgressWithCachedConnectionResult.args = {
+    inProgressResolution: BatchSpecWorkspaceResolutionState.QUEUED,
 }
 
 QueuedInProgressWithCachedConnectionResult.storyName = 'queued/in progress, with cached connection result'
@@ -264,8 +272,10 @@ FailedErrored.argTypes = {
             type: 'select',
             options: [BatchSpecWorkspaceResolutionState.FAILED, BatchSpecWorkspaceResolutionState.ERRORED],
         },
-        defaultValue: BatchSpecWorkspaceResolutionState.FAILED,
     },
+}
+FailedErrored.args = {
+    inProgressResolution: BatchSpecWorkspaceResolutionState.FAILED,
 }
 
 FailedErrored.storyName = 'failed/errored'
@@ -327,13 +337,15 @@ FailedErroredWithCachedConnectionResult.argTypes = {
             type: 'select',
             options: [BatchSpecWorkspaceResolutionState.FAILED, BatchSpecWorkspaceResolutionState.ERRORED],
         },
-        defaultValue: BatchSpecWorkspaceResolutionState.FAILED,
     },
+}
+FailedErroredWithCachedConnectionResult.args = {
+    inProgressResolution: BatchSpecWorkspaceResolutionState.FAILED,
 }
 
 FailedErroredWithCachedConnectionResult.storyName = 'failed/errored, with cached connection result'
 
-export const Succeeded: Story = () => (
+export const Succeeded: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -362,7 +374,7 @@ export const Succeeded: Story = () => (
     </WebStory>
 )
 
-export const CacheDisabled: Story = () => (
+export const CacheDisabled: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -391,7 +403,7 @@ export const CacheDisabled: Story = () => (
     </WebStory>
 )
 
-export const ReadOnly: Story = () => (
+export const ReadOnly: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -409,7 +421,7 @@ export const ReadOnly: Story = () => (
 
 ReadOnly.storyName = 'read-only'
 
-export const SucceededWithScaleAlert: Story = () => (
+export const SucceededWithScaleAlert: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(LARGE_SUCCESS_CONNECTION_MOCKS)}>
@@ -440,7 +452,7 @@ export const SucceededWithScaleAlert: Story = () => (
 
 SucceededWithScaleAlert.storyName = 'succeeded, with size alert'
 
-export const ReadOnlyWithScaleAlert: Story = () => (
+export const ReadOnlyWithScaleAlert: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(LARGE_SUCCESS_CONNECTION_MOCKS)}>
@@ -458,7 +470,7 @@ export const ReadOnlyWithScaleAlert: Story = () => (
 
 ReadOnlyWithScaleAlert.storyName = 'read-only, with size alert'
 
-export const UnstartedWithLicenseAlertConnectionResult: Story = () => (
+export const UnstartedWithLicenseAlertConnectionResult: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -478,7 +490,7 @@ export const UnstartedWithLicenseAlertConnectionResult: Story = () => (
 
 UnstartedWithLicenseAlertConnectionResult.storyName = 'unstarted, with license alert'
 
-export const ReadOnlyWithLicenseAlert: Story = () => (
+export const ReadOnlyWithLicenseAlert: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider

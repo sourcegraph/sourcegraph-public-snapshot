@@ -72,16 +72,7 @@ func FlattenPattern(pathPattern *PathPattern, inverted bool) (patterns []GlobAnd
 // PathPatternsFromUserData decodes a single path pattern or slice of path patterns from
 // the given Lua value.
 func PathPatternsFromUserData(value lua.LValue) (patterns []*PathPattern, err error) {
-	err = util.UnwrapSliceOrSingleton(value, func(value lua.LValue) error {
-		return util.UnwrapLuaUserData(value, func(value any) error {
-			if pathPattern, ok := value.(*PathPattern); ok {
-				patterns = append(patterns, pathPattern)
-				return nil
-			}
-
-			return util.NewTypeError("*PathPattern", value)
-		})
+	return util.MapSliceOrSingleton(value, func(value lua.LValue) (*PathPattern, error) {
+		return util.TypecheckUserData[*PathPattern](value, "*PathPattern")
 	})
-
-	return
 }

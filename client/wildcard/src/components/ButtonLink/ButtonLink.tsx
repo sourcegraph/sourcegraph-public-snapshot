@@ -1,4 +1,4 @@
-import React, { AnchorHTMLAttributes, useRef } from 'react'
+import React, { type AnchorHTMLAttributes, useRef } from 'react'
 
 import classNames from 'classnames'
 import { Key } from 'ts-key-enum'
@@ -6,8 +6,8 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
 
-import { ForwardReferenceComponent } from '../../types'
-import { Button, ButtonProps } from '../Button'
+import type { ForwardReferenceComponent } from '../../types'
+import { Button, type ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>

@@ -1,4 +1,4 @@
-import React, { ButtonHTMLAttributes, forwardRef, useEffect, useState } from 'react'
+import React, { type ButtonHTMLAttributes, forwardRef, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -17,13 +17,13 @@ import {
     Flipping,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Strategy,
     usePopoverContext,
 } from '@sourcegraph/wildcard'
 
-import { ParentTeamSelectSearchFields, UserSelectSearchFields } from '../../graphql-operations'
+import type { ParentTeamSelectSearchFields, UserSelectSearchFields } from '../../graphql-operations'
 import { useUserSelectSearch } from '../../site-admin/user-select/backend'
 import { useParentTeamSelectSearch } from '../../team/new/team-select/backend'
 

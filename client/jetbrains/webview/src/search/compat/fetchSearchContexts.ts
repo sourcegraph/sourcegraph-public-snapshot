@@ -1,16 +1,16 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
-    ListSearchContextsResult,
-    Maybe,
-    Scalars,
+    type ListSearchContextsResult,
+    type Maybe,
+    type Scalars,
     SearchContextsOrderBy,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { ListSearchContextsCompatResult, ListSearchContextsCompatVariables } from '../../graphql-operations'
+import type { ListSearchContextsCompatResult, ListSearchContextsCompatVariables } from '../../graphql-operations'
 
 // A version of fetchSearchContext that works with instances prior 4.3
 export function fetchSearchContextsCompat({

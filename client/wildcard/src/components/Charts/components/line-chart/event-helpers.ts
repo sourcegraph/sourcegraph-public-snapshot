@@ -1,5 +1,5 @@
 import { localPoint } from '@visx/event'
-import { VoronoiDiagram, VoronoiSite } from 'd3-voronoi'
+import type { VoronoiDiagram, VoronoiSite } from 'd3-voronoi'
 
 interface Offset {
     top: number

@@ -1,28 +1,28 @@
-import React, { PropsWithChildren, useCallback, useMemo, useState } from 'react'
+import React, { type PropsWithChildren, useCallback, useMemo, useState } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
-    ListSearchContextsResult,
-    ListSearchContextsVariables,
+    type ListSearchContextsResult,
+    type ListSearchContextsVariables,
     SearchContextsOrderBy,
-    SearchContextMinimalFields,
+    type SearchContextMinimalFields,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import {
-    Connection,
+    type Connection,
     FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionFilterValue,
+    type FilteredConnectionFilter,
+    type FilteredConnectionFilterValue,
 } from '../../components/FilteredConnection'
 
 import { useDefaultContext } from './hooks/useDefaultContext'
-import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
+import { SearchContextNode, type SearchContextNodeProps } from './SearchContextNode'
 
 import styles from './SearchContextsList.module.scss'
 

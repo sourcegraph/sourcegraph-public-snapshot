@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../../components/WebStory'
 
@@ -50,7 +50,7 @@ const getColor = (datum: LanguageUsageDatum) => datum.fill
 const getLink = (datum: LanguageUsageDatum) => datum.linkURL
 const getName = (datum: LanguageUsageDatum) => datum.name
 
-export const CategoricalPieChart: Story = () => (
+export const CategoricalPieChart: StoryFn = () => (
     <CategoricalChart
         type={CategoricalBasedChartTypes.Pie}
         width={400}

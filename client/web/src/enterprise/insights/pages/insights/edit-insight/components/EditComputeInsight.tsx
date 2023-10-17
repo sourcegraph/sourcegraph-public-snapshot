@@ -1,11 +1,11 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
-import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+import { FORM_ERROR, type SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { CodeInsightCreationMode, CodeInsightsCreationActions, createDefaultEditSeries } from '../../../../components'
-import { ComputeInsight, MinimalComputeInsightData } from '../../../../core'
+import type { ComputeInsight, MinimalComputeInsightData } from '../../../../core'
 import { ComputeInsightCreationContent } from '../../creation/compute/components/ComputeInsightCreationContent'
-import { CreateComputeInsightFormFields } from '../../creation/compute/types'
+import type { CreateComputeInsightFormFields } from '../../creation/compute/types'
 import { getSanitizedComputeInsight } from '../../creation/compute/utils/insight-sanitaizer'
 
 interface EditComputeInsightProps {

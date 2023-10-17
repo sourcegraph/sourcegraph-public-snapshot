@@ -1,19 +1,19 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { AuthenticatedUser } from '../../../auth'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import type { AuthenticatedUser } from '../../../auth'
+import type { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { NotFoundPage } from '../../../components/HeroPage'
-import { RepositoryFields } from '../../../graphql-operations'
-import { RouteV6Descriptor } from '../../../util/contributions'
-import { CodeIntelConfigurationPolicyPageProps } from '../../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
+import type { RepositoryFields } from '../../../graphql-operations'
+import type { RouteV6Descriptor } from '../../../util/contributions'
+import type { CodeIntelConfigurationPolicyPageProps } from '../../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { CodyConfigurationPage } from '../configuration/pages/CodyConfigurationPage'
 
-import { CodyRepoSidebar, CodyRepoSidebarGroups } from './CodyRepoSidebar'
+import { CodyRepoSidebar, type CodyRepoSidebarGroups } from './CodyRepoSidebar'
 
 export interface CodyRepoAreaRouteContext extends TelemetryProps {
     repo: { id: string; name: string }

@@ -13,14 +13,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RfcTemplate string
+type Template struct {
+	Name    string
+	DriveID string
+}
 
 // Template: RFC to frame a problem, propose a solution, and drive a decision.
 // https://docs.google.com/document/d/1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4
-const ProblemSolutionDriveTemplate = RfcTemplate("1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4")
+var ProblemSolutionDriveTemplate = Template{Name: "solution", DriveID: "1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4"}
 
-func Create(ctx context.Context, rfcType RfcTemplate, title string, driveSpec DriveSpec, out *std.Output) error {
-	newFile, newRfcID, err := createMainDoc(ctx, title, rfcType, driveSpec, out)
+// AllTemplates contains all the RFC templates that one can use when creating a new RFC
+var AllTemplates = []Template{ProblemSolutionDriveTemplate}
+
+func Create(ctx context.Context, template Template, title string, driveSpec DriveSpec, out *std.Output) error {
+	newFile, newRfcID, err := createMainDoc(ctx, title, template, driveSpec, out)
 	if err != nil {
 		return errors.Wrap(err, "cannot create RFC")
 	}
@@ -207,14 +213,14 @@ func updateContent(ctx context.Context, newFile *drive.File, nextRfcID int, titl
 	return nil
 }
 
-func createMainDoc(ctx context.Context, title string, rfcTemplate RfcTemplate, driveSpec DriveSpec,
+func createMainDoc(ctx context.Context, title string, template Template, driveSpec DriveSpec,
 	out *std.Output) (*drive.File, int, error) {
 	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	template, err := srv.Files.Get(string(rfcTemplate)).
+	templateFile, err := srv.Files.Get(template.DriveID).
 		Context(ctx).
 		SupportsTeamDrives(true).
 		SupportsAllDrives(true).
@@ -222,7 +228,7 @@ func createMainDoc(ctx context.Context, title string, rfcTemplate RfcTemplate, d
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to get template")
 	}
-	out.Write(fmt.Sprintf("Using template: %s", template.Name))
+	out.Write(fmt.Sprintf("Using template: %s", templateFile.Name))
 
 	nextRfcID, err := findNextRfcID(ctx, out)
 	if err != nil {
@@ -238,7 +244,7 @@ func createMainDoc(ctx context.Context, title string, rfcTemplate RfcTemplate, d
 		Parents: []string{driveSpec.FolderID},
 	}
 
-	newFile, err := srv.Files.Copy(template.Id, &newFileDetails).
+	newFile, err := srv.Files.Copy(templateFile.Id, &newFileDetails).
 		SupportsAllDrives(true).
 		SupportsTeamDrives(true).
 		Do()

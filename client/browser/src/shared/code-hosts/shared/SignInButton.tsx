@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { interval, Observable } from 'rxjs'
+import { interval, type Observable } from 'rxjs'
 import { switchMap, filter, take, tap } from 'rxjs/operators'
 
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'

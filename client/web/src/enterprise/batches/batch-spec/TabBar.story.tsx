@@ -1,12 +1,12 @@
 import { useState } from 'react'
 
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
-import { TabBar, TabsConfig, TabKey } from './TabBar'
+import { TabBar, type TabsConfig, type TabKey } from './TabBar'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/TabBar',
@@ -17,13 +17,13 @@ export default config
 
 const CREATE_TABS: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
-export const CreateNewBatchChange: Story = () => (
+export const CreateNewBatchChange: StoryFn = () => (
     <WebStory>{props => <TabBar {...props} activeTabKey="configuration" tabsConfig={CREATE_TABS} />}</WebStory>
 )
 
 CreateNewBatchChange.storyName = 'creating a new batch change'
 
-export const EditUnexecutedBatchSpec: Story = () => {
+export const EditUnexecutedBatchSpec: StoryFn = () => {
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
 
     const tabsConfig: TabsConfig[] = [
@@ -62,8 +62,10 @@ export const ExecuteBatchSpec: Story = args => (
 ExecuteBatchSpec.argTypes = {
     activeTabKey: {
         control: { type: 'select', options: ['configuration', 'spec', 'execution'] },
-        defaultValue: 'execution',
     },
+}
+ExecuteBatchSpec.args = {
+    activeTabKey: 'execution',
 }
 
 ExecuteBatchSpec.storyName = 'executing a batch spec'
@@ -81,8 +83,10 @@ export const PreviewExecutionResult: Story = args => (
 PreviewExecutionResult.argTypes = {
     activeTabKey: {
         control: { type: 'select', options: ['configuration', 'spec', 'execution', 'preview'] },
-        defaultValue: 'preview',
     },
+}
+PreviewExecutionResult.args = {
+    activeTabKey: 'preview',
 }
 
 PreviewExecutionResult.storyName = 'previewing an execution result'
@@ -100,8 +104,10 @@ export const LocallyExecutedSpec: Story = args => (
 LocallyExecutedSpec.argTypes = {
     activeTabKey: {
         control: { type: 'select', options: ['configuration', 'spec', 'preview'] },
-        defaultValue: 'preview',
     },
+}
+LocallyExecutedSpec.args = {
+    activeTabKey: 'preview',
 }
 
 LocallyExecutedSpec.storyName = 'for a locally-executed spec'

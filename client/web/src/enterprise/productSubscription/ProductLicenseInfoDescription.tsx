@@ -2,7 +2,7 @@ import React from 'react'
 
 import { H3 } from '@sourcegraph/wildcard'
 
-import { ProductLicenseInfoFields } from '../../graphql-operations'
+import type { ProductLicenseInfoFields } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 export const ProductLicenseInfoDescription: React.FunctionComponent<

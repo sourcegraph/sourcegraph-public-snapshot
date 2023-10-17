@@ -5,9 +5,7 @@ load("//dev:oci_defs.bzl", "image_repository")
 
 filegroup(
     name = "config",
-    srcs = glob(
-        ["rootfs/*"],
-    ) + ["config/postgresql.conf.sample"],
+    srcs = ["//docker-images/postgres-12-alpine/rootfs:files"] + glob(["config/postgresql.conf.sample"]),
 )
 
 pkg_tar(
@@ -35,15 +33,14 @@ oci_image(
     },
     tars = [":config_tar"],
     user = "postgres",
-    visibility = [
-        "//docker-images/codeintel-db:__pkg__",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["postgres-12:candidate"],
+    visibility = ["//visibility:public"],
 )
 
 container_structure_test(

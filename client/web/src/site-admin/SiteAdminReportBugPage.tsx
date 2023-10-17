@@ -2,8 +2,8 @@ import React, { useMemo } from 'react'
 
 import { mapValues, values } from 'lodash'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
 
@@ -112,12 +112,12 @@ const allConfigSchema = {
 }
 
 interface Props extends TelemetryProps {
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const isLightTheme = useIsLightTheme()
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
@@ -130,7 +130,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     target="_blank"
                     rel="noopener noreferrer"
                     to={
-                        isSourcegraphApp
+                        isCodyApp
                             ? 'https://github.com/sourcegraph/app/issues/new?assignees=&labels=&template=bug_report.md&title='
                             : 'https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title='
                     }

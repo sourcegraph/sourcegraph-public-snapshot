@@ -3,18 +3,18 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { test } from 'mocha'
 
-import { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     highlightFileResult,
     mixedSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { createEditorAPI, getSearchQueryInputConfig, percySnapshotWithVariants } from './utils'
 

@@ -36,7 +36,7 @@ contents:
     - ctags@sourcegraph
     - coursier@sourcegraph
     - p4cli@sourcegraph
-    - p4-fusion@sourcegraph
+    - p4-fusion=1.12-r6@sourcegraph
     - s3proxy@sourcegraph
     - grafana@chainguard
 
@@ -81,4 +81,4 @@ paths:
     type: directory
     permissions: 0o755
 
-# MANUAL REBUILD: Fri Jun 23 10:31:13 BST 2023
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

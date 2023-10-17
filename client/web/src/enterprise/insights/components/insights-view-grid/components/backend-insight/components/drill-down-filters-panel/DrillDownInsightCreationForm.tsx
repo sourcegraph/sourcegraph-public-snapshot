@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
 import {
     Button,
@@ -10,7 +10,7 @@ import {
     FORM_ERROR,
     getDefaultInputProps,
     createRequiredValidator,
-    SubmissionResult,
+    type SubmissionResult,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'

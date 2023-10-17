@@ -4,16 +4,16 @@
     import Icon from '$lib/Icon.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import { getSymbolIconPath } from '$lib/search/symbolIcons'
-    import { displayRepoName, splitPath, getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '$lib/shared'
+    import type { SymbolMatch } from '$lib/shared'
+    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
 
     import CodeExcerpt from './CodeExcerpt.svelte'
+    import CodeHostIcon from './CodeHostIcon.svelte'
+    import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
 
     export let result: SymbolMatch
 
-    $: repoName = result.repository
-    $: repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
-    $: [fileBase, fileName] = splitPath(result.path)
     $: ranges = result.symbols.map(symbol => ({
         startLine: symbol.line - 1,
         endLine: symbol.line,
@@ -27,27 +27,29 @@
     }
 </script>
 
-<SearchResult {result}>
-    <div slot="title">
-        <a href={repoAtRevisionURL}>{displayRepoName(repoName)}</a>
-        <span aria-hidden={true}>›</span>
-        <a href={getFileMatchUrl(result)}>
-            {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
-        </a>
-    </div>
-    {#each result.symbols as symbol}
-        <div class="result">
-            <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
-                <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
+<SearchResult>
+    <CodeHostIcon slot="icon" repository={result.repository} />
+    <FileSearchResultHeader slot="title" {result} />
+    <svelte:fragment slot="info">
+        {#if result.repoStars}
+            <RepoStars repoStars={result.repoStars} />
+        {/if}
+    </svelte:fragment>
+    <svelte:fragment slot="body">
+        {#each result.symbols as symbol}
+            <div class="result">
+                <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
+                    <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
+                </div>
+                <CodeExcerpt
+                    startLine={symbol.line - 1}
+                    endLine={symbol.line}
+                    fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
+                    --background-color="transparent"
+                />
             </div>
-            <CodeExcerpt
-                startLine={symbol.line - 1}
-                endLine={symbol.line}
-                fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
-                --background-color="transparent"
-            />
-        </div>
-    {/each}
+        {/each}
+    </svelte:fragment>
 </SearchResult>
 
 <style lang="scss">

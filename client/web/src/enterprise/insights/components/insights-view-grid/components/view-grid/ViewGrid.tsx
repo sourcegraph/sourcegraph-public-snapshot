@@ -1,10 +1,10 @@
 import React, {
     createContext,
-    FC,
+    type FC,
     forwardRef,
-    HTMLAttributes,
-    PropsWithChildren,
-    ReactElement,
+    type HTMLAttributes,
+    type PropsWithChildren,
+    type ReactElement,
     useCallback,
     useContext,
     useEffect,
@@ -17,9 +17,9 @@ import React, {
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import {
-    Layout,
-    Layout as ReactGridLayout,
-    Layouts as ReactGridLayouts,
+    type Layout,
+    type Layout as ReactGridLayout,
+    type Layouts as ReactGridLayouts,
     Responsive as ResponsiveGridLayout,
 } from 'react-grid-layout'
 import { Key } from 'ts-key-enum'
@@ -28,7 +28,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { isFirefox } from '@sourcegraph/common'
 import { useMeasure } from '@sourcegraph/wildcard'
 
-import { Direction, findNextLayout } from './focus-management'
+import { type Direction, findNextLayout } from './focus-management'
 
 import styles from './ViewGrid.module.scss'
 

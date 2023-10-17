@@ -8,8 +8,8 @@ import { useLocation } from 'react-router-dom'
 import { dirname } from '@sourcegraph/common'
 import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
 
-import { FileDiffFields } from '../../graphql-operations'
-import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
+import type { FileDiffFields } from '../../graphql-operations'
+import type { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { isPerforceChangelistMappingEnabled } from '../../repo/utils'
 
 import { DiffStat, DiffStatSquares } from './DiffStat'

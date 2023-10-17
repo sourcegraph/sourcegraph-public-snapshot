@@ -2,8 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../../types'
-import { getAlignmentStyle, getModeStyle, TypographyProps } from '../utils'
+import type { ForwardReferenceComponent } from '../../../types'
+import { getAlignmentStyle, getModeStyle, type TypographyProps } from '../utils'
 
 import styles from './Heading.module.scss'
 

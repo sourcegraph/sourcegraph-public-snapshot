@@ -1,0 +1,24 @@
+load("@aspect_bazel_lib//lib:output_files.bzl", "output_files")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+
+filegroup(
+    name = "sql",
+    srcs = glob(["**/*"]),
+    visibility = ["//visibility:public"],
+)
+
+output_files(
+    name = "squashed",
+    output_group = "frontend_squash",
+    paths = ["internal/database/_frontend_squashed.sql"],
+    target = "//internal/database:generate_schemas",
+)
+
+write_source_files(
+    name = "write_squashed",
+    files = {
+        "squashed.sql": ":squashed",
+    },
+    suggested_update_target = "//dev:write_all_generated",
+    visibility = ["//visibility:public"],
+)

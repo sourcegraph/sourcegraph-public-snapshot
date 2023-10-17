@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import type { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 export interface IconProps {
     className?: string

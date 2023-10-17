@@ -25,21 +25,27 @@ To verify their email address, the user can do one of the following:
 
 Users with emails [created by the site admin](../auth/index.md#creating-builtin-authentication-users) through the `/site-admin/users/new` UI will have the same behaviour as the above. Users created directly through GraphQL or the `src` CLI assume that the email provided is verified.
 
+> Note: For SSO (Single Sign-On) enabled instances, it is important to remove the basic authentication method from the `auth.providers` list to prevent users from receiving password reset links. This is because users do not need passwords to log in to SSO-enabled instances. Prior to disabling the basic authentication method, please ensure that there is at least one administrator account capable of signing in via SSO. This is essential because once basic authentication is disabled, the username/password combination used to create the initial admin account will no longer be functional.
+
 ## Configuring Sourcegraph to send email via Amazon AWS / SES
 
 To use Amazon SES with Sourcegraph, first [follow these steps to create an SES account for Sourcegraph](https://docs.aws.amazon.com/ses/latest/dg/send-email-smtp-software-package.html).
 
 Navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
-```json
-  "email.address": "from@domain.com",
+```jsonc
+{
+  // [...]
+  "email.senderName": "Example Sourcegraph Instance", // Default: Sourcegraph
+  "email.address": "from@example.com",
   "email.smtp": {
     "authentication": "PLAIN",
     "username": "<SES SMTP username>",
     "password": "<SES SMTP password>",
     "host": "email-smtp.us-west-2.amazonaws.com",
     "port": 587
-  },
+  }
+}
 ```
 
 Please note that the configured `email.address` (the from address) must be a verified address with SES, see [this page for details](https://docs.aws.amazon.com/ses/latest/dg/verify-addresses-and-domains.html).
@@ -52,19 +58,23 @@ To use Google Workspace with Sourcegraph, you will need to [create an SMTP Relay
 
 Navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
-```json
-  "email.address": "test@domain.com",
+```jsonc
+{
+  // [...]
+  "email.senderName": "Example Sourcegraph Instance", // Default: Sourcegraph
+  "email.address": "test@example.com",
   "email.smtp": {
     "authentication": "PLAIN",
-    "username": "test@domain.com",
+    "username": "test@example.com",
     "password": "<YOUR SECRET>",
     "host": "smtp-relay.gmail.com",
     "port": 587,
-    "domain": "domain.com"
-  },
+    "domain": "example.com"
+  }
+}
 ```
 
-Make sure that `test@domain.com` in both places of the configuration matches the email address of the account you created, and that `<YOUR SECRET>` is replaced with the account password or app password when 2FA enabled.
+Make sure that `test@example.com` in both places of the configuration matches the email address of the account you created, and that `<YOUR SECRET>` is replaced with the account password or app password when 2FA enabled.
 
 [Send a test email](#sending-a-test-email) to verify it is configured properly.
 
@@ -77,15 +87,19 @@ Other providers such as Mailchimp and Sendgrid may also be used with Sourcegraph
 
 Once you have an SMTP account, simply navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
-```json
-  "email.address": "from@domain.com",
+```jsonc
+{
+  // [...]
+  "email.senderName": "Example Sourcegraph Instance", // Default: Sourcegraph
+  "email.address": "from@example.com",
   "email.smtp": {
     "authentication": "PLAIN",
-    "username": "test@domain.com",
+    "username": "test@example.com",
     "password": "<YOUR SECRET>",
     "host": "smtp-server.example.com",
     "port": 587
-  },
+  }
+}
 ```
 
 A few helpful tips:

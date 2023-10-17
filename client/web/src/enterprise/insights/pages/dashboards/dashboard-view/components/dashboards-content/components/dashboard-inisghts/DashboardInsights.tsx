@@ -1,11 +1,11 @@
-import { FC, useContext, useMemo } from 'react'
+import { type FC, useContext, useMemo } from 'react'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { SmartInsightsViewGrid, InsightContext, GridApi } from '../../../../../../../components'
-import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../../../core'
+import { SmartInsightsViewGrid, InsightContext, type GridApi } from '../../../../../../../components'
+import { CodeInsightsBackendContext, type CustomInsightDashboard } from '../../../../../../../core'
 import { EmptyCustomDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
 interface DashboardInsightsProps extends TelemetryProps {

@@ -11,15 +11,15 @@ var durationSearchSeconds = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "search_blitz_duration_seconds",
 	Help:    "e2e duration search-blitz where client is either stream or batch",
 	Buckets: Buckets,
-}, []string{"group", "query_name", "client"})
+}, []string{"query_name", "client"})
 
 var firstResultSearchSeconds = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "search_blitz_first_result_seconds",
 	Help:    "e2e time to first result search-blitz where client is either stream or batch",
 	Buckets: Buckets,
-}, []string{"group", "query_name", "client"})
+}, []string{"query_name", "client"})
 
 var matchCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "search_blitz_match_count",
 	Help: "the match count where client is either stream or batch",
-}, []string{"group", "query_name", "client"})
+}, []string{"query_name", "client"})

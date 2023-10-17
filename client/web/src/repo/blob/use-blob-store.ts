@@ -1,7 +1,7 @@
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import create from 'zustand'
 
-import { lineScrollEnforcing, SelectedLineRange, setSelectedLines } from './codemirror/linenumbers'
+import { lineScrollEnforcing, type SelectedLineRange, setSelectedLines } from './codemirror/linenumbers'
 
 interface BlobStore {
     editorView: EditorView | null

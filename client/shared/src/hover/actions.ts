@@ -1,7 +1,7 @@
-import { Remote } from 'comlink'
+import type { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from, EMPTY } from 'rxjs'
+import { combineLatest, merge, type Observable, of, Subscription, type Unsubscribable, concat, from, EMPTY } from 'rxjs'
 import {
     catchError,
     delay,
@@ -16,33 +16,33 @@ import {
     mapTo,
 } from 'rxjs/operators'
 
-import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
+import { ContributableMenu, type TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import { type HoveredToken, LOADER_DELAY, type MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import {
     asError,
     compatNavigate,
-    ErrorLike,
-    HistoryOrNavigate,
+    type ErrorLike,
+    type HistoryOrNavigate,
     isErrorLike,
     isExternalLink,
     logger,
 } from '@sourcegraph/common'
-import { Location } from '@sourcegraph/extension-api-types'
-import { Context } from '@sourcegraph/template-parser'
+import type { Location } from '@sourcegraph/extension-api-types'
+import type { Context } from '@sourcegraph/template-parser'
 
-import { ActionItemAction } from '../actions/ActionItem'
+import type { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { FlatExtensionHostAPI } from '../api/contract'
-import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import type { FlatExtensionHostAPI } from '../api/contract'
+import type { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
 import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
 import { getContributedActionItems } from '../contributions/contributions'
-import { Controller, ExtensionsControllerProps } from '../extensions/controller'
-import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
+import type { Controller, ExtensionsControllerProps } from '../extensions/controller'
+import type { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 
-import { HoverContext } from './HoverOverlay'
+import type { HoverContext } from './HoverOverlay'
 
 const LOADING = 'loading' as const
 

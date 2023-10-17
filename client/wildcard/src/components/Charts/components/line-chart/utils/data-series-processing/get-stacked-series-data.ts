@@ -1,10 +1,10 @@
 import { scaleTime } from '@visx/scale'
 
-import { Series as ChartSeries } from '../../../../types'
+import type { Series as ChartSeries } from '../../../../types'
 import { isValidNumber } from '../data-guards'
 
 import { encodePointId } from './helpers'
-import { SeriesType, StackedSeries, StackedSeriesDatum } from './types'
+import { SeriesType, type StackedSeries, type StackedSeriesDatum } from './types'
 
 /**
  * Iterate over data and series and tries to "stack" series values on each other. So basically

@@ -1,20 +1,19 @@
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     AllConfigResult,
-    CheckMirrorRepositoryConnectionResult,
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
@@ -55,6 +54,9 @@ import {
     WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
+    GitserversVariables,
+    GitserversResult,
+    GitserverFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -160,6 +162,8 @@ export const REPOSITORIES_QUERY = gql`
         $query: String
         $indexed: Boolean
         $notIndexed: Boolean
+        $embedded: Boolean
+        $notEmbedded: Boolean
         $failedFetch: Boolean
         $corrupted: Boolean
         $cloneStatus: CloneStatus
@@ -176,6 +180,8 @@ export const REPOSITORIES_QUERY = gql`
             query: $query
             indexed: $indexed
             notIndexed: $notIndexed
+            embedded: $embedded
+            notEmbedded: $notEmbedded
             failedFetch: $failedFetch
             corrupted: $corrupted
             cloneStatus: $cloneStatus
@@ -304,28 +310,12 @@ export const UPDATE_MIRROR_REPOSITORY = gql`
 `
 
 export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
-    mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
-        checkMirrorRepositoryConnection(repository: $repository, name: $name) {
+    mutation CheckMirrorRepositoryConnection($repository: ID!) {
+        checkMirrorRepositoryConnection(repository: $repository) {
             error
         }
     }
 `
-
-export function checkMirrorRepositoryConnection(
-    args:
-        | {
-              repository: Scalars['ID']
-          }
-        | {
-              name: string
-          }
-): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
-    return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(data => data.checkMirrorRepositoryConnection)
-    )
-}
 
 export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['ID'] }): Observable<void> {
     return requestGraphQL<ScheduleRepositoryPermissionsSyncResult, ScheduleRepositoryPermissionsSyncVariables>(
@@ -755,6 +745,7 @@ export const STATUS_AND_REPO_STATS = gql`
             failedFetch
             corrupted
             indexed
+            embedded
         }
         statusMessages {
             ... on GitUpdatesDisabled {
@@ -1067,3 +1058,34 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
         createdAt
     }
 `
+
+const gitserverFieldsFragment = gql`
+    fragment GitserverFields on GitserverInstance {
+        id
+        address
+        freeDiskSpaceBytes
+        totalDiskSpaceBytes
+    }
+`
+
+export const GITSERVERS = gql`
+    query Gitservers {
+        gitservers {
+            nodes {
+                ...GitserverFields
+            }
+        }
+    }
+
+    ${gitserverFieldsFragment}
+`
+
+export const useGitserversConnection = (): UseShowMorePaginationResult<GitserversResult, GitserverFields> =>
+    useShowMorePagination<GitserversResult, GitserversVariables, GitserverFields>({
+        query: GITSERVERS,
+        variables: {},
+        getConnection: result => {
+            const { gitservers } = dataOrThrowErrors(result)
+            return gitservers
+        },
+    })

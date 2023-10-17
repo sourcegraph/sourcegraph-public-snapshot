@@ -6,16 +6,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 	opts := GitTreeEntryResolverOpts{
 		Commit: &GitCommitResolver{
@@ -34,10 +33,10 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	wantPath := "foobar.md"
 	wantContent := "foobar"
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
-	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
+	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}
@@ -79,10 +78,10 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 5
 6`
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
-	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
+	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}

@@ -1,12 +1,12 @@
 import { subDays } from 'date-fns'
 
 import {
-    BatchChangesByNamespaceResult,
-    BatchChangesResult,
+    type BatchChangesByNamespaceResult,
+    type BatchChangesResult,
     BatchChangeState,
     BatchSpecState,
-    GetLicenseAndUsageInfoResult,
-    ListBatchChange,
+    type GetLicenseAndUsageInfoResult,
+    type ListBatchChange,
 } from '../../../graphql-operations'
 
 export const now = new Date()

@@ -2,24 +2,24 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { Location, Navigate, useNavigate, useLocation, NavigateFunction } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { type Location, Navigate, useNavigate, useLocation, type NavigateFunction } from 'react-router-dom'
+import type { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { FilteredConnectionFilter } from '../../components/FilteredConnection'
+import type { AuthenticatedUser } from '../../auth'
+import type { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
-import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
+import { type CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
-import { NotebooksList, NotebooksListProps } from './NotebooksList'
+import { NotebooksList, type NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
 
 export interface NotebooksListPageProps extends TelemetryProps {

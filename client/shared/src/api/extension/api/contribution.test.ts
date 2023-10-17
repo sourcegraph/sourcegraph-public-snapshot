@@ -1,5 +1,5 @@
-import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
-import { Context, parse, parseTemplate } from '@sourcegraph/template-parser'
+import { ContributableMenu, type Contributions, type Evaluated } from '@sourcegraph/client-api'
+import { type Context, parse, parseTemplate } from '@sourcegraph/template-parser'
 
 import {
     evaluateContributions,

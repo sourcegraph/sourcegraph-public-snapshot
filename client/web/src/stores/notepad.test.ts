@@ -9,8 +9,8 @@ import {
     removeAllNotepadEntries,
     removeFromNotepad,
     restorePreviousSession,
-    NotepadEntry,
-    NotepadEntryInput,
+    type NotepadEntry,
+    type NotepadEntryInput,
     useNotepadState,
 } from './notepad'
 

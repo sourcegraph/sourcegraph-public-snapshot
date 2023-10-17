@@ -1,6 +1,6 @@
 # Dashboards reference
 
-<!-- DO NOT EDIT: generated via: 'RELOAD=false sg run monitoring-generator' -->
+<!-- DO NOT EDIT: generated via: bazel run //dev:write_all_generated -->
 
 This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
 
@@ -2847,9 +2847,9 @@ Query: `sum(increase(src_oobmigration_errors_total{op="down",job=~"^(frontend|so
 
 <br />
 
-### Frontend: GRPC server metrics
+### Frontend: Zoekt Configuration GRPC server metrics
 
-#### frontend: frontend_grpc_request_rate_all_methods
+#### frontend: zoekt_configuration_grpc_request_rate_all_methods
 
 <p class="subtitle">Request rate across all methods over 2m</p>
 
@@ -2864,13 +2864,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_started_total{instance=~`${internalInstance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m]))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_request_rate_per_method
+#### frontend: zoekt_configuration_grpc_request_rate_per_method
 
 <p class="subtitle">Request rate per-method over 2m</p>
 
@@ -2885,13 +2885,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)`
 
 </details>
 
 <br />
 
-#### frontend: frontend_error_percentage_all_methods
+#### frontend: zoekt_configuration_error_percentage_all_methods
 
 <p class="subtitle">Error percentage across all methods over 2m</p>
 
@@ -2906,13 +2906,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102110`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_code!="OK",instance=~`${internalInstance:regex}`}[2m]))) / (sum(rate(frontend_grpc_server_handled_total{instance=~`${internalInstance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m]))) ))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_error_percentage_per_method
+#### frontend: zoekt_configuration_grpc_error_percentage_per_method
 
 <p class="subtitle">Error percentage per-method over 2m</p>
 
@@ -2927,13 +2927,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102111`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)) / (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${zoekt_configuration_method:regex}`,grpc_code!="OK",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_p99_response_time_per_method
+#### frontend: zoekt_configuration_p99_response_time_per_method
 
 <p class="subtitle">99th percentile response time per method over 2m</p>
 
@@ -2948,13 +2948,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102120`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_p90_response_time_per_method
+#### frontend: zoekt_configuration_p90_response_time_per_method
 
 <p class="subtitle">90th percentile response time per method over 2m</p>
 
@@ -2969,13 +2969,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102121`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_p75_response_time_per_method
+#### frontend: zoekt_configuration_p75_response_time_per_method
 
 <p class="subtitle">75th percentile response time per method over 2m</p>
 
@@ -2990,17 +2990,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102122`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_response_stream_message_count_per_method
+#### frontend: zoekt_configuration_p99_9_response_size_per_method
 
-<p class="subtitle">Average streaming response message count per-method over 2m</p>
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
 
-The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -3011,17 +3011,59 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102130`
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(frontend_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method))/(sum(rate(frontend_grpc_server_started_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)))`
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_all_codes_per_method
+#### frontend: zoekt_configuration_p90_response_size_per_method
 
-<p class="subtitle">Response codes rate per-method over 2m</p>
+<p class="subtitle">90th percentile total response size per method over 2m</p>
 
-The rate of all generated gRPC response codes per method, aggregated across all instances.
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: zoekt_configuration_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102132` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: zoekt_configuration_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -3032,19 +3074,103 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102140`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
 <br />
 
-### Frontend: GRPC "internal error" metrics
+#### frontend: zoekt_configuration_p90_invididual_sent_message_size_per_method
 
-#### frontend: frontend_grpc_clients_error_percentage_all_methods
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102141` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: zoekt_configuration_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102142` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: zoekt_configuration_grpc_response_stream_message_count_per_method
+
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102150` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)))`
+
+</details>
+
+<br />
+
+#### frontend: zoekt_configuration_grpc_all_codes_per_method
+
+<p class="subtitle">Response codes rate per-method over 2m</p>
+
+The rate of all generated gRPC response codes per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102160` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${zoekt_configuration_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method, grpc_code)`
+
+</details>
+
+<br />
+
+### Frontend: Zoekt Configuration GRPC "internal error" metrics
+
+#### frontend: zoekt_configuration_grpc_clients_error_percentage_all_methods
 
 <p class="subtitle">Client baseline error percentage across all methods over 2m</p>
 
-The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "frontend" clients.
+The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "zoekt_configuration" clients.
 
 This panel has no related alerts.
 
@@ -3055,17 +3181,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102200`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))))))`
+Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK"}[2m])))) / ((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))))))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_clients_error_percentage_per_method
+#### frontend: zoekt_configuration_grpc_clients_error_percentage_per_method
 
 <p class="subtitle">Client baseline error percentage per-method over 2m</p>
 
-The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "frontend" clients.
+The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "zoekt_configuration" clients.
 
 This panel has no related alerts.
 
@@ -3076,17 +3202,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102201`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_clients_all_codes_per_method
+#### frontend: zoekt_configuration_grpc_clients_all_codes_per_method
 
 <p class="subtitle">Client baseline response codes rate per-method over 2m</p>
 
-The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "frontend" clients.
+The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "zoekt_configuration" clients.
 
 This panel has no related alerts.
 
@@ -3097,19 +3223,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102202`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_clients_internal_error_percentage_all_methods
+#### frontend: zoekt_configuration_grpc_clients_internal_error_percentage_all_methods
 
 <p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
 
-The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "frontend" clients.
+The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "zoekt_configuration" clients.
 
-**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "frontend" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "zoekt_configuration" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
 When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
 
@@ -3124,19 +3250,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102210`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))))))`
+Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))))))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_clients_internal_error_percentage_per_method
+#### frontend: zoekt_configuration_grpc_clients_internal_error_percentage_per_method
 
 <p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
 
-The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "frontend" clients.
+The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "zoekt_configuration" clients.
 
-**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "frontend" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "zoekt_configuration" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
 When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
 
@@ -3151,19 +3277,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102211`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
 <br />
 
-#### frontend: frontend_grpc_clients_internal_error_all_codes_per_method
+#### frontend: zoekt_configuration_grpc_clients_internal_error_all_codes_per_method
 
 <p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
 
-The rate of gRPC internal-error response codes per method, aggregated across all "frontend" clients.
+The rate of gRPC internal-error response codes per method, aggregated across all "zoekt_configuration" clients.
 
-**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "frontend" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "zoekt_configuration" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
 When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
 
@@ -3178,7 +3304,470 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102212`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",is_internal_error="true",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+
+</details>
+
+<br />
+
+### Frontend: Internal Api GRPC server metrics
+
+#### frontend: internal_api_grpc_request_rate_all_methods
+
+<p class="subtitle">Request rate across all methods over 2m</p>
+
+The number of gRPC requests received per second across all methods, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(grpc_server_started_total{instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m]))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_request_rate_per_method
+
+<p class="subtitle">Request rate per-method over 2m</p>
+
+The number of gRPC requests received per second broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])) by (grpc_method)`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_error_percentage_all_methods
+
+<p class="subtitle">Error percentage across all methods over 2m</p>
+
+The percentage of gRPC requests that fail across all methods, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m]))) ))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_error_percentage_per_method
+
+<p class="subtitle">Error percentage per-method over 2m</p>
+
+The percentage of gRPC requests that fail per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${internal_api_method:regex}`,grpc_code!="OK",instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])) by (grpc_method)) ))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p99_response_time_per_method
+
+<p class="subtitle">99th percentile response time per method over 2m</p>
+
+The 99th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102320` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p90_response_time_per_method
+
+<p class="subtitle">90th percentile response time per method over 2m</p>
+
+The 90th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102321` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p75_response_time_per_method
+
+<p class="subtitle">75th percentile response time per method over 2m</p>
+
+The 75th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102322` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102330` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102331` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102332` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102340` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102341` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102342` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_response_stream_message_count_per_method
+
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102350` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])) by (grpc_method)))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_all_codes_per_method
+
+<p class="subtitle">Response codes rate per-method over 2m</p>
+
+The rate of all generated gRPC response codes per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102360` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${internal_api_method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"api.internalapi.v1.ConfigService"}[2m])) by (grpc_method, grpc_code)`
+
+</details>
+
+<br />
+
+### Frontend: Internal Api GRPC "internal error" metrics
+
+#### frontend: internal_api_grpc_clients_error_percentage_all_methods
+
+<p class="subtitle">Client baseline error percentage across all methods over 2m</p>
+
+The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "internal_api" clients.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))))))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_clients_error_percentage_per_method
+
+<p class="subtitle">Client baseline error percentage per-method over 2m</p>
+
+The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "internal_api" clients.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method))))))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_clients_all_codes_per_method
+
+<p class="subtitle">Client baseline response codes rate per-method over 2m</p>
+
+The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "internal_api" clients.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102402` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_clients_internal_error_percentage_all_methods
+
+<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
+
+The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "internal_api" clients.
+
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "internal_api" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService"}[2m])))))))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_clients_internal_error_percentage_per_method
+
+<p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
+
+The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "internal_api" clients.
+
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "internal_api" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102411` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method))))))`
+
+</details>
+
+<br />
+
+#### frontend: internal_api_grpc_clients_internal_error_all_codes_per_method
+
+<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
+
+The rate of gRPC internal-error response codes per method, aggregated across all "internal_api" clients.
+
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "internal_api" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102412` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",is_internal_error="true",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -3192,7 +3781,7 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.config
 
 Refer to the [alerts reference](./alerts.md#frontend-internal-indexed-search-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -3211,7 +3800,7 @@ Query: `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2
 
 Refer to the [alerts reference](./alerts.md#frontend-internal-unindexed-search-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -3230,7 +3819,7 @@ Query: `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m]))
 
 Refer to the [alerts reference](./alerts.md#frontend-internalapi-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102502` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3249,7 +3838,7 @@ Query: `sum by(category) (increase(src_frontend_internal_request_duration_second
 
 Refer to the [alerts reference](./alerts.md#frontend-99th-percentile-gitserver-duration) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3268,7 +3857,7 @@ Query: `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request
 
 Refer to the [alerts reference](./alerts.md#frontend-gitserver-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3287,7 +3876,7 @@ Query: `sum by (category)(increase(src_gitserver_request_duration_seconds_count{
 
 Refer to the [alerts reference](./alerts.md#frontend-observability-test-alert-warning) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102320` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102520` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -3306,7 +3895,7 @@ Query: `max by(owner) (observability_test_metric_warning)`
 
 Refer to the [alerts reference](./alerts.md#frontend-observability-test-alert-critical) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102321` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102521` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -3329,7 +3918,7 @@ Rate (QPS) of requests to sign-in
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3350,7 +3939,7 @@ Query: `sum(irate(src_http_request_duration_seconds_count{route="sign-in",method
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3371,7 +3960,7 @@ Percentage of sign-in requests grouped by http code
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102402` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102602` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3392,7 +3981,7 @@ Rate (QPS) of requests to sign-up
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102610` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3413,7 +4002,7 @@ Query: `sum(irate(src_http_request_duration_seconds_count{route="sign-up",method
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102611` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3434,7 +4023,7 @@ Percentage of sign-up requests grouped by http code
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102612` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3455,7 +4044,7 @@ Rate (QPS) of requests to sign-out
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102420` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102620` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3476,7 +4065,7 @@ Query: `sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102421` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102621` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3497,7 +4086,7 @@ Percentage of sign-out requests grouped by http code
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102422` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102622` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3518,7 +4107,7 @@ Failed sign-in attempts per minute
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102430` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102630` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3539,7 +4128,7 @@ Account lockouts per minute
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102431` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102631` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3562,7 +4151,7 @@ Rate (QPS) of requests to cody related endpoints. completions.stream is for the 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
 
@@ -3570,386 +4159,6 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102500`
 <summary>Technical details</summary>
 
 Query: `sum by (route, code)(irate(src_http_request_duration_seconds_count{route=~"^completions.*"}[5m]))`
-
-</details>
-
-<br />
-
-### Frontend: Organisation GraphQL API requests
-
-#### frontend: org_members_rate
-
-<p class="subtitle">Rate of API requests to list organisation members</p>
-
-Rate (QPS) of API requests to list organisation members
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102600` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))`
-
-</details>
-
-<br />
-
-#### frontend: org_members_latency_p99
-
-<p class="subtitle">99 percentile latency of API requests to list organisation members</p>
-
-99 percentile latency ofAPI requests to list organisation members
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102601` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`
-
-</details>
-
-<br />
-
-#### frontend: org_members_error_rate
-
-<p class="subtitle">Percentage of API requests to list organisation members that return an error</p>
-
-Percentage of API requests to list organisation members that return an error
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102602` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`
-
-</details>
-
-<br />
-
-#### frontend: create_org_rate
-
-<p class="subtitle">Rate of API requests to create an organisation</p>
-
-Rate (QPS) of API requests to create an organisation
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102610` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))`
-
-</details>
-
-<br />
-
-#### frontend: create_org_latency_p99
-
-<p class="subtitle">99 percentile latency of API requests to create an organisation</p>
-
-99 percentile latency ofAPI requests to create an organisation
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102611` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="CreateOrganization"}[5m])) by (le))`
-
-</details>
-
-<br />
-
-#### frontend: create_org_error_rate
-
-<p class="subtitle">Percentage of API requests to create an organisation that return an error</p>
-
-Percentage of API requests to create an organisation that return an error
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102612` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="CreateOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))*100`
-
-</details>
-
-<br />
-
-#### frontend: remove_org_member_rate
-
-<p class="subtitle">Rate of API requests to remove organisation member</p>
-
-Rate (QPS) of API requests to remove organisation member
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102620` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))`
-
-</details>
-
-<br />
-
-#### frontend: remove_org_member_latency_p99
-
-<p class="subtitle">99 percentile latency of API requests to remove organisation member</p>
-
-99 percentile latency ofAPI requests to remove organisation member
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102621` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RemoveUserFromOrganization"}[5m])) by (le))`
-
-</details>
-
-<br />
-
-#### frontend: remove_org_member_error_rate
-
-<p class="subtitle">Percentage of API requests to remove organisation member that return an error</p>
-
-Percentage of API requests to remove organisation member that return an error
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102622` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))*100`
-
-</details>
-
-<br />
-
-#### frontend: invite_org_member_rate
-
-<p class="subtitle">Rate of API requests to invite a new organisation member</p>
-
-Rate (QPS) of API requests to invite a new organisation member
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102630` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))`
-
-</details>
-
-<br />
-
-#### frontend: invite_org_member_latency_p99
-
-<p class="subtitle">99 percentile latency of API requests to invite a new organisation member</p>
-
-99 percentile latency ofAPI requests to invite a new organisation member
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102631` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="InviteUserToOrganization"}[5m])) by (le))`
-
-</details>
-
-<br />
-
-#### frontend: invite_org_member_error_rate
-
-<p class="subtitle">Percentage of API requests to invite a new organisation member that return an error</p>
-
-Percentage of API requests to invite a new organisation member that return an error
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102632` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))*100`
-
-</details>
-
-<br />
-
-#### frontend: org_invite_respond_rate
-
-<p class="subtitle">Rate of API requests to respond to an org invitation</p>
-
-Rate (QPS) of API requests to respond to an org invitation
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102640` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))`
-
-</details>
-
-<br />
-
-#### frontend: org_invite_respond_latency_p99
-
-<p class="subtitle">99 percentile latency of API requests to respond to an org invitation</p>
-
-99 percentile latency ofAPI requests to respond to an org invitation
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102641` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RespondToOrganizationInvitation"}[5m])) by (le))`
-
-</details>
-
-<br />
-
-#### frontend: org_invite_respond_error_rate
-
-<p class="subtitle">Percentage of API requests to respond to an org invitation that return an error</p>
-
-Percentage of API requests to respond to an org invitation that return an error
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102642` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))*100`
-
-</details>
-
-<br />
-
-#### frontend: org_repositories_rate
-
-<p class="subtitle">Rate of API requests to list repositories owned by an org</p>
-
-Rate (QPS) of API requests to list repositories owned by an org
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102650` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))`
-
-</details>
-
-<br />
-
-#### frontend: org_repositories_latency_p99
-
-<p class="subtitle">99 percentile latency of API requests to list repositories owned by an org</p>
-
-99 percentile latency ofAPI requests to list repositories owned by an org
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102651` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrgRepositories"}[5m])) by (le))`
-
-</details>
-
-<br />
-
-#### frontend: org_repositories_error_rate
-
-<p class="subtitle">Percentage of API requests to list repositories owned by an org that return an error</p>
-
-Percentage of API requests to list repositories owned by an org that return an error
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102652` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrgRepositories",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))*100`
 
 </details>
 
@@ -3963,7 +4172,7 @@ Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrgReposito
 
 Refer to the [alerts reference](./alerts.md#frontend-cloudkms-cryptographic-requests) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -3984,7 +4193,7 @@ Query: `sum(increase(src_cloudkms_cryptographic_total[1m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102701` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -4005,7 +4214,7 @@ Query: `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102702` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102802` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -4026,7 +4235,7 @@ Query: `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4045,7 +4254,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="frontend"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102801` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102901` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4064,7 +4273,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="frontend"})`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102810` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102910` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4083,7 +4292,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="frontend"})
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102811` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102911` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4102,7 +4311,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="frontend"})`
 
 Refer to the [alerts reference](./alerts.md#frontend-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102820` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102920` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4121,7 +4330,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102830` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102930` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4140,7 +4349,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102831` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102931` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4159,7 +4368,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102832` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102932` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4190,7 +4399,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4209,7 +4418,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegr
 
 Refer to the [alerts reference](./alerts.md#frontend-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4228,7 +4437,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegr
 
 Refer to the [alerts reference](./alerts.md#frontend-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102902` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103002` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4250,7 +4459,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102903` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103003` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4271,7 +4480,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^(frontend|sourcegrap
 
 Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4290,7 +4499,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4309,7 +4518,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(
 
 Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103010` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103110` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4328,7 +4537,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(fro
 
 Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103011` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103111` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4350,7 +4559,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#frontend-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103012` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103112` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4373,7 +4582,7 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alerts reference](./alerts.md#frontend-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4392,7 +4601,7 @@ Query: `max by(instance) (go_goroutines{job=~".*(frontend|sourcegraph-frontend)"
 
 Refer to the [alerts reference](./alerts.md#frontend-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4413,7 +4622,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*(frontend|sourcegraph-f
 
 Refer to the [alerts reference](./alerts.md#frontend-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4436,7 +4645,7 @@ The total number of search clicks across all search types over a 6 hour window.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4457,7 +4666,7 @@ The percent of clicks that were on the top search result, excluding searches wit
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4478,7 +4687,7 @@ The percent of clicks that were on the first 3 search results, excluding searche
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4499,7 +4708,7 @@ The distribution of clicked search results by result type. At every point in tim
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4520,7 +4729,7 @@ The percent of Zoekt searches that hit the flush time limit. These searches don`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -4537,18 +4746,18 @@ Query: `sum(increase(zoekt_final_aggregate_size_count{reason="timer_expired"}[1d
 
 #### frontend: email_delivery_failures
 
-<p class="subtitle">Email delivery failures every 30 minutes</p>
+<p class="subtitle">Email delivery failure rate over 30 minutes</p>
 
 Refer to the [alerts reference](./alerts.md#frontend-email-delivery-failures) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_email_send{success="false"}[30m]))`
+Query: `sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100`
 
 </details>
 
@@ -4562,7 +4771,7 @@ Total emails successfully delivered.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4583,7 +4792,7 @@ Emails successfully delivered by source, i.e. product feature.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -4606,7 +4815,7 @@ Mean search duration for all successful sentinel queries
 
 Refer to the [alerts reference](./alerts.md#frontend-mean-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4627,7 +4836,7 @@ Mean time to first result for all successful streaming sentinel queries
 
 Refer to the [alerts reference](./alerts.md#frontend-mean-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4648,7 +4857,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103510` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103610` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4669,7 +4878,7 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103511` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103611` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4690,7 +4899,7 @@ Mean search duration for successful sentinel queries, broken down by query. Usef
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103520` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103620` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4711,7 +4920,7 @@ Mean time to first result for successful streaming sentinel queries, broken down
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103521` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103621` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4732,7 +4941,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103530` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103630` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4753,7 +4962,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103531` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103631` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4774,7 +4983,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103540` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103640` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4795,7 +5004,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103550` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103650` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4816,7 +5025,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103551` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103651` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4837,7 +5046,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103560` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103660` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4858,7 +5067,7 @@ The rate of unsuccessful sentinel queries, broken down by failure type.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103570` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103670` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4885,7 +5094,7 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -4906,7 +5115,7 @@ Query: `histogram_quantile(0.95, sum  (rate(src_http_request_duration_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4925,7 +5134,7 @@ Query: `sum(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegrap
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103701` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4944,7 +5153,7 @@ Query: `sum  by (le)(rate(src_insights_aggregations_duration_seconds_bucket{job=
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103702` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103802` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4963,7 +5172,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103703` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103803` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4982,7 +5191,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103710` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103810` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -5001,7 +5210,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_total{job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103711` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103811` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -5020,7 +5229,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op,extended_mode)(rate(src_insights
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103712` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103812` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -5039,7 +5248,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_errors_tota
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103713` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103813` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -5058,27 +5267,6 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_errors_tota
 
 To see this dashboard, visit `/-/debug/grafana/d/gitserver/gitserver` on your Sourcegraph instance.
 
-#### gitserver: memory_working_set
-
-<p class="subtitle">Memory working set</p>
-
-
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100000` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`})`
-
-</details>
-
-<br />
-
 #### gitserver: go_routines
 
 <p class="subtitle">Go routines</p>
@@ -5087,7 +5275,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (container_memory_workin
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -6315,7 +6503,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 <br />
 
-### Git Server: GRPC server metrics
+### Git Server: Gitserver GRPC server metrics
 
 #### gitserver: gitserver_grpc_request_rate_all_methods
 
@@ -6332,7 +6520,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{instance=~`${shard:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m]))`
 
 </details>
 
@@ -6353,7 +6541,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -6374,7 +6562,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[2m]))) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m]))) ))`
 
 </details>
 
@@ -6395,7 +6583,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${shard:regex}`}[2m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${gitserver_method:regex}`,grpc_code!="OK",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -6416,7 +6604,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
 
 </details>
 
@@ -6437,7 +6625,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
 
 </details>
 
@@ -6458,7 +6646,133 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100730` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100731` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100732` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100740` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100741` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100742` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
 
 </details>
 
@@ -6472,14 +6786,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100730` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100750` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`}[2m])) by (grpc_method))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -6493,20 +6807,20 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100740` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100760` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${gitserver_method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
 <br />
 
-### Git Server: GRPC "internal error" metrics
+### Git Server: Gitserver GRPC "internal error" metrics
 
 #### gitserver: gitserver_grpc_clients_error_percentage_all_methods
 
@@ -6544,7 +6858,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -6565,7 +6879,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -6619,7 +6933,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -6646,7 +6960,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",is_internal_error="true",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -7479,282 +7793,108 @@ Query: `sum by(app) (up{app=~".*gitserver"}) / count by (app) (up{app=~".*gitser
 
 <br />
 
-## GitHub Proxy
+## GitHub
 
-<p class="subtitle">Proxies all requests to github.com, keeping track of and managing rate limits.</p>
+<p class="subtitle">Dashboard to track requests and global concurrency locks for talking to github.com.</p>
 
-To see this dashboard, visit `/-/debug/grafana/d/github-proxy/github-proxy` on your Sourcegraph instance.
+To see this dashboard, visit `/-/debug/grafana/d/github/github` on your Sourcegraph instance.
 
-### GitHub Proxy: GitHub API monitoring
+### GitHub: GitHub API monitoring
 
-#### github-proxy: github_proxy_waiting_requests
+#### github: src_githubcom_concurrency_lock_waiting_requests
 
 <p class="subtitle">Number of requests waiting on the global mutex</p>
 
-Refer to the [alerts reference](./alerts.md#github-proxy-github-proxy-waiting-requests) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-src-githubcom-concurrency-lock-waiting-requests) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(github_proxy_waiting_requests)`
+Query: `max(src_githubcom_concurrency_lock_waiting_requests)`
 
 </details>
 
 <br />
 
-### GitHub Proxy: Container monitoring (not available on server)
+#### github: src_githubcom_concurrency_lock_failed_lock_requests
 
-#### github-proxy: container_missing
+<p class="subtitle">Number of lock failures</p>
 
-<p class="subtitle">Container missing</p>
+Refer to the [alerts reference](./alerts.md#github-src-githubcom-concurrency-lock-failed-lock-requests) for 1 alert related to this panel.
 
-This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100010` on your Sourcegraph instance.
 
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(src_githubcom_concurrency_lock_failed_lock_requests[5m]))`
+
+</details>
+
+<br />
+
+#### github: src_githubcom_concurrency_lock_failed_unlock_requests
+
+<p class="subtitle">Number of unlock failures</p>
+
+Refer to the [alerts reference](./alerts.md#github-src-githubcom-concurrency-lock-failed-unlock-requests) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100011` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(src_githubcom_concurrency_lock_failed_unlock_requests[5m]))`
+
+</details>
+
+<br />
+
+#### github: src_githubcom_concurrency_lock_requests
+
+<p class="subtitle">Number of locks taken global mutex</p>
+
+A high number of locks indicates heavy usage of the GitHub API. This might not be a problem, but you should check if request counts are expected.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100020` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^github-proxy.*"}) > 60)`
+Query: `sum(rate(src_githubcom_concurrency_lock_requests[5m]))`
 
 </details>
 
 <br />
 
-#### github-proxy: container_cpu_usage
+#### github: src_githubcom_concurrency_lock_acquire_duration_seconds_latency_p75
 
-<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+<p class="subtitle">75 percentile latency of src_githubcom_concurrency_lock_acquire_duration_seconds</p>
 
-Refer to the [alerts reference](./alerts.md#github-proxy-container-cpu-usage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100101` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}`
-
-</details>
-
-<br />
-
-#### github-proxy: container_memory_usage
-
-<p class="subtitle">Container memory usage by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-container-memory-usage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100102` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}`
-
-</details>
-
-<br />
-
-#### github-proxy: fs_io_operations
-
-<p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
-
-This value indicates the number of filesystem read and write operations by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+99 percentile latency of acquiring the global GitHub concurrency lock.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100103` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100021` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^github-proxy.*"}[1h]) + rate(container_fs_writes_total{name=~"^github-proxy.*"}[1h]))`
-
-</details>
-
-<br />
-
-### GitHub Proxy: Provisioning indicators (not available on server)
-
-#### github-proxy: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100200` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[1d])`
-
-</details>
-
-<br />
-
-#### github-proxy: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">Container memory usage (1d maximum) by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[1d])`
-
-</details>
-
-<br />
-
-#### github-proxy: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100210` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[5m])`
-
-</details>
-
-<br />
-
-#### github-proxy: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">Container memory usage (5m maximum) by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100211` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[5m])`
-
-</details>
-
-<br />
-
-#### github-proxy: container_oomkill_events_total
-
-<p class="subtitle">Container OOMKILL events total by instance</p>
-
-This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
-When it occurs frequently, it is an indicator of underprovisioning.
-
-Refer to the [alerts reference](./alerts.md#github-proxy-container-oomkill-events-total) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100212` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by (name) (container_oom_events_total{name=~"^github-proxy.*"})`
-
-</details>
-
-<br />
-
-### GitHub Proxy: Golang runtime monitoring
-
-#### github-proxy: go_goroutines
-
-<p class="subtitle">Maximum active goroutines</p>
-
-A high value here indicates a possible goroutine leak.
-
-Refer to the [alerts reference](./alerts.md#github-proxy-go-goroutines) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100300` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by(instance) (go_goroutines{job=~".*github-proxy"})`
-
-</details>
-
-<br />
-
-#### github-proxy: go_gc_duration_seconds
-
-<p class="subtitle">Maximum go garbage collection duration</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-go-gc-duration-seconds) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100301` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*github-proxy"})`
-
-</details>
-
-<br />
-
-### GitHub Proxy: Kubernetes monitoring (only available on Kubernetes)
-
-#### github-proxy: pods_available_percentage
-
-<p class="subtitle">Percentage pods available</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-pods-available-percentage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100400` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by(app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*github-proxy"}) * 100`
+Query: `histogram_quantile(0.75, sum(rate(src_githubcom_concurrency_lock_acquire_duration_seconds_bucket[5m])) by (le))`
 
 </details>
 
@@ -14574,7 +14714,7 @@ Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job
 
 <br />
 
-### Repo Updater: GRPC server metrics
+### Repo Updater: Repo Updater GRPC server metrics
 
 #### repo-updater: repo_updater_grpc_request_rate_all_methods
 
@@ -14591,7 +14731,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m]))`
 
 </details>
 
@@ -14612,7 +14752,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -14633,7 +14773,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(repo_updater_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m]))) ))`
 
 </details>
 
@@ -14654,7 +14794,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${repo_updater_method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -14675,7 +14815,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
 
 </details>
 
@@ -14696,7 +14836,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
 
 </details>
 
@@ -14717,7 +14857,133 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100730` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100731` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100732` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100740` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100741` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100742` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
 
 </details>
 
@@ -14731,14 +14997,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100730` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100750` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(repo_updater_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(repo_updater_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -14752,20 +15018,20 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100740` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100760` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${repo_updater_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
 <br />
 
-### Repo Updater: GRPC "internal error" metrics
+### Repo Updater: Repo Updater GRPC "internal error" metrics
 
 #### repo-updater: repo_updater_grpc_clients_error_percentage_all_methods
 
@@ -14803,7 +15069,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -14824,7 +15090,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -14878,7 +15144,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -14905,7 +15171,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",is_internal_error="true",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -15948,7 +16214,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 <br />
 
-### Searcher: GRPC server metrics
+### Searcher: Searcher GRPC server metrics
 
 #### searcher: searcher_grpc_request_rate_all_methods
 
@@ -15965,7 +16231,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m]))`
 
 </details>
 
@@ -15986,7 +16252,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -16007,7 +16273,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m]))) ))`
 
 </details>
 
@@ -16028,7 +16294,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${searcher_method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -16049,7 +16315,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100420`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
 
 </details>
 
@@ -16070,7 +16336,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100421`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
 
 </details>
 
@@ -16091,7 +16357,133 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100422`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100430` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100431` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100432` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100440` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100441` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100442` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
 
 </details>
 
@@ -16105,14 +16497,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100430` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100450` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -16126,20 +16518,20 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100440` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100460` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${searcher_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
 <br />
 
-### Searcher: GRPC "internal error" metrics
+### Searcher: Searcher GRPC "internal error" metrics
 
 #### searcher: searcher_grpc_clients_error_percentage_all_methods
 
@@ -16177,7 +16569,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -16198,7 +16590,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -16252,7 +16644,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -16279,7 +16671,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",is_internal_error="true",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -17515,7 +17907,7 @@ Query: `sum by (op)(increase(src_codeintel_symbols_gitserver_errors_total{job=~"
 
 <br />
 
-### Symbols: GRPC server metrics
+### Symbols: Symbols GRPC server metrics
 
 #### symbols: symbols_grpc_request_rate_all_methods
 
@@ -17532,7 +17924,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100500` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m]))`
 
 </details>
 
@@ -17553,7 +17945,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100501` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -17574,7 +17966,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100510` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m]))) ))`
 
 </details>
 
@@ -17595,7 +17987,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100511` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${symbols_method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -17616,7 +18008,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100520` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
 
 </details>
 
@@ -17637,7 +18029,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100521` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
 
 </details>
 
@@ -17658,7 +18050,133 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100522` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100531` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100532` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100540` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100541` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100542` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
 
 </details>
 
@@ -17672,14 +18190,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100550` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -17693,20 +18211,20 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100540` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100560` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${symbols_method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
 <br />
 
-### Symbols: GRPC "internal error" metrics
+### Symbols: Symbols GRPC "internal error" metrics
 
 #### symbols: symbols_grpc_clients_error_percentage_all_methods
 
@@ -17744,7 +18262,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100601` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -17765,7 +18283,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100602` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -17819,7 +18337,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100611` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -17846,7 +18364,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100612` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",is_internal_error="true",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -20084,6 +20602,469 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
+### Zoekt: Zoekt Webserver GRPC server metrics
+
+#### zoekt: zoekt_webserver_grpc_request_rate_all_methods
+
+<p class="subtitle">Request rate across all methods over 2m</p>
+
+The number of gRPC requests received per second across all methods, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(grpc_server_started_total{instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m]))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_request_rate_per_method
+
+<p class="subtitle">Request rate per-method over 2m</p>
+
+The number of gRPC requests received per second broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])) by (grpc_method)`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_error_percentage_all_methods
+
+<p class="subtitle">Error percentage across all methods over 2m</p>
+
+The percentage of gRPC requests that fail across all methods, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m]))) ))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_error_percentage_per_method
+
+<p class="subtitle">Error percentage per-method over 2m</p>
+
+The percentage of gRPC requests that fail per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${zoekt_webserver_method:regex}`,grpc_code!="OK",instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])) by (grpc_method)) ))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p99_response_time_per_method
+
+<p class="subtitle">99th percentile response time per method over 2m</p>
+
+The 99th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100820` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p90_response_time_per_method
+
+<p class="subtitle">90th percentile response time per method over 2m</p>
+
+The 90th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100821` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p75_response_time_per_method
+
+<p class="subtitle">75th percentile response time per method over 2m</p>
+
+The 75th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100822` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100830` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100831` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100832` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100840` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100841` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100842` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_response_stream_message_count_per_method
+
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100850` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])) by (grpc_method)))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_all_codes_per_method
+
+<p class="subtitle">Response codes rate per-method over 2m</p>
+
+The rate of all generated gRPC response codes per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100860` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${zoekt_webserver_method:regex}`,instance=~`${webserver_instance:regex}`,grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])) by (grpc_method, grpc_code)`
+
+</details>
+
+<br />
+
+### Zoekt: Zoekt Webserver GRPC "internal error" metrics
+
+#### zoekt: zoekt_webserver_grpc_clients_error_percentage_all_methods
+
+<p class="subtitle">Client baseline error percentage across all methods over 2m</p>
+
+The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "zoekt_webserver" clients.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100900` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))))))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_clients_error_percentage_per_method
+
+<p class="subtitle">Client baseline error percentage per-method over 2m</p>
+
+The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "zoekt_webserver" clients.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100901` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))))))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_clients_all_codes_per_method
+
+<p class="subtitle">Client baseline response codes rate per-method over 2m</p>
+
+The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "zoekt_webserver" clients.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100902` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_clients_internal_error_percentage_all_methods
+
+<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
+
+The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "zoekt_webserver" clients.
+
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "zoekt_webserver" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100910` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))))))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_clients_internal_error_percentage_per_method
+
+<p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
+
+The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "zoekt_webserver" clients.
+
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "zoekt_webserver" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100911` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))))))`
+
+</details>
+
+<br />
+
+#### zoekt: zoekt_webserver_grpc_clients_internal_error_all_codes_per_method
+
+<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
+
+The rate of gRPC internal-error response codes per method, aggregated across all "zoekt_webserver" clients.
+
+**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "zoekt_webserver" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
+
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100912` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",is_internal_error="true",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+
+</details>
+
+<br />
+
 ### Zoekt: Data disk I/O metrics
 
 #### zoekt: data_disk_reads_sec
@@ -20096,7 +21077,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20119,7 +21100,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20142,7 +21123,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20165,7 +21146,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20188,7 +21169,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100820` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101020` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20211,7 +21192,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100821` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101021` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20234,7 +21215,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100830` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101030` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20257,7 +21238,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100831` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101031` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20280,7 +21261,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100840` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101040` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20303,7 +21284,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100841` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101041` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20326,7 +21307,7 @@ Note: Disk statistics are per _device_, not per _service_. In certain environmen
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100850` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101050` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20357,7 +21338,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20376,7 +21357,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-indexserver.
 
 Refer to the [alerts reference](./alerts.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20395,7 +21376,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.
 
 Refer to the [alerts reference](./alerts.md#zoekt-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100902` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20417,7 +21398,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100903` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101103` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20448,7 +21429,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20467,7 +21448,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-webserver.*"
 
 Refer to the [alerts reference](./alerts.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20486,7 +21467,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-webserver.*"
 
 Refer to the [alerts reference](./alerts.md#zoekt-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101202` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20508,7 +21489,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101003` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101203` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20529,7 +21510,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-webserver.*"}[
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20548,7 +21529,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20567,7 +21548,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101310` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20586,7 +21567,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoek
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101311` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20608,7 +21589,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#zoekt-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101112` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101312` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20629,7 +21610,7 @@ Query: `max by (name) (container_oom_events_total{name=~"^zoekt-indexserver.*"})
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20648,7 +21629,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20667,7 +21648,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101210` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20686,7 +21667,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoek
 
 Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101211` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20708,7 +21689,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#zoekt-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101212` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101412` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -20729,7 +21710,7 @@ Query: `max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})`
 
 Refer to the [alerts reference](./alerts.md#zoekt-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -22836,7 +23817,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
 
 </details>
 
@@ -22857,7 +23838,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
 
 </details>
 
@@ -22880,7 +23861,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -22901,7 +23882,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -22923,7 +23904,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) >= 1`
+Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) >= 1`
 
 </details>
 
@@ -22945,7 +23926,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) > 60)`
 
 </details>
 
@@ -29445,6 +30426,326 @@ Query: `rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() 
 
 <br />
 
+### Telemetry: Telemetry Gateway Exporter: Export and queue metrics
+
+#### telemetry: telemetry_gateway_exporter_queue_size
+
+<p class="subtitle">Telemetry event payloads pending export</p>
+
+The number of events queued to be exported.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(src_telemetrygatewayexporter_queue_size)`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_gateway_exporter_queue_growth
+
+<p class="subtitle">Rate of growth of export queue over 30m</p>
+
+A positive value indicates the queue is growing.
+
+Refer to the [alerts reference](./alerts.md#telemetry-telemetry-gateway-exporter-queue-growth) for 2 alerts related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(deriv(src_telemetrygatewayexporter_queue_size[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: src_telemetrygatewayexporter_exported_events
+
+<p class="subtitle">Events exported from queue per hour</p>
+
+The number of events being exported.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(increase(src_telemetrygatewayexporter_exported_events[1h]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetry_gateway_exporter_batch_size
+
+<p class="subtitle">Number of events exported per batch over 30m</p>
+
+The number of events exported in each batch.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (le) (rate(src_telemetrygatewayexporter_batch_size_bucket[30m]))`
+
+</details>
+
+<br />
+
+### Telemetry: Telemetry Gateway Exporter: Export job operations
+
+#### telemetry: telemetrygatewayexporter_exporter_total
+
+<p class="subtitle">Events exporter operations every 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_exporter_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful events exporter operation duration distribution over 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_telemetrygatewayexporter_exporter_duration_seconds_bucket{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_exporter_errors_total
+
+<p class="subtitle">Events exporter operation errors every 30m</p>
+
+Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-exporter-errors-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100402` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_exporter_error_rate
+
+<p class="subtitle">Events exporter operation error rate over 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100403` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m])) / (sum(increase(src_telemetrygatewayexporter_exporter_total{job=~"^worker.*"}[30m])) + sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m]))) * 100`
+
+</details>
+
+<br />
+
+### Telemetry: Telemetry Gateway Exporter: Export queue cleanup job operations
+
+#### telemetry: telemetrygatewayexporter_queue_cleanup_total
+
+<p class="subtitle">Export queue cleanup operations every 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100500` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_queue_cleanup_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful export queue cleanup operation duration distribution over 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100501` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_cleanup_duration_seconds_bucket{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_queue_cleanup_errors_total
+
+<p class="subtitle">Export queue cleanup operation errors every 30m</p>
+
+Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-queue-cleanup-errors-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100502` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_queue_cleanup_error_rate
+
+<p class="subtitle">Export queue cleanup operation error rate over 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100503` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m])) / (sum(increase(src_telemetrygatewayexporter_queue_cleanup_total{job=~"^worker.*"}[30m])) + sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m]))) * 100`
+
+</details>
+
+<br />
+
+### Telemetry: Telemetry Gateway Exporter: Export queue metrics reporting job operations
+
+#### telemetry: telemetrygatewayexporter_queue_metrics_reporter_total
+
+<p class="subtitle">Export backlog metrics reporting operations every 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100600` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_queue_metrics_reporter_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful export backlog metrics reporting operation duration distribution over 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100601` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_telemetrygatewayexporter_queue_metrics_reporter_duration_seconds_bucket{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_queue_metrics_reporter_errors_total
+
+<p class="subtitle">Export backlog metrics reporting operation errors every 30m</p>
+
+Refer to the [alerts reference](./alerts.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-errors-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100602` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### telemetry: telemetrygatewayexporter_queue_metrics_reporter_error_rate
+
+<p class="subtitle">Export backlog metrics reporting operation error rate over 30m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=100603` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m])) / (sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_total{job=~"^worker.*"}[30m])) + sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m]))) * 100`
+
+</details>
+
+<br />
+
 ## OpenTelemetry Collector
 
 <p class="subtitle">The OpenTelemetry collector ingests OpenTelemetry data from Sourcegraph and exports it to the configured backends.</p>
@@ -29555,6 +30856,94 @@ Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))`
 
 <br />
 
+### OpenTelemetry Collector: Queue Length
+
+#### otel-collector: otelcol_exporter_queue_capacity
+
+<p class="subtitle">Exporter queue capacity</p>
+
+Shows the the capacity of the retry queue (in batches).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_queue_capacity{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otelcol_exporter_queue_size
+
+<p class="subtitle">Exporter queue size</p>
+
+Shows the current size of retry queue
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_queue_size{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otelcol_exporter_enqueue_failed_spans
+
+<p class="subtitle">Exporter enqueue failed spans</p>
+
+Shows the rate of spans failed to be enqueued by the configured exporter. A number higher than 0 for a long period can indicate a problem with the exporter configuration
+
+Refer to the [alerts reference](./alerts.md#otel-collector-otelcol-exporter-enqueue-failed-spans) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_enqueue_failed_spans{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+### OpenTelemetry Collector: Processors
+
+#### otel-collector: otelcol_processor_dropped_spans
+
+<p class="subtitle">Spans dropped per processor per minute</p>
+
+Shows the rate of spans dropped by the configured processor
+
+Refer to the [alerts reference](./alerts.md#otel-collector-otelcol-processor-dropped-spans) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (processor) (rate(otelcol_processor_dropped_spans[1m]))`
+
+</details>
+
+<br />
+
 ### OpenTelemetry Collector: Collector resource usage
 
 #### otel-collector: otel_cpu_usage
@@ -29565,7 +30954,7 @@ Shows CPU usage as reported by the OpenTelemetry collector.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -29586,7 +30975,7 @@ Shows the allocated memory Resident Set Size (RSS) as reported by the OpenTeleme
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -29613,7 +31002,7 @@ For more information on configuring processors for the OpenTelemetry collector s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100202` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -29644,7 +31033,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -29663,7 +31052,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^otel-collector.*"}
 
 Refer to the [alerts reference](./alerts.md#otel-collector-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -29682,7 +31071,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^otel-collector.*"}
 
 Refer to the [alerts reference](./alerts.md#otel-collector-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100502` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -29704,7 +31093,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100503` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -29725,7 +31114,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^otel-collector.*"}[1
 
 Refer to the [alerts reference](./alerts.md#otel-collector-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 

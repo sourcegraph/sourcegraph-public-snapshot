@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useState } from 'react'
+import React, { type ReactNode, useCallback, useEffect, useState } from 'react'
 
 import { mdiChevronDown, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Code,
@@ -26,11 +26,11 @@ import {
 import { requestGraphQL } from '../backend/graphql'
 import {
     FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
+    type FilteredConnectionFilter,
+    type FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { SlowRequestsResult, SlowRequestsVariables } from '../graphql-operations'
+import type { SlowRequestsResult, SlowRequestsVariables } from '../graphql-operations'
 
 import { SLOW_REQUESTS } from './backend'
 

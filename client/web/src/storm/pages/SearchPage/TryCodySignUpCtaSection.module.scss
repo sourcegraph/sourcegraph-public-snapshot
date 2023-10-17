@@ -50,6 +50,14 @@ h2 {
     color: var(--primary);
 }
 
+.experimental-badge {
+    --badge-base: transparent;
+    --badge-light: var(--secondary-2);
+    --badge-dark: var(--secondary-2);
+    --badge-text: var(--text-muted);
+    --badge-border: 1px solid var(--secondary);
+}
+
 .list {
     list-style: inside;
 }

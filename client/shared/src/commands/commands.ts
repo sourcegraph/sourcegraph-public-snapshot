@@ -1,16 +1,16 @@
-import { Remote } from 'comlink'
-import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
+import type { Remote } from 'comlink'
+import { concat, from, of, Subscription, type Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { ActionContributionClientCommandUpdateConfiguration, Evaluated, KeyPath } from '@sourcegraph/client-api'
+import type { ActionContributionClientCommandUpdateConfiguration, Evaluated, KeyPath } from '@sourcegraph/client-api'
 import { formatSearchParameters } from '@sourcegraph/common'
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { CommandEntry } from '../api/client/mainthread-api'
-import { SettingsEdit, updateSettings } from '../api/client/services/settings'
-import { FlatExtensionHostAPI } from '../api/contract'
-import { PlatformContext } from '../platform/context'
+import type { CommandEntry } from '../api/client/mainthread-api'
+import { type SettingsEdit, updateSettings } from '../api/client/services/settings'
+import type { FlatExtensionHostAPI } from '../api/contract'
+import type { PlatformContext } from '../platform/context'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See

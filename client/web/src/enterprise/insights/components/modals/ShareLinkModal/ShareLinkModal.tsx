@@ -1,4 +1,4 @@
-import { FC, MouseEventHandler, useRef } from 'react'
+import { type FC, type MouseEventHandler, useRef } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -9,7 +9,7 @@ import {
     Input,
     LoadingSpinner,
     Modal,
-    ModalProps,
+    type ModalProps,
     H3,
     Text,
     Tooltip,
@@ -17,8 +17,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import {
-    CustomInsightDashboard,
-    Insight,
+    type CustomInsightDashboard,
+    type Insight,
     isGlobalDashboard,
     isOrganizationDashboard,
     isOrganizationOwner,

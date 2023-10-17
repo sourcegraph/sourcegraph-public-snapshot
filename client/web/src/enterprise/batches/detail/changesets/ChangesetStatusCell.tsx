@@ -17,7 +17,7 @@ import classNames from 'classnames'
 
 import { Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
+import { type ChangesetFields, ChangesetState, type Scalars } from '../../../../graphql-operations'
 
 import { ChangesetStatusScheduled } from './ChangesetStatusScheduled'
 

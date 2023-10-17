@@ -4,7 +4,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, Modal, Input, H3, Text, Alert, Link, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExecutorSecretScope, Scalars } from '../../../graphql-operations'
+import type { ExecutorSecretScope, Scalars } from '../../../graphql-operations'
 
 import { useCreateExecutorSecret } from './backend'
 

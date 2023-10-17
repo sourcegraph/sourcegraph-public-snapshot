@@ -6,8 +6,8 @@ import classNames from 'classnames'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../components/Sidebar'
-import { SettingsAreaRepositoryFields } from '../../graphql-operations'
-import { NavGroupDescriptor } from '../../util/contributions'
+import type { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import type { NavGroupDescriptor } from '../../util/contributions'
 
 export interface RepoSettingsSideBarGroup extends Omit<NavGroupDescriptor, 'condition'> {}
 

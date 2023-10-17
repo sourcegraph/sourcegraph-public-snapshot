@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
 
-import { RepositoryFields } from '../../graphql-operations'
+import type { RepositoryFields } from '../../graphql-operations'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 

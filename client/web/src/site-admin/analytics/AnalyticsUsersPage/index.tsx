@@ -1,21 +1,21 @@
-import { useState, useMemo, useEffect, FC } from 'react'
+import { useState, useMemo, useEffect, type FC } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, type Series } from '@sourcegraph/wildcard'
 
-import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
+import type { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { ToggleSelect } from '../components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
+import { type StandardDatum, type FrequencyDatum, buildFrequencyDatum } from '../utils'
 
 import { USERS_STATISTICS } from './queries'
 

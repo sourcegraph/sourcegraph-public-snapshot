@@ -1,4 +1,4 @@
-import { SearchPatternType } from '../graphql-operations'
+import type { SearchPatternType } from '../graphql-operations'
 
 export interface ExampleQuery {
     title: string

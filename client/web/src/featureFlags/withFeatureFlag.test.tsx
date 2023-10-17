@@ -3,7 +3,7 @@ import { render } from '@testing-library/react'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { createFlagMock } from './createFlagMock'
-import { FeatureFlagName } from './featureFlags'
+import type { FeatureFlagName } from './featureFlags'
 import { withFeatureFlag } from './withFeatureFlag'
 
 describe('withFeatureFlag', () => {

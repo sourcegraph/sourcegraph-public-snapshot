@@ -5,7 +5,7 @@ import sinon from 'sinon'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { CodeMonitorFields } from '../../../graphql-operations'
+import type { CodeMonitorFields } from '../../../graphql-operations'
 import { mockAuthenticatedUser } from '../testing/util'
 
 import { FormActionArea } from './FormActionArea'

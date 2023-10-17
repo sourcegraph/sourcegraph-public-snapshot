@@ -4,7 +4,7 @@ import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, Text, Link, Input, H5, Form } from '@sourcegraph/wildcard'
 
 import {
@@ -16,7 +16,7 @@ import {
     VSCE_LINK_USER_DOCS,
     VSCE_SIDEBAR_PARAMS,
 } from '../../../common/links'
-import { WebviewPageProps } from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
 import styles from './AuthSidebarView.module.scss'
 

@@ -1,11 +1,11 @@
-import React, { AriaRole, ComponentType, ElementType, SVGProps } from 'react'
+import React, { type AriaRole, type ComponentType, type ElementType, type SVGProps } from 'react'
 
 import classNames from 'classnames'
-import { MdiReactIconProps } from 'mdi-react'
+import type { MdiReactIconProps } from 'mdi-react'
 
-import { ForwardReferenceComponent } from '../..'
+import type { ForwardReferenceComponent } from '../..'
 
-import { ICON_SIZES } from './constants'
+import type { ICON_SIZES } from './constants'
 
 import styles from './Icon.module.scss'
 

@@ -52,9 +52,9 @@ type AccountData struct {
 // We only expose publicly available fields in this struct.
 // See the GraphQL API's corresponding fields for documentation.
 type PublicAccountData struct {
-	DisplayName *string `json:"displayName,omitempty"`
-	Login       *string `json:"login,omitempty"`
-	URL         *string `json:"url,omitempty"`
+	DisplayName string `json:"displayName,omitempty"`
+	Login       string `json:"login,omitempty"`
+	URL         string `json:"url,omitempty"`
 }
 
 type EncryptableData = encryption.JSONEncryptable[any]
@@ -401,18 +401,6 @@ func TypeToKind(t string) string {
 	return variant.AsKind()
 }
 
-var (
-	// Precompute these for use in ParseServiceType below since the constants are mixed case
-	bbsLower    = strings.ToLower(VariantBitbucketServer.AsType())
-	bbcLower    = strings.ToLower(VariantBitbucketCloud.AsType())
-	jvmLower    = strings.ToLower(VariantJVMPackages.AsType())
-	npmLower    = strings.ToLower(VariantNpmPackages.AsType())
-	goLower     = strings.ToLower(VariantGoPackages.AsType())
-	pythonLower = strings.ToLower(VariantPythonPackages.AsType())
-	rustLower   = strings.ToLower(VariantRustPackages.AsType())
-	rubyLower   = strings.ToLower(VariantRubyPackages.AsType())
-)
-
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
 // It returns ("", false) if no match was found.
 func ParseServiceType(s string) (string, bool) {
@@ -431,16 +419,6 @@ func ParseServiceKind(s string) (string, bool) {
 		return "", false
 	}
 	return variant.AsKind(), true
-}
-
-var supportsRepoExclusion = map[string]bool{
-	VariantAWSCodeCommit.AsKind():   true,
-	VariantBitbucketCloud.AsKind():  true,
-	VariantBitbucketServer.AsKind(): true,
-	VariantGitHub.AsKind():          true,
-	VariantGitLab.AsKind():          true,
-	VariantGitolite.AsKind():        true,
-	VariantAzureDevOps.AsKind():     true,
 }
 
 // SupportsRepoExclusion returns true when given external service kind supports
@@ -595,7 +573,7 @@ func ExtractEncryptableRateLimit(ctx context.Context, config *EncryptableConfig,
 		return rate.Inf, errors.Wrap(err, "loading service configuration")
 	}
 
-	rlc, err := GetLimitFromConfig(kind, parsed)
+	rlc, _, err := GetLimitFromConfig(parsed, kind)
 	if err != nil {
 		return rate.Inf, err
 	}
@@ -605,104 +583,148 @@ func ExtractEncryptableRateLimit(ctx context.Context, config *EncryptableConfig,
 
 // ExtractRateLimit extracts the rate limit from the given args. If rate limiting is not
 // supported the error returned will be an ErrRateLimitUnsupported.
-func ExtractRateLimit(config, kind string) (rate.Limit, error) {
+func ExtractRateLimit(config, kind string) (limit rate.Limit, isDefault bool, err error) {
 	parsed, err := ParseConfig(kind, config)
 	if err != nil {
-		return rate.Inf, errors.Wrap(err, "loading service configuration")
+		return rate.Inf, false, errors.Wrap(err, "loading service configuration")
 	}
 
-	rlc, err := GetLimitFromConfig(kind, parsed)
+	rlc, isDefault, err := GetLimitFromConfig(parsed, kind)
 	if err != nil {
-		return rate.Inf, err
+		return rate.Inf, false, err
 	}
 
-	return rlc, nil
+	return rlc, isDefault, nil
 }
 
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
+func GetLimitFromConfig(config any, kind string) (limit rate.Limit, isDefault bool, err error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: Some infinite, some limited, depending on code host.
 	// 2. Defined and enabled: We use their defined limit.
 	// 3. Defined and disabled: We use an infinite limiter.
 
-	var limit rate.Limit
+	isDefault = true
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
-		limit = rate.Inf
+		limit = GetDefaultRateLimit(KindGitLab)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GitHubConnection:
-		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
-		limit = rate.Inf
+		limit = GetDefaultRateLimit(KindGitHub)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketServerConnection:
-		// 8/s is the default limit we enforce
-		limit = rate.Limit(8)
+		limit = GetDefaultRateLimit(KindBitbucketServer)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketCloudConnection:
-		limit = rate.Limit(2)
+		limit = GetDefaultRateLimit(KindBitbucketCloud)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.PerforceConnection:
-		limit = rate.Limit(5000.0 / 3600.0)
+		limit = GetDefaultRateLimit(KindPerforce)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.JVMPackagesConnection:
-		limit = rate.Limit(2)
+		limit = GetDefaultRateLimit(KindJVMPackages)
 		if c != nil && c.Maven.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
 	case *schema.PagureConnection:
-		// 8/s is the default limit we enforce
-		limit = rate.Limit(8)
+		limit = GetDefaultRateLimit(KindPagure)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.NpmPackagesConnection:
-		limit = rate.Limit(6000 / 3600.0) // Same as the default in npm-packages.schema.json
+		limit = GetDefaultRateLimit(KindNpmPackages)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GoModulesConnection:
-		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://proxy.golang.org)
-		// doesn't document an enforced req/s rate limit AND we do a lot more individual
-		// requests in comparison since they don't offer enough batch APIs.
-		limit = rate.Limit(57600.0 / 3600.0) // Same as default in go-modules.schema.json
+		limit = GetDefaultRateLimit(KindGoPackages)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.PythonPackagesConnection:
-		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
-		// document an enforced req/s rate limit.
-		limit = rate.Limit(57600.0 / 3600.0) // 16/second same as default in python-packages.schema.json
+		limit = GetDefaultRateLimit(KindPythonPackages)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RustPackagesConnection:
-		// The crates.io CDN has no rate limits https://www.pietroalbini.org/blog/downloading-crates-io/
-		limit = rate.Limit(100)
+		limit = GetDefaultRateLimit(KindRustPackages)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RubyPackagesConnection:
-		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
-		limit = rate.Limit(10)
+		limit = GetDefaultRateLimit(KindRubyPackages)
 		if c != nil && c.RateLimit != nil {
+			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	default:
-		return limit, ErrRateLimitUnsupported{codehostKind: kind}
+		return limit, isDefault, ErrRateLimitUnsupported{codehostKind: kind}
 	}
 
-	return limit, nil
+	return limit, isDefault, nil
+}
+
+// GetDefaultRateLimit returns the rate limit settings for code hosts.
+func GetDefaultRateLimit(kind string) rate.Limit {
+	switch kind {
+	case KindGitHub:
+		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
+		return rate.Inf
+	case KindGitLab:
+		return rate.Inf
+	case KindBitbucketServer:
+		// 8/s is the default limit we enforce
+		return rate.Limit(8)
+	case KindBitbucketCloud:
+		return rate.Limit(2)
+	case KindPerforce:
+		return rate.Limit(5000.0 / 3600.0)
+	case KindJVMPackages:
+		return rate.Limit(2)
+	case KindPagure:
+		// 8/s is the default limit we enforce
+		return rate.Limit(8)
+	case KindNpmPackages:
+		return rate.Limit(6000 / 3600.0)
+	case KindGoPackages:
+		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://proxy.golang.org)
+		// doesn't document an enforced req/s rate limit AND we do a lot more individual
+		// requests in comparison since they don't offer enough batch APIs
+		return rate.Limit(57600.0 / 3600.0)
+	case KindPythonPackages:
+		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
+		// document an enforced req/s rate limit.
+		return rate.Limit(57600.0 / 3600.0)
+	case KindRustPackages:
+		// The crates.io CDN has no rate limits https://www.pietroalbini.org/blog/downloading-crates-io/
+		return rate.Limit(100)
+	case KindRubyPackages:
+		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
+		return rate.Limit(10)
+	default:
+		return rate.Inf
+	}
 }
 
 func limitOrInf(enabled bool, perHour float64) rate.Limit {
@@ -753,7 +775,7 @@ type OtherRepoMetadata struct {
 
 	// AbsFilePath is an optional field which is the absolute path to the
 	// repository on the src git-serve server. Notably this is only
-	// implemented for Sourcegraph App's implementation of src git-serve.
+	// implemented for Cody App's implementation of src git-serve.
 	AbsFilePath string
 }
 

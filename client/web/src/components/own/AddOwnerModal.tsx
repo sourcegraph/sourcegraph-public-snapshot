@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 
-import { ApolloError } from '@apollo/client/errors'
+import type { ApolloError } from '@apollo/client/errors'
 import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, Form, H3, Label, Modal } from '@sourcegraph/wildcard'
 
-import {
+import type {
     AssignOwnerResult,
     AssignOwnerVariables,
     AssignTeamResult,

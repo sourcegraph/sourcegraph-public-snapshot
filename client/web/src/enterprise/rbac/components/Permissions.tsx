@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FocusEventHandler } from 'react'
+import React, { type ChangeEvent, type FocusEventHandler } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 
@@ -6,7 +6,7 @@ import { Text, Checkbox, Grid, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesReadPermission } from '../../../rbac/constants'
 import { prettifyAction, prettifyNamespace } from '../../../util/settings'
-import { PermissionsMap, allNamespaces } from '../backend'
+import { type PermissionsMap, allNamespaces } from '../backend'
 
 interface PermissionListProps {
     allPermissions: PermissionsMap

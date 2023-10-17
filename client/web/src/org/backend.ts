@@ -1,4 +1,4 @@
-import { concat, Observable } from 'rxjs'
+import { concat, type Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -6,7 +6,7 @@ import { gql } from '@sourcegraph/http-client'
 
 import { refreshAuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'
-import {
+import type {
     CreateOrganizationResult,
     CreateOrganizationVariables,
     RemoveUserFromOrganizationResult,
@@ -52,7 +52,6 @@ export const ORGANIZATION_MEMBERS_QUERY = gql`
         username
         displayName
         avatarURL
-        siteAdmin
     }
 `
 

@@ -4,7 +4,7 @@ import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
-import { SiteAdminAreaRoute } from './SiteAdminArea'
+import type { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
 const AnalyticsSearchPage = lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')
@@ -34,6 +34,10 @@ const SiteAdminConfigurationPage = lazyComponent(
     'SiteAdminConfigurationPage'
 )
 const SiteAdminSettingsPage = lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
+const SiteAdminOnboardingTourPage = lazyComponent(
+    () => import('./SiteAdminOnboardingTourPage'),
+    'SiteAdminOnboardingTourPage'
+)
 const SiteAdminExternalServicesArea = lazyComponent(
     () => import('./SiteAdminExternalServicesArea'),
     'SiteAdminExternalServicesArea'
@@ -94,6 +98,7 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     'SiteAdminWebhookUpdatePage'
 )
 const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
+const GitserversPageProps = lazyComponent(() => import('./SiteAdminGitserversPage'), 'SiteAdminGitserversPage')
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -119,10 +124,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/code-insights',
         render: () => <AnalyticsCodeInsightsPage />,
+        condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
         path: '/analytics/batch-changes',
         render: () => <AnalyticsBatchChangesPage />,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/analytics/notebooks',
@@ -135,6 +142,11 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/global-settings',
         render: props => <SiteAdminSettingsPage {...props} />,
+    },
+    {
+        path: '/end-user-onboarding',
+        render: props => <SiteAdminOnboardingTourPage {...props} />,
+        condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
     },
     {
         path: '/github-apps/*',
@@ -242,11 +254,15 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/permissions-syncs',
         render: props => <PermissionsSyncJobsTable {...props} />,
     },
+    {
+        path: '/gitservers',
+        render: props => <GitserversPageProps {...props} />,
+    },
 ]
 
 const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
     path: '/users',
-    render: () => <UsersManagement isEnterprise={false} renderAssignmentModal={() => null} />,
+    render: () => <UsersManagement renderAssignmentModal={() => null} />,
 }
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [

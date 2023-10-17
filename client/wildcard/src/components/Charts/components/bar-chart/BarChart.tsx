@@ -1,11 +1,11 @@
-import { ReactElement, SVGProps, useMemo, MouseEvent } from 'react'
+import { type ReactElement, type SVGProps, useMemo, type MouseEvent } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
-import { ScaleBand } from 'd3-scale'
+import type { ScaleBand } from 'd3-scale'
 
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
-import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
-import { CategoricalLikeChart } from '../../types'
+import type { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
+import type { CategoricalLikeChart } from '../../types'
 
 import { BarChartContent } from './BarChartContent'
 import { getGroupedCategories } from './utils/get-grouped-categories'

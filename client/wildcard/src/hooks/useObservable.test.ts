@@ -3,7 +3,7 @@
 import { useMemo, useCallback } from 'react'
 
 import { renderHook, act } from '@testing-library/react'
-import { Observable, Subscriber } from 'rxjs'
+import { Observable, type Subscriber } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sinon from 'sinon'
 

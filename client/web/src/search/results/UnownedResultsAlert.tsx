@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { renderMarkdown } from '@sourcegraph/common'
-import {
+import type {
     SearchPatternTypeProps,
     CaseSensitivityProps,
     SearchContextProps,

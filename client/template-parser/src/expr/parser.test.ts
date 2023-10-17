@@ -1,5 +1,5 @@
 import { TokenType } from './lexer'
-import { ExpressionNode, Parser, TemplateParser } from './parser'
+import { type ExpressionNode, Parser, TemplateParser } from './parser'
 
 describe('Parser', () => {
     const TESTS: { [expr: string]: ExpressionNode } = {

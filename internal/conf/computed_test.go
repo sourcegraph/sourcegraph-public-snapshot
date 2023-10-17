@@ -7,9 +7,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -315,7 +315,7 @@ func TestCodyEnabled(t *testing.T) {
 
 func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
-	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
 		ChatModel:                "anthropic/claude-2",
 		ChatModelMaxTokens:       12000,
@@ -476,6 +476,76 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "Azure OpenAI completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:        "azure-openai",
+					AccessToken:     "asdf",
+					Endpoint:        "https://acmecorp.openai.azure.com",
+					ChatModel:       "gpt4-deployment",
+					FastChatModel:   "gpt35-turbo-deployment",
+					CompletionModel: "gpt35-turbo-deployment",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "gpt4-deployment",
+				ChatModelMaxTokens:       8000,
+				FastChatModel:            "gpt35-turbo-deployment",
+				FastChatModelMaxTokens:   8000,
+				CompletionModel:          "gpt35-turbo-deployment",
+				CompletionModelMaxTokens: 8000,
+				AccessToken:              "asdf",
+				Provider:                 "azure-openai",
+				Endpoint:                 "https://acmecorp.openai.azure.com",
+			},
+		},
+		{
+			name: "Fireworks completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:    "fireworks",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "accounts/fireworks/models/llama-v2-7b",
+				ChatModelMaxTokens:       3000,
+				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
+				FastChatModelMaxTokens:   3000,
+				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				CompletionModelMaxTokens: 6000,
+				AccessToken:              "asdf",
+				Provider:                 "fireworks",
+				Endpoint:                 "https://api.fireworks.ai/inference/v1/completions",
+			},
+		},
+		{
+			name: "AWS Bedrock completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "aws-bedrock",
+					Endpoint: "us-west-2",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "anthropic.claude-v2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "anthropic.claude-instant-v1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic.claude-instant-v1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "",
+				Provider:                 "aws-bedrock",
+				Endpoint:                 "us-west-2",
+			},
+		},
+		{
 			name: "zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
@@ -625,7 +695,20 @@ func TestGetCompletionsConfig(t *testing.T) {
 
 func TestGetEmbeddingsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
-	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	defaultQdrantConfig := conftypes.QdrantConfig{
+		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
+			OnDisk: true,
+		},
+		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
+			IndexingThreshold: 0,
+			MemmapThreshold:   100,
+		},
+		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
+			Enabled:  true,
+			Quantile: 0.98,
+		},
+	}
 	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
 		Provider:                   "sourcegraph",
 		AccessToken:                licenseAccessToken,
@@ -640,6 +723,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		FileFilters: conftypes.EmbeddingsFileFilters{
 			MaxFileSizeBytes: 1000000,
 		},
+		ExcludeChunkOnError: true,
+		Qdrant:              defaultQdrantConfig,
 	}
 
 	testCases := []struct {
@@ -745,6 +830,43 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					IncludedFilePathPatterns: []string{"*.go"},
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "Disable exclude failed chunk during indexing",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+					ExcludeChunkOnError: pointers.Ptr(false),
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: false,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -770,6 +892,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -807,6 +931,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -819,6 +945,37 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				},
 			},
 			wantDisabled: true,
+		},
+		{
+			name: "Azure OpenAI provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider:    "azure-openai",
+					AccessToken: "asdf",
+					Endpoint:    "https://acmecorp.openai.azure.com",
+					Dimensions:  1536,
+					Model:       "the-model",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "azure-openai",
+				AccessToken:                "asdf",
+				Model:                      "the-model",
+				Endpoint:                   "https://acmecorp.openai.azure.com",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
 		},
 		{
 			name:       "App default config",
@@ -843,6 +1000,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -881,6 +1040,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -907,6 +1068,8 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -943,6 +1106,38 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
 					t.Fatalf("unexpected config computed: %s", diff)
 				}
+			}
+		})
+	}
+}
+
+func TestEmailSenderName(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig schema.SiteConfiguration
+		want       string
+	}{
+		{
+			name:       "nothing set",
+			siteConfig: schema.SiteConfiguration{},
+			want:       "Sourcegraph",
+		},
+		{
+			name: "value set",
+			siteConfig: schema.SiteConfiguration{
+				EmailSenderName: "Horsegraph",
+			},
+			want: "Horsegraph",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: tc.siteConfig})
+			t.Cleanup(func() { Mock(nil) })
+
+			if got, want := EmailSenderName(), tc.want; got != want {
+				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
 			}
 		})
 	}

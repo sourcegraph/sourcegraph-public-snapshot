@@ -1,8 +1,8 @@
-import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
+import type { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 
-import { BaseInsight, InsightFilters, InsightType } from '../common'
+import type { BaseInsight, InsightFilters, InsightType } from '../common'
 
-import { SearchBasedInsightSeries } from './search-insight'
+import type { SearchBasedInsightSeries } from './search-insight'
 
 export interface ComputeInsight extends BaseInsight {
     type: InsightType.Compute

@@ -1,8 +1,8 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { Insight, InsightsDashboardOwner } from '../types'
+import type { Insight, InsightsDashboardOwner } from '../types'
 
-import {
+import type {
     AssignInsightsToDashboardInput,
     DashboardCreateInput,
     DashboardCreateResult,

@@ -1,6 +1,6 @@
 import { foldEffect, foldGutter, foldKeymap, foldService } from '@codemirror/language'
-import { EditorState, Extension, StateField } from '@codemirror/state'
-import { EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { type EditorState, type Extension, StateField } from '@codemirror/state'
+import { EditorView, keymap, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 import { mdiMenuDown, mdiMenuRight } from '@mdi/js'
 import { createRoot } from 'react-dom/client'
 

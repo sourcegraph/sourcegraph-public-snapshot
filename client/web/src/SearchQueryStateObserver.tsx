@@ -1,10 +1,10 @@
-import { FC, useLayoutEffect, useRef, useState } from 'react'
+import { type FC, useLayoutEffect, useRef, useState } from 'react'
 
-import { Location, useLocation } from 'react-router-dom'
+import { type Location, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSearchContextSpecAvailable } from '@sourcegraph/shared/src/search'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 

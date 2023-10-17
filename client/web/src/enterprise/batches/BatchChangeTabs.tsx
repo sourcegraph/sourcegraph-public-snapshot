@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { TabList, TabListProps, Tabs, TabsProps } from '@sourcegraph/wildcard'
+import { TabList, type TabListProps, Tabs, type TabsProps } from '@sourcegraph/wildcard'
 
 /** sourcegraph/wildcard `Tabs` with styling applied to prevent CLS on hovering the tabs. */
 export const BatchChangeTabs: React.FunctionComponent<TabsProps> = props => (

@@ -1,6 +1,6 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
-import { FileDiffFields } from '../../graphql-operations'
+import type { FileDiffFields } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
 
 import { DEMO_HUNKS } from './FileDiffHunks.story'
@@ -191,7 +191,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     },
 ]
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/diffs/FileDiffNode',
@@ -200,18 +200,20 @@ const config: Meta = {
     argTypes: {
         persistLines: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         lineNumbers: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        persistLines: true,
+        lineNumbers: true,
     },
 }
 
 export default config
 
-export const AllUnifiedFileNode: Story = args => (
+export const AllUnifiedFileNode: StoryFn = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -233,7 +235,7 @@ export const AllUnifiedFileNode: Story = args => (
 
 AllUnifiedFileNode.storyName = 'All unified file node states overview'
 
-export const AllSplitFileNode: Story = args => (
+export const AllSplitFileNode: StoryFn = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">

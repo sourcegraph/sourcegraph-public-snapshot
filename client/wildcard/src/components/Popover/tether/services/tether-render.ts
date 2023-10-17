@@ -10,7 +10,7 @@ import {
 } from './tether-browser'
 import { getLayout } from './tether-layout'
 import { getState } from './tether-state'
-import { Tether } from './types'
+import type { Tether } from './types'
 
 /**
  * Main entry point for tooltip element position calculations. It mutates tooltip

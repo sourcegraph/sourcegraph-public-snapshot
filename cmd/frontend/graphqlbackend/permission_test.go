@@ -26,7 +26,7 @@ func TestPermissionResolver(t *testing.T) {
 
 	ctx := context.Background()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := createTestUser(t, db, false)
 	admin := createTestUser(t, db, true)
@@ -58,7 +58,7 @@ func TestPermissionResolver(t *testing.T) {
 		require.Equal(t, errs[0].Message, "must be site admin")
 	})
 
-	t.Run(" as site-administrator", func(t *testing.T) {
+	t.Run("as site-administrator", func(t *testing.T) {
 		want := apitest.Permission{
 			Typename:    "Permission",
 			ID:          mpid,

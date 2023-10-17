@@ -81,7 +81,7 @@ func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *s
 }
 
 func (s BitbucketCloudSource) CheckConnection(ctx context.Context) error {
-	_, err := s.client.CurrentUser(ctx)
+	_, _, err := s.client.Repos(ctx, nil, "", nil)
 	if err != nil {
 		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
 	}
@@ -174,24 +174,6 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 
 	var wg sync.WaitGroup
 
-	// List all repositories belonging to the account
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		page := &bitbucketcloud.PageToken{Pagelen: 100}
-		var err error
-		var repos []*bitbucketcloud.Repo
-		for page.HasMore() || page.Page == 0 {
-			if repos, page, err = s.client.Repos(ctx, page, s.config.Username, nil); err != nil {
-				ch <- batch{err: errors.Wrapf(err, "bitbucketcloud.repos: item=%q, page=%+v", s.config.Username, page)}
-				break
-			}
-
-			ch <- batch{repos: repos}
-		}
-	}()
-
 	// List all repositories of teams selected that the account has access to
 	wg.Add(1)
 	go func() {
@@ -262,6 +244,6 @@ func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Source, 
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
 func (s *BitbucketCloudSource) ValidateAuthenticator(ctx context.Context) error {
-	_, err := s.client.CurrentUser(ctx)
+	_, _, err := s.client.Repos(ctx, nil, "", nil)
 	return err
 }

@@ -4,13 +4,13 @@ import { map } from 'rxjs/operators'
 
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
-import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
+import type { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { GettingStarted } from '../list/GettingStarted'
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
-import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
+import { BatchChangeNode, type BatchChangeNodeProps } from './BatchChangeNode'
 
 import styles from './RepoBatchChanges.module.scss'
 

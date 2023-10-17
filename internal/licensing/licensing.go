@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -56,7 +57,12 @@ func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, er
 }
 
 func GetFreeLicenseInfo() (info *Info) {
-	return &Info{license.Info{Tags: []string{"plan:free-1"}, UserCount: 10, ExpiresAt: time.Now().Add(time.Hour * 8760)}}
+	return &Info{license.Info{
+		Tags:      []string{"plan:free-1"},
+		UserCount: 10,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(time.Hour * 8760),
+	}}
 }
 
 var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)
@@ -99,7 +105,7 @@ func GetConfiguredProductLicenseInfo() (*Info, error) {
 }
 
 func IsLicenseValid() bool {
-	val := store.Get(licenseValidityStoreKey)
+	val := store.Get(LicenseValidityStoreKey)
 	if val.IsNil() {
 		return true
 	}
@@ -112,6 +118,8 @@ func IsLicenseValid() bool {
 	return v
 }
 
+var store = redispool.Store
+
 func GetLicenseInvalidReason() string {
 	if IsLicenseValid() {
 		return ""
@@ -119,7 +127,7 @@ func GetLicenseInvalidReason() string {
 
 	defaultReason := "unknown"
 
-	val := store.Get(licenseInvalidReason)
+	val := store.Get(LicenseInvalidReason)
 	if val.IsNil() {
 		return defaultReason
 	}

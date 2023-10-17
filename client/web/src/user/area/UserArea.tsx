@@ -1,27 +1,31 @@
-import { FC, useMemo, Suspense } from 'react'
+import { type FC, useMemo, Suspense } from 'react'
 
 import { useParams, Routes, Route } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { BatchChangesProps } from '../../batches'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { AuthenticatedUser } from '../../auth'
+import type { BatchChangesProps } from '../../batches'
+import type { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RouteError } from '../../components/ErrorBoundary'
 import { NotFoundPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
-import { NamespaceProps } from '../../namespaces'
-import { RouteV6Descriptor } from '../../util/contributions'
+import type {
+    UserAreaUserFields,
+    UserAreaUserProfileResult,
+    UserAreaUserProfileVariables,
+} from '../../graphql-operations'
+import type { NamespaceProps } from '../../namespaces'
+import type { RouteV6Descriptor } from '../../util/contributions'
 import { isAccessTokenCallbackPage } from '../settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
-import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
-import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
+import type { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
+import type { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 
-import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+import { UserAreaHeader, type UserAreaHeaderNavItem } from './UserAreaHeader'
 
 /**
  * GraphQL fragment for the User fields needed by UserArea.
@@ -90,7 +94,7 @@ interface UserAreaProps
     authenticatedUser: AuthenticatedUser | null
 
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**
@@ -123,7 +127,7 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**
@@ -133,7 +137,7 @@ export const UserArea: FC<UserAreaProps> = ({
     useBreadcrumb,
     userAreaRoutes,
     isSourcegraphDotCom,
-    isSourcegraphApp,
+    isCodyApp,
     ...props
 }) => {
     const { username } = useParams()
@@ -190,7 +194,7 @@ export const UserArea: FC<UserAreaProps> = ({
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
-        isSourcegraphApp,
+        isCodyApp,
     }
 
     return (

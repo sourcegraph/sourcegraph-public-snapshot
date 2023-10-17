@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
@@ -21,10 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
@@ -47,6 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -101,8 +101,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 	db := database.NewDB(logger, sqlDB)
 
+	// Used by opentelemetry logging
+	stdr.SetVerbosity(10)
+
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		if !deploy.IsApp() {
+		if !deploy.IsSingleBinary() {
 			logger.Warn("Skipping out-of-band migrations check")
 		}
 	} else {
@@ -202,8 +205,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	siteid.Init(db)
-
 	globals.WatchBranding()
 	globals.WatchExternalURL()
 	globals.WatchPermissionsUserMapping()
@@ -219,7 +220,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	schema, err := graphqlbackend.NewSchema(
 		db,
-		gitserver.NewClient(db),
+		gitserver.NewClient(),
 		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
 	)
 	if err != nil {
@@ -268,7 +269,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	}
 
 	// Create the external HTTP handler.
-	externalHandler := newExternalHTTPHandler(
+	externalHandler, err := newExternalHTTPHandler(
 		db,
 		schema,
 		rateLimiter,
@@ -290,6 +291,8 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
+			SearchJobsDataExportHandler:     enterprise.SearchJobsDataExportHandler,
+			SearchJobsLogsHandler:           enterprise.SearchJobsLogsHandler,
 			NewDotcomLicenseCheckHandler:    enterprise.NewDotcomLicenseCheckHandler,
 			NewChatCompletionsStreamHandler: enterprise.NewChatCompletionsStreamHandler,
 			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
@@ -297,6 +300,9 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
 	)
+	if err != nil {
+		return nil, errors.Errorf("create external HTTP handler: %v", err)
+	}
 	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
@@ -381,7 +387,7 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	if pool, ok := redispool.Cache.Pool(); ok {
 		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	} else {
-		// If redis is disabled we are in Sourcegraph App and can rely on an
+		// If redis is disabled we are in Cody App and can rely on an
 		// in-memory store.
 		store, err = memstore.NewCtx(0)
 	}

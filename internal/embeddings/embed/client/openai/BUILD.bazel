@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//internal/conf/conftypes",
         "//internal/embeddings/embed/client",
+        "//internal/embeddings/embed/client/modeltransformations",
         "//lib/errors",
     ],
 )

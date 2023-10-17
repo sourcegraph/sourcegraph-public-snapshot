@@ -3,9 +3,9 @@ import React, { useEffect } from 'react'
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Container, Icon, Link, H2, H3, Text, useReducedMotion } from '@sourcegraph/wildcard'
@@ -60,7 +60,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
-    const isSourcegraphApp: boolean = window.context?.sourcegraphAppMode || false
+    const isCodyApp: boolean = window.context?.codyAppMode || false
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
@@ -72,7 +72,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     const isLightTheme = useIsLightTheme()
 
     const wrapOutboundLink = (url: string): string => {
-        if (isSourcegraphApp) {
+        if (isCodyApp) {
             return addSourcegraphAppOutboundUrlParameters(url)
         }
         return url

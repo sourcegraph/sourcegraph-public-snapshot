@@ -1,11 +1,11 @@
-import React, { ReactNode, useCallback, useMemo } from 'react'
+import React, { type ReactNode, useCallback, useMemo } from 'react'
 
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { parse } from 'jsonc-parser'
 
-import { ErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { ErrorLike } from '@sourcegraph/common'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
@@ -21,12 +21,12 @@ import {
     Label,
 } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceInput } from '../../graphql-operations'
+import type { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
-import { AddExternalServiceOptions } from './externalServices'
+import type { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, TelemetryProps {
     input: AddExternalServiceInput

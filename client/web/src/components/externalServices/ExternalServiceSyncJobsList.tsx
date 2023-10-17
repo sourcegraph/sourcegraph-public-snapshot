@@ -1,21 +1,21 @@
 import React, { useCallback } from 'react'
 
-import { Subject } from 'rxjs'
+import type { Subject } from 'rxjs'
 import { delay, repeatWhen, tap } from 'rxjs/operators'
 
 import { H2 } from '@sourcegraph/wildcard'
 
 import {
-    ExternalServiceSyncJobConnectionFields,
-    ExternalServiceSyncJobListFields,
+    type ExternalServiceSyncJobConnectionFields,
+    type ExternalServiceSyncJobListFields,
     ExternalServiceSyncJobState,
-    Scalars,
+    type Scalars,
 } from '../../graphql-operations'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../FilteredConnection'
 
 import { queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
 import { EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
-import { ExternalServiceSyncJobNode, ExternalServiceSyncJobNodeProps } from './ExternalServiceSyncJobNode'
+import { ExternalServiceSyncJobNode, type ExternalServiceSyncJobNodeProps } from './ExternalServiceSyncJobNode'
 
 interface ExternalServiceSyncJobsListProps {
     externalServiceID: Scalars['ID']

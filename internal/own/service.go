@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -85,10 +84,6 @@ type service struct {
 	db              database.DB
 }
 
-type ownerKey struct {
-	handle, email string
-}
-
 // codeownersLocations contains the locations where CODEOWNERS file
 // is expected to be found relative to the repository root directory.
 // These are in line with GitHub and GitLab documentation.
@@ -116,7 +111,6 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 		for _, path := range codeownersLocations {
 			content, err := s.gitserverClient.ReadFile(
 				ctx,
-				authz.DefaultSubRepoPermsChecker,
 				repoName,
 				commitID,
 				path,

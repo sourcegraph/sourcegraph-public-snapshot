@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 
-import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 
-import { AuthenticatedUser } from '../../../auth'
-import { Scalars } from '../../../graphql-operations'
+import type { AuthenticatedUser } from '../../../auth'
+import type { Scalars } from '../../../graphql-operations'
 
 export interface UseNamespacesResult {
     userNamespace: UserSettingFields

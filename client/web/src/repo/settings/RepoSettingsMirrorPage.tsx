@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react'
+import React, { type FC, useEffect, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -22,12 +22,10 @@ import {
     Collapse,
     CollapsePanel,
     Label,
-    H4,
 } from '@sourcegraph/wildcard'
 
-import { LogOutput } from '../../components/LogOutput'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     CheckMirrorRepositoryConnectionResult,
     CheckMirrorRepositoryConnectionVariables,
     RecloneRepositoryResult,
@@ -152,7 +150,7 @@ const CheckMirrorRepositoryConnectionActionContainer: FC<
         CheckMirrorRepositoryConnectionResult,
         CheckMirrorRepositoryConnectionVariables
     >(CHECK_MIRROR_REPOSITORY_CONNECTION, {
-        variables: { repository: props.repo.id, name: null },
+        variables: { repository: props.repo.id },
         onCompleted: result => {
             props.onDidUpdateReachability(result.checkMirrorRepositoryConnection.error === null)
         },
@@ -277,25 +275,6 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
                     </Collapse>
                 </div>
             }
-        />
-    )
-}
-
-interface LastSyncOutputProps {
-    repo: SettingsAreaRepositoryFields
-}
-
-const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
-    const output =
-        (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
-        props.repo.mirrorInfo.lastSyncOutput ||
-        'No logs yet.'
-    return (
-        <BaseActionContainer
-            title="Last sync log"
-            titleAs="h3"
-            description={<H4>Output from this repository's most recent sync</H4>}
-            details={<LogOutput text={output} logDescription="Job output:" />}
         />
     )
 }
@@ -428,7 +407,6 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                     </Alert>
                 )}
                 <CorruptionLogsContainer repo={repo} />
-                <LastSyncOutputContainer repo={repo} />
             </Container>
         </>
     )

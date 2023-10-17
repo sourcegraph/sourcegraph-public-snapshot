@@ -1,6 +1,6 @@
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 
-import { InsightStep } from '../search-insight'
+import type { InsightStep } from '../search-insight'
 
 export interface CaptureGroupFormFields {
     /**

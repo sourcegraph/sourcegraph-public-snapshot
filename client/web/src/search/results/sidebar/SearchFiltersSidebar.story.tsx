@@ -1,14 +1,14 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
-import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
-import { Filter } from '@sourcegraph/shared/src/search/stream'
+import type { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
 import { SearchPatternType } from '../../../graphql-operations'
 
-import { SearchFiltersSidebar, SearchFiltersSidebarProps } from './SearchFiltersSidebar'
+import { SearchFiltersSidebar, type SearchFiltersSidebarProps } from './SearchFiltersSidebar'
 
 const config: Meta = {
     title: 'web/search/results/sidebar/SearchFiltersSidebar',
@@ -127,11 +127,11 @@ const filters: Filter[] = [
     })),
 ]
 
-export const EmptySidebar: Story = () => <WebStory>{() => <SearchFiltersSidebar {...defaultProps} />}</WebStory>
+export const EmptySidebar: StoryFn = () => <WebStory>{() => <SearchFiltersSidebar {...defaultProps} />}</WebStory>
 
 EmptySidebar.storyName = 'empty sidebar'
 
-export const WithEverything: Story = () => (
+export const WithEverything: StoryFn = () => (
     <WebStory>
         {() => (
             <SearchFiltersSidebar

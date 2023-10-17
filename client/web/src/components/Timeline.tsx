@@ -1,4 +1,4 @@
-import React, { FunctionComponent, ReactNode, useState } from 'react'
+import React, { type FunctionComponent, type ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'

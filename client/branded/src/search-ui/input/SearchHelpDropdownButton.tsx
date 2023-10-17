@@ -1,9 +1,9 @@
-import { useCallback, FC } from 'react'
+import { useCallback, type FC } from 'react'
 
 import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     PopoverTrigger,
     PopoverContent,

@@ -36,6 +36,7 @@ func (s *Sandbox) Close() {
 // RunScript runs the given Lua script text in the sandbox.
 func (s *Sandbox) RunScript(ctx context.Context, opts RunOptions, script string) (retValue lua.LValue, err error) {
 	ctx, _, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
+
 	defer endObservation(1, observation.Args{})
 
 	return s.RunScriptNamed(ctx, opts, singleScriptFS{script}, "main.lua")

@@ -3,7 +3,7 @@ import React, { useRef } from 'react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { useResizablePanel, UseResizablePanelParameters } from './useResizablePanel'
+import { useResizablePanel, type UseResizablePanelParameters } from './useResizablePanel'
 import { getDisplayStyle, getPositionStyle } from './utils'
 
 import styles from './Panel.module.scss'

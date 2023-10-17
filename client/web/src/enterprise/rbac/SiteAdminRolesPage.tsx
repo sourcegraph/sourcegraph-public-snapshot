@@ -3,12 +3,12 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { groupBy, noop } from 'lodash'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 
-import { useRolesConnection, usePermissions, PermissionsMap } from './backend'
+import { useRolesConnection, usePermissions, type PermissionsMap } from './backend'
 import { CreateRoleModal } from './components/CreateRoleModal'
 import { RoleNode } from './components/RoleNode'
 

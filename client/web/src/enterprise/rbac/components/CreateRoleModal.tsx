@@ -14,11 +14,11 @@ import {
     useCheckboxes,
     useForm,
     useField,
-    SubmissionResult,
+    type SubmissionResult,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { useCreateRole, PermissionsMap } from '../backend'
+import { useCreateRole, type PermissionsMap } from '../backend'
 
 import { PermissionsList } from './Permissions'
 

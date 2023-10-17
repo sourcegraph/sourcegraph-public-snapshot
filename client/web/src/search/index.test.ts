@@ -1,4 +1,4 @@
-import { Location, createPath } from 'react-router-dom'
+import { type Location, createPath } from 'react-router-dom'
 import { Subscription, Subject } from 'rxjs'
 import { tap, last } from 'rxjs/operators'
 

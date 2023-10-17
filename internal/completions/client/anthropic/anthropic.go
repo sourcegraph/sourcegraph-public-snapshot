@@ -93,7 +93,7 @@ func (a *anthropicClient) Stream(
 }
 
 func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	prompt, err := getPrompt(requestParams.Messages)
+	prompt, err := GetPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +135,12 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Client", clientID)
 	req.Header.Set("X-API-Key", a.accessToken)
+	// Set the API version so responses are in the expected format.
+	// NOTE: When changing this here, Cody Gateway currently overwrites this header
+	// with 2023-01-01, so it will not be respected in Gateway usage and we will
+	// have to fall back to the old parser, or implement a mechanism on the Gateway
+	// side that understands the version header we send here and switch out the parser.
+	req.Header.Set("anthropic-version", "2023-01-01")
 
 	resp, err := a.cli.Do(req)
 	if err != nil {

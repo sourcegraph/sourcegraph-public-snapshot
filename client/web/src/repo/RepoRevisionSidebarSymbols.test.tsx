@@ -1,4 +1,4 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { cleanup, fireEvent } from '@testing-library/react'
 import delay from 'delay'
 import { escapeRegExp } from 'lodash'
@@ -6,13 +6,13 @@ import { escapeRegExp } from 'lodash'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { SymbolsResult } from '../graphql-operations'
+import type { SymbolsResult } from '../graphql-operations'
 
 import {
     RepoRevisionSidebarSymbols,
-    RepoRevisionSidebarSymbolsProps,
+    type RepoRevisionSidebarSymbolsProps,
     SYMBOLS_QUERY,
 } from './RepoRevisionSidebarSymbols'
 

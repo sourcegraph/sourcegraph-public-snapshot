@@ -3,7 +3,7 @@ import * as React from 'react'
 import { gql } from '@sourcegraph/http-client'
 import { Link } from '@sourcegraph/wildcard'
 
-import { ProductSubscriptionFields } from '../../../graphql-operations'
+import type { ProductSubscriptionFields } from '../../../graphql-operations'
 
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
 

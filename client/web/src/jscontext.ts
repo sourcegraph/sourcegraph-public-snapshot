@@ -1,8 +1,8 @@
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
-import { TemporarySettingsResult } from './graphql-operations'
+import type { TemporarySettingsResult } from './graphql-operations'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
 
@@ -51,13 +51,13 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'settingsURL'
     | 'viewerCanAdminister'
     | 'tosAccepted'
-    | 'searchable'
     | 'organizations'
     | 'session'
     | 'emails'
     | 'latestSettings'
     | 'permissions'
     | 'hasVerifiedEmail'
+    | 'completedPostSignup'
 >
 
 /**
@@ -114,7 +114,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
-    sourcegraphAppMode: boolean
+    codyAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -202,12 +202,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /**
      * Local git URL, it's used only to create a local external service
-     * in Sourcegraph App.
+     * in Cody App.
      */
     srcServeGitUrl: string
-
-    /** Whether users are allowed to add their own code and at what permission level. */
-    externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
@@ -270,6 +267,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
     }
+
+    /** sha256 hashed license key */
+    hashedLicenseKey?: string
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean

@@ -3,7 +3,7 @@ import React, { useContext, useEffect } from 'react'
 import { render } from '@testing-library/react'
 import { act } from 'react-dom/test-utils'
 
-import { MultiSelectContext, MultiSelectContextProvider, MultiSelectContextState } from './MultiSelectContext'
+import { MultiSelectContext, MultiSelectContextProvider, type MultiSelectContextState } from './MultiSelectContext'
 
 describe('MultiSelectContextProvider', () => {
     test('providers are initially empty', () => {

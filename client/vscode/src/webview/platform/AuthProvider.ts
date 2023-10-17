@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
     authentication,
-    AuthenticationProvider,
-    AuthenticationProviderAuthenticationSessionsChangeEvent,
-    AuthenticationSession,
+    type AuthenticationProvider,
+    type AuthenticationProviderAuthenticationSessionsChangeEvent,
+    type AuthenticationSession,
     commands,
     Disposable,
-    Event,
+    type Event,
     EventEmitter,
-    SecretStorage,
+    type SecretStorage,
 } from 'vscode'
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'

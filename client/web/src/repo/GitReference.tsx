@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -11,12 +11,12 @@ import { Badge, Icon, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import {
-    GitRefConnectionFields,
-    GitRefFields,
+    type GitRefConnectionFields,
+    type GitRefFields,
     GitRefType,
-    RepositoryGitRefsResult,
-    RepositoryGitRefsVariables,
-    Scalars,
+    type RepositoryGitRefsResult,
+    type RepositoryGitRefsVariables,
+    type Scalars,
 } from '../graphql-operations'
 
 import styles from './GitReference.module.scss'

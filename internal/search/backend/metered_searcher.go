@@ -85,7 +85,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			attribute.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
 			attribute.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
 			attribute.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
-			attribute.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 		}
 		tr.AddEvent("begin", fields...)
 		event.AddAttributes(fields)
@@ -187,6 +186,8 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		attribute.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
 		attribute.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
 		attribute.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
+		attribute.Int64("stats.match_tree_construction_ms", statsAgg.MatchTreeConstruction.Milliseconds()),
+		attribute.Int64("stats.match_tree_search_ms", statsAgg.MatchTreeSearch.Milliseconds()),
 		attribute.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
 		attribute.String("stats.flush_reason", statsAgg.FlushReason.String()),
 	}

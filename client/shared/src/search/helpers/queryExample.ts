@@ -1,6 +1,6 @@
-import { FilterType } from '../query/filters'
+import type { FilterType } from '../query/filters'
 import { FilterKind, findFilter } from '../query/query'
-import { CharacterRange } from '../query/token'
+import type { CharacterRange } from '../query/token'
 import { updateFilter } from '../query/transformer'
 
 /**

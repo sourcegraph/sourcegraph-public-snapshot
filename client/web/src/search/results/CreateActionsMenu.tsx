@@ -5,9 +5,9 @@ import classNames from 'classnames'
 
 import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
-import { CreateAction } from './createActions'
+import type { CreateAction } from './createActions'
 
 import createActionsStyles from './CreateActions.module.scss'
 import navStyles from './SearchResultsInfoBar.module.scss'

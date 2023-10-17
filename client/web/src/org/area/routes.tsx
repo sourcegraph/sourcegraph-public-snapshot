@@ -4,7 +4,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { namespaceAreaRoutes } from '../../namespaces/routes'
 
-import { OrgAreaRoute } from './OrgArea'
+import type { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 

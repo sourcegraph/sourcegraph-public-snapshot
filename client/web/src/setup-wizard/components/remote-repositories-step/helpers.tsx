@@ -1,13 +1,13 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab, mdiMicrosoftAzure } from '@mdi/js'
-import { MdiReactIconComponentType } from 'mdi-react'
+import type { MdiReactIconComponentType } from 'mdi-react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon, IconProps } from '@sourcegraph/wildcard'
+import { Icon, type IconProps } from '@sourcegraph/wildcard'
 
 import { GerritIcon } from '../../../components/externalServices/GerritIcon'
-import { GetCodeHostsResult } from '../../../graphql-operations'
+import type { GetCodeHostsResult } from '../../../graphql-operations'
 
 type CodeHostIconProps = IconProps & {
     codeHostType: ExternalServiceKind | null

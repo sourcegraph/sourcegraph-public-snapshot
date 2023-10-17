@@ -1,11 +1,11 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { HighlightRange } from '@sourcegraph/branded'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import type { HighlightRange } from '@sourcegraph/branded'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { HighlightLineRange, SymbolKind } from '../graphql-operations'
+import type { HighlightLineRange, SymbolKind } from '../graphql-operations'
 
 // When adding a new block type, make sure to track its usage in internal/usagestats/notebooks.go.
 export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'

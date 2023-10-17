@@ -1,10 +1,10 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { SearchTemplatesBanner } from './SearchTemplatesBanner'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/create/SearchTemplatesBanner',
@@ -13,6 +13,6 @@ const config: Meta = {
 
 export default config
 
-export const CreatingNewBatchChangeFromSearch: Story = () => <WebStory>{() => <SearchTemplatesBanner />}</WebStory>
+export const CreatingNewBatchChangeFromSearch: StoryFn = () => <WebStory>{() => <SearchTemplatesBanner />}</WebStory>
 
 CreatingNewBatchChangeFromSearch.storyName = 'Creating new batch change from search'

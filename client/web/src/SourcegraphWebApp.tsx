@@ -1,6 +1,6 @@
 import 'focus-visible'
 
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ApolloProvider, SuspenseCache } from '@apollo/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
@@ -9,8 +9,8 @@ import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 import { HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     isSearchContextSpecAvailable,
@@ -21,15 +21,15 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import {
     EMPTY_SETTINGS_CASCADE,
-    Settings,
-    SettingsCascadeOrError,
+    type Settings,
+    type SettingsCascadeOrError,
     SettingsProvider,
-    SettingsSubjectCommonFields,
+    type SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
-import { WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
+import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
 import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
@@ -39,9 +39,9 @@ import { createPlatformContext } from './platform/context'
 import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
-import { StaticAppConfig } from './staticAppConfig'
+import type { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
-import { AppShellInit } from './storm/app-shell-init'
+import type { AppShellInit } from './storm/app-shell-init'
 import { Layout } from './storm/pages/LayoutPage/LayoutPage'
 import { loader } from './storm/pages/LayoutPage/LayoutPage.loader'
 import { UserSessionStores } from './UserSessionStores'

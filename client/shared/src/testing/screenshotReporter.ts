@@ -2,7 +2,7 @@ import * as path from 'path'
 
 import { afterEach } from 'mocha'
 import { mkdir } from 'mz/fs'
-import * as puppeteer from 'puppeteer'
+import type * as puppeteer from 'puppeteer'
 
 import { logger } from '@sourcegraph/common'
 

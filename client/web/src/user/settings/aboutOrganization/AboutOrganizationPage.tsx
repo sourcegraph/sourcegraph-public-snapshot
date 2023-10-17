@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'

@@ -1,5 +1,5 @@
 import { cStyleComment } from './comments'
-import { FilterContext, LanguageSpec, Result, LSIFSupport } from './language-spec'
+import { type FilterContext, type LanguageSpec, type Result, LSIFSupport } from './language-spec'
 import { dotToSlash, extractFromLines, filterResultsByImports, removeExtension } from './util'
 
 /**

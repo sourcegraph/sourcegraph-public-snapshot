@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs'
+import { type Observable, Subject } from 'rxjs'
 
 /**
  * Simple state container that can be read synchronously and subscribed to to be notified of changes

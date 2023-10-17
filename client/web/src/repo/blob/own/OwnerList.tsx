@@ -1,4 +1,4 @@
-import { FC, Fragment, MouseEventHandler, useCallback, useState } from 'react'
+import { type FC, Fragment, type MouseEventHandler, useCallback, useState } from 'react'
 
 import { mdiClose, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,7 +9,7 @@ import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, PageHeader, Text } from 
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { AddOwnerModal } from '../../../components/own/AddOwnerModal'
-import { OwnerFields, OwnershipConnectionFields, SearchPatternType } from '../../../graphql-operations'
+import { type OwnerFields, type OwnershipConnectionFields, SearchPatternType } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 

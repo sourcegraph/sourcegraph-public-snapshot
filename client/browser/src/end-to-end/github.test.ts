@@ -1,19 +1,21 @@
 import assert from 'assert'
 
 import { startCase } from 'lodash'
-import { Target, Page } from 'puppeteer'
+import type { Target, Page } from 'puppeteer'
 import { fromEvent } from 'rxjs'
 import { first, filter, timeout, mergeMap } from 'rxjs/operators'
 
 import { isDefined } from '@sourcegraph/common'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { closeInstallPageTab, testSingleFilePage } from './shared'
 
-describe('Sourcegraph browser extension on github.com', function () {
+// Skip github.com tests because the redesign broke the extension for the file pages,
+// and the pull request tests were already skipped.
+describe.skip('Sourcegraph browser extension on github.com', function () {
     this.slow(8000)
 
     const { browser, sourcegraphBaseUrl, ...restConfig } = getConfig('browser', 'sourcegraphBaseUrl')

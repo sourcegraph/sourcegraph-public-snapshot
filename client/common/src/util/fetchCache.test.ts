@@ -1,7 +1,7 @@
 import fetch from 'jest-fetch-mock'
 import MockDate from 'mockdate'
 
-import { clearFetchCache, disableFetchCache, enableFetchCache, fetchCache, FetchCacheResponse } from './fetchCache'
+import { clearFetchCache, disableFetchCache, enableFetchCache, fetchCache, type FetchCacheResponse } from './fetchCache'
 
 const EXPECTED_DATA = { foo: { bar: 'baz' } }
 const TEST_URL = '/test/api'

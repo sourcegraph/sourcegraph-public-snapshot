@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { Connection } from '../../../../../components/FilteredConnection'
-import { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
+import type { Connection } from '../../../../../components/FilteredConnection'
+import type { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -10,7 +10,7 @@ import {
     ConnectionSummary,
     ShowMoreButton,
 } from '../../../../../components/FilteredConnection/ui'
-import {
+import type {
     BatchSpecWorkspacesPreviewResult,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,

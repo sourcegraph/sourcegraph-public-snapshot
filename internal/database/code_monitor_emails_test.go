@@ -14,6 +14,8 @@ func TestUpdateEmail(t *testing.T) {
 	ctx1 := actor.WithActor(ctx, actor.FromUser(uid1))
 	uid2 := insertTestUser(ctx, t, db, "u2", false)
 	ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
+	uid3 := insertTestUser(ctx, t, db, "u3", true)
+	ctx3 := actor.WithActor(ctx, actor.FromUser(uid3))
 	fixtures := s.insertTestMonitor(ctx1, t)
 	_ = s.insertTestMonitor(ctx2, t) // user2 also has monitors
 
@@ -33,6 +35,12 @@ func TestUpdateEmail(t *testing.T) {
 		Priority: "NORMAL",
 	})
 	require.Error(t, err)
+
+	// User3 can update it
+	_, err = s.UpdateEmailAction(ctx3, ea.ID, &EmailActionArgs{
+		Priority: "CRITICAL",
+	})
+	require.NoError(t, err)
 
 	ea, err = s.GetEmailAction(ctx1, ea.ID)
 	require.NoError(t, err)

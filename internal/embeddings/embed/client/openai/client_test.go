@@ -8,15 +8,16 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 func TestOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
 		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
 		invalidTexts := []string{"a", ""} // empty string is invalid
-		_, err := client.GetEmbeddings(context.Background(), invalidTexts)
+		_, err := client.GetDocumentEmbeddings(context.Background(), invalidTexts)
 		require.ErrorContains(t, err, "empty string")
 	})
 
@@ -67,7 +68,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
 		require.NoError(t, err)
 		var expected []float32
 		{
@@ -76,12 +77,13 @@ func TestOpenAI(t *testing.T) {
 			expected = append(expected, make([]float32, 1535)...)
 			expected = append(expected, 2)
 		}
-		require.Equal(t, expected, resp)
+		require.Equal(t, expected, resp.Embeddings)
+		require.Empty(t, resp.Failed)
 		require.True(t, gotRequest1)
 		require.True(t, gotRequest2)
 	})
 
-	t.Run("retry on empty embedding fails", func(t *testing.T) {
+	t.Run("retry on empty embedding fails and returns failed indices no error", func(t *testing.T) {
 		gotRequest1 := false
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			// On the first request, respond with a null embedding
@@ -93,6 +95,9 @@ func TestOpenAI(t *testing.T) {
 					}, {
 						Index:     1,
 						Embedding: nil,
+					}, {
+						Index:     2,
+						Embedding: append(make([]float32, 1535), 2),
 					}},
 				}
 				json.NewEncoder(w).Encode(resp)
@@ -119,8 +124,24 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		_, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
-		require.Error(t, err, "expected request to error on failed retry")
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b", "c"})
+		require.NoError(t, err)
+		var expected []float32
+		{
+			expected = append(expected, make([]float32, 1535)...)
+			expected = append(expected, 1)
+
+			// zero value embedding when chunk fails to generate embeddings
+			expected = append(expected, make([]float32, 1536)...)
+
+			expected = append(expected, make([]float32, 1535)...)
+			expected = append(expected, 2)
+		}
+
+		failed := []int{1}
+		require.Equal(t, expected, resp.Embeddings)
+		require.Equal(t, failed, resp.Failed)
+		require.True(t, gotRequest1)
 	})
 }
 

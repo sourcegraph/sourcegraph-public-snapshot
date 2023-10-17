@@ -3,9 +3,9 @@ import sinon from 'sinon'
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 
 import * as scip from '../../scip'
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 
-import { GenericLSIFResponse } from './api'
+import type { GenericLSIFResponse } from './api'
 
 export const document: sourcegraph.TextDocument = createStubTextDocument({
     uri: 'git://repo?rev#foo.ts',

@@ -27,11 +27,11 @@ type StreamingQueryExecutor struct {
 	logger log.Logger
 }
 
-func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
+func NewStreamingExecutor(db database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
-		gitserverClient: internalGitserver.NewClient(postgres),
+		gitserverClient: internalGitserver.NewClient(),
 		previewExecutor: previewExecutor{
-			repoStore: postgres.Repos(),
+			repoStore: db.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
 		},

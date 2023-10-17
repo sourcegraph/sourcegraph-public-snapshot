@@ -1,8 +1,11 @@
-// We want to polyfill first.
+// Set globals first before any imports.
+import '../../config/extension.entry'
+import '../../config/background.entry'
+// Polyfill before other imports.
 import '../../shared/polyfills'
 
-import { Endpoint } from 'comlink'
-import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
+import type { Endpoint } from 'comlink'
+import { combineLatest, merge, type Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
     filter,
@@ -19,9 +22,9 @@ import {
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 
 import { isDefined, fetchCache } from '@sourcegraph/common'
-import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
-import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { getHeaders } from '../../shared/backend/headers'
@@ -32,12 +35,12 @@ import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
 import { EventLogger } from '../../shared/tracking/eventLogger'
 import { getExtensionVersion, getPlatformName, observeSourcegraphURL } from '../../shared/util/context'
-import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
+import { type BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
 import { checkUrlPermissions, IsProductionVersion } from '../util'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
-import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
+import type { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
 
 const IS_EXTENSION = true
 
@@ -204,7 +207,7 @@ async function main(): Promise<void> {
                          * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
                          */
                         await browser.tabs.executeScript(tabId, {
-                            file: 'js/inject.bundle.js',
+                            file: 'js/contentPage.main.bundle.js',
                             runAt: 'document_end',
                         })
                     }

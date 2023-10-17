@@ -1,15 +1,15 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
 import { mdiWebhook } from '@mdi/js'
 import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, Form, Input, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import { CreateOutboundWebhookResult, CreateOutboundWebhookVariables } from '../../graphql-operations'
+import type { CreateOutboundWebhookResult, CreateOutboundWebhookVariables } from '../../graphql-operations'
 import { generateSecret } from '../../util/security'
 
 import { CREATE_OUTBOUND_WEBHOOK } from './backend'

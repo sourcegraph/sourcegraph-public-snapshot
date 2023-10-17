@@ -1,5 +1,5 @@
-import { BrainDot } from './BrainDot'
-import { UseCodeIntel } from './useCodeIntel'
+import type { BrainDot } from './BrainDot'
+import type { UseCodeIntel } from './useCodeIntel'
 
 /**
  * Common props for components needing to decide whether to show Code navigation

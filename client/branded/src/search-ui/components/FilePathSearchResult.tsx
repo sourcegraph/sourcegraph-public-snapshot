@@ -2,8 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { getFileMatchUrl, getRepositoryUrl, getRevision, PathMatch } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { getFileMatchUrl, getRepositoryUrl, getRevision, type PathMatch } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CopyPathAction } from './CopyPathAction'
 import { RepoFileLink } from './RepoFileLink'

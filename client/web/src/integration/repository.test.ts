@@ -4,19 +4,19 @@ import * as path from 'path'
 import { subDays } from 'date-fns'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { RepositoryType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { RepositoryType, type SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
     DiffHunkLineType,
-    RepositoryContributorsResult,
-    WebGraphQlOperations,
+    type RepositoryContributorsResult,
+    type WebGraphQlOperations,
     ExternalServiceKind,
 } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import {
     createResolveRepoRevisionResult,
     createFileExternalLinksResult,
@@ -450,7 +450,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `/${clickedFileName}`])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `${clickedFileName}`])
 
             // Return to repo page
             await driver.page.waitForSelector('.test-repo-header-repo-link')
@@ -546,7 +546,7 @@ describe('Repository', () => {
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
-                "/Geoffrey's random queries.32r242442bf/% token.4288249258.sql",
+                "Geoffrey's random queries.32r242442bf/% token.4288249258.sql",
             ])
 
             {
@@ -605,7 +605,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
 
         it('shows repo cloning in progress page', async () => {
@@ -654,7 +654,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
     })
 

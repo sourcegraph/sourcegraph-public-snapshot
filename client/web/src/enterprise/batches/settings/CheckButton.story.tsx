@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -11,7 +11,7 @@ const config: Meta = {
 
 export default config
 
-export const Initial: Story = () => (
+export const Initial: StoryFn = () => (
     <WebStory>
         {props => (
             <CheckButton {...props} label="Checks the state of something" onClick={action('onClick')} loading={false} />
@@ -19,13 +19,13 @@ export const Initial: Story = () => (
     </WebStory>
 )
 
-export const Checking: Story = () => (
+export const Checking: StoryFn = () => (
     <WebStory>
         {props => <CheckButton {...props} label="Checks the state of something" onClick={() => {}} loading={true} />}
     </WebStory>
 )
 
-export const Success: Story = () => (
+export const Success: StoryFn = () => (
     <WebStory>
         {props => (
             <CheckButton
@@ -39,7 +39,7 @@ export const Success: Story = () => (
     </WebStory>
 )
 
-export const Failed: Story = () => (
+export const Failed: StoryFn = () => (
     <WebStory>
         {props => (
             <CheckButton

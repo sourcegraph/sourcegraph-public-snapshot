@@ -103,7 +103,7 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 		// error on our side.
 		if resp.StatusCode == http.StatusTooManyRequests {
 			return nil, response.NewCustomHTTPStatusCodeError(http.StatusServiceUnavailable,
-				errors.New("we're facing too much load at the moment, please retry"), resp.StatusCode)
+				errors.New("we're facing too much load at the moment, please retry later"), resp.StatusCode)
 		}
 
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))

@@ -1,8 +1,8 @@
-import { HTMLAttributes, FC } from 'react'
+import type { HTMLAttributes, FC } from 'react'
 
 import { useDeepMemo, BarChart, LegendList, LegendItem, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { GroupByField } from '../../../../../../../graphql-operations'
+import type { GroupByField } from '../../../../../../../graphql-operations'
 import {
     LivePreviewUpdateButton,
     LivePreviewCard,
@@ -12,7 +12,7 @@ import {
     LivePreviewBanner,
     COMPUTE_MOCK_CHART,
 } from '../../../../../components'
-import { CategoricalChartContent, SearchBasedInsightSeries } from '../../../../../core'
+import type { CategoricalChartContent, SearchBasedInsightSeries } from '../../../../../core'
 import { LivePreviewStatus, useLivePreviewComputeInsight } from '../../../../../core/hooks/live-preview-insight'
 
 interface LanguageUsageDatum {

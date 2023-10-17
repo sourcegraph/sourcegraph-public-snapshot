@@ -13,20 +13,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestClientSource_AddrMatchesTarget(t *testing.T) {
+	repos := dbmocks.NewMockRepoStore()
+	repos.GetByNameFunc.SetDefaultReturn(nil, nil)
+
 	source := NewTestClientSource(t, []string{"localhost:1234", "localhost:4321"})
 	testGitserverConns := source.(*testGitserverConns)
 	conns := GitserverConns(*testGitserverConns.conns)
 
+	ctx := context.Background()
 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
-		addr := source.AddrForRepo("test", repo)
-		conn, err := conns.ConnForRepo("test", repo)
+		addr := source.AddrForRepo(ctx, "test", repo)
+		conn, err := conns.ConnForRepo(ctx, "test", repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,7 +81,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 		},
 	})
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
 
 	if !(m1.called && !m2.called) {
@@ -93,15 +97,17 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 
 	cfg := newConfig(
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver2"},
 	)
+
 	conns.update(cfg)
 
-	addr := client.AddrForRepo("repo1")
+	ctx := context.Background()
+	addr := client.AddrForRepo(ctx, "repo1")
 	require.Equal(t, "gitserver2", addr)
 
 	// simulate config change - site admin manually changes the pinned repo config
@@ -111,7 +117,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 	)
 	conns.update(cfg)
 
-	require.Equal(t, "gitserver1", client.AddrForRepo("repo1"))
+	require.Equal(t, "gitserver1", client.AddrForRepo(ctx, "repo1"))
 }
 
 func newConfig(addrs []string, pinned map[string]string) *conf.Unified {

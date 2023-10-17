@@ -8,7 +8,7 @@ import { CopyableText } from '../../../components/CopyableText'
 import { randomizeUserPassword, setUserIsSiteAdmin } from '../../backend'
 import { DELETE_USERS, DELETE_USERS_FOREVER, FORCE_SIGN_OUT_USERS, RECOVER_USERS } from '../queries'
 
-import { UseUserListActionReturnType, SiteUser, getUsernames } from './UsersList'
+import { type UseUserListActionReturnType, type SiteUser, getUsernames } from './UsersList'
 
 export function useUserListActions(onEnd: (error?: any) => void): UseUserListActionReturnType {
     const [forceSignOutUsers] = useMutation(FORCE_SIGN_OUT_USERS)

@@ -168,7 +168,7 @@ To install the Firecracker sandbox image, import the image using `docker`.
 $ docker pull <docker repository image for sourcegraph/ignite:v0.10.5>
 ```
 
-> Note: Check the [version](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/internal/config/consts.go?L15) against the version of executors being installed.
+> Note: Check the [version](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/internal/config/consts.go?L15) against the version of executors being installed.
 
 If you are using a custom image instead of the Sourcegraph image, you will need to set the environment variable
 `EXECUTOR_FIRECRACKER_SANDBOX_IMAGE` to match the image name.
@@ -181,7 +181,7 @@ To install the Firecracker Kernel image, import the image (`sourcegraph/ignite-k
 $ ignite kernel import --runtime docker <docker repository image for sourcegraph/ignite-kernel:5.10.135-amd64>
 ```
 
-> Note: Check the [version](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/internal/config/consts.go?L18) against the version of executors being installed.
+> Note: Check the [version](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/internal/config/consts.go?L18) against the version of executors being installed.
 
 If you are using a custom image instead of the Sourcegraph image, you will need to set the environment variable
 `EXECUTOR_FIRECRACKER_KERNEL_IMAGE` to match the image name.

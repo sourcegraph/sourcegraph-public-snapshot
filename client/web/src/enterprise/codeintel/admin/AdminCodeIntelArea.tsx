@@ -1,20 +1,20 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { SiteAdminAreaRouteContext } from '../../../site-admin/SiteAdminArea'
-import { RouteV6Descriptor } from '../../../util/contributions'
-import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
-import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
-import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
-import { GlobalDashboardPageProps } from '../dashboard/pages/GlobalDashboardPage'
-import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
-import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
-import { CodeIntelRankingPageProps } from '../ranking/pages/CodeIntelRankingPage'
+import type { SiteAdminAreaRouteContext } from '../../../site-admin/SiteAdminArea'
+import type { RouteV6Descriptor } from '../../../util/contributions'
+import type { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
+import type { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
+import type { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
+import type { GlobalDashboardPageProps } from '../dashboard/pages/GlobalDashboardPage'
+import type { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
+import type { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
+import type { CodeIntelRankingPageProps } from '../ranking/pages/CodeIntelRankingPage'
 
 export interface AdminCodeIntelAreaRouteContext extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null

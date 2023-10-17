@@ -1,5 +1,5 @@
 import { UpdateInfoContent } from './UpdateInfoContent'
-import { UpdateInfo, useUpdater } from './updater'
+import { type UpdateInfo, useUpdater } from './updater'
 
 export interface AboutPageUpdateFrameProps {
     update: UpdateInfo

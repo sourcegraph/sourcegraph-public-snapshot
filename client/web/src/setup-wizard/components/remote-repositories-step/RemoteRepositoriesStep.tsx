@@ -1,18 +1,18 @@
-import { FC, HTMLAttributes, useState, useEffect } from 'react'
+import { type FC, type HTMLAttributes, useState, useEffect } from 'react'
 
 import { useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, Text } from '@sourcegraph/wildcard'
 
-import { GetCodeHostsResult } from '../../../graphql-operations'
+import type { GetCodeHostsResult } from '../../../graphql-operations'
 import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
 import { FooterWidget, CustomNextButton } from '../setup-steps'
 
-import { CodeHostDeleteModal, CodeHostToDelete } from './components/code-host-delete-modal'
+import { CodeHostDeleteModal, type CodeHostToDelete } from './components/code-host-delete-modal'
 import { AppRemoteNotice, CodeHostsPicker } from './components/code-host-picker'
 import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
@@ -25,7 +25,7 @@ interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTM
     baseURL: string
     description?: boolean
     progressBar?: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
@@ -34,7 +34,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
     baseURL,
     description = true,
     progressBar = true,
-    isSourcegraphApp = false,
+    isCodyApp = false,
     ...attributes
 }) => {
     const location = useLocation()
@@ -80,7 +80,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
 
                 <Container className={styles.contentMain}>
                     <Routes>
-                        <Route index={true} element={isSourcegraphApp ? <AppRemoteNotice /> : <CodeHostsPicker />} />
+                        <Route index={true} element={isCodyApp ? <AppRemoteNotice /> : <CodeHostsPicker />} />
                         <Route
                             path=":codeHostType/create"
                             element={<CodeHostCreation telemetryService={telemetryService} />}

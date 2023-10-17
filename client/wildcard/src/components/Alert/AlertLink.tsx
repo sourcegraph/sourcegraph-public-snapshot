@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, LinkProps } from '../Link/Link'
+import { Link, type LinkProps } from '../Link/Link'
 
 import styles from './AlertLink.module.scss'
 

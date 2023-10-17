@@ -5,10 +5,10 @@ import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { FetchTreeOwnershipResult, FetchTreeOwnershipVariables } from '../../../graphql-operations'
+import type { FetchTreeOwnershipResult, FetchTreeOwnershipVariables } from '../../../graphql-operations'
 import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FETCH_TREE_OWNERS } from './grapqlQueries'

@@ -83,8 +83,9 @@ repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt rev:main
 # mono_structural_small
 repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...)
 
-# mono_rev_structural_small
-repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) rev:main
+## we have disabled this test because it was just too slow.
+## mono_rev_structural_small
+## repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) rev:main
 
 # mono_symbol_small
 repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
@@ -92,11 +93,15 @@ repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
 # mono_rev_symbol_small
 repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
 
+## for diff and commit search we limit the count. We are more interested in
+## time to first result. This depends on Camden remaining productive, so we
+## should be safe :P
+
 # mono_diff_small
-repo:^github\.com/sgtest/megarepo$ type:diff   author:camden before:"february 1 2021"
+repo:^github\.com/sgtest/megarepo$ type:diff   author:camden after:"february 1 2021" count:10
 
 # mono_commit_small
-repo:^github\.com/sgtest/megarepo$ type:commit author:camden before:"february 1 2021"
+repo:^github\.com/sgtest/megarepo$ type:commit author:camden after:"february 1 2021" count:10
 
 # mono_literal_small
 repo:^github\.com/sgtest/megarepo$ patterntype:literal --exclude-task=test
@@ -109,61 +114,3 @@ repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ cou
 
 # mono_rev_literal_large
 repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir rev:main
-
-
-## incremental_ queries consist of standard queries that run against two versions of
-## sourcegraph/sourcegraph that use different indexing strategies:
-##
-## - incremental_delta_  queries run against a fork of sourcegraph/sourcegraph that uses the experimental delta
-##                       indexing strategy: https://github.com/sourcegraph/sourcegraph-incremental-indexing-fork
-##
-## - incremental_normal_ queries run against the main sourcegraph/sourcegraph repository that uses the "normal"
-##                       (non-delta) indexing strategy: https://github.com/sourcegraph/sourcegraph
-
-# incremental_delta_literal_small
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:literal bitbucketserver.Activity
-
-# incremental_normal_literal_small
-repo:^github\.com/sourcegraph/sourcegraph$ patterntype:literal bitbucketserver.Activity
-
-# incremental_delta_literal_large
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:literal time.Duration count:1000
-
-# incremental_normal_literal_large
-repo:^github\.com/sourcegraph/sourcegraph$ patterntype:literal time.Duration count:1000
-
-# incremental_delta_regex_small
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:regexp se[arc]{3}hZoekt
-
-# incremental_normal_regex_small
-repo:^github\.com/sourcegraph/sourcegraph$ patterntype:regexp se[arc]{3}hZoekt
-
-# incremental_delta_rev_regex_small
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ patterntype:regexp se[arc]{3}hZoekt rev:main
-
-# incremental_normal_rev_regex_small
-repo:^github\.com/sourcegraph/sourcegraph$ patterntype:regexp se[arc]{3}hZoekt rev:main
-
-# incremental_delta_symbol_small
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:symbol redispool
-
-# incremental_normal_symbol_small
-repo:^github\.com/sourcegraph/sourcegraph$ type:symbol redispool
-
-# incremental_delta_rev_symbol_small
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:symbol redispool rev:main
-
-# incremental_normal_rev_symbol_small
-repo:^github\.com/sourcegraph/sourcegraph$ type:symbol redispool rev:main
-
-# incremental_delta_diff_small
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:diff author:camden before:"february 1 2021"
-
-# incremental_normal_diff_small
-repo:^github\.com/sourcegraph/sourcegraph$ type:diff author:camden before:"february 1 2021"
-
-# incremental_delta_commit_small
-repo:^github\.com/sourcegraph/sourcegraph-incremental-indexing-fork$ type:commit author:camden before:"february 1 2021"
-
-# incremental_normal_commit_small
-repo:^github\.com/sourcegraph/sourcegraph$ type:commit author:camden before:"february 1 2021"

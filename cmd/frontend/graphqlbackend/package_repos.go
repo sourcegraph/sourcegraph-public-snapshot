@@ -204,7 +204,7 @@ func (r *packageRepoReferenceResolver) Repository(ctx context.Context) (*Reposit
 	}
 
 	if repo, ok := repos[repoName]; ok {
-		return NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo), nil
+		return NewRepositoryResolver(r.db, gitserver.NewClient(), repo), nil
 	}
 
 	return nil, nil

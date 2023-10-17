@@ -1,14 +1,14 @@
-import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
+import React, { type FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Container, PageHeader, LoadingSpinner, Alert, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     Scalars,
     UserEmail as UserEmailType,
     UserEmailsResult,

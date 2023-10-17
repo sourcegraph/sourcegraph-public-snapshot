@@ -1,6 +1,6 @@
 import type { Hover as APIHover } from 'sourcegraph'
 
-import { Range } from './location'
+import type { Range } from './location'
 
 /**
  * A hover message.

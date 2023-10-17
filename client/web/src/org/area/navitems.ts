@@ -3,7 +3,7 @@ import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 
-import { OrgAreaHeaderNavItem } from './OrgHeader'
+import type { OrgAreaHeaderNavItem } from './OrgHeader'
 
 export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
     {

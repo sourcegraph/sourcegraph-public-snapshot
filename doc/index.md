@@ -1,17 +1,16 @@
-# <img alt="Sourcegraph logo" src="https://p21.p4.n0.cdn.getcloudapp.com/items/6qub2y6g/8c25cf68-2715-4f0e-9de6-26292fad604f.svg" width="50%" class="theme-dark-only"><img alt="Sourcegraph logo" src="https://p21.p4.n0.cdn.getcloudapp.com/items/12u7NWXL/5e21725d-6e84-4ccd-8300-27bf9a050416.svg" width="50%" class="theme-light-only"><span style="display:none">Sourcegraph</span>
+# <img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-dark.svg" width="50%" class="theme-dark-only"><img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-light.svg" width="50%" class="theme-light-only"><span class="sr-only">Sourcegraph</span>
 
 Sourcegraph makes it easy to read, write, and fix code—even in big, complex codebases.
 
 - **Code search:** Search all of your repositories across all branches and all code hosts.
-- **Code intelligence:** Navigate code, find references, see code owners, trace history, and more.
-- **Fix and refactor:** Roll out large-scale changes to many repositories at once and track big migrations.
-- **AI code assistant:** Use Cody to read, write, and understand code faster.
+- **Code intelligence:** Navigate code, find references, see code owners, trace history, & more.
+- **Fix & refactor:** Roll out & track large-scale changes & migrations across repos at once.
+- **AI code assistant:** Use Cody to read, write, and understand entire codebase faster.
 
 ## Usage
 
-- [**Download Sourcegraph**](https://about.sourcegraph.com/app) for macOS and Linux
-- [**Get Cody**](cody/index.md), the AI coding assistant
-- [Use Sourcegraph on the cloud or self-hosted](admin/deploy/index.md)
+- [**Get Cody**](cody/overview/index.md), the AI coding assistant
+- [**Use Sourcegraph on the cloud or self-hosted**](admin/deploy/index.md)
 - [Sourcegraph.com public code search](https://sourcegraph.com/search)
 
 <br>

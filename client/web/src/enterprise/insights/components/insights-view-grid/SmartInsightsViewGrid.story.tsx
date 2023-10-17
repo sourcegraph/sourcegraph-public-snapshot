@@ -1,17 +1,17 @@
-import { MockedResponse } from '@apollo/client/testing/core'
-import { Meta } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing/core'
+import type { Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
 import {
-    GetInsightViewResult,
-    GetInsightViewVariables,
+    type GetInsightViewResult,
+    type GetInsightViewVariables,
     SeriesSortDirection,
     SeriesSortMode,
 } from '../../../../graphql-operations'
-import { InsightType, BackendInsight } from '../../core'
+import { InsightType, type BackendInsight } from '../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'

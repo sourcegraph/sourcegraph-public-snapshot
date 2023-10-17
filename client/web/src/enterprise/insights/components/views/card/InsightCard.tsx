@@ -1,11 +1,11 @@
 import React, {
-    FC,
+    type FC,
     forwardRef,
-    HTMLAttributes,
-    ReactNode,
-    PropsWithChildren,
+    type HTMLAttributes,
+    type ReactNode,
+    type PropsWithChildren,
     useState,
-    FocusEvent,
+    type FocusEvent,
     createContext,
     useMemo,
     useContext,
@@ -16,13 +16,13 @@ import { useLocation } from 'react-router-dom'
 
 import {
     Card,
-    ForwardReferenceComponent,
+    type ForwardReferenceComponent,
     H2,
     H4,
     LoadingSpinner,
     LegendItem,
     LegendList,
-    Series,
+    type Series,
 } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'

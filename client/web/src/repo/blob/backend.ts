@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -6,7 +6,12 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
+import {
+    type BlobFileFields,
+    type BlobResult,
+    type BlobVariables,
+    HighlightResponseFormat,
+} from '../../graphql-operations'
 
 /**
  * Makes sure that default values are applied consistently for the cache key and the `fetchBlob` function.

@@ -4,14 +4,14 @@ import {
     escapeRevspecForURL,
     findLineKeyInSearchParameters,
     formatSearchParameters,
-    LineOrPositionOrRange,
+    type LineOrPositionOrRange,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
-import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import { SearchPatternType } from '../graphql-operations'
+import type { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import type { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
 import { appendContextFilter, omitFilter } from '../search/query/transformer'
@@ -560,7 +560,7 @@ export function buildSearchURLQuery(
 }
 
 /**
- * Takes an input URL and adds Sourcegraph App specific query parameters to it. This includes the UTM parameters and app_os.
+ * Takes an input URL and adds Cody App specific query parameters to it. This includes the UTM parameters and app_os.
  * @param url Original URL
  * @param campaign Optional utm_campaign value to add to the query params.
  * @returns URL string with appended query parameters

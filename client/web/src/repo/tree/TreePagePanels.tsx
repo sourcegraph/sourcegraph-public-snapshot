@@ -1,11 +1,11 @@
-import React, { FC, useCallback, useRef, useState, useMemo, useEffect } from 'react'
+import React, { type FC, useCallback, useRef, useState, useMemo, useEffect } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { basename, dirname } from '@sourcegraph/common'
-import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
     CardHeader,
@@ -22,7 +22,7 @@ import {
 
 import { FileContentEditor } from '../../cody/components/FileContentEditor'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
-import { BlobFileFields } from '../../graphql-operations'
+import type { BlobFileFields } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 

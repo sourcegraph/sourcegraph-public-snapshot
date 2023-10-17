@@ -1,4 +1,4 @@
-import { BehaviorSubject, fromEvent, NextObserver, Observable } from 'rxjs'
+import { type BehaviorSubject, fromEvent, type NextObserver, Observable } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 /**

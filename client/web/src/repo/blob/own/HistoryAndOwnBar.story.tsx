@@ -1,10 +1,10 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExternalServiceKind, FetchOwnersAndHistoryResult, RepositoryType } from '../../../graphql-operations'
+import { ExternalServiceKind, type FetchOwnersAndHistoryResult, RepositoryType } from '../../../graphql-operations'
 
 import { FETCH_OWNERS_AND_HISTORY } from './grapqlQueries'
 import { HistoryAndOwnBar } from './HistoryAndOwnBar'
@@ -131,6 +131,7 @@ const barData: FetchOwnersAndHistoryResult = {
             },
             __typename: 'GitCommit',
         },
+        changelist: null,
         __typename: 'Repository',
     },
 }
@@ -154,6 +155,6 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory mocks={[mockLoaded]}>{() => <HistoryAndOwnBar enableOwnershipPanel={true} {...variables} />}</WebStory>
 )

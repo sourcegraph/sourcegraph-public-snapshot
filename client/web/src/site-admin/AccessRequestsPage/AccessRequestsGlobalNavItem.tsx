@@ -6,7 +6,7 @@ import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, Text, Icon } from '@sourcegraph/wildcard'
 
-import { AccessRequestsCountResult, AccessRequestsCountVariables } from '../../graphql-operations'
+import type { AccessRequestsCountResult, AccessRequestsCountVariables } from '../../graphql-operations'
 import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
 
 import { ACCESS_REQUESTS_COUNT } from './queries'

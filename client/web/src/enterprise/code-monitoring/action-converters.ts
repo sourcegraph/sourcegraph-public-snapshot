@@ -1,16 +1,16 @@
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import {
-    CodeMonitorFields,
-    MonitorActionInput,
-    MonitorEditActionInput,
-    MonitorEmailInput,
+    type CodeMonitorFields,
+    type MonitorActionInput,
+    type MonitorEditActionInput,
+    type MonitorEmailInput,
     MonitorEmailPriority,
-    MonitorWebhookInput,
-    MonitorSlackWebhookInput,
-    MonitorWebhookFields,
-    MonitorSlackWebhookFields,
-    MonitorEmailFields,
+    type MonitorWebhookInput,
+    type MonitorSlackWebhookInput,
+    type MonitorWebhookFields,
+    type MonitorSlackWebhookFields,
+    type MonitorEmailFields,
 } from '../../graphql-operations'
 
 function convertEmailAction(

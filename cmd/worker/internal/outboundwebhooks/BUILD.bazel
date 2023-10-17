@@ -43,7 +43,7 @@ go_test(
     srcs = ["handler_test.go"],
     embed = [":outboundwebhooks"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/encryption",
         "//internal/types",
         "//lib/errors",

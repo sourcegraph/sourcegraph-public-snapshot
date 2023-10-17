@@ -1,4 +1,4 @@
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { parseHash } from './codeHost'
 

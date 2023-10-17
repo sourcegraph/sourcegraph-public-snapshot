@@ -194,7 +194,7 @@ Sourcegraph can be configured to sign commits pushed to GitHub using a GitHub Ap
 
 At present, only GitHub code hosts (both Cloud and Enterprise) are supported, and only GitHub App signing is supported. Support for other code hosts and signing methods may be added in the future.
 
-GitHub Apps are also the recommended way to [sync repositories on GitHub](../external_service/github.md#using-a-github-app). However, it is necessary to create a separate GitHub App for Batch Changes commit signing even if you already have an App connected for the same code host for repository syncing because the Apps require different permissions. The process for creating each type of GitHub App is almost identical.
+GitHub Apps are also the recommended way to [sync repositories on GitHub](../external_service/github.md#using-a-github-app). However, **they are not a replacement for [PATs](../../batch_changes/how-tos/configuring_credentials.md#personal-access-tokens) in Batch Changes**. It is **also** necessary to create a separate GitHub App for Batch Changes commit signing even if you already have an App connected for the same code host for repository syncing because the Apps require different permissions. The process for creating each type of GitHub App is almost identical.
 
 <!-- NOTE: The instructions in the following sections closely mirror those in doc/admin/external_service/github.md. When making changes here, be sure to consider if those changes should also be made over there! -->
 
@@ -281,3 +281,22 @@ Batch Changes uses the tokens from GitHub Apps in the following ways:
 #### Installation access tokens
 
 Installation access tokens are short-lived, non-refreshable tokens that give Sourcegraph access to the repositories the GitHub App has been given access to. Sourcegraph uses these tokens to read and write commits to repository branches. These tokens expire after 1 hour.
+
+### Custom Certificates
+
+<span class="badge badge-note">Sourcegraph 5.1.5+</span>
+
+If you are using a self-signed certificate for your GitHub Enterprise instance, configure `tls.external` under `experimentalFeatures` 
+in the **Site configuration** with your certificate(s).
+
+```json
+{
+  "experimentalFeatures": {
+    "tls.external": {
+      "certificates": [
+        "-----BEGIN CERTIFICATE-----\n..."
+      ]
+    }
+  }
+}
+```

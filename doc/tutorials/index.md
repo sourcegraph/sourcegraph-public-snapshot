@@ -13,7 +13,7 @@
 | [Three Types of Code Search](https://www.youtube.com/watch?v=-EGn_-2d9CQ) | Tutorial (video) | Code search is a vital tool for developers. It's great for digging up answers to questions from your own codebase, but it's even better for exploring and understanding code. This video will show you the types of code search we have on Sourcegraph. |
 | [Understanding Code Search Results](https://www.youtube.com/watch?v=oMWdYfG6-DQ) | Tutorial (video) | In this video, you'll understand the search results page and how to scope, export, save, and link to search results. |
 | [Basic Code Search Filters](https://www.youtube.com/watch?v=h1Kw0Wd9qZ4) | Tutorial (video) | In this video, you'll learn how to use Sourcegraph's code search filters and how they work. Filters are a great way to narrow down or search for specific code. This video covers language, repo, branch, file, and negative filters. |
-| [Search Query Syntax](../code_search/reference/queries.md) | Reference | This page describes search pattern syntax and keywords available for code search | 
+| [Search Query Syntax](../code_search/reference/queries.md) | Reference | This page describes search pattern syntax and keywords available for code search |
 
 
 ## More Advanced Searching
@@ -41,7 +41,7 @@
 ## Code Insights
 | Topic | Content Type | Description |
 | -------- | --------| -------- |
-| [Code Insights Overview](https://www.youtube.com/watch?v=fMCUJQHfbUA) | Explanation (video) | Learn about common Code Insights use cases and see how to create an insight. 
+| [Code Insights Overview](https://www.youtube.com/watch?v=fMCUJQHfbUA) | Explanation (video) | Learn about common Code Insights use cases and see how to create an insight.
 | [Quickstart Guide](../code_insights/quickstart.md) | Tutorial | Get started and create your first code insight in 5 minutes or less. |
 | [Common Use Cases](../code_insights/references/common_use_cases.md) | Reference | A list of common use cases for Code Insights and example data series queries you could use. |
 
@@ -49,7 +49,7 @@
 ## Batch Changes
 | Topic | Content Type | Description |
 | -------- | --------| -------- |
-| [Introduction to Batch Changes](../batch_changes/explanations/introduction_to_batch_changes.md) | Explanation | A basic introduction to the concepts, processes, and supported environments behind Batch Changes | 
+| [Introduction to Batch Changes](../batch_changes/explanations/introduction_to_batch_changes.md) | Explanation | A basic introduction to the concepts, processes, and supported environments behind Batch Changes |
 | [Get Started With Batch Changes](https://www.youtube.com/watch?v=GKyHYqH6ggY) | Tutorial (video) | Learn how you can quickly use Sourcegraph Batch Changes to automate small and large-scale code changes server-side. |
 | [Batch Changes Quickstart Guide](../batch_changes/quickstart.md) | Tutorial | Get started and create your first batch change in 10 minutes or less. This guide follows the local (CLI) method of running batch changes. |
 | [Getting Started Running Batch Changes Server-Side](../batch_changes/explanations/server_side_getting_started.md) | How-To-Guide | Follow this guide to learn how to run batch changes server-side. |
@@ -74,4 +74,4 @@
 | Topic | Content Type | Description |
 | -------- | -------- | -------- |
 | [Sourcegraph Tour](../getting-started/tour.md) | How-to-Guide | A tour of a sample Sourcegraph use cases, including using Sourcegraph for code reviews, debugging, and understanding how a function works. |
-| [Cody Use Cases](../cody/explanations/use_cases.md) | How-to-Guide | A tour of Cody and where the AI code assistant fits into everyday workflows. |
+| [Cody Use Cases](./../cody/use-cases.md) | How-to-Guide | A tour of Cody and where the AI code assistant fits into everyday workflows. |

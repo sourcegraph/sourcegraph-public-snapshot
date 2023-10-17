@@ -4,26 +4,27 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -35,10 +36,14 @@ func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
 }
 
 func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
+	SetupForTest(t)
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
+	c := NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
+	c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	return c
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -292,7 +297,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgs(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,6 +476,7 @@ func TestGetOrganization(t *testing.T) {
 
 func TestGetRepository(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	cli, save := newV3TestClient(t, "GetRepository")
 	defer save()
@@ -493,6 +499,8 @@ func TestGetRepository(t *testing.T) {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
 
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+
 			remaining, _, _, _ = cli.ExternalRateLimiter().Get()
 		})
 
@@ -510,6 +518,8 @@ func TestGetRepository(t *testing.T) {
 			if repo.NameWithOwner != want {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
 
 			remaining2, _, _, _ := cli.ExternalRateLimiter().Get()
 			if remaining2 < remaining {
@@ -529,6 +539,14 @@ func TestGetRepository(t *testing.T) {
 		if repo != nil {
 			t.Error("repo != nil")
 		}
+		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+	})
+
+	t.Run("forked repo", func(t *testing.T) {
+		repo, err := cli.GetRepository(context.Background(), "sgtest", "sourcegraph")
+		require.NoError(t, err)
+
+		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
 	})
 }
 
@@ -542,6 +560,7 @@ func TestListOrganizations(t *testing.T) {
 	// way we do in TestGetRepository.
 	t.Run("enterprise-integration-cached-response", func(t *testing.T) {
 		rcache.SetupForTest(t)
+		ratelimit.SetupForTest(t)
 
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
@@ -588,6 +607,7 @@ func TestListOrganizations(t *testing.T) {
 
 	t.Run("enterprise-pagination", func(t *testing.T) {
 		rcache.SetupForTest(t)
+		ratelimit.SetupForTest(t)
 
 		mockOrgs := make([]*Org, 200)
 
@@ -628,6 +648,7 @@ func TestListOrganizations(t *testing.T) {
 
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -744,6 +765,13 @@ func TestV3Client_Fork(t *testing.T) {
 		// user's namespace and sourcegraph-testing: it doesn't matter whether it
 		// already has been or not because of the way the GitHub API operates.
 		// We'll use github.com/sourcegraph/automation-testing as our guinea pig.
+		//
+		// Note: If you're running this test with `-update=success`, it will fail because the repo
+		// is already forked here at:
+		//
+		// https://github.com/sourcegraph-testing/sourcegraph-automation-testing
+		//
+		// Request an admin to delete the fork and then run the test again with `-update=success`
 		for name, org := range map[string]*string{
 			"user":                nil,
 			"sourcegraph-testing": pointers.Ptr("sourcegraph-testing"),
@@ -754,12 +782,12 @@ func TestV3Client_Fork(t *testing.T) {
 				defer save()
 
 				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org, "sourcegraph-automation-testing")
-				assert.Nil(t, err)
-				assert.NotNil(t, fork)
+				require.Nil(t, err)
+				require.NotNil(t, fork)
 				if org != nil {
 					owner, err := fork.Owner()
-					assert.Nil(t, err)
-					assert.Equal(t, *org, owner)
+					require.Nil(t, err)
+					require.Equal(t, *org, owner)
 				}
 
 				testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
@@ -775,8 +803,8 @@ func TestV3Client_Fork(t *testing.T) {
 		defer save()
 
 		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil, "sourcegraph-testing-unforkable")
-		assert.NotNil(t, err)
-		assert.Nil(t, fork)
+		require.NotNil(t, err)
+		require.Nil(t, fork)
 
 		testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
 	})
@@ -940,6 +968,7 @@ func TestV3Client_UpdateRef(t *testing.T) {
 
 func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
+	SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 	uri, err := url.Parse("https://github.com")
@@ -952,11 +981,15 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
+	cli := NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+
+	return cli, save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
+	SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 	uri, err := url.Parse("https://ghe.sgdev.org/api/v3")
@@ -969,7 +1002,9 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
+	cli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	return cli, save
 }
 
 func TestClient_ListRepositoriesForSearch(t *testing.T) {
@@ -977,6 +1012,7 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 	defer save()
 
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
 	if err != nil {
 		t.Fatal(err)
@@ -1050,12 +1086,14 @@ func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	ctx := context.Background()
 
 	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
+	client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 	defer save()
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
 			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
 			if err != nil {
@@ -1169,6 +1207,7 @@ func TestResponseHasNextPage(t *testing.T) {
 
 func TestRateLimitRetry(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	ctx := context.Background()
 
@@ -1188,12 +1227,7 @@ func TestRateLimitRetry(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			testCase.numRequests += 1
 			if usePrimaryLimit {
-				w.Header().Add("x-ratelimit-remaining", "0")
-				w.Header().Add("x-ratelimit-limit", "5000")
-				resetTime := time.Now().Add(time.Second)
-				w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+				simulateGitHubPrimaryRateLimitHit(w)
 
 				usePrimaryLimit = false
 				testCase.primaryLimitWasHit = true
@@ -1201,9 +1235,7 @@ func TestRateLimitRetry(t *testing.T) {
 			}
 
 			if useSecondaryLimit {
-				w.Header().Add("retry-after", "1")
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+				simulateGitHubSecondaryRateLimitHit(w)
 
 				useSecondaryLimit = false
 				testCase.secondaryLimitWasHit = true
@@ -1219,7 +1251,8 @@ func TestRateLimitRetry(t *testing.T) {
 		srvURL, err := url.Parse(srv.URL)
 		require.NoError(t, err)
 
-		testCase.client = NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
+		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", nil)
+		testCase.client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 		testCase.client.waitForRateLimit = true
 
 		return testCase
@@ -1291,6 +1324,75 @@ func TestRateLimitRetry(t *testing.T) {
 	})
 }
 
+func TestV3Client_Request_RequestUnmutated(t *testing.T) {
+	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
+
+	payload := struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}{Name: "foobar", Age: 35}
+	result := struct{}{}
+
+	ctx := context.Background()
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+	cli := &http.Client{Transport: transport}
+
+	numRequests := 0
+	requestPaths := []string{}
+	requestBodies := []string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		numRequests++
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		requestPaths = append(requestPaths, r.URL.Path)
+		requestBodies = append(requestBodies, string(body))
+
+		if numRequests == 1 {
+			simulateGitHubPrimaryRateLimitHit(w)
+			return
+		}
+
+		w.Write([]byte(`{"message": "Very nice"}`))
+	}))
+
+	t.Cleanup(srv.Close)
+
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+
+	// Now, this is IMPORTANT: we use `APIRoot` to simulate a real setup in which
+	// we append the "API path" to the base URL configured by an admin.
+	apiURL, _ := APIRoot(srvURL)
+
+	// Now we create a client to talk to our test server with the API path
+	// appended.
+	client := NewV3Client(logtest.Scoped(t), "test", apiURL, nil, cli)
+
+	// We use client.post as a shortcut to send a request with a payload, so
+	// we can test that the payload and the path are untouched when retried.
+	// The request doesn't make sense, but that doesn't matter since we're only
+	// testing the client.
+	_, err = client.post(ctx, "user/repos", payload, &result)
+	require.NoError(t, err)
+
+	// Two requests should have been sent
+	assert.Equal(t, numRequests, 2)
+
+	// We want the same data to have been sent, twice
+	wantPath := "/api/v3/user/repos"
+	wantBody := `{"name":"foobar","age":35}`
+	assert.Equal(t, []string{wantPath, wantPath}, requestPaths)
+	assert.Equal(t, []string{wantBody, wantBody}, requestBodies)
+}
+
 func TestListPublicRepositories(t *testing.T) {
 	t.Run("should skip null REST repositories", func(t *testing.T) {
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1302,6 +1404,7 @@ func TestListPublicRepositories(t *testing.T) {
 
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 		repositories, hasNextPage, err := testCli.ListPublicRepositories(context.Background(), 0)
 		if err != nil {

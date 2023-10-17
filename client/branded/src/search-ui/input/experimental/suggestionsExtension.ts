@@ -3,20 +3,27 @@ import React from 'react'
 import { snippet } from '@codemirror/autocomplete'
 import {
     EditorSelection,
-    EditorState,
-    Extension,
+    type EditorState,
+    type Extension,
     Facet,
     Prec,
     StateEffect,
     StateField,
-    Transaction,
+    type Transaction,
 } from '@codemirror/state'
-import { Command as CodeMirrorCommand, EditorView, KeyBinding, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { createRoot, Root } from 'react-dom/client'
+import {
+    type Command as CodeMirrorCommand,
+    EditorView,
+    type KeyBinding,
+    keymap,
+    ViewPlugin,
+    type ViewUpdate,
+} from '@codemirror/view'
+import { createRoot, type Root } from 'react-dom/client'
 
-import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
+import { compatNavigate, type HistoryOrNavigate } from '@sourcegraph/common'
 
-import { getSelectedMode, modeChanged, modesFacet, setModeEffect } from './modes'
+import { getSelectedMode, modeChanged, setModeEffect } from './modes'
 import { Suggestions } from './Suggestions'
 
 const ASYNC_THROTTLE_TIME = 300
@@ -267,7 +274,6 @@ class Result {
         return new Result(result.result, result.valid)
     }
 
-    // eslint-disable-next-line id-length
     public at(index: number): Option | undefined {
         return this.allOptions[index]
     }
@@ -686,7 +692,6 @@ interface ExternalConfig extends Config {
 }
 
 export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalConfig): Extension => [
-    modesFacet.of([]), // makes sure the facet is defined
     suggestionsConfig.of({ historyOrNavigate, id }),
     suggestionSources.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),

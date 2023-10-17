@@ -1,9 +1,9 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import {
@@ -25,7 +25,7 @@ import { ExternalServiceNode } from './ExternalServiceNode'
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**
@@ -35,15 +35,20 @@ export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
     }, [telemetryService])
 
+    const location = useLocation()
+    const searchParameters = new URLSearchParams(location.search)
+    const repoID = searchParameters.get('repoID') || null
+
     const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
         first: null,
         after: null,
+        repo: repoID,
     })
 
     const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
@@ -59,7 +64,7 @@ export const ExternalServicesPage: FC<Props> = ({
                 headingElement="h2"
                 actions={
                     <>
-                        {isSourcegraphApp && (
+                        {isCodyApp && (
                             <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
                             </ButtonLink>

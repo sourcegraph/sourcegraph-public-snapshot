@@ -6,7 +6,10 @@ sh_test(
     args = ["$(location //dev/tools:docsite)"],
     data = [
         "//dev/tools:docsite",
+        "//doc/admin/observability:doc_files",
         "//doc/cli/references:doc_files",
+        "//doc/dev/background-information/sg:doc_files",
+        "//doc/dev/background-information/telemetry:doc_files",
     ] + glob(
         ["**/*"],
         ["test.sh"],

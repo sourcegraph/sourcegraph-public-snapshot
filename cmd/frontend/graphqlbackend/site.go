@@ -16,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -33,10 +31,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -90,7 +92,7 @@ type siteResolver struct {
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
-func (r *siteResolver) SiteID() string { return siteid.Get() }
+func (r *siteResolver) SiteID() string { return siteid.Get(r.db) }
 
 type SiteConfigurationArgs struct {
 	ReturnSafeConfigsOnly *bool
@@ -269,6 +271,37 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	}
 	siteConfig, err := conf.RedactSecrets(conf.Raw())
 	return JSONCString(siteConfig.Site), err
+}
+
+type licenseInfoResolver struct {
+	tags      []string
+	userCount int32
+	expiresAt gqlutil.DateTime
+}
+
+func (r *licenseInfoResolver) Tags() []string   { return r.tags }
+func (r *licenseInfoResolver) UserCount() int32 { return r.userCount }
+
+func (r *licenseInfoResolver) ExpiresAt() gqlutil.DateTime {
+	return r.expiresAt
+}
+
+func (r *siteConfigurationResolver) LicenseInfo(ctx context.Context) (*licenseInfoResolver, error) {
+	// 🚨 SECURITY: Only site admins can view license information.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	license, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	return &licenseInfoResolver{
+		tags:      license.Tags,
+		userCount: int32(license.UserCount),
+		expiresAt: gqlutil.DateTime{Time: license.ExpiresAt},
+	}, nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
@@ -627,6 +660,7 @@ func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
 	return nil
 }
 
+func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
 func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	if c.config.CompletionModelMaxTokens != 0 {

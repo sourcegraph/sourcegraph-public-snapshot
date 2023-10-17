@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -18,6 +19,7 @@ func RunnerFromDSNs(out *output.Output, logger log.Logger, dsns map[string]strin
 }
 
 func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
+	var verbose = env.LogLevel == "dbug"
 	frontendSchema, ok := schemaByName(availableSchemas, "frontend")
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "frontend")
@@ -33,13 +35,22 @@ func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[s
 		factory func(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
-			pending := out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", dsns[name]))
+			var pending output.Pending
+			if verbose {
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s: %s", schema.Name, dsns[name]))
+			} else {
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", schema.Name))
+			}
 			db, err := factory(observation.NewContext(logger), dsns[name], appName)
 			if err != nil {
 				pending.Destroy()
 				return nil, err
 			}
-			pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %q succeeded", dsns[name]))
+			if verbose {
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s: %s succeeded", schema.Name, dsns[name]))
+			} else {
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", schema.Name))
+			}
 
 			return initStore(ctx, newStore, db, schema)
 		}

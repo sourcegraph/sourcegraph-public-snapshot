@@ -1,8 +1,8 @@
-import { ApolloError, FetchResult, MutationFunctionOptions, OperationVariables } from '@apollo/client'
+import type { ApolloError, FetchResult, MutationFunctionOptions, OperationVariables } from '@apollo/client'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 
-import { UpdateCodeIntelligenceConfigurationPolicyResult } from '../../../../graphql-operations'
+import type { UpdateCodeIntelligenceConfigurationPolicyResult } from '../../../../graphql-operations'
 
 const CREATE_POLICY_CONFIGURATION = gql`
     mutation CreateCodeIntelligenceConfigurationPolicy(

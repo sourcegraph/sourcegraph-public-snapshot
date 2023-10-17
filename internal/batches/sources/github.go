@@ -9,6 +9,8 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -29,7 +31,7 @@ type GitHubSource struct {
 
 var _ ForkableChangesetSource = GitHubSource{}
 
-func NewGitHubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGitHubSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -38,10 +40,10 @@ func NewGitHubSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(ctx, svc.URN(), &c, cf)
+	return newGitHubSource(ctx, db, svc.URN(), &c, cf)
 }
 
-func newGitHubSource(ctx context.Context, urn string, c *schema.GitHubConnection, cf *httpcli.Factory) (*GitHubSource, error) {
+func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.GitHubConnection, cf *httpcli.Factory) (*GitHubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -65,7 +67,7 @@ func newGitHubSource(ctx context.Context, urn string, c *schema.GitHubConnection
 		return nil, err
 	}
 
-	auther, err := ghauth.FromConnection(ctx, c)
+	auther, err := ghauth.FromConnection(ctx, c, db.GitHubApps(), keyring.Default().GitHubAppKey)
 	if err != nil {
 		return nil, err
 	}

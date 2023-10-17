@@ -1,5 +1,5 @@
 import { type Diagnostic as CMDiagnostic, linter, type LintSource } from '@codemirror/lint'
-import { Compartment, Extension } from '@codemirror/state'
+import { Compartment, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { renderMarkdown } from '@sourcegraph/common'

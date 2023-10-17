@@ -1,11 +1,11 @@
 /* eslint-disable unicorn/filename-case */
-import { ObservableQuery } from '@apollo/client'
+import type { ObservableQuery } from '@apollo/client'
 import { mock } from 'jest-mock-extended'
-import { of, Subscriber } from 'rxjs'
+import { of, type Subscriber } from 'rxjs'
 
-import { GraphQLClient } from '@sourcegraph/http-client'
+import type { GraphQLClient } from '@sourcegraph/http-client'
 
-import { PlatformContext } from '../../platform/context'
+import type { PlatformContext } from '../../platform/context'
 
 interface CreateGraphQLClientGetterOptions {
     /** Responses emitted by watch query sequentially for each call. */

@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer'
+import type puppeteer from 'puppeteer'
 
 import { percySnapshot as percySnapshotCommon } from '@sourcegraph/shared/src/testing/driver'
 

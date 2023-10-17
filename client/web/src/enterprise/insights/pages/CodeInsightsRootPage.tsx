@@ -1,9 +1,9 @@
-import { Suspense, FC, memo, useMemo } from 'react'
+import { Suspense, type FC, memo, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { useParams, useNavigate } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     Button,

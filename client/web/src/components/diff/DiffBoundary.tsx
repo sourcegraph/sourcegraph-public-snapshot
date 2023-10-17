@@ -4,8 +4,8 @@ import classNames from 'classnames'
 
 import { Code } from '@sourcegraph/wildcard'
 
-import { FileDiffHunkFields } from '../../graphql-operations'
-import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
+import type { FileDiffHunkFields } from '../../graphql-operations'
+import type { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 
 import styles from './DiffBoundary.module.scss'
 import diffHunkStyles from './DiffHunk.module.scss'

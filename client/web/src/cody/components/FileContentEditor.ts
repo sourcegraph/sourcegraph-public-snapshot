@@ -1,5 +1,6 @@
-import {
+import type {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
     ActiveTextEditorVisibleContent,
     Editor,
@@ -41,11 +42,25 @@ export class FileContentEditor implements Editor {
         }
     }
 
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        return this.getActiveTextEditorSelectionOrEntireFile()
+    }
+
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return {
             ...this.editor,
             fileName: this.editor.filePath,
         }
+    }
+
+    public getWorkspaceRootUri(): null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        // Not implemented.
+        return null
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
@@ -73,5 +88,15 @@ export class FileContentEditor implements Editor {
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         // Not implemented.
         return Promise.resolve(undefined)
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        // Not implemented.
+        return null
     }
 }

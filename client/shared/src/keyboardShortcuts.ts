@@ -1,6 +1,6 @@
 import { isMacPlatform } from '@sourcegraph/common'
 
-import { ModifierKey, Key } from './react-shortcuts/keys'
+import type { ModifierKey, Key } from './react-shortcuts/keys'
 import { getModKey } from './react-shortcuts/ShortcutManager'
 
 /**

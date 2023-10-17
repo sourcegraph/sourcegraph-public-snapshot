@@ -315,7 +315,7 @@ func TestDatabaseReferences(t *testing.T) {
 
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, codeIntelDB)
 
 	loadTestFile(t, codeIntelDB, "./testdata/code-intel-extensions@7802976b.sql")
@@ -575,27 +575,18 @@ func TestExtractOccurrenceData(t *testing.T) {
 					},
 					Symbols: []*scip.SymbolInformation{
 						{
-							Symbol: "react 17.1 main.go func1",
-							Relationships: []*scip.Relationship{
-								{
-									Symbol:           "react 17.1 main.go func1A",
-									IsImplementation: true,
-								},
-							},
-						},
-						{
 							Symbol: "react 17.1 main.go func1A",
 							Relationships: []*scip.Relationship{
 								{
-									Symbol:       "react 17.1 main.go func1",
-									IsDefinition: true,
+									Symbol:           "react 17.1 main.go func1",
+									IsImplementation: true,
 								},
 							},
 						},
 					},
 				},
 				occurrence: &scip.Occurrence{
-					Symbol:      "react 17.1 main.go func1A",
+					Symbol:      "react 17.1 main.go func1",
 					SymbolRoles: 1,
 				},
 				expectedRanges: []*scip.Range{

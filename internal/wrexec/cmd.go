@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/log"
 )
 
+const maxRecordedOutput = 5000
+
 // Cmd wraps an os/exec.Cmd into a thin layer than enables one to set hooks for before and after the commands.
 type Cmd struct {
 	*exec.Cmd
@@ -15,6 +17,7 @@ type Cmd struct {
 	logger      log.Logger
 	beforeHooks []BeforeHook
 	afterHooks  []AfterHook
+	output      []byte
 }
 
 // BeforeHook are called before the execution of a command. Returning an error within a before
@@ -116,7 +119,26 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	return c.Cmd.CombinedOutput()
+	output, err := c.Cmd.CombinedOutput()
+	c.setExecutionOutput(output)
+	return output, err
+}
+
+// This is used to save the output of the command execution for later retrieval.
+// We truncate the output at 5000 characters so we don't store too much data.
+func (c *Cmd) setExecutionOutput(output []byte) {
+	c.output = make([]byte, 0, maxRecordedOutput)
+	if len(c.output) > maxRecordedOutput {
+		c.output = output[:maxRecordedOutput]
+	} else {
+		c.output = output
+	}
+}
+
+// This is a workaround created to retrieve the output of an executed command without
+// calling `.Output()` or `.CombinedOutput()` again.
+func (c *Cmd) GetExecutionOutput() string {
+	return string(c.output)
 }
 
 // Environ returns the underlying command environ. It never call the hooks.
@@ -131,7 +153,9 @@ func (c *Cmd) Output() ([]byte, error) {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	return c.Cmd.Output()
+	output, err := c.Cmd.Output()
+	c.setExecutionOutput(output)
+	return output, err
 }
 
 // Run calls os/exec.Cmd.Run after running the before hooks,

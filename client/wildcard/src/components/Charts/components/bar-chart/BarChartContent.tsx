@@ -1,16 +1,16 @@
-import { FocusEventHandler, MouseEvent, ReactElement, SVGProps, useRef, useState } from 'react'
+import { type FocusEventHandler, type MouseEvent, type ReactElement, type SVGProps, useRef, useState } from 'react'
 
 import { Group } from '@visx/group'
 import classNames from 'classnames'
-import { ScaleBand, ScaleLinear } from 'd3-scale'
+import type { ScaleBand, ScaleLinear } from 'd3-scale'
 
 import { Tooltip } from '../../core'
 
 import { GroupedBars } from './components/GroupedBars'
 import { StackedBars } from './components/StackedBars'
 import { BarTooltipContent } from './components/TooltipContent'
-import { ActiveSegment } from './types'
-import { Category } from './utils/get-grouped-categories'
+import type { ActiveSegment } from './types'
+import type { Category } from './utils/get-grouped-categories'
 
 import styles from './BarChartContent.module.scss'
 

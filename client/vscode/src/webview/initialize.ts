@@ -1,9 +1,9 @@
 import * as Comlink from 'comlink'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
+import type { ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
 import { endpointSetting } from '../settings/endpointSetting'
 
 import { createEndpointsForWebview } from './comlink/extensionEndpoint'
@@ -37,7 +37,6 @@ export async function initializeSearchPanelWebview({
     const scriptSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.js'))
     const cssModuleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.css'))
     const styleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
-    const codiconFontSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon.ttf'))
 
     const { proxy, expose, panelId } = createEndpointsForWebview(panel)
 
@@ -59,18 +58,11 @@ export async function initializeSearchPanelWebview({
 
     // Apply Content-Security-Policy
     // panel.webview.cspSource comes from the webview object
-    // debt: load codicon ourselves.
     panel.webview.html = `<!DOCTYPE html>
     <html lang="en" data-panel-id="${panelId}" data-extensions-dist-path=${extensionsDistributionWebviewPath.toString()}>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            @font-face {
-                font-family: 'codicon';
-                src: url(${codiconFontSource.toString()})
-            }
-        </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
             panel.webview.cspSource
         }; img-src data: vscode-resource: https:; script-src ${panel.webview.cspSource}; style-src data: ${
@@ -118,7 +110,6 @@ export function initializeSearchSidebarWebview({
     const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.js'))
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.css'))
     const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
-    const codiconFontSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon.ttf'))
 
     const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
 
@@ -129,18 +120,11 @@ export function initializeSearchSidebarWebview({
     Comlink.expose(extensionCoreAPI, expose)
 
     // Apply Content-Security-Policy
-    // debt: load codicon ourselves.
     webviewView.webview.html = `<!DOCTYPE html>
     <html lang="en" data-panel-id="${panelId}" data-instance-url=${endpointSetting()} data-extensions-dist-path=${extensionsDistributionWebviewPath.toString()}>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            @font-face {
-                font-family: 'codicon';
-                src: url(${codiconFontSource.toString()})
-            }
-        </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
             webviewView.webview.cspSource
         }; worker-src blob: data:; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${

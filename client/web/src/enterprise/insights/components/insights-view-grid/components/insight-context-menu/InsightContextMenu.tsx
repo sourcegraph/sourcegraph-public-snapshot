@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, useState } from 'react'
+import { type FC, type PropsWithChildren, useState } from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
@@ -20,7 +20,13 @@ import {
     MenuHeader,
 } from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard, InsightType, isLangStatsInsight, isVirtualDashboard } from '../../../../core'
+import {
+    type Insight,
+    type InsightDashboard,
+    InsightType,
+    isLangStatsInsight,
+    isVirtualDashboard,
+} from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { encodeDashboardIdQueryParam } from '../../../../routers.constant'
 import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'

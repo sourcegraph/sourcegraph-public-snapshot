@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
@@ -6,14 +6,14 @@ import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../../batches/utils'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
-import { RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import type { RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'
+import type { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { BatchChangeStatsTotalAction } from '../detail/BatchChangeStatsCard'
 import {
     ChangesetStatusUnpublished,
@@ -24,7 +24,7 @@ import {
 import { NewBatchChangeButton } from '../list/NewBatchChangeButton'
 
 import {
-    queryRepoBatchChanges as _queryRepoBatchChanges,
+    type queryRepoBatchChanges as _queryRepoBatchChanges,
     queryRepoBatchChangeStats as _queryRepoBatchChangeStats,
 } from './backend'
 import { RepoBatchChanges } from './RepoBatchChanges'

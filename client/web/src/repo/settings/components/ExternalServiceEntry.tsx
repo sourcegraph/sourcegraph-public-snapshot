@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -8,7 +8,7 @@ import { Alert, Button, ErrorAlert, Link, LoadingSpinner, renderError, Tooltip }
 
 import { ExternalServiceCard } from '../../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import {
+import type {
     ExcludeRepoFromExternalServicesResult,
     ExcludeRepoFromExternalServicesVariables,
     SettingsAreaExternalServiceFields,

@@ -6,14 +6,14 @@ import { Button, Link, Icon, PageHeader, Container } from '@sourcegraph/wildcard
 
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
+import type { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { queryProductSubscriptions } from './backend'
 import {
     SiteAdminProductSubscriptionNode,
     SiteAdminProductSubscriptionNodeHeader,
-    SiteAdminProductSubscriptionNodeProps,
+    type SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
 
 interface Props {}

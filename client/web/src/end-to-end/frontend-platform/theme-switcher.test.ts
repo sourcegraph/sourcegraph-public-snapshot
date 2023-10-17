@@ -3,7 +3,7 @@ import { describe, test, before, after } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { initEndToEndTest } from '../utils/initEndToEndTest'

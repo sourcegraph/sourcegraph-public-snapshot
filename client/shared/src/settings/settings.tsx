@@ -2,10 +2,15 @@ import { createContext, useContext, useMemo } from 'react'
 
 import { cloneDeep, isFunction } from 'lodash'
 
-import { createAggregateError, ErrorLike, isErrorLike, logger, parseJSONCOrError } from '@sourcegraph/common'
+import { createAggregateError, type ErrorLike, isErrorLike, logger, parseJSONCOrError } from '@sourcegraph/common'
 
-import { DefaultSettingFields, OrgSettingFields, SiteSettingFields, UserSettingFields } from '../graphql-operations'
-import { Settings as GeneratedSettingsType, SettingsExperimentalFeatures } from '../schema/settings.schema'
+import type {
+    DefaultSettingFields,
+    OrgSettingFields,
+    SiteSettingFields,
+    UserSettingFields,
+} from '../graphql-operations'
+import type { Settings as GeneratedSettingsType, SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -306,7 +311,6 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     codeInsightsCompute: false,
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
-    applySearchQuerySuggestionOnEnter: false,
     isInitialized: true,
     searchQueryInput: 'experimental',
 }

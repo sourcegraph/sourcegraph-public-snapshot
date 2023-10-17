@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor/store"
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,7 +19,7 @@ import (
 
 func TestJobTokenStore_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	repoStore := database.ReposWith(logger, db)
@@ -80,7 +80,7 @@ func TestJobTokenStore_Create(t *testing.T) {
 
 func TestJobTokenStore_Create_Duplicate(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	repoStore := database.ReposWith(logger, db)
@@ -102,7 +102,7 @@ func TestJobTokenStore_Create_Duplicate(t *testing.T) {
 
 func TestJobTokenStore_Regenerate(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	repoStore := database.ReposWith(logger, db)
@@ -147,7 +147,7 @@ func TestJobTokenStore_Regenerate(t *testing.T) {
 
 func TestJobTokenStore_Exists(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	repoStore := database.ReposWith(logger, db)
@@ -200,7 +200,7 @@ func TestJobTokenStore_Exists(t *testing.T) {
 
 func TestJobTokenStore_Get(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	repoStore := database.ReposWith(logger, db)
@@ -267,7 +267,7 @@ func TestJobTokenStore_Get(t *testing.T) {
 
 func TestJobTokenStore_GetByToken(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	repoStore := database.ReposWith(logger, db)
@@ -332,7 +332,7 @@ func TestJobTokenStore_GetByToken(t *testing.T) {
 
 func TestJobTokenStore_Delete(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	repoStore := database.ReposWith(logger, db)

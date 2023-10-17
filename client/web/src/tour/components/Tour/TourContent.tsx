@@ -4,8 +4,8 @@ import { mdiClose, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { chunk, upperFirst } from 'lodash'
 
-import { TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
-import { Button, Icon, Text } from '@sourcegraph/wildcard'
+import type { TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { Badge, Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
@@ -16,8 +16,8 @@ import styles from './Tour.module.scss'
 interface TourContentProps {
     title?: string
     keepCompletedTasks?: boolean
-    tasks: (TourTaskType | TourTaskType)[]
-    onClose: () => void
+    tasks: TourTaskType[]
+    onClose?: () => void
     variant?: 'horizontal'
     height?: number
     className?: string
@@ -28,9 +28,18 @@ const Header: React.FunctionComponent<React.PropsWithChildren<{ onClose: () => v
     onClose,
     title = 'Quick start',
 }) => (
-    <div className="d-flex justify-content-between align-items-start">
+    <div className="d-flex align-items-start">
         <Text className={styles.title}>{title}</Text>
-        <Button variant="icon" data-testid="tour-close-btn" onClick={onClose} aria-label="Close quick start">
+        <Badge className="ml-2" variant="warning">
+            Experimental
+        </Badge>
+        <Button
+            className="ml-auto"
+            variant="icon"
+            data-testid="tour-close-btn"
+            onClick={onClose}
+            aria-label="Close quick start"
+        >
             <Icon aria-hidden={true} svgPath={mdiClose} /> {children}
         </Button>
     </div>
@@ -94,7 +103,7 @@ export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourCo
 
     return (
         <div className={className} data-testid="tour-content">
-            {isHorizontal && (
+            {isHorizontal && onClose && (
                 <Header onClose={onClose} title={title}>
                     Don't show again
                 </Header>
@@ -103,7 +112,7 @@ export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourCo
                 wrapperClassName={classNames('w-100 d-flex', !isHorizontal && styles.marketingBlockWrapper)}
                 contentClassName={classNames(styles.marketingBlockContent, 'w-100 d-flex flex-column pt-3 pb-1')}
             >
-                {!isHorizontal && <Header onClose={onClose} title={title} />}
+                {!isHorizontal && onClose && <Header onClose={onClose} title={title} />}
                 <div
                     className={classNames(
                         styles.taskList,

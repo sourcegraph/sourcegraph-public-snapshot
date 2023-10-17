@@ -1,7 +1,7 @@
-import { MockedProviderProps } from '@apollo/client/testing'
-import { Meta } from '@storybook/react'
+import type { MockedProviderProps } from '@apollo/client/testing'
+import type { Meta } from '@storybook/react'
 
-import { RevisionsProps, TabIndex } from '@sourcegraph/branded'
+import { type RevisionsProps, TabIndex } from '@sourcegraph/branded'
 import sidebarStyles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchSidebar.module.scss'
 // eslint-disable-next-line no-restricted-imports
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

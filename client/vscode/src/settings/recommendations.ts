@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode'
 
-import { DISMISS_WORKSPACERECS_CTA_KEY, LocalStorageService } from './LocalStorageService'
+import { DISMISS_WORKSPACERECS_CTA_KEY, type LocalStorageService } from './LocalStorageService'
 
 /**
  * Ask if user wants to add Sourcegraph to their Workspace Recommendations list by displaying built-in popup

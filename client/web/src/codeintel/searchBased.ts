@@ -1,4 +1,4 @@
-import { Range } from '@sourcegraph/extension-api-types'
+import type { Range } from '@sourcegraph/extension-api-types'
 
 export interface Result {
     /** The name of the repository containing the result. */

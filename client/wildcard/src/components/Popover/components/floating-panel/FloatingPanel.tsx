@@ -1,12 +1,12 @@
-import React, { forwardRef, PropsWithChildren, useLayoutEffect, useState } from 'react'
+import React, { forwardRef, type PropsWithChildren, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { createPortal } from 'react-dom'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
-import { ForwardReferenceComponent } from '../../../../types'
-import { createTether, Flipping, Overlapping, Padding, Position, Strategy, Tether } from '../../tether'
-import { TetherInstanceAPI } from '../../tether/services/tether-registry'
+import type { ForwardReferenceComponent } from '../../../../types'
+import { createTether, Flipping, Overlapping, type Padding, Position, Strategy, type Tether } from '../../tether'
+import type { TetherInstanceAPI } from '../../tether/services/tether-registry'
 
 import styles from './FloatingPanel.module.scss'
 

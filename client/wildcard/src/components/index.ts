@@ -1,6 +1,7 @@
 /** Component exports */
 export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
+export { Breadcrumbs } from './Breadcrumbs'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
@@ -76,6 +77,7 @@ export {
     usePopoverContext,
     Flipping,
     Strategy,
+    Overlapping,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {
@@ -108,7 +110,7 @@ export type { ButtonLinkProps } from './ButtonLink'
 export type { SelectProps, InputProps } from './Form'
 export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
-export type { PopoverOpenEvent, Rectangle } from './Popover'
+export type { PopoverOpenEvent, Rectangle, TetherInstanceAPI } from './Popover'
 export type { MenuLinkProps, MenuItemProps } from './Menu'
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
 export type { IconProps, IconType } from './Icon'

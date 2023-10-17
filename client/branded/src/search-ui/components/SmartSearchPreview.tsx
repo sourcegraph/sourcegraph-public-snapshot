@@ -6,11 +6,11 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { of } from 'rxjs'
 
 import { formatSearchParameters } from '@sourcegraph/common'
-import { SearchMode, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { SearchMode, type SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { Icon, H3, H2, Text, Button, Link, createLinkUrl, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
-import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
+import { LATEST_VERSION, aggregateStreamingSearch, type ProposedQuery } from '../../../../shared/src/search/stream'
 import { smartSearchIconSvgPath } from '../input/toggles/SmartSearchToggle'
 
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'

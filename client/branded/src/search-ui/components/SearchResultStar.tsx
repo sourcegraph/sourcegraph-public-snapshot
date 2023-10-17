@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { MdiReactIconProps } from 'mdi-react'
+import type { MdiReactIconProps } from 'mdi-react'
 import StarIcon from 'mdi-react/StarIcon'
 
 import styles from './SearchResultStar.module.scss'

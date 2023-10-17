@@ -1,16 +1,16 @@
-import { forwardRef, useContext, useEffect, useState, FC, PropsWithChildren } from 'react'
+import { forwardRef, useContext, useEffect, useState, type FC, type PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 import FocusLock from 'react-focus-lock'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useKeyboard, useOnClickOutside } from '../../../../hooks'
-import { ForwardReferenceComponent } from '../../../../types'
+import type { ForwardReferenceComponent } from '../../../../types'
 import { PopoverContext } from '../../contexts/internal-context'
 import { PopoverRoot } from '../../contexts/public-context'
-import { TetherInstanceAPI } from '../../tether'
-import { PopoverOpenEvent, PopoverOpenEventReason } from '../../types'
-import { FloatingPanel, FloatingPanelProps } from '../floating-panel/FloatingPanel'
+import type { TetherInstanceAPI } from '../../tether'
+import { type PopoverOpenEvent, PopoverOpenEventReason } from '../../types'
+import { FloatingPanel, type FloatingPanelProps } from '../floating-panel/FloatingPanel'
 
 import styles from './PopoverContent.module.scss'
 

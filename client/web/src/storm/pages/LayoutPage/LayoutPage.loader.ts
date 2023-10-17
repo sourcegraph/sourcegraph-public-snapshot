@@ -2,8 +2,8 @@ import { ApolloError } from '@apollo/client'
 
 import { gql } from '@sourcegraph/http-client'
 
-import { LayoutPageQueryResult, LayoutPageQueryVariables } from '../../../graphql-operations'
-import { createPreloadedQuery, QueryReference } from '../../backend/route-loader'
+import type { LayoutPageQueryResult, LayoutPageQueryVariables } from '../../../graphql-operations'
+import { createPreloadedQuery, type QueryReference } from '../../backend/route-loader'
 
 export const siteFlagFieldsFragment = gql`
     fragment SiteFlagFields on Site {

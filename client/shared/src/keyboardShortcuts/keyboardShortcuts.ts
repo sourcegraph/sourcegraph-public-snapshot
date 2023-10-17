@@ -1,6 +1,6 @@
 import { isMacPlatform, isSafari } from '@sourcegraph/common'
 
-import { KeyboardShortcut } from '../keyboardShortcuts'
+import type { KeyboardShortcut } from '../keyboardShortcuts'
 
 type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'switchTheme'

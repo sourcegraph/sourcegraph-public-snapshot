@@ -1,8 +1,8 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 
-import { SavedSearchForm, SavedSearchFormProps } from './SavedSearchForm'
+import { SavedSearchForm, type SavedSearchFormProps } from './SavedSearchForm'
 
 const config: Meta = {
     title: 'web/savedSearches/SavedSearchForm',
@@ -31,7 +31,7 @@ const commonProps: Omit<SavedSearchFormProps, 'isLightTheme'> = {
     },
 }
 
-export const NewSavedSearch: Story = () => (
+export const NewSavedSearch: StoryFn = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -47,7 +47,7 @@ export const NewSavedSearch: Story = () => (
 
 NewSavedSearch.storyName = 'new saved search'
 
-export const NotifcationsDisabled: Story = () => (
+export const NotifcationsDisabled: StoryFn = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -68,7 +68,7 @@ export const NotifcationsDisabled: Story = () => (
 
 NotifcationsDisabled.storyName = 'existing saved search, notifications disabled'
 
-export const NotifcationsEnabled: Story = () => (
+export const NotifcationsEnabled: StoryFn = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm
@@ -89,7 +89,7 @@ export const NotifcationsEnabled: Story = () => (
 
 NotifcationsEnabled.storyName = 'existing saved search, notifications enabled'
 
-export const NotificationsEnabledWithInvalidQueryWarning: Story = () => (
+export const NotificationsEnabledWithInvalidQueryWarning: StoryFn = () => (
     <WebStory>
         {webProps => (
             <SavedSearchForm

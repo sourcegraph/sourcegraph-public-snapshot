@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type EmbeddingIndex struct {
@@ -22,6 +23,17 @@ func (index *EmbeddingIndex) Row(n int) []int8 {
 
 func (index *EmbeddingIndex) EstimateSize() uint64 {
 	return uint64(len(index.Embeddings) + len(index.RowMetadata)*(16+8+8) + len(index.Ranks)*4)
+}
+
+// Validate will return a non-nil error if the fields on index break an
+// invariant. This is useful to call after unmarshalling to ensure there is no
+// corruption.
+func (index *EmbeddingIndex) Validate() error {
+	if len(index.Embeddings) != index.ColumnDimension*len(index.RowMetadata) {
+		return errors.Errorf("embedding index has an unexpected number of cells: cells=%d != columns=%d * rows=%d", len(index.Embeddings), index.ColumnDimension, len(index.RowMetadata))
+	}
+
+	return nil
 }
 
 // Filter removes all files from the index that are in the set and updates the ranks

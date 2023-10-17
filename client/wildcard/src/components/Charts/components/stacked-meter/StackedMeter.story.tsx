@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import ParentSize from '@visx/responsive/lib/components/ParentSizeModern'
 
 import { BrandedStory } from '../../../../stories'
@@ -14,7 +14,7 @@ const StoryConfig: Meta = {
 }
 export default StoryConfig
 
-export const StackedMeterDemo: Story = () => {
+export const StackedMeterDemo: StoryFn = () => {
     const data = [
         {
             language: 'JavaScript',

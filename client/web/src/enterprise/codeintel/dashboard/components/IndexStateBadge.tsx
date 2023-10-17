@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
 import { mdiAlert, mdiCheck, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,7 +6,7 @@ import { formatDistance, parseISO } from 'date-fns'
 
 import { Badge, Icon, Link, LoadingSpinner, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
-import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
+import { type PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { INDEX_TERMINAL_STATES } from '../constants'
 
 import { getIndexerKey } from './tree/util'

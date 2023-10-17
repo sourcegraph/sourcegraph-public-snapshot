@@ -1,11 +1,11 @@
-import React, { FC, useMemo } from 'react'
+import React, { type FC, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiDomain, mdiLock, mdiWeb } from '@mdi/js'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { OrgAvatar } from '../../org/OrgAvatar'
 
 import styles from './NotebookShareOptionsDropdown.module.scss'

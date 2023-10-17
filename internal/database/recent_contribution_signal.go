@@ -52,11 +52,6 @@ func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *re
 	return &recentContributionSignalStore{Store: s.Store.With(other)}
 }
 
-func (s *recentContributionSignalStore) transact(ctx context.Context) (*recentContributionSignalStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &recentContributionSignalStore{Store: txBase}, err
-}
-
 const commitAuthorInsertFmtstr = `
 	WITH already_exists (id) AS (
 		SELECT id

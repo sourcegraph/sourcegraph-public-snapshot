@@ -1,4 +1,4 @@
-import { Story, Meta, DecoratorFn } from '@storybook/react'
+import type { StoryFn, Meta, Decorator } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import { of } from 'rxjs'
@@ -15,7 +15,7 @@ import { ExternalChangesetNode } from './ExternalChangesetNode'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container')}>{story()}</div>
 )
 
@@ -25,22 +25,24 @@ const config: Meta = {
     argTypes: {
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         labeled: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         commitsSigned: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        viewerCanAdminister: true,
+        labeled: true,
+        commitsSigned: true,
     },
 }
 
 export default config
 
-export const AllStates: Story = args => {
+export const AllStates: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -134,7 +136,7 @@ export const AllStates: Story = args => {
 
 AllStates.storyName = 'All states'
 
-export const Unpublished: Story = args => {
+export const Unpublished: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -209,7 +211,7 @@ export const Unpublished: Story = args => {
     )
 }
 
-export const Importing: Story = args => {
+export const Importing: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -272,7 +274,7 @@ export const Importing: Story = args => {
     )
 }
 
-export const ImportingFailed: Story = args => {
+export const ImportingFailed: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -327,7 +329,7 @@ export const ImportingFailed: Story = args => {
 
 ImportingFailed.storyName = 'Importing failed'
 
-export const SyncFailed: Story = args => {
+export const SyncFailed: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>

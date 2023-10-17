@@ -1,13 +1,13 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from 'src/graphql-operations'
+import type { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from 'src/graphql-operations'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -34,7 +34,7 @@ const AddExternalServicesPage = lazyComponent(
 
 interface Props extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 export const SiteAdminExternalServicesArea: FC<Props> = props => {

@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -94,14 +93,14 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 		tokenHash = a.Hash()
 	}
 
-	rl := ratelimit.DefaultRegistry.Get(urn)
+	rl := ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitHubClient", ""), urn))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
 		log:                 log.Scoped("github.v4", "github v4 client"),
 		urn:                 urn,
 		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		githubDotCom:        URLIsGitHubDotCom(apiURL),
 		auth:                a,
 		httpClient:          cli,
 		internalRateLimiter: rl,
@@ -145,6 +144,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	if err != nil {
 		return err
 	}
+	urlCopy := *req.URL
 
 	// Enable Checks API
 	// https://developer.github.com/v4/previews/#checks
@@ -174,7 +174,14 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+		// Reset Body/URL to the originals, to ignore changes a previous
+		// `doRequest` might have made.
 		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+		// Create a copy of the URL, because this loop might execute
+		// multiple times.
+		reqURLCopy := urlCopy
+		req.URL = &reqURLCopy
+
 		// Because GitHub responds with http.StatusForbidden when a rate limit is hit, we cannot
 		// say with absolute certainty that a rate limit was hit. It might have been an honest
 		// http.StatusForbidden. So we use the externalRateLimiter's WaitForRateLimit function
@@ -565,7 +572,7 @@ func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners 
 			return "", err
 		}
 		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
-		b.WriteString("... on Repository { ...RepositoryFields } }\n")
+		b.WriteString("... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }\n")
 	}
 
 	b.WriteString("}")
@@ -609,7 +616,7 @@ fragment RepositoryFields on Repository {
 		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
 	}
 
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
+	if ghe330PlusOrDotComSemver.Check(version) {
 		conditionalGHEFields = append(conditionalGHEFields, "visibility")
 	}
 

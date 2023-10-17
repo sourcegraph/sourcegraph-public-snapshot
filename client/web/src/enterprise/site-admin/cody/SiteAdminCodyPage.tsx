@@ -1,11 +1,11 @@
-import { FC, useCallback, useEffect, useState, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useState, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
 import { RepoEmbeddingJobState } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Container,
@@ -15,7 +15,7 @@ import {
     useField,
     useForm,
     H3,
-    Validator,
+    type Validator,
     ErrorAlert,
     Form,
     useDebounce,
@@ -23,7 +23,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon } from '../../../cody/chat/CodyPageIcon'
-import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
+import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -73,7 +73,7 @@ const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): F
 }
 
 export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService }) => {
-    const isSourcegraphApp = window.context?.sourcegraphAppMode
+    const isCodyApp = window.context?.codyAppMode
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
@@ -231,12 +231,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embeddings jobs">
                         {connection?.nodes?.map(node => (
-                            <RepoEmbeddingJobNode
-                                key={node.id}
-                                {...node}
-                                onCancel={onCancel}
-                                isSourcegraphApp={isSourcegraphApp}
-                            />
+                            <RepoEmbeddingJobNode key={node.id} {...node} onCancel={onCancel} isCodyApp={isCodyApp} />
                         ))}
                     </ConnectionList>
                     {connection && (

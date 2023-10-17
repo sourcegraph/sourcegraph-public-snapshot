@@ -1,6 +1,6 @@
-import { FC, ReactElement } from 'react'
+import type { FC, ReactElement } from 'react'
 
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 import { mdiDelete, mdiInformationOutline, mdiPlus, mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -18,7 +18,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { CodeHost, ExternalServiceKind, GetCodeHostsResult } from '../../../../../graphql-operations'
+import { type CodeHost, ExternalServiceKind, type GetCodeHostsResult } from '../../../../../graphql-operations'
 import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
@@ -56,7 +56,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
 
     // Filter out all other external services since we don't properly support them
     // in the wizard, "Other" and "LocalGit" external services are used as local repositories setup in
-    // Sourcegraph App for which we have a special setup step
+    // Cody App for which we have a special setup step
     const nonOtherExternalServices = data.externalServices.nodes.filter(
         service => service.kind !== ExternalServiceKind.OTHER && service.kind !== ExternalServiceKind.LOCALGIT
     )

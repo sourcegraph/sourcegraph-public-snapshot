@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 
-import { Navigate, RouteObject } from 'react-router-dom'
+import { Navigate, type RouteObject } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
+import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 
@@ -17,10 +17,6 @@ const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
-const InstallGitHubAppSuccessPage = lazyComponent(
-    () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
-    'InstallGitHubAppSuccessPage'
-)
 const RedirectToUserSettings = lazyComponent(
     () => import('./user/settings/RedirectToUserSettings'),
     'RedirectToUserSettings'
@@ -35,6 +31,7 @@ const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoC
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
 const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
+const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
@@ -85,10 +82,6 @@ export const routes: RouteObject[] = [
         element: <Navigate replace={true} to={PageRoutes.Search} />,
     },
     {
-        path: PageRoutes.InstallGitHubAppSuccess,
-        element: <InstallGitHubAppSuccessPage />,
-    },
-    {
         path: PageRoutes.Settings,
         element: <LegacyRoute render={props => <RedirectToUserSettings {...props} />} />,
     },
@@ -118,6 +111,7 @@ export const routes: RouteObject[] = [
                         routes={props.siteAdminAreaRoutes}
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
+                        codeInsightsEnabled={window.context.codeInsightsEnabled}
                     />
                 )}
             />
@@ -125,7 +119,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.PasswordReset,
-        element: <LegacyRoute render={props => <ResetPasswordPage {...props} />} />,
+        element: <LegacyRoute render={props => <ResetPasswordPage {...props} context={window.context} />} />,
     },
     {
         path: PageRoutes.ApiConsole,
@@ -153,7 +147,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodySidebarStoreProvider>
+                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
                         <RepoContainer {...props} />
                     </CodySidebarStoreProvider>
                 )}
@@ -168,6 +162,10 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.GetCody,
         element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.PostSignUp,
+        element: <LegacyRoute render={props => <PostSignUpPage {...props} />} />,
     },
 ]
 

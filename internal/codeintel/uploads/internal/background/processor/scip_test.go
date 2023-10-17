@@ -1,14 +1,14 @@
 package processor
 
 import (
-	"compress/gzip"
 	"context"
-	"io"
 	"os"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -16,39 +16,56 @@ import (
 )
 
 func TestCorrelateSCIP(t *testing.T) {
+	testIndexPath := "./testdata/index1.scip.gz"
+	fileInfo, err := os.Stat(testIndexPath)
+	require.NoError(t, err)
+
+	var smallLimit int64 = 1024
+	require.Greater(t, fileInfo.Size(), smallLimit)
+	implCorrelateSCIP(t, testIndexPath, smallLimit)
+
+	var largeLimit int64 = 100 * 1024 * 1024
+	require.Less(t, fileInfo.Size(), largeLimit)
+	implCorrelateSCIP(t, testIndexPath, largeLimit)
+}
+
+func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64) {
 	ctx := context.Background()
 
-	testReader := func() io.Reader {
-		gzipped, err := os.Open("./testdata/index1.scip.gz")
+	oldValue := uncompressedSizeLimitBytes
+	uncompressedSizeLimitBytes = indexSizeLimit
+	t.Cleanup(func() {
+		uncompressedSizeLimitBytes = oldValue
+	})
+
+	testReader := func() gzipReadSeeker {
+		gzipped, err := os.Open(testIndexPath)
 		if err != nil {
 			t.Fatalf("unexpected error reading test file: %s", err)
 		}
-		r, err := gzip.NewReader(gzipped)
-		if err != nil {
-			t.Fatalf("unexpected error unzipping test file: %s", err)
-		}
+		indexReader, err := newGzipReadSeeker(gzipped)
+		require.NoError(t, err, "failed to create reader for test file")
 
-		return r
+		return indexReader
 	}
-
-	content, err := io.ReadAll(testReader())
-	if err != nil {
-		t.Fatalf("unexpected error reading test reader: %s", err)
-	}
-	n := int64(len(content))
 
 	// Correlate and consume channels from returned object
-	correlatedSCIPData, err := correlateSCIP(ctx, testReader(), n, "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	scipDataStream, err := prepareSCIPDataStream(ctx, testReader(), "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		return scipDirectoryChildren, nil
 	})
 	if err != nil {
 		t.Fatalf("unexpected error processing SCIP: %s", err)
 	}
 	var documents []lsifstore.ProcessedSCIPDocument
-	for document := range correlatedSCIPData.Documents {
-		documents = append(documents, document)
-	}
-	packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
+	packageData := lsifstore.ProcessedPackageData{}
+	err = scipDataStream.DocumentIterator.VisitAllDocuments(ctx, log.NoOp(), &packageData, func(d lsifstore.ProcessedSCIPDocument) error {
+		documents = append(documents, d)
+		return nil
+	})
+	require.NoError(t, err)
+	packageData.Normalize()
+	packages := packageData.Packages
+	packageReferences := packageData.PackageReferences
 	if err != nil {
 		t.Fatalf("unexpected error reading processed SCIP: %s", err)
 	}
@@ -61,13 +78,13 @@ func TestCorrelateSCIP(t *testing.T) {
 		ToolArguments:        nil,
 		ProtocolVersion:      0,
 	}
-	if diff := cmp.Diff(expectedMetadata, correlatedSCIPData.Metadata); diff != "" {
-		t.Errorf("unexpected metadata (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedMetadata, scipDataStream.Metadata); diff != "" {
+		t.Fatalf("unexpected metadata (-want +got):\n%s", diff)
 	}
 
 	// Check document values
 	if len(documents) != 11 {
-		t.Errorf("unexpected number of documents. want=%d have=%d", 11, len(documents))
+		t.Fatalf("unexpected number of documents. want=%d have=%d", 11, len(documents))
 	} else {
 		documentMap := map[string]lsifstore.ProcessedSCIPDocument{}
 		for _, document := range documents {

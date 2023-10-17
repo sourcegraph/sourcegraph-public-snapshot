@@ -1,0 +1,37 @@
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dotcom",
+    srcs = [
+        "dotcom.go",
+        "operations.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//internal/trace",
+        "@com_github_khan_genqlient//graphql",
+    ],
+)
+
+genrule(
+    name = "generate_genql_yaml",
+    srcs = [
+        "genql.yaml",
+        "operations.graphql",
+        "//cmd/frontend/graphqlbackend:schema.graphql",
+        "//cmd/frontend/graphqlbackend:guardrails.graphql",
+    ],
+    outs = ["_operations.go"],
+    cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genql.yaml) && mv cmd/frontend/internal/guardrails/dotcom/operations.go $@",
+    tools = ["@com_github_khan_genqlient//:genqlient"],
+)
+
+write_generated_to_source_files(
+    name = "write_genql_yaml",
+    output_files = {"operations.go": "_operations.go"},
+    tags = ["go_generate"],
+    target = ":generate_genql_yaml",
+)

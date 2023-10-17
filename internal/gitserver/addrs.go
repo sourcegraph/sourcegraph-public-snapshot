@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/binary"
 	"sync"
@@ -24,16 +25,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const maxMessageSizeBytes = 64 * 1024 * 1024 // 64MiB
+var (
+	addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_addr_for_repo_invoked",
+		Help: "Number of times gitserver.AddrForRepo was invoked",
+	}, []string{"user_agent"})
+)
 
-var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_invoked",
-	Help: "Number of times gitserver.AddrForRepo was invoked",
-}, []string{"user_agent"})
-
-// NewGitserverAddressesFromConf fetches the current set of gitserver addresses
+// NewGitserverAddresses fetches the current set of gitserver addresses
 // and pinned repos for gitserver.
-func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
+func NewGitserverAddresses(cfg *conf.Unified) GitserverAddresses {
 	addrs := GitserverAddresses{
 		Addresses: cfg.ServiceConnectionConfig.GitServers,
 	}
@@ -53,7 +54,7 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+func NewTestClientSource(t testing.TB, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
 	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
@@ -103,8 +104,8 @@ type testGitserverConns struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (c *testGitserverConns) AddrForRepo(userAgent string, repo api.RepoName) string {
-	return c.conns.AddrForRepo(userAgent, repo)
+func (c *testGitserverConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
+	return c.conns.AddrForRepo(ctx, userAgent, repo)
 }
 
 // Addresses returns the current list of gitserver addresses.
@@ -112,18 +113,23 @@ func (c *testGitserverConns) Addresses() []AddressWithClient {
 	return c.testAddresses
 }
 
+func (c *testGitserverConns) GetAddressWithClient(addr string) AddressWithClient {
+	for _, addrClient := range c.testAddresses {
+		if addrClient.Address() == addr {
+			return addrClient
+		}
+	}
+	return nil
+}
+
 // ClientForRepo returns a client or host for the given repo name.
-func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := c.conns.ConnForRepo(userAgent, repo)
+func (c *testGitserverConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := c.conns.ConnForRepo(ctx, userAgent, repo)
 	if err != nil {
 		return nil, err
 	}
 
 	return c.clientFunc(conn), nil
-}
-
-func (c *testGitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.conns.ConnForRepo(userAgent, repo)
 }
 
 type testConnAndErr struct {
@@ -157,17 +163,16 @@ type GitserverAddresses struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (g GitserverAddresses) AddrForRepo(userAgent string, repo api.RepoName) string {
+func (g *GitserverAddresses) AddrForRepo(ctx context.Context, userAgent string, repoName api.RepoName) string {
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
-	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	rs := string(repo)
-
-	if pinnedAddr, ok := g.PinnedServers[rs]; ok {
+	// Normalizing the name in case the caller didn't.
+	name := string(protocol.NormalizeRepo(repoName))
+	if pinnedAddr, ok := g.PinnedServers[name]; ok {
 		return pinnedAddr
 	}
 
-	return addrForKey(rs, g.Addresses)
+	return addrForKey(name, g.Addresses)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -180,12 +185,13 @@ func addrForKey(key string, addrs []string) string {
 
 type GitserverConns struct {
 	GitserverAddresses
+
 	// invariant: there is one conn for every gitserver address
 	grpcConns map[string]connAndErr
 }
 
-func (g *GitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	addr := g.AddrForRepo(userAgent, repo)
+func (g *GitserverConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+	addr := g.AddrForRepo(ctx, userAgent, repo)
 	ce, ok := g.grpcConns[addr]
 	if !ok {
 		return nil, errors.Newf("no gRPC connection found for address %q", addr)
@@ -218,20 +224,16 @@ type atomicGitServerConns struct {
 	watchOnce sync.Once
 }
 
-func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) string {
-	return a.get().AddrForRepo(userAgent, repo)
+func (a *atomicGitServerConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
+	return a.get().AddrForRepo(ctx, userAgent, repo)
 }
 
-func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := a.get().ConnForRepo(userAgent, repo)
+func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().ConnForRepo(ctx, userAgent, repo)
 	if err != nil {
 		return nil, err
 	}
 	return proto.NewGitserverServiceClient(conn), nil
-}
-
-func (a *atomicGitServerConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return a.get().ConnForRepo(userAgent, repo)
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {
@@ -245,6 +247,19 @@ func (a *atomicGitServerConns) Addresses() []AddressWithClient {
 		})
 	}
 	return addrs
+}
+
+func (a *atomicGitServerConns) GetAddressWithClient(addr string) AddressWithClient {
+	conns := a.get()
+	addrConn, ok := conns.grpcConns[addr]
+	if ok {
+		return &connAndErr{
+			address: addr,
+			conn:    addrConn.conn,
+			err:     addrConn.err,
+		}
+	}
+	return nil
 }
 
 func (a *atomicGitServerConns) get() *GitserverConns {
@@ -263,7 +278,7 @@ func (a *atomicGitServerConns) initOnce() {
 
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	after := GitserverConns{
-		GitserverAddresses: NewGitserverAddressesFromConf(cfg),
+		GitserverAddresses: NewGitserverAddresses(cfg),
 		grpcConns:          nil, // to be filled in
 	}
 
@@ -293,9 +308,6 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		conn, err := defaults.Dial(
 			addr,
 			clientLogger,
-
-			// Allow large messages to accomodate large diffs
-			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSizeBytes)),
 		)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}

@@ -2,7 +2,7 @@ import compression from 'compression'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import { once } from 'lodash'
 import signale from 'signale'
-import createWebpackCompiler, { Configuration } from 'webpack'
+import createWebpackCompiler, { type Configuration } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
@@ -13,7 +13,7 @@ import {
     ENVIRONMENT_CONFIG,
     getAPIProxySettings,
     getIndexHTML,
-    getWebpackManifest,
+    getWebBuildManifest,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
     printSuccessBanner,
@@ -59,7 +59,7 @@ async function startWebpackDevelopmentServer({ apiURL }: DevelopmentServerInit):
     const { proxyRoutes, ...proxyConfig } = getAPIProxySettings({
         apiURL,
         getLocalIndexHTML(jsContextScript) {
-            const manifestFile = getWebpackManifest()
+            const manifestFile = getWebBuildManifest()
             return getIndexHTML({ manifestFile, jsContextScript })
         },
     })

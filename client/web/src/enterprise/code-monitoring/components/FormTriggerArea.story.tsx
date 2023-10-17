@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -26,7 +26,7 @@ const config: Meta = {
 
 export default config
 
-export const FormTrigerArea: Story = () => (
+export const FormTrigerArea: StoryFn = () => (
     <WebStory>
         {props => (
             <>

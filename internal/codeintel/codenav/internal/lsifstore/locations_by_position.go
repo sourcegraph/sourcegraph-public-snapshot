@@ -302,7 +302,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		for _, rel := range sym.Relationships {
 			if rel.IsImplementation {
 				if rel.Symbol == occurrence.Symbol {
-					implementationsBySymbol[occurrence.Symbol] = struct{}{}
+					implementationsBySymbol[sym.Symbol] = struct{}{}
 				}
 			}
 		}
@@ -378,7 +378,7 @@ func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, locat
 }
 
 func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractImplementationRanges, symbolExtractDefault, s.operations.getImplementationLocations, locationKey)
+	return s.extractLocationsFromPosition(ctx, extractImplementationRanges, symbolExtractImplementations, s.operations.getImplementationLocations, locationKey)
 }
 
 func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
@@ -390,6 +390,20 @@ func symbolExtractDefault(document *scip.Document, symbolName string) (symbols [
 		for _, rel := range symbol.Relationships {
 			if rel.IsReference {
 				symbols = append(symbols, rel.Symbol)
+			}
+		}
+	}
+
+	return append(symbols, symbolName)
+}
+
+func symbolExtractImplementations(document *scip.Document, symbolName string) (symbols []string) {
+	for _, sym := range document.Symbols {
+		for _, rel := range sym.Relationships {
+			if rel.IsImplementation {
+				if rel.Symbol == symbolName {
+					symbols = append(symbols, sym.Symbol)
+				}
 			}
 		}
 	}

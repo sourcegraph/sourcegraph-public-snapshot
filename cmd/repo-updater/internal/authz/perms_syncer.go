@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -269,6 +270,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			log.Int32("ID", userID),
 			log.String("name", user.Username)),
 	)
+	ctx = featureflag.WithFlags(ctx, s.db.FeatureFlags())
 
 	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	providerStates := results.providerStates
@@ -456,7 +458,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 		providerLogger.Debug("account found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID), log.Int32("account_id", acct.ID))
 
-		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		acct, err = accounts.Upsert(ctx, acct)
 		if err != nil {
 			providerLogger.Error("could not associate external account to user", log.Error(err))
 			continue
@@ -699,7 +701,6 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 		UserID:            userID,
 		ExternalAccountID: acctID,
 	}, repoIDs, authz.SourceUserSync)
-
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
 		return nil, err

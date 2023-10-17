@@ -31,6 +31,12 @@ func (c *openAIChatCompletionStreamClient) Complete(
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
+	// TODO: If we add support for CompletionsFeatureCode, Cody Gateway must
+	// also be updated to allow OpenAI code completions requests.
+	if feature == types.CompletionsFeatureCode {
+		return nil, errors.Newf("%q for OpenAI is currently not supported")
+	}
+
 	resp, err := c.makeRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err

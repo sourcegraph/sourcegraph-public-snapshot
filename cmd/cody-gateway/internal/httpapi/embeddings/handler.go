@@ -104,6 +104,7 @@ func NewHandler(
 							"upstream_request_duration_ms":                   upstreamFinished.Milliseconds(),
 							"resolved_status_code":                           resolvedStatusCode,
 							codygateway.EmbeddingsTokenUsageMetadataField:    usedTokens,
+							"batch_size": len(body.Input),
 						},
 					},
 				)
@@ -116,6 +117,12 @@ func NewHandler(
 			usedTokens = ut
 			upstreamFinished = time.Since(upstreamStarted)
 			if err != nil {
+				// This is an error path, so always set a default retry-after
+				// on errors that discourages Sourcegraph clients from retrying
+				// at all - embeddings will likely be run by embeddings workers
+				// that will eventually retry on a more reasonable schedule.
+				w.Header().Set("retry-after", "60")
+
 				// If a status error is returned, pass through the code and error
 				var statusCodeErr response.HTTPStatusCodeError
 				if errors.As(err, &statusCodeErr) {
@@ -152,8 +159,23 @@ func NewHandler(
 			}
 
 			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			// Write implicitly returns a 200 status code if one isn't set yet
+			if resolvedStatusCode <= 0 {
+				resolvedStatusCode = 200
+			}
 			_, _ = w.Write(data)
-		}))
+		}),
+		func(responseHeaders http.Header) (int, error) {
+			uh := responseHeaders.Get(usageHeaderName)
+			if uh == "" {
+				return 0, errors.New("no usage header set on response")
+			}
+			usage, err := strconv.Atoi(uh)
+			if err != nil {
+				return 0, errors.Wrap(err, "failed to parse usage header as number")
+			}
+			return usage, nil
+		})
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {

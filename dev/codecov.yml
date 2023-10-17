@@ -8,14 +8,14 @@ coverage:
         informational: true
         paths:
           - cmd/symbols
-          - enterprise/cmd/precise-code-intel-*
-          - enterprise/internal/codeintel
+          - cmd/precise-code-intel-*
+          - internal/codeintel
       batches:
         informational: true
         paths:
           - cmd/frontend/graphqlbackend/batches.go
           - internal/usagestats/batches.go
-          - enterprise/cmd/frontend/internal/batches
+          - cmd/frontend/internal/batches
           - internal/batches
           - client/web/src/enterprise/batches
       insights:

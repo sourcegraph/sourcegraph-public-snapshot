@@ -8,10 +8,10 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
-    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+    condition: ({ isCodyApp }) => !isCodyApp,
     header: {
         label: 'Analytics',
         icon: ChartLineVariantIcon,
@@ -37,10 +37,12 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Insights',
             to: '/site-admin/analytics/code-insights',
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
         {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
             label: 'Notebooks',
@@ -57,7 +59,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isCodyApp }) => !isCodyApp,
         },
     ],
 }
@@ -75,7 +77,12 @@ export const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Global settings',
             to: '/site-admin/global-settings',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isCodyApp }) => !isCodyApp,
+        },
+        {
+            label: 'End user onboarding',
+            to: '/site-admin/end-user-onboarding',
+            condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
         },
         {
             label: 'Feature flags',
@@ -97,15 +104,19 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Repositories',
             to: '/site-admin/repositories',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isCodyApp }) => !isCodyApp,
         },
         {
             label: 'Packages',
             to: '/site-admin/packages',
             condition: isPackagesEnabled,
         },
+        {
+            label: 'Gitservers',
+            to: '/site-admin/gitservers',
+        },
     ],
-    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+    condition: ({ isCodyApp }) => !isCodyApp,
 }
 
 export const usersGroup: SiteAdminSideBarGroup = {
@@ -114,7 +125,7 @@ export const usersGroup: SiteAdminSideBarGroup = {
         icon: AccountMultipleIcon,
     },
 
-    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             label: 'Users',
@@ -153,7 +164,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
-    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             label: maintenanceGroupUpdatesItemLabel,
@@ -210,7 +221,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
         label: 'API Console',
         icon: ConsoleIcon,
     },
-    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             label: 'API Console',

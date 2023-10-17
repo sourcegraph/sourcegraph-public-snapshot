@@ -1,6 +1,6 @@
 import { Subscription } from 'rxjs'
 
-import { ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
+import type { ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
 
 import { createEndpointsForWebToWeb } from '../../../comlink/webviewEndpoint'
 

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Card, Input, Text, H2 } from '@sourcegraph/wildcard'
 

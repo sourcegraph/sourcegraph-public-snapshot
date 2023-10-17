@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing/core'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing/core'
+import type { Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -7,7 +7,11 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { GetSearchAggregationResult, SearchAggregationMode, SearchPatternType } from '../../../../graphql-operations'
+import {
+    type GetSearchAggregationResult,
+    SearchAggregationMode,
+    SearchPatternType,
+} from '../../../../graphql-operations'
 
 import { AGGREGATION_SEARCH_QUERY } from './hooks'
 import { SearchAggregationResult } from './SearchAggregationResult'
@@ -134,7 +138,7 @@ const SEARCH_AGGREGATION_MOCK: MockedResponse<GetSearchAggregationResult> = {
     },
 }
 
-export const SearchAggregationResultDemo: Story = () => (
+export const SearchAggregationResultDemo: StoryFn = () => (
     <BrandedStory>
         {() => (
             <MockedTestProvider mocks={[SEARCH_AGGREGATION_MOCK]}>

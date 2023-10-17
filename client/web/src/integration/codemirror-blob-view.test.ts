@@ -1,15 +1,15 @@
 import assert from 'assert'
 
-import { ElementHandle, MouseButton } from 'puppeteer'
+import type { ElementHandle, MouseButton } from 'puppeteer'
 
-import { JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { type JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { type Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createResolveRepoRevisionResult,
     createFileExternalLinksResult,
@@ -18,7 +18,7 @@ import {
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createEditorAPI, EditorAPI } from './utils'
+import { createEditorAPI, type EditorAPI } from './utils'
 
 describe('CodeMirror blob view', () => {
     let driver: Driver

@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
+import { mdiClose, mdiHistory, mdiPlus, mdiDelete } from '@mdi/js'
+import classNames from 'classnames'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'
@@ -16,9 +18,10 @@ export const SCROLL_THRESHOLD = 100
 
 interface CodySidebarProps {
     onClose?: () => void
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
+export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, authenticatedUser }) => {
     const codySidebarStore = useCodySidebar()
     const {
         initializeNewChat,
@@ -83,7 +86,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
-                    <div className="d-flex col-2 p-0">
+                    <div className={classNames(styles.actionButtons, 'd-flex col-2 p-0')}>
                         <Tooltip content="Chat history">
                             <Button
                                 variant="icon"
@@ -92,7 +95,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
                                 onClick={() => setShowHistory(showing => !showing)}
                                 aria-pressed={showHistory}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
+                                <Icon aria-hidden={true} svgPath={mdiHistory} />
                             </Button>
                         </Tooltip>
                         <Tooltip content="Start a new chat">
@@ -100,18 +103,19 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
                                 <Icon aria-hidden={true} svgPath={mdiPlus} />
                             </Button>
                         </Tooltip>
-                        {showHistory && (
-                            <Tooltip content="Clear all chats">
-                                <Button
-                                    variant="icon"
-                                    className="ml-2"
-                                    aria-label="Clear all chats"
-                                    onClick={clearHistory}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                </Button>
-                            </Tooltip>
-                        )}
+                        {showHistory &&
+                            (transcriptHistory.length > 1 || !!transcriptHistory[0]?.interactions?.length) && (
+                                <Tooltip content="Clear all chats">
+                                    <Button
+                                        variant="icon"
+                                        className="ml-2"
+                                        aria-label="Clear all chats"
+                                        onClick={clearHistory}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                    </Button>
+                                </Tooltip>
+                            )}
                     </div>
                     <div className="col-8 d-flex justify-content-center">
                         <div className="d-flex flex-shrink-0 align-items-center">
@@ -141,7 +145,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
                         deleteHistoryItem={deleteHistoryItem}
                     />
                 ) : (
-                    <ChatUI codyChatStore={codySidebarStore} />
+                    <ChatUI codyChatStore={codySidebarStore} authenticatedUser={authenticatedUser} />
                 )}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}

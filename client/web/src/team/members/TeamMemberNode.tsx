@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { ListTeamMemberFields, Scalars } from '../../graphql-operations'
+import type { ListTeamMemberFields, Scalars } from '../../graphql-operations'
 
 import { RemoveTeamMemberModal } from './RemoveTeamMemberModal'
 

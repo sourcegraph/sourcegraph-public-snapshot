@@ -5,7 +5,7 @@ import { mdiAlert } from '@mdi/js'
 import { Button, Icon, Text, Modal, H3, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { RoleFields } from '../../../graphql-operations'
+import type { RoleFields } from '../../../graphql-operations'
 
 interface ConfirmDeleteRoleModalProps {
     onCancel: () => void

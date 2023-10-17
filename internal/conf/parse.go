@@ -41,21 +41,10 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 // Experimental features are special in that they are denoted individually
 // via e.g. "experimentalFeatures::myFeatureFlag".
 var requireRestart = []string{
-	"auth.accessTokens",
-	"auth.sessionExpiry",
-	"git.cloneURLToRepositoryName",
-	"searchScopes",
-	"extensions",
-	"disablePublicRepoRedirects",
-	"auth.userOrgMap",
 	"auth.providers",
-	"externalURL",
-	"update.channel",
 	"insights.query.worker.concurrency",
 	"insights.commit.indexer.interval",
-	"codeIntelAutoIndexing.enabled",
 	"permissions.syncUsersMaxConcurrency",
-	"gitHubApp",
 }
 
 // needRestartToApply determines if a restart is needed to apply the changes

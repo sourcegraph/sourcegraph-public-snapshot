@@ -4,7 +4,7 @@ import delay from 'delay'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { createFlagMock } from './createFlagMock'
-import { FeatureFlagName } from './featureFlags'
+import type { FeatureFlagName } from './featureFlags'
 import { useFeatureFlag } from './useFeatureFlag'
 
 describe('useFeatureFlag', () => {

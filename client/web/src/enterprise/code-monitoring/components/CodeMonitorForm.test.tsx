@@ -7,7 +7,7 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 
-import { CodeMonitorForm, CodeMonitorFormProps } from './CodeMonitorForm'
+import { CodeMonitorForm, type CodeMonitorFormProps } from './CodeMonitorForm'
 
 const PROPS: CodeMonitorFormProps = {
     onSubmit: () => NEVER,

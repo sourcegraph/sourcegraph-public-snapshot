@@ -1,25 +1,25 @@
-import { FC, useCallback, useEffect, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon } from '../../../../cody/chat/CodyPageIcon'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
+import type { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { FlashMessage } from '../../../codeintel/configuration/components/FlashMessage'
 import { queryPolicies as defaultQueryPolicies } from '../../../codeintel/configuration/hooks/queryPolicies'
 import { useDeletePolicies } from '../../../codeintel/configuration/hooks/useDeletePolicies'
 import {
     PoliciesNode,
-    UnprotectedPoliciesNodeProps,
+    type UnprotectedPoliciesNodeProps,
 } from '../../../codeintel/configuration/pages/CodeIntelConfigurationPage'
 import { EmptyPoliciesList } from '../components/EmptyPoliciesList'
 

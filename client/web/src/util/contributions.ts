@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */

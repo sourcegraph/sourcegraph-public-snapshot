@@ -2,10 +2,10 @@ import { useCallback, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 
-import {
+import type {
     AddLocalRepositoriesResult,
     AddLocalRepositoriesVariables,
     DeleteRemoteCodeHostResult,
@@ -15,7 +15,7 @@ import {
 } from '../../../graphql-operations'
 import { ADD_LOCAL_REPOSITORIES, DELETE_CODE_HOST } from '../../queries'
 
-import { LocalCodeHost } from './helpers'
+import type { LocalCodeHost } from './helpers'
 import { GET_LOCAL_CODE_HOSTS } from './queries'
 
 interface LocalCodeHostResult {

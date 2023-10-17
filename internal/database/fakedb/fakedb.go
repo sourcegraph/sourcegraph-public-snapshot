@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 )
 
 // New creates a set of fakes currently available to database stores.
@@ -30,7 +31,7 @@ type Fakes struct {
 }
 
 // Wire injects fakes into a database.MockDB.
-func (fs Fakes) Wire(db *database.MockDB) {
+func (fs Fakes) Wire(db *dbmocks.MockDB) {
 	db.TeamsFunc.SetDefaultReturn(fs.TeamStore)
 	db.UsersFunc.SetDefaultReturn(fs.UserStore)
 	db.WithTransactFunc.SetDefaultHook(func(_ context.Context, callback func(database.DB) error) error {

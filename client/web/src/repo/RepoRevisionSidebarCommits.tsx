@@ -1,11 +1,11 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
@@ -15,7 +15,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
-import { FetchCommitsResult, FetchCommitsVariables, GitCommitFields, Scalars } from '../graphql-operations'
+import type { FetchCommitsResult, FetchCommitsVariables, GitCommitFields, Scalars } from '../graphql-operations'
 import { replaceRevisionInURL } from '../util/url'
 
 import { GitCommitNode } from './commits/GitCommitNode'

@@ -11,22 +11,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/oauth2"
 )
-
-type mockDoer struct {
-	do func(*http.Request) (*http.Response, error)
-}
-
-func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
-	return c.do(r)
-}
 
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
@@ -74,7 +68,9 @@ func createTestServer() *httptest.Server {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
-	db := database.NewMockDB()
+	ratelimit.SetupForTest(t)
+
+	db := dbmocks.NewMockDB()
 	t.Run("nil account", func(t *testing.T) {
 		p := NewProvider(db,
 			&types.BitbucketCloudConnection{
@@ -183,9 +179,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 }
 
 func TestProvider_FetchRepoPerms(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	server := createTestServer()
 	defer server.Close()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	conn := &schema.BitbucketCloudConnection{
 		ApiURL: server.URL,

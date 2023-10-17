@@ -231,10 +231,6 @@ func (r *UserResolver) CompletedPostSignup(ctx context.Context) (bool, error) {
 	return r.user.CompletedPostSignup, nil
 }
 
-func (r *UserResolver) Searchable(_ context.Context) bool {
-	return r.user.Searchable
-}
-
 type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
@@ -448,64 +444,54 @@ type userMutationArgs struct {
 	UserID *graphql.ID
 }
 
+func (r *schemaResolver) affectedUserID(ctx context.Context, args *userMutationArgs) (affectedUserID int32, err error) {
+	if args.UserID != nil {
+		return UnmarshalUserID(*args.UserID)
+	}
+
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return user.ID, nil
+}
+
 func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
+	affectedUserID, err := r.affectedUserID(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
 	tosAccepted := true
 	update := database.UserUpdate{TosAccepted: &tosAccepted}
-
-	return r.updateAffectedUser(ctx, args, update)
+	return r.updateAffectedUser(ctx, affectedUserID, update)
 }
 
 func (r *schemaResolver) SetCompletedPostSignup(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
-	completedPostSignup := true
-	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
-
-	return r.updateAffectedUser(ctx, args, update)
-}
-
-func (r *schemaResolver) updateAffectedUser(ctx context.Context, args *userMutationArgs, update database.UserUpdate) (*EmptyResponse, error) {
-	var affectedUserID int32
-	if args.UserID != nil {
-		var err error
-		affectedUserID, err = UnmarshalUserID(*args.UserID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		user, err := r.db.Users().GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		affectedUserID = user.ID
+	affectedUserID, err := r.affectedUserID(ctx, args)
+	if err != nil {
+		return nil, err
 	}
 
+	has, err := backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, affectedUserID)
+	if err != nil {
+		return nil, err
+	} else if !has {
+		return nil, errors.New("must have a verified email to complete post-signup flow")
+	}
+
+	completedPostSignup := true
+	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
+	return r.updateAffectedUser(ctx, affectedUserID, update)
+}
+
+func (r *schemaResolver) updateAffectedUser(ctx context.Context, affectedUserID int32, update database.UserUpdate) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
 		return nil, err
 	}
 
 	if err := r.db.Users().Update(ctx, affectedUserID, update); err != nil {
-		return nil, err
-	}
-
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
-	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, errors.New("no authenticated user")
-	}
-
-	searchable := args.Searchable
-	update := database.UserUpdate{
-		Searchable: &searchable,
-	}
-
-	if err := r.db.Users().Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 
@@ -617,7 +603,7 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
 		return nil, err
 	}
-	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
+	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, &r.user.ID, args)
 }
 
 func (r *UserResolver) ToUser() (*UserResolver, bool) {

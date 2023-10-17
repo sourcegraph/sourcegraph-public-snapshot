@@ -1,0 +1,40 @@
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("//dev:oci_defs.bzl", "image_repository")
+
+oci_image(
+    name = "qdrant_image",
+    base = "@wolfi_qdrant_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/usr/local/bin/qdrant",
+        "--config-path=/etc/qdrant/config.yaml",
+    ],
+    env = {},
+    user = "sourcegraph",
+)
+
+container_structure_test(
+    name = "qdrant_image_test",
+    timeout = "short",
+    configs = ["qdrant_image_test.yaml"],
+    driver = "docker",
+    image = ":qdrant_image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_tarball(
+    name = "qdrant_image_tarball",
+    image = ":qdrant_image",
+    repo_tags = ["qdrant:candidate"],
+)
+
+oci_push(
+    name = "qdrant_candidate_push",
+    image = ":qdrant_image",
+    repository = image_repository("qdrant"),
+)

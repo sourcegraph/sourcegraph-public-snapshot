@@ -7,7 +7,7 @@ import {
     ChangesetState,
 } from '@sourcegraph/shared/src/graphql-operations'
 
-import { ChangesetFields, RepoBatchChange } from '../../../graphql-operations'
+import type { ChangesetFields, RepoBatchChange } from '../../../graphql-operations'
 
 export const now = new Date()
 

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -40,8 +41,8 @@ func TestServiceConnections(t *testing.T) {
 }
 
 func TestWriteSiteConfig(t *testing.T) {
-	db := database.NewMockDB()
-	confStore := database.NewMockConfStore()
+	db := dbmocks.NewMockDB()
+	confStore := dbmocks.NewMockConfStore()
 	conf := &database.SiteConfig{ID: 1}
 	confStore.SiteGetLatestFunc.SetDefaultReturn(
 		conf,
@@ -64,7 +65,7 @@ func TestWriteSiteConfig(t *testing.T) {
 
 func TestOverrideSiteConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	conf := db.Conf()
 	ctx := context.Background()
 

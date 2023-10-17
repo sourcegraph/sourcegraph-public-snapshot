@@ -4,7 +4,7 @@ import { getReasonPhrase } from 'http-status-codes'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 
-import { WebhookLogFields } from '../../graphql-operations'
+import type { WebhookLogFields } from '../../graphql-operations'
 
 import styles from './MessagePanel.module.scss'
 

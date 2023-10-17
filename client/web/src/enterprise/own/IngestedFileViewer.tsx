@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { EditorState, Extension } from '@codemirror/state'
+import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useLocation } from 'react-router-dom'
 

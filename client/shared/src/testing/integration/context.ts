@@ -1,12 +1,12 @@
 import * as path from 'path'
 import * as util from 'util'
 
-import { MODE, Polly, PollyServer } from '@pollyjs/core'
+import { type MODE, Polly, type PollyServer } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
-import { GraphQLError } from 'graphql'
+import type { GraphQLError } from 'graphql'
 import { snakeCase } from 'lodash'
 import * as mime from 'mime-types'
-import { Test } from 'mocha'
+import type { Test } from 'mocha'
 import { readFile, mkdir } from 'mz/fs'
 import pTimeout from 'p-timeout'
 import * as prettier from 'prettier'
@@ -15,14 +15,14 @@ import { first, timeoutWith } from 'rxjs/operators'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import { logger, asError, keyExistsIn } from '@sourcegraph/common'
-import { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
+import type { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
 
 import { getConfig } from '../config'
 import { recordCoverage } from '../coverage'
-import { Driver } from '../driver'
+import type { Driver } from '../driver'
 import { readEnvironmentString } from '../utils'
 
-import { CdpAdapter, CdpAdapterOptions } from './polly/CdpAdapter'
+import { CdpAdapter, type CdpAdapterOptions } from './polly/CdpAdapter'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0

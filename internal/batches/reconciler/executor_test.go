@@ -27,6 +27,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -76,7 +77,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -95,8 +96,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	})
 	defer state.Unmock()
 
-	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
-	t.Cleanup(btypes.ResetInternalClient)
+	mockExternalURL(t, "https://sourcegraph.test")
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
@@ -295,7 +295,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantChangeset: bt.ChangesetAssertions{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
-			wantErr: errors.New("pushing commit: creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
+			wantErr: errors.New("creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
 		},
 		"general push error": {
 			hasCurrentSpec: true,
@@ -850,7 +850,6 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 				afterDone(bstore)
 				webhook, err := wstore.GetLast(ctx)
-
 				if err != nil {
 					t.Fatalf("could not get latest webhook job: %s", err)
 				}
@@ -877,7 +876,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -920,7 +919,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, &observation.TestContext, et.TestKey{})
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
@@ -998,7 +997,7 @@ func TestLoadChangesetSource(t *testing.T) {
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -1211,13 +1210,12 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 func TestDecorateChangesetBody(t *testing.T) {
 	ctx := context.Background()
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmocks.NewMockNamespaceStore()
 	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})
 
-	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
-	t.Cleanup(btypes.ResetInternalClient)
+	mockExternalURL(t, "https://sourcegraph.test")
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {

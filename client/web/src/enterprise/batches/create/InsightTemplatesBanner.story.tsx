@@ -1,10 +1,10 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { InsightTemplatesBanner } from './InsightTemplatesBanner'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/create/InsightTemplatesBanner',
@@ -13,13 +13,13 @@ const config: Meta = {
 
 export default config
 
-export const CreatingNewBatchChangeFromInsight: Story = () => (
+export const CreatingNewBatchChangeFromInsight: StoryFn = () => (
     <WebStory>{props => <InsightTemplatesBanner {...props} insightTitle="My Go Insight" type="create" />}</WebStory>
 )
 
 CreatingNewBatchChangeFromInsight.storyName = 'Creating new batch change from insight'
 
-export const EditingBatchSpecFromInsightTemplate: Story = () => (
+export const EditingBatchSpecFromInsightTemplate: StoryFn = () => (
     <WebStory>{props => <InsightTemplatesBanner {...props} insightTitle="My Go Insight" type="edit" />}</WebStory>
 )
 

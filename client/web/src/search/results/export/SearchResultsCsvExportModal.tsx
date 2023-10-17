@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Code, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'

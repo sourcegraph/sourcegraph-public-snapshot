@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -11,7 +11,7 @@ import { mockPermissionsMap, mockRoles } from '../mock'
 
 import { CreateRoleModal } from './CreateRoleModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/src/site-admin/rbac',
@@ -33,7 +33,7 @@ const mocks = new WildcardMockLink([
     },
 ])
 
-export const CreateRoleModalStory: Story = () => (
+export const CreateRoleModalStory: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>

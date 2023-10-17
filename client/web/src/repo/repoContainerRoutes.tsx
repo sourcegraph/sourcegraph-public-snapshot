@@ -4,7 +4,7 @@ import { canWriteRepoMetadata } from '../util/rbac'
 
 import { RepositoryChangelistPage } from './commit/RepositoryCommitPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
-import { RepoContainerRoute } from './RepoContainer'
+import type { RepoContainerRoute } from './RepoContainer'
 
 const RepositoryCommitPage = lazyComponent(() => import('./commit/RepositoryCommitPage'), 'RepositoryCommitPage')
 const RepositoryBranchesArea = lazyComponent(

@@ -1,9 +1,11 @@
 <script lang="ts">
     import classNames from 'classnames'
 
-    import { type BUTTON_GROUP_DIRECTION, styles } from './Button'
+    import type { BUTTON_GROUP_DIRECTION } from './Button'
 
-    export let direction: typeof BUTTON_GROUP_DIRECTION[number] = 'horizontal'
+    import styles from './Button.module.scss'
+
+    export let direction: (typeof BUTTON_GROUP_DIRECTION)[number] = 'horizontal'
 
     $: className = classNames(styles.btnGroup, direction === 'vertical' && styles.btnGroupVertical)
 </script>

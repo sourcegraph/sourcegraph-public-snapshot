@@ -1,11 +1,11 @@
-import { FC, useContext } from 'react'
+import { type FC, useContext } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
+import { CodeInsightsBackendContext, type CreationInsightInput } from '../../../core'
 import { useQueryParameters } from '../../../hooks'
 import { encodeDashboardIdQueryParam } from '../../../routers.constant'
 

@@ -82,7 +82,7 @@ mkShell {
     universal-ctags
 
     # Build our backend. Sometimes newer :^)
-    go_1_20
+    go_1_21
 
     # Lots of our tooling and go tests rely on git et al.
     comby
@@ -97,9 +97,9 @@ mkShell {
     shellcheck
 
     # Web tools.
-    nodejs-16_x
-    nodejs-16_x.pkgs.pnpm
-    nodejs-16_x.pkgs.typescript
+    nodejs-18_x
+    nodejs-18_x.pkgs.pnpm
+    nodejs-18_x.pkgs.typescript
 
     # Rust utils for syntax-highlighter service, currently not pinned to the same versions.
     cargo
@@ -107,13 +107,14 @@ mkShell {
     rustfmt
     libiconv
     clippy
-
+  ] ++ lib.optional hostPlatform.isLinux (with pkgs; [
+    # bazel via nix is broken on MacOS for us. Lets just rely on bazelisk from brew.
     # special sauce bazel stuff.
     bazelisk # needed to please sg, but not used directly by us
-    (if hostPlatform.isLinux then bazel-fhs else bazel-wrapper)
+    bazel-fhs
     bazel-watcher
     bazel-buildtools
-  ];
+  ]);
 
   # Startup postgres, redis & set nixos specific stuff
   shellHook = ''

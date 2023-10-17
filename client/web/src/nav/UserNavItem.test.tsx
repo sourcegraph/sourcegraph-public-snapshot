@@ -8,7 +8,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { UserNavItem, UserNavItemProps } from './UserNavItem'
+import { UserNavItem, type UserNavItemProps } from './UserNavItem'
 
 describe('UserNavItem', () => {
     beforeAll(() => {
@@ -57,7 +57,7 @@ describe('UserNavItem', () => {
                             showKeyboardShortcutsHelp={() => undefined}
                             authenticatedUser={USER}
                             isSourcegraphDotCom={true}
-                            isSourcegraphApp={false}
+                            isCodyApp={false}
                             showFeedbackModal={() => undefined}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
@@ -74,7 +74,7 @@ describe('UserNavItem', () => {
                     showKeyboardShortcutsHelp={() => undefined}
                     authenticatedUser={USER}
                     isSourcegraphDotCom={true}
-                    isSourcegraphApp={false}
+                    isCodyApp={false}
                     showFeedbackModal={() => undefined}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />

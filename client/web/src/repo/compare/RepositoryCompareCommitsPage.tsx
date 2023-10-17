@@ -1,7 +1,7 @@
 import * as React from 'react'
 
-import { NavigateFunction, Location } from 'react-router-dom'
-import { Observable, Subject, Subscription } from 'rxjs'
+import type { NavigateFunction, Location } from 'react-router-dom'
+import { type Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -10,11 +10,11 @@ import { CardHeader, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { GitCommitFields, RepositoryComparisonCommitsResult, Scalars } from '../../graphql-operations'
-import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
+import type { GitCommitFields, RepositoryComparisonCommitsResult, Scalars } from '../../graphql-operations'
+import { GitCommitNode, type GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
-import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 type RepositoryComparisonRepository = Extract<RepositoryComparisonCommitsResult['node'], { __typename?: 'Repository' }>
 

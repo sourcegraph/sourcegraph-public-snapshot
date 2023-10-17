@@ -1,12 +1,12 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
 import { useSearchParams } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { RepositoryFields } from '../../graphql-operations'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { RepositoryFields } from '../../graphql-operations'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'

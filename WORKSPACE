@@ -2,10 +2,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "bazel_skylib",
-    sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
+    sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
     ],
 )
 
@@ -15,23 +15,31 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "0da75299c5a52737b2ac39458398b3f256e41a1a6748e5457ceb3a6225269485",
-    strip_prefix = "bazel-lib-1.31.2",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.31.2/bazel-lib-v1.31.2.tar.gz",
+    sha256 = "cbf473d630ab67b36461d83b38fdc44e56f45b78d03c405e4958280211124d79",
+    strip_prefix = "bazel-lib-1.36.0",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.36.0/bazel-lib-v1.36.0.tar.gz",
+)
+
+# rules_js defines an older rules_nodejs, so we override it here
+http_archive(
+    name = "rules_nodejs",
+    sha256 = "5ad078287b5f3069735652e1fc933cb2e2189b15d2c9fc826c889dc466c32a07",
+    strip_prefix = "rules_nodejs-6.0.1",
+    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.1/rules_nodejs-v6.0.1.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "0b69e0967f8eb61de60801d6c8654843076bf7ef7512894a692a47f86e84a5c2",
-    strip_prefix = "rules_js-1.27.1",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.27.1/rules_js-v1.27.1.tar.gz",
+    sha256 = "7ab9776bcca823af361577a1a2ebb9a30d2eb5b94ecc964b8be360f443f714b2",
+    strip_prefix = "rules_js-1.32.6",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.32.6/rules_js-v1.32.6.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "ace5b609603d9b5b875d56c9c07182357c4ee495030f40dcefb10d443ba8c208",
-    strip_prefix = "rules_ts-1.4.0",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v1.4.0/rules_ts-v1.4.0.tar.gz",
+    sha256 = "8aabb2055629a7becae2e77ae828950d3581d7fc3602fe0276e6e039b65092cb",
+    strip_prefix = "rules_ts-2.0.0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.0.0/rules_ts-v2.0.0.tar.gz",
 )
 
 http_archive(
@@ -48,6 +56,13 @@ http_archive(
         "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
         "https://github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
     ],
+)
+
+http_archive(
+    name = "rules_proto_grpc",
+    sha256 = "9ba7299c5eb6ec45b6b9a0ceb9916d0ab96789ac8218269322f0124c0c0d24e2",
+    strip_prefix = "rules_proto_grpc-4.5.0",
+    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/releases/download/4.5.0/rules_proto_grpc-4.5.0.tar.gz"],
 )
 
 http_archive(
@@ -70,16 +85,16 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
+    sha256 = "814680e1ab535f799fd10e8739ddca901351ceb4d2d86dd8126c22d36e9fcbd9",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.29.0/rules_rust-v0.29.0.tar.gz"],
 )
 
 # Container rules
 http_archive(
     name = "rules_oci",
-    sha256 = "db57efd706f01eb3ce771468366baa1614b5b25f4cce99757e2b8d942155b8ec",
-    strip_prefix = "rules_oci-1.0.0",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.0.0/rules_oci-v1.0.0.tar.gz",
+    sha256 = "c71c25ed333a4909d2dd77e0b16c39e9912525a98c7fa85144282be8d04ef54c",
+    strip_prefix = "rules_oci-1.3.4",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.3.4/rules_oci-v1.3.4.tar.gz",
 )
 
 http_archive(
@@ -101,8 +116,20 @@ http_archive(
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 
+# Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
+# so we can produce container images locally on Mac laptops.
+#
+# @jhchabran See https://github.com/sourcegraph/sourcegraph/pull/55969, there is an ongoing issue with UBSAN
+# and treesitter, that breaks the compilation of syntax-highlighter. Since we only use
+# hermetic_cc for local development purposes, while it's a bit heavy handed for a --copt, it's acceptable
+# at this point. Passing --copt=-fno-sanitize=undefined sadly doesn't fix the problem, which is why
+# we have to patch to inject the flag.
 http_archive(
     name = "hermetic_cc_toolchain",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/hermetic_cc:disable_ubsan.patch",
+    ],
     sha256 = "57f03a6c29793e8add7bd64186fc8066d23b5ffd06fe9cc6b0b8c499914d3a65",
     urls = [
         "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
@@ -120,7 +147,7 @@ load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
 nodejs_register_toolchains(
     name = "nodejs",
-    node_version = "16.19.0",
+    node_version = "18.17.1",
 )
 
 # rules_js npm setup ============================
@@ -221,6 +248,21 @@ load("@webpack//:npm_repositories.bzl", webpack_npm_repositories = "npm_reposito
 webpack_npm_repositories()
 
 # Go toolchain setup
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+load("@rules_proto_grpc//doc:repositories.bzl", rules_proto_grpc_doc_repos = "doc_repos")
+
+rules_proto_grpc_doc_repos()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
 
 load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
 
@@ -231,12 +273,6 @@ rules_buf_toolchains(version = "v1.11.0")
 load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
 
 gazelle_buf_dependencies()
-
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-
-rules_proto_dependencies()
-
-rules_proto_toolchains()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
@@ -278,7 +314,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.20.5",
+    version = "1.20.10",
 )
 
 linter_dependencies()
@@ -290,17 +326,29 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
 # rust toolchain setup
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains", "rust_repository_set")
 
 rules_rust_dependencies()
+
+rust_version = "1.68.0"
 
 rust_register_toolchains(
     edition = "2021",
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
     # and docker-images/syntax-highlighter/rust-toolchain.toml
     versions = [
-        "1.68.0",
+        rust_version,
     ],
+)
+
+# Needed for locally cross-compiling rust binaries to linux/amd64 on a Mac laptop, when seeking to
+# create container images in local for testing purposes.
+rust_repository_set(
+    name = "macos_arm_64",
+    edition = "2021",
+    exec_triple = "aarch64-apple-darwin",
+    extra_target_triples = ["x86_64-unknown-linux-gnu"],
+    versions = [rust_version],
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
@@ -332,10 +380,6 @@ load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains"
 
 zig_toolchains()
 
-load("//dev/backcompat:defs.bzl", "back_compat_defs")
-
-back_compat_defs()
-
 # containers steup       ===============================
 load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
 
@@ -360,7 +404,7 @@ load("//dev:oci_deps.bzl", "oci_deps")
 
 oci_deps()
 
-load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
+load("//cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
 
 embbedings_assets_deps()
 

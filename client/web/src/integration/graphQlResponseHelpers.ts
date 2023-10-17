@@ -1,15 +1,15 @@
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { JsonDocument } from '@sourcegraph/shared/src/codeintel/scip'
-import { RepositoryType, TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
+import type { JsonDocument } from '@sourcegraph/shared/src/codeintel/scip'
+import { RepositoryType, type TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import {
-    BlobResult,
+    type BlobResult,
     ExternalServiceKind,
-    FileExternalLinksResult,
-    FileNamesResult,
-    FileTreeEntriesResult,
-    RepoChangesetsStatsResult,
-    ResolveRepoRevResult,
+    type FileExternalLinksResult,
+    type FileNamesResult,
+    type FileTreeEntriesResult,
+    type RepoChangesetsStatsResult,
+    type ResolveRepoRevResult,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({

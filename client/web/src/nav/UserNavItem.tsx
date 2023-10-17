@@ -1,4 +1,4 @@
-import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
+import { useCallback, useMemo, type ChangeEventHandler, type FC } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,7 +8,7 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -24,9 +24,10 @@ import {
     Select,
     Icon,
     ProductStatusBadge,
+    Text,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 
 import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
@@ -43,7 +44,7 @@ type MinimalAuthenticatedUser = Pick<
 export interface UserNavItemProps extends TelemetryProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
@@ -57,7 +58,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
         authenticatedUser,
         isSourcegraphDotCom,
-        isSourcegraphApp,
+        isCodyApp,
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
@@ -114,8 +115,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                         >
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
-                                    {isSourcegraphApp ? (
-                                        <Icon svgPath={mdiCogOutline} aria-hidden={true} />
+                                    {isCodyApp ? (
+                                        <>
+                                            <Icon svgPath={mdiCogOutline} aria-hidden={true} />
+                                            <Text className="mb-0 ml-1">Settings</Text>
+                                        </>
                                     ) : (
                                         <UserAvatar user={authenticatedUser} className={styles.avatar} />
                                     )}
@@ -129,7 +133,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             className={styles.dropdownMenu}
                             aria-label="User. Open menu"
                         >
-                            {!isSourcegraphApp ? (
+                            {!isCodyApp ? (
                                 <>
                                     <MenuHeader className={styles.dropdownHeader}>
                                         Signed in as <strong>@{authenticatedUser.username}</strong>
@@ -137,19 +141,16 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     <MenuDivider className={styles.dropdownDivider} />
                                 </>
                             ) : null}
-                            <MenuLink
-                                as={Link}
-                                to={isSourcegraphApp ? '/user/app-settings' : authenticatedUser.settingsURL!}
-                            >
-                                Settings
+                            <MenuLink as={Link} to={isCodyApp ? '/user/app-settings' : authenticatedUser.settingsURL!}>
+                                {isCodyApp ? 'Local Repositories' : 'Settings'}
                             </MenuLink>
-                            {!isSourcegraphApp && (
+                            {!isCodyApp && (
                                 <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                     Saved searches
                                 </MenuLink>
                             )}
-                            {isSourcegraphApp && <AppUserConnectDotComAccount />}
-                            {!isSourcegraphDotCom && !isSourcegraphApp && (
+                            {isCodyApp && <AppUserConnectDotComAccount />}
+                            {!isSourcegraphDotCom && !isCodyApp && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
                                 </MenuLink>
@@ -187,7 +188,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {!isSourcegraphApp && searchQueryInputFeature === 'experimental' && (
+                            {!isCodyApp && searchQueryInputFeature === 'experimental' && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">
@@ -217,7 +218,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     )}
                                 </>
                             )}
-                            {!isSourcegraphApp && (
+                            {!isCodyApp && (
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />
                                     {authenticatedUser.siteAdmin && (

@@ -2,10 +2,10 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { RedirectRoute } from '../../components/RedirectRoute'
 import { userAreaRoutes } from '../../user/area/routes'
-import { UserAreaRoute } from '../../user/area/UserArea'
-import { EditBatchSpecPageProps } from '../batches/batch-spec/edit/EditBatchSpecPage'
-import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
-import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
+import type { UserAreaRoute } from '../../user/area/UserArea'
+import type { EditBatchSpecPageProps } from '../batches/batch-spec/edit/EditBatchSpecPage'
+import type { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
+import type { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
@@ -35,14 +35,14 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     ...userAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
 
-    // Sourcegraph app specific route (cody/app settings page)
+    // Cody app specific route (cody/app settings page)
     // This route won't be available for any non-app deploy types.
     // See userAreaHeaderNavItems in client/web/src/enterprise/user/navitems.ts
     // for more context on user settings page.
     {
         path: 'app-settings/*',
         render: props => <AppSettingsArea telemetryService={props.telemetryService} />,
-        condition: context => context.isSourcegraphApp,
+        condition: context => context.isCodyApp,
     },
 
     // Redirect from previous /users/:username/subscriptions -> /users/:username/settings/subscriptions.

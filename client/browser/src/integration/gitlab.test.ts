@@ -1,12 +1,12 @@
 import assert from 'assert'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
+import { type BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
 
 describe('GitLab', () => {

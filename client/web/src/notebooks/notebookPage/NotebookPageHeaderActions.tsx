@@ -2,10 +2,10 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiStar, mdiStarOutline, mdiLock, mdiDotsHorizontal, mdiWeb, mdiDomain } from '@mdi/js'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Menu,
     MenuButton,
@@ -19,17 +19,17 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { NotebookFields } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { NotebookFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import {
+import type {
     deleteNotebook as _deleteNotebook,
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
 
 import { DeleteNotebookModal } from './DeleteNotebookModal'
-import { ShareOption } from './NotebookShareOptionsDropdown'
+import type { ShareOption } from './NotebookShareOptionsDropdown'
 import { ShareNotebookModal } from './ShareNotebookModal'
 
 import styles from './NotebookPageHeaderActions.module.scss'

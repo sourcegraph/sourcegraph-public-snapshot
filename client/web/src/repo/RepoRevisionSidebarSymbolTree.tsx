@@ -8,12 +8,12 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
+import { Link, flattenTree, type TreeNode } from '@sourcegraph/wildcard'
 
-import { SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
+import { type SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
+import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'

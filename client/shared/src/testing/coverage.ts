@@ -1,11 +1,11 @@
 import { writeFile, mkdir } from 'mz/fs'
 import pTimeout from 'p-timeout'
-import { Browser, WebWorker } from 'puppeteer'
+import type { Browser, WebWorker } from 'puppeteer'
 import * as uuid from 'uuid'
 
 import { logger } from '@sourcegraph/common'
 
-import { Driver } from './driver'
+import type { Driver } from './driver'
 
 declare global {
     interface FileCoverage {

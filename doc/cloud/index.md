@@ -70,7 +70,7 @@ All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-
 Sourcegraph Cloud provides all customer instances a `customer.sourcegraphcloud.com` domain. This domain is fully managed by Sourcegraph, including DNS and HTTPS.
 However, to provide better branding and a more seamless experience for your users, you may bring your own company domain, for example `sourcegraph.company.io`.
 
-In order to use your own domain, you need to perform an one-time setup by adding DNS records at your authoritative DNS. These DNS records are neccessary to ensure that your users can access your Sourcegraph instance via the custom domain, and also to ensure we can provide managed TLS certificates for your instance. See a [list of DNS records to be created by your organization](#list-of-dns-records-to-be-created-by-your-organization) below as an example. Additionally, your custom domain's [CAA records](https://blog.cloudflare.com/caa-of-the-wild/) should permit our upstream certificate authorities to issue certificates for your domain, follow the [instructions](#verify-caa-records) below to verify your CAA records.
+In order to use your own domain, you need to perform an one-time setup by adding DNS records at your authoritative DNS. These DNS records are neccessary to ensure that your users can access your Sourcegraph instance via the custom domain, and also to ensure we can provide managed TLS certificates for your instance. See a [list of DNS records to be created by your organization](#dns-records-to-be-created-by-your-organization) below as an example. Additionally, your custom domain's [CAA records](https://blog.cloudflare.com/caa-of-the-wild/) should permit our upstream certificate authorities to issue certificates for your domain, follow the [instructions](#verify-caa-records) below to verify your CAA records.
 
 Please reach out to your Sourcegraph account team to request a custom domain to be configured for your Sourcegraph Cloud instance.
 
@@ -101,46 +101,26 @@ If the output is empty, you don't have to do anything. If the output is not empt
 ### Multiple region availability
 
 Sourcegraph Cloud instances are deployed in one of Google Cloud Platform data center locations:
-- North America (USA)
-- Europe (UK or Germany)
-- Asia (Japan)
-- Australia
+
+- North America (USA) - `us-central1`
+- Europe (UK or Germany) - `europe-west2` or `europe-west3`
+- Asia (Japan) - `asia-northeast1`
+- Australia - `australia-southeast1`
+
+If you have specific requirements for the region, please reach out to your Sourcegraph account team.
 
 More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
 
 ### Private Code Host support
 
-Private Code Hosts refer to code hosts that are not publicly accessible, such as a GitHub or GitLab instance protected by a VPN.
+Public code hosts are supported by Sourcegraph Cloud out-of-the-box. They are either publically accessible or protected by IP-based firewall rules, Sourcegraph Cloud can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
 
-Sourcegraph Cloud connects to customer code hosts from Google Cloud Platform using NAT Gateway with 2 customer dedicated public NAT IPs. Customers can add the dedicated IPs for their Sourcegraph Cloud instance to an IP allowlist on their private code host.
+Private code hosts refer to code hosts that are not publicly accessible, such as self-hosted GitHub Enterprise servers or self-hosted GitLab instances deployed in a private network that are only accessible through VPN. Learn more about private code hosts support below:
 
-#### Code host on AWS without public access
-
-<aside class="experimental">
-<p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental
-</p>
-
-<p>Please contact Sourcegraph directly via <a href="https://about.sourcegraph.com/contact">prefered contact method</a> for more informations</p>
-</aside>
-
-As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourcegraph Cloud offers customers that have code hosts without public access deployed on AWS a [highly available site-to-site VPN solution](https://cloud.google.com/network-connectivity/docs/vpn/tutorials/create-ha-vpn-connections-google-cloud-aws) with [AWS Private Link](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html) inside AWS's network, so that access to a private code host never occurs over the public internet.
-
-Solution architecture:
-<img src="https://sourcegraphstatic.com/private-code-host-solution-vpn-aws-private-link.png" class="screenshot">
-
-Advantages of the site-to-site GCP to AWS VPN include:
-- encrypted connection between Sourcegraph Cloud and customer code host
-- multiple tunnels to provide high availability between Cloud
-instance and customer code host
-
-Advantages of AWS Private Link include:
-- connectivity to customer VPC is only available inside AWS network
--  ability to select AWS Principal (AWS Account or more granular) that can connect to customer code host
-- allows customer to control incoming connections
-- supports private DNS
-
-When a customer has private code hosts inside the AWS VPC and needs to expose it for Sourcegraph managed AWS VPC, customers can follow [AWS Documentation](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html)
+- [Code hosts on AWS without public access](./private_connectivity_aws.md)
+- [Code hosts on GCP without public access](./private_connectivity_gcp.md)
+- Code hosts on Azure is not supported yet, please reach out to your account manager if you are interested in this feature.
+- Code hosts on custom data center is not supported yet, please reach out to your account manager if you are interested in this feature.
 
 ### Health monitoring, support, and SLAs
 
@@ -192,7 +172,7 @@ To learn more about how the Sourcegraph team operates managed SMTP internally, r
 </p>
 </aside>
 
-Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/index.md) about how Cody can help you.
+Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/overview/index.md) about how Cody can help you.
 
 On Cloud, Cody can be enabled by contacting your Sourcegraph account team. Once Cody has been enabled by us, you can follow the instruction below to try it out.
 
@@ -207,7 +187,7 @@ Now that Cody is turned on on your Sourcegraph Cloud instance, any user can conf
 
 3. Reload VS Code, and open the Cody extension. Review and accept the terms.
 
-4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraphcloud.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraphcloud.com/users/<your-username>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
 
 <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
@@ -224,10 +204,6 @@ A few things you can ask Cody:
 - "What are popular go libraries for building CLIs?"
 - Open your workspace, and ask "Do we have a React date picker component in this repository?"
 - Right click on a function, and ask Cody to explain it
-- Try any of the Cody recipes!
-
-<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
-
 
 ## Requirements
 

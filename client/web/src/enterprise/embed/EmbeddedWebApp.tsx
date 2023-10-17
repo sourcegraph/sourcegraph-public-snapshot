@@ -1,13 +1,19 @@
-import { FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
+import { type FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-import { GraphQLClient } from '@sourcegraph/http-client'
+import type { GraphQLClient } from '@sourcegraph/http-client'
 import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    LoadingSpinner,
+    setLinkComponent,
+    type WildcardTheme,
+    WildcardThemeContext,
+} from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 

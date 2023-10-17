@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/run"
@@ -42,7 +42,7 @@ func NewGitHubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitHubCod
 	}
 	baseURL.Path = "/api/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create GitHub client")
 	}
@@ -229,7 +229,7 @@ func (g *GitHubCodeHost) getTotalPrivateRepos(ctx context.Context) (int, error) 
 				return 0, errors.Newf("failed to get user %s. Got status %d code", strings.Replace(g.def.Path, "@", "", 1), resp.StatusCode)
 			}
 
-			return u.GetOwnedPrivateRepos(), nil
+			return int(u.GetOwnedPrivateRepos()), nil
 		} else {
 			o, resp, err := g.c.Organizations.Get(ctx, g.def.Path)
 			if err != nil {
@@ -239,7 +239,7 @@ func (g *GitHubCodeHost) getTotalPrivateRepos(ctx context.Context) (int, error) 
 				return 0, errors.Newf("failed to get org %s. Got status %d code", g.def.Path, resp.StatusCode)
 			}
 
-			return o.GetOwnedPrivateRepos(), nil
+			return int(o.GetOwnedPrivateRepos()), nil
 		}
 	} else {
 		return g.def.RepositoryLimit, nil

@@ -1,16 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import {
-    BatchSpecExecutionFields,
+    type BatchSpecExecutionFields,
     BatchSpecState,
     BatchSpecWorkspaceResolutionState,
-    EditBatchChangeFields,
+    type EditBatchChangeFields,
 } from '../../../graphql-operations'
 
 import { useExecuteBatchSpec } from './edit/useExecuteBatchSpec'
-import { WorkspacePreviewFilters } from './edit/workspaces-preview/useWorkspaces'
-import { useWorkspacesPreview, UseWorkspacesPreviewResult } from './edit/workspaces-preview/useWorkspacesPreview'
-import { useBatchSpecCode, UseBatchSpecCodeResult } from './useBatchSpecCode'
+import type { WorkspacePreviewFilters } from './edit/workspaces-preview/useWorkspaces'
+import { useWorkspacesPreview, type UseWorkspacesPreviewResult } from './edit/workspaces-preview/useWorkspacesPreview'
+import { useBatchSpecCode, type UseBatchSpecCodeResult } from './useBatchSpecCode'
 
 export interface BatchSpecContextErrors {
     // Errors from trying to automatically apply updates to the batch spec code.

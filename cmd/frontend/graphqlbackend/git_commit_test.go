@@ -16,8 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -26,7 +25,7 @@ import (
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	client := gitserver.NewMockClient()
 
@@ -77,12 +76,12 @@ func TestGitCommitResolver(t *testing.T) {
 			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypeGitHub},
 		}
 
-		repos := database.NewMockRepoStore()
+		repos := dbmocks.NewMockRepoStore()
 		repos.GetFunc.SetDefaultReturn(repo, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		client := gitserver.NewMockClient()
-		client.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
 			return commit, nil
 		})
 
@@ -187,7 +186,7 @@ func TestGitCommitResolver(t *testing.T) {
 
 		repoResolver := NewRepositoryResolver(db, client, repo)
 
-		repos := database.NewMockRepoStore()
+		repos := dbmocks.NewMockRepoStore()
 		repos.GetFunc.SetDefaultReturn(repo, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
@@ -273,13 +272,13 @@ func TestGitCommitResolver(t *testing.T) {
 }
 
 func TestGitCommitFileNames(t *testing.T) {
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(nil, nil)
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
 
@@ -321,10 +320,10 @@ func TestGitCommitFileNames(t *testing.T) {
 }
 
 func TestGitCommitAncestors(t *testing.T) {
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -364,7 +363,6 @@ func TestGitCommitAncestors(t *testing.T) {
 
 	client.CommitsFunc.SetDefaultHook(func(
 		ctx context.Context,
-		authz authz.SubRepoPermissionChecker,
 		repo api.RepoName,
 		opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 
@@ -654,9 +652,9 @@ func TestGitCommitAncestors(t *testing.T) {
 }
 
 func TestGitCommitPerforceChangelist(t *testing.T) {
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {

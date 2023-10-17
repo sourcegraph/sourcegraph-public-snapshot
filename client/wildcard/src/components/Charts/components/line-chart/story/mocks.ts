@@ -1,4 +1,4 @@
-import { Series } from '../../../types'
+import type { Series } from '../../../types'
 
 export interface StandardDatum {
     value: number

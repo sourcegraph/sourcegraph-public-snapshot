@@ -1,10 +1,10 @@
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter } from '@sourcegraph/shared/src/search/query/token'
 
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
-import { InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
-import { CaptureGroupFormFields } from '../types'
+import { InsightType, type MinimalCaptureGroupInsightData } from '../../../../../core'
+import type { CaptureGroupFormFields } from '../types'
 
 export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): MinimalCaptureGroupInsightData {
     return {

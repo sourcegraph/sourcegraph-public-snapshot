@@ -1,4 +1,4 @@
-import { SymbolKind } from '../../graphql-operations'
+import type { SymbolKind } from '../../graphql-operations'
 
 /**
  * PersistableQueryResult must be safe to cache with JSON.stringify().

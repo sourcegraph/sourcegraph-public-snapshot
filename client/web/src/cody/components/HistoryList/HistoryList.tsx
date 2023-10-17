@@ -4,10 +4,10 @@ import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import type { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import { Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { CodyChatStore, safeTimestampToDate } from '../../useCodyChat'
+import { type CodyChatStore, safeTimestampToDate } from '../../useCodyChat'
 
 import styles from './HistoryList.module.scss'
 
@@ -110,14 +110,16 @@ const HistoryListItem: React.FunctionComponent<{
                 <Text className="mb-1 text-muted" size="small">
                     <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
                 </Text>
-                <Tooltip content="Delete">
-                    <Icon
-                        aria-label="Delete"
-                        svgPath={mdiDelete}
-                        onClick={deleteItem}
-                        className={styles.deleteButton}
-                    />
-                </Tooltip>
+                {!!interactions.length && (
+                    <Tooltip content="Delete">
+                        <Icon
+                            aria-label="Delete"
+                            svgPath={mdiDelete}
+                            onClick={deleteItem}
+                            className={styles.deleteButton}
+                        />
+                    </Tooltip>
+                )}
             </div>
             <Text className="mb-0 truncate text-body">
                 {text.slice(0, truncateMessageLength)}

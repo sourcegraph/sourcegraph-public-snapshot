@@ -3,9 +3,9 @@ import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../../graphql-operations'
+import type { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../../graphql-operations'
 import { EXECUTE_BATCH_SPEC } from '../../create/backend'
 
 interface UseExecuteBatchSpecResult {

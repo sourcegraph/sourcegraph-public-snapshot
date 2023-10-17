@@ -5,10 +5,10 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
-import { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Badge, Icon, Link, Menu, MenuButton, MenuItem, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
 import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'
 import { SearchContextStarButton } from './SearchContextStarButton'

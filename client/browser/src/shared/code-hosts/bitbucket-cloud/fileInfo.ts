@@ -1,4 +1,4 @@
-import { BlobInfo, DiffInfo } from '../shared/codeHost'
+import type { BlobInfo, DiffInfo } from '../shared/codeHost'
 
 import { getRawRepoName } from './context'
 import {

@@ -14,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewOTLPExporter exports spans to an OpenTelemetry collector via the OpenTelemetry
-// protocol (OTLP) based environment configuration.
+// NewOTLPTraceExporter exports trace spans to an OpenTelemetry collector via the
+// OpenTelemetry protocol (OTLP) based on environment configuration.
 //
 // By default, prefer to use internal/tracer.Init to set up a global OpenTelemetry
 // tracer and use that instead.
-func NewOTLPExporter(ctx context.Context, logger log.Logger) (oteltracesdk.SpanExporter, error) {
+func NewOTLPTraceExporter(ctx context.Context, logger log.Logger) (oteltracesdk.SpanExporter, error) {
 	endpoint := otlpenv.GetEndpoint()
 	if endpoint == "" {
 		// OTEL_EXPORTER_OTLP_ENDPOINT has been explicitly set to ""

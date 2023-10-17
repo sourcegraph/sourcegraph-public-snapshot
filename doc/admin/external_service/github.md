@@ -57,7 +57,7 @@ To create a GitHub App and connect it to Sourcegraph:
 
 9. (Optional) If you want to sync repositories from other organization or user namespaces and your GitHub App is set to public visibility, you can create additional installations with **Add installation**.
 
-> NOTE: If you are using [Batch Changes](../../batch_changes/index.md), you can also [configure commit signing](../config/batch_changes.md#commit-signing-for-github) using a GitHub App <span class="badge badge-beta">Beta</span>.
+> NOTE: If you are using [Batch Changes](../../batch_changes/index.md), you can create a GitHub App to perform [commit signing](../config/batch_changes.md#commit-signing-for-github) <span class="badge badge-beta">Beta</span>.
 
 ### Multiple installations
 
@@ -119,6 +119,25 @@ Installation access tokens are short-lived, non-refreshable tokens that give Sou
 #### User access tokens
 
 These are OAuth tokens that Sourcegraph receives when a user signs into Sourcegraph using the configured GitHub App. Sourcegraph uses these tokens to link the user's Sourcegraph account to their GitHub account, as well as determine which repositories a user should be able to access. These tokens are refreshable, and by default they expire after 8 hours. Sourcegraph refreshes the user tokens as required.
+
+### Custom Certificates
+
+<span class="badge badge-note">Sourcegraph 5.1.5+</span>
+
+If you are using a self-signed certificate for your GitHub Enterprise instance, configure `tls.external` under `experimentalFeatures`
+in the **Site configuration** with your certificate(s).
+
+```json
+{
+  "experimentalFeatures": {
+    "tls.external": {
+      "certificates": [
+        "-----BEGIN CERTIFICATE-----\n..."
+      ]
+    }
+  }
+}
+```
 
 ## Using an access token
 
@@ -255,6 +274,30 @@ Repo-centric permission syncing is done by calling the [list repository collabor
 <span class="virtual-br"></span>
 
 > NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
+
+### Internal repositories
+
+GitHub Enterprise has internal repositories in addition to the usual public and private repositories. Depending on how your organization structure is configured, you may want to make these internal repositories available to everyone on your Sourcegraph instance without relying on permission syncs. To mark all internal repositories as public, add the following field to the `authorization` field:
+
+```json
+{
+  // ...
+  "authorization": {
+    "markInternalReposAsPublic": true
+  }
+}
+```
+
+If you would like internal repositories to remain private, but you're experiencing issues where user permission syncs aren't granting access to internal repositories, you can add the following field instead:
+
+```json
+{
+  // ...
+  "authorization": {
+    "syncInternalRepoPermissions": true
+  }
+}
+```
 
 ### Trigger permissions sync from GitHub webhooks
 

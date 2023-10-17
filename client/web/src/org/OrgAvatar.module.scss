@@ -16,6 +16,8 @@
         font-size: 0.5rem;
         height: 1.15rem;
         width: 1.15rem;
+        min-height: 1.15rem;
+        min-width: 1.15rem;
     }
 
     &--md {
@@ -23,6 +25,8 @@
         font-size: 0.625rem;
         height: 1.5rem;
         width: 1.5rem;
+        min-height: 1.5rem;
+        min-width: 1.5rem;
     }
 
     &--lg {
@@ -30,5 +34,7 @@
         font-size: 1.25rem;
         height: 3rem;
         width: 3rem;
+        min-height: 3rem;
+        min-width: 3rem;
     }
 }

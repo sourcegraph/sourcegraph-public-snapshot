@@ -1,10 +1,10 @@
-import { render, act, RenderResult } from '@testing-library/react'
+import { render, act, type RenderResult } from '@testing-library/react'
 import * as H from 'history'
 import { of, NEVER } from 'rxjs'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 
-import { FlatExtensionHostAPI } from '../api/contract'
+import type { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { extensionsController } from '../testing/searchTestHelpers'

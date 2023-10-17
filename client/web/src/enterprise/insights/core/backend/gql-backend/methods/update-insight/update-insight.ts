@@ -1,16 +1,16 @@
-import { ApolloClient } from '@apollo/client'
-import { ApolloCache } from '@apollo/client/cache'
-import { MutationUpdaterFunction } from '@apollo/client/core/types'
-import { from, Observable } from 'rxjs'
+import type { ApolloClient } from '@apollo/client'
+import type { ApolloCache } from '@apollo/client/cache'
+import type { MutationUpdaterFunction } from '@apollo/client/core/types'
+import { from, type Observable } from 'rxjs'
 
-import {
+import type {
     UpdateLangStatsInsightResult,
     UpdateLangStatsInsightVariables,
     UpdateLineChartSearchInsightResult,
     UpdateLineChartSearchInsightVariables,
 } from '../../../../../../../graphql-operations'
 import { InsightType } from '../../../../types'
-import { InsightUpdateInput } from '../../../code-insights-backend-types'
+import type { InsightUpdateInput } from '../../../code-insights-backend-types'
 import { UPDATE_LANG_STATS_INSIGHT_GQL } from '../../gql/UpdateLangStatsInsight'
 import { UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL } from '../../gql/UpdateLineChartSearchInsight'
 

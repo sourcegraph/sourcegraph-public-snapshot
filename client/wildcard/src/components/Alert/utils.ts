@@ -1,7 +1,7 @@
 import className from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { ALERT_VARIANTS } from './constants'
+import type { ALERT_VARIANTS } from './constants'
 
 import styles from './Alert.module.scss'
 

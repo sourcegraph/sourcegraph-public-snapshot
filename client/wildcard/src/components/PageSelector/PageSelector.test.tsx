@@ -1,7 +1,7 @@
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
+import { render, type RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import sinon from 'sinon'
 
-import { PageSelector, PageSelectorProps } from './PageSelector'
+import { PageSelector, type PageSelectorProps } from './PageSelector'
 
 describe('PageSelector', () => {
     let queries: RenderResult

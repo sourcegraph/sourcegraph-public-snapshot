@@ -1,13 +1,13 @@
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { merge } from 'lodash'
-import { Page } from 'puppeteer'
+import type { Page } from 'puppeteer'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { type Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
 const CODE_HIGHLIGHTING_QUERIES: Partial<keyof (WebGraphQlOperations & SharedGraphQlOperations)>[] = [
     'highlightCode',

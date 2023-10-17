@@ -9,7 +9,10 @@ import (
 )
 
 func GitServer() *monitoring.Dashboard {
-	const containerName = "gitserver"
+	const (
+		containerName   = "gitserver"
+		grpcServiceName = "gitserver.v1.GitserverService"
+	)
 
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
 		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
@@ -20,7 +23,7 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+	grpcMethodVariable := shared.GRPCMethodVariable("gitserver", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "gitserver",
@@ -44,18 +47,6 @@ func GitServer() *monitoring.Dashboard {
 				Title: "General",
 				Rows: []monitoring.Row{
 					{
-						{
-							Name:        "memory_working_set",
-							Description: "memory working set",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`})",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.Bytes).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
-						},
 						{
 							Name:        "go_routines",
 							Description: "go routines",
@@ -546,17 +537,19 @@ func GitServer() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName: "gitserver",
-					MetricNamespace:  "gitserver",
+					HumanServiceName:   "gitserver",
+					RawGRPCServiceName: grpcServiceName,
 
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${shard:regex}`,
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${shard:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: "gitserver.v1.GitserverService",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),

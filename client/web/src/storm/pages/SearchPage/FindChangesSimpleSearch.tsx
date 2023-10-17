@@ -1,10 +1,10 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
 import { mdiHelpCircleOutline } from '@mdi/js'
 
 import { Icon, Select, Tooltip, Input, Button, Form, Label } from '@sourcegraph/wildcard'
 
-import { SimpleSearchProps } from './CodeSearchSimpleSearch'
+import type { SimpleSearchProps } from './CodeSearchSimpleSearch'
 
 interface QueryOptions {
     repoPattern?: string

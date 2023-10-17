@@ -1,9 +1,9 @@
 import { noop } from 'lodash'
-import { Observable, Subscription } from 'rxjs'
+import { type Observable, Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { logEvent } from '../backend/userEvents'

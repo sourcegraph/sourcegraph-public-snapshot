@@ -3,26 +3,26 @@ import {
     forwardRef,
     useContext,
     useState,
-    HTMLAttributes,
-    RefObject,
+    type HTMLAttributes,
+    type RefObject,
     useMemo,
     useRef,
     useEffect,
     useLayoutEffect,
-    InputHTMLAttributes,
+    type InputHTMLAttributes,
 } from 'react'
 
 import {
     Combobox as ReachCombobox,
-    ComboboxProps as ReachComboboxProps,
+    type ComboboxProps as ReachComboboxProps,
     ComboboxInput as ReachComboboxInput,
-    ComboboxInputProps as ReachComboboxInputProps,
+    type ComboboxInputProps as ReachComboboxInputProps,
     ComboboxPopover as ReachComboboxPopover,
-    ComboboxContextValue as ReachComboboxContextValue,
+    type ComboboxContextValue as ReachComboboxContextValue,
     ComboboxList as ReachComboboxList,
-    ComboboxListProps as ReachComboboxListProps,
+    type ComboboxListProps as ReachComboboxListProps,
     ComboboxOption as ReachComboboxOption,
-    ComboboxOptionProps as ReachComboboxOptionProps,
+    type ComboboxOptionProps as ReachComboboxOptionProps,
     ComboboxOptionText as ReachComboboxOptionText,
     useComboboxOptionContext,
     useComboboxContext,
@@ -31,10 +31,10 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useMeasure } from '../../hooks'
-import { ForwardReferenceComponent } from '../../types'
-import { Input, InputProps } from '../Form'
-import { PopoverContent, Position } from '../Popover'
-import { Heading, HeadingElement } from '../Typography'
+import type { ForwardReferenceComponent } from '../../types'
+import { Input, type InputProps } from '../Form'
+import { PopoverContent, type PopoverContentProps, Position } from '../Popover'
+import { Heading, type HeadingElement } from '../Typography'
 
 import styles from './Combobox.module.scss'
 
@@ -98,7 +98,7 @@ export const ComboboxInput = forwardRef(function ComboboxInput(props, ref) {
     return <ReachComboboxInput ref={mergedRef} as={Component} {...attributes} />
 }) as ForwardReferenceComponent<'input', ComboboxInputProps>
 
-interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {
+interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement>, PopoverContentProps {
     target?: HTMLElement | null
     open?: boolean
 }

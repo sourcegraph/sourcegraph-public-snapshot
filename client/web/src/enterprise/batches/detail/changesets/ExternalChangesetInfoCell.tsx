@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Link, H3, Badge, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { type ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 import { BranchMerge } from '../../Branch'
 
 import { ChangesetLabel } from './ChangesetLabel'

@@ -18,15 +18,15 @@ import {
     useCheckboxes,
     useForm,
     Form,
-    SubmissionResult,
+    type SubmissionResult,
     Alert,
     useStopwatch,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { RoleFields } from '../../../graphql-operations'
+import type { RoleFields } from '../../../graphql-operations'
 import { prettifySystemRole } from '../../../util/settings'
-import { PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
+import { type PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
 
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 import { PermissionsList } from './Permissions'

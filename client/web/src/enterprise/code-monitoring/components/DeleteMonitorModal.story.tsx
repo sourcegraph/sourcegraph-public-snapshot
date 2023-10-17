@@ -1,9 +1,9 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../components/WebStory'
-import { CodeMonitorFields } from '../../../graphql-operations'
+import type { CodeMonitorFields } from '../../../graphql-operations'
 import { mockCodeMonitor } from '../testing/util'
 
 import { DeleteMonitorModal } from './DeleteMonitorModal'
@@ -17,7 +17,7 @@ const config: Meta = {
 
 export default config
 
-export const DeleteMonitorModalStory: Story = () => (
+export const DeleteMonitorModalStory: StoryFn = () => (
     <WebStory>
         {props => (
             <DeleteMonitorModal

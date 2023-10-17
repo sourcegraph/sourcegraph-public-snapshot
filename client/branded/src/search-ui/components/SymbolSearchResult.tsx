@@ -1,16 +1,16 @@
-import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
+import React, { useCallback, type KeyboardEvent, type MouseEvent } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
-import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { type HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
+import { getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
 import { CodeExcerpt } from './CodeExcerpt'

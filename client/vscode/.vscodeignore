@@ -13,7 +13,6 @@
 **/*.ts
 **/tsconfig*.json
 dist/*.vsix
-gulpfile.js
 node_modules/**
 out/**
 prettier.config.json
@@ -22,6 +21,5 @@ src/**
 test/**
 tests/**
 tsconfig.json
-webpack.config.js
 webviews/**
 pnpm-lock.yaml

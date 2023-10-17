@@ -23,12 +23,12 @@ import {
     Position,
     Button,
     Tooltip,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     Input,
     Select,
 } from '@sourcegraph/wildcard'
 
-import { DateRangeSelect, DateRangeSelectProps } from './DateRangeSelect'
+import { DateRangeSelect, type DateRangeSelectProps } from './DateRangeSelect'
 
 import styles from './Table.module.scss'
 

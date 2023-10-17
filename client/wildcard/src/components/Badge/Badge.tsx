@@ -3,11 +3,11 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { useWildcardTheme } from '../../hooks/useWildcardTheme'
-import { ForwardReferenceComponent } from '../../types'
+import type { ForwardReferenceComponent } from '../../types'
 import { Link } from '../Link'
 import { Tooltip } from '../Tooltip'
 
-import { BADGE_VARIANTS } from './constants'
+import type { BADGE_VARIANTS } from './constants'
 
 import styles from './Badge.module.scss'
 

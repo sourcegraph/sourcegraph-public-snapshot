@@ -1,5 +1,9 @@
-//go:generate go build -o /tmp/monitoring-generator
-//go:generate /tmp/monitoring-generator
+// The monitoring generator is now called by Bazel targets instead of go generate
+//
+// To run monitoring generator run:
+// - bazel build //monitoring:generate_config # see bazel-bin/monitoring/outputs
+// - bazel build //monitoring:generate_config_zip # see bazel-bin/monitoring/monitoring.zip
+// - bazel build //monitoring:generate_grafana_config_tar # see bazel-bin/monitoring/monitoring.tar
 package main
 
 import (

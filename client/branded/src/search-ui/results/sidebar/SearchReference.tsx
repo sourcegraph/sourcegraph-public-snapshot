@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo, useState } from 'react'
+import React, { type ReactElement, useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronLeft, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,15 +7,15 @@ import { escapeRegExp } from 'lodash'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchQueryState,
+    type SearchQueryState,
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
-    QueryExample,
+    type QueryExample,
     EditorHint,
 } from '@sourcegraph/shared/src/search'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     useLocalStorage,

@@ -1,10 +1,10 @@
-import { concat, from, Observable, of } from 'rxjs'
+import { concat, from, type Observable, of } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 
 import { getPlatformName } from '../../shared/util/context'
 
 import { fromBrowserEvent } from './fromBrowserEvent'
-import { LocalStorageItems, SyncStorageItems, ManagedStorageItems } from './types'
+import type { LocalStorageItems, SyncStorageItems, ManagedStorageItems } from './types'
 
 interface ExtensionStorageItems {
     local: LocalStorageItems

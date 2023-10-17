@@ -1,5 +1,5 @@
 import { uniqBy } from 'lodash'
-import { RouteObject } from 'react-router-dom'
+import type { RouteObject } from 'react-router-dom'
 
 import { routes as legacyRoutes } from '../routes'
 

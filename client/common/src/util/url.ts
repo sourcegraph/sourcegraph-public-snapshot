@@ -1,4 +1,4 @@
-import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
+import type { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 
 import { tryCatch } from '../errors'
 

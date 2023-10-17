@@ -1,15 +1,15 @@
 import {
     modify as jsoncModify,
     applyEdits,
-    JSONPath,
-    FormattingOptions,
+    type JSONPath,
+    type FormattingOptions,
     parse,
-    ParseError,
+    type ParseError,
     format as jsoncFormat,
     printParseErrorCode,
 } from 'jsonc-parser'
 
-import { asError, createAggregateError, ErrorLike } from '../errors'
+import { asError, createAggregateError, type ErrorLike } from '../errors'
 
 /**
  * Parses the JSON input using an error-tolerant "JSONC" parser. If an error occurs, it is returned as a value

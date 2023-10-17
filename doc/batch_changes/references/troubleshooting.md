@@ -181,3 +181,16 @@ If you're experiencing `src-cli` hanging at the "Determining Workspace Type" ste
 ### Do you have the right credentials?
 
 When publishing changesets fails, make sure that you have [configured credentials](../how-tos/configuring_credentials.md) with all of the required scopes and from an account with write access to the changeset's repository on the code host.
+
+### Do you have email privacy enabled on GitHub?
+
+In case you encounter an error informing that your push was rejected due to the presence of an email address that isn't
+permitted to be public, there are a couple of possible solutions.
+
+You can choose either to:
+
+1. Permit your email address to be public.
+2. Disable the feature **Block command line pushes that expose my email**.
+
+Instructions for both of these potential solutions can be found in
+the [GitHub Email Settings](https://github.com/settings/emails).

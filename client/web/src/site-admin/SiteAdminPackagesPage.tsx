@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     ErrorAlert,
@@ -32,14 +32,14 @@ import { externalRepoIcon } from '../components/externalServices/externalService
 import {
     buildFilterArgs,
     FilterControl,
-    FilteredConnectionFilter,
-    FilteredConnectionFilterValue,
+    type FilteredConnectionFilter,
+    type FilteredConnectionFilterValue,
 } from '../components/FilteredConnection'
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../components/FilteredConnection/ui'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import { PageTitle } from '../components/PageTitle'
-import {
+import type {
     PackagesResult,
     PackagesVariables,
     SiteAdminPackageFields,

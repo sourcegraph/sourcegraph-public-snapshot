@@ -1,8 +1,8 @@
 import { subDays } from 'date-fns'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 
-import { AuthenticatedUser } from '../../auth'
-import { Maybe, Scalars } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { Maybe, Scalars } from '../../graphql-operations'
 
 interface SearchContextFields {
     __typename: 'SearchContext'

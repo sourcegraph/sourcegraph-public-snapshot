@@ -15,12 +15,6 @@ service RepoUpdaterService {
   // future. It does not wait for the update.
   rpc EnqueueRepoUpdate(EnqueueRepoUpdateRequest) returns (EnqueueRepoUpdateResponse);
   rpc EnqueueChangesetSync(EnqueueChangesetSyncRequest) returns (EnqueueChangesetSyncResponse);
-  // SyncExternalService requests the given external service to be synced.
-  rpc SyncExternalService(SyncExternalServiceRequest) returns (SyncExternalServiceResponse);
-  // ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
-  rpc ExternalServiceNamespaces(ExternalServiceNamespacesRequest) returns (ExternalServiceNamespacesResponse);
-  // ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
-  rpc ExternalServiceRepositories(ExternalServiceRepositoriesRequest) returns (ExternalServiceRepositoriesResponse);
 }
 
 message RepoUpdateSchedulerInfoRequest {
@@ -48,12 +42,11 @@ message RepoQueueState {
 }
 
 message RepoLookupRequest {
+  reserved 2;
+  reserved "update";
+
   // Repo is the repository name to look up.
   string repo = 1;
-
-  // Update will enqueue a high priority git update for this repo if it
-  // exists and this field is true.
-  bool update = 2;
 }
 
 message RepoLookupResponse {
@@ -154,50 +147,3 @@ message EnqueueChangesetSyncRequest {
 }
 
 message EnqueueChangesetSyncResponse {}
-
-message FetchPermsOptions {
-  bool invalidate_caches = 1;
-}
-
-message SyncExternalServiceRequest {
-  int64 external_service_id = 1;
-}
-
-message SyncExternalServiceResponse {}
-
-message ExternalServiceNamespacesRequest {
-  optional int64 external_service_id = 1;
-  string kind = 2;
-  string config = 3;
-}
-
-message ExternalServiceNamespacesResponse {
-  repeated ExternalServiceNamespace namespaces = 1;
-}
-
-// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
-message ExternalServiceNamespace {
-  int64 id = 1;
-  string name = 2;
-  string external_id = 3;
-}
-
-message ExternalServiceRepositoriesRequest {
-  optional int64 external_service_id = 1;
-  string kind = 2;
-  string query = 3;
-  string config = 4;
-  int32 first = 5;
-  repeated string exclude_repos = 6;
-}
-
-message ExternalServiceRepositoriesResponse {
-  repeated ExternalServiceRepository repos = 1;
-}
-
-// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
-message ExternalServiceRepository {
-  int32 id = 1;
-  string name = 2;
-  string external_id = 3;
-}

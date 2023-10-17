@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Icon, Label } from '@sourcegraph/wildcard'
 
-import { ProductLicenseFields } from '../../../graphql-operations'
+import type { ProductLicenseFields } from '../../../graphql-operations'
 import { isProductLicenseExpired } from '../../../productSubscription/helpers'
 
 const getIcon = (isExpired: boolean, isRevoked: boolean): string => {

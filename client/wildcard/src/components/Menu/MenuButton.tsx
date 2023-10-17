@@ -1,11 +1,11 @@
-import { ReactNode, useMemo, forwardRef } from 'react'
+import { type ReactNode, useMemo, forwardRef } from 'react'
 
 import { MenuButton as ReachMenuButton } from '@reach/menu-button'
 import { uniqueId } from 'lodash'
 
-import { ForwardReferenceComponent } from '../../types'
-import { Button, ButtonProps } from '../Button'
-import { PopoverTrigger, PopoverTriggerProps } from '../Popover'
+import type { ForwardReferenceComponent } from '../../types'
+import { Button, type ButtonProps } from '../Button'
+import { PopoverTrigger, type PopoverTriggerProps } from '../Popover'
 
 export interface MenuButtonProps extends Omit<ButtonProps, 'children'>, PopoverTriggerProps {}
 

@@ -38,7 +38,6 @@ import (
 func ProvidersFromConfig(
 	ctx context.Context,
 	cfg conftypes.SiteConfigQuerier,
-	store database.ExternalServiceStore,
 	db database.DB,
 ) (
 	allowAccessByDefault bool,
@@ -59,13 +58,13 @@ func ProvidersFromConfig(
 
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
-			extsvc.KindAzureDevOps,
-			extsvc.KindBitbucketCloud,
-			extsvc.KindBitbucketServer,
-			extsvc.KindGerrit,
-			extsvc.KindGitHub,
-			extsvc.KindGitLab,
-			extsvc.KindPerforce,
+			extsvc.VariantAzureDevOps.AsKind(),
+			extsvc.VariantBitbucketCloud.AsKind(),
+			extsvc.VariantBitbucketServer.AsKind(),
+			extsvc.VariantGerrit.AsKind(),
+			extsvc.VariantGitHub.AsKind(),
+			extsvc.VariantGitLab.AsKind(),
+			extsvc.VariantPerforce.AsKind(),
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
@@ -82,7 +81,7 @@ func ProvidersFromConfig(
 		azuredevopsConns     []*types.AzureDevOpsConnection
 	)
 	for {
-		svcs, err := store.List(ctx, opt)
+		svcs, err := db.ExternalServices().List(ctx, opt)
 		if err != nil {
 			seriousProblems = append(seriousProblems, fmt.Sprintf("Could not list external services: %v", err))
 			break
@@ -164,7 +163,7 @@ func ProvidersFromConfig(
 	initResult := github.NewAuthzProviders(ctx, db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 	initResult.Append(gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
 	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
-	initResult.Append(perforce.NewAuthzProviders(db, perforceConns))
+	initResult.Append(perforce.NewAuthzProviders(perforceConns))
 	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
@@ -193,9 +192,9 @@ func PermissionSyncingDisabled() bool {
 }
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(
-	[]func(*types.GitHubConnection) error{github.ValidateAuthz},
-	[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
-	[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
-	[]func(*schema.PerforceConnection) error{perforce.ValidateAuthz},
-	[]func(*schema.AzureDevOpsConnection) error{func(_ *schema.AzureDevOpsConnection) error { return nil }},
+	[]database.GitHubValidatorFunc{github.ValidateAuthz},
+	[]database.GitLabValidatorFunc{gitlab.ValidateAuthz},
+	[]database.BitbucketServerValidatorFunc{bitbucketserver.ValidateAuthz},
+	[]database.PerforceValidatorFunc{perforce.ValidateAuthz},
+	[]database.AzureDevOpsValidatorFunc{func(_ *schema.AzureDevOpsConnection) error { return nil }},
 ) // TODO: @varsanojidan switch this with actual authz once its implemented.

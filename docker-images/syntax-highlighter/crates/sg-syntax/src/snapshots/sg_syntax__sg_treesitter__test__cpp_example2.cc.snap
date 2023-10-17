@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 362
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   // Stripped down from llvm/ADT/SmallSet.h (the code doesn't make sense)
@@ -340,5 +339,5 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
   #endif // BAD_SMALLSET_H
 //^^^^^^ Keyword
-//      ^^^^^^^^^^^^^^^^^^ Comment
+//       ^^^^^^^^^^^^^^^^^ Comment
 

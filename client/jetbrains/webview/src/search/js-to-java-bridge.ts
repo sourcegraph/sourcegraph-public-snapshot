@@ -2,16 +2,16 @@ import { encode } from 'js-base64'
 
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import {
-    ContentMatch,
+    type ContentMatch,
     getRepoMatchUrl,
-    PathMatch,
-    SearchMatch,
-    SearchType,
-    SymbolMatch,
+    type PathMatch,
+    type SearchMatch,
+    type SearchType,
+    type SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
-import { PluginConfig, Search, Theme } from './types'
+import type { PluginConfig, Search, Theme } from './types'
 
 export interface PreviewContent {
     timeAsISOString: string

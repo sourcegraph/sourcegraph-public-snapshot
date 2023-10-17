@@ -2,7 +2,7 @@ import { once } from 'lodash'
 import gql from 'tagged-template-noop'
 
 import { searchContext } from '../../searchContext'
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 import { cache } from '../util'
 
 import { graphqlIdToRepoId, queryGraphQL } from './graphql'
@@ -253,15 +253,16 @@ export class API {
         if (!payload) {
             return
         }
-
-        for (const symbol of payload.symbols) {
-            if (isInRange(position, symbol.def)) {
-                return symbol
-            }
-
-            for (const reference of symbol.refs ?? []) {
-                if (isInRange(position, reference)) {
+        if (payload.symbols) {
+            for (const symbol of payload.symbols) {
+                if (isInRange(position, symbol.def)) {
                     return symbol
+                }
+
+                for (const reference of symbol.refs ?? []) {
+                    if (isInRange(position, reference)) {
+                        return symbol
+                    }
                 }
             }
         }
@@ -472,7 +473,7 @@ export interface RepoCommitPath {
 }
 
 type LocalCodeIntelPayload = {
-    symbols: LocalSymbol[]
+    symbols: LocalSymbol[] | null
 } | null
 
 interface LocalSymbol {

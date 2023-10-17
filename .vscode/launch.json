@@ -30,7 +30,6 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
-        "--disable-extension=kandalatj.sourcegraph-preview",
         "--disable-extension=sourcegraph.sourcegraph"
       ],
       "stopOnEntry": false,
@@ -44,7 +43,6 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
-        "--disable-extension=kandalatj.sourcegraph-preview",
         "--disable-extension=sourcegraph.sourcegraph",
         "--extensionDevelopmentKind=web",
         "--disable-web-security"
@@ -57,7 +55,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/enterprise/cmd/sourcegraph",
+      "program": "${workspaceFolder}/cmd/sourcegraph",
       "env": {
         "DEPLOY_TYPE": "app",
         "INSECURE_DEV": "true"
@@ -187,18 +185,6 @@
       "mode": "remote",
       "remotePath": "${workspaceRoot}",
       "port": 2350,
-      "host": "127.0.0.1",
-      "program": "${workspaceRoot}",
-      "env": {},
-      "args": []
-    },
-    {
-      "name": "Attach to github-proxy",
-      "type": "go",
-      "request": "launch",
-      "mode": "remote",
-      "remotePath": "${workspaceRoot}",
-      "port": 2351,
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},

@@ -1,11 +1,11 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,
     SettingsAreaRepositoryVariables,
@@ -48,6 +48,7 @@ export const settingsAreaRepositoryFragment = gql`
                 index
                 total
             }
+            shard
         }
         externalServices {
             nodes {

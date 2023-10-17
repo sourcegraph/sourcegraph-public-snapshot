@@ -6,18 +6,17 @@ import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
-import { useCodySurveyToast } from '../marketing/toast/CodySurveyToast'
+import type { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
+import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { FeatureList } from './components/FeatureList'
-import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { type SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
@@ -59,7 +58,6 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     isSourcegraphDotCom,
 }) => {
     const location = useLocation()
-    const { setShouldShowCodySurvey } = useCodySurveyToast()
 
     const queryWithUseEmailToggled = new URLSearchParams(location.search)
     if (showEmailForm) {
@@ -81,7 +79,6 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     const invitedByUser = data?.user
 
     const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
-        setShouldShowCodySurvey(true)
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
     }
@@ -109,12 +106,9 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 context={context}
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
+                googleLabel="Continue with Google"
                 onClick={logEventAndSetFlags}
             />
-
-            <div className="mb-4">
-                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
-            </div>
         </>
     )
 

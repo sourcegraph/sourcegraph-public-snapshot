@@ -1,4 +1,4 @@
-import { FC, useContext } from 'react'
+import { type FC, useContext } from 'react'
 
 import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,7 +7,7 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { Button, H1, H2, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { EnterprisePageRoutes } from '../../../../routes.constants'
-import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { SetupStepsContext, type StepComponentProps } from '../../../../setup-wizard/components'
 import { useQueryParameters } from '../../../insights/hooks'
 
 import styles from './AppWelcomeSetupStep.module.scss'

@@ -5,16 +5,16 @@ import { useNavigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
+import type { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
 import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FETCH_OWNERS } from './grapqlQueries'
 import { MakeOwnerButton } from './MakeOwnerButton'
 import { OwnerList } from './OwnerList'
-import { OwnershipPanelProps } from './TreeOwnershipPanel'
+import type { OwnershipPanelProps } from './TreeOwnershipPanel'
 
 import styles from './FileOwnershipPanel.module.scss'
 

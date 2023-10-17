@@ -1,0 +1,19 @@
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+load("//dev:defs.bzl", "ts_project")
+
+write_generated_to_source_files(
+    name = "write_generated",
+    output_files = {"constants.ts": "internal/rbac/_constants.ts"},
+    tags = ["go_generate"],
+    target = "//internal/rbac:generate_constants_ts",
+)
+
+# We have to create a ts project out of this folder since with the BUILD.bazel file, it's now considered
+# a package. Now that it is a package, the JS/TS in Bazel does not like us doing `exports_files` with the
+# single file. So we make a project out it and then add it as a DEPENDENCY target to where it originally
+# appeared in the `srcs` target, ie. //client/web:build-enterprise
+ts_project(
+    name = "constants",
+    srcs = ["constants.ts"],
+    tsconfig = "//client/web:tsconfig",
+)

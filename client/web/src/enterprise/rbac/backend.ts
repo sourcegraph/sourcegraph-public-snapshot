@@ -1,20 +1,20 @@
-import { MutationTuple, QueryResult } from '@apollo/client'
+import type { MutationTuple, QueryResult } from '@apollo/client'
 
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
-    DeleteRoleVariables,
-    DeleteRoleResult,
-    AllRolesVariables,
-    AllRolesResult,
-    CreateRoleResult,
-    CreateRoleVariables,
-    AllPermissionsResult,
-    AllPermissionsVariables,
+    type DeleteRoleVariables,
+    type DeleteRoleResult,
+    type AllRolesVariables,
+    type AllRolesResult,
+    type CreateRoleResult,
+    type CreateRoleVariables,
+    type AllPermissionsResult,
+    type AllPermissionsVariables,
     PermissionNamespace,
-    PermissionFields,
-    SetPermissionsResult,
-    SetPermissionsVariables,
+    type PermissionFields,
+    type SetPermissionsResult,
+    type SetPermissionsVariables,
 } from '../../graphql-operations'
 
 export const DEFAULT_PAGE_LIMIT = 10

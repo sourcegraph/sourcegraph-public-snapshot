@@ -213,6 +213,8 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 					return afterDone, errCannotPushToArchivedRepo
 				}
 			}
+			// do not wrap the error (pushCommitError), so it can be nicely displayed in the UI
+			return afterDone, err
 		}
 		return afterDone, errors.Wrap(err, "pushing commit")
 	}
@@ -590,7 +592,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
+	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential, repo)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -646,7 +648,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
-		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp)
+		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp, e.remote)
 		if err != nil {
 			switch err {
 			case sources.ErrNoGitHubAppConfigured:

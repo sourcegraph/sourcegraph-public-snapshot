@@ -1,4 +1,5 @@
 # Generated images
+local-images/
 *.tar
 
 # SBOM files

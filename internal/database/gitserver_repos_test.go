@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -30,7 +31,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	repos := types.Repos{
@@ -110,7 +111,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 func TestIteratePurgeableRepos(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := basestore.NewWithHandle(db.Handle())
 
 	normalRepo := &types.Repo{Name: "normal"}
@@ -267,7 +268,7 @@ func TestListReposWithLastError(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(logger, t))
+			db := NewDB(logger, dbtest.NewDB(t))
 			now := time.Now()
 
 			cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
@@ -349,7 +350,7 @@ func TestReposWithLastOutput(t *testing.T) {
 	}
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	now := time.Now()
 	cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
 	for i, tr := range testRepos {
@@ -370,6 +371,16 @@ func TestReposWithLastOutput(t *testing.T) {
 			createTestRepos(ctx, t, db, types.Repos{testRepo})
 			if err := db.GitserverRepos().SetLastOutput(ctx, testRepo.Name, tr.lastOutput); err != nil {
 				t.Fatal(err)
+			}
+			haveOut, ok, err := db.GitserverRepos().GetLastSyncOutput(ctx, testRepo.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tr.lastOutput == "" && ok {
+				t.Fatalf("last output is not empty")
+			}
+			if have, want := haveOut, tr.lastOutput; have != want {
+				t.Fatalf("wrong last output returned, have=%s want=%s", have, want)
 			}
 		})
 	}
@@ -403,7 +414,7 @@ func TestGitserverReposGetByID(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -429,7 +440,7 @@ func TestGitserverReposGetByName(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -455,7 +466,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
@@ -496,7 +507,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -564,7 +575,7 @@ func TestCloningProgress(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	t.Run("Default", func(t *testing.T) {
@@ -609,7 +620,7 @@ func TestLogCorruption(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	t.Run("log repo corruption sets corrupted_at time", func(t *testing.T) {
@@ -763,7 +774,7 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -842,7 +853,7 @@ func TestSetRepoSize(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -919,7 +930,7 @@ func TestGitserverRepo_Update(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -983,7 +994,7 @@ func TestGitserverRepoUpdateMany(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create two test repos
@@ -1041,70 +1052,13 @@ func TestSanitizeToUTF8(t *testing.T) {
 	}
 }
 
-func TestGitserverRepoListReposWithoutSize(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		RepoSizeBytes: 0,
-	})
-
-	if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(
-		`update gitserver_repos set repo_size_bytes = null where repo_id = %d;`,
-		gitserverRepo.RepoID)); err != nil {
-		t.Fatalf("unexpected error while updating gitserver repo: %s", err)
-	}
-
-	// Get it back from the db
-	fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// Check that this repo is returned from ListReposWithoutSize
-	if reposWithoutSize, err := db.GitserverRepos().ListReposWithoutSize(ctx); err != nil {
-		t.Fatal(err)
-	} else if len(reposWithoutSize) != 1 {
-		t.Fatal("One repo without size should be returned")
-	}
-
-	// Setting the size
-	gitserverRepo.RepoSizeBytes = 4040
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check that this repo is not returned now from ListReposWithoutSize
-	if reposWithoutSize, err := db.GitserverRepos().ListReposWithoutSize(ctx); err != nil {
-		t.Fatal(err)
-	} else if len(reposWithoutSize) != 0 {
-		t.Fatal("There should be no repos without size")
-	}
-
-	// Check that nothing except UpdatedAt and RepoSizeBytes has been changed
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "RepoSizeBytes", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
 func TestGitserverUpdateRepoSizes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
@@ -1201,7 +1155,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{Name: payload.Name}
+	repo := &types.Repo{Name: payload.Name, URI: payload.URI, Fork: payload.Fork}
 
 	// Create Repo
 	err := db.Repos().Create(ctx, repo)
@@ -1236,6 +1190,8 @@ type createTestRepoPayload struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
+	URI  string
+	Fork bool
 
 	// Gitserver related properties
 
@@ -1265,4 +1221,56 @@ func updateTestGitserverRepos(ctx context.Context, t *testing.T, db DB, hasLastE
 	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestGitserverRepos_GetGitserverGitDirSize(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	assertSize := func(want int64) {
+		t.Helper()
+
+		have, err := db.GitserverRepos().GetGitserverGitDirSize(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, want, have)
+	}
+
+	// Expect exactly 0 bytes used when no repos exist yet.
+	assertSize(0)
+
+	// Create one test repo.
+	repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name: "github.com/sourcegraph/repo",
+	})
+
+	// Now, we should see an uncloned test repo that takes no space.
+	assertSize(0)
+
+	// Set repo size and mark repo as cloned.
+	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo.Name, 200, "test-gitserver"))
+
+	// Now the total should be 200 bytes.
+	assertSize(200)
+
+	// Now add a second repo to make sure it aggregates properly.
+	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name: "github.com/sourcegraph/repo2",
+	})
+	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo2.Name, 500, "test-gitserver"))
+
+	// 200 from the first repo and another 500 from the newly created repo.
+	assertSize(700)
+
+	// Now mark the repo as uncloned, that should exclude it from statistics.
+	require.NoError(t, db.GitserverRepos().SetCloneStatus(ctx, repo.Name, types.CloneStatusNotCloned, "test-gitserver"))
+
+	// only repo2 which is 500 bytes should cont now.
+	assertSize(500)
 }

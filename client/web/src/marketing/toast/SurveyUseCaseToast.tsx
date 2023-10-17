@@ -1,13 +1,13 @@
 import React from 'react'
 
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { Alert, Button } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
 
-import { TotalFeedbackState } from './SurveyToastContent'
+import type { TotalFeedbackState } from './SurveyToastContent'
 import { Toast } from './Toast'
 
 import styles from './SurveyUseCaseToast.module.scss'

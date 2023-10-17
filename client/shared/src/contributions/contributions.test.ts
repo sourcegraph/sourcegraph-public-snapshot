@@ -1,6 +1,6 @@
 import { ContributableMenu } from '@sourcegraph/client-api'
 
-import { ActionItemAction } from '../actions/ActionItem'
+import type { ActionItemAction } from '../actions/ActionItem'
 
 import { getContributedActionItems } from './contributions'
 

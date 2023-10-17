@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { within } from '@testing-library/dom'
 import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -10,9 +10,9 @@ import sinon from 'sinon'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import {
+import type {
     FindInsightsBySearchTermResult,
     GetDashboardInsightsResult,
     GetInsightsResult,

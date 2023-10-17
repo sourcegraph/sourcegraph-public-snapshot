@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { Label } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -28,7 +28,7 @@ const config: Meta = {
 
 export default config
 
-export const Interactive: Story = () => {
+export const Interactive: StoryFn = () => {
     const [value, setValue] = useState(false)
 
     const onToggle = (value: boolean) => setValue(value)
@@ -42,7 +42,7 @@ Interactive.parameters = {
     },
 }
 
-export const Variants: Story = () => (
+export const Variants: StoryFn = () => (
     <>
         <ToggleExample value={true} onToggle={onToggle} />
         <ToggleExample value={false} onToggle={onToggle} />

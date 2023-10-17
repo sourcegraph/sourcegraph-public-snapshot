@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { type FC, useState } from 'react'
 
 import { useDebounce } from 'use-debounce'
 
@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
-import {
+import type {
     AddRepoMetadataResult,
     AddRepoMetadataVariables,
     SearchRepoMetaKeysResult,

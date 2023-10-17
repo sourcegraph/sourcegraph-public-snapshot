@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useState } from 'react'
+import React, { type CSSProperties, useCallback, useState } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,9 +6,9 @@ import classNames from 'classnames'
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
 import { Card, Icon, Button } from '@sourcegraph/wildcard'
 
-import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
-import { PlatformContextProps } from '../platform/context'
-import { TelemetryProps } from '../telemetry/telemetryService'
+import { ActionItem, type ActionItemComponentProps } from '../actions/ActionItem'
+import type { PlatformContextProps } from '../platform/context'
+import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import { CopyLinkIcon } from './CopyLinkIcon'
 import { toNativeEvent } from './helpers'

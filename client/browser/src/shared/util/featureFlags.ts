@@ -1,5 +1,5 @@
 import { storage } from '../../browser-extension/web-extension-api/storage'
-import { featureFlagDefaults, FeatureFlags } from '../../browser-extension/web-extension-api/types'
+import { featureFlagDefaults, type FeatureFlags } from '../../browser-extension/web-extension-api/types'
 import { isInPage } from '../context'
 
 interface FeatureFlagsStorage {

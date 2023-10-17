@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     LoadingSpinner,
     Button,
@@ -21,11 +21,11 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import {
+import type {
     InviteUserToOrganizationResult,
     InviteUserToOrganizationVariables,
     AddUserToOrganizationResult,
@@ -206,8 +206,8 @@ function inviteUserToOrganization(
 ): Promise<InviteUserToOrganizationResult['inviteUserToOrganization']> {
     return requestGraphQL<InviteUserToOrganizationResult, InviteUserToOrganizationVariables>(
         gql`
-            mutation InviteUserToOrganization($organization: ID!, $username: String, $email: String) {
-                inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
+            mutation InviteUserToOrganization($organization: ID!, $username: String!) {
+                inviteUserToOrganization(organization: $organization, username: $username) {
                     ...InviteUserToOrganizationFields
                 }
             }
@@ -220,7 +220,6 @@ function inviteUserToOrganization(
         {
             username,
             organization,
-            email: null,
         }
     )
         .pipe(

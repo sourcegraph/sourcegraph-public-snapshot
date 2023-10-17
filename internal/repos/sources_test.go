@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -36,7 +36,7 @@ func TestSources_ListRepos(t *testing.T) {
 			GitServers: []string{"127.0.0.1:3178"},
 		}, SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: false,
+				EnableGRPC: boolPointer(false),
 			},
 		},
 	})
@@ -623,7 +623,7 @@ func TestSources_ListRepos(t *testing.T) {
 
 				logger := logtest.Scoped(t)
 				obs := ObservedSource(logger, NewSourceMetrics())
-				src, err := NewSourcer(logtest.Scoped(t), database.NewMockDB(), cf, obs)(tc.ctx, svc)
+				src, err := NewSourcer(logtest.Scoped(t), dbmocks.NewMockDB(), cf, obs)(tc.ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -694,4 +694,8 @@ func getAWSEnv(envVar string) string {
 		s = fmt.Sprintf("BOGUS-%s", envVar)
 	}
 	return s
+}
+
+func boolPointer(b bool) *bool {
+	return &b
 }

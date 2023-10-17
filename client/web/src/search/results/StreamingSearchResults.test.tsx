@@ -8,7 +8,7 @@ import { spy, assert } from 'sinon'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -21,13 +21,13 @@ import {
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { SearchResultsCacheProvider } from './SearchResultsCacheProvider'
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
-import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+import { StreamingSearchResults, type StreamingSearchResultsProps } from './StreamingSearchResults'
 
 describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT

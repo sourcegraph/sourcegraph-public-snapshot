@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,7 +26,7 @@ func (c *Client) WaitForReposToBeClonedWithin(timeout time.Duration, repos ...st
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var missing []string
+	var missing collections.Set[string]
 	for {
 		select {
 		case <-ctx.Done():
@@ -47,7 +48,7 @@ query Repositories {
 		if err != nil {
 			return errors.Wrap(err, "wait for repos to be cloned")
 		}
-		if len(missing) == 0 {
+		if missing.IsEmpty() {
 			break
 		}
 
@@ -88,7 +89,7 @@ func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var missing []string
+	var missing collections.Set[string]
 	for {
 		select {
 		case <-ctx.Done():
@@ -110,7 +111,7 @@ query Repositories {
 		if err != nil {
 			return errors.Wrap(err, "wait for repos to be indexed")
 		}
-		if len(missing) == 0 {
+		if missing.IsEmpty() {
 			break
 		}
 
@@ -119,7 +120,7 @@ query Repositories {
 	return nil
 }
 
-func (c *Client) waitForReposByQuery(query string, repos ...string) ([]string, error) {
+func (c *Client) waitForReposByQuery(query string, repos ...string) (collections.Set[string], error) {
 	var resp struct {
 		Data struct {
 			Repositories struct {
@@ -134,21 +135,16 @@ func (c *Client) waitForReposByQuery(query string, repos ...string) ([]string, e
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
 
-	repoSet := make(map[string]struct{}, len(repos))
-	for _, repo := range repos {
-		repoSet[repo] = struct{}{}
+	nodes := resp.Data.Repositories.Nodes
+	repoSet := collections.NewSet[string](repos...)
+	clonedRepoNames := collections.NewSet[string]()
+	for _, node := range nodes {
+		clonedRepoNames.Add(node.Name)
 	}
-	for _, node := range resp.Data.Repositories.Nodes {
-		delete(repoSet, node.Name)
-	}
-	if len(repoSet) > 0 {
-		missing := make([]string, 0, len(repoSet))
-		for name := range repoSet {
-			missing = append(missing, name)
-		}
+	missing := repoSet.Difference(clonedRepoNames)
+	if !missing.IsEmpty() {
 		return missing, nil
 	}
-
 	return nil, nil
 }
 

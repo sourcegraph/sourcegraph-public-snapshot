@@ -1,5 +1,5 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { Range } from '@sourcegraph/extension-api-types'
+import type { Range } from '@sourcegraph/extension-api-types'
 
 import { fromHoverMerged } from './hover'
 

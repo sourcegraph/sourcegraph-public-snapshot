@@ -1,4 +1,4 @@
-import { CodeHostContext } from '../shared/codeHost'
+import type { CodeHostContext } from '../shared/codeHost'
 import { RepoURLParseError } from '../shared/errors'
 
 export async function getContext(): Promise<CodeHostContext> {

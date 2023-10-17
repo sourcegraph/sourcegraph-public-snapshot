@@ -17,7 +17,7 @@ import {
     H2,
 } from '@sourcegraph/wildcard'
 
-import { ToggleProps } from './QueryInputToggle'
+import type { ToggleProps } from './QueryInputToggle'
 
 import smartStyles from './SmartSearchToggle.module.scss'
 import styles from './Toggles.module.scss'

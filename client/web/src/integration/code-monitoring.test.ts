@@ -4,10 +4,10 @@ import expect from 'expect'
 
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import { createEditorAPI, isElementDisabled, percySnapshotWithVariants } from './utils'
@@ -86,6 +86,11 @@ describe('Code monitoring', () => {
                                 trigger: {
                                     id: 'Q29kZU1vbml0b3JUcmlnZ2VyUXVlcnk6Mg==',
                                     query: 'type:diff repo:sourcegraph/sourcegraph after:\\"1 week ago\\" filtered  patternType:literal',
+                                },
+                                owner: {
+                                    id: 'VXNlcjoyNDc=',
+                                    namespaceName: 'myname',
+                                    url: 'myname',
                                 },
                             },
                         ],

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	luaParse "github.com/yuin/gopher-lua/parse"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -39,6 +40,11 @@ func (s *store) SetInferenceScript(ctx context.Context, script string) (err erro
 	}})
 	defer endObservation(1, observation.Args{})
 
+	_, error := luaParse.Parse(strings.NewReader(script), "(inference script)")
+	if error != nil {
+		return error
+	}
+
 	return s.db.Exec(ctx, sqlf.Sprintf(setInferenceScriptQuery, script))
 }
 
@@ -65,11 +71,12 @@ local custom_recognizer = recognizer.new_path_recognizer {
 		local jobs = {}
 		for i = 1, #paths do
 			table.insert(jobs, {
-				steps = {},
+				indexer = "acme/acme-indexer",
 				root = path.dirname(paths[i]),
-				indexer = "acme/custom-indexer",
-				indexer_args = {},
-				outfile = "",
+				-- Run a dependency installation step before invoking the indexer
+				local_steps = {"acme-package-manager install"},
+				indexer_args = {"acme-indexer", "index", ".", "--output", "index.scip"},
+				outfile = "index.scip",
 			})
 		end
 
@@ -78,7 +85,7 @@ local custom_recognizer = recognizer.new_path_recognizer {
 }
 
 return require("sg.autoindex.config").new({
-	-- ["sg.clang"] = false,
+	-- Uncomment one or more lines to turn off default auto-indexing scripts
 	-- ["sg.go"] = false,
 	-- ["sg.java"] = false,
 	-- ["sg.python"] = false,

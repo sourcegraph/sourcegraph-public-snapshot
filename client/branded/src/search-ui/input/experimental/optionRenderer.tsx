@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 
 import { HighlightedLabel } from './Suggestions'
-import { Option } from './suggestionsExtension'
+import type { Option } from './suggestionsExtension'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
 import styles from './Suggestions.module.scss'

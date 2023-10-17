@@ -15,15 +15,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetAuthenticatedUserOAuthScopes(t *testing.T) {
@@ -57,7 +60,9 @@ func createTestProvider(t *testing.T) *ClientProvider {
 func createTestClient(t *testing.T) *Client {
 	t.Helper()
 	token := os.Getenv("GITLAB_TOKEN")
-	return createTestProvider(t).GetOAuthClient(token)
+	c := createTestProvider(t).GetOAuthClient(token)
+	c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("gitlab", rate.NewLimiter(100, 10))
+	return c
 }
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -194,6 +199,7 @@ func TestRateLimitRetry(t *testing.T) {
 
 			provider := NewClientProvider("Test", srvURL, nil)
 			client := provider.getClient(nil)
+			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("gitlab", rate.NewLimiter(100, 10))
 			client.waitForRateLimit = tt.waitForRateLimit
 
 			req, err := http.NewRequest(http.MethodGet, "url", nil)

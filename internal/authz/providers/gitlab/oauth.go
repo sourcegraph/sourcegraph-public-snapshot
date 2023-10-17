@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/oauthtoken"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,6 +47,8 @@ type OAuthProviderOp struct {
 	TokenType gitlab.TokenType
 
 	DB database.DB
+
+	CLI httpcli.Doer
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
@@ -111,7 +114,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		Token:              tok.AccessToken,
 		RefreshToken:       tok.RefreshToken,
 		Expiry:             tok.Expiry,
-		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		RefreshFunc:        oauthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
 		NeedsRefreshBuffer: 5,
 	}
 	client := p.clientProvider.NewClient(token)

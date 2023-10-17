@@ -1,5 +1,5 @@
-import { Remote } from 'comlink'
-import { Unsubscribable } from 'rxjs'
+import type { Remote } from 'comlink'
+import type { Unsubscribable } from 'rxjs'
 
 import type { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
 import type { FlatExtensionHostAPI } from '../api/contract'

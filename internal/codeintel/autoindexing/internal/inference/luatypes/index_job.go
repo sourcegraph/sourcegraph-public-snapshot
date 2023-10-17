@@ -8,24 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// IndexJobsFromTable decodes a single index job or slice of index jobs from the given Lua
-// value.
-func IndexJobsFromTable(value lua.LValue) (jobs []config.IndexJob, err error) {
-	err = util.UnwrapSliceOrSingleton(value, func(value lua.LValue) error {
-		job, err := indexJobFromTable(value)
-		if err != nil {
-			return err
-		}
-
-		jobs = append(jobs, job)
-		return nil
-	})
-
-	return
-}
-
-// indexJobFromTable decodes a single Lua table value into an index job instance.
-func indexJobFromTable(value lua.LValue) (config.IndexJob, error) {
+// IndexJobFromTable decodes a single Lua table value into an index job instance.
+func IndexJobFromTable(value lua.LValue) (config.IndexJob, error) {
 	table, ok := value.(*lua.LTable)
 	if !ok {
 		return config.IndexJob{}, util.NewTypeError("table", value)
@@ -77,19 +61,15 @@ func dockerStepFromTable(value lua.LValue) (step config.DockerStep, _ error) {
 // slice value on invocation. For use in luasandbox.DecodeTable.
 func setDockerSteps(ptr *[]config.DockerStep) func(lua.LValue) error {
 	return func(value lua.LValue) (err error) {
-		values, err := util.DecodeSlice(value)
+		table, ok := value.(*lua.LTable)
+		if !ok {
+			return util.NewTypeError("table", value)
+		}
+		steps, err := util.MapSlice(table, dockerStepFromTable)
 		if err != nil {
 			return err
 		}
-
-		for _, v := range values {
-			step, err := dockerStepFromTable(v)
-			if err != nil {
-				return err
-			}
-			*ptr = append(*ptr, step)
-		}
-
+		*ptr = append(*ptr, steps...)
 		return nil
 	}
 }

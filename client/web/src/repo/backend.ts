@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
@@ -11,14 +11,14 @@ import {
 } from '@sourcegraph/shared/src/backend/errors'
 import {
     makeRepoURI,
-    RepoRevision,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
+    type RepoRevision,
+    type RepoSpec,
+    type ResolvedRevisionSpec,
+    type RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import {
+import type {
     ExternalLinkFields,
     FileExternalLinksResult,
     RepositoryFields,

@@ -1,23 +1,23 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import React, { type FC, useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { HeroPage } from '../../../../components/HeroPage'
-import {
+import type {
     CheckExecutorsAccessTokenResult,
     CheckExecutorsAccessTokenVariables,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
 } from '../../../../graphql-operations'
-import { NamespaceProps } from '../../../../namespaces'
+import type { NamespaceProps } from '../../../../namespaces'
 import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
@@ -25,11 +25,11 @@ import { InsightTemplatesBanner } from '../../create/InsightTemplatesBanner'
 import { SearchTemplatesBanner } from '../../create/SearchTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
 import { useSearchTemplate } from '../../create/useSearchTemplate'
-import { BatchSpecContextProvider, useBatchSpecContext, BatchSpecContextState } from '../BatchSpecContext'
+import { BatchSpecContextProvider, useBatchSpecContext, type BatchSpecContextState } from '../BatchSpecContext'
 import { ActionsMenu, ActionsMenuMode } from '../execute/ActionsMenu'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
-import { TabBar, TabsConfig, TabKey } from '../TabBar'
+import { TabBar, type TabsConfig, type TabKey } from '../TabBar'
 
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'

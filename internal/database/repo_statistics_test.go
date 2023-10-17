@@ -2,10 +2,10 @@ package database
 
 import (
 	"context"
-	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
@@ -21,7 +21,7 @@ func TestRepoStatistics(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -174,7 +174,7 @@ func TestRepoStatistics_RecloneAndCorruption(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -263,7 +263,7 @@ func TestRepoStatistics_DeleteAndUndelete(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -359,7 +359,7 @@ func TestRepoStatistics_AvoidZeros(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -414,7 +414,7 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -544,10 +544,9 @@ func assertRepoStatistics(t *testing.T, ctx context.Context, s RepoStatisticsSto
 		t.Fatalf("GetRepoStatistics failed: %s", err)
 	}
 
-	sort.Slice(haveGitserverStats, func(i, j int) bool { return haveGitserverStats[i].ShardID < haveGitserverStats[j].ShardID })
-	sort.Slice(wantGitserverStats, func(i, j int) bool { return wantGitserverStats[i].ShardID < wantGitserverStats[j].ShardID })
-
-	if diff := cmp.Diff(haveGitserverStats, wantGitserverStats); diff != "" {
+	type Stat = GitserverReposStatistic
+	lessThan := func(s1 Stat, s2 Stat) bool { return s1.ShardID < s2.ShardID }
+	if diff := cmp.Diff(haveGitserverStats, wantGitserverStats, cmpopts.SortSlices(lessThan)); diff != "" {
 		t.Fatalf("gitserverReposStatistics differ: %s", diff)
 	}
 }

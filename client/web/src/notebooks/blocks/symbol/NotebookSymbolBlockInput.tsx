@@ -3,13 +3,13 @@ import React, { useCallback, useMemo } from 'react'
 import { EditorView } from '@codemirror/view'
 
 import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/branded'
-import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Button, Code } from '@sourcegraph/wildcard'
 
-import { BlockProps, SymbolBlockInput } from '../..'
+import type { BlockProps, SymbolBlockInput } from '../..'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
 
@@ -40,9 +40,6 @@ const editorAttributes = [
 export const NotebookSymbolBlockInput: React.FunctionComponent<
     React.PropsWithChildren<NotebookSymbolBlockInputProps>
 > = ({ onSymbolSelected, isSourcegraphDotCom, ...inputProps }) => {
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-
     const fetchSymbolSuggestions = useCallback(
         (query: string) =>
             fetchSuggestions(
@@ -70,10 +67,9 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<
             createDefaultSuggestions({
                 isSourcegraphDotCom,
                 fetchSuggestions: fetchStreamSuggestions,
-                applyOnEnter: applySuggestionsOnEnter,
                 disableSymbolCompletion: true,
             }),
-        [isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom]
     )
 
     return (

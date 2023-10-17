@@ -44,7 +44,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -292,7 +292,7 @@ func TestService(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
@@ -2837,7 +2837,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH", "CLOSE"}
+			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}

@@ -1,8 +1,8 @@
-import { Line, SelectionRange, Text } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import type { Line, SelectionRange, Text } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
 
-import { Position } from '@sourcegraph/extension-api-types'
-import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import type { Position } from '@sourcegraph/extension-api-types'
+import type { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 /**
  * The MouseEvent uses numbers to indicate which button was pressed.

@@ -1,4 +1,4 @@
-import { RepoSettingsSideBarGroups } from '../../../repo/settings/RepoSettingsSidebar'
+import type { RepoSettingsSideBarGroups } from '../../../repo/settings/RepoSettingsSidebar'
 import { repoSettingsSideBarGroups, settingsGroup } from '../../../repo/settings/sidebaritems'
 
 export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups =
@@ -11,6 +11,11 @@ export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups =
                     ...group,
                     items: [
                         ...group.items,
+                        {
+                            to: '/logs',
+                            exact: true,
+                            label: 'Logs',
+                        },
                         {
                             to: '/permissions',
                             exact: true,

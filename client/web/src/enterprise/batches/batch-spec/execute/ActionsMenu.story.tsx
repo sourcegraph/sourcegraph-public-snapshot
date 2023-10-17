@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { EXECUTING_BATCH_SPEC, mockBatchChange } from '../batch-spec.mock'
@@ -6,7 +6,7 @@ import { BatchSpecContextProvider } from '../BatchSpecContext'
 
 import { ActionsMenu, ActionsMenuMode } from './ActionsMenu'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/ActionsMenu',
@@ -15,7 +15,7 @@ const config: Meta = {
 
 export default config
 
-export const Preview: Story = () => (
+export const Preview: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
@@ -25,7 +25,7 @@ export const Preview: Story = () => (
     </WebStory>
 )
 
-export const Actions: Story = () => (
+export const Actions: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
@@ -35,7 +35,7 @@ export const Actions: Story = () => (
     </WebStory>
 )
 
-export const ActionsOnlyClose: Story = () => (
+export const ActionsOnlyClose: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
@@ -45,7 +45,7 @@ export const ActionsOnlyClose: Story = () => (
     </WebStory>
 )
 
-export const ActionsWithPreview: Story = () => (
+export const ActionsWithPreview: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>

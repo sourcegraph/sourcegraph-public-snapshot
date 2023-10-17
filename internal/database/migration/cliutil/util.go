@@ -145,10 +145,6 @@ func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
 	return oobmigration.NewRunnerWithDB(migratorObservationCtx, db, time.Second)
 }
 
-func outOfBandMigrationRunnerWithStore(store *oobmigration.Store) *oobmigration.Runner {
-	return oobmigration.NewRunner(migratorObservationCtx, store, time.Second)
-}
-
 // checks if a known good version's schema can be reached through either Github
 // or GCS, to report whether the migrator may be operating in an airgapped environment.
 func isAirgapped(ctx context.Context) (err error) {

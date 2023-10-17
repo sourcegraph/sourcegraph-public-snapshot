@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -27,12 +28,12 @@ func TestSetActorDeleteSession(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new session
@@ -148,12 +149,12 @@ func TestSessionExpiry(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new session
@@ -194,13 +195,13 @@ func TestManualSessionExpiry(t *testing.T) {
 	defer cleanup()
 
 	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		user.ID = id
 		return user, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new session
@@ -238,7 +239,7 @@ func TestCookieMiddleware(t *testing.T) {
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
 	userCreatedAt := time.Now()
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {
 			return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
@@ -249,7 +250,7 @@ func TestCookieMiddleware(t *testing.T) {
 		return nil, errors.New("x") // other error
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new sessions for all actors
@@ -371,10 +372,10 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	// request. Later we'll change the value in the database, and the
 	// mismatch will be noticed, terminating the session.
 	user := &types.User{ID: 1, CreatedAt: time.Now()}
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start a new session for the user with ID 1. Their creation time
@@ -431,10 +432,10 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	// This user's session will _not_ have the UserCreatedAt value in the session
 	// store. When that situation occurs, we want to allow the session to continue
 	// as this is a logged-in user with a session that was created before the change.
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, CreatedAt: time.Now()}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start a new session for the user with ID 1. Their creation time will not be

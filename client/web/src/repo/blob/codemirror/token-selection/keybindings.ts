@@ -11,8 +11,8 @@ import {
     selectPageDown,
     selectPageUp,
 } from '@codemirror/commands'
-import { Extension, Prec } from '@codemirror/state'
-import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
+import { type Extension, Prec } from '@codemirror/state'
+import { EditorView, type KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'

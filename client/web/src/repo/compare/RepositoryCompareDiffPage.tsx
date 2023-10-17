@@ -1,22 +1,22 @@
 import React, { useCallback } from 'react'
 
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { requestGraphQL } from '../../backend/graphql'
-import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
-import { ConnectionQueryArguments, FilteredConnection } from '../../components/FilteredConnection'
-import {
+import { FileDiffNode, type FileDiffNodeProps } from '../../components/diff/FileDiffNode'
+import { type ConnectionQueryArguments, FilteredConnection } from '../../components/FilteredConnection'
+import type {
     RepositoryComparisonDiffResult,
     RepositoryComparisonDiffVariables,
     FileDiffFields,
 } from '../../graphql-operations'
 
-import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 

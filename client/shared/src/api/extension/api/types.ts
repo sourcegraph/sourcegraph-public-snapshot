@@ -1,7 +1,7 @@
-import * as sourcegraph from 'sourcegraph'
+import type * as sourcegraph from 'sourcegraph'
 
 import { Position, Range } from '@sourcegraph/extension-api-classes'
-import * as clientType from '@sourcegraph/extension-api-types'
+import type * as clientType from '@sourcegraph/extension-api-types'
 
 /**
  * Firefox does not like URLs being transmitted, so convert them to strings.

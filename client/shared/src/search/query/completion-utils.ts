@@ -4,9 +4,9 @@
 
 import { escapeRegExp } from 'lodash'
 
-import { RepositoryMatch } from '../stream'
+import type { RepositoryMatch } from '../stream'
 
-import { escapeSpaces, FILTERS, FilterType, isNegatableFilter } from './filters'
+import { escapeSpaces, FILTERS, type FilterType, isNegatableFilter } from './filters'
 
 export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
 

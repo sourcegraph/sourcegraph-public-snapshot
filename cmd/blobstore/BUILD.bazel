@@ -10,7 +10,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/blobstore/shared",
-        "//cmd/sourcegraph-oss/osscmd",
+        "//cmd/sourcegraph/osscmd",
         "//internal/sanitycheck",
     ],
 )

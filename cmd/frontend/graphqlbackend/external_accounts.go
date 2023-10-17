@@ -2,19 +2,19 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	gext "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit/externalaccount"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -126,6 +126,13 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	ExternalAccount graphql.ID
 },
 ) (*EmptyResponse, error) {
+	ff, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "disallow-user-external-account-deletion")
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	} else if ff != nil && ff.Bool != nil && ff.Bool.Value {
+		return nil, errors.New("unlinking external account is not allowed")
+	}
+
 	id, err := unmarshalExternalAccountID(args.ExternalAccount)
 	if err != nil {
 		return nil, err
@@ -145,7 +152,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{
 		UserIDs: []int32{account.UserID},
 		Reason:  database.ReasonExternalAccountDeleted,
 	})
@@ -181,7 +188,7 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 		return nil, errors.Newf("unsupported service type %q", args.ServiceType)
 	}
 
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{
 		UserIDs: []int32{a.UID},
 		Reason:  database.ReasonExternalAccountAdded,
 	})

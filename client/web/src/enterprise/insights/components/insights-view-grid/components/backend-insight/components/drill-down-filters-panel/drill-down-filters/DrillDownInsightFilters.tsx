@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo, useState } from 'react'
+import { type FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiArrowExpand, mdiArrowCollapse, mdiPlus } from '@mdi/js'
@@ -13,8 +13,8 @@ import {
     H4,
     ErrorAlert,
     useField,
-    FormChangeEvent,
-    SubmissionResult,
+    type FormChangeEvent,
+    type SubmissionResult,
     useForm,
     FORM_ERROR,
 } from '@sourcegraph/wildcard'

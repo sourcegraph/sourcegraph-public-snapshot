@@ -8,7 +8,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { Button, Modal, H2, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { CustomInsightDashboard } from '../../../../../core/types'
+import type { CustomInsightDashboard } from '../../../../../core/types'
 
 import { useDeleteDashboardHandler } from './hooks/use-delete-dashboard-handler'
 

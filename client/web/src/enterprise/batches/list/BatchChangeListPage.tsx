@@ -5,12 +5,12 @@ import { useLocation } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_NAMESPACE } from '../../../batches/utils'
@@ -25,7 +25,7 @@ import {
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
 import { Page } from '../../../components/Page'
-import {
+import type {
     ListBatchChange,
     Scalars,
     BatchChangesVariables,

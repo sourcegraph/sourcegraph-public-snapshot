@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { stub } from 'sinon'
 
-import { Filter } from '@sourcegraph/shared/src/search/stream'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import { getDynamicFilterLinks } from './FilterLink'
 import { SearchFilterSection } from './SearchFilterSection'
