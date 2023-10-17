@@ -275,7 +275,7 @@ export function recordEventSynchronously(
     parameters?: unknown,
     marketingTracking?: unknown
 ): Promise<void> {
-    return sendTelemetryEvents(createTelemetryEvent(feature, action, source, parameters, marketingTracking))
+    return sendTelemetryEvents([createTelemetryEvent(feature, action, source, parameters, marketingTracking)])
 }
 
 function createTelemetryEvent(
@@ -288,8 +288,8 @@ function createTelemetryEvent(
     return {
         feature,
         action,
-        source: EventSource.WEB,
-        parameters: parameters ? JSON.stringify(parameters) : null,
-        marketingTracking: marketingTracking ? JSON.stringify(marketingTracking) : null,
+        source: { client: EventSource.WEB },
+        parameters: { billingMetadata: undefined },
+        marketingTracking: null,
     }
 }
