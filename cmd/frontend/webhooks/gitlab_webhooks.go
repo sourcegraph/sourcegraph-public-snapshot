@@ -63,7 +63,7 @@ func (wr *Router) HandleGitLabWebhook(ctx context.Context, logger log.Logger, w 
 
 func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	glSecret := r.Header.Get("X-Gitlab-Token")
-	if subtle.ConstantTimeCompare([]byte(glSecret), []byte(secret)) == 1 {
+	if subtle.ConstantTimeCompare([]byte(glSecret), []byte(secret)) != 1 {
 		return nil, errors.New("secrets don't match!")
 	}
 
