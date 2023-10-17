@@ -5,7 +5,7 @@ import * as uuid from 'uuid'
 
 import { isErrorLike, isFirefox, logger } from '@sourcegraph/common'
 import { EventClient } from '@sourcegraph/shared/src/graphql-operations'
-import type { TelemetryServiceV2 } from '@sourcegraph/shared/src/telemetry/telemetryServiceV2'
+import type { TelemetryRecorder } from '@sourcegraph/telemetry'
 import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
 import { observeQuerySelector } from '../util/dom'
@@ -71,7 +71,7 @@ const browserExtensionMessageReceived: Observable<{ platform?: string; version?:
     refCount()
 )
 
-export class EventRecorder implements TelemetryServiceV2 {
+export class EventRecorder implements TelemetryRecorder {
     private hasStrippedQueryParameters = false
 
     private anonymousUserID = ''
