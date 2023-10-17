@@ -19,10 +19,6 @@ export GITHUB_TOKEN
 ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="true"
 export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
-unset PERFORCE_USER
-unset PERFORCE_PASSWORD
-unset PERFORCE_PORT
-
 run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
 echo "--- integration test ./dev/gqltest -long"
