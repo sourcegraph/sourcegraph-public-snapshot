@@ -119,7 +119,6 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 		"P4PORT="+p4port,
 		"P4USER="+p4user,
 		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
 	)
 
 	fmt.Printf(">>>>>>> ENV: %v <<<<<<<", strings.Join(cmd.Env, " "))
