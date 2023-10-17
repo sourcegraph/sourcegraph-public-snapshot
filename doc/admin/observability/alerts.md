@@ -612,6 +612,38 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 
 <br />
 
+## frontend: site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (aggregated across all instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> frontend: 300s+ maximum duration since last successful site configuration update (aggregated across all instances)
+
+**Next steps**
+
+- This indicates that one or more services have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the service`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_frontend_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## frontend: internal_indexed_search_error_responses
 
 <p class="subtitle">internal indexed search error responses every 5m</p>
@@ -8219,4 +8251,3 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*embeddings"})
 </details>
 
 <br />
-
