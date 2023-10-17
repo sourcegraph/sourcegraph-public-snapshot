@@ -134,8 +134,8 @@ export const initMainThreadAPI = (
             return proxySubscribable(of([]))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
-        recordEvent: (eventName, eventProperties) =>
-            platformContext.telemetryServiceV2?.record(eventName, eventProperties),
+        recordEvent: (feature, action, source, parameters, marketingTracking) =>
+            platformContext.telemetryServiceV2?.record(feature, action, source, parameters, marketingTracking),
         logExtensionMessage: (...data) => logger.log(...data),
     }
 

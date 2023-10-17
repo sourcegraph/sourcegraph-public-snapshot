@@ -10,7 +10,7 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
 import { observeQuerySelector } from '../util/dom'
 
-import { serverAdmin } from './services/serverAdminWrapper'
+import { serverAdmin } from './services/serverAdminTelemetryWrapper'
 import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
@@ -119,7 +119,7 @@ export class EventRecorder implements TelemetryServiceV2 {
         // eslint-disable-next-line rxjs/no-ignored-subscription
         browserExtensionMessageReceived.subscribe(({ platform, version }) => {
             const args = { platform, version }
-            this.record('BrowserExtensionConnectedToServer', args, args)
+            this.record('BrowserExtensionConnectedToServer', 'VIEWED', 'WEB', { args }, null)
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 logger.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
@@ -129,10 +129,10 @@ export class EventRecorder implements TelemetryServiceV2 {
         this.initializeLogParameters()
     }
 
-    private recordViewEventInternal(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
+    private recordViewEventInternal(feature: string, source: any, parameters?: any, marketingTracking?: any): void {
         const props = pageViewQueryParameters(window.location.href)
-        serverAdmin.trackPageView(eventName, logAsActiveUser, eventProperties)
-        this.logToConsole(eventName, props)
+        serverAdmin.trackPageView(feature, 'VIEWED', source, parameters, marketingTracking)
+        this.logToConsole(feature, props)
 
         // Use flag to ensure URL query params are only stripped once
         if (!this.hasStrippedQueryParameters) {
@@ -146,15 +146,14 @@ export class EventRecorder implements TelemetryServiceV2 {
      *
      * @param eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
-    public recordPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
+    public recordPageView(feature: string, source: any, parameters?: any, marketingTracking?: any): void {
         // call to refresh the session
         this.resetSessionCookieExpiration()
 
-        if (window.context?.userAgentIsBot || !eventName) {
+        if (window.context?.userAgentIsBot || !feature) {
             return
         }
-        eventName = `${eventName}Viewed`
-        this.recordViewEventInternal(eventName, eventProperties, logAsActiveUser)
+        this.recordViewEventInternal(feature, source, parameters, marketingTracking)
     }
 
     /**
@@ -168,23 +167,35 @@ export class EventRecorder implements TelemetryServiceV2 {
      * include any private information, such as full URLs that may contain private repo names or
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
-    public record(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
+    public record(feature: string, action: string, source: any, parameters?: any, marketingTracking?: any): void {
         // call to refresh the session
         this.resetSessionCookieExpiration()
 
         for (const listener of this.listeners) {
-            listener(eventLabel)
+            listener(feature)
         }
-        if (window.context?.userAgentIsBot || !eventLabel) {
+        if (window.context?.userAgentIsBot || !feature) {
             return
         }
-        serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
-        this.logToConsole(eventLabel, eventProperties, publicArgument)
+        serverAdmin.trackAction(feature, action, source, parameters, marketingTracking)
+        this.logToConsole(feature, action, source)
     }
 
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
             logger.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
+        }
+    }
+
+    private logTelemetryToConsole(
+        feature: string,
+        action: string,
+        source: any,
+        parameters?: any,
+        marketingTracking?: any
+    ): void {
+        if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+            logger.debug('%cEVENT %s', 'color: #aaa', feature, action, source, parameters, marketingTracking)
         }
     }
 
@@ -450,7 +461,7 @@ function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
     if (isBadgeRedirect) {
-        eventRecorder.record('RepoBadgeRedirected')
+        eventRecorder.record('RepoBadgeRedirected', 'VIEWED', 'WEB')
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
@@ -475,13 +486,13 @@ function pageViewQueryParameters(url: string): UTMMarker {
     }
 
     if (utmSource === 'saved-search-email') {
-        eventRecorder.record('SavedSearchEmailClicked')
+        eventRecorder.record('SavedSearchEmail', 'CLICKED', 'WEB')
     } else if (utmSource === 'saved-search-slack') {
-        eventRecorder.record('SavedSearchSlackClicked')
+        eventRecorder.record('SavedSearchSlack', 'CLICKED', 'WEB')
     } else if (utmSource === 'code-monitoring-email') {
-        eventRecorder.record('CodeMonitorEmailLinkClicked')
+        eventRecorder.record('CodeMonitorEmailLink', 'CLICKED', 'WEB')
     } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
-        eventRecorder.record('UTMCampaignLinkClicked', utmProps, utmProps)
+        eventRecorder.record('UTMCampaignLink', 'VIEWED', 'WEB', { utmProps })
     } else if (
         [
             'safari-extension',
@@ -492,9 +503,9 @@ function pageViewQueryParameters(url: string): UTMMarker {
             'gitlab-integration',
         ].includes(utmSource ?? '')
     ) {
-        eventRecorder.record('UTMCodeHostIntegration', utmProps, utmProps)
+        eventRecorder.record('UTMCodeHostIntegration', 'VIEWED', 'WEB', { utmProps })
     } else if (utmMedium === 'VSCODE' && utmCampaign === 'vsce-sign-up') {
-        eventRecorder.record('VSCODESignUpLinkClicked', utmProps, utmProps)
+        eventRecorder.record('VSCODESignUpLink', 'CLICKED', 'WEB', { utmProps })
     }
 
     return utmProps

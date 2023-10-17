@@ -30,19 +30,19 @@ export class ConditionalTelemetryService implements TelemetryServiceV2 {
             })
         )
     }
-    public record(eventName: string, eventProperties?: any, publicArgument?: any): void {
+    public record(feature: string, action?: any, source?: any, parameters?: any, marketingTracking?: any): void {
         // Wait for this.isEnabled to get a new value
         setTimeout(() => {
             if (this.isEnabled) {
-                this.innerTelemetryService.record(eventName, eventProperties, publicArgument)
+                this.innerTelemetryService.record(feature, action, source, parameters, marketingTracking)
             }
         })
     }
-    public recordPageView(eventName: string, eventProperties?: any, publicArgument?: any): void {
+    public recordPageView(feature: string, source: any, parameters?: any, marketingTracking?: any): void {
         // Wait for this.isEnabled to get a new value
         setTimeout(() => {
             if (this.isEnabled) {
-                this.innerTelemetryService.recordPageView(eventName, eventProperties, publicArgument)
+                this.innerTelemetryService.recordPageView(feature, source, parameters, marketingTracking)
             }
         })
     }
@@ -148,20 +148,14 @@ export class EventRecorder implements TelemetryServiceV2 {
     /**
      * Implements {@link TelemetryService}.
      *
-     * @deprecated Use logPageView instead
-     *
-     * @param pageTitle The title of the page being viewed.
-     */
-    public async recordViewEvent(pageTitle: string, parameters?: any, marketingTracking?: any): Promise<void> {
-        await this.recordEvent(`View${pageTitle}`, parameters, marketingTracking)
-    }
-
-    /**
-     * Implements {@link TelemetryService}.
-     *
      * @param eventName The name of the entity being viewed.
      */
-    public async recordPageView(eventName: string, parameters?: any, marketingTracking?: any): Promise<void> {
-        await this.recordEvent(`${eventName}Viewed`, parameters, marketingTracking)
+    public async recordPageView(
+        feature: string,
+        source: any,
+        parameters?: any,
+        marketingTracking?: any
+    ): Promise<void> {
+        await this.recordEvent(feature, 'VIEWED', source, parameters, marketingTracking)
     }
 }

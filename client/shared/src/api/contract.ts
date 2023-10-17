@@ -178,7 +178,7 @@ export interface MainThreadAPI {
     /**
      * Record an event (by sending it to the server).
      */
-    recordEvent: (eventName: string, eventProperties?: any) => void
+    recordEvent: (feature: string, action: string, source: any, parameters?: any, marketingTracking?: any) => void
 
     /**
      * Log messages from extensions in the main thread. Makes it easier to debug extensions for applications
