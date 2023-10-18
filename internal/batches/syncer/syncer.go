@@ -54,7 +54,7 @@ var (
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
 func NewSyncRegistry(ctx context.Context, observationCtx *observation.Context, bstore SyncStore, cf *httpcli.Factory) *SyncRegistry {
-	logger := observationCtx.Logger.Scoped("SyncRegistry", "starts a syncer for each code host and updates them")
+	logger := observationCtx.Logger.Scoped("SyncRegistry")
 	ctx, cancel := context.WithCancel(ctx)
 	return &SyncRegistry{
 		ctx:            ctx,

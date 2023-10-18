@@ -68,7 +68,7 @@ func Init() {
 	conf.ContributeValidator(validateConfig)
 
 	const pkgName = "saml"
-	logger := log.Scoped(pkgName, "SAML config watch")
+	logger := log.Scoped(pkgName)
 	go func() {
 		conf.Watch(func() {
 			ps := getProviders()

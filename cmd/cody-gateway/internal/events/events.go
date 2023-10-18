@@ -138,7 +138,7 @@ func NewStdoutLogger(logger log.Logger) Logger {
 	// demo tracing in dev.
 	return &instrumentedLogger{
 		Scope:  "stdoutLogger",
-		Logger: &stdoutLogger{logger: logger.Scoped("events", "event logger")},
+		Logger: &stdoutLogger{logger: logger.Scoped("events")},
 	}
 }
 

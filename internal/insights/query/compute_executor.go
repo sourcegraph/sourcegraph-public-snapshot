@@ -26,7 +26,7 @@ type ComputeExecutor struct {
 
 func NewComputeExecutor(postgres database.DB, clock func() time.Time) *ComputeExecutor {
 	executor := ComputeExecutor{
-		logger: log.Scoped("ComputeExecutor", "a logger scoped to query.ComputeExecutor"),
+		logger: log.Scoped("ComputeExecutor"),
 		previewExecutor: previewExecutor{
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},

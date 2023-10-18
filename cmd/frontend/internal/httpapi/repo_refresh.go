@@ -13,7 +13,7 @@ import (
 )
 
 func serveRepoRefresh(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	logger := log.Scoped("serveRepoRefresh", "")
+	logger := log.Scoped("serveRepoRefresh")
 	return func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 

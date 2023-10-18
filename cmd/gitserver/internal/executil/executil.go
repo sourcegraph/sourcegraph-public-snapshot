@@ -255,7 +255,7 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
-	logger := log.Scoped("tlsExternal", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
+	logger := log.Scoped("tlsExternal")
 
 	if c == nil {
 		return &tlsConfig{}

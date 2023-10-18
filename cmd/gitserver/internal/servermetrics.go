@@ -80,7 +80,7 @@ func registerEchoMetric(logger log.Logger) {
 	})
 	prometheus.MustRegister(echoDuration)
 	go func() {
-		logger = logger.Scoped("echoMetricReporter", "")
+		logger = logger.Scoped("echoMetricReporter")
 		for {
 			time.Sleep(10 * time.Second)
 			s := time.Now()

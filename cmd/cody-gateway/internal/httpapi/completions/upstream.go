@@ -98,7 +98,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// response.
 	defaultRetryAfterSeconds int,
 ) http.Handler {
-	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
+	baseLogger = baseLogger.Scoped(upstreamName).
 		With(log.String("upstream.url", upstreamAPIURL))
 
 	// Convert allowedModels to the Cody Gateway configuration format with the

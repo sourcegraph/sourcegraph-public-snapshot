@@ -30,7 +30,7 @@ func main() {
 	})
 	defer logfuncs.Sync()
 
-	logger := log.Scoped("init", "runner initialization process")
+	logger := log.Scoped("init")
 
 	db, err := initDB(logger)
 	if err != nil {

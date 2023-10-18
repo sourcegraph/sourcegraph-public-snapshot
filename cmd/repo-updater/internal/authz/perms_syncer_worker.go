@@ -27,9 +27,9 @@ const (
 )
 
 func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *permsSyncerWorker {
-	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo", "Repository permissions sync worker")
+	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo")
 	if syncType == SyncTypeUser {
-		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker", "User permissions sync worker")
+		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker")
 	}
 	return &permsSyncerWorker{
 		logger:    logger,

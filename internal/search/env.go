@@ -43,7 +43,7 @@ func SearcherURLs() *endpoint.Map {
 
 func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
 	searcherGRPCConnectionCacheOnce.Do(func() {
-		logger := log.Scoped("searcherGRPCConnectionCache", "gRPC connection cache for searcher endpoints")
+		logger := log.Scoped("searcherGRPCConnectionCache")
 		searcherGRPCConnectionCache = defaults.NewConnectionCache(logger)
 	})
 

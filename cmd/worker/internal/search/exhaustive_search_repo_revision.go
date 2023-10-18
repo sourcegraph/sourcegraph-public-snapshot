@@ -32,7 +32,7 @@ func newExhaustiveSearchRepoRevisionWorker(
 	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoRevHandler{
-		logger:      log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
+		logger:      log.Scoped("exhaustive-search-repo-revision"),
 		store:       exhaustiveSearchStore,
 		newSearcher: newSearcher,
 		uploadStore: uploadStore,

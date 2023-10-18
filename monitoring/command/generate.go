@@ -111,7 +111,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 			return definitions.Default().Names()
 		}),
 		Action: func(c *cli.Context) error {
-			logger := log.Scoped(c.Command.Name, c.Command.Description)
+			logger := log.Scoped(c.Command.Name)
 
 			// expandErr is set from within expandWithSgRoot
 			var expandErr error

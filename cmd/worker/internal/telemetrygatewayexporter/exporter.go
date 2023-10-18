@@ -87,7 +87,7 @@ func (j *exporterJob) Handle(ctx context.Context) error {
 	// as each worker run will create a new one.
 	exporter, err := telemetrygateway.NewExporter(
 		ctx,
-		j.logger.Scoped("exporter", "exporter client"),
+		j.logger.Scoped("exporter"),
 		conf.DefaultClient(),
 		j.globalStateStore,
 		ConfigInst.ExportAddress,

@@ -123,7 +123,7 @@ var (
 
 func getOperations() *operations {
 	operationsInstOnce.Do(func() {
-		observationCtx := observation.NewContext(log.Scoped("gitserver.client", "gitserver client"))
+		observationCtx := observation.NewContext(log.Scoped("gitserver.client"))
 		operationsInst = newOperations(observationCtx)
 	})
 
