@@ -1,21 +1,58 @@
+<style>
+  .demo{
+    display: table;
+    width: 25%;
+    margin: 0.1rem;
+    padding: 0.5rem 0.5rem;
+    color: var(--text-color);
+    border-radius: 4px;
+    border: 1px solid var(--sidebar-nav-active-bg);
+    padding: 0.5rem;
+    padding-top: 0.5rem;
+    background-color: var(--sidebar-nav-active-bg);
+  }
+</style>
+
 # Cody Context Selection
 
 <p class="subtitle">Learn about where does context come from and how Cody ensures it's good.</p>
 
-The quality of the context is critical, even with increasing context window sizes. Cody obtains context in two primary ways:
+The quality of the context is critical, even with increasing context window sizes. Cody obtains context that is relevant to user input through the following methods:
 
-1. Embeddings
-2. Keyword Search
+## Local Context
 
-## Embeddings
-
-Embedding search, on the other hand, utilizes text embeddings, which encode words and sentences as numeric vectors. These vectors are designed to capture the meaning of text, enabling Cody to match code based on semantic similarity rather than exact terms. Embeddings are the preferred method, as they provide:
-
-- Access to the entire code in specified repositories, not limited to the local workspace
-- Matches based on the meaning of the query, not just the exact terms
-
-You can learn more about embeddings [here →](./../embeddings.md).
+Cody initially looks at your local context by examining the currently open or recently accessed files within your code editor. By doing this, Cody aims to provide relevant information based on your recent work.
 
 ## Keyword Search
 
-Keyword search is a traditional text search approach. It involves splitting content into terms and mapping terms to documents. At query time, terms from the query are matched to candidate documents. While powerful, this approach may be used as a fallback when a codebase lacks embeddings.
+Keyword Search is a traditional text search approach. It finds keywords matching your input and searches for those in the local code. It involves splitting content into terms and mapping terms to documents. At query time, terms from the query are matched to your documents. While powerful, this method might be used as a fallback solution when a codebase lacks embeddings.
+
+<div class="getting-started">
+  <a class="demo text-center" target="_blank" href="https://docs.sourcegraph.com/cody/core-concepts/keyword-search">Learn more →</a>
+</div>
+
+## Code Search
+
+For more extensive searches, Cody utilizes Sourcegraph's Code Search. This powerful tool allows Cody to search beyond the local files and access non-local code repositories. Using an indexed trigram search, Cody can locate code snippets or relevant information from a broader range of sources.
+
+<div class="getting-started">
+  <a class="demo text-center" target="_blank" href="https://docs.sourcegraph.com/code_search">Learn more →</a>
+</div>
+
+## Code Graph
+
+Code Graph involves analyzing the structure of the code rather than treating it as plain text. Cody examines how different components of the codebase are interconnected and how they are used. This method is dependent on the code's structure and inheritance relationships. It can help Cody find context related to your input based on how code elements are linked and utilized.
+
+<div class="getting-started">
+  <a class="demo text-center" target="_blank" href="https://docs.sourcegraph.com/cody/core-concepts/code-graph">Learn more →</a>
+</div>
+
+## Embeddings
+
+Cody employs numerical vector representations of both your input and pre-calculated representations of your entire codebase. These embeddings are processed by an LLM that understands the semantic relationships between these vectors.
+
+By comparing the user's input vector with the vectors representing various documents in the codebase, Cody can identify documents that are considered relevant. This method relies on machine learning and semantic understanding to find the context that is not apparent through simple keyword or structural analysis.
+
+<div class="getting-started">
+  <a class="demo text-center" target="_blank" href="https://docs.sourcegraph.com/cody/core-concepts/embeddings">Learn more →</a>
+</div>

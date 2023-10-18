@@ -16,6 +16,9 @@
 - [Manage embeddings](./embeddings/manage-embeddings.md)
 - [Usage and limits](./embeddings/usage-and-limits.md)
 
-## Code Graph Context
+## Keyword Search
 
-- [Configuring code graph context](code_graph_context.md)
+## Code Graph
+
+- [Overview](code-graph.md)
+- [Code Graph Data Uploads](./../../code_navigation/explanations/uploads)
