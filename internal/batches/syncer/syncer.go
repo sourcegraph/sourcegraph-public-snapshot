@@ -137,7 +137,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncsForRepos(ctx context.Context, repoID
 func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
-		s.logger.Info("Code host not support by batch changes",
+		s.logger.Info("Code host not supported by batch changes",
 			log.String("type", codeHost.ExternalServiceType),
 			log.String("url", codeHost.ExternalServiceID))
 		return
@@ -228,7 +228,7 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 		return err
 	}
 
-	codeHostsByExternalServiceID := make(map[string]*btypes.CodeHost)
+	codeHostsByExternalServiceID := make(map[string]*btypes.CodeHost, len(codeHosts))
 
 	// Add and start syncers
 	for _, host := range codeHosts {
@@ -325,13 +325,16 @@ func makeMetrics(observationCtx *observation.Context) *syncerMetrics {
 	return m
 }
 
+const defaultChangesetScheduleInterval = 2 * time.Minute
+
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *changesetSyncer) Run(ctx context.Context) {
 	s.logger.Debug("Starting changeset syncer")
 	scheduleInterval := s.scheduleInterval
+	// When a scheduleInterval is not set, use the default schedule interval.
 	if scheduleInterval == 0 {
-		scheduleInterval = 2 * time.Minute
+		scheduleInterval = defaultChangesetScheduleInterval
 	}
 	if s.syncFunc == nil {
 		s.syncFunc = s.SyncChangeset
@@ -353,8 +356,8 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 	var next scheduledSync
 	var ok bool
 
-	// NOTE: All mutations of the queue should be done is this loop as operations on the queue
-	// are not safe for concurrent use
+	// NOTE: All mutations of the queue should be done in this loop as operations on the queue
+	// are not safe for concurrent use.
 	for {
 		var timer *time.Timer
 		var timerChan <-chan time.Time

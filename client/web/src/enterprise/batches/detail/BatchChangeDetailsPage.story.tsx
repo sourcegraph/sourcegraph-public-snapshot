@@ -1,5 +1,5 @@
 import { useMemo } from '@storybook/addons'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -31,7 +31,7 @@ import {
 } from './BatchChangeDetailsPage.mock'
 import { CHANGESET_COUNTS_OVER_TIME_MOCK } from './testdata'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/details/BatchChangeDetailsPage',
     decorators: [decorator],
@@ -86,7 +86,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const Template: Story<{
+const Template: StoryFn<{
     url: string
     supersedingBatchSpec?: boolean
     currentBatchSpec?: BatchChangeFields['currentSpec']
@@ -233,7 +233,7 @@ UnpublishableBatchSpec.argTypes = {
     supersedingBatchSpec: {},
 }
 
-export const EmptyChangesets: Story = args => {
+export const EmptyChangesets: StoryFn = args => {
     const mocks = new WildcardMockLink([
         {
             request: {

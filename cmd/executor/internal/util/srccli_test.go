@@ -48,7 +48,7 @@ func TestLatestSrcCLIVersion(t *testing.T) {
 			client, err := apiclient.NewBaseClient(logtest.Scoped(t), apiclient.BaseClientOptions{EndpointOptions: apiclient.EndpointOptions{URL: server.URL}})
 			require.NoError(t, err)
 
-			version, err := util.LatestSrcCLIVersion(context.Background(), client, apiclient.EndpointOptions{URL: server.URL})
+			version, err := util.LatestSrcCLIVersion(context.Background(), client)
 			if test.expectedError != nil {
 				require.Error(t, err)
 				require.EqualError(t, err, test.expectedError.Error())

@@ -46,3 +46,13 @@ If you are automatically signed out of Cody upon every VS Code restart due to ke
 Cody supports 1,000 suggested autocompletions per day, per user. For Sourcegraph Enterprise instances, this rate limit is pooled across all users.
 
 If you hit the rate limit, please wait a bit and try again later. You can also contact Sourcegraph Support to discuss increasing your rate limit for your use case.
+
+### Error logging in VS Code on Linux
+
+On Linux, if you encounter an issue where your are unable to login to Cody using your Sourcegraph instance URL, with a valid access token and you observe that during the sign-in process VS Code just hangs and Cody cannot start, it could be possible that you may be having possible underlying networking rules related to SSL certificates.
+
+To resolve this via a workaround:
+
+1. Quit VS Code.
+2. Run `echo "export NODE_TLS_REJECT_UNAUTHORIZED=0" >> ~/.bashrc` in terminal.
+3. Restart VS Code and sign in again.

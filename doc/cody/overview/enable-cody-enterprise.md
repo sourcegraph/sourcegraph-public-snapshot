@@ -119,7 +119,7 @@ Cody enhances your coding experience by providing intelligent code suggestions, 
 ### Prerequisites
 
 - You have Sourcegraph version 5.1.0 or above
-- A Sourcegraph enterprise subscription with [Cody Gateway access](./../explanations/cody_gateway.md) or [an account with a third-party LLM provider](#using-a-third-party-llm-provider-directly)
+- A Sourcegraph enterprise subscription with [Cody Gateway access](./../explanations/cody_gateway.md) or [an account with a third-party LLM provider](#using-a-third-party-llm-provider)
 
 ### Enable Cody on your Sourcegraph instance
 
