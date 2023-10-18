@@ -176,7 +176,7 @@ You're all set to use Cody on your self-hosted Sourcegraph instance. You can lea
 
 ## Enabling codebase-aware answers
 
-> NOTE: To enable codebase-aware answers for Cody, you must first [configure the code graph context](./../core-concepts/code_graph_context.md).
+> NOTE: To enable codebase-aware answers for Cody, you must first [configure the code graph context](./../core-concepts/code-graph.md).
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension.
 

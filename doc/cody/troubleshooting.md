@@ -29,7 +29,7 @@ command 'cody.set-access-token' not found
 
 If you are logged into Sourcegraph.com, only public open source repositories on [this list](embedded-repos.md) are indexed. Please join the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) and message the `#embeddings-indexing` channel to get an open source repository added to the public index.
 
-If you’re connected to a Sourcegraph Enterprise instance, please ask your site admin to [Configure Code Graph Context](core-concepts/code_graph_context.md) for your Sourcegraph instance and then [Enable Cody](overview/enable-cody-enterprise.md) for your account.
+If you’re connected to a Sourcegraph Enterprise instance, please ask your site admin to [Configure Code Graph Context](core-concepts/code-graph.md) for your Sourcegraph instance and then [Enable Cody](overview/enable-cody-enterprise.md) for your account.
 
 If you're connected to the Cody app, you can trigger indexing for a repository by adding the repo to your app under Settings > Local repositories, navigating to Settings > Advanced settings > Embeddings jobs in the app, and scheduling embedding. If your repo has no git remote or still shows as `Not Indexed`, you'll need to follow the step below to set `Cody: Codebase` to the repository name as displayed at Settings > Local repositories in the Cody App.
 

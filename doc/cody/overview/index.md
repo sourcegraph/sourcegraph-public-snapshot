@@ -108,7 +108,7 @@ We value your feedback! You can <a href="https://about.sourcegraph.com/contact">
 
 ## What is Cody?
 
-Cody is a free, open-source AI coding assistant that writes, understands, and fixes code. Cody is powered by Sourcegraph's <a href="https://docs.sourcegraph.com/cody/core-concepts/code_graph_context">code graph</a> and uses knowledge of your entire codebase to give more accurate answers and generate idiomatic code.
+Cody is a free, open-source AI coding assistant that writes, understands, and fixes code. Cody is powered by Sourcegraph's <a href="https://docs.sourcegraph.com/cody/core-concepts/code-graph">code graph</a> and uses knowledge of your entire codebase to give more accurate answers and generate idiomatic code.
 
 Think of Cody as your personal AI coding assistant, equipped with a comprehensive understanding of three crucial elements:
 
@@ -177,7 +177,7 @@ If you have any questions regarding Cody, you can always ask our community on [G
 - [Enabling Cody for open source Sourcegraph.com users](./../overview/cody-with-sourcegraph.md)
 - [Installing the Cody VS Code extension](./../overview/install-vscode.md)
 - [Installing the Jetbrains extension (experimental)](./../overview/install-jetbrains.md)
-- [Configuring code graph context](./../core-concepts/code_graph_context.md)
+- [Configuring code graph context](./../core-concepts/code-graph.md)
 - [Sourcegraph Cody Gateway](./../core-concepts/cody_gateway.md)
 
 ## More resources
