@@ -33,11 +33,11 @@ pub fn main() {
             language,
             out,
             filenames,
-        } => index_impl(&language, &filenames, &out),
+        } => index_command(&language, &filenames, &out),
     }
 }
 
-fn index_impl(language: &String, filenames: &Vec<String>, out: &Option<String>) {
+fn index_command(language: &String, filenames: &Vec<String>, out: &Option<String>) {
     let p = BundledParser::get_parser(language).unwrap();
 
     let working_directory = Path::new("./");
@@ -91,7 +91,7 @@ fn index_impl(language: &String, filenames: &Vec<String>, out: &Option<String>) 
     write_message_to_file(path, index).expect("to write the file");
 }
 
-pub fn write_message_to_file<P>(
+fn write_message_to_file<P>(
     path: P,
     msg: impl protobuf::Message,
 ) -> Result<(), Box<dyn std::error::Error>>
@@ -106,4 +106,19 @@ where
     writer.write_all(&res)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::env::temp_dir;
+
+    #[test]
+    fn basic_test() {
+        let out_dir = temp_dir();
+        let java = include_str!("../../scip-syntax/testdata/globals.java");
+
+
+        let result = 2 + 2;
+        assert_eq!(result, 4);
+    }
 }
