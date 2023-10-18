@@ -56,5 +56,11 @@
     name: (identifier) @definition.term
 )
 
+; In Java grammar, declarations of type parameters are marked as type_parameter,
+; and call-site generic parameters are marked as type_arguments
+(type_parameter
+    (type_identifier) @definition.type
+)
+
 (identifier) @reference
 (type_identifier) @reference

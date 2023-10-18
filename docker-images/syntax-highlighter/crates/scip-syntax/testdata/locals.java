@@ -4,7 +4,7 @@ import java.lang.AutoCloseable;
 import java.util.*;
 import java.util.stream.*;
 
-public class Locals implements AutoCloseable {
+public class Locals<Container> implements AutoCloseable {
 
 	final String chars;
 
@@ -21,6 +21,10 @@ public class Locals implements AutoCloseable {
 	}
 
 	public void close() {
+	}
+
+	public static void create() {
+		var x = new Locals<Integer>("hello");
 	}
 
 	public record Person(String name, String address) {
@@ -48,7 +52,7 @@ public class Locals implements AutoCloseable {
 		return "text=" + getChars();
 	}
 
-	public <T> List<T> fromArrayToList(T[] a) {
+	public <T extends Container> List<T> fromArrayToList(T[] a) {
 		return Arrays.stream(a).collect(Collectors.toList());
 	}
 
