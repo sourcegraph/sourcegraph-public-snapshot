@@ -1,4 +1,4 @@
-// bazel-ignore
+// eslint-disable-next-line import/no-useless-path-segments
 import { eventRecorder } from '../../tracking/eventRecorder'
 import { logEvent } from '../../user/settings/backend'
 
