@@ -9,7 +9,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/prometheus v0.40.5
-	github.com/sourcegraph/log v0.0.0-20231018072732-c9c6af5e5ade
+	github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230613175844-f031949c72f5
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli/v2 v2.23.7

@@ -304,6 +304,8 @@ github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMB
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/sourcegraph/log v0.0.0-20231018072732-c9c6af5e5ade h1:EpakpjinOPDoLLUXfAzdrKc21teqkWJ3xLLTOINb3m8=
 github.com/sourcegraph/log v0.0.0-20231018072732-c9c6af5e5ade/go.mod h1:IDp09QkoqS8Z3CyN2RW6vXjgABkNpDbyjLIHNQwQ8P8=
+github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb h1:tHKdC+bXxxGJ0cy/R06kg6Z0zqwVGOWMx8uWsIwsaoY=
+github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb/go.mod h1:IDp09QkoqS8Z3CyN2RW6vXjgABkNpDbyjLIHNQwQ8P8=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
