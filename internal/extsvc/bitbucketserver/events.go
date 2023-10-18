@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -27,7 +28,7 @@ func ParseWebhookEvent(eventType string, payload []byte) (e any, err error) {
 	case "repo:build_status":
 		e = &BuildStatusEvent{}
 		return e, json.Unmarshal(payload, e)
-	case "pr:activity:status", "pr:activity:event", "pr:activity:rescope", "pr:activity:merge", "pr:activity:comment", "pr:activity:reviewers":
+	case "pr:activity:status", "pr:activity:event", "pr:activity:rescope", "pr:activity:merge", "pr:activity:comment", "pr:activity:reviewers", "pr:merged":
 		e = &PullRequestActivityEvent{}
 		return e, json.Unmarshal(payload, e)
 	case "pr:participant:status":
@@ -44,8 +45,25 @@ type PushEvent struct {
 	Repository Repo `json:"repository"`
 }
 
+type CustomTime time.Time
+
+// UnmarshalJSON we create a custom unmarshal func to handle the custom time format
+// from Bitbucket
+func (ct *CustomTime) UnmarshalJSON(b []byte) error {
+	// The date returned by the Bitbucket webhook is a string in the format:
+	// "2016-07-19T12:34:56+0000". We have to strip out the extraneous quote
+	// before parsing the string.
+	s := strings.Trim(string(b), "\"")
+	t, err := time.Parse("2006-01-02T15:04:05+0000", s)
+	if err != nil {
+		return err
+	}
+	*ct = CustomTime(t)
+	return nil
+}
+
 type PullRequestActivityEvent struct {
-	Date        time.Time      `json:"date"`
+	Date        CustomTime     `json:"date"`
 	Actor       User           `json:"actor"`
 	PullRequest PullRequest    `json:"pullRequest"`
 	Action      ActivityAction `json:"action"`
