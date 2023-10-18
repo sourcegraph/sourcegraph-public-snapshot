@@ -1,10 +1,15 @@
-# Code graph context
+# Codebase context
 
-Code graph context is Cody's ability to respond to queries using contextual information of a codebase. We recommend configuring code graph context for the best Cody experience.
+Cody can respond to queries using contextual information relevant to your codebase and your query. 
+We recommend configuring embeddings for the best Cody experience. 
+With embedings enabled, you will receive high-quality responses from Cody irrespective of which files you have open as it has the ability to find what files are relevent to your query.
+
 
 ## Relevant code files
 
 Cody reads relevant code files to increase the accuracy and quality of the response and make it match your own codebase's conventions. There are 2 ways Cody can find relevant code files: embeddings (preferred) and local keyword-based search.
+
+Today you can tell cody about your entire codebase via embeddings, in the future you will be able to include internal documentation such as wikis as additional context to your codebase via embeddings too. 
 
 ### Embeddings
 
