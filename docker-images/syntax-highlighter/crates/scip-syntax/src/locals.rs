@@ -366,8 +366,6 @@ pub fn parse_tree<'a>(
         let mut scope_modifier = None;
         let mut reassignment_behavior = None;
 
-        println!("captures: {:?}", m.captures);
-
         for capture in m.captures {
             let capture_name = match capture_names.get(capture.index as usize) {
                 Some(capture_name) => capture_name,
@@ -412,9 +410,6 @@ pub fn parse_tree<'a>(
 
             if capture_name.starts_with("reference") {
                 assert!(reference.is_none(), "only one reference per match");
-                let properties = config.query.property_settings(m.pattern_index);
-                println!("props: {:?}", properties);
-
                 reference = Some(capture_name);
             }
 
