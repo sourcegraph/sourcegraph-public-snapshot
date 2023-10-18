@@ -269,7 +269,7 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse YAML file '%s'\n", configFile))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse YAML file '%s'", configFile))
 	}
 
 	return config.Contents.Packages, nil
