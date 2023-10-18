@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -472,7 +471,6 @@ func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair,
 }
 
 func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, error) {
-	println(featureflag.FromContext(ctx).GetBool("ab-email-verification-alert"))
 	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, err
