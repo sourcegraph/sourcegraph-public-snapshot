@@ -1189,6 +1189,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	if len(opt.TopicFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.TopicFilters {
+			filter := filter
 			// This condition checks that the requested topics are contained in
 			// the repo's metadata. This is designed to work with the
 			// idx_repo_github_topics and idx_repo_gitlab_topics index
@@ -1204,11 +1205,22 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 				// Use Coalesce in case the JSON access evaluates to NULL.
 				// Since negating a NULL evaluates to NULL, we want to
 				// explicitly treat NULLs as false first
-				githubCond = `NOT COALESCE(` + githubCond + `, false)`
-				gitlabCond = `NOT COALESCE(` + gitlabCond + `, false)`
+				cond := sqlf.Sprintf(
+					`NOT (COALESCE(`+githubCond+`, false) OR COALESCE(`+gitlabCond+`, false))`,
+					filter.Topic,
+					filter.Topic,
+				)
+				ands = append(ands, cond)
+			} else {
+				cond := sqlf.Join(
+					[]*sqlf.Query{
+						sqlf.Sprintf(githubCond, filter.Topic),
+						sqlf.Sprintf(gitlabCond, filter.Topic),
+					},
+					"OR",
+				)
+				ands = append(ands, cond)
 			}
-			cond := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(githubCond, filter.Topic), sqlf.Sprintf(gitlabCond, filter.Topic)}, "OR")
-			ands = append(ands, cond)
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
