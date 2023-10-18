@@ -110,6 +110,16 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
+	info := exec.CommandContext(ctx, "p4", "info")
+	info.Env = append(os.Environ(),
+		"P4PORT="+p4port,
+		"P4USER="+p4user,
+		"P4PASSWD="+p4passwd,
+		"HOME="+p4home,
+	)
+	o, e := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), info))
+	fmt.Printf(">>>> INFO ERR: %v\n>>>> OUT: %v\n", e, string(o))
+
 	// `p4 ping` requires extra-special access, so we want to avoid using it
 	//
 	// p4 login -s checks the connection and the credentials,
@@ -122,13 +132,6 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 		"HOME="+p4home,
 	)
 
-	fmt.Printf(">>>>>>> ENV: %v <<<<<<<", strings.Join(cmd.Env, " "))
-
-	ping := exec.CommandContext(ctx, "ping", "-c", "4", "perforce.sgdev.org")
-	o, e := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), ping))
-	if e != nil {
-		fmt.Printf(">>>> PING ERR: %v\n>>>> OUT: %v\n", e, string(o))
-	}
 	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
