@@ -156,7 +156,7 @@ export class EventRecorder implements TelemetryRecorder<string, string, any, any
         this.recordViewEventInternal(feature, source, parameters, marketingTracking)
     }
 
-    recordEvent(feature: string, action: string, metadata?: any): void {
+    public recordEvent(feature: string, action: string, metadata?: any): void {
         // call to refresh the session
         this.resetSessionCookieExpiration()
 
