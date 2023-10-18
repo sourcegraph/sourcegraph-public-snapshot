@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-useless-path-segments
 import { eventRecorder } from '../../tracking/eventRecorder'
 import { logEvent } from '../../user/settings/backend'
 
@@ -10,12 +11,24 @@ class ServerAdminWrapper {
         logEvent(eventAction, eventProperties, publicArgument)
     }
 
-    public trackTelemetryPageView(feature: string, action: string, parameter?: any): void {
-        eventRecorder.record(feature, action, parameter)
+    public trackTelemetryPageView(
+        feature: string,
+        action: string,
+        source: any,
+        parameter?: any,
+        marketingTracking?: any
+    ): void {
+        eventRecorder.record(feature, action, source, parameter, marketingTracking)
     }
 
-    public trackTelemetryAction(feature: string, action: string, parameter?: any): void {
-        eventRecorder.record(feature, action, parameter)
+    public trackTelemetryAction(
+        feature: string,
+        action: string,
+        source: any,
+        parameter?: any,
+        marketingTracking?: any
+    ): void {
+        eventRecorder.record(feature, action, source, parameter, marketingTracking)
     }
 }
 

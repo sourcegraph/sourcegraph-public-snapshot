@@ -1,4 +1,3 @@
-import { f } from '@tauri-apps/api/event-2a9960e7'
 import cookies, { type CookieAttributes } from 'js-cookie'
 import { EMPTY, fromEvent, merge, type Observable } from 'rxjs'
 import { catchError, map, publishReplay, refCount, take } from 'rxjs/operators'
@@ -72,7 +71,7 @@ const browserExtensionMessageReceived: Observable<{ platform?: string; version?:
     refCount()
 )
 
-export class EventRecorder implements TelemetryRecorder<string, string, string, string, string> {
+export class EventRecorder implements TelemetryRecorder<string, string, any, any, any> {
     private hasStrippedQueryParameters = false
 
     private anonymousUserID = ''
@@ -116,24 +115,24 @@ export class EventRecorder implements TelemetryRecorder<string, string, string, 
     }
 
     constructor() {
-        // EventRecorder is never teared down
+        // EventTelemetry is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
         browserExtensionMessageReceived.subscribe(({ platform, version }) => {
             const args = { platform, version }
-            this.record('BrowserExtensionConnectedToServer', 'CONSTRUCTED', args)
+            this.record('BrowserExtensionConnectedToServer', 'VIEWED', 'WEB', { args }, null)
 
-            if (debugEventLoggingEnabled()) {
+            if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 logger.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
         })
 
-        this.initializeRecorderParameters()
+        this.initializeLogParameters()
     }
 
-    private recordViewEventInternal(feature: string, action: string, parameters?: any, logAsActiveUser = true): void {
+    private recordViewEventInternal(feature: string, source: any, parameters?: any, marketingTracking?: any): void {
         const props = pageViewQueryParameters(window.location.href)
-        serverAdmin.trackPageView(feature, action, parameters)
-        this.recordToConsole(feature, action, JSON.stringify(props))
+        serverAdmin.trackTelemetryPageView(feature, 'VIEWED', source, parameters, marketingTracking)
+        this.logTelemetryToConsole(feature, JSON.stringify(props))
 
         // Use flag to ensure URL query params are only stripped once
         if (!this.hasStrippedQueryParameters) {
@@ -145,39 +144,19 @@ export class EventRecorder implements TelemetryRecorder<string, string, string, 
     /**
      * Record a pageview, following the new event naming conventions
      *
-     * @param feature should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     * @param eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
-    public recordPageView(feature: string, action: string, parameter?: any, logAsActiveUser = true): void {
+    public recordPageView(feature: string, source: any, parameters?: any, marketingTracking?: any): void {
         // call to refresh the session
         this.resetSessionCookieExpiration()
 
         if (window.context?.userAgentIsBot || !feature) {
             return
         }
-        this.recordViewEventInternal(feature, action, parameter, logAsActiveUser)
+        this.recordViewEventInternal(feature, source, parameters, marketingTracking)
     }
 
     public recordEvent(feature: string, action: string, metadata?: any): void {
-        const props = {
-            feature,
-            action,
-            metadata,
-        }
-        serverAdmin.trackTelemetryAction(feature, action, metadata)
-        this.recordToConsole(feature, action, JSON.stringify(props))
-    }
-
-    /**
-     * Record a user action or event.
-     * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
-     *
-     * @param feature: the event name.
-     * @param action: the action taken.
-     * @param parameters: (optional) event properties. These get logged to our database, but are sanitized before being
-     * sent to our analytics systems. This may contain private info such as repository names or search queries
-     * but no unredacted string data will be sent to our analytics systems.
-     */
-    public record(feature: string, action: string, parameters?: any): void {
         // call to refresh the session
         this.resetSessionCookieExpiration()
 
@@ -187,13 +166,44 @@ export class EventRecorder implements TelemetryRecorder<string, string, string, 
         if (window.context?.userAgentIsBot || !feature) {
             return
         }
-        serverAdmin.trackAction(feature, action, parameters)
-        this.recordToConsole(feature, action, parameters)
+        serverAdmin.trackTelemetryAction(feature, action, 'WEB', metadata)
+        this.logTelemetryToConsole(feature, action, JSON.stringify(metadata))
     }
 
-    private recordToConsole(feature: string, action: string, parameters?: any): void {
-        if (debugEventLoggingEnabled()) {
-            logger.debug('%cEVENT %s', 'color: #aaa', feature, action, parameters)
+    /**
+     * Record a user action or event.
+     * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
+     *
+     * @param eventLabel: the event name.
+     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * sent to our analytics systems. This may contain private info such as repository names or search queries.
+     * @param publicArgument: event properties that include only public information. Do NOT
+     * include any private information, such as full URLs that may contain private repo names or
+     * search queries. The contents of this parameter are sent to our analytics systems.
+     */
+    public record(feature: string, action: string, source: any, parameters?: any, marketingTracking?: any): void {
+        // call to refresh the session
+        this.resetSessionCookieExpiration()
+
+        for (const listener of this.listeners) {
+            listener(feature)
+        }
+        if (window.context?.userAgentIsBot || !feature) {
+            return
+        }
+        serverAdmin.trackTelemetryAction(feature, action, source, parameters, marketingTracking)
+        this.logTelemetryToConsole(feature, action, source)
+    }
+
+    private logTelemetryToConsole(
+        feature?: string,
+        action?: string,
+        source?: any,
+        parameters?: any,
+        marketingTracking?: any
+    ): void {
+        if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
+            logger.debug('%cEVENT %s', 'color: #aaa', feature, action, source, parameters, marketingTracking)
         }
     }
 
@@ -386,7 +396,7 @@ export class EventRecorder implements TelemetryRecorder<string, string, string, 
      *
      * If user had an anonymous user ID in localStorage, it will be migrated to cookies.
      */
-    private initializeRecorderParameters(): void {
+    private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
         this.deviceSessionID = ''
@@ -450,16 +460,6 @@ export class EventRecorder implements TelemetryRecorder<string, string, string, 
 
 export const eventRecorder = new EventRecorder()
 
-export function debugEventLoggingEnabled(): boolean {
-    return !!localStorage && localStorage.getItem('eventLogDebug') === 'true'
-}
-
-export function setDebugEventLoggingEnabled(enabled: boolean): void {
-    if (localStorage) {
-        localStorage.setItem('eventLogDebug', String(enabled))
-    }
-}
-
 /**
  * Log events associated with URL query string parameters, and remove those parameters as necessary
  * Note that this is a destructive operation (it changes the page URL and replaces browser state) by
@@ -467,15 +467,12 @@ export function setDebugEventLoggingEnabled(enabled: boolean): void {
  */
 function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
-    if (parsedUrl.searchParams.has('signup')) {
-        eventRecorder.record('web:auth:signUpCompleted', 'SIGNUP')
+    const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
+    if (isBadgeRedirect) {
+        eventRecorder.record('RepoBadgeRedirected', 'VIEWED', 'WEB')
     }
 
-    if (parsedUrl.searchParams.has('signin')) {
-        eventRecorder.record('web:auth:signInCompleted', 'SIGNIN')
-    }
-
-    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
+    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
 }
 
 /**
@@ -497,13 +494,13 @@ function pageViewQueryParameters(url: string): UTMMarker {
     }
 
     if (utmSource === 'saved-search-email') {
-        eventRecorder.record('SavedSearchEmailClicked', 'CLICKED')
+        eventRecorder.record('SavedSearchEmail', 'CLICKED', 'WEB')
     } else if (utmSource === 'saved-search-slack') {
-        eventRecorder.record('SavedSearchSlackClicked', 'CLICKED')
+        eventRecorder.record('SavedSearchSlack', 'CLICKED', 'WEB')
     } else if (utmSource === 'code-monitoring-email') {
-        eventRecorder.record('CodeMonitorEmailLinkClicked', 'CLICKED')
+        eventRecorder.record('CodeMonitorEmailLink', 'CLICKED', 'WEB')
     } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
-        eventRecorder.record('UTMCampaignLinkClicked', 'CLICKED', utmProps)
+        eventRecorder.record('UTMCampaignLink', 'VIEWED', 'WEB', { utmProps })
     } else if (
         [
             'safari-extension',
@@ -514,9 +511,9 @@ function pageViewQueryParameters(url: string): UTMMarker {
             'gitlab-integration',
         ].includes(utmSource ?? '')
     ) {
-        eventRecorder.record('UTMCodeHostIntegration', 'CLICKED', utmProps)
+        eventRecorder.record('UTMCodeHostIntegration', 'VIEWED', 'WEB', { utmProps })
     } else if (utmMedium === 'VSCODE' && utmCampaign === 'vsce-sign-up') {
-        eventRecorder.record('VSCODESignUpLinkClicked', 'CLICKED', utmProps)
+        eventRecorder.record('VSCODESignUpLink', 'CLICKED', 'WEB', { utmProps })
     }
 
     return utmProps
