@@ -56,7 +56,7 @@ docker run \
   --platform linux/amd64 \
   --name wg_pgsql \
   --network=wg_test \
-  sourcegraph/postgres-12-alpine:5.1.0 >/dev/null
+  sourcegraph/postgres-12-alpine:$TEST_VERSION >/dev/null
 
 echo "--- 🐋 creating codeintel db"
 docker run \
@@ -65,7 +65,7 @@ docker run \
   --platform linux/amd64 \
   --name wg_codeintel-db \
   --network=wg_test \
-  sourcegraph/codeintel-db:5.1.0 >/dev/null
+  sourcegraph/codeintel-db:$TEST_VERSION >/dev/null
 
 echo "--- 🐋 creating codeinsights db"
 docker run \
@@ -74,10 +74,10 @@ docker run \
   --platform linux/amd64 \
   --name wg_codeinsights-db \
   --network=wg_test \
-  sourcegraph/codeinsights-db:5.1.0 >/dev/null
+  sourcegraph/codeinsights-db:$TEST_VERSION >/dev/null
 
 # Migrate those databases to a given version
-echo "--- 💽 Migration databases up to v5.1.0"
+echo "--- 💽 Migration databases up to v$TEST_VERSION"
 run_migrator sourcegraph/migrator:"$TEST_VERSION"
 
 # Load the docker image for migrator
