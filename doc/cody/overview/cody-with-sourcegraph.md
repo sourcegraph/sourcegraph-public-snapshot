@@ -124,7 +124,7 @@ You've now successfully connected Cody to your Sourcegraph.com instance.
 
 ## Configure code graph context for code-aware answers
 
-After connecting Cody to Sourcegraph.com, you can optionally use [code graph context](./../explanations/code_graph_context.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on sourcegraph.com, which have embeddings.
+After connecting Cody to Sourcegraph.com, you can optionally use [code graph context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on sourcegraph.com, which have embeddings.
 
 You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
 
