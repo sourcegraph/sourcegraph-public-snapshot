@@ -48,12 +48,14 @@ eslint_test_with_types(
     srcs = glob([
         "src/**/*.story.tsx",
         "src/**/*.fixtures.ts",  # required for import/extensions rule not to fail.
+        ":web_lib",
     ]),
     config = ":eslint_config",
     deps = [
         ":web_tests",
         "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
+        ":web_lib",
     ],
 )
 
@@ -144,13 +146,12 @@ generate_graphql_operations(
 ts_project(
     name = "graphql_operations",
     srcs = [
-        "//client/web:package.json",
         "src/graphql-operations.ts",
+        "//client/web:package.json",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/shared",
-        ":node_modules/@sourcegraph/telemetry",
     ],
 )
 
@@ -1863,6 +1864,7 @@ ts_project(
         "//:node_modules/uuid",
         "//:node_modules/yaml-ast-parser",
         "//:node_modules/zustand",
+        "//:node_modules/@sourcegraph/telemetry",
         "//client/web/src/rbac:constants",
         "//schema:schema-json",
     ],
