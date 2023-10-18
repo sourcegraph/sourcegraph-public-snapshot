@@ -161,7 +161,7 @@ filegroup(
 )
 
 #TOOD(bazel): why is the indirect '@lezer/common' dep required here?
-# bazel-precheck: no dep on file
+
 ts_project(
     name = "web_lib",
     srcs = [
