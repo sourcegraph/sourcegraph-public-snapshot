@@ -35,7 +35,7 @@ func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
 		Streamer: z,
 		hostname: hostname,
-		log:      sglog.Scoped("meteredSearcher", "wraps zoekt.Streamer with observability"),
+		log:      sglog.Scoped("meteredSearcher"),
 	}
 }
 

@@ -35,7 +35,7 @@ var (
 )
 
 func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
-	logger := log.Scoped("LicenseCheckHandler logEvent", "Event logging for LicenseCheckHandler")
+	logger := log.Scoped("LicenseCheckHandler logEvent")
 	eArg, err := json.Marshal(struct {
 		SiteID string `json:"site_id,omitempty"`
 	}{
@@ -88,7 +88,7 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
 }
 
 func NewLicenseCheckHandler(db database.DB) http.Handler {
-	baseLogger := log.Scoped("LicenseCheckHandler", "Handles license validity checks")
+	baseLogger := log.Scoped("LicenseCheckHandler")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

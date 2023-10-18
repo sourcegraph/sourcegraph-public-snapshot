@@ -66,7 +66,7 @@ type globalRateLimiter struct {
 }
 
 func NewGlobalRateLimiter(logger log.Logger, bucketName string) GlobalLimiter {
-	logger = logger.Scoped(fmt.Sprintf("GlobalRateLimiter.%s", bucketName), "")
+	logger = logger.Scoped(fmt.Sprintf("GlobalRateLimiter.%s", bucketName))
 
 	// Pool can return false for ok if the implementation of `KeyValue` is not
 	// backed by a real redis server. For App, we implemented an in-memory version

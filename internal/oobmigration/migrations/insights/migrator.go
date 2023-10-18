@@ -25,7 +25,7 @@ func NewMigrator(frontendDB, insightsDB *basestore.Store) *insightsMigrator {
 	return &insightsMigrator{
 		frontendStore: frontendDB,
 		insightsStore: insightsDB,
-		logger:        log.Scoped("insights-migrator", ""),
+		logger:        log.Scoped("insights-migrator"),
 	}
 }
 

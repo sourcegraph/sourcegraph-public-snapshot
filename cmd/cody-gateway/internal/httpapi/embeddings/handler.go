@@ -34,7 +34,7 @@ func NewHandler(
 	mf ModelFactory,
 	allowedModels []string,
 ) http.Handler {
-	baseLogger = baseLogger.Scoped("embeddingshandler", "The HTTP API handler for the embeddings endpoint.")
+	baseLogger = baseLogger.Scoped("embeddingshandler")
 
 	return featurelimiter.HandleFeature(
 		baseLogger,

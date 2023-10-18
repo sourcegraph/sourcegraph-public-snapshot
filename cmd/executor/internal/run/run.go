@@ -30,7 +30,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 		return err
 	}
 
-	logger = log.Scoped("service", "executor service")
+	logger = log.Scoped("service")
 
 	// Initialize tracing/metrics
 	observationCtx := observation.NewContext(logger)
@@ -103,7 +103,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 
 	if cfg.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(
-			log.Scoped("orphaned-vm-janitor", "deletes VMs from a previous executor instance"),
+			log.Scoped("orphaned-vm-janitor"),
 			cfg.VMPrefix,
 			nameSet,
 			cfg.CleanupTaskInterval,

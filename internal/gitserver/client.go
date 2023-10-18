@@ -89,7 +89,7 @@ type ClientSource interface {
 
 // NewClient returns a new gitserver.Client.
 func NewClient() Client {
-	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
+	logger := sglog.Scoped("GitserverClient")
 	return &clientImplementor{
 		logger:      logger,
 		httpClient:  defaultDoer,

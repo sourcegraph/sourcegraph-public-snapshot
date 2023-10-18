@@ -26,7 +26,7 @@ func NewRubyPackagesSyncer(
 	client *rubygems.Client,
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("RubyPackagesSyncer", "sync Ruby packages"),
+		logger:      log.Scoped("RubyPackagesSyncer"),
 		typ:         "ruby_packages",
 		scheme:      dependencies.RubyPackagesScheme,
 		placeholder: reposource.NewRubyVersionedPackage("sourcegraph/placeholder", "0.0.0"),

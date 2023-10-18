@@ -239,7 +239,7 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			// database in most cases, to avoid log spam when running sourcegraph/server for the
 			// first time.
 			delayBeforeUnreachableLog: 15 * time.Second,
-			logger:                    log.Scoped("conf.client", "configuration client"),
+			logger:                    log.Scoped("conf.client"),
 			sleepBetweenUpdates: func() {
 				jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 				time.Sleep(jitter)

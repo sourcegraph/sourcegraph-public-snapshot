@@ -67,7 +67,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 
 	externalAccountsStore := db.UserExternalAccounts()
 	users := db.Users()
-	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
+	logger := sglog.Scoped("authGetAndSaveUser")
 
 	acct := &extsvc.Account{
 		AccountSpec: op.ExternalAccount,

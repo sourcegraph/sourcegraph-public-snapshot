@@ -66,7 +66,7 @@ func Init() {
 	conf.ContributeValidator(validateConfig)
 
 	const pkgName = "openidconnect"
-	logger := log.Scoped(pkgName, "OpenID Connect config watch")
+	logger := log.Scoped(pkgName)
 	go func() {
 		conf.Watch(func() {
 			ps := getProviders()
