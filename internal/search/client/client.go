@@ -295,7 +295,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		Keyword:                 flagSet.GetBoolOr("search-new-keyword", false),
+		UseZoektParser:          flagSet.GetBoolOr("search-new-keyword", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

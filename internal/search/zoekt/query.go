@@ -18,7 +18,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	isCaseSensitive := b.IsCaseSensitive()
 
 	if b.Pattern != nil {
-		if feat.Keyword {
+		if feat.UseZoektParser {
 			q, err = toZoektPatternNew(
 				b.Pattern,
 				isCaseSensitive,

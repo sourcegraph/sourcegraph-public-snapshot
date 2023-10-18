@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Site configuration edit history no longer breaks when the user that made the edit is deleted. [#57656](https://github.com/sourcegraph/sourcegraph/pull/57656)
 - Drilling down into an insights query no longer mangles `content:` fields in your query. [#57679](https://github.com/sourcegraph/sourcegraph/pull/57679)
 
 ### Removed

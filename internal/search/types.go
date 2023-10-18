@@ -215,7 +215,11 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOpti
 	// replica respectively.
 	searchOpts.ShardMaxMatchCount = 10_000
 	searchOpts.TotalMaxMatchCount = 100_000
-	if o.KeywordScoring {
+	// KeywordScoring and Features.UseZoektParser represent different approaches we
+	// are evaluating to deliver a better keyword-based search experience. For now
+	// these are separate, but we might combine them in the future. Both profit from
+	// higher defaults.
+	if o.KeywordScoring || o.Features.UseZoektParser {
 		// Keyword searches tends to match much more broadly than code searches, so we need to
 		// consider more candidates to ensure we don't miss highly-ranked documents
 		searchOpts.ShardMaxMatchCount *= 10
@@ -416,9 +420,9 @@ type Features struct {
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
-	// Keyword when true will use a new way to interpret queries optimized for
+	// UseZoektParser when true will use a new way to interpret queries optimized for
 	// keyword search. This is currently just supported by Zoekt.
-	Keyword bool `json:"search-new-keyword"`
+	UseZoektParser bool `json:"search-new-keyword"`
 
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
