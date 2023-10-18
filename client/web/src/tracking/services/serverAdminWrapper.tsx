@@ -1,5 +1,6 @@
+// bazel-ignore
+import { eventRecorder } from '../../tracking/eventRecorder'
 import { logEvent } from '../../user/settings/backend'
-import { eventRecorder } from '../tracking/eventRecorder'
 
 class ServerAdminWrapper {
     public trackPageView(eventAction: string, eventProperties?: any, publicArgument?: any): void {
