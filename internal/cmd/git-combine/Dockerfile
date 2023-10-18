@@ -22,7 +22,7 @@ RUN go build .
 # Does not need to use sourcegraph-alpine since this is only deployed for
 # Sourcegraph.com.
 # alpine_base CHECK:ALPINE_OK
-FROM alpine:3.15 as alpine_base
+FROM alpine:3.15@sha256:794bc829ea39d85926be70fedfc9fb17aa4244d82b2fbecb5634b03e5dd97aca as alpine_base
 
 RUN apk add --no-cache\
     bash \

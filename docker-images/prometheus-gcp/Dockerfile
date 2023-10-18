@@ -1,11 +1,11 @@
 # sourcegraph/prometheus-gcp - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 
-FROM gke.gcr.io/prometheus-engine/prometheus:v2.35.0-gmp.2-gke.0 AS prom_upstream
+FROM gke.gcr.io/prometheus-engine/prometheus:v2.35.0-gmp.2-gke.0@sha256:02449f32a9fa8ab02c529eb34aa5c13f49d5b6c56f5d3cf23ff7ca23af6eb7d2 AS prom_upstream
 FROM prom/alertmanager:v0.25.0@sha256:db8303fa05341f5dc6b19b36a97325cd1b8307254ed9042a2c554af71f3c0284 AS am_upstream
 
 # Prepare final image
 # hadolint ignore=DL3007
-FROM quay.io/prometheus/busybox-linux-amd64:latest
+FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:9990834ed59b823ba7ea1374a4c4233f692926312ac3a1ae6b13b47be07d6934
 
 # Should reflect versions above
 LABEL com.sourcegraph.prometheus.version=v2.38.0
