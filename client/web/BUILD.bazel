@@ -143,7 +143,10 @@ generate_graphql_operations(
 
 ts_project(
     name = "graphql_operations",
-    srcs = ["src/graphql-operations.ts"],
+    srcs = [
+        "//client/web:package.json",
+        "src/graphql-operations.ts",
+    ],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/shared",
@@ -1760,7 +1763,6 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
-        ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
