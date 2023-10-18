@@ -180,7 +180,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 	return nil
 }
 
-	// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
+// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, port string) *exec.Cmd {
 	return exec.CommandContext(ctx, "p4-fusion",
 		"--path", depot+"...",
