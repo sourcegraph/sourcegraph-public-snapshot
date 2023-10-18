@@ -4,17 +4,20 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/lib/background"
 )
 
 type Service[ConfigT any] interface {
 	Name() string
 	Version() string
-	Start(
+	// Initialize should use given configuration to build a combined background
+	// routine that implements starting and stopping the service.
+	Initialize(
 		ctx context.Context,
 		logger log.Logger,
 		contract Contract,
 		config ConfigT,
-	) error
+	) (background.CombinedRoutine, error)
 }
 
 // Run handles the entire lifecycle of the program running Service.
@@ -54,13 +57,17 @@ func Run[
 		logger.Fatal("environment configuration error encountered", log.Error(err))
 	}
 
-	// Start up service
-	if err := service.Start(
+	// Initialize the service
+	routine, err := service.Initialize(
 		ctx,
 		log.Scoped("service", service.Name()),
 		contract,
 		*config,
-	); err != nil {
+	)
+	if err != nil {
 		logger.Fatal("service startup failed", log.Error(err))
 	}
+
+	// Start service routine, and block until it stops.
+	background.Monitor(ctx, routine)
 }
