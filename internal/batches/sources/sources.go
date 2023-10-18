@@ -130,7 +130,7 @@ type sourcer struct {
 
 func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	return &sourcer{
-		logger:    log.Scoped("sourcer", "logger scoped to sources.sourcer"),
+		logger:    log.Scoped("sourcer"),
 		cf:        cf,
 		newSource: csf,
 	}

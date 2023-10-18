@@ -35,7 +35,7 @@ func (gh *githupAppsInstallationJob) Routines(ctx context.Context, observationCt
 		return nil, errors.Wrap(err, "init DB")
 	}
 
-	logger := log.Scoped("github_apps_installation", "")
+	logger := log.Scoped("github_apps_installation")
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),

@@ -30,7 +30,7 @@ func InitBackgroundJobs(
 	// host, we manually check for BatchChangesCredentials.
 	ctx = actor.WithInternalActor(ctx)
 
-	observationCtx := observation.NewContext(log.Scoped("batches.background", "batches background jobs"))
+	observationCtx := observation.NewContext(log.Scoped("batches.background"))
 	bstore := store.New(db, observationCtx, key)
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, observationCtx, bstore, cf)

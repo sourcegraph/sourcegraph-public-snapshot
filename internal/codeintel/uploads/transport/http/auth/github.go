@@ -56,7 +56,7 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 var _ AuthValidator = enforceAuthViaGitHub
 
 func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
-	logger := log.Scoped("uncachedEnforceAuthViaGitHub", "uncached authentication enforcement")
+	logger := log.Scoped("uncachedEnforceAuthViaGitHub")
 
 	ghClient := github.NewV3Client(logger,
 		extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)

@@ -13,7 +13,7 @@ import (
 
 // NewChatCompletionsStreamHandler is an http handler which streams back completions results.
 func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
-	logger = logger.Scoped("chat", "chat completions handler")
+	logger = logger.Scoped("chat")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
 
 	return newCompletionsHandler(

@@ -60,7 +60,7 @@ func NewService(
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
-	logger := log.Scoped("service", "")
+	logger := log.Scoped("service")
 
 	service := &Service{
 		logger:                  logger,

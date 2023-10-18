@@ -13,7 +13,7 @@ import (
 )
 
 func newObservedClient(inner types.CompletionsClient) *observedClient {
-	observationCtx := observation.NewContext(log.Scoped("completions", "completions client"))
+	observationCtx := observation.NewContext(log.Scoped("completions"))
 	ops := newOperations(observationCtx)
 	return &observedClient{
 		inner: inner,

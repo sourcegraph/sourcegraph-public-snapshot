@@ -31,16 +31,11 @@ func NewExporter(
 	logger log.Logger,
 	c conftypes.SiteConfigQuerier,
 	g database.GlobalStateStore,
-	exportAddress string,
+	exportURL *url.URL,
 ) (Exporter, error) {
-	u, err := url.Parse(exportAddress)
-	if err != nil {
-		return nil, errors.Wrap(err, "invalid export address")
-	}
-
-	insecureTarget := u.Scheme != "https"
+	insecureTarget := exportURL.Scheme != "https"
 	if insecureTarget && !env.InsecureDev {
-		return nil, errors.Wrap(err, "insecure export address used outside of dev mode")
+		return nil, errors.New("insecure export address used outside of dev mode")
 	}
 
 	// TODO(@bobheadxi): Maybe don't use defaults.DialOptions etc, which are
@@ -51,7 +46,7 @@ func NewExporter(
 	} else {
 		opts = defaults.ExternalDialOptions(logger)
 	}
-	conn, err := grpc.DialContext(ctx, u.Host, opts...)
+	conn, err := grpc.DialContext(ctx, exportURL.Host, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing telemetry gateway")
 	}

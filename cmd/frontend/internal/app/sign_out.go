@@ -36,7 +36,7 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 }
 
 func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("signOut", "signout handler")
+	logger = logger.Scoped("signOut")
 	recorder := telemetryrecorder.NewBestEffort(logger, db)
 
 	return func(w http.ResponseWriter, r *http.Request) {

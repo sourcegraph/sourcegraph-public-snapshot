@@ -26,7 +26,6 @@ func GetHandler(svc *uploads.Service, db database.DB, gitserverClient gitserver.
 	handlerOnce.Do(func() {
 		logger := log.Scoped(
 			"uploads.handler",
-			"codeintel uploads http handler",
 		)
 
 		observationCtx := observation.NewContext(logger)
