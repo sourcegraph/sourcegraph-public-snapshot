@@ -56,6 +56,13 @@ public class Locals<Container> implements AutoCloseable {
 		return Arrays.stream(a).collect(Collectors.toList());
 	}
 
+	// ? in (wildcard) node doesn't have its own node and
+	// is not treated as a type identifier
+	public void printList(List<? extends Container> a) {
+		System.out.println(a);
+	}
+
+
 	public void print(int r) {
 		for (int i = 0; i < r; i++) {
 			System.out.println(i);
