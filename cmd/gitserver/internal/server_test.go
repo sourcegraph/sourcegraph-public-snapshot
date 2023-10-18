@@ -181,7 +181,7 @@ func TestExecRequest(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
@@ -310,7 +310,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
@@ -499,8 +499,8 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 			name: "Failing clone",
 			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
 				m := vcssyncer.NewMockVCSSyncer()
-				m.CloneCommandFunc.SetDefaultHook(func(ctx context.Context, url *vcs.URL, s string) (*exec.Cmd, error) {
-					return exec.Command("git", "clone", "/dev/null"), nil
+				m.CloneFunc.SetDefaultHook(func(context.Context, api.RepoName, *vcs.URL, common.GitDir, string, io.Writer) error {
+					return errors.New("fatal: repository '/dev/null' does not exist: exit status 128")
 				})
 				return m, nil
 			},

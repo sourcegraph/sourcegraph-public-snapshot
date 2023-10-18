@@ -382,7 +382,7 @@ func TestCleanupExpired(t *testing.T) {
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		Hostname:                "test-gitserver",
 		DB:                      database.NewDB(logger, dbtest.NewDB(t)),

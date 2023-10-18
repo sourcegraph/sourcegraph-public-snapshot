@@ -81,12 +81,11 @@ func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 
 	tr, _ := trace.New(ctx, "runCommand",
 		attribute.String("path", cmd.Unwrap().Path),
+		// TODO: Shouldn't this be redacted?
 		attribute.StringSlice("args", cmd.Unwrap().Args),
 		attribute.String("dir", cmd.Unwrap().Dir))
 	defer func() {
-		if err != nil {
-			tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		}
+		tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		tr.EndWithErr(&err)
 	}()
 
@@ -110,7 +109,7 @@ func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, er
 
 // RunRemoteGitCommand runs the command after applying the remote options. If
 // progress is not nil, all output is written to it in a separate goroutine.
-func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
@@ -120,93 +119,13 @@ func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts
 		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
 	}
 
-	var b interface {
-		Bytes() []byte
-	}
-
-	if progress != nil {
-		var pw progressWriter
-		mr := io.MultiWriter(&pw, progress)
-		cmd.Unwrap().Stdout = mr
-		cmd.Unwrap().Stderr = mr
-		b = &pw
-	} else {
-		var buf bytes.Buffer
-		cmd.Unwrap().Stdout = &buf
-		cmd.Unwrap().Stderr = &buf
-		b = &buf
-	}
-
-	// We don't care about exitStatus, we just rely on error.
-	_, err := RunCommand(ctx, cmd)
-
-	return b.Bytes(), err
+	return cmd.CombinedOutput()
 }
 
 // tlsExternal will create a new cache for this gitserer process and store the certificates set in
 // the site config.
 // This creates a long lived
 var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
-
-// progressWriter is an io.Writer that writes to a buffer.
-// '\r' resets the write offset to the index after last '\n' in the buffer,
-// or the beginning of the buffer if a '\n' has not been written yet.
-//
-// This exists to remove intermediate progress reports from "git clone
-// --progress".
-type progressWriter struct {
-	// writeOffset is the offset in buf where the next write should begin.
-	writeOffset int
-
-	// afterLastNewline is the index after the last '\n' in buf
-	// or 0 if there is no '\n' in buf.
-	afterLastNewline int
-
-	buf []byte
-}
-
-func (w *progressWriter) Write(p []byte) (n int, err error) {
-	l := len(p)
-	for {
-		if len(p) == 0 {
-			// If p ends in a '\r' we still want to include that in the buffer until it is overwritten.
-			break
-		}
-		idx := bytes.IndexAny(p, "\r\n")
-		if idx == -1 {
-			w.buf = append(w.buf[:w.writeOffset], p...)
-			w.writeOffset = len(w.buf)
-			break
-		}
-		switch p[idx] {
-		case '\n':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			w.writeOffset = len(w.buf)
-			w.afterLastNewline = len(w.buf)
-			p = p[idx+1:]
-		case '\r':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			// Record that our next write should overwrite the data after the most recent newline.
-			// Don't slice it off immediately here, because we want to be able to return that output
-			// until it is overwritten.
-			w.writeOffset = w.afterLastNewline
-			p = p[idx+1:]
-		default:
-			panic(fmt.Sprintf("unexpected char %q", p[idx]))
-		}
-	}
-	return l, nil
-}
-
-// String returns the contents of the buffer as a string.
-func (w *progressWriter) String() string {
-	return string(w.buf)
-}
-
-// Bytes returns the contents of the buffer.
-func (w *progressWriter) Bytes() []byte {
-	return w.buf
-}
 
 type tlsConfig struct {
 	// Whether to not verify the SSL certificate when fetching or pushing over
@@ -298,6 +217,10 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 	}
 }
 
+func ConfigureRemoteGitCommand(cmd *exec.Cmd) {
+	configureRemoteGitCommand(cmd, tlsExternal())
+}
+
 func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	// We split here in case the first command is an absolute path to the executable
 	// which allows us to safely match lower down
@@ -383,4 +306,26 @@ func WrapCmdError(cmd *exec.Cmd, err error) error {
 		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
 	}
 	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
+}
+
+// ScanLinesWithCRLF is a modified version of bufio.ScanLines that retains
+// the trailing newline byte(s) in the returned token and splits on either CR
+// or LF.
+func ScanLinesWithCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	if i := bytes.IndexAny(data, "\r\n"); i >= 0 {
+		// We have a full newline-terminated line.
+		return i + 1, data[0 : i+1], nil
+	}
+
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), data, nil
+	}
+
+	// Request more data.
+	return 0, nil, nil
 }
