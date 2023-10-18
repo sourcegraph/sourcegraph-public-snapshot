@@ -6,7 +6,7 @@ Cody's usage and limits policies help optimize its performance and ensure cost-e
 
 ## Cody context window size
 
-Cody's context window represents the amount of contextual information provided to assist in generating code or responses. Currently, the context window size for both chat and commands is set to **7000 tokens**.
+Cody's context window represents the amount of contextual information provided to assist in generating code or responses. Currently, the context window size for both chat and commands is set to **7000**.
 
 While Cody aims to provide maximum context for each prompt, there are limits to ensure efficiency. Cody shares all relevant context for chat but limits it to **12 code results** and **3 text results** (i.e., 15 tokens) to maintain performance.
 
