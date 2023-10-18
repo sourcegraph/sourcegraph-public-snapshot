@@ -160,8 +160,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.className = className
 
     // new GitHub code view: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view
-    const container =
-        codeViewElement.querySelector('#repos-sticky-header .react-blob-header-edit-and-raw-actions')
+    const container = codeViewElement.querySelector('#repos-sticky-header .react-blob-header-edit-and-raw-actions')
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
