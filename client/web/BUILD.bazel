@@ -52,10 +52,10 @@ eslint_test_with_types(
     ]),
     config = ":eslint_config",
     deps = [
+        ":web_lib",
         ":web_tests",
         "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
-        ":web_lib",
     ],
 )
 
@@ -161,7 +161,7 @@ filegroup(
 )
 
 #TOOD(bazel): why is the indirect '@lezer/common' dep required here?
-
+# bazel-precheck: no dep on file
 ts_project(
     name = "web_lib",
     srcs = [
@@ -1864,7 +1864,6 @@ ts_project(
         "//:node_modules/uuid",
         "//:node_modules/yaml-ast-parser",
         "//:node_modules/zustand",
-        "//:node_modules/@sourcegraph/telemetry",
         "//client/web/src/rbac:constants",
         "//schema:schema-json",
     ],
