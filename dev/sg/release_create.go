@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -38,6 +39,9 @@ type createReleaseManifest struct {
 			Major []cmdManifest `yaml:"major"`
 		} `yaml:"steps"`
 	} `yaml:"create"`
+	Finalize struct {
+		Steps []cmdManifest `yaml:"steps"`
+	} `yaml:"finalize"`
 	PromoteToPublic struct {
 		Steps []cmdManifest `yaml:"steps"`
 	} `yaml:"promoteToPublic"`
@@ -61,13 +65,35 @@ type releaseRunner struct {
 	typ     string
 }
 
-func NewReleaseRunner(cctx *cli.Context) (*releaseRunner, error) {
-	workdir := cctx.String("workdir")
-	pretend := cctx.Bool("pretend")
-	version := cctx.String("version")
-	typ := cctx.String("type")
+// releaseConfig is a serializable structure holding the configuration
+// for the release tooling, that can be passed around easily.
+type releaseConfig struct {
+	Version string `json:"version"`
+	Inputs  string `json:"inputs"`
+	Type    string `json:"type"`
+}
 
-	inputs, err := parseInputs(cctx.String("inputs"))
+func parseReleaseConfig(configRaw string) (*releaseConfig, error) {
+	rc := releaseConfig{}
+	if err := json.Unmarshal([]byte(configRaw), &rc); err != nil {
+		return nil, err
+	}
+	return &rc, nil
+}
+
+func NewReleaseRunner(workdir string, version string, inputsArg string, typ string, pretend bool) (*releaseRunner, error) {
+	inputs, err := parseInputs(inputsArg)
+	if err != nil {
+		return nil, err
+	}
+
+	config := releaseConfig{
+		Version: version,
+		Inputs:  inputsArg,
+		Type:    typ,
+	}
+
+	configBytes, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +101,7 @@ func NewReleaseRunner(cctx *cli.Context) (*releaseRunner, error) {
 	vars := map[string]string{
 		"version": version,
 		"tag":     strings.TrimPrefix(version, "v"),
+		"config":  string(configBytes),
 	}
 	for k, v := range inputs {
 		// TODO sanitize input format
@@ -83,7 +110,7 @@ func NewReleaseRunner(cctx *cli.Context) (*releaseRunner, error) {
 	}
 
 	announce2("setup", "Finding release manifest in %q", workdir)
-	if err := os.Chdir(cctx.String("workdir")); err != nil {
+	if err := os.Chdir(workdir); err != nil {
 		return nil, err
 	}
 
@@ -129,6 +156,7 @@ func NewReleaseRunner(cctx *cli.Context) (*releaseRunner, error) {
 		inputs:  inputs,
 		typ:     typ,
 		m:       &m,
+		vars:    vars,
 	}
 
 	return r, nil
@@ -186,21 +214,13 @@ func (r *releaseRunner) checkDeps(ctx context.Context) error {
 	return nil
 }
 
-func (r *releaseRunner) CreateRelease(ctx context.Context) error {
-	if err := r.checkDeps(ctx); err != nil {
-		return nil
-	}
+func (r *releaseRunner) Finalize(ctx context.Context) error {
+	// TODO skip check deps
+	announce2("finalize", "Running finalize steps for %s", r.version)
+	return r.runSteps(ctx, r.m.Finalize.Steps)
+}
 
-	var steps []cmdManifest
-	switch r.typ {
-	case "patch":
-		steps = r.m.Create.Steps.Patch
-	case "minor":
-		steps = r.m.Create.Steps.Minor
-	case "major":
-		steps = r.m.Create.Steps.Major
-	}
-
+func (r *releaseRunner) runSteps(ctx context.Context, steps []cmdManifest) error {
 	for _, step := range steps {
 		cmd := interpolate(step.Cmd, r.vars)
 		if r.pretend {
@@ -222,6 +242,24 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (r *releaseRunner) CreateRelease(ctx context.Context) error {
+	if err := r.checkDeps(ctx); err != nil {
+		return nil
+	}
+
+	var steps []cmdManifest
+	switch r.typ {
+	case "patch":
+		steps = r.m.Create.Steps.Patch
+	case "minor":
+		steps = r.m.Create.Steps.Minor
+	case "major":
+		steps = r.m.Create.Steps.Major
+	}
+
+	return r.runSteps(ctx, steps)
 }
 
 // func createReleaseCommand(cctx *cli.Context) error {

@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+
+	"github.com/sourcegraph/run"
 )
 
 var releaseCommand = &cli.Command{
@@ -64,11 +66,83 @@ var releaseCommand = &cli.Command{
 				},
 			},
 			Action: func(cctx *cli.Context) error {
-				r, err := NewReleaseRunner(cctx)
+				workdir := cctx.String("workdir")
+				pretend := cctx.Bool("pretend")
+				version := cctx.String("version")
+				typ := cctx.String("type")
+				inputs := cctx.String("inputs")
+
+				r, err := NewReleaseRunner(workdir, version, inputs, typ, pretend)
 				if err != nil {
 					return err
 				}
 				return r.CreateRelease(cctx.Context)
+			},
+		},
+		{
+			Name:      "finalize",
+			Usage:     "Finalize a release for a given product",
+			UsageText: "sg release create --workdir [path]",
+			Category:  category.Util,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "workdir",
+					Value: ".",
+					Usage: "Set the working directory to load release scripts from",
+				},
+				&cli.BoolFlag{
+					Name:  "pretend",
+					Value: false,
+					Usage: "Preview all the commands that would be performed",
+				},
+				&cli.StringFlag{
+					Name:  "version",
+					Value: "v6.6.666",
+					Usage: "Force version",
+				},
+				&cli.StringFlag{
+					Name:  "inputs",
+					Usage: "Set inputs to use for a given release, ex: --input=server=v5.2.404040,foobar=ffefe",
+				},
+				&cli.BoolFlag{
+					Name:  "config-from-commit",
+					Usage: "Infer release config from last commit",
+				},
+			},
+			Action: func(cctx *cli.Context) error {
+				workdir := cctx.String("workdir")
+				pretend := cctx.Bool("pretend")
+				version := cctx.String("version")
+				typ := cctx.String("type")
+				inputs := cctx.String("inputs")
+
+				if cctx.Bool("config-from-commit") {
+					cmd := run.Cmd(cctx.Context, "git", "log", "-1")
+					cmd.Dir(cctx.String("workdir"))
+					lines, err := cmd.Run().Lines()
+					if err != nil {
+						return err
+					}
+					// config dump is always the last line.
+					configRaw := lines[len(lines)-1]
+					if !strings.HasPrefix(strings.TrimSpace(configRaw), "{") {
+						return errors.New("Trying to infer config from last commit, but did not find serialized config")
+					}
+					rc, err := parseReleaseConfig(configRaw)
+					if err != nil {
+						return err
+					}
+
+					version = rc.Version
+					typ = rc.Type
+					inputs = rc.Inputs
+				}
+
+				r, err := NewReleaseRunner(workdir, version, inputs, typ, pretend)
+				if err != nil {
+					return err
+				}
+				return r.Finalize(cctx.Context)
 			},
 		},
 	},
