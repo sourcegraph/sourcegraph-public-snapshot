@@ -1205,20 +1205,10 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 				// Use Coalesce in case the JSON access evaluates to NULL.
 				// Since negating a NULL evaluates to NULL, we want to
 				// explicitly treat NULLs as false first
-				cond := sqlf.Sprintf(
-					`NOT (COALESCE(`+githubCond+`, false) OR COALESCE(`+gitlabCond+`, false))`,
-					filter.Topic,
-					filter.Topic,
-				)
+				cond := sqlf.Sprintf(`NOT (COALESCE(`+githubCond+`, false) OR COALESCE(`+gitlabCond+`, false))`, filter.Topic, filter.Topic)
 				ands = append(ands, cond)
 			} else {
-				cond := sqlf.Join(
-					[]*sqlf.Query{
-						sqlf.Sprintf(githubCond, filter.Topic),
-						sqlf.Sprintf(gitlabCond, filter.Topic),
-					},
-					"OR",
-				)
+				cond := sqlf.Sprintf(`(`+githubCond+` OR `+gitlabCond+`)`, filter.Topic, filter.Topic)
 				ands = append(ands, cond)
 			}
 		}
