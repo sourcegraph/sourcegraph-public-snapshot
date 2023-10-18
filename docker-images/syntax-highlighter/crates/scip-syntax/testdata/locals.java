@@ -30,6 +30,14 @@ public class Locals<Container> implements AutoCloseable {
 	public record Person(String name, String address) {
 	}
 
+	private class Binary<N extends Number> {
+		final N val;
+		public Binary(N value) {
+			this.val = value;
+		}
+	}
+
+
 	enum Flags {
 		NODE_TEXT, FOR_HEADING_ID, NO_TRIM_REF_TEXT_START, NO_TRIM_REF_TEXT_END, ADD_SPACES_BETWEEN_NODES,;
 
