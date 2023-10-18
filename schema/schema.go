@@ -1008,7 +1008,7 @@ type FusionClient struct {
 	FsyncEnable bool `json:"fsyncEnable,omitempty"`
 	// IncludeBinaries description: Whether to include binary files
 	IncludeBinaries bool `json:"includeBinaries,omitempty"`
-	// LookAhead description: DEPRECATED: this setting is ignored.
+	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
 	LookAhead int `json:"lookAhead,omitempty"`
 	// MaxChanges description: How many changes to fetch during initial clone. The default of -1 will fetch all known changes
 	MaxChanges int `json:"maxChanges,omitempty"`
