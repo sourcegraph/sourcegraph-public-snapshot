@@ -232,7 +232,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 		ctx                                        = context.Background()
 		lastKnownFileContents, lastKnownDBContents string
 		lastKnownConfigID                          int32
-		logger                                     = sglog.Scoped("SiteConfigEscapeHatch", "escape hatch for site config").With(sglog.String("path", siteConfigEscapeHatchPath))
+		logger                                     = sglog.Scoped("SiteConfigEscapeHatch").With(sglog.String("path", siteConfigEscapeHatchPath))
 	)
 	go func() {
 		// First, ensure we populate the file with what is currently in the DB.

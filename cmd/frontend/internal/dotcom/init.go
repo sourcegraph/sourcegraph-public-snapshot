@@ -51,11 +51,11 @@ func Init(
 	if envvar.SourcegraphDotComMode() {
 		enterpriseServices.DotcomRootResolver = dotcomRootResolver{
 			ProductSubscriptionLicensingResolver: productsubscription.ProductSubscriptionLicensingResolver{
-				Logger: observationCtx.Logger.Scoped("productsubscriptions", "resolvers for dotcom product subscriptions"),
+				Logger: observationCtx.Logger.Scoped("productsubscriptions"),
 				DB:     db,
 			},
 			CodyGatewayDotcomUserResolver: productsubscription.CodyGatewayDotcomUserResolver{
-				Logger: observationCtx.Logger.Scoped("codygatewayuser", "resolvers for dotcom cody gateway users"),
+				Logger: observationCtx.Logger.Scoped("codygatewayuser"),
 				DB:     db,
 			},
 		}

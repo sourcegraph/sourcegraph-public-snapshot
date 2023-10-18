@@ -39,7 +39,7 @@ func main() {
 
 	ignoreRulesWithHost := ignoreRulesWithHostFlag == nil || *ignoreRulesWithHostFlag
 
-	logger := log.Scoped("scanprotects", "")
+	logger := log.Scoped("scanprotects")
 	run(logger, *depot, os.Stdin, ignoreRulesWithHost)
 }
 

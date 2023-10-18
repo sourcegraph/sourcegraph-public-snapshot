@@ -81,7 +81,7 @@ func NewFirecrackerRunner(
 		cmd:              cmd,
 		vmName:           vmName,
 		workspaceDevice:  workspaceDevice,
-		internalLogger:   log.Scoped("firecracker-runner", ""),
+		internalLogger:   log.Scoped("firecracker-runner"),
 		cmdLogger:        logger,
 		options:          options,
 		dockerAuthConfig: actualDockerAuthConfig,

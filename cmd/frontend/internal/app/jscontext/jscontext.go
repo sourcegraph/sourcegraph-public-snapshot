@@ -305,7 +305,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		}
 	}
 
-	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext"), db)
 	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
 	if err != nil {
 		needsRepositoryConfiguration = false

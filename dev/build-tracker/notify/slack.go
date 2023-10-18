@@ -112,7 +112,7 @@ func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Clie
 	history := make(map[int]*SlackNotification)
 
 	return &Client{
-		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		logger:  logger.Scoped("notificationClient"),
 		slack:   *slackClient,
 		team:    teamResolver,
 		channel: channel,

@@ -27,7 +27,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	logger := srs.logger.Scoped("languages", "provide stats on langauges from the search results")
+	logger := srs.logger.Scoped("languages")
 	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient(), matches)
 	if err != nil {
 		return nil, err

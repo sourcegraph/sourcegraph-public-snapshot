@@ -84,7 +84,7 @@ func Main() {
 	})
 	defer liblog.Sync()
 
-	logger := sglog.Scoped("server", "Sourcegraph server")
+	logger := sglog.Scoped("server")
 
 	// Ensure CONFIG_DIR and DATA_DIR
 

@@ -170,7 +170,7 @@ func (s *searchInsightLivePreviewSeriesResolver) Label(ctx context.Context) (str
 func getPreviewRepos(ctx context.Context, repoScope graphqlbackend.RepositoryScopeInput, logger log.Logger) ([]string, error) {
 	var repos []string
 	if repoScope.RepositoryCriteria != nil {
-		repoQueryExecutor := query.NewStreamingRepoQueryExecutor(logger.Scoped("live_preview_resolver", ""))
+		repoQueryExecutor := query.NewStreamingRepoQueryExecutor(logger.Scoped("live_preview_resolver"))
 		repoQuery, err := querybuilder.RepositoryScopeQuery(*repoScope.RepositoryCriteria)
 		if err != nil {
 			return nil, err

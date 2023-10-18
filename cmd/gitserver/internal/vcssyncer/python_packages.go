@@ -28,7 +28,7 @@ func NewPythonPackagesSyncer(
 	reposDir string,
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("PythonPackagesSyncer", "sync Python packages"),
+		logger:      log.Scoped("PythonPackagesSyncer"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
 		placeholder: reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0"),
@@ -84,7 +84,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 // files that aren't valid or that are potentially malicious. It detects the kind of archive
 // and compression used with the given packageURL.
 func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) error {
-	logger := log.Scoped("unpackPythonPackage", "unpackPythonPackage unpacks the given python package archive into workDir")
+	logger := log.Scoped("unpackPythonPackage")
 	u, err := url.Parse(packageURL)
 	if err != nil {
 		return errors.Wrap(err, "bad python package URL")
