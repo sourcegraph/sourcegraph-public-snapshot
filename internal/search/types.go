@@ -416,6 +416,10 @@ type Features struct {
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
+	// Keyword when true will use a new way to interpret queries optimized for
+	// keyword search. This is currently just supported by Zoekt.
+	Keyword bool `json:"search-new-keyword"`
+
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
