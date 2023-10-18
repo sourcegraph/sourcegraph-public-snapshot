@@ -1741,6 +1741,7 @@ ts_project(
         "src/util/size.ts",
         "src/util/time.ts",
         "src/util/url.ts",
+        "//client/web:package.json",
     ],
     data = [
         ":enterprise-yaml",
@@ -1760,7 +1761,6 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
-        ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
