@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const wolfiImageDir = "wolfi-images"
@@ -268,7 +269,7 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to parse YAML file '%s'", configFile)
 	}
 
 	return config.Contents.Packages, nil
