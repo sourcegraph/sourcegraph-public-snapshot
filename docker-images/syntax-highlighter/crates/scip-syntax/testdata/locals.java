@@ -32,11 +32,17 @@ public class Locals<Container> implements AutoCloseable {
 
 	private class Binary<N extends Number> {
 		final N val;
+
 		public Binary(N value) {
 			this.val = value;
 		}
 	}
 
+	public void checks(Object person) {
+		if (person instanceof Person(String x, String y)) {
+			System.out.println(x + "," + y);
+    }
+	}
 
 	enum Flags {
 		NODE_TEXT, FOR_HEADING_ID, NO_TRIM_REF_TEXT_START, NO_TRIM_REF_TEXT_END, ADD_SPACES_BETWEEN_NODES,;
@@ -69,7 +75,6 @@ public class Locals<Container> implements AutoCloseable {
 	public void printList(List<? extends Container> a) {
 		System.out.println(a);
 	}
-
 
 	public void print(int r) {
 		for (int i = 0; i < r; i++) {

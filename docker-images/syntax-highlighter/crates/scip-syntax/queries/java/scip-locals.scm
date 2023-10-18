@@ -56,6 +56,10 @@
     name: (identifier) @definition.term
 )
 
+(record_pattern_component
+  (identifier) @definition.term
+)
+
 ; In Java grammar, declarations of type parameters are marked as type_parameter,
 ; and call-site generic parameters are marked as type_arguments
 (type_parameter
