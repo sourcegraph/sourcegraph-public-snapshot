@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -28,6 +29,10 @@ type client struct {
 	// should be closed when future queries to the client returns the most up to date
 	// configuration.
 	sourceUpdates <-chan chan struct{}
+
+	// metricDurationSinceLastSuccessfulUpdateSeconds measures the duration in seconds since the client's
+	// last successful update from the configuration source
+	metricDurationSinceLastSuccessfulUpdateSeconds prometheus.Gauge
 }
 
 var _ conftypes.UnifiedQuerier = &client{}
@@ -47,7 +52,12 @@ func DefaultClient() *client {
 // MockClient returns a client in the same basic configuration as the DefaultClient, but is not limited to a global singleton.
 // This is useful to mock configuration in tests without race conditions modifying values when running tests in parallel.
 func MockClient() *client {
-	return &client{store: newStore()}
+	return &client{
+		store: newStore(),
+		metricDurationSinceLastSuccessfulUpdateSeconds: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "src_mock_conf_client_time_since_last_successful_update_seconds",
+			Help: "Time since the last successful update of the configuration by the mock conf client"}),
+	}
 }
 
 // Raw returns a copy of the raw configuration.
@@ -277,8 +287,12 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 	// error on this initial attempt.
 	_ = c.fetchAndUpdate(opts.logger)
 
-	start := time.Now()
+	lastSuccessfulUpdate := time.Now()
 	for {
+		if c.metricDurationSinceLastSuccessfulUpdateSeconds != nil { // Update configuration latency at the top of the loop
+			c.metricDurationSinceLastSuccessfulUpdateSeconds.Set(time.Since(lastSuccessfulUpdate).Seconds())
+		}
+
 		logger := opts.logger
 
 		// signalDoneReading, if set, indicates that we were prompted to update because
@@ -293,19 +307,27 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			logger = logger.With(log.String("triggered_by", "waitForSleep"))
 		}
 
+		if c.metricDurationSinceLastSuccessfulUpdateSeconds != nil { // Update configuration latency after sleeping
+			c.metricDurationSinceLastSuccessfulUpdateSeconds.Set(time.Since(lastSuccessfulUpdate).Seconds())
+		}
+
 		logger.Debug("checking for updates")
 		err := c.fetchAndUpdate(logger)
 		if err != nil {
 			// Suppress log messages for errors caused by the frontend being unreachable until we've
 			// given the frontend enough time to initialize (in case other services start up before
 			// the frontend), to reduce log spam.
-			if time.Since(start) > opts.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
+			if time.Since(lastSuccessfulUpdate) > opts.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
 				logger.Error("received error during background config update", log.Error(err))
 			}
 		} else {
 			// We successfully fetched the config, we reset the timer to give
 			// frontend time if it needs to restart
-			start = time.Now()
+			lastSuccessfulUpdate = time.Now()
+		}
+
+		if c.metricDurationSinceLastSuccessfulUpdateSeconds != nil { // Record the update latency after the fetch
+			c.metricDurationSinceLastSuccessfulUpdateSeconds.Set(time.Since(lastSuccessfulUpdate).Seconds())
 		}
 
 		// Indicate that we are done reading, if we were prompted to update by the updates

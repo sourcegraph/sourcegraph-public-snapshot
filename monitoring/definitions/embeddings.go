@@ -12,7 +12,23 @@ func Embeddings() *monitoring.Dashboard {
 		Name:        "embeddings",
 		Title:       "Embeddings",
 		Description: "Handles embeddings searches.",
+		Variables: []monitoring.ContainerVariable{
+			{
+				Label: "instance",
+				Name:  "instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_embeddings_cache_hit_count",
+					LabelName:     "instance",
+					ExampleOption: "embeddings:6099",
+				},
+				Multi: true,
+			},
+		},
 		Groups: []monitoring.Group{
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "embeddings",
+				InstanceFilterRegex: `${instance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
