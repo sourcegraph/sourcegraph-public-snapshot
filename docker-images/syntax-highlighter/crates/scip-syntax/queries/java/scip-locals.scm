@@ -29,6 +29,10 @@
 
 (for_statement) @scope
 
+(enum_constant
+  name: (identifier) @definition.term
+)
+
 (enhanced_for_statement
     name: (identifier) @definition.term
 ) @scope
@@ -48,10 +52,8 @@
     name: (identifier) @definition.term
 )
 
-(local_variable_declaration
-    (variable_declarator
-        name: (identifier) @definition.term
-    )
+(variable_declarator
+    name: (identifier) @definition.term
 )
 
 (identifier) @reference
