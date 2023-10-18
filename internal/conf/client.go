@@ -56,7 +56,7 @@ func MockClient() *client {
 		store: newStore(),
 		metricDurationSinceLastSuccessfulUpdateSeconds: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "src_mock_conf_client_time_since_last_successful_update_seconds",
-			Help: "Time since the last successful update of the configuration by the conf client"}),
+			Help: "Time since the last successful update of the configuration by the mock conf client"}),
 	}
 }
 
