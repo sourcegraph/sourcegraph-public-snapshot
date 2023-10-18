@@ -90,7 +90,7 @@
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": ["enabled", "lookAhead"],
+      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Enable the p4-fusion client for cloning and fetching repos",
@@ -128,7 +128,7 @@
           "minimum": 1
         },
         "lookAhead": {
-          "description": "How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them",
+          "description": "DEPRECATED: this setting is ignored.",
           "type": "integer",
           "default": 2000,
           "minimum": 1
