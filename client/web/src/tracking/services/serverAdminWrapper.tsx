@@ -1,3 +1,4 @@
+import { eventRecorder } from '../../tracking/eventRecorder'
 import { logEvent } from '../../user/settings/backend'
 
 class ServerAdminWrapper {
@@ -7,6 +8,26 @@ class ServerAdminWrapper {
 
     public trackAction(eventAction: string, eventProperties?: any, publicArgument?: any): void {
         logEvent(eventAction, eventProperties, publicArgument)
+    }
+
+    public trackTelemetryPageView(
+        feature: string,
+        action: string,
+        source: any,
+        parameter?: any,
+        marketingTracking?: any
+    ): void {
+        eventRecorder.record(feature, action, source, parameter, marketingTracking)
+    }
+
+    public trackTelemetryAction(
+        feature: string,
+        action: string,
+        source: any,
+        parameter?: any,
+        marketingTracking?: any
+    ): void {
+        eventRecorder.record(feature, action, source, parameter, marketingTracking)
     }
 }
 
