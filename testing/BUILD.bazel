@@ -252,3 +252,13 @@ server_integration_test(
         "no-sanbdox",
     ],
 )
+
+sh_binary(
+    name = "migration_test",
+    srcs = [":migration_test.sh"],
+    args = [
+        "$(location //cmd/migrator:image_tarball)",
+        "5.1.0",
+    ],
+    data = ["//cmd/migrator:image_tarball"]
+)
