@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/jsonx"
 	sglog "github.com/sourcegraph/log"
 
@@ -106,7 +108,13 @@ func getModeUncached() configurationMode {
 var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
-	defaultClient := &client{store: newStore()}
+	defaultClient := &client{
+		store: newStore(),
+		metricDurationSinceLastSuccessfulUpdateSeconds: promauto.NewGauge(prometheus.GaugeOpts{
+			Name: "src_conf_client_time_since_last_successful_update_seconds",
+			Help: "Time since the last successful update of the configuration by the conf client",
+		}),
+	}
 
 	mode := getMode()
 	// Don't kickoff the background updaters for the client/server

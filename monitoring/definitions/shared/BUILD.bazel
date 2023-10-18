@@ -28,6 +28,7 @@ go_library(
         "provisioning.go",
         "queues.go",
         "shared.go",
+        "site_configuration.go",
         "standard.go",
         "usage_data_pipeline.go",
         "workerutil.go",
