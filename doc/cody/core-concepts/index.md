@@ -21,4 +21,4 @@
 ## Code Graph
 
 - [Overview](code-graph.md)
-- [Code Graph Data Uploads](./../../code_navigation/explanations/uploads)
+- [Code Graph Data Uploads](./../../code_navigation/explanations/uploads.md)
