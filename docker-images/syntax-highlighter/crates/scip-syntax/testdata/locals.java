@@ -1,68 +1,96 @@
 package com.hello;
 
-import com.hello1.TextContainer;
-import java.util.ArrayList;
+import java.lang.AutoCloseable;
+import java.util.*;
+import java.util.stream.*;
 
-public class Text implements TextContainer {
-    public Text(String chars) {
-        super(chars);
-    }
+public class Locals implements AutoCloseable {
 
-    public Text append(String chars, int num) {
-        return new Text(this.chars + chars);
-    }
+	final String chars;
 
-    public record Person (String name, String address) {}
+	public Locals(String chars) {
+		this.chars = chars;
+	}
 
-    enum Flags {
-        Flags() {
-            this(1);
-        }
+	public Locals append(String chars, int num, Locals text) {
+		return new Locals(this.chars + chars + text.getChars());
+	}
 
-        Flags(int bits) {
-            this.bits = bits;
-        }
-    }
+	public String getChars() {
+		return this.chars;
+	}
 
-    protected String toStringAttributes() {
-        return "text=" + getChars();
-    }
+	public void close() {
+	}
 
-    public void print(int i) {
-        for (int i = 0; i < 5; i++) {
-          System.out.println(i);
-        }
-        System.out.println(i);
-    }
+	public record Person(String name, String address) {
+	}
 
-    public interface Hello {
+	enum Flags {
+		NODE_TEXT, FOR_HEADING_ID, NO_TRIM_REF_TEXT_START, NO_TRIM_REF_TEXT_END, ADD_SPACES_BETWEEN_NODES,;
 
-        public void func1(Hello t) {
-            var newT = t;
-        }
+		final int bits;
 
-    }
+		Flags() {
+			this(1);
+		}
 
-    public void blocks(int num) {
-        {
-            var num = 25;
-            {
-                var num = 100;
-            }
-        }
-    }
+		Flags(int bits) {
+			this.bits = bits;
+		}
 
-    public void test() {
-        ArrayList<Integer> numbers = new ArrayList<Integer>();
-        numbers.add(5);
-        numbers.add(9);
-        numbers.add(8);
-        numbers.add(1);
-        numbers.forEach( (n) -> { System.out.println(n); } );
+		public static boolean hasNodeText(Flags bits) {
+			return (bits.bits & Flags.NODE_TEXT.bits) != 0;
+		}
+	}
 
-        for(Integer num: numbers) {
-            System.out.println(num);
-        }
+	protected String toStringAttributes() {
+		return "text=" + getChars();
+	}
 
-    }
+	public <T> List<T> fromArrayToList(T[] a) {
+		return Arrays.stream(a).collect(Collectors.toList());
+	}
+
+	public void print(int r) {
+		for (int i = 0; i < r; i++) {
+			System.out.println(i);
+		}
+		System.out.println(r);
+	}
+
+	public interface Hello {
+		public void func1(Hello t);
+	}
+
+	public class Hello2 {
+		public Hello2(int t) {
+			var newT = t;
+		}
+	}
+
+	public void blocks(int num) {
+		{
+			var num2 = 25;
+			{
+				var num3 = 100;
+			}
+		}
+	}
+
+	public void test() {
+		ArrayList<Integer> numbers = new ArrayList<Integer>();
+		numbers.add(5);
+		numbers.add(9);
+		numbers.add(8);
+		numbers.add(1);
+		numbers.forEach((n) -> {
+			System.out.println(n);
+		});
+
+		for (Integer num : numbers) {
+			System.out.println(num);
+		}
+
+	}
 }
