@@ -67,7 +67,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 			// ASAP.
 			if envvar.SourcegraphDotComMode() {
 				diskSizer := &StatDiskSizer{}
-				logger := logger.Scoped("dotcom-repo-cleaner", "The background janitor process to clean up repos on Sourcegraph.com that haven't been changed in a long time")
+				logger := logger.Scoped("dotcom-repo-cleaner")
 				toFree, err := howManyBytesToFree(logger, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree)
 				if err != nil {
 					logger.Error("ensuring free disk space", log.Error(err))
@@ -245,7 +245,7 @@ func cleanupRepos(
 	cloneRepo cloneRepoFunc,
 	gitServerAddrs gitserver.GitserverAddresses,
 ) {
-	logger = logger.Scoped("cleanup", "repositories cleanup operation")
+	logger = logger.Scoped("cleanup")
 
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -682,7 +682,7 @@ func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID
 		return nil
 	}
 
-	logger = logger.Scoped("freeUpSpace", "removes git directories under ReposDir")
+	logger = logger.Scoped("freeUpSpace")
 
 	// Get the git directories and their mod times.
 	gitDirs, err := findGitDirs(reposDir)

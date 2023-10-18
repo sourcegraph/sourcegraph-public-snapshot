@@ -123,7 +123,7 @@ func Init(logger log.Logger, c WatchableConfigurationSource) {
 
 func newTracer(logger log.Logger, provider *oteltracesdk.TracerProvider, debugMode *atomic.Bool) oteltrace.TracerProvider {
 	// Set up logging
-	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
+	otelLogger := logger.AddCallerSkip(2).Scoped("otel")
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
 		if debugMode.Load() {
 			otelLogger.Warn("error encountered", log.Error(err))

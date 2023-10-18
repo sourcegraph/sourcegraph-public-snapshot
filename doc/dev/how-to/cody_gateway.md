@@ -1,6 +1,6 @@
 # How to set up Cody Gateway locally
 
-> WARNING: This is a development guide - to use Cody Gateway for Sourcegraph, refer to [Sourcegraph Cody Gateway](../../cody/explanations/cody_gateway.md).
+> WARNING: This is a development guide - to use Cody Gateway for Sourcegraph, refer to [Sourcegraph Cody Gateway](../../cody/core-concepts/cody_gateway.md).
 
 This guide documents how to set up [Cody Gateway](https://handbook.sourcegraph.com/departments/engineering/teams/cody/cody-gateway/) locally for development.
 
@@ -63,7 +63,7 @@ All event logging is output as standard logs in development under the `cody-gate
 
 ## Working with BigQuery for events logging
 
-> NOTE: To make authentication work magically with the GCP, you need to install the [`gcloud`](https://cloud.google.com/sdk/docs/install-sdk) CLI and 
+> NOTE: To make authentication work magically with the GCP, you need to install the [`gcloud`](https://cloud.google.com/sdk/docs/install-sdk) CLI and
 run `gcloud auth login --project cody-gateway-dev` once.
 
 To send events to BigQuery while developing Cody Gateway locally, add the following to your `sg.config.overwrite.yaml`:

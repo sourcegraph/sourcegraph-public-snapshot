@@ -119,7 +119,7 @@ Cody enhances your coding experience by providing intelligent code suggestions, 
 ### Prerequisites
 
 - You have Sourcegraph version 5.1.0 or above
-- A Sourcegraph enterprise subscription with [Cody Gateway access](./../explanations/cody_gateway.md) or [an account with a third-party LLM provider](#using-a-third-party-llm-provider)
+- A Sourcegraph enterprise subscription with [Cody Gateway access](./../core-concepts/cody_gateway.md) or [an account with a third-party LLM provider](#using-a-third-party-llm-provider-directly)
 
 ### Enable Cody on your Sourcegraph instance
 
@@ -127,7 +127,7 @@ Cody uses one or more third-party LLM (Large Language Model) providers. Make sur
 
 This requires site-admin privileges. To do so,
 
-1. First, configure your desired LLM provider either by [Using Sourcegraph Cody Gateway](./../explanations/cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise) (recommended) or [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
+1. First, configure your desired LLM provider either by [Using Sourcegraph Cody Gateway](./../core-concepts/cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise) (recommended) or [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
 
     > NOTE: If you are a Sourcegraph Cloud customer, skip directly to step 3.
 
@@ -140,7 +140,7 @@ This requires site-admin privileges. To do so,
     }
 ```
 
-3. Finally, set up a policy to automatically [create  and configure embeddings](./../explanations/code_graph_context.md#configuring-embeddings) for your repositories.
+1. Finally, set up a policy to automatically [create and configure](./../core-concepts/embeddings/configure-embeddings.md) embeddings for your repositories.
 
 Cody is now fully enabled on your self-hosted Sourcegraph enterprise instance!
 
@@ -176,7 +176,7 @@ You're all set to use Cody on your self-hosted Sourcegraph instance. You can lea
 
 ## Enabling codebase-aware answers
 
-> NOTE: To enable codebase-aware answers for Cody, you must first [configure the code graph context](./../explanations/code_graph_context.md).
+> NOTE: To enable codebase-aware answers for Cody, you must first [configure the code graph context](./../core-concepts/code-graph.md).
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension.
 
@@ -224,7 +224,7 @@ To enable Cody only for some users, for example, when rolling out a Cody POC, fo
 
 ## Using a third-party LLM provider
 
-Instead of [Sourcegraph Cody Gateway](./../explanations/cody_gateway.md), you can also configure Sourcegraph to use a third-party provider directly, like:
+Instead of [Sourcegraph Cody Gateway](./../core-concepts/cody_gateway.md), you can also configure Sourcegraph to use a third-party provider directly, like:
 
 - Anthropic
 - OpenAI
@@ -337,4 +337,4 @@ For the access token, you can either:
 - Set it to `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` if directly configuring the credentials
 - Set it to `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>:<SESSION_TOKEN>` if a session token is also required
 
-Similarly, you can also [use a third-party LLM provider directly for embeddings](./../explanations/code_graph_context.md#using-a-third-party-embeddings-provider-directly).
+Similarly, you can also [use a third-party LLM provider directly for embeddings](./../core-concepts/embeddings.md#third-party-embeddings-provider).

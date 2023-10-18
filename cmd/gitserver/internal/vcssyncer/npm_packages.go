@@ -33,7 +33,7 @@ func NewNpmPackagesSyncer(
 	}
 
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("NPMPackagesSyncer", "sync NPM packages"),
+		logger:      log.Scoped("NPMPackagesSyncer"),
 		typ:         "npm_packages",
 		scheme:      dependencies.NpmPackagesScheme,
 		placeholder: placeholder,
@@ -125,7 +125,7 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 // Additionally, if all the files in the tarball have paths of the form
 // dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
 func decompressTgz(tgz io.Reader, destination string) error {
-	logger := log.Scoped("decompressTgz", "Decompress a tarball at tgzPath, putting the files under destination.")
+	logger := log.Scoped("decompressTgz")
 
 	err := unpack.Tgz(tgz, destination, unpack.Opts{
 		SkipInvalid:    true,

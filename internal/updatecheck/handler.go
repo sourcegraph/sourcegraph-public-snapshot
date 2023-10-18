@@ -395,7 +395,7 @@ type pingPayload struct {
 }
 
 func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
-	logger = logger.Scoped("logPing", "logs ping requests")
+	logger = logger.Scoped("logPing")
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", err)))

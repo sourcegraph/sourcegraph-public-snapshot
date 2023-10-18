@@ -28,7 +28,7 @@ var _ goroutine.Handler = &multiqueueCacheCleaner{}
 // window size. A cache key is represented by a queue name; the value is a hash containing timestamps as the field key and the
 // job ID as the field value (which is not used for anything currently).
 func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowSize time.Duration, cleanupInterval time.Duration) goroutine.BackgroundRoutine {
-	logger := log.Scoped("multiqueue-cache-cleaner", "Periodically removes entries from the multiqueue dequeue cache that are older than the configured window size.")
+	logger := log.Scoped("multiqueue-cache-cleaner")
 	observationCtx := observation.NewContext(logger)
 	handler := &multiqueueCacheCleaner{
 		queueNames: queueNames,
@@ -88,7 +88,7 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 var timeNow = time.Now
 
 func (m *multiqueueCacheCleaner) initMetrics(observationCtx *observation.Context, queue string, constLabels prometheus.Labels) {
-	logger := observationCtx.Logger.Scoped("multiqueue.cachecleaner.metrics", "")
+	logger := observationCtx.Logger.Scoped("multiqueue.cachecleaner.metrics")
 	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name:        "multiqueue_executor_dequeue_cache_size",
 		Help:        "Current size of the executor dequeue cache",

@@ -71,7 +71,7 @@ type GitCommitResolver struct {
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
 	return &GitCommitResolver{
-		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").With(
+		logger: log.Scoped("gitCommitResolver").With(
 			log.String("repo", string(repoName)),
 			log.String("commitID", string(id)),
 		),

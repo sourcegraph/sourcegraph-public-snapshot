@@ -111,7 +111,7 @@ func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 			Password: config.AppPassword,
 		},
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketCloudClient", ""), urn)),
+		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketCloudClient"), urn)),
 	}, nil
 }
 

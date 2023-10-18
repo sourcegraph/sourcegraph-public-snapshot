@@ -452,7 +452,7 @@ func utf8String(b []byte) string {
 }
 
 func filterRawDiff(rawDiff []*godiff.FileDiff, filterFunc func(string) (bool, error)) []*godiff.FileDiff {
-	logger := log.Scoped("filterRawDiff", "sub-repo filtering for raw diffs")
+	logger := log.Scoped("filterRawDiff")
 	if filterFunc == nil {
 		return rawDiff
 	}

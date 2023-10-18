@@ -103,7 +103,7 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	var tr trace.Trace
 	tr, ctx = trace.New(ctx, "telemetryevents.QueueForExport",
 		// actually queued events may be different - final attribute is added later
-		attribute.Int("submitted_events", len(events)))
+		attribute.Int("submitted-events", len(events)))
 	defer tr.EndWithErr(&err)
 
 	logger := trace.Logger(ctx, s.logger)
@@ -171,11 +171,11 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 		insertTelemetryEventsChannel(logger, events))
 
 	// Record results
-	if err != nil {
-		counterQueuedEvents.
-			WithLabelValues(strconv.FormatBool(err != nil)).
-			Add(float64(len(events)))
-		tr.SetAttributes(attribute.Int("queued_events", len(events)))
+	counterQueuedEvents.
+		WithLabelValues(strconv.FormatBool(err != nil)).
+		Add(float64(len(events)))
+	if err == nil {
+		tr.SetAttributes(attribute.Int("queued-events", len(events)))
 	}
 
 	return err

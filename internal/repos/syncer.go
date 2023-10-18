@@ -52,7 +52,7 @@ func NewSyncer(observationCtx *observation.Context, store Store, sourcer Sourcer
 		Store:   store,
 		Synced:  make(chan types.RepoSyncDiff),
 		Now:     func() time.Time { return time.Now().UTC() },
-		ObsvCtx: observation.ContextWithLogger(observationCtx.Logger.Scoped("syncer", "repo syncer"), observationCtx),
+		ObsvCtx: observation.ContextWithLogger(observationCtx.Logger.Scoped("syncer"), observationCtx),
 	}
 }
 
@@ -80,7 +80,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker"), s.ObsvCtx),
 		store.Handle(),
 		&syncHandler{
 			syncer:          s,

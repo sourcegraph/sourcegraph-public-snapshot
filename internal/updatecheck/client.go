@@ -385,7 +385,7 @@ func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ 
 }
 
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
-	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
+	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions"))
 	var (
 		err error
 		dv  dependencyVersions
@@ -508,7 +508,7 @@ func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMes
 }
 
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
-	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
+	scopedLog := logger.Scoped("telemetry")
 	logFunc := scopedLog.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = scopedLog.Warn
@@ -915,7 +915,7 @@ func Start(logger log.Logger, db database.DB) {
 	started = true
 
 	const delay = 30 * time.Minute
-	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
+	scopedLog := logger.Scoped("updatecheck")
 	for {
 		check(scopedLog, db)
 

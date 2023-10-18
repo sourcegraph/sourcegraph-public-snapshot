@@ -44,7 +44,7 @@ type UserEmailsService interface {
 func NewUserEmailsService(db database.DB, logger log.Logger) UserEmailsService {
 	return &userEmails{
 		db:     db,
-		logger: logger.Scoped("UserEmails", "user emails handling service"),
+		logger: logger.Scoped("UserEmails"),
 	}
 }
 
@@ -56,7 +56,7 @@ type userEmails struct {
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
 func (e *userEmails) Add(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("Add", "handles addition of user emails")
+	logger := e.logger.Scoped("Add")
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
 		return err
@@ -119,7 +119,7 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 // Remove removes the e-mail from the specified user. Perforce external accounts
 // using the e-mail will also be removed.
 func (e *userEmails) Remove(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("Remove", "handles removal of user emails").
+	logger := e.logger.Scoped("Remove").
 		With(log.Int32("userID", userID))
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
@@ -166,7 +166,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 // SetPrimaryEmail sets the supplied e-mail address as the primary address for
 // the given user.
 func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("SetPrimaryEmail", "handles setting primary e-mail for user").
+	logger := e.logger.Scoped("SetPrimaryEmail").
 		With(log.Int32("userID", userID))
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
@@ -192,7 +192,7 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 // If verified is false, Perforce external accounts using the e-mail will be
 // removed.
 func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
-	logger := e.logger.Scoped("SetVerified", "handles setting e-mail as verified")
+	logger := e.logger.Scoped("SetVerified")
 
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
 	// verification status. Users themselves must go through the normal email

@@ -46,7 +46,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		needsEmailVerification = false
 	}
 
-	logger := r.logger.Scoped("createUser", "create user handler").With(
+	logger := r.logger.Scoped("createUser").With(
 		log.Bool("needsEmailVerification", needsEmailVerification))
 
 	var emailVerificationCode string
