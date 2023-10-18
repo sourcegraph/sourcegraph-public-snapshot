@@ -31,7 +31,7 @@ In some cases, the processing of an index file may fail due to issues such as ma
 
 At any point, an uploaded record may be deleted. This can happen due to various reasons, such as being replaced by a newer upload, due to the age of the upload record, or by explicit deletion initiated by the user. When deleting a record that could be used for code navigation queries, it transitions first into the `DELETING` state. This temporary state allows Sourcegraph to manage the set of Code Graph uploads smoothly.
 
-Changing the state of an upload to or from `COMPLETED` requires [updating]((https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%cmd/worker/internal/codeintel/uploads/internal/commitgraph/updater%5C.go+func+%28u+*Updater%29+update%28ctx&patternType=literal)) the [repository commit graph](#repository-commit-graph). This process can be computationally expensive for the worker service or Postgres database.
+Changing the state of an upload to or from `COMPLETED` requires updating the [repository commit graph](#repository-commit-graph). This process can be computationally expensive for the worker service or Postgres database.
 
 ## Lifecycle of an upload (via UI)
 

@@ -18,6 +18,8 @@
 
 ## Keyword Search
 
+- [Overview](keyword-search.md)
+
 ## Code Graph
 
 - [Overview](code-graph.md)

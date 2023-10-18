@@ -25,7 +25,7 @@ Cody initially looks at your local context by examining the currently open or re
 
 ## Keyword Search
 
-Keyword Search is a traditional text search approach. It finds keywords matching your input and searches for those in the local code. It involves splitting content into terms and mapping terms to documents. At query time, terms from the query are matched to your documents. While powerful, this method might be used as a fallback solution when a codebase lacks embeddings.
+Keyword Search is a traditional text search approach. It finds keywords matching your input and searches for those in the local code. It involves splitting content into terms and mapping terms to documents. At query time, terms from the query are matched to your documents. While powerful, this method can be used as a fallback solution when a codebase lacks embeddings.
 
 <div class="getting-started">
   <a class="demo text-center" target="_blank" href="https://docs.sourcegraph.com/cody/core-concepts/keyword-search">Learn more →</a>
