@@ -28,7 +28,18 @@ func ParseWebhookEvent(eventType string, payload []byte) (e any, err error) {
 	case "repo:build_status":
 		e = &BuildStatusEvent{}
 		return e, json.Unmarshal(payload, e)
-	case "pr:activity:status", "pr:activity:event", "pr:activity:rescope", "pr:activity:merge", "pr:activity:comment", "pr:activity:reviewers", "pr:merged":
+	case "pr:activity:status",
+		"pr:activity:event",
+		"pr:activity:rescope",
+		"pr:activity:merge",
+		"pr:activity:comment",
+		"pr:activity:reviewers",
+		"pr:merged",
+		"pr:declined",
+		"pr:deleted",
+		"pr:comment:added",
+		"pr:reviewer:approved",
+		"pr:reviewer:unapproved":
 		e = &PullRequestActivityEvent{}
 		return e, json.Unmarshal(payload, e)
 	case "pr:participant:status":

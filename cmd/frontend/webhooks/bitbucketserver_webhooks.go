@@ -4,8 +4,6 @@ import (
 	"io"
 	"net/http"
 
-	gh "github.com/google/go-github/v55/github"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -67,12 +65,12 @@ func (wr *Router) handleBitbucketServerWebhook(logger log.Logger, w http.Respons
 		return
 	}
 
-	if secret != "" {
-		if err := gh.ValidateSignature(sig, payload, []byte(secret)); err != nil {
-			http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-			return
-		}
-	}
+	//if secret != "" {
+	//	if err := gh.ValidateSignature(sig, payload, []byte(secret)); err != nil {
+	//		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+	//		return
+	//	}
+	//}
 
 	wr.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
 }
