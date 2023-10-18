@@ -332,35 +332,11 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
-			{
-				Title:  "Site configuration client update latency",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:           "site_configuration_duration_since_last_successful_update_by_instance",
-							Description:    "duration since last successful site configuration update (by instance)",
-							Query:          `src_conf_client_time_since_last_successful_update_seconds`,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerDevOps,
-							NoAlert:        true,
-							Interpretation: "The duration since each client last successfully updated its site configuration. Long durations could indicate issues updating the site configuration.",
-						},
-						{
-							Name:        "site_configuration_duration_since_last_successful_update_by_instance",
-							Description: "maximum duration since last successful site configuration update (aggregated across all instances)",
-							Query:       `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))`,
-							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Critical:    monitoring.Alert().GreaterOrEqual((5 * time.Minute).Seconds()),
-							NextSteps: `
-								- This indicates that one or more services have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
-								- Check for relevant errors in the service's logs.
-							`,
-						},
-					},
-				},
-			},
+
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "frontend",
+				InstanceFilterRegex: `${internalInstance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
 
 			shared.CodeIntelligence.NewResolversGroup(containerName),
 			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
