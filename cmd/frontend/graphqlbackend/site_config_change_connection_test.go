@@ -92,7 +92,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		},
 		// ID: 6
 		{
-			AuthorUserID: 1,
+			AuthorUserID: 3, // This user no longer exists
 			// Existing line is removed.
 			Contents: `{
   "auth.Providers": []
