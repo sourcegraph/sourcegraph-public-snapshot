@@ -26,7 +26,6 @@ go_library(
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
-        "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
@@ -49,7 +48,6 @@ go_test(
         "//lib/errors",
         "@com_github_gobwas_glob//:glob",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
