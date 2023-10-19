@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestNewTelemetryGatewayEvents(t *testing.T) {
@@ -108,7 +107,9 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 							Value: 123,
 						},
 					},
-					PrivateMetadata: pointers.Ptr(json.RawMessage(`{"private": "super-sensitive"}`)),
+					PrivateMetadata: &graphqlbackend.JSONValue{
+						Value: map[string]any{"private": "super-sensitive"},
+					},
 					BillingMetadata: &graphqlbackend.TelemetryEventBillingMetadataInput{
 						Product:  "Product",
 						Category: "Category",
