@@ -120,7 +120,7 @@ func (o dbSubscriptionsListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("product_subscriptions.archived_at IS NULL"))
 	}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf("(users.username LIKE %s) OR (primary_emails.primary_email LIKE %s)", "%"+o.Query+"%", "%"+o.Query+"%"))
+		conds = append(conds, sqlf.Sprintf("(users.username LIKE %s OR primary_emails.primary_email LIKE %s)", "%"+o.Query+"%", "%"+o.Query+"%"))
 	}
 	return conds
 }

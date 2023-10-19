@@ -174,7 +174,7 @@ func negate(query *sqlf.Query) *sqlf.Query {
 		return nil
 	}
 
-	return sqlf.Sprintf("NOT %s", query)
+	return sqlf.Sprintf("NOT (%s)", query)
 }
 
 func globEscape(str string) string {
