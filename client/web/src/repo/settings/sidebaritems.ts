@@ -8,17 +8,12 @@ export const settingsGroup = {
         {
             to: '',
             exact: true,
-            label: 'Options',
+            label: 'Mirroring',
         },
         {
             to: '/index',
             exact: true,
-            label: 'Indexing',
-        },
-        {
-            to: '/mirror',
-            exact: true,
-            label: 'Mirroring',
+            label: 'Search Indexing',
         },
     ],
 }

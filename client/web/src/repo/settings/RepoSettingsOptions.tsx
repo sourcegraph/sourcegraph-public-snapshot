@@ -3,10 +3,9 @@ import { type FC, useCallback, useEffect, useState } from 'react'
 import { noop } from 'lodash'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Button, Container, ErrorAlert, H2, LoadingSpinner, PageHeader, renderError, Text } from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, H3, LoadingSpinner, renderError, Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
-import { PageTitle } from '../../components/PageTitle'
 import type {
     ExcludeRepoFromExternalServicesResult,
     ExcludeRepoFromExternalServicesVariables,
@@ -23,16 +22,13 @@ import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, FETCH_SETTINGS_AREA_REPOSITORY_GQL
 import { ExternalServiceEntry } from './components/ExternalServiceEntry'
 import { RedirectionAlert } from './components/RedirectionAlert'
 
-import styles from './RepoSettingsOptionsPage.module.scss'
+import styles from './RepoSettingsOptions.module.scss'
 
 interface Props {
     repo: SettingsAreaRepositoryFields
 }
 
-/**
- * The repository settings options page.
- */
-export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
+export const RepoSettingsOptions: FC<Props> = ({ repo }) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepoSettings')
     })
@@ -71,12 +67,10 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
 
     return (
         <>
-            <PageTitle title="Repository settings" />
-            <PageHeader path={[{ text: 'Settings' }]} headingElement="h2" className="mb-3" />
-            <Container className="repo-settings-options-page">
-                <H2 className="mb-3">Repository name</H2>
+            <Container className="mb-3 repo-settings-options-page">
+                <H3>Repository name</H3>
                 <CopyableText className="mb-3" text={repo.name} size={repo.name.length} />
-                <H2 className="mb-3">Code host connections</H2>
+                <H3>Code host connections</H3>
                 {loading && <LoadingSpinner />}
                 {error && <ErrorAlert error={error} />}
                 {services && services.length > 0 && (
