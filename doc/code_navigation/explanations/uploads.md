@@ -1,6 +1,6 @@
 # Code Graph Data uploads
 
-<p class="subtitle">How data uploads to Code Graph and becomes useful to gather Cody context.</p>
+<p class="subtitle">How Code Graph data is uploaded and used.</p>
 
 <style>
 img.screenshot {
@@ -17,7 +17,7 @@ img.terminal-screenshot {
 }
 </style>
 
-[Code graph indexers](../references/indexers.md) analyze source code and generate an index file, which is subsequently [uploaded to a Sourcegraph instance](../how-to/index_other_languages.md#4-upload-lsif-data) using the [Sourcegraph CLI](../../cli/index.md) for processing. Once processed, this data becomes available for [precise code navigation queries](precise_code_navigation.md).
+[Code graph indexers](../references/indexers.md) analyze source code and generate an index file, which is subsequently [uploaded to a Sourcegraph instance](../how-to/index_other_languages.md#4-upload-lsif-data) using [Sourcegraph CLI](../../cli/index.md) for processing. Once processed, this data becomes available for [precise code navigation queries](precise_code_navigation.md).
 
 ## Lifecycle of an upload
 

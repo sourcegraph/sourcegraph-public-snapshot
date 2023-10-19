@@ -49,9 +49,7 @@ Code Graph involves analyzing the structure of the code rather than treating it 
 
 ## Embeddings
 
-Cody employs numerical vector representations of both your input and pre-calculated representations of your entire codebase. These embeddings are processed by an LLM that understands the semantic relationships between these vectors.
-
-By comparing the user's input vector with the vectors representing various documents in the codebase, Cody can identify documents that are considered relevant. This method relies on machine learning and semantic understanding to find the context that is not apparent through simple keyword or structural analysis.
+Cody employs embeddings to find pieces of your codebase that are semantically related to your query. An LLM is used to pre-calculate the embeddings for your codebase so Cody can quickly find relevant chunks of code.
 
 <div class="getting-started">
   <a class="demo text-center" target="_blank" href="https://docs.sourcegraph.com/cody/core-concepts/embeddings">Learn more →</a>
