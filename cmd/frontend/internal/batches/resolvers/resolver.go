@@ -2120,6 +2120,7 @@ func (r *Resolver) GetChangesetsByIDs(ctx context.Context, args *graphqlbackend.
 			if err != nil {
 				return nil, err
 			}
+			reposMap[repo.ID] = repo
 		}
 
 		cs[i] = NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo)
