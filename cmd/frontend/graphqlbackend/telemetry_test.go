@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -82,4 +83,11 @@ func TestTelemetryRecordEvents(t *testing.T) {
 		}`,
 	})
 
+	// Check PrivateMetadata
+	require.Len(t, mockResolver.events, 1)
+	data, err := mockResolver.events[0].Parameters.PrivateMetadata.MarshalJSON()
+	require.NoError(t, err)
+	v := map[string]any{}
+	require.NoError(t, json.Unmarshal(data, &v))
+	require.Equal(t, v["key"], "value")
 }
