@@ -439,6 +439,10 @@ CREATE FUNCTION func_row_to_lsif_uploads_transition_columns(rec record) RETURNS 
     END;
 $$;
 
+CREATE FUNCTION get_topics(external_service_type text, metadata jsonb) RETURNS text[]
+    LANGUAGE sql IMMUTABLE
+    RETURN CASE external_service_type WHEN 'github'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text(jsonb_path_query_array(get_topics.metadata, '$."RepositoryTopics"."Nodes"[*]."Topic"."Name"'::jsonpath)) jsonb_array_elements_text(value)) WHEN 'gitlab'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text((get_topics.metadata -> 'topics'::text)) jsonb_array_elements_text(value)) ELSE '{}'::text[] END;
+
 CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1307,6 +1311,7 @@ CREATE TABLE repo (
     private boolean DEFAULT false NOT NULL,
     stars integer DEFAULT 0 NOT NULL,
     blocked jsonb,
+    topics text[] GENERATED ALWAYS AS (get_topics(external_service_type, metadata)) STORED,
     CONSTRAINT check_name_nonempty CHECK ((name OPERATOR(<>) ''::citext)),
     CONSTRAINT repo_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
 );
@@ -6074,13 +6079,7 @@ CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING 
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 
-CREATE INDEX idx_repo_github_topics ON repo USING gin ((((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text))) WHERE (external_service_type = 'github'::text);
-
-COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos by topic. Intended to be used when TopicFilters are added to the RepoListOptions';
-
-CREATE INDEX idx_repo_gitlab_topics ON repo USING gin (((metadata -> 'topics'::text))) WHERE (external_service_type = 'gitlab'::text);
-
-COMMENT ON INDEX idx_repo_gitlab_topics IS 'An index to speed up listing repos by gitlab topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+CREATE INDEX idx_repo_topics ON repo USING gin (topics);
 
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 

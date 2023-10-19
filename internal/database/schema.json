@@ -135,6 +135,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.func_row_to_lsif_uploads_transition_columns(rec record)\n RETURNS lsif_uploads_transition_columns\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        RETURN (rec.state, rec.expired, rec.num_resets, rec.num_failures, rec.worker_hostname, rec.committed_at);\n    END;\n$function$\n"
     },
     {
+      "Name": "get_topics",
+      "Definition": "CREATE OR REPLACE FUNCTION public.get_topics(external_service_type text, metadata jsonb)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE\nRETURN CASE external_service_type WHEN 'github'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text(jsonb_path_query_array(get_topics.metadata, '$.\"RepositoryTopics\".\"Nodes\"[*].\"Topic\".\"Name\"'::jsonpath)) jsonb_array_elements_text(value)) WHEN 'gitlab'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text((get_topics.metadata -\u003e 'topics'::text)) jsonb_array_elements_text(value)) ELSE '{}'::text[] END\n"
+    },
+    {
       "Name": "invalidate_session_for_userid_on_password_change",
       "Definition": "CREATE OR REPLACE FUNCTION public.invalidate_session_for_userid_on_password_change()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        IF OLD.passwd != NEW.passwd THEN\n            NEW.invalidated_sessions_at = now() + (1 * interval '1 second');\n            RETURN NEW;\n        END IF;\n    RETURN NEW;\n    END;\n$function$\n"
     },
@@ -23683,6 +23687,19 @@
           "Comment": ""
         },
         {
+          "Name": "topics",
+          "Index": 17,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "ALWAYS",
+          "GenerationExpression": "get_topics(external_service_type, metadata)",
+          "Comment": ""
+        },
+        {
           "Name": "updated_at",
           "Index": 6,
           "TypeName": "timestamp with time zone",
@@ -23741,22 +23758,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "idx_repo_github_topics",
+          "Name": "idx_repo_topics",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX idx_repo_github_topics ON repo USING gin (((metadata -\u003e 'RepositoryTopics'::text) -\u003e 'Nodes'::text)) WHERE external_service_type = 'github'::text",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "idx_repo_gitlab_topics",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX idx_repo_gitlab_topics ON repo USING gin ((metadata -\u003e 'topics'::text)) WHERE external_service_type = 'gitlab'::text",
+          "IndexDefinition": "CREATE INDEX idx_repo_topics ON repo USING gin (topics)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
