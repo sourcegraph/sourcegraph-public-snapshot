@@ -116,6 +116,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 						StarCount:     168,
 						ForksCount:    76,
 						DefaultBranch: "master",
+						Topics:        []string{"topic1", "topic2"},
 					},
 				}
 
