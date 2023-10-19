@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 
@@ -29,4 +29,4 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = (args = {}) => <LoadingSpinner inline={args.inline} />
+export const Simple: StoryFn = (args = {}) => <LoadingSpinner inline={args.inline} />

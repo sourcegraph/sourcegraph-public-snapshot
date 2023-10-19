@@ -109,6 +109,12 @@ copy_to_bin(
     visibility = ["//visibility:public"],
 )
 
+copy_to_bin(
+    name = "global-style-sources",
+    srcs = glob(["src/global-styles/**/*.scss"]),
+    visibility = ["//client/web-sveltekit:__pkg__"],
+)
+
 ts_project(
     name = "wildcard_lib",
     srcs = [

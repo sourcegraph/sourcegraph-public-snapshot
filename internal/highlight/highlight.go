@@ -318,7 +318,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return Mocks.Code(p)
 	}
 
-	logger := log.Scoped("highlight", "Code")
+	logger := log.Scoped("highlight")
 
 	p.Filepath = normalizeFilepath(p.Filepath)
 

@@ -86,7 +86,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 		},
 	}
 	app.Action = func(_ *cli.Context) error {
-		logger := log.Scoped("sourcegraph", "Sourcegraph")
+		logger := log.Scoped("sourcegraph")
 		cleanup := singleprogram.Init(logger)
 		defer func() {
 			err := cleanup()
@@ -124,7 +124,7 @@ func SingleServiceMain(svc sgservice.Service, config Config) {
 			},
 		),
 	)
-	logger := log.Scoped("sourcegraph", "Sourcegraph")
+	logger := log.Scoped("sourcegraph")
 	run(liblog, logger, []sgservice.Service{svc}, config, nil)
 }
 
@@ -156,7 +156,7 @@ func SingleServiceMainWithoutConf(svc sgservice.Service, config Config, oobConfi
 			},
 		),
 	)
-	logger := log.Scoped("sourcegraph", "Sourcegraph")
+	logger := log.Scoped("sourcegraph")
 	run(liblog, logger, []sgservice.Service{svc}, config, &oobConfig)
 }
 
@@ -186,7 +186,7 @@ func run(
 		go oobConfig.Logging.Watch(liblog.Update(oobConfig.Logging.SinksConfig))
 	}
 	if oobConfig.Tracing != nil {
-		tracer.Init(log.Scoped("tracer", "internal tracer package"), oobConfig.Tracing)
+		tracer.Init(log.Scoped("tracer"), oobConfig.Tracing)
 	}
 
 	profiler.Init()
@@ -244,7 +244,7 @@ func run(
 			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
 			// errors and listen to signals to initiate cleanup in a consistent way across all
 			// services.
-			obctx := observation.ContextWithLogger(log.Scoped(service.Name(), service.Name()), obctx)
+			obctx := observation.ContextWithLogger(log.Scoped(service.Name()), obctx)
 
 			// ensure ready is only called once and always call it.
 			ready := syncx.OnceFunc(allReadyWG.Done)

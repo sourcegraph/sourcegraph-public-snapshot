@@ -296,7 +296,6 @@ var sg = &cli.App{
 		// Company
 		teammateCommand,
 		rfcCommand,
-		adrCommand,
 		liveCommand,
 		opsCommand,
 		auditCommand,

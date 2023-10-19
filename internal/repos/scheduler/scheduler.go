@@ -72,7 +72,7 @@ const notifyChanBuffer = 1
 
 // NewUpdateScheduler returns a new scheduler.
 func NewUpdateScheduler(logger log.Logger, db database.DB, gitserverClient gitserver.Client) *UpdateScheduler {
-	updateSchedLogger := logger.Scoped("UpdateScheduler", "repo update scheduler")
+	updateSchedLogger := logger.Scoped("UpdateScheduler")
 
 	return &UpdateScheduler{
 		db:              db,
@@ -85,7 +85,7 @@ func NewUpdateScheduler(logger log.Logger, db database.DB, gitserverClient gitse
 			index:         make(map[api.RepoID]*scheduledRepoUpdate),
 			wakeup:        make(chan struct{}, notifyChanBuffer),
 			randGenerator: rand.New(rand.NewSource(time.Now().UnixNano())),
-			logger:        updateSchedLogger.Scoped("Schedule", ""),
+			logger:        updateSchedLogger.Scoped("Schedule"),
 		},
 		logger: updateSchedLogger,
 	}
@@ -169,7 +169,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				break
 			}
 
-			subLogger := s.logger.Scoped("RunUpdateLoop", "")
+			subLogger := s.logger.Scoped("RunUpdateLoop")
 
 			go func(ctx context.Context, repo configuredRepo, cancel context.CancelFunc) {
 				defer cancel()

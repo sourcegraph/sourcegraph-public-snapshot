@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { Card } from '@sourcegraph/wildcard'
@@ -8,7 +8,7 @@ import type { GitCommitFields } from '../../graphql-operations'
 
 import { GitCommitNode } from './GitCommitNode'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
 
@@ -118,7 +118,7 @@ FullCustomizable.args = {
 
 FullCustomizable.storyName = 'Full customizable'
 
-export const Compact: Story = () => (
+export const Compact: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -134,7 +134,7 @@ export const Compact: Story = () => (
     </WebStory>
 )
 
-export const CommitMessageExpand: Story = () => (
+export const CommitMessageExpand: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -152,7 +152,7 @@ export const CommitMessageExpand: Story = () => (
 
 CommitMessageExpand.storyName = 'Commit message expanded'
 
-export const SHAAndParentShown: Story = () => (
+export const SHAAndParentShown: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -170,7 +170,7 @@ export const SHAAndParentShown: Story = () => (
 
 SHAAndParentShown.storyName = 'SHA and parent shown'
 
-export const ExpandCommitMessageButtonHidden: Story = () => (
+export const ExpandCommitMessageButtonHidden: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -249,7 +249,7 @@ const perforceChangelistNode: GitCommitFields = {
         'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.',
 }
 
-export const PerforceChangelist: Story = () => (
+export const PerforceChangelist: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>

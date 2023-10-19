@@ -1157,9 +1157,7 @@ var (
 )
 
 func TestLogPartsPerCommitInSync(t *testing.T) {
-	require.Equal(t, 2*partsPerCommitBasic, strings.Count(logFormatWithoutRefs, "%"),
-		"Expected (2 * %0d) %% signs in log format string (%0d fields, %0d %%x00 separators)",
-		partsPerCommitBasic)
+	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
 }
 
 func TestRepository_GetCommit(t *testing.T) {
@@ -1799,6 +1797,7 @@ func TestRepository_Commits_options(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	ctx := context.Background()
+	ctx = actor.WithActor(ctx, actor.FromUser(42))
 
 	gitCommands := []string{
 		"git commit --allow-empty -m foo",
@@ -1880,7 +1879,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
-			wantErr := `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
+			wantErr := `git command [git log --format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
 			if subRepo != "" {
 				wantErr += " --name-only"
 			}

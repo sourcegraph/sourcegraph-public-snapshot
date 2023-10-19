@@ -60,7 +60,7 @@ type ProviderOptions struct {
 func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
-		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
+		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3"),
 			urn, apiURL, opts.BaseAuther, nil)
 	}
 
@@ -354,7 +354,7 @@ func (p *Provider) fetchCachedAuthenticatedUserPerms(ctx context.Context, logger
 // This may return a partial result if an error is encountered, e.g. via rate limits.
 func (p *Provider) fetchAuthenticatedUserPerms(ctx context.Context, cli client, accountID extsvc.AccountID, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+	logger := log.Scoped("fetchUserPermsByToken")
 
 	// Repository affiliations to list for - groupsCache only lists for a subset. Left
 	// unset indicates all affiliations should be sync'd.

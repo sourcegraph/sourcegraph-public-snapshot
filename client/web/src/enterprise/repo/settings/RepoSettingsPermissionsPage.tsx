@@ -260,6 +260,10 @@ const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
     },
     Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
     'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
+    'Explicit API': {
+        variant: 'success',
+        tooltip: 'The permission was granted through explicit permissions API.',
+    },
 }
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {

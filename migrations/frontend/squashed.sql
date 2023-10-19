@@ -4193,7 +4193,6 @@ CREATE TABLE users (
     site_admin boolean DEFAULT false NOT NULL,
     page_views integer DEFAULT 0 NOT NULL,
     search_queries integer DEFAULT 0 NOT NULL,
-    tags text[] DEFAULT '{}'::text[],
     billing_customer_id text,
     invalidated_sessions_at timestamp with time zone DEFAULT now() NOT NULL,
     tos_accepted boolean DEFAULT false NOT NULL,

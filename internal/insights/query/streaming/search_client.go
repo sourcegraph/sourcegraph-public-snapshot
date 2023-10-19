@@ -16,7 +16,7 @@ type SearchClient interface {
 }
 
 func NewInsightsSearchClient(db database.DB) SearchClient {
-	logger := log.Scoped("insightsSearchClient", "")
+	logger := log.Scoped("insightsSearchClient")
 	return &insightsSearchClient{
 		db:           db,
 		searchClient: client.New(logger, db),

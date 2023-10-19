@@ -193,7 +193,7 @@ var badRefs = syncx.OnceValue(func() []string {
 // If there are no commits or the latest commit is in the future, or there is any
 // error, time.Now is returned.
 func LatestCommitTimestamp(logger log.Logger, dir common.GitDir) time.Time {
-	logger = logger.Scoped("LatestCommitTimestamp", "compute the timestamp of the most recent commit").
+	logger = logger.Scoped("LatestCommitTimestamp").
 		With(log.String("repo", string(dir)))
 
 	now := time.Now() // return current time if we don't find a more accurate time

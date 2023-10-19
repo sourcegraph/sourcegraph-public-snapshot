@@ -174,7 +174,7 @@ func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordT
 
 func makeSearchHandler(provider streamSearchProvider) InsightsHandler {
 	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-		recordings, err := generateSearchRecordingsStream(ctx, job, recordTime, provider, log.Scoped("SearchRecordingsGenerator", ""))
+		recordings, err := generateSearchRecordingsStream(ctx, job, recordTime, provider, log.Scoped("SearchRecordingsGenerator"))
 		if err != nil {
 			return nil, errors.Wrapf(err, "searchHandler")
 		}
@@ -187,7 +187,7 @@ func makeComputeHandler(provider streamComputeProvider) InsightsHandler {
 		computeDelegate := func(ctx context.Context, job *SearchJob, recordTime time.Time, logger log.Logger) (_ []store.RecordSeriesPointArgs, err error) {
 			return generateComputeRecordingsStream(ctx, job, recordTime, provider, logger)
 		}
-		recordings, err := computeDelegate(ctx, job, recordTime, log.Scoped("ComputeRecordingsGenerator", ""))
+		recordings, err := computeDelegate(ctx, job, recordTime, log.Scoped("ComputeRecordingsGenerator"))
 		if err != nil {
 			return nil, errors.Wrapf(err, "computeHandler")
 		}
@@ -197,7 +197,7 @@ func makeComputeHandler(provider streamComputeProvider) InsightsHandler {
 
 func makeMappingComputeHandler(provider streamComputeProvider) InsightsHandler {
 	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-		recordings, err := generateComputeRecordingsStream(ctx, job, recordTime, provider, log.Scoped("ComputeMappingRecordingsGenerator", ""))
+		recordings, err := generateComputeRecordingsStream(ctx, job, recordTime, provider, log.Scoped("ComputeMappingRecordingsGenerator"))
 		if err != nil {
 			return nil, errors.Wrapf(err, "mappingComputeHandler")
 		}

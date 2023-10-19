@@ -2,7 +2,7 @@
 
 > WARNING: This is a guide intended for development reference.
 >
-> Additionally, export capabilities are **not yet enabled by default**.
+> To learn more about telemetry export, refer to the [Sourcegraph adminstrator documentation on telemetry](../../../admin/telemetry/index.md).
 
 This page outlines the architecture and components involved in Sourcegraph's new telemetry export system.
 

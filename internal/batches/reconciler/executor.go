@@ -31,7 +31,7 @@ import (
 func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (afterDone func(store *store.Store), err error) {
 	e := &executor{
 		client:            client,
-		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
+		logger:            logger.Scoped("executor"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,

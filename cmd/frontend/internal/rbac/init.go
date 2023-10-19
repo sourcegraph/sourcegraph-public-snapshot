@@ -22,7 +22,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	logger := log.Scoped("rbac", "")
+	logger := log.Scoped("rbac")
 	enterpriseServices.RBACResolver = resolvers.New(logger, db)
 
 	return nil

@@ -13,9 +13,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { closeInstallPageTab, testSingleFilePage } from './shared'
 
-// Skip github.com tests because the redesign broke the extension for the file pages,
-// and the pull request tests were already skipped.
-describe.skip('Sourcegraph browser extension on github.com', function () {
+describe('Sourcegraph browser extension on github.com', function () {
     this.slow(8000)
 
     const { browser, sourcegraphBaseUrl, ...restConfig } = getConfig('browser', 'sourcegraphBaseUrl')
@@ -44,7 +42,8 @@ describe.skip('Sourcegraph browser extension on github.com', function () {
         repoName: 'github.com/sourcegraph/jsonrpc2',
         commitID: '6864d8cc6d35a79f50745f8990cb4d594a8036f4',
         sourcegraphBaseUrl,
-        getLineSelector: lineNumber => `#LC${lineNumber}`,
+        // Hovercards are broken on the new GitHub file page
+        // getLineSelector: lineNumber => `#LC${lineNumber}`,
         goToDefinitionURL:
             'https://github.com/sourcegraph/jsonrpc2/blob/6864d8cc6d35a79f50745f8990cb4d594a8036f4/call_opt.go#L5:6',
     })

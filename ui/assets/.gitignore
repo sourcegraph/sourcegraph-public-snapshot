@@ -10,3 +10,4 @@
 *.DS_Store
 stats.json
 *.hot-update.json
+_sk/

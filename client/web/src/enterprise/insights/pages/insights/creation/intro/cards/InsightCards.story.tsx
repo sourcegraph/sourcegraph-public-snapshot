@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H2 } from '@sourcegraph/wildcard'
 
@@ -17,7 +17,7 @@ export default {
     },
 } as Meta
 
-export const InsightCards: Story = () => (
+export const InsightCards: StoryFn = () => (
     <section className="row">
         <article className="col-sm-4">
             <H2>Search Insight Card</H2>

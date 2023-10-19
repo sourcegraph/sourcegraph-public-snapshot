@@ -59,7 +59,7 @@ var (
 func NewHandleWithDB(logger log.Logger, db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
 	return &dbHandle{
 		DB:        db,
-		logger:    logger.Scoped("db-handle", "internal database"),
+		logger:    logger.Scoped("db-handle"),
 		txOptions: txOptions,
 	}
 }
@@ -69,7 +69,7 @@ func NewHandleWithTx(tx *sql.Tx, txOptions sql.TxOptions) TransactableHandle {
 	return &txHandle{
 		lockingTx: &lockingTx{
 			tx:     tx,
-			logger: log.Scoped("db-handle", "internal database"),
+			logger: log.Scoped("db-handle"),
 		},
 		txOptions: txOptions,
 	}

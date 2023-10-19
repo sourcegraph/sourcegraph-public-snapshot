@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { Popover } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -15,4 +15,4 @@ const config: Meta = {
 
 export default config
 
-export const Standalone404InsightExample: Story = () => <Standalone404Insight />
+export const Standalone404InsightExample: StoryFn = () => <Standalone404Insight />

@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -21,7 +21,7 @@ import {
 
 window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/RepositoryCommitsPage',
@@ -348,7 +348,7 @@ const gitRepo: RepositoryFields = {
     metadata: [],
 }
 
-export const GitCommitsStory: Story<RepositoryCommitsPageProps> = () => (
+export const GitCommitsStory: StoryFn<RepositoryCommitsPageProps> = () => (
     <MockedTestProvider>
         <WebStory
             initialEntries={['/github.com/sourcegraph/sourcegraph/-/commits']}
@@ -361,7 +361,7 @@ export const GitCommitsStory: Story<RepositoryCommitsPageProps> = () => (
 
 GitCommitsStory.storyName = 'Git commits'
 
-export const GitCommitsInPathStory: Story<RepositoryCommitsPageProps> = () => (
+export const GitCommitsInPathStory: StoryFn<RepositoryCommitsPageProps> = () => (
     <MockedTestProvider>
         <WebStory
             initialEntries={['/github.com/sourcegraph/sourcegraph/-/commits/somePath']}
@@ -392,7 +392,7 @@ const perforceRepo: RepositoryFields = {
     metadata: [],
 }
 
-export const PerforceChangelistsStory: Story<RepositoryCommitsPageProps> = () => (
+export const PerforceChangelistsStory: StoryFn<RepositoryCommitsPageProps> = () => (
     <MockedTestProvider>
         <WebStory
             initialEntries={['/perforce.sgdev.org/go/-/changelists']}
@@ -405,7 +405,7 @@ export const PerforceChangelistsStory: Story<RepositoryCommitsPageProps> = () =>
 
 PerforceChangelistsStory.storyName = 'Perforce changelists'
 
-export const PerforceChangelistsInPathStory: Story<RepositoryCommitsPageProps> = () => (
+export const PerforceChangelistsInPathStory: StoryFn<RepositoryCommitsPageProps> = () => (
     <MockedTestProvider>
         <WebStory
             initialEntries={['/perforce.sgdev.org/go/-/changelists/somePath']}

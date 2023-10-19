@@ -38,7 +38,7 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client 
 		urls:           urls,
 		cachedClient:   cached,
 		uncachedClient: uncached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GoModClient", ""), urn)),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GoModClient"), urn)),
 	}
 }
 

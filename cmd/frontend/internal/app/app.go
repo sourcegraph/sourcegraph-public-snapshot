@@ -36,7 +36,7 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 		return globals.ExternalURL().Scheme == "https"
 	}))
 
-	logger = logger.Scoped("appHandler", "handles routes for all app related requests")
+	logger = logger.Scoped("appHandler")
 
 	r := router.Router()
 

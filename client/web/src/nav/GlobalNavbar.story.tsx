@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
@@ -57,7 +57,7 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => {
+const decorator: Decorator = Story => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -87,7 +87,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story<GlobalNavbarProps> = props => (
+export const Default: StoryFn<GlobalNavbarProps> = props => (
     <Grid columnCount={1}>
         <div>
             <H3 className="ml-2">Anonymous viewer</H3>

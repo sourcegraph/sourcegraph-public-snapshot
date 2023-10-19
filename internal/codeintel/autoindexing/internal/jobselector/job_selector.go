@@ -123,7 +123,7 @@ func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, com
 // explicitly via a GraphQL query parameter. If no configuration was supplield then a false valued
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
-	logger := log.Scoped("explicitConfigurationFactory", "")
+	logger := log.Scoped("explicitConfigurationFactory")
 	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
 		if configuration == "" {
 			return nil, false, nil

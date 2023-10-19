@@ -72,7 +72,7 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) (*Client
 		urls:           urls,
 		uncachedClient: uncached,
 		cachedClient:   cached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PyPiClient", ""), urn)),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PyPiClient"), urn)),
 	}, nil
 }
 
