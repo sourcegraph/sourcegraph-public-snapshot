@@ -3,6 +3,7 @@
 (enum_declaration) @scope
 (record_declaration) @scope
 (method_declaration) @scope
+(constructor_declaration) @scope
 
 
 ; NOTE: The definitions below are commented out
