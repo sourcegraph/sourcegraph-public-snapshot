@@ -1,9 +1,9 @@
 package vcssyncer
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -12,6 +12,7 @@ import (
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -26,6 +27,7 @@ func NewGoModulesSyncer(
 	connection *schema.GoModulesConnection,
 	svc *dependencies.Service,
 	client *gomodproxy.Client,
+	reposDir string,
 ) VCSSyncer {
 	placeholder, err := reposource.ParseGoVersionedPackage("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
@@ -39,12 +41,14 @@ func NewGoModulesSyncer(
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		source:      &goModulesSyncer{client: client},
+		source:      &goModulesSyncer{client: client, reposDir: reposDir},
+		reposDir:    reposDir,
 	}
 }
 
 type goModulesSyncer struct {
-	client *gomodproxy.Client
+	client   *gomodproxy.Client
+	reposDir string
 }
 
 func (s goModulesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
@@ -64,13 +68,14 @@ func (goModulesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposour
 }
 
 func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	zipBytes, err := s.client.GetZip(ctx, dep.PackageSyntax(), dep.PackageVersion())
+	zip, err := s.client.GetZip(ctx, dep.PackageSyntax(), dep.PackageVersion())
 	if err != nil {
 		return errors.Wrap(err, "get zip")
 	}
+	defer zip.Close()
 
 	mod := dep.(*reposource.GoVersionedPackage).Module
-	if err = unzip(mod, zipBytes, dir); err != nil {
+	if err = unzip(mod, zip, s.reposDir, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip go module")
 	}
 
@@ -79,20 +84,28 @@ func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposour
 
 // unzip the given go module zip into workDir, skipping any files that aren't
 // valid according to modzip.CheckZip or that are potentially malicious.
-func unzip(mod module.Version, zipBytes []byte, workDir string) error {
-	zipFile := path.Join(workDir, "mod.zip")
-	err := os.WriteFile(zipFile, zipBytes, 0o666)
+func unzip(mod module.Version, zipContent io.Reader, reposDir string, workDir string) (err error) {
+	// We cannot unzip in a streaming fashion, so we write the zip file to
+	// a temporary file. Otherwise, we would need to load the entire zip into
+	// memory, which isn't great for multi-megabyte+ files.
+
+	// Create a tmpdir that gitserver manages.
+	tmpdir, err := gitserverfs.TempDir(reposDir, "gomod-zips")
 	if err != nil {
-		return errors.Wrapf(err, "failed to create go module zip file %q", zipFile)
+		return err
 	}
+	defer os.RemoveAll(tmpdir)
 
-	files, err := modzip.CheckZip(mod, zipFile)
+	// Write the whole package to a temporary file.
+	zip, zipLen, err := writeZipToTemp(tmpdir, zipContent)
+	if err != nil {
+		return err
+	}
+	defer zip.Close()
+
+	files, err := modzip.CheckZip(mod, zip.Name())
 	if err != nil && len(files.Valid) == 0 {
-		return errors.Wrapf(err, "failed to check go module zip %q", zipFile)
-	}
-
-	if err = os.RemoveAll(zipFile); err != nil {
-		return errors.Wrapf(err, "failed to remove module zip file %q", zipFile)
+		return errors.Wrapf(err, "failed to check go module zip %q", zip.Name())
 	}
 
 	if len(files.Valid) == 0 {
@@ -104,8 +117,7 @@ func unzip(mod module.Version, zipBytes []byte, workDir string) error {
 		valid[f] = struct{}{}
 	}
 
-	br := bytes.NewReader(zipBytes)
-	err = unpack.Zip(br, int64(br.Len()), workDir, unpack.Opts{
+	err = unpack.Zip(zip, zipLen, workDir, unpack.Opts{
 		SkipInvalid:    true,
 		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
