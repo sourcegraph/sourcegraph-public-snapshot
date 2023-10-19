@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -258,7 +257,7 @@ func PartitionRepos(
 	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.ReposMap)))
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.ReposMap, repos, filterFunc) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	indexed, unindexed = zoektIndexedRepos(list.ReposMap, repos, filterFunc)
 
 	tr.SetAttributes(
 		attribute.Int("indexed.size", len(indexed.RepoRevs)),
@@ -751,29 +750,16 @@ func (t *GlobalTextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyVa
 func (t *GlobalTextSearchJob) Children() []job.Describer       { return nil }
 func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }
 
-// Get all private repos for the the current actor. On sourcegraph.com, those are
-// only the repos directly added by the user. Otherwise it's all repos the user has
-// access to on all connected code hosts / external services.
+// Get all private repos for the the current actor.
 func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "privateReposForActor")
 	defer tr.End()
 
-	userID := int32(0)
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a.IsAuthenticated() {
-			userID = a.UID
-		} else {
-			tr.AddEvent("skipping private repo resolution for unauthed user")
-			return nil
-		}
-	}
-	tr.SetAttributes(attribute.Int64("userID", int64(userID)))
-
-	// TODO: We should use repos.Resolve here. However, the logic for
-	// UserID is different to repos.Resolve, so we need to work out how
-	// best to address that first.
+	// TODO: We should use repos.Resolve here. However, this logic was added
+	// when we used UserID on sourcegraph.com and it was handled differently
+	// in repos.Resolve. We need to confirm and test the change to
+	// repos.Resolve.
 	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		UserID:         userID, // Zero valued when not in sourcegraph.com mode
 		OnlyPrivate:    true,
 		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
 		OnlyForks:      repoOptions.OnlyForks,
@@ -784,6 +770,10 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 	})
 
 	if err != nil {
+		var userID int32
+		if a := actor.FromContext(ctx); a != nil {
+			userID = a.UID
+		}
 		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
 		tr.AddEvent("error resolving user private repos", trace.Error(err))
 	}

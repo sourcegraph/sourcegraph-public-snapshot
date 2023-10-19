@@ -205,7 +205,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
                         styles.signUpButton,
-                        styles.gitlabButton,
+                        styles.googleButton,
                         ctaClassName
                     )}
                     onClick={() => onClick('openidconnect')}

@@ -76,7 +76,7 @@ func NewUserResolver(ctx context.Context, db database.DB, user *types.User) *Use
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+		logger: log.Scoped("userResolver").With(log.String("user", user.Username)),
 		actor:  actor.FromContext(ctx),
 	}
 }
@@ -86,7 +86,7 @@ func newUserResolverFromActor(a *actor.Actor, db database.DB, user *types.User) 
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+		logger: log.Scoped("userResolver").With(log.String("user", user.Username)),
 		actor:  a,
 	}
 }
@@ -229,10 +229,6 @@ func (r *UserResolver) CompletedPostSignup(ctx context.Context) (bool, error) {
 	}
 
 	return r.user.CompletedPostSignup, nil
-}
-
-func (r *UserResolver) Searchable(_ context.Context) bool {
-	return r.user.Searchable
 }
 
 type updateUserArgs struct {
@@ -403,7 +399,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	logger := r.logger.Scoped("UpdatePassword", "password update").
+	logger := r.logger.Scoped("UpdatePassword").
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {
@@ -431,7 +427,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	logger := r.logger.Scoped("CreatePassword", "password creation").
+	logger := r.logger.Scoped("CreatePassword").
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {
@@ -496,27 +492,6 @@ func (r *schemaResolver) updateAffectedUser(ctx context.Context, affectedUserID 
 	}
 
 	if err := r.db.Users().Update(ctx, affectedUserID, update); err != nil {
-		return nil, err
-	}
-
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
-	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, errors.New("no authenticated user")
-	}
-
-	searchable := args.Searchable
-	update := database.UserUpdate{
-		Searchable: &searchable,
-	}
-
-	if err := r.db.Users().Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 

@@ -52,7 +52,7 @@ Here's a word-by-word breakout to demonstrate how the captured entry aligns with
 ### What is audited?
 
 - [Security events](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L120-131)
-- [Gitserver access](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/gitserver/server/internal/accesslog/accesslog.go?L100-104)
+- [Gitserver access](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/gitserver/internal/accesslog/accesslog.go?L100-104)
 - [GraphQL requests](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/httpapi/graphql.go?L226-244)
 
 This list is expected to grow in the future.

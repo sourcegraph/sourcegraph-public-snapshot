@@ -112,7 +112,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 
 	authr := &auth.Authenticator{
-		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
+		Logger:      obctx.Logger.Scoped("auth"),
 		EventLogger: eventLogger,
 		Sources:     sources,
 	}
@@ -149,17 +149,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			redis: redispool.Cache,
 		},
 		&httpapi.Config{
-			RateLimitNotifier:              rateLimitNotifier,
-			AnthropicAccessToken:           config.Anthropic.AccessToken,
-			AnthropicAllowedModels:         config.Anthropic.AllowedModels,
-			AnthropicMaxTokensToSample:     config.Anthropic.MaxTokensToSample,
-			AnthropicAllowedPromptPatterns: config.Anthropic.AllowedPromptPatterns,
-			OpenAIAccessToken:              config.OpenAI.AccessToken,
-			OpenAIOrgID:                    config.OpenAI.OrgID,
-			OpenAIAllowedModels:            config.OpenAI.AllowedModels,
-			FireworksAccessToken:           config.Fireworks.AccessToken,
-			FireworksAllowedModels:         config.Fireworks.AllowedModels,
-			EmbeddingsAllowedModels:        config.AllowedEmbeddingsModels,
+			RateLimitNotifier:               rateLimitNotifier,
+			AnthropicAccessToken:            config.Anthropic.AccessToken,
+			AnthropicAllowedModels:          config.Anthropic.AllowedModels,
+			AnthropicMaxTokensToSample:      config.Anthropic.MaxTokensToSample,
+			AnthropicAllowedPromptPatterns:  config.Anthropic.AllowedPromptPatterns,
+			AnthropicRequestBlockingEnabled: config.Anthropic.RequestBlockingEnabled,
+			OpenAIAccessToken:               config.OpenAI.AccessToken,
+			OpenAIOrgID:                     config.OpenAI.OrgID,
+			OpenAIAllowedModels:             config.OpenAI.AllowedModels,
+			FireworksAccessToken:            config.Fireworks.AccessToken,
+			FireworksAllowedModels:          config.Fireworks.AllowedModels,
+			EmbeddingsAllowedModels:         config.AllowedEmbeddingsModels,
 		})
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
@@ -256,14 +257,14 @@ func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTeleme
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
 	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
 	shutdownTracing, err := maybeEnableTracing(ctx,
-		logger.Scoped("tracing", "OpenTelemetry tracing"),
+		logger.Scoped("tracing"),
 		config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "maybeEnableTracing")
 	}
 
 	shutdownMetrics, err := maybeEnableMetrics(ctx,
-		logger.Scoped("metrics", "OpenTelemetry metrics"),
+		logger.Scoped("metrics"),
 		config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "maybeEnableMetrics")
@@ -300,8 +301,8 @@ type dotcomPromptRecorder struct {
 var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
-	// Only log prompts from Sourcegraph.com: https://sourcegraph.com/site-admin/dotcom/product/subscriptions/d3d2b638-d0a2-4539-a099-b36860b09819
-	if actor.FromContext(ctx).ID != "d3d2b638-d0a2-4539-a099-b36860b09819" {
+	// Only log prompts from Sourcegraph.com
+	if !actor.FromContext(ctx).IsDotComActor() {
 		return errors.New("attempted to record prompt from non-dotcom actor")
 	}
 	// Must expire entries

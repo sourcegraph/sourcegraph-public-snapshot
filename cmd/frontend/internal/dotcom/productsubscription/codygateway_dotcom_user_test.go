@@ -48,7 +48,7 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	}()
 
 	ctx := context.Background()
-	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
 
 	// User with default rate limits
 	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
@@ -158,7 +158,7 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 
 func TestCodyGatewayDotcomUserResolverUserNotFound(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
 
 	// admin user to make request
 	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
@@ -176,7 +176,7 @@ func TestCodyGatewayDotcomUserResolverUserNotFound(t *testing.T) {
 
 func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
 
 	// Admin
 	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})

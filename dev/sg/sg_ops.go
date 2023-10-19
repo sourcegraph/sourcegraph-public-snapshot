@@ -155,7 +155,7 @@ func opsUpdateImages(
 	path string,
 	registryType string,
 	deploymentType string,
-	pintag string,
+	pinTag string,
 	dockerUsername string,
 	dockerPassword string,
 	skipImages []string,
@@ -190,15 +190,15 @@ func opsUpdateImages(
 			return false
 		}
 
-		if pintag != "" {
-			std.Out.WriteNoticef("pinning images to tag %q", pintag)
+		if pinTag != "" {
+			std.Out.WriteNoticef("pinning images to tag %q", pinTag)
 			// We're pinning a tag.
 			op = func(registry images.Registry, r *images.Repository) (*images.Repository, error) {
 				if !images.IsSourcegraph(r) || shouldSkip(r) {
 					return nil, images.ErrNoUpdateNeeded
 				}
 
-				newR, err := registry.GetByTag(r.Name(), pintag)
+				newR, err := registry.GetByTag(r.Name(), pinTag)
 				if err != nil {
 					return nil, err
 				}

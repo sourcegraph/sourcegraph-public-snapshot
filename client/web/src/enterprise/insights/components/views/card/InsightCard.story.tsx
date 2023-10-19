@@ -1,5 +1,5 @@
 import { mdiFilterOutline, mdiDotsVertical } from '@mdi/js'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import {
@@ -28,7 +28,7 @@ export default {
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 
-export const InsightCardShowcase: Story = () => (
+export const InsightCardShowcase: StoryFn = () => (
     <main style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
         <section>
             <H2>Empty view</H2>

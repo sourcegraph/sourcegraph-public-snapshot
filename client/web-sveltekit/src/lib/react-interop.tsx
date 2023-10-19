@@ -3,7 +3,8 @@ import React, { useEffect, useMemo, type FC, type PropsWithChildren } from 'reac
 import { createRouter, type History, Action, type Location, type Router } from '@remix-run/router'
 import type { Navigation } from '@sveltejs/kit'
 import { RouterProvider, type RouteObject, UNSAFE_enhanceManualRouteObjects } from 'react-router-dom'
-import { RouterLink, setLinkComponent } from 'wildcard/src'
+
+import { RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { goto } from '$app/navigation'
 import { navigating } from '$app/stores'

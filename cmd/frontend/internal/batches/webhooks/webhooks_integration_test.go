@@ -17,7 +17,7 @@ func TestWebhooksIntegration(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 
 	user := bt.CreateTestUser(t, db, false)

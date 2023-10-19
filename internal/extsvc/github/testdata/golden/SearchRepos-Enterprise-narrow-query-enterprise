@@ -21,7 +21,7 @@
       }
      ]
     },
-    "Visibility": "INTERNAL"
+    "visibility": "INTERNAL"
    }
   ],
   "TotalCount": 1,

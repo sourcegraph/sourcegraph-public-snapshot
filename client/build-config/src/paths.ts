@@ -2,8 +2,6 @@
 import fs from 'fs'
 import path from 'path'
 
-import { getEnvironmentBoolean } from './utils/environment-config'
-
 // TODO(bazel): drop when non-bazel removed.
 const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
 
@@ -34,11 +32,7 @@ export function resolveAssetsPath(root: string): string {
     // and be done with it. With Bazel, we have different loaders on the backend where the assets gets embedded. So
     // what we do here is "simulate" what happens in bazel, by putting the assets in the correct relative directory
     // so that when the backend is compiled the assets gets embedded properly
-    const isEnterprise: boolean = getEnvironmentBoolean('ENTERPRISE')
-    const relativeAssetPath: string = isEnterprise ? 'enterprise' : 'oss'
-    const path: string = resolveWithSymlink(root, 'ui/assets', relativeAssetPath)
-
-    return path
+    return resolveWithSymlink(root, 'ui/assets/enterprise')
 }
 
 export const ROOT_PATH = IS_BAZEL ? process.cwd() : resolveWithSymlink(__dirname, '../../../')

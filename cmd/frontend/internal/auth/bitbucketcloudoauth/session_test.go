@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	bitbucketlogin "github.com/dghubble/gologin/bitbucket"
+	bitbucketlogin "github.com/dghubble/gologin/v2/bitbucket"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
 

@@ -26,6 +26,7 @@ module.exports = {
             {
                 svelte: 'always',
                 svg: 'always',
+                cjs: 'always',
             },
         ],
     },

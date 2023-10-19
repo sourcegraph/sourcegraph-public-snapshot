@@ -39,7 +39,7 @@ func SendResetPasswordURLEmail(ctx context.Context, email, username string, rese
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
 func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleResetPasswordInit", "password reset initialization flow handler")
+	logger = logger.Scoped("HandleResetPasswordInit")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -96,7 +96,7 @@ func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc
 // HandleResetPasswordCode resets the password if the correct code is provided, and also
 // verifies emails if the appropriate parameters are found.
 func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleResetPasswordCode", "verifies password reset code requests handler")
+	logger = logger.Scoped("HandleResetPasswordCode")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {

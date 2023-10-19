@@ -64,7 +64,7 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, che
 	if err != nil {
 		return errors.Wrap(err, "repoStore.Get")
 	}
-	files, err := r.client.LsFiles(ctx, nil, repo.Name, "HEAD")
+	files, err := r.client.LsFiles(ctx, repo.Name, "HEAD")
 	if err != nil {
 		return errors.Wrap(err, "ls-files")
 	}

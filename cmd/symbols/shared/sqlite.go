@@ -37,7 +37,7 @@ func LoadConfig() {
 var config types.SqliteConfig
 
 func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
-	logger := observationCtx.Logger.Scoped("sqlite.setup", "SQLite setup")
+	logger := observationCtx.Logger.Scoped("sqlite.setup")
 
 	if err := baseConfig.Validate(); err != nil {
 		logger.Fatal("failed to load configuration", log.Error(err))

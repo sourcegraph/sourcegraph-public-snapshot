@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { type FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
@@ -51,7 +51,7 @@ export const DEMO_HUNKS: FileDiffHunkFields[] = [
     },
 ]
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/diffs/FileDiffHunks',
@@ -60,18 +60,20 @@ const config: Meta = {
     argTypes: {
         persistLines: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         lineNumbers: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        persistLines: true,
+        lineNumbers: true,
     },
 }
 
 export default config
 
-export const OneDiffUnifiedHunk: Story = args => (
+export const OneDiffUnifiedHunk: StoryFn = args => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
@@ -89,7 +91,7 @@ export const OneDiffUnifiedHunk: Story = args => (
 
 OneDiffUnifiedHunk.storyName = 'One diff unified hunk'
 
-export const OneDiffSplitHunk: Story = args => (
+export const OneDiffSplitHunk: StoryFn = args => (
     <WebStory>
         {webProps => (
             <FileDiffHunks

@@ -18,7 +18,7 @@ func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct{ To stri
 		return "", err
 	}
 
-	logger := r.logger.Scoped("SendTestEmail", "email send test")
+	logger := r.logger.Scoped("SendTestEmail")
 
 	// Generate a simple identifier to make each email unique (don't need the full ID)
 	var testID string

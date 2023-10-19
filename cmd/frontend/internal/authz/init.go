@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var clock = timeutil.Now
@@ -47,12 +46,10 @@ func Init(
 		return database.NewAuthzStore(observationCtx.Logger, db, clock)
 	}
 
-	extsvcStore := db.ExternalServices()
-
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		_, providers, seriousProblems, warnings, _ := providers.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
+		_, providers, seriousProblems, warnings, _ := providers.ProvidersFromConfig(ctx, cfg, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
 		// Validating the connection may make a cross service call, so we should use an
@@ -70,13 +67,9 @@ func Init(
 		return problems
 	})
 
-	enterpriseServices.PermissionsGitHubWebhook = webhooks.NewGitHubWebhook(log.Scoped("PermissionsGitHubWebhook", "permissions sync webhook handler for GitHub webhooks"))
+	enterpriseServices.PermissionsGitHubWebhook = webhooks.NewGitHubWebhook(log.Scoped("PermissionsGitHubWebhook"))
 
-	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
-	if err != nil {
-		return errors.Wrap(err, "Failed to createe sub-repo client")
-	}
+	authz.DefaultSubRepoPermsChecker = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		if licensing.IsLicenseValid() {
@@ -102,7 +95,7 @@ func Init(
 			return nil
 		}
 
-		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 
 		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
 		authzTypes := make(map[string]struct{}, 3)
@@ -219,7 +212,7 @@ func Init(
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

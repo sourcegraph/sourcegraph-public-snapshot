@@ -364,9 +364,9 @@ Gazelle will automatically remove sources added to the new BUILD file from the B
 mocha_test(
     name = "integration-tests",
     timeout = "moderate",
-    data = ["//client/web:app-enterprise"],
+    data = ["//client/web:app"],
     env = {
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
     },
     is_percy_enabled = True,
     tags = [

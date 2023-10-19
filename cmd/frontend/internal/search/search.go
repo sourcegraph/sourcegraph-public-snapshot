@@ -39,7 +39,7 @@ import (
 
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db database.DB) http.Handler {
-	logger := log.Scoped("searchStreamHandler", "")
+	logger := log.Scoped("searchStreamHandler")
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,

@@ -1,11 +1,11 @@
-import type { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { ChangesetState } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/ChangesetStatusCell',
     decorators: [decorator],
@@ -13,7 +13,7 @@ const config: Meta = {
 
 export default config
 
-const Template: Story<{ state: ChangesetState }> = ({ state }) => (
+const Template: StoryFn<{ state: ChangesetState }> = ({ state }) => (
     <WebStory>{() => <ChangesetStatusCell state={state} className="d-flex text-muted" />}</WebStory>
 )
 

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -38,14 +39,14 @@ func substituteRegexp(content string, match *regexp.Regexp, replacePattern, sepa
 	return b.String()
 }
 
-func output(ctx context.Context, fragment string, matchPattern MatchPattern, replacePattern string, separator string) (string, error) {
+func output(ctx context.Context, logger log.Logger, fragment string, matchPattern MatchPattern, replacePattern string, separator string) (string, error) {
 	var newContent string
 	var err error
 	switch match := matchPattern.(type) {
 	case *Regexp:
 		newContent = substituteRegexp(fragment, match.Value, replacePattern, separator)
 	case *Comby:
-		newContent, err = comby.Outputs(ctx, comby.Args{
+		newContent, err = comby.Outputs(ctx, logger, comby.Args{
 			Input:           comby.FileContent(fragment),
 			MatchTemplate:   match.Value,
 			RewriteTemplate: replacePattern,
@@ -107,13 +108,13 @@ func resultChunks(r result.Match, kind string, onlyPath bool) []string {
 	}
 }
 
-func toTextResult(ctx context.Context, content string, matchPattern MatchPattern, outputPattern, separator, selector string) (string, error) {
+func toTextResult(ctx context.Context, logger log.Logger, content string, matchPattern MatchPattern, outputPattern, separator, selector string) (string, error) {
 	if selector != "" {
 		// Don't run the search pattern over the search result content
 		// when there's an explicit `select:` value.
 		return outputPattern, nil
 	}
-	return output(ctx, content, matchPattern, outputPattern, separator)
+	return output(ctx, logger, content, matchPattern, outputPattern, separator)
 }
 
 func toTextExtraResult(content string, r result.Match) *TextExtra {
@@ -136,7 +137,7 @@ func (c *Output) Run(ctx context.Context, _ gitserver.Client, r result.Match) (R
 			return nil, err
 		}
 
-		textResult, err := toTextResult(ctx, content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
+		textResult, err := toTextResult(ctx, log.Scoped("compute"), content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
 		if err != nil {
 			return nil, err
 		}

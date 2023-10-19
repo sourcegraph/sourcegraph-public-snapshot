@@ -39,7 +39,7 @@ func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
 	}
 
 	return &Server{
-		logger:      logger.Scoped("server", "grpc server"),
+		logger:      logger.Scoped("server"),
 		eventsTopic: eventsTopic,
 
 		recordEventsMetrics: m,

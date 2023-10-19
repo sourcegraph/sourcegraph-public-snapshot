@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
@@ -20,7 +20,7 @@ import type { PermissionsSyncJob } from '../../graphql-operations'
 import { PERMISSIONS_SYNC_JOBS_QUERY, PERMISSIONS_SYNC_JOBS_STATS } from './backend'
 import { PermissionsSyncJobsTable } from './PermissionsSyncJobsTable'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/src/site-admin/permissions-center/PermissionsSyncJobsTable',
@@ -48,7 +48,7 @@ const FAILED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === Permiss
 const PROCESSING_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.PROCESSING)
 const QUEUED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.QUEUED)
 
-export const SixSyncJobsFound: Story = () => (
+export const SixSyncJobsFound: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider

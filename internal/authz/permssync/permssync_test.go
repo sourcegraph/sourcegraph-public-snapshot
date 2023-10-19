@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
@@ -29,7 +29,7 @@ func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	syncTime := time.Now().Add(13 * time.Second)
-	request := protocol.PermsSyncRequest{UserIDs: []int32{1}, Reason: database.ReasonManualUserSync, TriggeredByUserID: int32(123), ProcessAfter: syncTime}
+	request := ScheduleSyncOpts{UserIDs: []int32{1}, Reason: database.ReasonManualUserSync, TriggeredByUserID: int32(123), ProcessAfter: syncTime}
 	SchedulePermsSync(ctx, logger, db, request)
 	assert.Len(t, permsSyncStore.CreateUserSyncJobFunc.History(), 1)
 	assert.Empty(t, permsSyncStore.CreateRepoSyncJobFunc.History())
@@ -52,7 +52,7 @@ func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 
 	syncTime := time.Now().Add(37 * time.Second)
-	request := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{1}, Reason: database.ReasonManualRepoSync, ProcessAfter: syncTime}
+	request := ScheduleSyncOpts{RepoIDs: []api.RepoID{1}, Reason: database.ReasonManualRepoSync, ProcessAfter: syncTime}
 	SchedulePermsSync(ctx, logger, db, request)
 	assert.Len(t, permsSyncStore.CreateRepoSyncJobFunc.History(), 1)
 	assert.Empty(t, permsSyncStore.CreateUserSyncJobFunc.History())

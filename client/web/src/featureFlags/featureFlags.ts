@@ -29,6 +29,7 @@ export const FEATURE_FLAGS = [
     'enable-simple-search',
     'end-user-onboarding',
     'admin-onboarding',
+    'enable-sveltekit',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

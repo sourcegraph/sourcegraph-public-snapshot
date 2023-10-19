@@ -59,9 +59,9 @@ type UserResourceHandler struct {
 
 func (h *UserResourceHandler) getLogger() log.Logger {
 	if h.observationCtx != nil && h.observationCtx.Logger != nil {
-		return h.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
+		return h.observationCtx.Logger.Scoped("scim.user")
 	}
-	return log.Scoped("scim.user", "resource handler for scim user")
+	return log.Scoped("scim.user")
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.
@@ -96,7 +96,7 @@ type UserSCIMService struct {
 }
 
 func (u *UserSCIMService) getLogger() log.Logger {
-	return log.Scoped("scim.user", "scim service for user")
+	return log.Scoped("scim.user")
 }
 
 func (u *UserSCIMService) Get(ctx context.Context, id string) (scim.Resource, error) {
@@ -105,8 +105,8 @@ func (u *UserSCIMService) Get(ctx context.Context, id string) (scim.Resource, er
 		return scim.Resource{}, err
 	}
 	return user.ToResource(), nil
-
 }
+
 func (u *UserSCIMService) GetAll(ctx context.Context, start int, count *int) (totalCount int, entities []scim.Resource, err error) {
 	return getAllUsersFromDB(ctx, u.db.Users(), start, count)
 }
@@ -132,7 +132,6 @@ func (u *UserSCIMService) Update(ctx context.Context, id string, applySCIMUpdate
 		txErr = updateUser.Update(ctx, &resourceBeforeUpdate, &resourceAfterUpdate)
 		return txErr
 	})
-
 	if err != nil {
 		multiErr, ok := err.(errors.MultiError)
 		if !ok || len(multiErr.Errors()) == 0 {
@@ -185,7 +184,7 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 		// The user exists, but is not SCIM-controlled, so we'll update the user with the new attributes,
 		// and make the user SCIM-controlled (which is the same as a replace)
 		return u.Update(ctx, strconv.Itoa(int(userID)), func(getResource func() scim.Resource) (updated scim.Resource, _ error) {
-			var now = time.Now()
+			now := time.Now()
 			return scim.Resource{
 				ID:         strconv.Itoa(int(userID)),
 				ExternalID: getOptionalExternalID(attributes),
@@ -224,7 +223,11 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 		if err != nil {
 			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 		}
-		user, err = tx.UserExternalAccounts().CreateUserAndSave(ctx, newUser, accountSpec, accountData)
+		user, err = tx.Users().CreateWithExternalAccount(ctx, newUser,
+			&extsvc.Account{
+				AccountSpec: accountSpec,
+				AccountData: accountData,
+			})
 
 		if err != nil {
 			if dbErr, ok := containsErrCannotCreateUserError(err); ok {
@@ -266,7 +269,7 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), u.getLogger())
 	})
 
-	var now = time.Now()
+	now := time.Now()
 	return scim.Resource{
 		ID:         strconv.Itoa(int(user.ID)),
 		ExternalID: getOptionalExternalID(attributes),
@@ -277,6 +280,7 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 		},
 	}, nil
 }
+
 func (u *UserSCIMService) Delete(ctx context.Context, id string) error {
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -347,7 +351,7 @@ func getAllUsersFromDB(ctx context.Context, store database.UserStore, startIndex
 	}
 
 	// Get users and convert them to SCIM resources
-	var opt = &database.UsersListOptions{}
+	opt := &database.UsersListOptions{}
 	if count != nil {
 		opt = &database.UsersListOptions{
 			LimitOffset: &database.LimitOffset{Limit: *count, Offset: offset},

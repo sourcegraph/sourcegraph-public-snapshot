@@ -36,7 +36,7 @@ func (*sender) Config() []env.Config {
 }
 
 func (s *sender) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("sender", "outbound webhook sender"))
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("sender"))
 	ctx := actor.WithInternalActor(context.Background())
 
 	db, err := workerdb.InitDB(observationCtx)

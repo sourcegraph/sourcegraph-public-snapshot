@@ -62,6 +62,11 @@ func (a *Actor) GetSource() codygateway.ActorSource {
 	return codygateway.ActorSource(a.Source.Name())
 }
 
+func (a *Actor) IsDotComActor() bool {
+	// Corresponds to sourcegraph.com subscription ID.
+	return a != nil && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819"
+}
+
 type contextKey int
 
 const actorKey contextKey = iota
@@ -184,7 +189,7 @@ func (a *Actor) Limiter(
 	}
 
 	return &concurrencyLimiter{
-		logger:             logger.Scoped("concurrency", "concurrency limiter"),
+		logger:             logger.Scoped("concurrency"),
 		actor:              a,
 		feature:            feature,
 		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),

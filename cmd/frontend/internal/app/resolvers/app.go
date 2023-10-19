@@ -316,7 +316,7 @@ func (r localExternalServiceResolver) Repositories(ctx context.Context) ([]graph
 			})
 		}
 	case *schema.LocalGitExternalService:
-		src, err := repos.NewLocalGitSource(ctx, log.Scoped("localExternalServiceResolver.Repositories", ""), r.service)
+		src, err := repos.NewLocalGitSource(ctx, log.Scoped("localExternalServiceResolver.Repositories"), r.service)
 		if err != nil {
 			return nil, err
 		}

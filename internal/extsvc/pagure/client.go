@@ -52,7 +52,7 @@ func NewClient(urn string, config *schema.PagureConnection, httpClient httpcli.D
 		Config:     config,
 		URL:        u,
 		httpClient: httpClient,
-		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PagureClient", ""), urn)),
+		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PagureClient"), urn)),
 	}, nil
 }
 

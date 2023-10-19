@@ -132,7 +132,6 @@ func addGrafana(r *mux.Router, db database.DB) {
 						req.URL.Path = req.URL.Path[i+len(prefix):]
 					}
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "grafana"), log.LstdFlags),
 			}))
 		}
 	} else {
@@ -146,7 +145,7 @@ func addGrafana(r *mux.Router, db database.DB) {
 // The route only forwards known project ids, so a DSN must be defined in siteconfig.Log.Sentry.Dsn
 // to allow events to be forwarded. Sentry responses are ignored.
 func addSentry(r *mux.Router) {
-	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+	logger := sglog.Scoped("sentryTunnel")
 
 	// Helper to fetch Sentry configuration from siteConfig.
 	getConfig := func() (string, string, error) {
@@ -261,7 +260,6 @@ func addJaeger(r *mux.Router, db database.DB) {
 					req.URL.Scheme = "http"
 					req.URL.Host = jaegerURL.Host
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "jaeger"), log.LstdFlags),
 			}))
 		}
 
@@ -287,7 +285,7 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 		ctx      = context.Background()
 		endpoint = otlpenv.GetEndpoint()
 		protocol = otlpenv.GetProtocol()
-		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
+		logger   = sglog.Scoped("otlpAdapter").
 				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
 	)
 

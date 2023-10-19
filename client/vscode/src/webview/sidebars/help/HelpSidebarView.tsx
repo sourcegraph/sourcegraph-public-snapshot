@@ -66,7 +66,6 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 onClick={() => onHelpItemClick(VSCE_LINK_FEEDBACK, 'Feedback')}
                 className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-github" slot="start" />
                 Give feedback
             </Button>
             <Button
@@ -74,7 +73,6 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 onClick={() => onHelpItemClick(VSCE_LINK_ISSUES, 'Issues')}
                 className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-bug" slot="start" />
                 Report an issue
             </Button>
             <Button
@@ -82,7 +80,6 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 onClick={() => onHelpItemClick(VSCE_LINK_TROUBLESHOOT, 'Troubleshoot')}
                 className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-notebook" slot="start" />
                 Troubleshooting docs
             </Button>
             <Button
@@ -92,7 +89,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
             >
                 <img
                     alt="sg-logo"
-                    className={classNames(styles.icon, 'codicon')}
+                    className={styles.icon}
                     slot="start"
                     src={isLightTheme ? VSCE_SG_LOGOMARK_DARK : VSCE_SG_LOGOMARK_LIGHT}
                 />
@@ -103,7 +100,6 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 onClick={() => setOpenAuthPanel(previousOpenAuthPanel => !previousOpenAuthPanel)}
                 className={classNames('p-0 m-0', styles.sidebarViewButton)}
             >
-                <i className="codicon codicon-account" slot="start" />
                 {authenticatedUser ? `User: ${authenticatedUser.username}` : 'Authenticate account'}
             </Button>
             {openAuthPanel && (
@@ -134,7 +130,6 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 </div>
             )}
             <Button as={VSCodeButton} className={classNames('p-0 m-0', styles.sidebarViewButton)}>
-                <i className="codicon codicon-calendar" slot="start" />
                 Version v{version}
             </Button>
         </div>

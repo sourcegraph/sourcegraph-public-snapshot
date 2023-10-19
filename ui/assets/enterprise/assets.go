@@ -12,17 +12,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
-//go:embed *
+// By default, `go:embed *` will ignore files that start with `.` or `_`. `all:*` on the other
+// hand will truly include all files.
+//
+//go:embed all:*
 var assetsFS embed.FS
 var afs fs.FS = assetsFS
 
 var Assets http.FileSystem
 
 var (
-	webpackManifestOnce sync.Once
-	assetsOnce          sync.Once
-	webpackManifest     *assets.WebpackManifest
-	webpackManifestErr  error
+	webBuildManifestOnce sync.Once
+	assetsOnce           sync.Once
+	webBuildManifest     *assets.WebBuildManifest
+	webBuildManifestErr  error
 )
 
 func init() {
@@ -32,27 +35,27 @@ func init() {
 
 type Provider struct{}
 
-func (p Provider) LoadWebpackManifest() (*assets.WebpackManifest, error) {
-	webpackManifestOnce.Do(func() {
-		f, err := afs.Open("webpack.manifest.json")
+func (p Provider) LoadWebBuildManifest() (*assets.WebBuildManifest, error) {
+	webBuildManifestOnce.Do(func() {
+		f, err := afs.Open("web.manifest.json")
 		if err != nil {
-			webpackManifestErr = errors.Wrap(err, "read manifest file")
+			webBuildManifestErr = errors.Wrap(err, "read manifest file")
 			return
 		}
 		defer f.Close()
 
 		manifestContent, err := io.ReadAll(f)
 		if err != nil {
-			webpackManifestErr = errors.Wrap(err, "read manifest file")
+			webBuildManifestErr = errors.Wrap(err, "read manifest file")
 			return
 		}
 
-		if err := json.Unmarshal(manifestContent, &webpackManifest); err != nil {
-			webpackManifestErr = errors.Wrap(err, "unmarshal manifest json")
+		if err := json.Unmarshal(manifestContent, &webBuildManifest); err != nil {
+			webBuildManifestErr = errors.Wrap(err, "unmarshal manifest json")
 			return
 		}
 	})
-	return webpackManifest, webpackManifestErr
+	return webBuildManifest, webBuildManifestErr
 }
 
 func (p Provider) Assets() http.FileSystem {

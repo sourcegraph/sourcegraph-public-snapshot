@@ -18,12 +18,14 @@ copy_to_directory(
     srcs = [
         "//:CONTRIBUTING.md",
         "//client/browser:integration-assets",
-        "//client/web:bundle-enterprise",
+        "//client/web:bundle",
+        "//client/web-sveltekit",
         "//ui/assets/img",
     ],
     out = "dist",
     replace_prefixes = {
-        "client/web/bundle-enterprise": "",
+        "client/web/bundle": "",
+        "client/web-sveltekit/build": "",
         "ui/assets/img": "img",
         "client/browser/integration-assets": "",
     },
