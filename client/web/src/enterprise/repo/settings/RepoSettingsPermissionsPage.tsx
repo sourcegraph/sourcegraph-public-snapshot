@@ -91,9 +91,9 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
 
     return (
         <>
-            <PageTitle title="Permissions" />
+            <PageTitle title="Repo Permissions" />
             <PageHeader
-                path={[{ text: 'Permissions' }]}
+                path={[{ text: 'Repo Permissions' }]}
                 headingElement="h2"
                 className="mb-3"
                 description={
