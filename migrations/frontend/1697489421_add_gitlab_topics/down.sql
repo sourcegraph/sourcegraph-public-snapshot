@@ -1,1 +1,1 @@
-DROP INDEX IF EXISTS idx_repo_gitlab_topics;
+ALTER TABLE IF EXISTS repo DROP COLUMN topics;
