@@ -123,9 +123,9 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
-	t.Skip("SKIPPED because this fails in Aspect Workflows CI")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
+	time.Sleep(10 * time.Second) // Try to sleep for 10 seconds after editing site config
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
 	t.Cleanup(cleanup)
 	userClient, _, err := createTestUserAndWaitForRepo(t)
