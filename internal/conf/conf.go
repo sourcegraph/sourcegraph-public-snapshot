@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/jsonx"
 	sglog "github.com/sourcegraph/log"
 
@@ -109,11 +108,8 @@ var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
 	defaultClient := &client{
-		store: newStore(),
-		metricDurationSinceLastSuccessfulUpdateSeconds: promauto.NewGauge(prometheus.GaugeOpts{
-			Name: "src_conf_client_time_since_last_successful_update_seconds",
-			Help: "Time since the last successful update of the configuration by the conf client",
-		}),
+		store:          newStore(),
+		lastUpdateTime: time.Now(),
 	}
 
 	mode := getMode()
@@ -131,6 +127,19 @@ func initDefaultClient() *client {
 			log.Fatalf("received error when setting up the store for the default client during test, err :%s", err)
 		}
 	}
+
+	m := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_conf_client_time_since_last_successful_update_seconds",
+		Help: "Time since the last successful update of the configuration by the conf client",
+	}, func() float64 {
+		defaultClient.lastUpdateTimeMu.RLock()
+		defer defaultClient.lastUpdateTimeMu.RUnlock()
+
+		return time.Since(defaultClient.lastUpdateTime).Seconds()
+	})
+
+	prometheus.DefaultRegisterer.MustRegister(m)
+
 	return defaultClient
 }
 
