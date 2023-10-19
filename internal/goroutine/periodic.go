@@ -2,7 +2,6 @@ package goroutine
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -390,7 +389,7 @@ func runAndConvertPanicToError(ctx context.Context, f func(ctx context.Context) 
 			if e, ok := r.(error); ok {
 				err = errors.Wrap(e, "panic occurred")
 			} else {
-				err = fmt.Errorf("panic occurred: %v", r)
+				err = errors.Newf("panic occurred: %v", r)
 			}
 		}
 	}()
