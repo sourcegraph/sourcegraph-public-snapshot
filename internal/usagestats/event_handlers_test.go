@@ -14,7 +14,7 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 		want string
 	}{
 		{
-			name: "URL path parameters are redacted",
+			name: "URL path parameters are redacted (when `SourcegraphDotComMode` is false)",
 			url:  "https://sourcegraph.com/search?q=abcd",
 			want: "https://sourcegraph.com/search?q=redacted",
 		},

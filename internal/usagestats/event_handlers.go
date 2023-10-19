@@ -328,6 +328,8 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
 
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
+	// Because Sourcegraph.com only contains public code, URLs do not contain sensitive information.
+	// Redaction is only used for URLs from cloud and self-hosted instance telemetry.
 	if envvar.SourcegraphDotComMode() {
 		return rawURL, nil
 	}
