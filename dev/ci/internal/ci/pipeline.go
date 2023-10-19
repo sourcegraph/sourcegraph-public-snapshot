@@ -159,6 +159,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				triggerAsync(buildOptions)))
 		}
 
+		if c.Diff.Has(changed.ClientBrowserExtensions) {
+			ops.Merge(operations.NewNamedSet("Browser Extensions",
+				addBrowserExtensionUnitTests,
+				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+			))
+		}
+
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 

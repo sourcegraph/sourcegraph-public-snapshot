@@ -2,7 +2,7 @@
 
 > WARNING: This is a guide intended for development reference.
 >
-> Additionally, export capabilities are **not yet enabled by default**.
+> To learn more about telemetry export, refer to the [Sourcegraph adminstrator documentation on telemetry](../../../admin/telemetry/index.md).
 
 Telemetry describes the logging of user events, such as a page view or search, from various components of the Sourcegraph and Cody applications.
 There are currently two ways to log product telemetry:
@@ -21,7 +21,6 @@ All usages of old telemetry mechanisms should be migrated to the new framework.
   - [Exported event schema](#exported-event-schema)
   - [Sensitive attributes](#sensitive-attributes)
 - [Testing events](#testing-events)
-- [Enabling telemetry export](#enabling-telemetry-export)
 
 ## Why a new framework and APIs?
 
@@ -164,14 +163,3 @@ func TestRecorder(t *testing.T) {
   require.Equal(t, "Feature", store.StoreEventsFunc.History()[0].Arg1[0].Feature)
 }
 ```
-
-## Enabling telemetry export
-
-> NOTE: Telemetry export is currently experimental, and disabled by default.
-
-Telemetry export can be enabled by making the following configuration changes:
-
-- Set environment variable `TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR="https://telemetry-gateway.sourcegraph.com:443"`
-- Enable feature flag `telemetry-export` on the entire instance, or on a subset of users that you want to export telemetry for
-
-Our defaults for the above may change in the future.

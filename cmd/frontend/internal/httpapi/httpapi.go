@@ -99,7 +99,7 @@ func NewHandler(
 	rateLimiter graphqlbackend.LimitWatcher,
 	handlers *Handlers,
 ) (http.Handler, error) {
-	logger := sglog.Scoped("Handler", "frontend HTTP API handler")
+	logger := sglog.Scoped("Handler")
 
 	if m == nil {
 		m = apirouter.New(nil)
@@ -123,7 +123,7 @@ func NewHandler(
 	)
 
 	wh := webhooks.Router{
-		Logger: logger.Scoped("webhooks.Router", "handling webhook requests and dispatching them to handlers"),
+		Logger: logger.Scoped("webhooks.Router"),
 		DB:     db,
 	}
 	webhookhandlers.Init(&wh)
@@ -222,7 +222,7 @@ func RegisterInternalServices(
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 ) {
-	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
+	logger := sglog.Scoped("InternalHandler")
 	m.StrictSlash(true)
 
 	handler := JsonMiddleware(&ErrorHandler{
@@ -235,7 +235,7 @@ func RegisterInternalServices(
 	gsClient := gitserver.NewClient()
 	indexer := &searchIndexerServer{
 		db:              db,
-		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
+		logger:          logger.Scoped("searchIndexerServer"),
 		gitserverClient: gsClient,
 		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
 		RepoStore:       db.Repos(),

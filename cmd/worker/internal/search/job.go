@@ -103,7 +103,7 @@ func (j *searchJob) newSearchJobRoutines(
 		)
 
 		observationCtx = observation.ContextWithLogger(
-			observationCtx.Logger.Scoped("routines", "exhaustive search job routines"),
+			observationCtx.Logger.Scoped("routines"),
 			observationCtx,
 		)
 

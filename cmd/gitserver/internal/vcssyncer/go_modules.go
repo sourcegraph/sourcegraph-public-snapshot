@@ -33,7 +33,7 @@ func NewGoModulesSyncer(
 	}
 
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("GoModulesSyncer", "sync Go modules"),
+		logger:      log.Scoped("GoModulesSyncer"),
 		typ:         "go_modules",
 		scheme:      dependencies.GoPackagesScheme,
 		placeholder: placeholder,

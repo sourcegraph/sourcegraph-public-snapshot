@@ -86,7 +86,7 @@ func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
 	return &LocalGitCommand{
 		repo:   repo,
 		args:   args,
-		Logger: log.Scoped("local", "local git command logger"),
+		Logger: log.Scoped("local"),
 	}
 }
 

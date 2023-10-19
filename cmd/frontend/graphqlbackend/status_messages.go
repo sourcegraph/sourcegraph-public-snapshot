@@ -95,7 +95,7 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 		return nil, err
 	}
 
-	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}, nil
+	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: externalService}, nil
 }
 
 type indexingProgressMessageResolver struct {

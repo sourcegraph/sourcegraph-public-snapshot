@@ -48,7 +48,7 @@ type ReposService interface {
 // more idiomatic solution.
 func NewRepos(logger log.Logger, db database.DB, client gitserver.Client) ReposService {
 	repoStore := db.Repos()
-	logger = logger.Scoped("repos", "provides a repos store for the backend")
+	logger = logger.Scoped("repos")
 	return &repos{
 		logger:          logger,
 		db:              db,

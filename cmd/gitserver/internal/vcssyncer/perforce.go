@@ -248,9 +248,11 @@ func configureFusionClient(conn *schema.PerforceConnection) FusionConfig {
 
 	// Required
 	fc.Enabled = conn.FusionClient.Enabled
-	fc.LookAhead = conn.FusionClient.LookAhead
 
 	// Optional
+	if conn.FusionClient.LookAhead > 0 {
+		fc.LookAhead = conn.FusionClient.LookAhead
+	}
 	if conn.FusionClient.NetworkThreads > 0 {
 		fc.NetworkThreads = conn.FusionClient.NetworkThreads
 	}

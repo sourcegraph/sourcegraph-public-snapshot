@@ -34,6 +34,7 @@ type s3Store struct {
 var _ Store = &s3Store{}
 
 type S3Config struct {
+	IsBlobstore     bool
 	Region          string
 	Endpoint        string
 	UsePathStyle    bool
@@ -400,6 +401,20 @@ func (r *countingReader) Read(p []byte) (n int, err error) {
 }
 
 func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) {
+	if s3config.IsBlobstore {
+		// For blobstore, no need to read local credential files or talk to a server
+		// to get a role assumption. Instead, we return a simple config with only a static
+		// provider and that's it.
+		cfg := aws.NewConfig()
+		cfg.Credentials = credentials.NewStaticCredentialsProvider(
+			s3config.AccessKeyID,
+			s3config.SecretAccessKey,
+			s3config.SessionToken,
+		)
+		cfg.Region = s3config.Region
+		return *cfg, nil
+	}
+
 	optFns := []func(*awsconfig.LoadOptions) error{
 		awsconfig.WithRegion(s3config.Region),
 	}

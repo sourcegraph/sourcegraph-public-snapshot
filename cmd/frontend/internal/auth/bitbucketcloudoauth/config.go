@@ -17,7 +17,7 @@ import (
 
 func Init(logger log.Logger, db database.DB) {
 	const pkgName = "bitbucketcloudoauth"
-	logger = logger.Scoped(pkgName, "Bitbucket Cloud OAuth config watch")
+	logger = logger.Scoped(pkgName)
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(logger, cfg, db)
 		return problems

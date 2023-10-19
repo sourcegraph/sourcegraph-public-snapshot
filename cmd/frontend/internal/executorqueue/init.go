@@ -30,7 +30,7 @@ func Init(
 		return conf.SiteConfig().ExecutorsAccessToken
 	}
 
-	logger := log.Scoped("executorqueue", "")
+	logger := log.Scoped("executorqueue")
 
 	queueHandler := newExecutorQueuesHandler(
 		observationCtx,

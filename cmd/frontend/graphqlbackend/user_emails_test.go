@@ -110,6 +110,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 		userEmails := dbmocks.NewMockUserEmailsStore()
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 		tests := []struct {
 			name    string
@@ -255,6 +256,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
+			db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 			RunTests(t, test.gqlTests(db))
 

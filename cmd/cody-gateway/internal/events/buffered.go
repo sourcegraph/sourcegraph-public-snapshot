@@ -65,7 +65,7 @@ func defaultWorkers(bufferSize, workerCount int) int {
 // goroutine.BackgroundRoutine that must be started.
 func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize, workerCount int) *BufferedLogger {
 	return &BufferedLogger{
-		log: logger.Scoped("bufferedLogger", "buffered events logger"),
+		log: logger.Scoped("bufferedLogger"),
 
 		handler: handler,
 

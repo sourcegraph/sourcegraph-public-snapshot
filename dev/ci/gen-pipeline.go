@@ -50,7 +50,7 @@ func main() {
 	))
 	defer liblog.Sync()
 
-	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
+	logger := log.Scoped("gen-pipeline")
 
 	if docs {
 		renderPipelineDocs(logger, os.Stdout)

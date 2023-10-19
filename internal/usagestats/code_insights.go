@@ -32,7 +32,7 @@ func (p *pingLoader) withOperation(name string, loadFunc pingLoadFunc) {
 
 func (p *pingLoader) generate(ctx context.Context, db database.DB) *types.CodeInsightsUsageStatistics {
 	stats := &types.CodeInsightsUsageStatistics{}
-	logger := log.Scoped("code insights ping loader", "pings for code insights")
+	logger := log.Scoped("code insights ping loader")
 
 	for name, loadFunc := range p.operations {
 		err := loadFunc(ctx, db, stats, p.now)

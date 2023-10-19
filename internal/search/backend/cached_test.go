@@ -28,32 +28,6 @@ func TestCachedSearcher(t *testing.T) {
 
 	ctx := context.Background()
 
-	// RepoListFieldMinimal
-	{
-		s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
-
-		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
-		want := &zoekt.RepoList{
-			Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
-				1: {},
-				2: {HasSymbols: true},
-			},
-			Stats: zoekt.RepoStats{
-				Repos: 2,
-			},
-		}
-
-		if !cmp.Equal(have, want) {
-			t.Fatalf("list mismatch: %s", cmp.Diff(have, want))
-		}
-
-		if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
-			t.Fatalf("have ListCalls %d, want %d", have, want)
-		}
-
-		atomic.StoreInt64(&ms.ListCalls, 0)
-	}
-
 	// RepoListFieldReposMap
 	{
 		s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})

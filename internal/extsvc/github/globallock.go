@@ -48,7 +48,7 @@ var metricLockRequestDurationGauge = promauto.NewHistogram(prometheus.HistogramO
 })
 
 func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *http.Request) (*http.Response, error) {
-	logger = logger.Scoped("githubcom-concurrency-limiter", "Limits concurrency to 1 per token against GitHub.com to prevent abuse detection")
+	logger = logger.Scoped("githubcom-concurrency-limiter")
 	var token string
 	if v := r.Header["Authorization"]; len(v) > 0 {
 		fields := strings.Fields(v[0])
