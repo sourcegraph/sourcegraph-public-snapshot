@@ -13,6 +13,7 @@ const (
 	None Diff = 0
 
 	Go Diff = 1 << iota
+	ClientBrowserExtensions
 	Client
 	GraphQL
 	DatabaseSchema
@@ -210,6 +211,11 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 		if strings.HasSuffix(p, ".pb.go") {
 			diff |= Protobuf
 		}
+
+		// Affects browser extensions
+		if strings.HasPrefix(p, "client/browser/") {
+			diff |= ClientBrowserExtensions
+		}
 	}
 
 	return
@@ -224,6 +230,8 @@ func (d Diff) String() string {
 		return "Go"
 	case Client:
 		return "Client"
+	case ClientBrowserExtensions:
+		return "ClientBrowserExtensions"
 	case GraphQL:
 		return "GraphQL"
 	case DatabaseSchema:
