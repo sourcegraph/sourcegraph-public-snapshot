@@ -23751,6 +23751,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "idx_repo_gitlab_topics",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX idx_repo_gitlab_topics ON repo USING gin ((metadata -\u003e 'topics'::text)) WHERE external_service_type = 'gitlab'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_archived",
           "IsPrimaryKey": false,
           "IsUnique": false,
