@@ -23,7 +23,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	logger := log.Scoped("compute", "")
+	logger := log.Scoped("compute")
 	enterpriseServices.ComputeResolver = resolvers.NewResolver(logger, db)
 	enterpriseServices.NewComputeStreamHandler = func() http.Handler {
 		return streaming.NewComputeStreamHandler(logger, db)

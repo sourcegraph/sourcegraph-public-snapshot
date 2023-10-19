@@ -90,7 +90,7 @@
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": ["enabled", "lookAhead"],
+      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Enable the p4-fusion client for cloning and fetching repos",

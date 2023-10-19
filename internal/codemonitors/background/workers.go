@@ -123,7 +123,7 @@ func newActionJobResetter(_ context.Context, observationCtx *observation.Context
 }
 
 func createDBWorkerStoreForTriggerJobs(observationCtx *observation.Context, s basestore.ShareableStore) dbworkerstore.Store[*database.TriggerJob] {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("triggerJobs.dbworker.Store", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("triggerJobs.dbworker.Store"), observationCtx)
 
 	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*database.TriggerJob]{
 		Name:              "code_monitors_trigger_jobs_worker_store",
@@ -138,7 +138,7 @@ func createDBWorkerStoreForTriggerJobs(observationCtx *observation.Context, s ba
 }
 
 func createDBWorkerStoreForActionJobs(observationCtx *observation.Context, s database.CodeMonitorStore) dbworkerstore.Store[*database.ActionJob] {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("actionJobs.dbworker.Store", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("actionJobs.dbworker.Store"), observationCtx)
 
 	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*database.ActionJob]{
 		Name:              "code_monitors_action_jobs_worker_store",
@@ -278,7 +278,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *database.ActionJob) e
 		if rec.NamespaceUserID == nil {
 			return errors.New("nil recipient")
 		}
-		err = SendEmailForNewSearchResult(ctx, database.NewDBWith(log.Scoped("handleEmail", ""), r.CodeMonitorStore), *rec.NamespaceUserID, data)
+		err = SendEmailForNewSearchResult(ctx, database.NewDBWith(log.Scoped("handleEmail"), r.CodeMonitorStore), *rec.NamespaceUserID, data)
 		if err != nil {
 			return err
 		}

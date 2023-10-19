@@ -116,7 +116,7 @@ func withOAuthExternalClient(r *http.Request) *http.Request {
 	if traceLogEnabled {
 		loggingClient := *client
 		loggingClient.Transport = &loggingRoundTripper{
-			log:        log.Scoped("oauth_external.transport", "transport logger for withOAuthExternalClient"),
+			log:        log.Scoped("oauth_external.transport"),
 			underlying: client.Transport,
 		}
 		client = &loggingClient

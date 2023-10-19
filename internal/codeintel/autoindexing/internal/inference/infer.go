@@ -62,7 +62,7 @@ func inferNpmRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
+	logger := log.Scoped("inferNpmRepositoryAndRevision")
 	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
 	if err != nil {
 		logger.Error("invalid npm package name in database", log.Error(err))

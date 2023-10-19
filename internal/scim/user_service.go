@@ -59,9 +59,9 @@ type UserResourceHandler struct {
 
 func (h *UserResourceHandler) getLogger() log.Logger {
 	if h.observationCtx != nil && h.observationCtx.Logger != nil {
-		return h.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
+		return h.observationCtx.Logger.Scoped("scim.user")
 	}
-	return log.Scoped("scim.user", "resource handler for scim user")
+	return log.Scoped("scim.user")
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.
@@ -96,7 +96,7 @@ type UserSCIMService struct {
 }
 
 func (u *UserSCIMService) getLogger() log.Logger {
-	return log.Scoped("scim.user", "scim service for user")
+	return log.Scoped("scim.user")
 }
 
 func (u *UserSCIMService) Get(ctx context.Context, id string) (scim.Resource, error) {

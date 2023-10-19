@@ -25,7 +25,7 @@ type GitHubWebhook struct {
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped("ServeGitHubWebhook", "direct endpoint for github webhook")
+	logger := log.Scoped("ServeGitHubWebhook")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)

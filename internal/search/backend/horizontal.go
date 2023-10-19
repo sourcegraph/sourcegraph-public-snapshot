@@ -167,7 +167,6 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	// does deduplication.
 
 	aggregate := zoekt.RepoList{
-		Minimal:  make(map[uint32]*zoekt.MinimalRepoListEntry),
 		ReposMap: make(zoekt.ReposMap),
 	}
 	for range clients {
@@ -185,10 +184,6 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 		aggregate.Crashes += r.rl.Crashes
 		aggregate.Stats.Add(&r.rl.Stats)
 
-		for k, v := range r.rl.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-			aggregate.Minimal[k] = v //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		}
-
 		for k, v := range r.rl.ReposMap {
 			aggregate.ReposMap[k] = v
 		}
@@ -198,7 +193,7 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	// field is the number of Repos. We may overcount in the case of asking
 	// for Repos since we don't deduplicate, but this should be very rare
 	// (only happens in the case of rebalancing)
-	aggregate.Stats.Repos = len(aggregate.Repos) + len(aggregate.Minimal) + len(aggregate.ReposMap) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	aggregate.Stats.Repos = len(aggregate.Repos) + len(aggregate.ReposMap)
 
 	return &aggregate, nil
 }

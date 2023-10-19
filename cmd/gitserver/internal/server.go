@@ -230,7 +230,7 @@ func shortGitCommandSlow(args []string) time.Duration {
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
 func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
+		l := log.Scoped("gitserver")
 
 		// Do not apply the middleware to /ping and /git endpoints.
 		//
@@ -280,19 +280,19 @@ func (s *Server) Handler() http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		s.Logger.Scoped("archive.accesslog"),
 		conf.DefaultClient(),
 		s.handleArchive,
 	)))
 	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		s.Logger.Scoped("exec.accesslog"),
 		conf.DefaultClient(),
 		s.handleExec,
 	)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
 	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
+		s.Logger.Scoped("p4-exec.accesslog"),
 		conf.DefaultClient(),
 		s.handleP4Exec,
 	)))
@@ -325,7 +325,7 @@ func (s *Server) Handler() http.Handler {
 	// scaling events and the new destination gitserver replica can directly clone from
 	// the gitserver replica which hosts the repository currently.
 	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
+		s.Logger.Scoped("git.accesslog"),
 		conf.DefaultClient(),
 		func(rw http.ResponseWriter, r *http.Request) {
 			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
@@ -412,7 +412,7 @@ func (p *clonePipelineRoutine) cloneJobProducer(ctx context.Context, tasks chan<
 }
 
 func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
-	logger := p.s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
+	logger := p.s.Logger.Scoped("cloneJobConsumer")
 
 	for task := range tasks {
 		logger := logger.With(log.String("job.repo", string(task.repo)))
@@ -581,7 +581,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
+	logger := s.Logger.Scoped("handleRepoUpdate")
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.ReposDir, req.Repo)
@@ -642,7 +642,7 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 // time out) call to clone a repository.
 // Asynchronous errors will have to be checked in the gitserver_repos table under last_error.
 func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
-	logger := s.Logger.Scoped("handleRepoClone", "asynchronous http handler for repo clones")
+	logger := s.Logger.Scoped("handleRepoClone")
 	var req protocol.RepoCloneRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -665,7 +665,7 @@ func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
-		logger    = s.Logger.Scoped("handleArchive", "http handler for repo archive")
+		logger    = s.Logger.Scoped("handleArchive")
 		q         = r.URL.Query()
 		treeish   = q.Get("treeish")
 		repo      = q.Get("repo")
@@ -722,7 +722,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	logger := s.Logger.Scoped("handleSearch", "http handler for search")
+	logger := s.Logger.Scoped("handleSearch")
 	tr, ctx := trace.New(r.Context(), "handleSearch")
 	defer tr.End()
 
@@ -1182,7 +1182,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 // execHTTP translates the results of an exec into the expected HTTP statuses and payloads
 func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
-	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
+	logger := s.Logger.Scoped("exec").With(log.Strings("req.Args", req.Args))
 
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
@@ -1424,7 +1424,7 @@ func (s *Server) doClone(
 	remoteURL *vcs.URL,
 	opts CloneOptions,
 ) (err error) {
-	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
+	logger := s.Logger.Scoped("doClone").With(log.String("repo", string(repo)))
 
 	defer lock.Release()
 	defer func() {
@@ -1779,7 +1779,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
 func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
-	logger := s.Logger.Scoped("backgroundRepoUpdate", "").With(log.String("repo", string(repo)))
+	logger := s.Logger.Scoped("backgroundRepoUpdate").With(log.String("repo", string(repo)))
 
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)

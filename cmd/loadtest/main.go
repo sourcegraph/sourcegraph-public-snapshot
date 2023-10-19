@@ -30,7 +30,7 @@ func main() {
 	sanitycheck.Pass()
 
 	log.Init(log.Resource{Name: "loadtest"})
-	logger := log.Scoped("loadtest", "")
+	logger := log.Scoped("loadtest")
 
 	if err := run(logger); err != nil {
 		logger.Fatal("run failed", log.Error(err))

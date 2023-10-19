@@ -96,14 +96,14 @@ func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTeleme
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
 	// we run without conf which means Sourcegraph tracing is not enabled.
 	shutdownTracing, err := maybeEnableTracing(ctx,
-		logger.Scoped("tracing", "OpenTelemetry tracing"),
+		logger.Scoped("tracing"),
 		config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "maybeEnableTracing")
 	}
 
 	shutdownMetrics, err := maybeEnableMetrics(ctx,
-		logger.Scoped("metrics", "OpenTelemetry metrics"),
+		logger.Scoped("metrics"),
 		config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "maybeEnableMetrics")

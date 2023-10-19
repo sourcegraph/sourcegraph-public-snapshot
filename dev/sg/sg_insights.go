@@ -63,7 +63,7 @@ func getInsightSeriesIDsAction(cmd *cli.Context) error {
 	std.Out.WriteNoticef("Finding the Series IDs for %s", ids[0])
 
 	ctx := cmd.Context
-	logger := log.Scoped("getInsightSeriesIDsAction", "")
+	logger := log.Scoped("getInsightSeriesIDsAction")
 
 	// Read the configuration.
 	conf, err := getConfig()

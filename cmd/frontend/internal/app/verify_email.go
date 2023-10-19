@@ -18,7 +18,7 @@ import (
 func serveVerifyEmail(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		logger := log.Scoped("verify-email", "")
+		logger := log.Scoped("verify-email")
 		email := r.URL.Query().Get("email")
 		verifyCode := r.URL.Query().Get("code")
 		actr := actor.FromContext(ctx)

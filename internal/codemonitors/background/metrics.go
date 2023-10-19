@@ -15,7 +15,7 @@ type codeMonitorsMetrics struct {
 }
 
 func newMetricsForTriggerQueries(observationCtx *observation.Context) codeMonitorsMetrics {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("triggers", "code monitor triggers"), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("triggers"), observationCtx)
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_codemonitors_query_reset_failures_total",
@@ -44,7 +44,7 @@ func newMetricsForTriggerQueries(observationCtx *observation.Context) codeMonito
 }
 
 func newActionMetrics(observationCtx *observation.Context) codeMonitorsMetrics {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("actions", "code monitors actions"), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("actions"), observationCtx)
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_codemonitors_action_reset_failures_total",
