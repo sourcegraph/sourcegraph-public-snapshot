@@ -111,18 +111,6 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 	// We should use an internal actor when doing cross service calls.
 	clientCtx := actor.WithInternalActor(ctx)
 
-	// TODO: This is a blocking request to clone the index repository to disk.
-	// However, this repo does not actually exist in the repo table, so it will
-	// cause DB errors when trying to update the repos DB state, and it will be
-	// pruned at a random point in time when gitserver detects the repo should
-	// no longer be on disk (because it is not tracked in the DB).
-	// This is a hack that should not exist.
-	// The correct way would be for the Source for rust to return this repo so
-	// is is a proper repo.
-	// Then we also don't need to make that request here as the repo can be expected
-	// to be kept fresh.
-	// However, we don't have a token for the index repo, so it's unclear how
-	// we would clone it.
 	update, err := j.gitClient.RequestRepoUpdate(clientCtx, repoName, interval)
 	if err != nil {
 		return err
