@@ -26,6 +26,5 @@ tasks:
       flags:
         - --noexperimental_reuse_sandbox_directories
       targets:
-          - //...
           - //testing:grpc_backend_integration_test
           - //testing:codeintel_integration_test
