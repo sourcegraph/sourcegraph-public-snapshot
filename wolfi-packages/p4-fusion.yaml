@@ -35,12 +35,12 @@ pipeline:
   # Download p4-fusion
   - uses: fetch
     with:
-      uri: https://github.com/sourcegraph/p4-fusion/archive/52446032942d31baf6b36b09e72928415400a037.tar.gz
-      expected-sha256: 4edfb8b3f3ded5f7de70a7604272fe489604330a0699c93cb9f4c62633530d68
+      uri: https://github.com/sourcegraph/p4-fusion/archive/1927d60872e88244d9421865a1ebcfa89d4d893f.tar.gz
+      expected-sha256: 16cc228293590c294c08d8bd53d228393ca72f4d998b6f38d78dc108969f5003
       extract: false
   - runs: |
       mkdir p4-fusion-src
-      tar -C p4-fusion-src -xzf 52446032942d31baf6b36b09e72928415400a037.tar.gz --strip 1
+      tar -C p4-fusion-src -xzf 1927d60872e88244d9421865a1ebcfa89d4d893f.tar.gz --strip 1
 
   # Download OpenSSL
   - uses: fetch
