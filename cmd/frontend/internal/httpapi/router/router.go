@@ -27,7 +27,7 @@ const (
 
 	Registry = "registry"
 
-	RepoShield  = "repo.shield"
+	RepoShield = "repo.shield"
 
 	Webhooks                = "webhooks"
 	GitHubWebhooks          = "github.webhooks"
