@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/exp/slices"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 )
@@ -67,6 +68,10 @@ var (
 func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) TelemetryEventsExportMode {
 	if licenseKey == "" {
 		return TelemetryEventsExportAll // without licensing
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		return TelemetryEventsExportAll // dotcom mode
 	}
 
 	// Use parametrized pk for testing
