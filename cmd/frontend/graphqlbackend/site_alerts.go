@@ -11,6 +11,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -18,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
@@ -53,11 +56,13 @@ const (
 	AlertTypeError   = "ERROR"
 )
 
+type AlertFunc func(context.Context, database.DB, AlertFuncArgs) ([]*Alert, error)
+
 // AlertFuncs is a list of functions called to populate the GraphQL Site.alerts value. It may be
 // appended to at init time.
 //
 // The functions are called each time the Site.alerts value is queried, so they must not block.
-var AlertFuncs []func(AlertFuncArgs) []*Alert
+var AlertFuncs []AlertFunc
 
 // AlertFuncArgs are the arguments provided to functions in AlertFuncs used to populate the GraphQL
 // Site.alerts value. They allow the functions to customize the returned alerts based on the
@@ -81,8 +86,20 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	}
 
 	var alerts []*Alert
+	var errs error
 	for _, f := range AlertFuncs {
-		alerts = append(alerts, f(args)...)
+		a, err := f(ctx, r.db, args)
+		if err != nil {
+			errs = errors.Append(errs, err)
+			continue
+		}
+		alerts = append(alerts, a...)
+	}
+	if errs != nil {
+		alerts = append(alerts, &Alert{
+			TypeValue:    AlertTypeWarning,
+			MessageValue: fmt.Sprintf("failed to generate alerts: %s", errs),
+		})
 	}
 	return alerts, nil
 }
@@ -126,7 +143,7 @@ func init() {
 		log15.Warn("WARNING: possibly misconfigured Prometheus", "error", err)
 	}
 
-	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
+	AlertFuncs = append(AlertFuncs, func(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 		var alerts []*Alert
 		for _, notification := range conf.Get().Notifications {
 			alerts = append(alerts, &Alert{
@@ -135,16 +152,16 @@ func init() {
 				IsDismissibleWithKeyValue: notification.Key,
 			})
 		}
-		return alerts
+		return alerts, nil
 	})
 
 	// Warn about invalid site configuration.
-	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
+	AlertFuncs = append(AlertFuncs, func(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 		// 🚨 SECURITY: Only the site admin should care about the site configuration being invalid, as they
 		// are the only one who can take action on that. Additionally, it may be unsafe to expose information
 		// about the problems with the configuration (e.g. if the error message contains sensitive information).
 		if !args.IsSiteAdmin {
-			return nil
+			return nil, nil
 		}
 
 		problems, err := conf.Validate(conf.Raw())
@@ -154,7 +171,7 @@ func init() {
 					TypeValue:    AlertTypeError,
 					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
-			}
+			}, nil
 		}
 
 		warnings, err := conf.GetWarnings()
@@ -164,12 +181,12 @@ func init() {
 					TypeValue:    AlertTypeError,
 					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
-			}
+			}, nil
 		}
 		problems = append(problems, warnings...)
 
 		if len(problems) == 0 {
-			return nil
+			return nil, nil
 		}
 		alerts := make([]*Alert, 0, 2)
 
@@ -190,7 +207,7 @@ func init() {
 					"\n* " + strings.Join(externalServiceProblems.Messages(), "\n* "),
 			})
 		}
-		return alerts
+		return alerts, nil
 	})
 
 	// Warn if customer is using GitLab on a version < 12.0.
@@ -199,54 +216,54 @@ func init() {
 	AlertFuncs = append(AlertFuncs, codyGatewayUsageAlert)
 }
 
-func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
-	licenseInfo := hooks.GetLicenseInfo()
+func storageLimitReachedAlert(ctx context.Context, db database.DB, args AlertFuncArgs) ([]*Alert, error) {
+	licenseInfo := hooks.GetLicenseInfo(ctx, log.Scoped("storageLimitReachedAlert"), db)
 	if licenseInfo == nil {
-		return nil
+		return nil, nil
 	}
 
 	if licenseInfo.CodeScaleCloseToLimit {
 		return []*Alert{{
 			TypeValue:    AlertTypeWarning,
 			MessageValue: "You're about to reach the 100GiB storage limit. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
-		}}
+		}}, nil
 	} else if licenseInfo.CodeScaleExceededLimit {
 		return []*Alert{{
 			TypeValue:    AlertTypeError,
 			MessageValue: "You've used all 100GiB of storage. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
-		}}
+		}}, nil
 	}
-	return nil
+	return nil, nil
 }
 
-func updateAvailableAlert(args AlertFuncArgs) []*Alert {
+func updateAvailableAlert(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 	if deploy.IsApp() {
-		return nil
+		return nil, nil
 	}
 
 	// We only show update alerts to admins. This is not for security reasons, as we already
 	// expose the version number of the instance to all users via the user settings page.
 	if !args.IsSiteAdmin {
-		return nil
+		return nil, nil
 	}
 
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() || !globalUpdateStatus.HasUpdate() || globalUpdateStatus.Err != nil {
-		return nil
+		return nil, nil
 	}
 	// ensure the user has opted in to receiving notifications for minor updates and there is one available
 	if !args.ViewerFinalSettings.AlertsShowPatchUpdates && !isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
-		return nil
+		return nil, nil
 	}
 	// for major/minor updates, ensure banner is hidden if they have opted out
 	if !args.ViewerFinalSettings.AlertsShowMajorMinorUpdates && isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
-		return nil
+		return nil, nil
 	}
 	message := fmt.Sprintf("An update is available: [Sourcegraph v%s](https://about.sourcegraph.com/blog) - [changelog](https://about.sourcegraph.com/changelog)", globalUpdateStatus.UpdateVersion)
 
 	// dismission key includes the version so after it is dismissed the alert comes back for the next update.
 	key := "update-available-" + globalUpdateStatus.UpdateVersion
-	return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}}
+	return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}}, nil
 }
 
 // isMinorUpdateAvailable tells if upgrading from the current version to the specified upgrade
@@ -266,48 +283,47 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 	return cv.Major() != uv.Major() || cv.Minor() != uv.Minor()
 }
 
-func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
+func emailSendingNotConfiguredAlert(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsSingleBinary() {
-		return nil
+		return nil, nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
 		return []*Alert{{
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.smtp`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",
-		}}
+		}}, nil
 	}
 	if conf.Get().EmailAddress == "" {
 		return []*Alert{{
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.address`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",
-		}}
+		}}, nil
 	}
-	return nil
+	return nil, nil
 }
 
-func outOfDateAlert(args AlertFuncArgs) []*Alert {
+func outOfDateAlert(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 	if deploy.IsApp() {
-		return nil
+		return nil, nil
 	}
 
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
-		return nil
+		return nil, nil
 	}
 	offline := globalUpdateStatus.Err != nil // Whether or not instance can connect to Sourcegraph.com for update checks
 	now := time.Now()
 	monthsOutOfDate, err := version.HowLongOutOfDate(now)
 	if err != nil {
-		log15.Error("failed to determine how out of date Sourcegraph is", "error", err)
-		return nil
+		return nil, errors.Wrap(err, "failed to determine how out of date Sourcegraph is")
 	}
 	alert := determineOutOfDateAlert(args.IsSiteAdmin, monthsOutOfDate, offline)
 	if alert == nil {
-		return nil
+		return nil, nil
 	}
-	return []*Alert{alert}
+	return []*Alert{alert}, nil
 }
 
 func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
@@ -358,8 +374,8 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 }
 
 // observabilityActiveAlertsAlert directs admins to check Grafana if critical alerts are firing
-func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArgs) []*Alert {
-	return func(args AlertFuncArgs) []*Alert {
+func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
+	return func(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 		// true by default - change settings.schema.json if this changes
 		// blocked by https://github.com/sourcegraph/sourcegraph/issues/12190
 		observabilitySiteAlertsDisabled := true
@@ -368,7 +384,7 @@ func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArg
 		}
 
 		if !args.IsSiteAdmin || observabilitySiteAlertsDisabled {
-			return nil
+			return nil, nil
 		}
 
 		// use a short timeout to avoid having this block problems from loading
@@ -376,30 +392,30 @@ func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArg
 		defer cancel()
 		status, err := prom.GetAlertsStatus(ctx)
 		if err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Failed to fetch alerts status: %s", err)}}
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Failed to fetch alerts status: %s", err)}}, nil
 		}
 
 		// decide whether to render a message about alerts
 		if status.Critical == 0 {
-			return nil
+			return nil, nil
 		}
 		msg := fmt.Sprintf("%s across %s currently firing - [view alerts](/-/debug/grafana)",
 			pluralize(status.Critical, "critical alert", "critical alerts"),
 			pluralize(status.ServicesCritical, "service", "services"))
-		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg}}
+		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg}}, nil
 	}
 }
 
-func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
+func gitlabVersionAlert(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 	// We only show this alert to site admins.
 	if !args.IsSiteAdmin {
-		return nil
+		return nil, nil
 	}
 
 	chvs, err := versions.GetVersions()
 	if err != nil {
 		log15.Warn("Failed to get code host versions for GitLab minimum version alert", "error", err)
-		return nil
+		return nil, nil
 	}
 
 	// NOTE: It's necessary to include a "-0" prerelease suffix on each constraint so that
@@ -427,17 +443,17 @@ func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
 			return []*Alert{{
 				TypeValue:    AlertTypeError,
 				MessageValue: "One or more of your code hosts is running a version of GitLab below 12.0, which is not supported by Sourcegraph. Please upgrade your GitLab instance(s) to prevent disruption.",
-			}}
+			}}, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
-func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
+func codyGatewayUsageAlert(_ context.Context, _ database.DB, args AlertFuncArgs) ([]*Alert, error) {
 	// We only show this alert to site admins.
 	if !args.IsSiteAdmin {
-		return nil
+		return nil, nil
 	}
 
 	var alerts []*Alert
@@ -470,7 +486,7 @@ func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
 		}
 	}
 
-	return alerts
+	return alerts, nil
 }
 
 func pluralize(v int, singular, plural string) string {

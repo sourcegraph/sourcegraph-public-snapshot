@@ -117,7 +117,9 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 				test.mockSetup(t)
 			}
 
-			err := NewBeforeCreateUserHook()(context.Background(), db, test.spec)
+			err := BeforeCreateUserHook(context.Background(), func(ctx context.Context) (int, error) {
+				return db.Users().Count(ctx, nil)
+			}, test.spec)
 			if test.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -170,12 +172,9 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			db, usersStore := mockDBAndStores(t)
 			user := new(types.User)
 
-			hook := NewAfterCreateUserHook()
-			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), db, user)
-				if err != nil {
-					t.Fatal(err)
-				}
+			err := AfterCreateUserHook(context.Background(), db.Users().SetIsSiteAdmin, user)
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			if test.setSiteAdmin {
@@ -245,7 +244,7 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			err := NewBeforeSetUserIsSiteAdmin()(test.ctx, test.isSiteAdmin)
+			err := BeforeSetUserIsSiteAdminHook(test.ctx, test.isSiteAdmin)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}

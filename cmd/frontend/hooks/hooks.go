@@ -2,7 +2,16 @@
 package hooks
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 // PostAuthMiddleware is an HTTP handler middleware that, if set, runs just before auth-related
@@ -32,4 +41,62 @@ type LicenseInfo struct {
 	BatchChanges           *FeatureBatchChanges `json:"batchChanges"`
 }
 
-var GetLicenseInfo = func() *LicenseInfo { return nil }
+// Surface basic, non-sensitive information about the license type. This information
+// can be used to soft-gate features from the UI, and to provide info to admins from
+// site admin settings pages in the UI.
+func GetLicenseInfo(ctx context.Context, logger log.Logger, db database.DB) *LicenseInfo {
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		logger.Error("Failed to get license info", log.Error(err))
+		return nil
+	}
+
+	licenseInfo := &LicenseInfo{
+		CurrentPlan: string(info.Plan()),
+	}
+	if info.Plan() == licensing.PlanBusiness0 {
+		const codeScaleLimit = 100 * 1024 * 1024 * 1024
+		licenseInfo.CodeScaleLimit = "100GiB"
+
+		stats, err := usagestats.GetRepositories(ctx, db)
+		if err != nil {
+			logger.Error("Failed to get repository stats", log.Error(err))
+			return nil
+		}
+
+		if stats.GitDirBytes >= codeScaleLimit {
+			licenseInfo.CodeScaleExceededLimit = true
+		} else if stats.GitDirBytes >= codeScaleLimit*0.9 {
+			licenseInfo.CodeScaleCloseToLimit = true
+		}
+	}
+
+	// returning this only makes sense on dotcom
+	if envvar.SourcegraphDotComMode() {
+		for _, plan := range licensing.AllPlans {
+			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, fmt.Sprintf("plan:%s", plan))
+		}
+		for _, feature := range licensing.AllFeatures {
+			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
+		}
+		licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, licensing.MiscTags...)
+	} else { // returning BC info only makes sense on non-dotcom
+		bcFeature := &licensing.FeatureBatchChanges{}
+		if err := licensing.Check(bcFeature); err == nil {
+			if bcFeature.Unrestricted {
+				licenseInfo.BatchChanges = &FeatureBatchChanges{
+					Unrestricted: true,
+					// Superceded by being unrestricted
+					MaxNumChangesets: -1,
+				}
+			} else {
+				max := int(bcFeature.MaxNumChangesets)
+				licenseInfo.BatchChanges = &FeatureBatchChanges{
+					MaxNumChangesets: max,
+				}
+			}
+		}
+	}
+
+	return licenseInfo
+}

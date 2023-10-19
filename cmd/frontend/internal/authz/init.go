@@ -71,9 +71,9 @@ func Init(
 
 	authz.DefaultSubRepoPermsChecker = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(_ context.Context, _ database.DB, args graphqlbackend.AlertFuncArgs) ([]*graphqlbackend.Alert, error) {
 		if licensing.IsLicenseValid() {
-			return nil
+			return nil, nil
 		}
 
 		reason := licensing.GetLicenseInvalidReason()
@@ -81,18 +81,18 @@ func Init(
 		return []*graphqlbackend.Alert{{
 			TypeValue:    graphqlbackend.AlertTypeError,
 			MessageValue: fmt.Sprintf("The Sourcegraph license key is invalid. Reason: %s. To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration). Please contact Sourcegraph support for more information.", reason),
-		}}
+		}}, nil
 	})
 
 	// Warn about usage of authz providers that are not enabled by the license.
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(_ context.Context, _ database.DB, args graphqlbackend.AlertFuncArgs) ([]*graphqlbackend.Alert, error) {
 		// Only site admins can act on this alert, so only show it to site admins.
 		if !args.IsSiteAdmin {
-			return nil
+			return nil, nil
 		}
 
 		if licensing.IsFeatureEnabledLenient(licensing.FeatureACLs) {
-			return nil
+			return nil, nil
 		}
 
 		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), db)
@@ -118,21 +118,21 @@ func Init(
 		}
 
 		if len(authzNames) == 0 {
-			return nil
+			return nil, nil
 		}
 
 		return []*graphqlbackend.Alert{{
 			TypeValue:    graphqlbackend.AlertTypeError,
 			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable repository permissions for the following code hosts: %s. [**Get a license.**](/site-admin/license)", strings.Join(authzNames, ", ")),
-		}}
+		}}, nil
 	})
 
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(_ context.Context, _ database.DB, args graphqlbackend.AlertFuncArgs) ([]*graphqlbackend.Alert, error) {
 		// 🚨 SECURITY: Only the site admin should ever see this (all other users will see a hard-block
 		// license expiration screen) about this. Leaking this wouldn't be a security vulnerability, but
 		// just in case this method is changed to return more information, we lock it down.
 		if !args.IsSiteAdmin {
-			return nil
+			return nil, nil
 		}
 
 		info, err := licensing.GetConfiguredProductLicenseInfo()
@@ -141,25 +141,26 @@ func Init(
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
 				MessageValue: "Error reading Sourcegraph license key. Check the logs for more information, or update the license key in the [**site configuration**](/site-admin/configuration).",
-			}}
+			}}, nil
 		}
 		if info != nil && info.IsExpired() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
 				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.",
-			}}
+			}}, nil
 		}
 		if info != nil && info.IsExpiringSoon() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeWarning,
 				MessageValue: fmt.Sprintf("Sourcegraph license will expire soon! Expires on: %s. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.", info.ExpiresAt.UTC().Truncate(time.Hour).Format(time.UnixDate)),
-			}}
+			}}, nil
 		}
-		return nil
+		return nil, nil
 	})
 
 	// Enforce the use of a valid license key by preventing all HTTP requests if the license is invalid
 	// (due to an error in parsing or verification, or because the license has expired).
+	// TODO: Remove assignment.
 	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			a := actor.FromContext(ctx)

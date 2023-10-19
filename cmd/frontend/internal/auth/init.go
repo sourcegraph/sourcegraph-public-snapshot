@@ -2,6 +2,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -62,14 +63,14 @@ func Init(logger log.Logger, db database.DB) {
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)
 
 	// Warn about usage of auth providers that are not enabled by the license.
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(_ context.Context, _ database.DB, args graphqlbackend.AlertFuncArgs) ([]*graphqlbackend.Alert, error) {
 		// Only site admins can act on this alert, so only show it to site admins.
 		if !args.IsSiteAdmin {
-			return nil
+			return nil, nil
 		}
 
 		if licensing.IsFeatureEnabledLenient(licensing.FeatureSSO) {
-			return nil
+			return nil, nil
 		}
 
 		collected := make(map[string]struct{})
@@ -106,14 +107,14 @@ func Init(logger log.Logger, db database.DB) {
 			}
 		}
 		if len(names) == 0 {
-			return nil
+			return nil, nil
 		}
 
 		sort.Strings(names)
 		return []*graphqlbackend.Alert{{
 			TypeValue:    graphqlbackend.AlertTypeError,
 			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(names, ", ")),
-		}}
+		}}, nil
 	})
 }
 

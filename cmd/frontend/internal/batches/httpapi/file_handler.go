@@ -16,10 +16,10 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -212,8 +212,8 @@ func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode i
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batch spec can upload files.
-	if !isSiteAdminOrSameUser(ctx, h.logger, h.db, spec.UserID) {
-		return resp, http.StatusUnauthorized, nil
+	if err := auth.CheckSiteAdminOrSameUser(ctx, h.db, spec.UserID); err != nil {
+		return resp, http.StatusUnauthorized, err
 	}
 
 	// ParseMultipartForm parses the whole request body and stores the max size into memory. The rest of the body is
@@ -241,20 +241,6 @@ func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode i
 	resp.Id = workspaceFileRandID
 
 	return resp, http.StatusOK, err
-}
-
-func isSiteAdminOrSameUser(ctx context.Context, logger sglog.Logger, db database.DB, userId int32) bool {
-	user, err := db.Users().GetByCurrentAuthUser(ctx)
-	if err != nil {
-		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
-			return false
-		}
-
-		logger.Error("failed to get up current user", sglog.Error(err))
-		return false
-	}
-
-	return user != nil && (user.SiteAdmin || user.ID == userId)
 }
 
 var pathValidationRegex = regex.MustCompile("[.]{2}|[\\\\]")

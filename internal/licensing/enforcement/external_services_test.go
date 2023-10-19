@@ -6,20 +6,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestNewBeforeCreateExternalServiceHook(t *testing.T) {
+func TestBeforeCreateExternalServiceHook(t *testing.T) {
 	tests := []struct {
-		name                 string
-		license              *license.Info
-		externalServiceCount int
-		externalService      *types.ExternalService
-		wantErr              bool
+		name            string
+		license         *license.Info
+		externalService *types.ExternalService
+		wantErr         bool
 	}{
 		{
 			name:    "Free plan",
@@ -101,9 +99,7 @@ func TestNewBeforeCreateExternalServiceHook(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			externalServices := dbmocks.NewMockExternalServiceStore()
-			externalServices.CountFunc.SetDefaultReturn(test.externalServiceCount, nil)
-			got := NewBeforeCreateExternalServiceHook()(context.Background(), externalServices, test.externalService)
+			got := BeforeCreateExternalServiceHook(context.Background(), test.externalService)
 			assert.Equal(t, test.wantErr, got != nil)
 		})
 	}

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log"
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -291,7 +292,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// properties are only set for certain license types. This information can be used to
 	// soft-gate features from the UI, and to provide info to admins from site admin
 	// settings pages in the UI.
-	licenseInfo := hooks.GetLicenseInfo()
+	licenseInfo := hooks.GetLicenseInfo(ctx, log.Scoped("licenseInfo"), db)
 
 	var user *types.User
 	temporarySettings := "{}"

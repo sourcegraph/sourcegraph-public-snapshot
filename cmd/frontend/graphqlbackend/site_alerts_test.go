@@ -1,11 +1,14 @@
 package graphqlbackend
 
 import (
+	"context"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -163,7 +166,8 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 				return
 			}
 			fn := observabilityActiveAlertsAlert(prom)
-			gotAlerts := fn(tt.args.args)
+			gotAlerts, err := fn(context.Background(), dbmocks.NewMockDB(), tt.args.args)
+			require.NoError(t, err)
 			if len(gotAlerts) != len(tt.want) {
 				t.Errorf("expected %+v, got %+v", tt.want, gotAlerts)
 				return
