@@ -52,7 +52,7 @@ type adaptedSignal struct {
 
 // Register attaches a route to the router that adapts requests on the `/otlp` path.
 func (sig *adaptedSignal) Register(ctx context.Context, logger log.Logger, r *mux.Router, receiverURL *url.URL) {
-	adapterLogger := logger.Scoped(path.Base(sig.PathPrefix), "OpenTelemetry signal-specific tunnel")
+	adapterLogger := logger.Scoped(path.Base(sig.PathPrefix))
 
 	// Set up an http/json -> ${configured_protocol} adapter
 	adapter, err := sig.CreateAdapter()

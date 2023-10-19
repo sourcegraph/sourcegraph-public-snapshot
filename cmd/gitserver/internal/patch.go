@@ -56,7 +56,7 @@ func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *htt
 }
 
 func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-	logger := s.Logger.Scoped("createCommitFromPatch", "").
+	logger := s.Logger.Scoped("createCommitFromPatch").
 		With(
 			log.String("repo", string(req.Repo)),
 			log.String("baseCommit", string(req.BaseCommit)),
@@ -426,7 +426,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 		_, _, _, p4depot, _ = perforce.DecomposePerforceRemoteURL(remoteURL)
 	}
 
-	logger := s.Logger.Scoped("shelveChangelist", "").
+	logger := s.Logger.Scoped("shelveChangelist").
 		With(
 			log.String("repo", repo),
 			log.String("baseCommit", baseCommit),

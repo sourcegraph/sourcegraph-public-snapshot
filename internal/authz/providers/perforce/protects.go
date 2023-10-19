@@ -194,7 +194,7 @@ type protectsScanner struct {
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
 func scanProtects(logger log.Logger, protects []*perforce.Protect, s *protectsScanner, ignoreRulesWithHost bool) error {
-	logger = logger.Scoped("scanProtects", "")
+	logger = logger.Scoped("scanProtects")
 	for _, protect := range protects {
 		// skip any rule that relies on particular client IP addresses or hostnames
 		// this is the initial approach to address wrong behaviors
@@ -295,7 +295,7 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protects
 // fullRepoPermsScanner converts `p4 protects` to a 1:1 implementation of Sourcegraph
 // authorization, including sub-repo perms and exact depot-as-repo matches.
 func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
-	logger = logger.Scoped("fullRepoPermsScanner", "")
+	logger = logger.Scoped("fullRepoPermsScanner")
 	// Get glob equivalents of all depots
 	var configuredDepotMatches []globMatch
 	for _, depot := range configuredDepots {
@@ -450,7 +450,7 @@ func trimDepotNameAndSlashes(s, depotName string) string {
 }
 
 func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, patternsToGlob map[string]globMatch) []string {
-	logger := log.Scoped("convertRulesForWildcardDepotMatch", "")
+	logger := log.Scoped("convertRulesForWildcardDepotMatch")
 	if !strings.Contains(match.pattern, "**") && !strings.Contains(match.pattern, "*") {
 		return []string{match.pattern}
 	}
@@ -496,7 +496,7 @@ func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, pat
 
 // allUsersScanner converts `p4 protects` to a map of users within the protection rules.
 func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) *protectsScanner {
-	logger := log.Scoped("allUsersScanner", "")
+	logger := log.Scoped("allUsersScanner")
 	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
 			if line.isExclusion {

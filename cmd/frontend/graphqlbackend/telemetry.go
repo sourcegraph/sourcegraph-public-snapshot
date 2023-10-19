@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 )
 
 // TelemetryRootResolver provides TelemetryResolver via field 'telemetry' as
@@ -35,7 +34,7 @@ type TelemetryEventSourceInput struct {
 type TelemetryEventParametersInput struct {
 	Version         int32                               `json:"version"`
 	Metadata        *[]TelemetryEventMetadataInput      `json:"metadata,omitempty"`
-	PrivateMetadata *json.RawMessage                    `json:"privateMetadata,omitempty"`
+	PrivateMetadata *JSONValue                          `json:"privateMetadata,omitempty"`
 	BillingMetadata *TelemetryEventBillingMetadataInput `json:"billingMetadata,omitempty"`
 }
 

@@ -50,7 +50,7 @@ func newService(
 		repoStore,
 		inferenceSvc,
 		gitserverClient,
-		log.Scoped("autoindexing job selector", ""),
+		log.Scoped("autoindexing job selector"),
 	)
 
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(

@@ -27,7 +27,7 @@ func (j *janitorJob) Config() []env.Config {
 }
 
 func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "janitor job routines"))
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -63,22 +63,22 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 		executorMetricsReporter,
 
 		janitor.NewReconcilerWorkerResetter(
-			observationCtx.Logger.Scoped("ReconcilerWorkerResetter", ""),
+			observationCtx.Logger.Scoped("ReconcilerWorkerResetter"),
 			reconcilerStore,
 			janitorMetrics,
 		),
 		janitor.NewBulkOperationWorkerResetter(
-			observationCtx.Logger.Scoped("BulkOperationWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BulkOperationWorkerResetter"),
 			bulkOperationStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceExecutionWorkerResetter(
-			observationCtx.Logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter"),
 			workspaceExecutionStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceResolutionWorkerResetter(
-			observationCtx.Logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter"),
 			workspaceResolutionStore,
 			janitorMetrics,
 		),

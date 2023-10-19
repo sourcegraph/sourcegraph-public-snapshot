@@ -17,7 +17,7 @@ import (
 
 func Init(logger log.Logger, db database.DB) {
 	const pkgName = "gitlaboauth"
-	logger = log.Scoped(pkgName, "GitLab OAuth config watch")
+	logger = log.Scoped(pkgName)
 
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(logger, cfg, db)

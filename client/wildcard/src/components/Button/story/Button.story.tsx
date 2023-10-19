@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 
@@ -67,7 +67,7 @@ Simple.args = {
     outline: false,
 }
 
-export const AllButtons: Story = () => (
+export const AllButtons: StoryFn = () => (
     <div className="pb-3">
         <H1>Buttons</H1>
         <H2>Variants</H2>
@@ -126,7 +126,7 @@ AllButtons.parameters = {
 
 type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
 
-export const Group: Story = () => {
+export const Group: StoryFn = () => {
     const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
     const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
 

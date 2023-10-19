@@ -30,7 +30,7 @@ func New(
 	uploadStore uploadstore.Store,
 	newSearcher NewSearcher,
 ) *Service {
-	logger := log.Scoped("searchjobs.Service", "search job service")
+	logger := log.Scoped("searchjobs.Service")
 
 	svc := &Service{
 		logger:      logger,

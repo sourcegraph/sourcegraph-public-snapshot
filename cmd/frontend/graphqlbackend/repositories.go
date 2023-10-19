@@ -112,7 +112,7 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 	connectionStore := &repositoriesConnectionStore{
 		ctx:    ctx,
 		db:     r.db,
-		logger: r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
+		logger: r.logger.Scoped("repositoryConnectionResolver"),
 		opt:    opt,
 	}
 

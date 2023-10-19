@@ -148,9 +148,19 @@ fi
 # Show image usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
-    echo -e "Run the \`${name}\` base image locally using:
-\`\`\`
+    mkdir -p ./annotations
+    file="${name} image.md"
+    cat <<-EOF > "${REPO_DIR}/annotations/${file}"
+
+<strong>:octopus: ${name} image &bull; [View job output](#${BUILDKITE_JOB_ID})</strong>
+<br />
+<br />
+Run the \`${name}\` base image locally using:
+
+\`\`\`bash
 docker pull us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
-  \`\`\`" | "$REPO_DIR/dev/ci/scripts/annotate.sh" -m -t "info"
+\`\`\`
+
+EOF
   fi
 fi

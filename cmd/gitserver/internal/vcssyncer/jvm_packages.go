@@ -42,10 +42,10 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
 
-	chandle := coursier.NewCoursierHandle(observation.NewContext(log.Scoped("gitserver.jvmsyncer", "")), cacheDir)
+	chandle := coursier.NewCoursierHandle(observation.NewContext(log.Scoped("gitserver.jvmsyncer")), cacheDir)
 
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("JVMPackagesSyncer", "sync JVM packages"),
+		logger:      log.Scoped("JVMPackagesSyncer"),
 		typ:         "jvm_packages",
 		scheme:      dependencies.JVMPackagesScheme,
 		placeholder: placeholder,
@@ -124,7 +124,7 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 }
 
 func unzipJarFile(jarPath, destination string) (err error) {
-	logger := log.Scoped("unzipJarFile", "unzipJarFile unpacks the given jvm archive into workDir")
+	logger := log.Scoped("unzipJarFile")
 	workDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 
 	zipFile, err := os.ReadFile(jarPath)

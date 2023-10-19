@@ -20,7 +20,7 @@ import (
 func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 60
 	e := InsightsPingEmitter{
-		logger:     log.Scoped("InsightsPingEmitter", ""),
+		logger:     log.Scoped("InsightsPingEmitter"),
 		postgresDb: base,
 		insightsDb: insights,
 	}

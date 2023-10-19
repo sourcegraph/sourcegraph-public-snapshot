@@ -1,6 +1,5 @@
 import React, { type FC, Suspense, useEffect, useMemo, useState } from 'react'
 
-import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import { type Location, useLocation, Route, Routes } from 'react-router-dom'
@@ -15,7 +14,6 @@ import {
     isRevisionNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -27,7 +25,7 @@ import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/sett
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
+import { Panel, useObservable } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
@@ -55,6 +53,7 @@ import { AskCodyButton } from './cody/AskCodyButton'
 import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, type RepoHeaderActionButton, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
+import { RepoLinkPicker } from './RepoLinkPicker'
 import {
     RepoRevisionContainer,
     type RepoRevisionContainerContext,
@@ -232,23 +231,15 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 return
             }
 
-            const button = (
-                <Button
-                    to={resolvedRevisionOrError?.rootTreeURL || repoOrError?.url || ''}
-                    disabled={!resolvedRevisionOrError}
-                    className="text-nowrap test-repo-header-repo-link"
-                    variant="secondary"
-                    outline={true}
-                    size="sm"
-                    as={Link}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoName)}
-                </Button>
-            )
-
             return {
                 key: 'repository',
-                element: button,
+                element: (
+                    <RepoLinkPicker
+                        repositoryName={repoName}
+                        repositoryURL={resolvedRevisionOrError?.rootTreeURL || repoOrError?.url || ''}
+                        disabled={!resolvedRevisionOrError}
+                    />
+                ),
             }
         }, [resolvedRevisionOrError, repoOrError, repoName])
     )

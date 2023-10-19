@@ -78,7 +78,7 @@ git_versions=(
   v5.0.0 v5.0.1 v5.0.2 v5.0.3 v5.0.4
   v5.1.0 v5.1.1 v5.1.2 v5.1.3 v5.1.4 v5.1.5 v5.1.6 v5.1.7 v5.1.8 v5.1.9 
   v5.2.0
-)
+ v5.2.1)
 
 for version in "${git_versions[@]}"; do
   download_github "${version}"

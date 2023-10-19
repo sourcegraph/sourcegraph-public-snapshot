@@ -21,7 +21,7 @@ func NewDiagnosticsHandler(
 	secret string,
 	healthCheck func(context.Context) error,
 ) http.Handler {
-	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
+	baseLogger = baseLogger.Scoped("diagnostics")
 
 	hasValidSecret := func(w http.ResponseWriter, r *http.Request) (yes bool) {
 		token, err := authbearer.ExtractBearer(r.Header)

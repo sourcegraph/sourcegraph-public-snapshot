@@ -93,11 +93,11 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 		tokenHash = a.Hash()
 	}
 
-	rl := ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitHubClient", ""), urn))
+	rl := ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitHubClient"), urn))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
-		log:                 log.Scoped("github.v4", "github v4 client"),
+		log:                 log.Scoped("github.v4"),
 		urn:                 urn,
 		apiURL:              apiURL,
 		githubDotCom:        URLIsGitHubDotCom(apiURL),
@@ -387,7 +387,7 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	}
 
 	// Initiate a v3Client since this requires a V3 API request.
-	logger := c.log.Scoped("fetchGitHubVersion", "temporary client for fetching github version")
+	logger := c.log.Scoped("fetchGitHubVersion")
 	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
@@ -649,7 +649,7 @@ fragment RepositoryFields on Repository {
 }
 
 func (c *V4Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
-	logger := c.log.Scoped("GetRepo", "temporary client for getting GitHub repository")
+	logger := c.log.Scoped("GetRepo")
 	// We technically don't need to use the REST API for this but it's just a bit easier.
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRepo(ctx, owner, repo)
 }
@@ -660,7 +660,7 @@ func (c *V4Client) GetRepo(ctx context.Context, owner, repo string) (*Repository
 func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
-	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
+	logger := c.log.Scoped("Fork")
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org, forkName)
 }
 
@@ -668,7 +668,7 @@ func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 func (c *V4Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to delete a ref/branch as
 	// of May 2023, so we have to fall back to the REST API.
-	logger := c.log.Scoped("DeleteBranch", "temporary client for deleting a branch")
+	logger := c.log.Scoped("DeleteBranch")
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).DeleteBranch(ctx, owner, repo, branch)
 }
 
@@ -676,14 +676,14 @@ func (c *V4Client) DeleteBranch(ctx context.Context, owner, repo, branch string)
 // be supplied in a fully qualified format, such as `refs/heads/branch` or
 // `refs/tags/tag`.
 func (c *V4Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
-	logger := c.log.Scoped("GetRef", "temporary client for getting a ref on GitHub")
+	logger := c.log.Scoped("GetRef")
 	// We technically don't need to use the REST API for this but it's just a bit easier.
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRef(ctx, owner, repo, ref)
 }
 
 // CreateCommit creates a commit in the given repository based on a tree object.
 func (c *V4Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*RestCommit, error) {
-	logger := c.log.Scoped("CreateCommit", "temporary client for creating a commit on GitHub")
+	logger := c.log.Scoped("CreateCommit")
 	// As of May 2023, the GraphQL API does not expose any mutations for creating commits
 	// other than one which requires sending the entire file contents for any files
 	// changed by the commit, which is not feasible for creating large commits. Therefore,
@@ -695,7 +695,7 @@ func (c *V4Client) CreateCommit(ctx context.Context, owner, repo, message, tree 
 // UpdateRef updates the ref of a branch to point to the given commit. The ref should be
 // supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
 func (c *V4Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
-	logger := c.log.Scoped("UpdateRef", "temporary client for updating a ref on GitHub")
+	logger := c.log.Scoped("UpdateRef")
 	// We technically don't need to use the REST API for this but it's just a bit easier.
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).UpdateRef(ctx, owner, repo, ref, commit)
 }
