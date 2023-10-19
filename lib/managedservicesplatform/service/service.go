@@ -38,7 +38,7 @@ func Run[
 	defer liblog.Sync()
 
 	ctx := context.Background()
-	logger := log.Scoped("msp.run", "Managed Services Platform service initialization")
+	logger := log.Scoped("msp.run")
 
 	env, err := newEnv()
 	if err != nil {
@@ -60,7 +60,7 @@ func Run[
 	// Initialize the service
 	routine, err := service.Initialize(
 		ctx,
-		log.Scoped("service", service.Name()),
+		log.Scoped("service"),
 		contract,
 		*config,
 	)
