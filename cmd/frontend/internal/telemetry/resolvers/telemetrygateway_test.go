@@ -141,6 +141,68 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
   "timestamp": "2023-02-24T14:48:30Z"
 }`),
 		},
+		{
+			name: "with string PrivateMetadata",
+			ctx:  context.Background(),
+			event: graphqlbackend.TelemetryEventInput{
+				Feature: "Feature",
+				Action:  "Example",
+				Parameters: graphqlbackend.TelemetryEventParametersInput{
+					Version: 0,
+					PrivateMetadata: &graphqlbackend.JSONValue{
+						Value: "some metadata",
+					},
+				},
+			},
+			expect: autogold.Expect(`{
+  "action": "Example",
+  "feature": "Feature",
+  "id": "with string PrivateMetadata",
+  "parameters": {
+    "privateMetadata": {
+      "value": "some metadata"
+    }
+  },
+  "source": {
+    "client": {},
+    "server": {
+      "version": "0.0.0+dev"
+    }
+  },
+  "timestamp": "2023-02-24T14:48:30Z"
+}`),
+		},
+		{
+			name: "with numeric PrivateMetadata",
+			ctx:  context.Background(),
+			event: graphqlbackend.TelemetryEventInput{
+				Feature: "Feature",
+				Action:  "Example",
+				Parameters: graphqlbackend.TelemetryEventParametersInput{
+					Version: 0,
+					PrivateMetadata: &graphqlbackend.JSONValue{
+						Value: 1234,
+					},
+				},
+			},
+			expect: autogold.Expect(`{
+  "action": "Example",
+  "feature": "Feature",
+  "id": "with numeric PrivateMetadata",
+  "parameters": {
+    "privateMetadata": {
+      "value": 1234
+    }
+  },
+  "source": {
+    "client": {},
+    "server": {
+      "version": "0.0.0+dev"
+    }
+  },
+  "timestamp": "2023-02-24T14:48:30Z"
+}`),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := newTelemetryGatewayEvents(tc.ctx,
