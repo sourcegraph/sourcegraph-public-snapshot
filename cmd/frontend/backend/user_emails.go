@@ -436,11 +436,9 @@ func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, us
 		return errors.Wrap(err, "deleting stale external account")
 	}
 
-	// Since we deleted an external account for the user we can no longer trust user
-	// based permissions, so we clear them out.
-	// This also removes the user's sub-repo permissions.
-	if err := db.Authz().RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{UserID: userID}); err != nil {
-		return errors.Wrapf(err, "revoking user permissions for user with ID %d", userID)
+	// Delete all sub-repo permissions for the user.
+	if err := db.SubRepoPerms().DeleteByUser(ctx, userID); err != nil {
+		return errors.Wrap(err, "deleting sub-repo permissions")
 	}
 
 	return nil
