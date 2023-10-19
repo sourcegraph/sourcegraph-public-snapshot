@@ -30,7 +30,8 @@ func TestTelemetryRecordEvents(t *testing.T) {
 		// value, as if from a client, which the Variables field in RunTest doesn't
 		// seem to accept right (it wants the final type, which defeats the point)
 		gqlEventsInput string
-		assert         func(t *testing.T, gotEvents []TelemetryEventInput)
+		// Assertions on received events.
+		assert func(t *testing.T, gotEvents []TelemetryEventInput)
 	}{
 		{
 			name: "object privateMetadata",
@@ -154,9 +155,6 @@ func TestTelemetryRecordEvents(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			tc := tc
-			t.Parallel()
-
 			mockResolver := &mockTelemetryResolver{}
 			parsedSchema, err := NewSchema(
 				dbmocks.NewMockDB(),
@@ -167,6 +165,11 @@ func TestTelemetryRecordEvents(t *testing.T) {
 				graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
 			)
 			require.NoError(t, err)
+
+			// Parallel must start here, as NewSchema is not concurrency-safe
+			// (it assigns to a global variable).
+			tc := tc
+			t.Parallel()
 
 			// Check all fields accepted in GraphQL resolver.
 			RunTest(t, &Test{
