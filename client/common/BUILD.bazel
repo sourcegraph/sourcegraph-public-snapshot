@@ -55,6 +55,7 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
+        ":common_lib",
         ":node_modules/@sourcegraph/extension-api-types",
         "//:node_modules/@types/dompurify",
         "//:node_modules/@types/highlight.js",

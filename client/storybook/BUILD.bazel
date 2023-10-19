@@ -53,6 +53,7 @@ ts_project(
         ":module_style_typings",
         ":node_modules/@sourcegraph/build-config",
         ":node_modules/@sourcegraph/wildcard",
+        ":storybook_lib",
         "//:node_modules/@storybook/addon-actions",
         "//:node_modules/@storybook/addon-console",
         "//:node_modules/@storybook/builder-vite",

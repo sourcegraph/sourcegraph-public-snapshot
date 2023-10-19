@@ -38,10 +38,10 @@ ts_project(
         "//:node_modules/@types/signale",
         "//:node_modules/envalid",
         "//:node_modules/glob",
-        "//:node_modules/libhoney",
         "//:node_modules/lodash",
         "//:node_modules/node-fetch",
         "//:node_modules/signale",
+        "//client/observability-client:observability-client_lib",
     ],
 )
 
