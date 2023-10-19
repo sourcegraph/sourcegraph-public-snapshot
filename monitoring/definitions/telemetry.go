@@ -98,11 +98,8 @@ func Telemetry() *monitoring.Dashboard {
 					Duration:  shared.NoAlertsOption("none"),
 					ErrorRate: shared.NoAlertsOption("none"),
 					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
-						Failures indicate that exporting of telemetry events from Sourcegraph are failing.
-						This may affect the performance of the database as the backlog grows.
-
-						See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
-						If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph's Telemetry Gateway service.
+						- Failures indicate that exporting of telemetry events from Sourcegraph are failing. This may affect the performance of the database as the backlog grows.
+						- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details. If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph's Telemetry Gateway service.
 					`),
 				},
 			}),
@@ -121,10 +118,8 @@ func Telemetry() *monitoring.Dashboard {
 					Duration:  shared.NoAlertsOption("none"),
 					ErrorRate: shared.NoAlertsOption("none"),
 					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
-						Failures indicate that pruning of already-exported telemetry events from the database is failing.
-						This may affect the performance of the database as the export queue table grows.
-
-						See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
+						- Failures indicate that pruning of already-exported telemetry events from the database is failing. This may affect the performance of the database as the export queue table grows.
+						- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
 					`),
 				},
 			}),
@@ -143,10 +138,8 @@ func Telemetry() *monitoring.Dashboard {
 					Duration:  shared.NoAlertsOption("none"),
 					ErrorRate: shared.NoAlertsOption("none"),
 					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
-						Failures indicate that reporting of telemetry events metrics is failing.
-						This may affect the reliability of telemetry events export metrics.
-
-						See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
+						- Failures indicate that reporting of telemetry events metrics is failing. This may affect the reliability of telemetry events export metrics.
+						- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
 					`),
 				},
 			}),

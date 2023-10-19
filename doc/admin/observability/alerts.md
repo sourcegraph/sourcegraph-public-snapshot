@@ -7658,11 +7658,8 @@ Generated query for critical alert: `max((max(deriv(src_telemetrygatewayexporter
 
 **Next steps**
 
-- Failures indicate that exporting of telemetry events from Sourcegraph are failing.
-This may affect the performance of the database as the backlog grows.
-
-See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
-If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
+- Failures indicate that exporting of telemetry events from Sourcegraph are failing. This may affect the performance of the database as the backlog grows.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details. If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-exporter-errors-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -7693,10 +7690,8 @@ Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexport
 
 **Next steps**
 
-- Failures indicate that pruning of already-exported telemetry events from the database is failing.
-This may affect the performance of the database as the export queue table grows.
-
-See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Failures indicate that pruning of already-exported telemetry events from the database is failing. This may affect the performance of the database as the export queue table grows.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-cleanup-errors-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -7727,10 +7722,8 @@ Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexport
 
 **Next steps**
 
-- Failures indicate that reporting of telemetry events metrics is failing.
-This may affect the reliability of telemetry events export metrics.
-
-See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Failures indicate that reporting of telemetry events metrics is failing. This may affect the reliability of telemetry events export metrics.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-errors-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
