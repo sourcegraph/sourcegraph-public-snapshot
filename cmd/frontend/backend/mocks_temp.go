@@ -734,9 +734,6 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 		GetByNameFunc: &ReposServiceGetByNameFunc{
 			defaultHook: i.GetByName,
 		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: i.GetCommit,
-		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
 			defaultHook: i.GetInventory,
 		},
