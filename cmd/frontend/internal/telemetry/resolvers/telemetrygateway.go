@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -29,17 +28,24 @@ func newTelemetryGatewayEvents(
 		// Parse private metadata
 		var privateMetadata *structpb.Struct
 		if e.Parameters.PrivateMetadata != nil {
-			data, err := e.Parameters.PrivateMetadata.MarshalJSON()
-			if err != nil {
-				return nil, errors.Wrapf(err, "error marshaling privateMetadata for event %d", i)
-			}
-			var privateData map[string]any
-			if err := json.Unmarshal(data, &privateData); err != nil {
-				return nil, errors.Wrapf(err, "error unmarshaling privateMetadata for event %d", i)
-			}
-			privateMetadata, err = structpb.NewStruct(privateData)
-			if err != nil {
-				return nil, errors.Wrapf(err, "error converting privateMetadata to protobuf for event %d", i)
+			switch v := e.Parameters.PrivateMetadata.Value.(type) {
+			// If the input is an object, turn it into proto struct as-is
+			case map[string]any:
+				var err error
+				privateMetadata, err = structpb.NewStruct(v)
+				if err != nil {
+					return nil, errors.Wrapf(err, "error converting privateMetadata to protobuf struct for event %d", i)
+				}
+
+			// Otherwise, nest the value within a proto struct
+			default:
+				protoValue, err := structpb.NewValue(v)
+				if err != nil {
+					return nil, errors.Wrapf(err, "error converting privateMetadata to protobuf value for event %d", i)
+				}
+				privateMetadata = &structpb.Struct{
+					Fields: map[string]*structpb.Value{"value": protoValue},
+				}
 			}
 		}
 
