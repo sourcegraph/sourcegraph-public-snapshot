@@ -30778,7 +30778,7 @@ Query: `sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_
 
 <br />
 
-### Telemetry: Usage data exporter: Job operations
+### Telemetry: Usage data exporter (legacy): Job operations
 
 #### telemetry: telemetry_job_total
 
@@ -30932,7 +30932,7 @@ Query: `sum by (op)(increase(src_telemetry_job_errors_total{job=~"^worker.*"}[5m
 
 <br />
 
-### Telemetry: Usage data exporter: Queue size
+### Telemetry: Usage data exporter (legacy): Queue size
 
 #### telemetry: telemetry_job_queue_size_queue_size
 
@@ -30978,7 +30978,7 @@ Query: `sum(increase(src_telemetry_job_queue_size_total{job=~"^worker.*"}[30m]))
 
 <br />
 
-### Telemetry: Usage data exporter: Utilization
+### Telemetry: Usage data exporter (legacy): Utilization
 
 #### telemetry: telemetry_job_utilized_throughput
 
