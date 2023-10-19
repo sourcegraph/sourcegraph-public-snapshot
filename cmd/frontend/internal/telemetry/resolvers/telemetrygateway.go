@@ -28,7 +28,7 @@ func newTelemetryGatewayEvents(
 
 		// Parse private metadata
 		var privateMetadata *structpb.Struct
-		if e.Parameters.PrivateMetadata != nil && len(*e.Parameters.PrivateMetadata) > 0 {
+		if e.Parameters.PrivateMetadata != nil {
 			data, err := e.Parameters.PrivateMetadata.MarshalJSON()
 			if err != nil {
 				return nil, errors.Wrapf(err, "error marshaling privateMetadata for event %d", i)
