@@ -9,222 +9,191 @@ expression: dumped
   import java.util.stream.*;
   
   public class Locals<Container> implements AutoCloseable {
-//             ^^^^^^ definition local 1
-//                    ^^^^^^^^^ definition local 2
+//                    ^^^^^^^^^ definition local 1
   
    final String chars;
-//              ^^^^^ definition local 3
+//              ^^^^^ definition local 2
   
    public Locals(String chars) {
-//        ^^^^^^ reference local 1
-//                      ^^^^^ reference local 3
+//                      ^^^^^ reference local 2
     this.chars = chars;
-//       ^^^^^ reference local 3
-//               ^^^^^ reference local 3
+//       ^^^^^ reference local 2
+//               ^^^^^ reference local 2
    }
   
    public Locals append(String chars, int num, Locals text) {
-//        ^^^^^^ reference local 1
-//               ^^^^^^ definition local 4
-//                             ^^^^^ definition local 5
-//                                        ^^^ definition local 6
-//                                             ^^^^^^ reference local 1
-//                                                    ^^^^ definition local 7
+//                             ^^^^^ definition local 3
+//                                        ^^^ definition local 4
+//                                                    ^^^^ definition local 5
     return new Locals(this.chars + chars + text.getChars());
-//             ^^^^^^ reference local 1
-//                         ^^^^^ reference local 5
-//                                 ^^^^^ reference local 5
-//                                         ^^^^ reference local 7
+//                         ^^^^^ reference local 3
+//                                 ^^^^^ reference local 3
+//                                         ^^^^ reference local 5
    }
   
    public String getChars() {
-//               ^^^^^^^^ definition local 8
     return this.chars;
-//              ^^^^^ reference local 3
+//              ^^^^^ reference local 2
    }
   
    public void close() {
-//             ^^^^^ definition local 9
    }
   
    public static void create() {
-//                    ^^^^^^ definition local 10
     var x = new Locals<Integer>("hello");
-//      ^ definition local 11
-//              ^^^^^^ reference local 1
+//      ^ definition local 6
    }
   
    public record Person(String name, String address) {
-//               ^^^^^^ definition local 12
-//                             ^^^^ definition local 13
-//                                          ^^^^^^^ definition local 14
+//                             ^^^^ definition local 7
+//                                          ^^^^^^^ definition local 8
    }
   
    private class Binary<N extends Number> {
-//               ^^^^^^ definition local 15
-//                      ^ definition local 16
+//                      ^ definition local 9
     final N val;
-//        ^ reference local 16
-//          ^^^ definition local 17
+//        ^ reference local 9
+//          ^^^ definition local 10
   
     public Binary(N value) {
-//         ^^^^^^ reference local 15
-//                ^ reference local 16
-//                  ^^^^^ definition local 18
+//                ^ reference local 9
+//                  ^^^^^ definition local 11
      this.val = value;
-//        ^^^ reference local 17
-//              ^^^^^ reference local 18
+//        ^^^ reference local 10
+//              ^^^^^ reference local 11
     }
    }
   
    public void checks(Object person) {
-//             ^^^^^^ definition local 19
-//                           ^^^^^^ definition local 20
+//                           ^^^^^^ definition local 12
     if (person instanceof Person(String x, String y)) {
-//      ^^^^^^ reference local 20
-//                                      ^ definition local 21
-//                                                ^ definition local 22
+//      ^^^^^^ reference local 12
+//                                      ^ definition local 13
+//                                                ^ definition local 14
      System.out.println(x + "," + y);
-//                      ^ reference local 21
-//                                ^ reference local 22
+//                      ^ reference local 13
+//                                ^ reference local 14
       }
    }
   
    enum Flags {
-//      ^^^^^ definition local 23
     NODE_TEXT, FOR_HEADING_ID, NO_TRIM_REF_TEXT_START, NO_TRIM_REF_TEXT_END, ADD_SPACES_BETWEEN_NODES,;
-//  ^^^^^^^^^ definition local 24
-//             ^^^^^^^^^^^^^^ definition local 25
-//                             ^^^^^^^^^^^^^^^^^^^^^^ definition local 26
-//                                                     ^^^^^^^^^^^^^^^^^^^^ definition local 27
-//                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^ definition local 28
+//  ^^^^^^^^^ definition local 15
+//             ^^^^^^^^^^^^^^ definition local 16
+//                             ^^^^^^^^^^^^^^^^^^^^^^ definition local 17
+//                                                     ^^^^^^^^^^^^^^^^^^^^ definition local 18
+//                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^ definition local 19
   
     final int bits;
-//            ^^^^ definition local 29
+//            ^^^^ definition local 20
   
     Flags() {
-//  ^^^^^ reference local 23
      this(1);
     }
   
     Flags(int bits) {
-//  ^^^^^ reference local 23
-//            ^^^^ reference local 29
+//            ^^^^ reference local 20
      this.bits = bits;
-//        ^^^^ reference local 29
-//               ^^^^ reference local 29
+//        ^^^^ reference local 20
+//               ^^^^ reference local 20
     }
   
     public static boolean hasNodeText(Flags bits) {
-//                        ^^^^^^^^^^^ definition local 30
-//                                    ^^^^^ reference local 23
-//                                          ^^^^ definition local 31
+//                                          ^^^^ definition local 21
      return (bits.bits & Flags.NODE_TEXT.bits) != 0;
-//           ^^^^ reference local 31
-//                ^^^^ reference local 31
-//                       ^^^^^ reference local 23
-//                             ^^^^^^^^^ reference local 24
-//                                       ^^^^ reference local 31
+//           ^^^^ reference local 21
+//                ^^^^ reference local 21
+//                             ^^^^^^^^^ reference local 15
+//                                       ^^^^ reference local 21
     }
    }
   
    protected String toStringAttributes() {
-//                  ^^^^^^^^^^^^^^^^^^ definition local 32
     return "text=" + getChars();
    }
   
    public <T extends Container> List<T> fromArrayToList(T[] a) {
-//         ^ definition local 33
-//                   ^^^^^^^^^ reference local 2
-//                                   ^ reference local 33
-//                                      ^^^^^^^^^^^^^^^ definition local 34
-//                                                      ^ reference local 33
-//                                                          ^ definition local 35
+//         ^ definition local 22
+//                   ^^^^^^^^^ reference local 1
+//                                   ^ reference local 22
+//                                                      ^ reference local 22
+//                                                          ^ definition local 23
     return Arrays.stream(a).collect(Collectors.toList());
-//                       ^ reference local 35
+//                       ^ reference local 23
    }
   
    // ? in (wildcard) node doesn't have its own node and
    // is not treated as a type identifier
    public void printList(List<? extends Container> a) {
-//             ^^^^^^^^^ definition local 36
-//                                      ^^^^^^^^^ reference local 2
-//                                                 ^ definition local 37
+//                                      ^^^^^^^^^ reference local 1
+//                                                 ^ definition local 24
     System.out.println(a);
-//                     ^ reference local 37
+//                     ^ reference local 24
    }
   
    public void print(int r) {
-//             ^^^^^ definition local 38
-//                       ^ definition local 39
+//                       ^ definition local 25
     for (int i = 0; i < r; i++) {
-//           ^ definition local 40
-//                  ^ reference local 40
-//                      ^ reference local 39
-//                         ^ reference local 40
+//           ^ definition local 26
+//                  ^ reference local 26
+//                      ^ reference local 25
+//                         ^ reference local 26
      System.out.println(i);
-//                      ^ reference local 40
+//                      ^ reference local 26
     }
     System.out.println(r);
-//                     ^ reference local 39
+//                     ^ reference local 25
    }
   
    public interface Hello {
-//                  ^^^^^ definition local 41
     public void func1(Hello t);
-//              ^^^^^ definition local 42
-//                    ^^^^^ reference local 41
-//                          ^ definition local 43
+//                          ^ definition local 27
    }
   
    public class Hello2 {
-//              ^^^^^^ definition local 44
     public Hello2(int t) {
-//         ^^^^^^ reference local 44
-//                    ^ definition local 45
+//                    ^ definition local 28
      var newT = t;
-//       ^^^^ definition local 46
-//              ^ reference local 45
+//       ^^^^ definition local 29
+//              ^ reference local 28
     }
    }
   
    public void blocks(int num) {
-//             ^^^^^^ definition local 47
-//                        ^^^ definition local 48
+//                        ^^^ definition local 30
     {
      var num2 = 25;
-//       ^^^^ definition local 49
+//       ^^^^ definition local 31
      {
       var num3 = 100;
-//        ^^^^ definition local 50
+//        ^^^^ definition local 32
      }
     }
    }
   
    public void test() {
-//             ^^^^ definition local 51
     ArrayList<Integer> numbers = new ArrayList<Integer>();
-//                     ^^^^^^^ definition local 52
+//                     ^^^^^^^ definition local 33
     numbers.add(5);
-//  ^^^^^^^ reference local 52
+//  ^^^^^^^ reference local 33
     numbers.add(9);
-//  ^^^^^^^ reference local 52
+//  ^^^^^^^ reference local 33
     numbers.add(8);
-//  ^^^^^^^ reference local 52
+//  ^^^^^^^ reference local 33
     numbers.add(1);
-//  ^^^^^^^ reference local 52
+//  ^^^^^^^ reference local 33
     numbers.forEach((n) -> {
-//  ^^^^^^^ reference local 52
-//                   ^ definition local 53
+//  ^^^^^^^ reference local 33
+//                   ^ definition local 34
      System.out.println(n);
-//                      ^ reference local 53
+//                      ^ reference local 34
     });
   
     for (Integer num : numbers) {
-//               ^^^ definition local 54
-//                     ^^^^^^^ reference local 52
+//               ^^^ definition local 35
+//                     ^^^^^^^ reference local 33
      System.out.println(num);
-//                      ^^^ reference local 54
+//                      ^^^ reference local 35
     }
   
    }

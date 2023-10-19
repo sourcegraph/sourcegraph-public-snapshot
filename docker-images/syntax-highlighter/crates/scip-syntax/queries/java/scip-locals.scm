@@ -4,25 +4,33 @@
 (record_declaration) @scope
 (method_declaration) @scope
 
-(class_declaration
-    name: (identifier) @definition.type
-)
 
-(interface_declaration
-    name: (identifier) @definition.type
-)
+; NOTE: The definitions below are commented out
+; as they overlap with global symbol indexing
+; marking type declarations as locals causes
+; various confusions, for example around constructors
+;
+; They are kept here for reference and to avoid re-introducing them
 
-(enum_declaration
-    name: (identifier) @definition.type
-)
+; (class_declaration
+;     name: (identifier) @definition.type
+; )
 
-(record_declaration
-    name: (identifier) @definition.type
-)
+; (interface_declaration
+;     name: (identifier) @definition.type
+; )
 
-(method_declaration
-    name: (identifier) @definition.function (#set! "scope" "parent")
-)
+; (enum_declaration
+;     name: (identifier) @definition.type
+; )
+
+; (record_declaration
+;     name: (identifier) @definition.type
+; )
+
+; (method_declaration
+;     name: (identifier) @definition.function (#set! "scope" "parent")
+; )
 
 (block) @scope
 
