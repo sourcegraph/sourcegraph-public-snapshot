@@ -39,7 +39,7 @@ func ParsePersonalAccessToken(token string) (string, error) {
 // GeneratePersonalAccessToken generates a new personal access token.
 // It returns the full token string, and the byte representation of the access token.
 // Personal access tokens have the form: sgp_<instance-identifier>_<token>
-func GeneratePersonalAccessToken(licenseKey string, isDevInstance bool) (string, [20]byte, error) {
+func GeneratePersonalAccessToken(includeInstanceIdentifier bool, licenseKey string, isDevInstance bool) (string, [20]byte, error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return "", b, err
@@ -48,16 +48,19 @@ func GeneratePersonalAccessToken(licenseKey string, isDevInstance bool) (string,
 	// Include part of the hashed license key in the token, to allow us to tie tokens back to an instance
 	// If no license key is set or this is a dev instance, use a placeholder value
 	var instanceIdentifier string
-	if isDevInstance || licenseKey == "" {
-		instanceIdentifier = LocalInstanceIdentifier
-	} else {
-		h := hmac.New(sha256.New, []byte(InstanceIdentifierHmacKey))
-		h.Write([]byte(licenseKey))
+	if includeInstanceIdentifier {
+		if isDevInstance || licenseKey == "" {
+			instanceIdentifier = LocalInstanceIdentifier
+		} else {
+			h := hmac.New(sha256.New, []byte(InstanceIdentifierHmacKey))
+			h.Write([]byte(licenseKey))
 
-		instanceIdentifier = hex.EncodeToString(h.Sum(nil))[:InstanceIdentifierLength]
+			instanceIdentifier = hex.EncodeToString(h.Sum(nil))[:InstanceIdentifierLength]
+		}
+		instanceIdentifier = instanceIdentifier + "_"
 	}
 
-	token := fmt.Sprintf("%s%s_%s", PersonalAccessTokenPrefix, instanceIdentifier, hex.EncodeToString(b[:]))
+	token := fmt.Sprintf("%s%s%s", PersonalAccessTokenPrefix, instanceIdentifier, hex.EncodeToString(b[:]))
 
 	return token, b, nil
 }
