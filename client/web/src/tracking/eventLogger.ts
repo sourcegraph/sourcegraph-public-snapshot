@@ -226,31 +226,35 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     public getFirstSourceURL(): string {
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
         this.firstSourceURL = firstSourceURL
 
-        if (isSourcegraphDotComMode) {
-            cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
-            return firstSourceURL
-        }
-        return ''
+        cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
+        return firstSourceURL
     }
 
     public getLastSourceURL(): string {
         // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
         // lives in Google Tag Manager.
+
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
         this.lastSourceURL = lastSourceURL
 
-        if (isSourcegraphDotComMode) {
-            cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
-            return lastSourceURL
-        }
-        return ''
+        cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
+        return lastSourceURL
     }
 
     public getOriginalReferrer(): string {
         // Gets the original referrer from the cookie or if it doesn't exist, the mkto_referrer from the URL.
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const originalReferrer =
             this.originalReferrer ||
             cookies.get(ORIGINAL_REFERRER_KEY) ||
@@ -258,34 +262,31 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             document.referrer
         this.originalReferrer = originalReferrer
 
-        if (isSourcegraphDotComMode) {
-            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
-            return originalReferrer
-        }
-        return ''
+        cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+        return originalReferrer
     }
 
     public getSessionReferrer(): string {
         // Gets the session referrer from the cookie
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
         this.sessionReferrer = sessionReferrer
 
-        if (isSourcegraphDotComMode) {
-            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
-            return sessionReferrer
-        }
-        return ''
+        cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
+        return sessionReferrer
     }
 
     public getSessionFirstURL(): string {
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
         this.sessionFirstURL = sessionFirstURL
 
-        if (isSourcegraphDotComMode) {
-            cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
-            return sessionFirstURL
-        }
-        return ''
+        cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
+        return sessionFirstURL
     }
 
     public getDeviceSessionID(): string {
