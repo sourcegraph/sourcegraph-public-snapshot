@@ -18,8 +18,8 @@ export function useFeatureFlagOverrides(): Map<string, boolean> {
     const counter = useOverrideCounter()
     const overrides = useMemo(
         () =>
-            // `counter` is only referenced here to make linters happy.
-            // I know it's hacky and unnecessary.
+            // `counter` is referenced here to make linters happy
+            // Better than disabling hook dependency checks IMO.
             counter.featureFlags ? getFeatureFlagOverrides() : new Map(),
         [counter]
     )

@@ -1729,7 +1729,6 @@ ts_project(
         "src/util/constants.ts",
         "src/util/contributions.ts",
         "src/util/dom.ts",
-        "src/util/environment.ts",
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
         "src/util/prettyBytesBigint.ts",

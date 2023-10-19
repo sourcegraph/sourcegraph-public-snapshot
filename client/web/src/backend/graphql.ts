@@ -5,7 +5,6 @@ import { getGraphQLClient, type GraphQLResult, requestGraphQLCommon } from '@sou
 
 import { getFeatureFlagOverrides } from '../featureFlags/lib/feature-flag-local-overrides'
 import type { WebGraphQlOperations } from '../graphql-operations'
-import { isDevEnvironment } from '../util/environment'
 
 import { getPersistentCache } from './getPersistentCache'
 
@@ -23,7 +22,7 @@ const getHeaders = (): { [header: string]: string } => {
 
     // Get values from URL and local overrides
     let feat = parameters.getAll('feat')
-    if (isDevEnvironment()) {
+    if (process.env.NODE_ENV === 'development') {
         // Use Set to dedupe values from the URL and local. At some point during page
         // rendering the overrides from the URL will be synced to local.
         // It's not necessary to dedupe them (duplicate values are not a problem),

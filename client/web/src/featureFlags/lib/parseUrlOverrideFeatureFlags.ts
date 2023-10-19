@@ -6,7 +6,7 @@ export const parseUrlOverrideFeatureFlags = (queryString: string): Map<string, b
     const flags = new Map<string, boolean | null>()
 
     for (const flag of urlParameters.getAll('feat').flatMap(value => value.split(','))) {
-        flags.set(flag.replace(/^-/, ''), flag.startsWith('~') ? null : !flag.startsWith('-'))
+        flags.set(flag.replace(/^(-|~)/, ''), flag.startsWith('~') ? null : !flag.startsWith('-'))
     }
 
     return flags
