@@ -57,7 +57,7 @@ func NewMockExternalServices(logger log.Logger, db database.DB, mockSourcer inte
 	}
 }
 
-const validateConnectionTimeout = 60 * time.Second
+const validateConnectionTimeout = 15 * time.Second
 
 func (e *externalServices) ValidateConnection(ctx context.Context, svc *types.ExternalService) error {
 	ctx, cancel := context.WithTimeout(ctx, validateConnectionTimeout)
