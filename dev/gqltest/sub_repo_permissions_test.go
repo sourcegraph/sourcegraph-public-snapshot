@@ -84,7 +84,6 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSymbols(t *testing.T) {
-	t.Skip("SKIPPED because this fails in Aspect Workflows CI")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
@@ -122,7 +121,6 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
-	t.Skip("SKIPPED because this fails in Aspect Workflows CI")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
