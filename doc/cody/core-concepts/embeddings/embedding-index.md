@@ -38,7 +38,7 @@ Cody tries to connect to the correct codebase using Git at start-up, so the manu
 
 To enable Cody to set the codebase config using `git remote get-url origin`, ensure that the `Cody: Codebase` (`cody.codebase`) configuration field is unset in your VS Code User and Workspace settings, and remote workspace and folder-level settings if applicable.
 
-If this attempt fails and you see `NOT INDEXED` below your Cody chatbox, you can manually specify the correct codebase for Cody using the `Cody: Codebase` (`cody.codebase`) configuration option.
+If this attempt fails and you see `Embeddings Not Found` below your Cody chatbox, you can manually specify the correct codebase for Cody using the `Cody: Codebase` (`cody.codebase`) configuration option.
 
 ### Manual Configuration
 
