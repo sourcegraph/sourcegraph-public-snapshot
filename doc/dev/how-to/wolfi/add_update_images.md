@@ -27,7 +27,7 @@ This process is automated by Buildkite, which runs a daily scheduled build to:
 - Update the base image hashes in `dev/oci_deps.bzl`.
 - Open, or update the already open pull request updating the hashes.
 
-To rerun the automation (perhaps to pick up a just-released package version), click the Buildkite run link in the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-autoupdate/main+is:open) and hit "Rebuild". Alternatively, look for the latest "Nightly Rebuild of Wolfi Base Images" run [on Buildkite](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=main).
+To rerun the automation manually (perhaps to pick up a just-released package version or a change you made), open [Buildkite for sourcegraph/sourcegraph](https://buildkite.com/sourcegraph/sourcegraph) and choose New Build > Options > set Environment Variables to `WOLFI_BASE_REBUILD=true` and Create Build.
 
 #### Manual image updates
 

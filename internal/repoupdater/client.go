@@ -72,7 +72,7 @@ func NewClient(serverURL string) *Client {
 				return nil, err
 			}
 
-			l := log.Scoped("repoUpdateGRPCClient", "gRPC client for repo-updater")
+			l := log.Scoped("repoUpdateGRPCClient")
 			conn, err := defaults.Dial(u.Host, l)
 			if err != nil {
 				return nil, err

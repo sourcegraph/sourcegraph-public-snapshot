@@ -50,7 +50,7 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
-	logger := log.Scoped("authz", "parse providers from config")
+	logger := log.Scoped("authz")
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}

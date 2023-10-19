@@ -24,7 +24,7 @@ func NewBatchSpecResolutionWorker(
 ) *workerutil.Worker[*btypes.BatchSpecResolutionJob] {
 	e := &batchSpecWorkspaceCreator{
 		store:  s,
-		logger: log.Scoped("batch-spec-workspace-creator", "The background worker running workspace resolutions for batch changes"),
+		logger: log.Scoped("batch-spec-workspace-creator"),
 	}
 
 	options := workerutil.WorkerOptions{

@@ -23,6 +23,6 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	g := gitserver.NewClient()
-	enterpriseServices.OwnResolver = resolvers.New(db, g, observationCtx.Logger.Scoped("own", "Code ownership"))
+	enterpriseServices.OwnResolver = resolvers.New(db, g, observationCtx.Logger.Scoped("own"))
 	return nil
 }

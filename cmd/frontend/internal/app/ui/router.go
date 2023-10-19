@@ -245,7 +245,7 @@ func brandNameSubtitle(titles ...string) string {
 }
 
 func initRouter(db database.DB, router *mux.Router) {
-	logger := log.Scoped("router", "")
+	logger := log.Scoped("router")
 
 	uirouter.Router = router // make accessible to other packages
 
@@ -505,7 +505,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
-	logger := log.Scoped("ui", "logger for serveErrorNoDebug")
+	logger := log.Scoped("ui")
 
 	// Determine trace URL and log the error.
 	var traceURL string

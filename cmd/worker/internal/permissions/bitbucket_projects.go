@@ -83,7 +83,7 @@ type bitbucketProjectPermissionsHandler struct {
 
 // Handle implements the workerutil.Handler interface.
 func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger log.Logger, workerJob *types.BitbucketProjectPermissionJob) (err error) {
-	logger = logger.Scoped("BitbucketProjectPermissionsHandler", "handles jobs to apply explicit permissions to all repositories of a Bitbucket Project")
+	logger = logger.Scoped("BitbucketProjectPermissionsHandler")
 	defer func() {
 		if err != nil {
 			logger.Error("Handle", log.Error(err))
@@ -355,7 +355,7 @@ func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, rep
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
 func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *observation.Context, db database.DB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker[*types.BitbucketProjectPermissionJob] {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsWorker", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsWorker"), observationCtx)
 
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
@@ -374,7 +374,7 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *o
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
 func newBitbucketProjectPermissionsResetter(observationCtx *observation.Context, db database.DB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsResetter", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsResetter"), observationCtx)
 
 	workerStore := createBitbucketProjectPermissionsStore(observationCtx, db, cfg)
 
@@ -393,7 +393,7 @@ func newBitbucketProjectPermissionsResetter(observationCtx *observation.Context,
 // createBitbucketProjectPermissionsStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
 // It is used by the worker and resetter.
 func createBitbucketProjectPermissionsStore(observationCtx *observation.Context, s basestore.ShareableStore, cfg *config) dbworkerstore.Store[*types.BitbucketProjectPermissionJob] {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermission.Store", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermission.Store"), observationCtx)
 
 	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*types.BitbucketProjectPermissionJob]{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_store",
@@ -417,7 +417,7 @@ type bitbucketProjectPermissionsMetrics struct {
 }
 
 func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucketProjectPermissionsMetrics {
-	observationCtx := observation.NewContext(logger.Scoped("routines", "bitbucket projects explicit permissions job routines"))
+	observationCtx := observation.NewContext(logger.Scoped("routines"))
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_explicit_permissions_bitbucket_project_query_reset_failures_total",

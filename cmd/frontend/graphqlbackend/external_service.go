@@ -83,7 +83,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
+	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: db, externalService: es}, nil
 }
 
 func MarshalExternalServiceID(id int64) graphql.ID {
@@ -263,7 +263,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 
 	source, err := repos.NewSource(
 		ctx,
-		log.Scoped("externalServiceResolver.CheckConnection", ""),
+		log.Scoped("externalServiceResolver.CheckConnection"),
 		r.db,
 		r.externalService,
 		httpcli.ExternalClientFactory,
@@ -485,7 +485,7 @@ func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context
 			return
 		}
 
-		e := newExternalServices(log.Scoped("graphql.externalservicenamespaces", ""), r.db)
+		e := newExternalServices(log.Scoped("graphql.externalservicenamespaces"), r.db)
 		r.nodes, r.err = e.ListNamespaces(ctx, externalServiceID, r.args.Kind, config)
 		r.totalCount = int32(len(r.nodes))
 	})
@@ -549,7 +549,7 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 			return
 		}
 
-		e := newExternalServices(log.Scoped("graphql.externalservicerepositories", ""), r.db)
+		e := newExternalServices(log.Scoped("graphql.externalservicerepositories"), r.db)
 		r.nodes, r.err = e.DiscoverRepos(ctx, externalServiceID, r.args.Kind, config, first, r.args.Query, r.args.ExcludeRepos)
 	})
 

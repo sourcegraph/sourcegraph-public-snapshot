@@ -29,7 +29,7 @@ func (p *eventLoader) withOperation(name string, loadFunc evenLoadFunc) {
 
 func (p *eventLoader) generate(ctx context.Context, db database.DB) *types.SearchJobsUsageStatistics {
 	stats := &types.SearchJobsUsageStatistics{}
-	logger := log.Scoped("search jobs ping loader", "pings for search jobs")
+	logger := log.Scoped("search jobs ping loader")
 
 	for name, loadFunc := range p.operations {
 		err := loadFunc(ctx, db, stats, p.now)

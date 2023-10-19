@@ -43,7 +43,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
-		logger:       logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
+		logger:       logger.Scoped("BatchSearchSearchImplementer"),
 		client:       cli,
 		db:           db,
 		SearchInputs: inputs,

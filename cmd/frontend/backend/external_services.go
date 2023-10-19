@@ -44,14 +44,14 @@ type externalServices struct {
 
 func NewExternalServices(logger log.Logger, db database.DB) ExternalServicesService {
 	return &externalServices{
-		logger: logger.Scoped("ExternalServices", "service related to external service functionality"),
+		logger: logger.Scoped("ExternalServices"),
 		db:     db,
 	}
 }
 
 func NewMockExternalServices(logger log.Logger, db database.DB, mockSourcer internalrepos.Sourcer) ExternalServicesService {
 	return &externalServices{
-		logger:      logger.Scoped("ExternalServices", "service related to external service functionality"),
+		logger:      logger.Scoped("ExternalServices"),
 		db:          db,
 		mockSourcer: mockSourcer,
 	}
@@ -63,7 +63,7 @@ func (e *externalServices) ValidateConnection(ctx context.Context, svc *types.Ex
 	ctx, cancel := context.WithTimeout(ctx, validateConnectionTimeout)
 	defer cancel()
 
-	genericSourcer := newGenericSourcer(log.Scoped("externalservice.validateconnection", ""), e.db)
+	genericSourcer := newGenericSourcer(log.Scoped("externalservice.validateconnection"), e.db)
 	genericSrc, err := genericSourcer(ctx, svc)
 	if err != nil {
 		if ctx.Err() != nil && ctx.Err() == context.DeadlineExceeded {
@@ -130,7 +130,7 @@ func (e *externalServices) ListNamespaces(ctx context.Context, externalServiceID
 			return nil, err
 		}
 	} else {
-		genericSourcer := newGenericSourcer(log.Scoped("externalservice.namespacediscovery", ""), e.db)
+		genericSourcer := newGenericSourcer(log.Scoped("externalservice.namespacediscovery"), e.db)
 		genericSrc, err = genericSourcer(ctx, externalSvc)
 		if err != nil {
 			return nil, err
@@ -199,7 +199,7 @@ func (e *externalServices) DiscoverRepos(ctx context.Context, externalServiceID 
 			return nil, err
 		}
 	} else {
-		genericSourcer := newGenericSourcer(log.Scoped("externalservice.repodiscovery", ""), e.db)
+		genericSourcer := newGenericSourcer(log.Scoped("externalservice.repodiscovery"), e.db)
 		genericSrc, err = genericSourcer(ctx, externalSvc)
 		if err != nil {
 			return nil, err
@@ -260,7 +260,7 @@ func (e *externalServices) ExcludeRepoFromExternalServices(ctx context.Context, 
 		return err
 	}
 
-	logger := e.logger.Scoped("ExcludeRepoFromExternalServices", "excluding a repo from external service config").With(log.Int32("repoID", int32(repoID)))
+	logger := e.logger.Scoped("ExcludeRepoFromExternalServices").With(log.Int32("repoID", int32(repoID)))
 	for _, extSvcID := range externalServiceIDs {
 		logger = logger.With(log.Int64("externalServiceID", extSvcID))
 	}
@@ -436,8 +436,8 @@ func schemaContainsExclusion[T comparable](exclusions []*T, newExclusion *T) boo
 func newGenericSourcer(logger log.Logger, db database.DB) internalrepos.Sourcer {
 	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
 	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
-	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-	db = database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), db)
+	sourcerLogger := logger.Scoped("repos.Sourcer")
+	db = database.NewDBWith(sourcerLogger.Scoped("db"), db)
 	dependenciesService := dependencies.NewService(observation.NewContext(logger), db)
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
 	return internalrepos.NewSourcer(sourcerLogger, db, cf, internalrepos.WithDependenciesService(dependenciesService))

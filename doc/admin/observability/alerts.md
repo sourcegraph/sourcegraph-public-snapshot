@@ -612,6 +612,38 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 
 <br />
 
+## frontend: frontend_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "frontend" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> frontend: 300s+ maximum duration since last successful site configuration update (all "frontend" instances)
+
+**Next steps**
+
+- This indicates that one or more "frontend" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "frontend" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-frontend-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_frontend_frontend_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## frontend: internal_indexed_search_error_responses
 
 <p class="subtitle">internal indexed search error responses every 5m</p>
@@ -1570,6 +1602,38 @@ Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 2
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="gitserver"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver"}[5m]))) >= 2)`
+
+</details>
+
+<br />
+
+## gitserver: gitserver_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "gitserver" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> gitserver: 300s+ maximum duration since last successful site configuration update (all "gitserver" instances)
+
+**Next steps**
+
+- This indicates that one or more "gitserver" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "gitserver" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-gitserver-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_gitserver_gitserver_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -3814,6 +3878,38 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / c
 
 <br />
 
+## worker: worker_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "worker" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: 300s+ maximum duration since last successful site configuration update (all "worker" instances)
+
+**Next steps**
+
+- This indicates that one or more "worker" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "worker" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_worker_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## repo-updater: src_repoupdater_max_sync_backoff
 
 <p class="subtitle">time since oldest sync</p>
@@ -4609,6 +4705,38 @@ Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_r
 
 <br />
 
+## repo-updater: repo_updater_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "repo_updater" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> repo-updater: 300s+ maximum duration since last successful site configuration update (all "repo_updater" instances)
+
+**Next steps**
+
+- This indicates that one or more "repo_updater" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "repo_updater" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repo-updater-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_repo_updater_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## repo-updater: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
@@ -5058,6 +5186,38 @@ Generated query for warning alert: `max((sum by (code) (increase(searcher_servic
 
 <br />
 
+## searcher: searcher_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "searcher" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> searcher: 300s+ maximum duration since last successful site configuration update (all "searcher" instances)
+
+**Next steps**
+
+- This indicates that one or more "searcher" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "searcher" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-searcher-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_searcher_searcher_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## searcher: mean_blocked_seconds_per_conn_request
 
 <p class="subtitle">mean blocked seconds per conn request</p>
@@ -5442,6 +5602,38 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) / count by (app) (up{app=~".*searcher"}) * 100) <= 90)`
+
+</details>
+
+<br />
+
+## symbols: symbols_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "symbols" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> symbols: 300s+ maximum duration since last successful site configuration update (all "symbols" instances)
+
+**Next steps**
+
+- This indicates that one or more "symbols" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "symbols" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-symbols-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_symbols_symbols_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -7826,6 +8018,38 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collector"}) / count by (app) (up{app=~".*otel-collector"}) * 100) <= 90)`
+
+</details>
+
+<br />
+
+## embeddings: embeddings_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "embeddings" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> embeddings: 300s+ maximum duration since last successful site configuration update (all "embeddings" instances)
+
+**Next steps**
+
+- This indicates that one or more "embeddings" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "embeddings" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-embeddings-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_embeddings_embeddings_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 

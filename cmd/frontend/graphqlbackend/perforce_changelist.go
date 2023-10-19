@@ -46,7 +46,7 @@ func newPerforceChangelistResolver(r *RepositoryResolver, changelistID, commitSH
 	canonicalURL := filepath.Join(repoURL.Path, "-", "changelist", changelistID)
 
 	return &PerforceChangelistResolver{
-		logger:             r.logger.Scoped("PerforceChangelistResolver", "resolve a specific changelist"),
+		logger:             r.logger.Scoped("PerforceChangelistResolver"),
 		repositoryResolver: r,
 		cid:                changelistID,
 		commitSHA:          commitSHA,

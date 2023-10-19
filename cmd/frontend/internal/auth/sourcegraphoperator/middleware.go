@@ -59,7 +59,7 @@ const (
 )
 
 func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped(internalauth.SourcegraphOperatorProviderType+".authHandler", "Sourcegraph Operator authentication handler")
+	logger := log.Scoped(internalauth.SourcegraphOperatorProviderType + ".authHandler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
