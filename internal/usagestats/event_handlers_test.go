@@ -31,7 +31,7 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 		{
 			name: "path and non-approved query param redacted, multi-page URL",
 			url:  "https://sourcegraph.com/first/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
-			want: "https://sourcegraph.com/first?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
+			want: "https://sourcegraph.com/first/redacted?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
 		},
 		{
 			name: "url path redaction test",
@@ -41,12 +41,12 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 		{
 			name: "url path redaction test with multiple pages",
 			url:  "https://sourcegraph.sourcegraph.com/auth/sign-in?returnTo=fileName",
-			want: "https://sourcegraph.sourcegraph.com/auth?returnTo=redacted",
+			want: "https://sourcegraph.sourcegraph.com/auth/redacted?returnTo=redacted",
 		},
 		{
 			name: "url URL with multiple path segments",
 			url:  "https://sourcegraph.sourcegraph.com/first/second/third/fourth/fifth/sixth/",
-			want: "https://sourcegraph.sourcegraph.com/first",
+			want: "https://sourcegraph.sourcegraph.com/first/redacted",
 		},
 	}
 

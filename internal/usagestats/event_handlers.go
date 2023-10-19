@@ -364,8 +364,18 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		}
 	}
 
-	// Retain only the first part of the URL's path segment for security.
-	parsedURL.Path = strings.Split(parsedURL.Path, "/")[1]
+	// Retain only first part of the URL's path segment for security(avoid leaking sensitive path info)
+	pathParts := strings.Split(parsedURL.Path, "/")
+
+	// Check length to avoid index out of range error
+	if len(pathParts) > 1 {
+		parsedURL.Path = pathParts[1]
+
+		// Add '/redacted' if we removed parts of the original path
+		if len(pathParts) > 2 {
+			parsedURL.Path += "/redacted"
+		}
+	}
 
 	parsedURL.RawQuery = urlQueryParams.Encode()
 
