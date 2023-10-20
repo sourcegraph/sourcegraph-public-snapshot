@@ -1192,7 +1192,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 			filter := filter
 
 			// This is designed to work with the idx_repo_topics
-			cond := sqlf.Sprintf("%s = ANY(topics)", filter.Topic)
+			cond := sqlf.Sprintf("topics @> '{%s}", filter.Topic)
 			if filter.Negated {
 				cond = sqlf.Sprintf("NOT (%s)", cond)
 			}
