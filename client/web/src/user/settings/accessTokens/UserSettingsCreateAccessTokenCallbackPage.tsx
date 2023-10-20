@@ -121,9 +121,20 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
-    const requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
-    const port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
-    const destination = useMemo(() => urlSearchParams.get('destination'), [urlSearchParams])
+    const requestFrom = useMemo(() => {
+        const requestFromParam = urlSearchParams.get('requestFrom') || ''
+        const [requestFromValue,] = requestFromParam.split('-')
+        return requestFromValue
+    }, [urlSearchParams])
+
+    const port = useMemo(() => {
+        const requestFromParam = urlSearchParams.get('requestFrom') || ''
+        if (requestFromParam.includes('-')) {
+            const [, portValue] = requestFromParam.split('-')
+            return portValue
+        }
+        return urlSearchParams.get('port')
+    }, [urlSearchParams])
 
     /** The validated requester where the callback request originally comes from. */
     const [requester, setRequester] = useState<TokenRequester | null | undefined>(undefined)
