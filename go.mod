@@ -172,7 +172,6 @@ require (
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/slack-go/slack v0.10.1
 	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
-	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/go-ctags v0.0.0-20230929045819-c736fcb519eb
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac
@@ -198,7 +197,6 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
-	go.etcd.io/bbolt v1.3.6
 	go.opentelemetry.io/collector v0.81.0 // indirect
 	go.opentelemetry.io/collector/component v0.81.0
 	go.opentelemetry.io/collector/exporter v0.81.0
@@ -542,7 +540,6 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/scim2/filter-parser/v2 v2.2.0
-	github.com/snabb/diagio v1.0.0 // indirect
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6

@@ -5817,20 +5817,6 @@ def go_dependencies():
     )
 
     go_repository(
-        name = "com_github_snabb_diagio",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/snabb/diagio",
-        sum = "h1:kovhQ1rDXoEbmpf/T5N2sUp2iOdxEg+TcqzbYVHV2V0=",
-        version = "v1.0.0",
-    )
-    go_repository(
-        name = "com_github_snabb_sitemap",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/snabb/sitemap",
-        sum = "h1:7vJeNPAaaj7fQSRS3WYuJHzUjdnhLdSLLpvVtnhbzC0=",
-        version = "v1.0.0",
-    )
-    go_repository(
         name = "com_github_soheilhy_cmux",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/soheilhy/cmux",
