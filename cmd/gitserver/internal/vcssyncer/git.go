@@ -128,7 +128,7 @@ func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL 
 		for sc.Scan() {
 			line := sc.Text()
 			writeMu.Lock()
-			if _, err := fmt.Fprintln(progressWriter, redactor.Redact(line)); err != nil {
+			if _, err := fmt.Fprint(progressWriter, redactor.Redact(line)); err != nil {
 				return err
 			}
 			writeMu.Unlock()
@@ -140,7 +140,7 @@ func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL 
 		for sc.Scan() {
 			line := sc.Text()
 			writeMu.Lock()
-			if _, err := fmt.Fprintln(progressWriter, redactor.Redact(line)); err != nil {
+			if _, err := fmt.Fprint(progressWriter, redactor.Redact(line)); err != nil {
 				return err
 			}
 			writeMu.Unlock()

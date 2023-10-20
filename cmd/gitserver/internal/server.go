@@ -1562,14 +1562,13 @@ func (w *linebasedBufferedWriter) Write(p []byte) (n int, err error) {
 			w.writeOffset = len(w.buf)
 			break
 		}
+		w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
 		switch p[idx] {
 		case '\n':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
 			w.writeOffset = len(w.buf)
 			w.afterLastNewline = len(w.buf)
 			p = p[idx+1:]
 		case '\r':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
 			// Record that our next write should overwrite the data after the most recent newline.
 			// Don't slice it off immediately here, because we want to be able to return that output
 			// until it is overwritten.
