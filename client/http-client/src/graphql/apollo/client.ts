@@ -1,12 +1,12 @@
 import {
     ApolloClient,
-    ApolloLink,
     createHttpLink,
     from,
     type HttpOptions,
     type InMemoryCache,
     type NormalizedCacheObject,
 } from '@apollo/client'
+import { setContext } from '@apollo/client/link/context'
 import type { PersistenceMapperFunction } from 'apollo3-cache-persist/lib/types'
 import { once } from 'lodash'
 
@@ -59,17 +59,13 @@ export const getGraphQLClient = once(async (options: GetGraphqlClientOptions): P
             defined([
                 new ConcurrentRequestsLink(),
                 getHeaders
-                    ? new ApolloLink((operation, forward) => {
-                          const context = operation.getContext()
-                          operation.setContext({
-                              ...context,
-                              headers: {
-                                  ...context.headers,
-                                  ...getHeaders(),
-                              },
-                          })
-                          return forward(operation)
-                      })
+                    ? setContext((_request, previousContext) => ({
+                          ...previousContext,
+                          headers: {
+                              ...previousContext.headers,
+                              ...getHeaders(),
+                          },
+                      }))
                     : null,
                 createHttpLink({
                     uri: ({ operationName }) => `${uri}?${operationName}`,
