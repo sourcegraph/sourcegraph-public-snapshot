@@ -69,7 +69,7 @@ export interface TemporarySettingsSchema {
     'search.input.usedInlineHistory': boolean
 
     /** Let users quickly switch between the v1 and v2 query inputs. */
-    'search.input.v2': boolean
+    'search.input.experimental': boolean
 
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
@@ -133,7 +133,7 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
      */
     'search.input.usedExamples': null,
     'search.input.usedInlineHistory': null,
-    'search.input.v2': null,
+    'search.input.experimental': null,
     'batches.minSavedPerChangeset': null,
     'search.notebooks.minSavedPerView': null,
     'repo.commitPage.diffMode': null,
