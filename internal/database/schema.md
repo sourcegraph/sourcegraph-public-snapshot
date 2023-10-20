@@ -3521,8 +3521,8 @@ Referenced by:
 
 # Table "public.repo"
 ```
-        Column         |           Type           | Collation | Nullable |                                 Default                                  
------------------------+--------------------------+-----------+----------+--------------------------------------------------------------------------
+        Column         |           Type           | Collation | Nullable |                                          Default                                           
+-----------------------+--------------------------+-----------+----------+--------------------------------------------------------------------------------------------
  id                    | integer                  |           | not null | nextval('repo_id_seq'::regclass)
  name                  | citext                   |           | not null | 
  description           | text                     |           |          | 
@@ -3539,7 +3539,7 @@ Referenced by:
  private               | boolean                  |           | not null | false
  stars                 | integer                  |           | not null | 0
  blocked               | jsonb                    |           |          | 
- topics                | text[]                   |           |          | generated always as (get_topics(external_service_type, metadata)) stored
+ topics                | text[]                   |           |          | generated always as (extract_topics_from_metadata(external_service_type, metadata)) stored
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)

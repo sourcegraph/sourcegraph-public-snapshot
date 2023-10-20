@@ -83,6 +83,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_user_repo_permissions_on_user_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM user_repo_permissions WHERE user_id = OLD.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
     },
     {
+      "Name": "extract_topics_from_metadata",
+      "Definition": "CREATE OR REPLACE FUNCTION public.extract_topics_from_metadata(external_service_type text, metadata jsonb)\n RETURNS text[]\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n    RETURN CASE external_service_type\n    WHEN 'github' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))\n    WHEN 'gitlab' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata-\u003e'topics'))\n    ELSE\n        '{}'::text[]\n    END;\nEXCEPTION WHEN others THEN\n    -- Catch exceptions in the case that metadata is not shaped like we expect\n    RETURN '{}'::text[];\nEND;\n$function$\n"
+    },
+    {
       "Name": "func_configuration_policies_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE configuration_policies_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE policy_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -133,10 +137,6 @@
     {
       "Name": "func_row_to_lsif_uploads_transition_columns",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_row_to_lsif_uploads_transition_columns(rec record)\n RETURNS lsif_uploads_transition_columns\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        RETURN (rec.state, rec.expired, rec.num_resets, rec.num_failures, rec.worker_hostname, rec.committed_at);\n    END;\n$function$\n"
-    },
-    {
-      "Name": "get_topics",
-      "Definition": "CREATE OR REPLACE FUNCTION public.get_topics(external_service_type text, metadata jsonb)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE\nAS $function$\n    SELECT CASE external_service_type\n    WHEN 'github' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))\n    WHEN 'gitlab' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata-\u003e'topics'))\n    ELSE\n        '{}'::text[]\n    END;\n$function$\n"
     },
     {
       "Name": "invalidate_session_for_userid_on_password_change",
@@ -23696,7 +23696,7 @@
           "IsIdentity": false,
           "IdentityGeneration": "",
           "IsGenerated": "ALWAYS",
-          "GenerationExpression": "get_topics(external_service_type, metadata)",
+          "GenerationExpression": "extract_topics_from_metadata(external_service_type, metadata)",
           "Comment": ""
         },
         {

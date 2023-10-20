@@ -1,9 +1,9 @@
-CREATE OR REPLACE FUNCTION get_topics(external_service_type text, metadata jsonb)
+CREATE OR REPLACE FUNCTION extract_topics_from_metadata(external_service_type text, metadata jsonb)
     RETURNS text[]
-    LANGUAGE SQL
     IMMUTABLE
 AS $$
-    SELECT CASE external_service_type
+BEGIN
+    RETURN CASE external_service_type
     WHEN 'github' THEN
         ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))
     WHEN 'gitlab' THEN
@@ -11,8 +11,12 @@ AS $$
     ELSE
         '{}'::text[]
     END;
-$$;
+EXCEPTION WHEN others THEN
+    -- Catch exceptions in the case that metadata is not shaped like we expect
+    RETURN '{}'::text[];
+END;
+$$ LANGUAGE plpgsql;
 
 
 ALTER TABLE IF EXISTS repo
-ADD COLUMN IF NOT EXISTS topics text[] GENERATED ALWAYS AS (get_topics(external_service_type, metadata)) STORED;
+ADD COLUMN IF NOT EXISTS topics text[] GENERATED ALWAYS AS (extract_topics_from_metadata(external_service_type, metadata)) STORED;

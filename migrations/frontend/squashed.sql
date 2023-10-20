@@ -176,6 +176,24 @@ CREATE FUNCTION delete_user_repo_permissions_on_user_soft_delete() RETURNS trigg
   END
 $$;
 
+CREATE FUNCTION extract_topics_from_metadata(external_service_type text, metadata jsonb) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN CASE external_service_type
+    WHEN 'github' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))
+    WHEN 'gitlab' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata->'topics'))
+    ELSE
+        '{}'::text[]
+    END;
+EXCEPTION WHEN others THEN
+    -- Catch exceptions in the case that metadata is not shaped like we expect
+    RETURN '{}'::text[];
+END;
+$_$;
+
 CREATE FUNCTION func_configuration_policies_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -438,19 +456,6 @@ CREATE FUNCTION func_row_to_lsif_uploads_transition_columns(rec record) RETURNS 
         RETURN (rec.state, rec.expired, rec.num_resets, rec.num_failures, rec.worker_hostname, rec.committed_at);
     END;
 $$;
-
-CREATE FUNCTION get_topics(external_service_type text, metadata jsonb) RETURNS text[]
-    LANGUAGE sql IMMUTABLE
-    AS $_$
-    SELECT CASE external_service_type
-    WHEN 'github' THEN
-        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))
-    WHEN 'gitlab' THEN
-        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata->'topics'))
-    ELSE
-        '{}'::text[]
-    END;
-$_$;
 
 CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigger
     LANGUAGE plpgsql
@@ -1320,7 +1325,7 @@ CREATE TABLE repo (
     private boolean DEFAULT false NOT NULL,
     stars integer DEFAULT 0 NOT NULL,
     blocked jsonb,
-    topics text[] GENERATED ALWAYS AS (get_topics(external_service_type, metadata)) STORED,
+    topics text[] GENERATED ALWAYS AS (extract_topics_from_metadata(external_service_type, metadata)) STORED,
     CONSTRAINT check_name_nonempty CHECK ((name OPERATOR(<>) ''::citext)),
     CONSTRAINT repo_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
 );
