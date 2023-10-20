@@ -86,6 +86,11 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 		}
 	}()
 
+	// First, make sure the tmpPath exists.
+	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "clone failed to create tmp dir")
+	}
+
 	p4user, p4passwd, p4port, depot, err := perforce.DecomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "invalid perforce remote URL")
@@ -110,7 +115,6 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 		args = append(args, depot+"@all", tmpPath)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
-	cmd.Dir = tmpPath
 	cmd.Env = s.p4CommandEnv(p4port, p4user, p4passwd)
 
 	stdout, err := cmd.StdoutPipe()
