@@ -85,6 +85,7 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/graphqlbackend",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/audit/audittest",
         "//internal/auth",
@@ -95,7 +96,6 @@ go_test(
         "//internal/database/dbtest",
         "//internal/errcode",
         "//internal/featureflag",
-        "//internal/hashutil",
         "//internal/license",
         "//internal/licensing",
         "//internal/productsubscription",
