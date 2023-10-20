@@ -3323,6 +3323,9 @@ type ExternalService implements Node {
     """
     nextSyncAt: DateTime
 
+    creator: User
+    lastUpdater: User
+
     """
     Returns recently received webhooks on this external service.
 

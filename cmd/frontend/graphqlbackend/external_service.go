@@ -201,6 +201,32 @@ func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, erro
 	return &r.webhookURL, r.webhookErr
 }
 
+func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, error) {
+	if r.externalService.CreatorID <= 0 {
+		return nil, nil
+	}
+
+	user, err := r.db.Users().GetByID(ctx, r.externalService.CreatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewUserResolver(ctx, r.db, user), nil
+}
+
+func (r *externalServiceResolver) LastUpdater(ctx context.Context) (*UserResolver, error) {
+	if r.externalService.LastUpdaterID <= 0 {
+		return nil, nil
+	}
+
+	user, err := r.db.Users().GetByID(ctx, r.externalService.LastUpdaterID)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewUserResolver(ctx, r.db, user), nil
+}
+
 func (r *externalServiceResolver) Warning() *string {
 	if r.warning == "" {
 		return nil
