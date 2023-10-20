@@ -186,7 +186,7 @@ sg db add-access-token -username=foo
 
 func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
-	logger := log.Scoped("dbAddUserAction", "")
+	logger := log.Scoped("dbAddUserAction")
 
 	// Read the configuration.
 	conf, _ := getConfig()
@@ -241,7 +241,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 
 func dbAddAccessTokenAction(cmd *cli.Context) error {
 	ctx := cmd.Context
-	logger := log.Scoped("dbAddAccessTokenAction", "")
+	logger := log.Scoped("dbAddAccessTokenAction")
 
 	// Read the configuration.
 	conf, _ := getConfig()
@@ -285,7 +285,7 @@ func dbAddAccessTokenAction(cmd *cli.Context) error {
 }
 
 func dbUpdateUserExternalAccount(cmd *cli.Context) error {
-	logger := log.Scoped("dbUpdateUserExternalAccount", "")
+	logger := log.Scoped("dbUpdateUserExternalAccount")
 	ctx := cmd.Context
 	username := cmd.String("sg.username")
 	serviceName := cmd.String("extsvc.display-name")
@@ -450,7 +450,7 @@ func deleteTestDBsExec(ctx *cli.Context) error {
 	}
 	dsn := config.String()
 
-	db, err := dbconn.ConnectInternal(log.Scoped("sg", ""), dsn, "", "")
+	db, err := dbconn.ConnectInternal(log.Scoped("sg"), dsn, "", "")
 	if err != nil {
 		return err
 	}
@@ -537,7 +537,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNs(std.Out.Output, log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(std.Out.Output, log.Scoped("migrations.runner"), dsnMap, "sg", storeFactory)
 	if err != nil {
 		return err
 	}

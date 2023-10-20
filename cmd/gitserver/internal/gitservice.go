@@ -72,7 +72,7 @@ func flowrateWriter(logger log.Logger, w io.Writer) io.Writer {
 }
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
-	logger := s.Logger.Scoped("gitServiceHandler", "smart Git HTTP transfer protocol")
+	logger := s.Logger.Scoped("gitServiceHandler")
 
 	return &gitservice.Handler{
 		Dir: func(d string) string {

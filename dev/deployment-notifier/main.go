@@ -48,7 +48,7 @@ func main() {
 	ctx := context.Background()
 	liblog := log.Init(log.Resource{Name: "deployment-notifier"})
 	defer liblog.Sync()
-	logger = log.Scoped("main", "a script that checks for deployment notifications")
+	logger = log.Scoped("main")
 
 	flags := &Flags{}
 	flags.Parse()

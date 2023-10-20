@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -65,10 +67,14 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
+	userID := actor.FromContext(ctx).UID
+
 	externalService := &types.ExternalService{
-		Kind:        args.Input.Kind,
-		DisplayName: args.Input.DisplayName,
-		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
+		Kind:          args.Input.Kind,
+		DisplayName:   args.Input.DisplayName,
+		Config:        extsvc.NewUnencryptedConfig(args.Input.Config),
+		CreatorID:     userID,
+		LastUpdaterID: userID,
 	}
 
 	// Create the external service in the database.
@@ -86,7 +92,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	// Verify if the connection is functional, to render a warning message in the
 	// editor if not.
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver"), db: r.db, externalService: externalService}
 	if err = newExternalServices(r.logger, r.db).ValidateConnection(ctx, externalService); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -138,11 +144,15 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
+	userID := actor.FromContext(ctx).UID
+
 	ps := conf.Get().AuthProviders
 	update := &database.ExternalServiceUpdate{
-		DisplayName: args.Input.DisplayName,
-		Config:      args.Input.Config,
+		DisplayName:   args.Input.DisplayName,
+		Config:        args.Input.Config,
+		LastUpdaterID: pointers.Ptr(userID),
 	}
+
 	// Update the external service in the database.
 	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
 		return nil, err
@@ -166,7 +176,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		r.logger.Warn("Failed to trigger external service sync")
 	}
 
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver"), db: r.db, externalService: es}
 
 	if oldConfig != newConfig {
 		// Verify if the connection is functional, to render a warning message in the
@@ -327,7 +337,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -392,7 +402,7 @@ func (r *ComputedExternalServiceConnectionResolver) Nodes(_ context.Context) []*
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: svc})
 	}
 	return resolvers
 }

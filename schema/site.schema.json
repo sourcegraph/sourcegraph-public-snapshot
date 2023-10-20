@@ -877,7 +877,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages", "symbols"],
+      "required": ["engine", "languages"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -1118,12 +1118,6 @@
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
       "type": "integer",
       "default": 5
-    },
-    "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
-      "type": "string",
-      "enum": ["public", "disabled", "all"],
-      "default": "disabled"
     },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",

@@ -196,7 +196,7 @@ func newDiskCollector(path string) prometheus.Collector {
 			nil,
 			constLabels,
 		),
-		logger: log.Scoped("diskCollector", ""),
+		logger: log.Scoped("diskCollector"),
 	}
 }
 

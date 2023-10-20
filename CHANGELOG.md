@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- The `has.topic` filter now supports filtering by Gitlab topics. [#57649](https://github.com/sourcegraph/sourcegraph/pull/57649)
 
 ### Changed
 
@@ -25,7 +25,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Site configuration edit history no longer breaks when the user that made the edit is deleted. [#57656](https://github.com/sourcegraph/sourcegraph/pull/57656)
+- Drilling down into an insights query no longer mangles `content:` fields in your query. [#57679](https://github.com/sourcegraph/sourcegraph/pull/57679)
 
 ### Removed
 
@@ -38,6 +39,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added two new authorization configuration options to GitHub code host connections: "markInternalReposAsPublic" and "syncInternalRepoPermissions". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Setting "syncInternalRepoPermissions" to true adds an additional step to user permission syncs that explicitly checks for internal repositories. However, this could lead to longer user permission sync times. [#56677](https://github.com/sourcegraph/sourcegraph/pull/56677)
+- Fixed an issue with Code Monitors that could cause users to be notified multiple times for the same commit [#57546](https://github.com/sourcegraph/sourcegraph/pull/57546)
+- Fixed an issue with Code Monitors that could prevent a new code monitor from being created if it targeted multiple repos [#57546](https://github.com/sourcegraph/sourcegraph/pull/57546)
+- Sourcegraph instances will now emit a limited set of [telemetry events](https://docs.sourcegraph.com/admin/telemetry) in the background by default ([#57605](https://github.com/sourcegraph/sourcegraph/pull/57605)). Enablement will be based on the following conditions:
+  - Customers with a license key created after October 3, 2023, or do not have a valid license key configured, will export all telemetry events recorded in the new system.
+  - Customers with a license key created before October 3, 2023 will export only Cody-related events recorded in the new system, as covered by the [Cody Usage and Privacy Notice](https://about.sourcegraph.com/terms/cody-notice).
+  - If you have a previous agreement regarding telemetry sharing, you account representative will reach out with more details.
 
 ### Changed
 
@@ -49,6 +56,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where site admins could not view a user's permissions if they didn't have access to all of the repositories the user has. Admins still won't be able to see repositories they don't have access to, but they will now be able to view the rest of the user's repository permissions. [#57375](https://github.com/sourcegraph/sourcegraph/pull/57375)
 - Fixed a bug where gitserver statistics would not be properly decoded / reported when using REST (i.e. `experimentalFeatures.enableGRPC = false` in site configuration). [#57318](https://github.com/sourcegraph/sourcegraph/pull/57318)
 - Updated the `curl` and `libcurl` dependencies to `8.4.0-r0` to fix [CVE-2023-38545](https://curl.se/docs/CVE-2023-38545.html). [#57533](https://github.com/sourcegraph/sourcegraph/pull/57533)
+- Fixed a bug where commit signing failed when creating a changeset if `batchChanges.enforceFork` is set to true. [#57520](https://github.com/sourcegraph/sourcegraph/pull/57520)
+- Fixed a regression in ranking of Go struct and interface in search results. [zoekt#655](https://github.com/sourcegraph/zoekt/pull/655)
 
 ### Removed
 

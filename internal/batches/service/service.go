@@ -49,12 +49,12 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
-	logger := sglog.Scoped("batches.Service", "batch changes service")
+	logger := sglog.Scoped("batches.Service")
 	svc := &Service{
 		logger: logger,
 		store:  store,
 		sourcer: sources.NewSourcer(httpcli.NewExternalClientFactory(
-			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer")),
 		)),
 		clock:      clock,
 		operations: newOperations(store.ObservationCtx()),

@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 
 import { WebStory } from '../components/WebStory'
@@ -6,7 +6,7 @@ import { ExternalServiceKind, type WebhookFields } from '../graphql-operations'
 
 import { WebhookInformation } from './WebhookInformation'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/incoming/WebhookInformation',
@@ -17,7 +17,7 @@ export default config
 
 const TIMESTAMP_MOCK = new Date(2021, 10, 8, 16, 40, 30)
 
-export const WebhookDescription: Story = () => (
+export const WebhookDescription: StoryFn = () => (
     <WebStory>{() => <WebhookInformation webhook={createWebhook()} />}</WebStory>
 )
 

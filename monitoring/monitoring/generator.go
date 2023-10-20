@@ -86,7 +86,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	var grafanaClient *grafanasdk.Client
 	var grafanaFolderID int
 	if opts.GrafanaURL != "" && opts.Reload {
-		gclog := logger.Scoped("grafana.client", "grafana client setup")
+		gclog := logger.Scoped("grafana.client")
 
 		var err error
 		grafanaClient, err = grafanaclient.New(opts.GrafanaURL, opts.GrafanaCredentials, opts.GrafanaHeaders)
@@ -146,7 +146,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	var generatedAssets []string
 	var err error
 	if len(opts.MultiInstanceDashboardGroupings) > 0 {
-		l := logger.Scoped("multi-instance", "multi-instance dashboards")
+		l := logger.Scoped("multi-instance")
 		l.Info("generating multi-instance")
 		generatedAssets, err = generateMultiInstance(ctx, l, grafanaClient, grafanaFolderID, dashboards, opts)
 	} else {
@@ -212,7 +212,7 @@ func generateAll(
 		// Logger for dashboard
 		dlog := logger.With(log.String("dashboard", dashboard.Name))
 
-		glog := dlog.Scoped("grafana", "grafana dashboard generation").
+		glog := dlog.Scoped("grafana").
 			With(log.String("instance", opts.GrafanaURL))
 
 		glog.Debug("Rendering Grafana assets")
@@ -251,7 +251,7 @@ func generateAll(
 
 		// Prepare Prometheus assets
 		if opts.PrometheusDir != "" {
-			plog := dlog.Scoped("prometheus", "prometheus rules generation")
+			plog := dlog.Scoped("prometheus")
 
 			plog.Debug("Rendering Prometheus assets")
 			promAlertsFile, err := dashboard.RenderPrometheusRules(opts.InjectLabelMatchers)
@@ -291,7 +291,7 @@ func generateAll(
 
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.PrometheusURL != "" && opts.Reload {
-		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
+		rlog := logger.Scoped("prometheus").
 			With(log.String("instance", opts.PrometheusURL))
 		// Reload all Prometheus rules
 		rlog.Debug("Reloading Prometheus instance")

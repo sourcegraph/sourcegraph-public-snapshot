@@ -12,8 +12,6 @@ bash --version
 
 p4 -h
 
-p4-fusion-binary
-
 coursier
 
 redis-server --version

@@ -40,7 +40,7 @@ func Init() {
 	conf.ContributeValidator(validateConfig)
 
 	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator)
-	logger := log.Scoped(auth.SourcegraphOperatorProviderType, "Sourcegraph Operator config watch")
+	logger := log.Scoped(auth.SourcegraphOperatorProviderType)
 	go func() {
 		if err := p.Refresh(context.Background()); err != nil {
 			logger.Error("failed to fetch Sourcegraph Operator service provider metadata", log.Error(err))

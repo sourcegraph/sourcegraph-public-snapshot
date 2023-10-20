@@ -1768,6 +1768,8 @@ Foreign-key constraints:
  has_webhooks      | boolean                  |           |          | 
  token_expires_at  | timestamp with time zone |           |          | 
  code_host_id      | integer                  |           |          | 
+ creator_id        | integer                  |           |          | 
+ last_updater_id   | integer                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "external_services_unique_kind_org_id" UNIQUE, btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL
@@ -3544,6 +3546,7 @@ Indexes:
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "idx_repo_github_topics" gin (((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text)) WHERE external_service_type = 'github'::text
+    "idx_repo_gitlab_topics" gin ((metadata -> 'topics'::text)) WHERE external_service_type = 'gitlab'::text
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
@@ -4296,7 +4299,6 @@ Foreign-key constraints:
  site_admin              | boolean                  |           | not null | false
  page_views              | integer                  |           | not null | 0
  search_queries          | integer                  |           | not null | 0
- tags                    | text[]                   |           |          | '{}'::text[]
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false

@@ -54,7 +54,7 @@ type internalClient struct {
 var Client = &internalClient{
 	URL: frontendInternal.String(),
 	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
-		logger := log.Scoped("internalapi", "")
+		logger := log.Scoped("internalapi")
 		conn, err := defaults.Dial(frontendInternal.Host, logger)
 		if err != nil {
 			return nil, err

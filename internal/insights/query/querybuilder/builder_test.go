@@ -879,6 +879,17 @@ func TestPointDiffQuery(t *testing.T) {
 			},
 			autogold.Expect(BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
+		{
+			// Test for #57323. Previously, the content field would get mangled to `content:/"TEST"/`
+			"no mangle content",
+			PointDiffQueryOpts{
+				Before:      before,
+				After:       &after,
+				RepoList:    []string{},
+				SearchQuery: BasicQuery(`content:"TEST" patternType:regexp`),
+			},
+			autogold.Expect(BasicQuery(`after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff patterntype:regexp content:"TEST"`)),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

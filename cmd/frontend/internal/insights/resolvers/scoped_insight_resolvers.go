@@ -52,7 +52,7 @@ func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphq
 		return nil, errors.Wrap(err, "could not build repository scope query")
 	}
 
-	executor := query.NewStreamingRepoQueryExecutor(r.logger.Scoped("StreamingRepoQueryExecutor", "preview repositories"))
+	executor := query.NewStreamingRepoQueryExecutor(r.logger.Scoped("StreamingRepoQueryExecutor"))
 	repos, err := executor.ExecuteRepoList(ctx, repoScopeQuery.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "executing the repository search errored")

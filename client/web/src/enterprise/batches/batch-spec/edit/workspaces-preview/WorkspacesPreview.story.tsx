@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -24,7 +24,7 @@ import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>
 )
 
@@ -345,7 +345,7 @@ FailedErroredWithCachedConnectionResult.args = {
 
 FailedErroredWithCachedConnectionResult.storyName = 'failed/errored, with cached connection result'
 
-export const Succeeded: Story = () => (
+export const Succeeded: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -374,7 +374,7 @@ export const Succeeded: Story = () => (
     </WebStory>
 )
 
-export const CacheDisabled: Story = () => (
+export const CacheDisabled: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -403,7 +403,7 @@ export const CacheDisabled: Story = () => (
     </WebStory>
 )
 
-export const ReadOnly: Story = () => (
+export const ReadOnly: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -421,7 +421,7 @@ export const ReadOnly: Story = () => (
 
 ReadOnly.storyName = 'read-only'
 
-export const SucceededWithScaleAlert: Story = () => (
+export const SucceededWithScaleAlert: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(LARGE_SUCCESS_CONNECTION_MOCKS)}>
@@ -452,7 +452,7 @@ export const SucceededWithScaleAlert: Story = () => (
 
 SucceededWithScaleAlert.storyName = 'succeeded, with size alert'
 
-export const ReadOnlyWithScaleAlert: Story = () => (
+export const ReadOnlyWithScaleAlert: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(LARGE_SUCCESS_CONNECTION_MOCKS)}>
@@ -470,7 +470,7 @@ export const ReadOnlyWithScaleAlert: Story = () => (
 
 ReadOnlyWithScaleAlert.storyName = 'read-only, with size alert'
 
-export const UnstartedWithLicenseAlertConnectionResult: Story = () => (
+export const UnstartedWithLicenseAlertConnectionResult: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -490,7 +490,7 @@ export const UnstartedWithLicenseAlertConnectionResult: Story = () => (
 
 UnstartedWithLicenseAlertConnectionResult.storyName = 'unstarted, with license alert'
 
-export const ReadOnlyWithLicenseAlert: Story = () => (
+export const ReadOnlyWithLicenseAlert: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider

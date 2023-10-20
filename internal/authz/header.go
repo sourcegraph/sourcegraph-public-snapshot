@@ -2,11 +2,7 @@ package authz
 
 import (
 	"bytes"
-	"io"
-	"net/http"
 	"strings"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,7 +35,7 @@ func IsUnrecognizedScheme(err error) bool {
 //
 // The returned values are derived directly from user input and have not been validated or
 // authenticated.
-func ParseAuthorizationHeader(logger log.Logger, r *http.Request, headerValue string) (token, sudoUser string, err error) {
+func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err error) {
 	scheme, token68, params, err := parseHTTPCredentials(headerValue)
 	if err != nil {
 		return "", "", err
@@ -59,9 +55,6 @@ func ParseAuthorizationHeader(logger log.Logger, r *http.Request, headerValue st
 	}
 
 	if envvar.SourcegraphDotComMode() && scheme == SchemeTokenSudo {
-		// Attempt to read the body. This might fail if it was read before.
-		body, readErr := io.ReadAll(r.Body)
-		logger.Warn("saw request with sudo mode", log.String("path", r.URL.Path), log.String("body", string(body)), log.Error(readErr))
 		return "", "", errors.New("use of access tokens with sudo scope is disabled")
 	}
 

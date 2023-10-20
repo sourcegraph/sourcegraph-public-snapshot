@@ -1009,7 +1009,7 @@ type FusionClient struct {
 	// IncludeBinaries description: Whether to include binary files
 	IncludeBinaries bool `json:"includeBinaries,omitempty"`
 	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
-	LookAhead int `json:"lookAhead"`
+	LookAhead int `json:"lookAhead,omitempty"`
 	// MaxChanges description: How many changes to fetch during initial clone. The default of -1 will fetch all known changes
 	MaxChanges int `json:"maxChanges,omitempty"`
 	// NetworkThreads description: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
@@ -2627,8 +2627,6 @@ type SiteConfiguration struct {
 	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	ExportUsageTelemetry *ExportUsageTelemetry `json:"exportUsageTelemetry,omitempty"`
-	// ExternalServiceUserMode description: Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.
-	ExternalServiceUserMode string `json:"externalService.userMode,omitempty"`
 	// ExternalURL description: The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
@@ -2856,7 +2854,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "executors.srcCLIImageTag")
 	delete(m, "experimentalFeatures")
 	delete(m, "exportUsageTelemetry")
-	delete(m, "externalService.userMode")
 	delete(m, "externalURL")
 	delete(m, "git.cloneURLToRepositoryName")
 	delete(m, "gitHubApp")
@@ -2978,7 +2975,7 @@ type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
 	Languages SyntaxHighlightingLanguage `json:"languages"`
 	// Symbols description: Configure symbol generation
-	Symbols SymbolConfiguration `json:"symbols"`
+	Symbols *SymbolConfiguration `json:"symbols,omitempty"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use

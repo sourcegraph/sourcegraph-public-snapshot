@@ -67,7 +67,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 
 	externalAccountsStore := db.UserExternalAccounts()
 	users := db.Users()
-	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
+	logger := sglog.Scoped("authGetAndSaveUser")
 
 	acct := &extsvc.Account{
 		AccountSpec: op.ExternalAccount,
@@ -164,6 +164,9 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 
 		const eventName = "ExternalAuthSignupSucceeded"
+
+		// SECURITY: This args map is treated as a public argument in the LogEvent call below, so it must not contain
+		// any sensitive data.
 		args, err := json.Marshal(map[string]any{
 			// NOTE: The conventional name should be "service_type", but keeping as-is for
 			// backwards capability.
@@ -185,10 +188,11 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			ctx,
 			db,
 			usagestats.Event{
-				EventName: eventName,
-				UserID:    act.UID,
-				Argument:  args,
-				Source:    "BACKEND",
+				EventName:      eventName,
+				UserID:         act.UID,
+				Argument:       args,
+				PublicArgument: args,
+				Source:         "BACKEND",
 			},
 		)
 		if err != nil {

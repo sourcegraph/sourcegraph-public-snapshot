@@ -320,7 +320,7 @@ const (
 //
 // It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
 func NewLoggingMiddleware(logger log.Logger) Middleware {
-	logger = logger.Scoped("httpcli", "http client")
+	logger = logger.Scoped("httpcli")
 
 	return func(d Doer) Doer {
 		return DoerFunc(func(r *http.Request) (*http.Response, error) {

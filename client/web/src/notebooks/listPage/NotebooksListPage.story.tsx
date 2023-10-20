@@ -1,4 +1,4 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { type Observable, of } from 'rxjs'
 
@@ -11,7 +11,7 @@ import { NotebooksListPage } from './NotebooksListPage'
 
 const now = new Date()
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/search/notebooks/listPage/NotebooksListPage',
@@ -64,7 +64,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
         pageInfo: { hasNextPage: false, endCursor: null },
     })
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {props => (
             <NotebooksListPage

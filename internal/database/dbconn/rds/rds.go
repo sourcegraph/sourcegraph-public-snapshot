@@ -26,7 +26,7 @@ func NewUpdater() *Updater {
 }
 
 func (u *Updater) ShouldUpdate(cfg *pgx.ConnConfig) bool {
-	logger := log.Scoped("rds", "shouldUpdate")
+	logger := log.Scoped("rds")
 	token, err := parseRDSAuthToken(cfg.Password)
 	if err != nil {
 		logger.Warn("Error parsing RDS auth token, refreshing", log.Error(err))
@@ -37,7 +37,7 @@ func (u *Updater) ShouldUpdate(cfg *pgx.ConnConfig) bool {
 }
 
 func (u *Updater) Update(cfg *pgx.ConnConfig) (*pgx.ConnConfig, error) {
-	logger := log.Scoped("rds", "update")
+	logger := log.Scoped("rds")
 	if cfg.Password != "" {
 		// only output the warning once, or it will emit a new entry on every connection
 		syncx.OnceFunc(func() {

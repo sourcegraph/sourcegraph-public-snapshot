@@ -93,16 +93,16 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// bit more to do in this method, though, and the process will be marked ready
 	// further down this function.
 
-	repos.MustRegisterMetrics(log.Scoped("MustRegisterMetrics", ""), db, envvar.SourcegraphDotComMode())
+	repos.MustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
+	store := repos.NewStore(logger.Scoped("store"), db)
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 		store.SetMetrics(m)
 	}
 
-	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	sourcerLogger := logger.Scoped("repos.Sourcer")
 	cf := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)
@@ -133,7 +133,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
 	permsSyncer := authz.NewPermsSyncer(
-		observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"),
+		observationCtx.Logger.Scoped("PermsSyncer"),
 		db,
 		store,
 		database.Perms(observationCtx.Logger, db, timeutil.Now),
@@ -152,7 +152,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		// separate name for logging and metrics.
 		authz.MakeResetter(observationCtx, repoWorkerStore),
 		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
-		repos.NewPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store),
+		repos.NewPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
 		updateScheduler,
 	}
@@ -176,7 +176,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
 		logger.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
 	} else {
-		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"), db, conf.DefaultClient()))
+		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker"), db, conf.DefaultClient()))
 	}
 
 	// Register recorder in all routines that support it.
@@ -316,7 +316,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 				return
 			}
 		}
-		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos", ""), db, limit, perSecond)
+		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos"), db, limit, perSecond)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
 			return

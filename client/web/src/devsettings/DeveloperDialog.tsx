@@ -46,7 +46,7 @@ import {
 
 import { FEATURE_FLAGS, type FeatureFlagName } from '../featureFlags/featureFlags'
 import {
-    getFeatureFlagOverrideValue,
+    getFeatureFlagOverride,
     removeFeatureFlagOverride,
     setFeatureFlagOverride,
 } from '../featureFlags/lib/feature-flag-local-overrides'
@@ -60,6 +60,7 @@ import {
     useOverrideCounter,
 } from '../stores'
 
+import { ReloadButton } from './DeveloperSettingsGlobalNavItem'
 import { EventLoggingDebugToggle } from './settings/eventLoggingDebug'
 
 import styles from './DeveloperDialog.module.scss'
@@ -161,8 +162,9 @@ const FeatureFlags: FC<{}> = () => {
     return (
         <>
             <Alert variant="info" className="my-2">
-                Click on the respective "Override value" entry to cycle through enabled, disabled and not set. You might
-                have to reload the page after changing the value.
+                Click on the respective "Override value" entry to cycle through enabled, disabled and not set. If the
+                feature flag is used on the server, reload the page via the reload button to apply them to the intial
+                page load as well.
             </Alert>
             <div className="d-flex align-items-center my-2">
                 <Label className="mb-0" htmlFor="feature-flag-view">
@@ -189,6 +191,9 @@ const FeatureFlags: FC<{}> = () => {
                     onChange={value => setDeveloperSettingsFeatureFlags({ filter: value })}
                     placeholder="Filter feature flags..."
                 />
+                <ReloadButton className="ml-3 flex-1" variant="primary">
+                    Reload
+                </ReloadButton>
             </div>
             <div className="flex-1 overflow-auto min-h-0 mt-2">
                 <table>
@@ -217,7 +222,7 @@ const FeatureFlags: FC<{}> = () => {
 
 const FeatureFlagOverride: FC<{ featureFlag: FeatureFlagName; filter: string; serverValue?: boolean }> = memo(
     ({ featureFlag, filter, serverValue }) => {
-        const [overrideValue, setOverrideValue] = useState(getFeatureFlagOverrideValue(featureFlag))
+        const [overrideValue, setOverrideValue] = useState(getFeatureFlagOverride(featureFlag))
 
         const enabled = overrideValue === true || (overrideValue === null && serverValue)
         const overridden = overrideValue !== null
@@ -226,17 +231,16 @@ const FeatureFlagOverride: FC<{ featureFlag: FeatureFlagName; filter: string; se
             switch (overrideValue) {
                 case null:
                     setFeatureFlagOverride(featureFlag, true)
-                    updateOverrideCounter()
                     break
                 case true:
                     setFeatureFlagOverride(featureFlag, false)
                     break
                 case false:
                     removeFeatureFlagOverride(featureFlag)
-                    updateOverrideCounter()
                     break
             }
-            setOverrideValue(getFeatureFlagOverrideValue(featureFlag))
+            updateOverrideCounter()
+            setOverrideValue(getFeatureFlagOverride(featureFlag))
         }
 
         if ((filter === 'Enabled' && !enabled) || (filter === 'Overridden' && !overridden)) {

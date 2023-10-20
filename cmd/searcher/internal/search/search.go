@@ -231,7 +231,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	// structural search.
 	hybrid := !p.IsStructuralPat
 	if hybrid {
-		logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
 		)

@@ -13103,6 +13103,19 @@
           "Comment": ""
         },
         {
+          "Name": "creator_id",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "deleted_at",
           "Index": 7,
           "TypeName": "timestamp with time zone",
@@ -13184,6 +13197,19 @@
           "Name": "last_sync_at",
           "Index": 8,
           "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_updater_id",
+          "Index": 19,
+          "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -23751,6 +23777,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "idx_repo_gitlab_topics",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX idx_repo_gitlab_topics ON repo USING gin ((metadata -\u003e 'topics'::text)) WHERE external_service_type = 'gitlab'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_archived",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -28181,19 +28217,6 @@
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tags",
-          "Index": 15,
-          "TypeName": "text[]",
-          "IsNullable": true,
-          "Default": "'{}'::text[]",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

@@ -128,7 +128,7 @@ func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Optio
 	// enabled, caller should use goroutine.WithOperation
 	if r.operation == nil {
 		r.operation = observation.NewContext(
-			log.Scoped("periodic", "periodic goroutine handler"),
+			log.Scoped("periodic"),
 			observation.Tracer(oteltrace.NewNoopTracerProvider().Tracer("noop")),
 			observation.Metrics(metrics.NoOpRegisterer),
 		).Operation(observation.Op{
@@ -366,11 +366,11 @@ func (r *PeriodicGoroutine) withOperation(ctx context.Context, f func(ctx contex
 
 func (r *PeriodicGoroutine) withRecorder(ctx context.Context, f func(ctx context.Context) error) error {
 	if r.recorder == nil {
-		return f(ctx)
+		return runAndConvertPanicToError(ctx, f)
 	}
 
 	start := time.Now()
-	err := f(ctx)
+	err := runAndConvertPanicToError(ctx, f)
 	duration := time.Since(start)
 
 	go func() {
@@ -379,6 +379,21 @@ func (r *PeriodicGoroutine) withRecorder(ctx context.Context, f func(ctx context
 	}()
 
 	return err
+}
+
+// runAndConvertPanicToError invokes f with the given ctx and recovers any panics
+// by turning them into an error instead.
+func runAndConvertPanicToError(ctx context.Context, f func(ctx context.Context) error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(error); ok {
+				err = errors.Wrap(e, "panic occurred")
+			} else {
+				err = errors.Newf("panic occurred: %v", r)
+			}
+		}
+	}()
+	return f(ctx)
 }
 
 func typeFromOperations(operation *observation.Operation) recorder.RoutineType {

@@ -57,7 +57,7 @@ func New(logger log.Logger, raw, passphrase []byte) (*sshAgent, error) {
 
 	// Set up the type we're going to return.
 	a := &sshAgent{
-		logger:  logger.Scoped("sshAgent", "speaks the ssh-agent protocol and can be used by gitserver"),
+		logger:  logger.Scoped("sshAgent"),
 		l:       l,
 		sock:    socketName,
 		keyring: keyring,

@@ -109,6 +109,10 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventAzureDevOpsAuthFailed
 }
 
+func (s *sessionIssuerHelper) GetServiceID() string {
+	return s.ServiceID
+}
+
 func (s *sessionIssuerHelper) verifyAllowOrgs(ctx context.Context, profile *azuredevops.Profile, token *oauth2.Token) (bool, error) {
 	if len(s.allowOrgs) == 0 {
 		return true, nil

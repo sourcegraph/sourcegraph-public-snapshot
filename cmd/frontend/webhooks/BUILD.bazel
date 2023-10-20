@@ -51,6 +51,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/actor",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",

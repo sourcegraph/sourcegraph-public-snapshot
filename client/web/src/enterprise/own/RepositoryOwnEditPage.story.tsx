@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -62,7 +62,7 @@ const emptyResponse: MockedResponse<GetIngestedCodeownersResult, GetIngestedCode
     },
 }
 
-export const EmptyNonAdmin: Story = () => (
+export const EmptyNonAdmin: StoryFn = () => (
     <WebStory mocks={[emptyResponse]}>
         {({ useBreadcrumb }) => (
             <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
@@ -71,7 +71,7 @@ export const EmptyNonAdmin: Story = () => (
 )
 EmptyNonAdmin.storyName = 'Empty (non-admin)'
 
-export const EmptyAdmin: Story = () => (
+export const EmptyAdmin: StoryFn = () => (
     <WebStory mocks={[emptyResponse]}>
         {({ useBreadcrumb }) => (
             <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
@@ -102,7 +102,7 @@ const populatedResponse: MockedResponse<GetIngestedCodeownersResult, GetIngested
     },
 }
 
-export const PopulatedNonAdmin: Story = () => (
+export const PopulatedNonAdmin: StoryFn = () => (
     <WebStory mocks={[populatedResponse]}>
         {({ useBreadcrumb }) => (
             <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
@@ -111,7 +111,7 @@ export const PopulatedNonAdmin: Story = () => (
 )
 PopulatedNonAdmin.storyName = 'Populated (non-admin)'
 
-export const PopulatedAdmin: Story = () => (
+export const PopulatedAdmin: StoryFn = () => (
     <WebStory mocks={[populatedResponse]}>
         {({ useBreadcrumb }) => (
             <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />

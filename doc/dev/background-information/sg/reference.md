@@ -41,11 +41,13 @@ Available comamndsets in `sg.config.yaml`:
 * dotcom
 * enterprise
 * enterprise-bazel
+* enterprise-bazel-sveltekit
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
 * enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
+* enterprise-sveltekit
 * iam
 * monitoring
 * monitoring-alerts
@@ -54,6 +56,7 @@ Available comamndsets in `sg.config.yaml`:
 * single-program
 * web-standalone
 * web-standalone-prod
+* web-sveltekit-standalone
 
 ```sh
 # Run default environment, Sourcegraph enterprise:
@@ -142,6 +145,8 @@ Available commands in `sg.config.yaml`:
 * web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
+* web-sveltekit-prod-watch: Builds the prod version of the SvelteKit web app and rebuilds on changes
+* web-sveltekit-standalone: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
 * worker
 * zoekt-index-0
@@ -1525,75 +1530,6 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--type="<value>"`: the type of the RFC to create (valid: solution) (default: solution)
-
-## sg adr
-
-List, search, view, and create Sourcegraph Architecture Decision Records (ADRs).
-
-We use Architecture Decision Records (ADRs) only for logging decisions that have notable
-architectural impact on our codebase. Since we're a high-agency company, we encourage any
-contributor to commit an ADR if they've made an architecturally significant decision.
-
-ADRs are not meant to replace our current RFC process but to complement it by capturing
-decisions made in RFCs. However, ADRs do not need to come out of RFCs only. GitHub issues
-or pull requests, PoCs, team-wide discussions, and similar processes may result in an ADR
-as well.
-
-Learn more about ADRs here: https://docs.sourcegraph.com/dev/adr
-
-```sh
-# List all ADRs
-$ sg adr list
-
-# Search for an ADR
-$ sg adr search "search terms"
-
-# Open a specific index
-$ sg adr view 420
-
-# Create a new ADR!
-$ sg adr create my ADR title
-```
-
-### sg adr list
-
-List all ADRs.
-
-
-Flags:
-
-* `--asc`: List oldest ADRs first
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg adr search
-
-Search ADR titles and content.
-
-Arguments: `[terms...]`
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg adr view
-
-View an ADR.
-
-Arguments: `[number]`
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg adr create
-
-Create an ADR!.
-
-Arguments: `<title>`
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg live
 

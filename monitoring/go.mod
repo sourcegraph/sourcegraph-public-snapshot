@@ -9,7 +9,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/prometheus v0.40.5
-	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
+	github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230613175844-f031949c72f5
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli/v2 v2.23.7
@@ -34,7 +34,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
-	github.com/fatih/color v1.13.0 // indirect
+	github.com/fatih/color v1.15.0 // indirect
 	github.com/getsentry/sentry-go v0.21.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -64,9 +64,9 @@ require (
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53 // indirect

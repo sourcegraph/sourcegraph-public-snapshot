@@ -2626,6 +2626,8 @@ CREATE TABLE external_services (
     has_webhooks boolean,
     token_expires_at timestamp with time zone,
     code_host_id integer,
+    creator_id integer,
+    last_updater_id integer,
     CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text)),
     CONSTRAINT external_services_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );
@@ -4193,7 +4195,6 @@ CREATE TABLE users (
     site_admin boolean DEFAULT false NOT NULL,
     page_views integer DEFAULT 0 NOT NULL,
     search_queries integer DEFAULT 0 NOT NULL,
-    tags text[] DEFAULT '{}'::text[],
     billing_customer_id text,
     invalidated_sessions_at timestamp with time zone DEFAULT now() NOT NULL,
     tos_accepted boolean DEFAULT false NOT NULL,
@@ -6078,6 +6079,10 @@ CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, 
 CREATE INDEX idx_repo_github_topics ON repo USING gin ((((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text))) WHERE (external_service_type = 'github'::text);
 
 COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos by topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+
+CREATE INDEX idx_repo_gitlab_topics ON repo USING gin (((metadata -> 'topics'::text))) WHERE (external_service_type = 'gitlab'::text);
+
+COMMENT ON INDEX idx_repo_gitlab_topics IS 'An index to speed up listing repos by gitlab topic. Intended to be used when TopicFilters are added to the RepoListOptions';
 
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 

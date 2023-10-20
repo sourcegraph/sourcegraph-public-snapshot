@@ -44,7 +44,7 @@ interactions:
     url: https://gitlab.com/api/v4/projects/gnachman%2Fiterm2
     method: GET
   response:
-    body: '{"id":252461,"description":"Issues site for iTerm2","name":"iterm2","name_with_namespace":"George
+    body: '{"id":252461,"topics":["topic1", "topic2"],"description":"Issues site for iTerm2","name":"iterm2","name_with_namespace":"George
       Nachman / iterm2","path":"iterm2","path_with_namespace":"gnachman/iterm2","created_at":"2015-04-29T03:24:21.000Z","default_branch":"master","tag_list":[],"ssh_url_to_repo":"git@gitlab.com:gnachman/iterm2.git","http_url_to_repo":"https://gitlab.com/gnachman/iterm2.git","web_url":"https://gitlab.com/gnachman/iterm2","readme_url":"https://gitlab.com/gnachman/iterm2/blob/master/README.md","avatar_url":"https://assets.gitlab-static.net/uploads/-/system/project/avatar/252461/icon_256x256_2x.png","star_count":657,"forks_count":41,"last_activity_at":"2019-05-03T13:19:07.302Z","namespace":{"id":63972,"name":"gnachman","path":"gnachman","kind":"user","full_path":"gnachman","parent_id":null}}'
     headers:
       Cache-Control:
@@ -85,7 +85,7 @@ interactions:
     url: https://gitlab.com/api/v4/projects/13083
     method: GET
   response:
-    body: '{"id":13083,"description":"GitLab Community Edition (CE) is an open source
+    body: '{"id":13083,"topics":["topic1", "topic2"],"description":"GitLab Community Edition (CE) is an open source
       end-to-end software development platform with built-in version control, issue
       tracking, code review, CI/CD, and more. Self-host GitLab CE on your own servers,
       in a container, or on a cloud provider.","name":"GitLab Community Edition","name_with_namespace":"GitLab.org

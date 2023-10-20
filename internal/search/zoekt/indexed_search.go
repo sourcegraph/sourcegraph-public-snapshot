@@ -257,7 +257,7 @@ func PartitionRepos(
 	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.ReposMap)))
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.ReposMap, repos, filterFunc) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	indexed, unindexed = zoektIndexedRepos(list.ReposMap, repos, filterFunc)
 
 	tr.SetAttributes(
 		attribute.Int("indexed.size", len(indexed.RepoRevs)),

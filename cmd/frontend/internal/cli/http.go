@@ -47,7 +47,7 @@ func newExternalHTTPHandler(
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) (http.Handler, error) {
-	logger := log.Scoped("external", "external http handlers")
+	logger := log.Scoped("external")
 
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
@@ -148,7 +148,7 @@ func newInternalHTTPHandler(
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 ) http.Handler {
 	internalMux := http.NewServeMux()
-	logger := log.Scoped("internal", "internal http handlers")
+	logger := log.Scoped("internal")
 
 	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
 	internalhttpapi.RegisterInternalServices(

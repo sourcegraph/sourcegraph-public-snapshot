@@ -31,7 +31,7 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 	case *Regexp:
 		newContent = match.Value.ReplaceAllString(string(content), replacePattern)
 	case *Comby:
-		replacements, err := comby.Replacements(ctx, log.Scoped("compute", ""), comby.Args{
+		replacements, err := comby.Replacements(ctx, log.Scoped("compute"), comby.Args{
 			Input:           comby.FileContent(content),
 			MatchTemplate:   match.Value,
 			RewriteTemplate: replacePattern,

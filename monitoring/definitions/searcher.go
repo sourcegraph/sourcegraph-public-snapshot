@@ -240,6 +240,10 @@ regularly above 0 it is a sign for further investigation.`,
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "searcher",
+				InstanceFilterRegex: `${instance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
