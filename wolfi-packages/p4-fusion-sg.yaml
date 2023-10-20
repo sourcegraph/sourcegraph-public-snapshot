@@ -1,0 +1,86 @@
+# Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/gitserver/p4-fusion-install-alpine.sh
+
+package:
+  name: p4-fusion-sg
+  version: 1.13.1
+  epoch: 0
+  description: "A fast Perforce to Git conversion tool, Sourcegraph fork"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: 'Copyright (c) 2022 Salesforce, Inc.'
+      license: 'BSD 3-Clause License'
+  dependencies:
+    runtime:
+      - libstdc++
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - wget
+      - perl
+      - bash
+      - cmake
+      - busybox
+      - ca-certificates-bundle
+
+pipeline:
+  # Download p4-fusion
+  - uses: fetch
+    with:
+      uri: https://github.com/sourcegraph/p4-fusion/archive/1927d60872e88244d9421865a1ebcfa89d4d893f.tar.gz
+      expected-sha256: 16cc228293590c294c08d8bd53d228393ca72f4d998b6f38d78dc108969f5003
+      extract: false
+  - runs: |
+      mkdir p4-fusion-src
+      tar -C p4-fusion-src -xzf 1927d60872e88244d9421865a1ebcfa89d4d893f.tar.gz --strip 1
+
+  # Download OpenSSL
+  - uses: fetch
+    with:
+      uri: https://www.openssl.org/source/openssl-1.0.2t.tar.gz
+      expected-sha256: 14cb464efe7ac6b54799b34456bd69558a749a4931ecfd9cf9f71d7881cac7bc
+      extract: false
+  - runs: |
+      mkdir openssl-src
+      tar -C openssl-src -xzf openssl-1.0.2t.tar.gz --strip 1
+
+  # Download Helix Core C++ API
+  - uses: fetch
+    with:
+      uri: https://www.perforce.com/downloads/perforce/r22.1/bin.linux26x86_64/p4api-glibc2.3-openssl1.0.2.tgz
+      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r22.1/bin.linux26x86_64/SHA256SUMS (check version)
+      expected-sha256: 7a7ca5b1b6c2401282a30c93065cd88f1bb47412246231c640ad3a6b7002c93b
+      extract: false
+  - runs: |
+      mkdir -p p4-fusion-src/vendor/helix-core-api/linux
+      tar -C p4-fusion-src/vendor/helix-core-api/linux -xzf p4api-glibc2.3-openssl1.0.2.tgz --strip 1
+
+  # Build OpenSSL
+  - runs: |
+      cd openssl-src
+      ./config
+  - runs: |
+      cd openssl-src
+      make build_libs
+  - runs: |
+      cd openssl-src
+      make install
+
+  # Build p4-fusion
+  - runs: |
+      cd p4-fusion-src
+      ./generate_cache.sh RelWithDebInfo
+      ./build.sh
+
+  # Copy p4-fusion binary
+  - runs: |
+      mkdir -p ${{targets.destdir}}/usr/local/bin/
+      cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/p4-fusion-binary
