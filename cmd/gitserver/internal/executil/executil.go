@@ -107,8 +107,7 @@ func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, er
 	return buf.Bytes(), err
 }
 
-// RunRemoteGitCommand runs the command after applying the remote options. If
-// progress is not nil, all output is written to it in a separate goroutine.
+// RunRemoteGitCommand runs the command after applying the remote options.
 func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
