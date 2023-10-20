@@ -3,6 +3,7 @@ import type { Observable } from 'rxjs'
 
 import { getGraphQLClient, type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 
+import { getFeatureFlagOverrides } from '../featureFlags/lib/feature-flag-local-overrides'
 import type { WebGraphQlOperations } from '../graphql-operations'
 
 import { getPersistentCache } from './getPersistentCache'
@@ -18,7 +19,19 @@ const getHeaders = (): { [header: string]: string } => {
     if (trace) {
         headers['X-Sourcegraph-Should-Trace'] = trace
     }
-    const feat = parameters.getAll('feat')
+
+    // Get values from URL and local overrides
+    let feat = parameters.getAll('feat')
+    if (process.env.NODE_ENV === 'development') {
+        // Use Set to dedupe values from the URL and local. At some point during page
+        // rendering the overrides from the URL will be synced to local.
+        // It's not necessary to dedupe them (duplicate values are not a problem),
+        // but it's less surprising when inspecting requests.
+        feat = Array.from(
+            new Set(feat.concat(Array.from(getFeatureFlagOverrides(), ([flag, value]) => (value ? '' : '-') + flag)))
+        )
+    }
+
     if (feat.length) {
         headers['X-Sourcegraph-Override-Feature'] = feat.join(',')
     }
@@ -100,7 +113,7 @@ export const getWebGraphQLClient = memoize(async () => {
 
     const client = await getGraphQLClient({
         cache: persistentCache,
-        headers: getHeaders(),
+        getHeaders,
     })
 
     return client

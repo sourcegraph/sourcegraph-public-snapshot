@@ -1095,6 +1095,7 @@ ts_project(
         "src/featureFlags/lib/feature-flag-local-overrides.ts",
         "src/featureFlags/lib/parseUrlOverrideFeatureFlags.ts",
         "src/featureFlags/useFeatureFlag.ts",
+        "src/featureFlags/useFeatureFlagOverrides.ts",
         "src/featureFlags/withFeatureFlag.tsx",
         "src/fuzzyFinder/AggregateFuzzySearch.ts",
         "src/fuzzyFinder/CaseInsensitiveFuzzySearch.ts",

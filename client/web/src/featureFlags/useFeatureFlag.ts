@@ -4,7 +4,7 @@ import { getDocumentNode, gql, useQuery } from '@sourcegraph/http-client'
 import type { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
 
 import type { FeatureFlagName } from './featureFlags'
-import { getFeatureFlagOverrideValue } from './lib/feature-flag-local-overrides'
+import { getFeatureFlagOverride } from './lib/feature-flag-local-overrides'
 
 export const EVALUATE_FEATURE_FLAG_QUERY = getDocumentNode(gql`
     query EvaluateFeatureFlag($flagName: String!) {
@@ -40,8 +40,8 @@ export function useFeatureFlag(
      */
     flagStates = FLAG_STATES
 ): [boolean, FetchStatus, EvaluateError?] {
-    const overriddenValue = getFeatureFlagOverrideValue(flagName)
-    const overriddenValueExists = typeof overriddenValue === 'boolean'
+    const overriddenValue = getFeatureFlagOverride(flagName)
+    const overriddenValueExists = overriddenValue !== null
 
     const { data, error, refetch } = useQuery<EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables>(
         EVALUATE_FEATURE_FLAG_QUERY,
