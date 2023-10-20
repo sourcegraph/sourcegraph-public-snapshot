@@ -26,6 +26,7 @@ func NewNpmPackagesSyncer(
 	connection schema.NpmPackagesConnection,
 	svc *dependencies.Service,
 	client npm.Client,
+	reposDir string,
 ) VCSSyncer {
 	placeholder, err := reposource.ParseNpmVersionedPackage("@sourcegraph/placeholder@1.0.0")
 	if err != nil {
@@ -39,6 +40,7 @@ func NewNpmPackagesSyncer(
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Dependencies,
+		reposDir:    reposDir,
 		source:      &npmPackagesSyncer{client: client},
 	}
 }

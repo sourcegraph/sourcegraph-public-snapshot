@@ -36,7 +36,7 @@ const (
 	jvmMajorVersion0 = 44
 )
 
-func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service, cacheDir string) VCSSyncer {
+func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service, cacheDir string, reposDir string) VCSSyncer {
 	placeholder, err := reposource.ParseMavenVersionedPackage("com.sourcegraph:sourcegraph:1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
@@ -51,6 +51,7 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Maven.Dependencies,
+		reposDir:    reposDir,
 		source: &jvmPackagesSyncer{
 			coursier: chandle,
 			config:   connection,
