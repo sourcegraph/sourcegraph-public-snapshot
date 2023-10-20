@@ -31,7 +31,7 @@ type gitRepoSyncer struct {
 }
 
 func NewGitRepoSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
-	return &gitRepoSyncer{logger: logger.Scoped("GitRepoSyncer", ""), recordingCommandFactory: r}
+	return &gitRepoSyncer{logger: logger.Scoped("GitRepoSyncer"), recordingCommandFactory: r}
 }
 
 func (s *gitRepoSyncer) Type() string {

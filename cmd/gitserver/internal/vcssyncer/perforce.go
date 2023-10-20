@@ -48,7 +48,7 @@ type perforceDepotSyncer struct {
 
 func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, connection *schema.PerforceConnection, p4Home string) VCSSyncer {
 	return &perforceDepotSyncer{
-		logger:                  logger.Scoped("PerforceDepotSyncer", ""),
+		logger:                  logger.Scoped("PerforceDepotSyncer"),
 		recordingCommandFactory: r,
 		MaxChanges:              int(connection.MaxChanges),
 		P4Client:                connection.P4Client,
