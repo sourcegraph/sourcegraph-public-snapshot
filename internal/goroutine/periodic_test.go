@@ -308,6 +308,60 @@ func TestPeriodicGoroutineError(t *testing.T) {
 	}
 }
 
+func TestPeriodicGoroutinePanic(t *testing.T) {
+	clock := glock.NewMockClock()
+	handler := NewMockHandlerWithErrorHandler()
+
+	calls := 0
+	called := make(chan struct{}, 1)
+	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
+		calls++
+		defer func() {
+			called <- struct{}{}
+		}()
+
+		if calls == 1 {
+			panic("oops")
+		}
+
+		return nil
+	})
+
+	goroutine := NewPeriodicGoroutine(
+		context.Background(),
+		handler,
+		WithName(t.Name()),
+		WithInterval(time.Second),
+		withClock(clock),
+	)
+	go goroutine.Start()
+
+	clock.BlockingAdvance(time.Second)
+	select {
+	case <-called:
+	case <-time.After(time.Second):
+		t.Fatal("first call didn't happen within 1s")
+	}
+	// Run a second time to make sure it actually is invoked again after the
+	// panic. Periodic goroutines turn panics into errors (analogous to
+	// goroutine.Go which silences panics), and we expect to keep running a periodic
+	// routine after a panic.
+	clock.BlockingAdvance(time.Second)
+	select {
+	case <-called:
+	case <-time.After(time.Second):
+		t.Fatal("second call didn't happen within 1s")
+	}
+	goroutine.Stop()
+
+	if calls := len(handler.HandleFunc.History()); calls != 2 {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4, calls)
+	}
+	if calls := len(handler.HandleErrorFunc.History()); calls != 1 {
+		t.Errorf("unexpected number of error handler invocations. want=%d have=%d", 4, calls)
+	}
+}
+
 func TestPeriodicGoroutineContextError(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := NewMockHandlerWithErrorHandler()

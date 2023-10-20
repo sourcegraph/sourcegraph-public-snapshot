@@ -2,8 +2,8 @@
 
 package:
   name: p4-fusion
-  version: 1.12
-  epoch: 6
+  version: 1.13.1-sg
+  epoch: 0
   description: "A fast Perforce to Git conversion tool"
   target-architecture:
     - x86_64
@@ -35,12 +35,12 @@ pipeline:
   # Download p4-fusion
   - uses: fetch
     with:
-      uri: https://github.com/salesforce/p4-fusion/archive/refs/tags/v${{package.version}}.tar.gz
-      expected-sha256: f5cbca35880aad2e6fac05c669dab6c13c3389aa62cbc5d5ee2ce73e77bcfe78
+      uri: https://github.com/sourcegraph/p4-fusion/archive/1927d60872e88244d9421865a1ebcfa89d4d893f.tar.gz
+      expected-sha256: 16cc228293590c294c08d8bd53d228393ca72f4d998b6f38d78dc108969f5003
       extract: false
   - runs: |
       mkdir p4-fusion-src
-      tar -C p4-fusion-src -xzf v${{package.version}}.tar.gz --strip 1
+      tar -C p4-fusion-src -xzf 1927d60872e88244d9421865a1ebcfa89d4d893f.tar.gz --strip 1
 
   # Download OpenSSL
   - uses: fetch

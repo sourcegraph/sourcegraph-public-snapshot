@@ -1189,22 +1189,28 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	if len(opt.TopicFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.TopicFilters {
+			filter := filter
 			// This condition checks that the requested topics are contained in
 			// the repo's metadata. This is designed to work with the
-			// idx_repo_github_topics index.
+			// idx_repo_github_topics and idx_repo_gitlab_topics index
 			//
 			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
 			// syntax instead of JSONB literals so that we can use SQL
 			// variables for the user-provided topic names (don't want SQL
 			// injections here).
-			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			githubCond := sqlf.Sprintf(`external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`, filter.Topic)
+			gitlabCond := sqlf.Sprintf(`external_service_type = 'gitlab' AND metadata->'topics' @> jsonb_build_array(%s::text)`, filter.Topic)
+
 			if filter.Negated {
 				// Use Coalesce in case the JSON access evaluates to NULL.
 				// Since negating a NULL evaluates to NULL, we want to
 				// explicitly treat NULLs as false first
-				cond = `NOT COALESCE(` + cond + `, false)`
+				cond := sqlf.Sprintf(`NOT (COALESCE(%s, false) OR COALESCE(%s, false))`, githubCond, gitlabCond)
+				ands = append(ands, cond)
+			} else {
+				cond := sqlf.Sprintf("(%s)", sqlf.Join([]*sqlf.Query{githubCond, gitlabCond}, "OR"))
+				ands = append(ands, cond)
 			}
-			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
