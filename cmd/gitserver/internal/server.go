@@ -1456,13 +1456,12 @@ func (s *Server) doClone(
 	// We clone to a temporary location first to avoid having incomplete
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
-	tmpPath, err := gitserverfs.TempDir(s.ReposDir, "clone-")
+	tmpDir, err := gitserverfs.TempDir(s.ReposDir, "clone-")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmpPath)
-	tmpPath = filepath.Join(tmpPath, ".git")
-	tmp := common.GitDir(tmpPath)
+	defer os.RemoveAll(tmpDir)
+	tmpPath := filepath.Join(tmpDir, ".git")
 
 	// It may already be cloned
 	if !repoCloned(dir) {
@@ -1477,7 +1476,7 @@ func (s *Server) doClone(
 		}
 	}()
 
-	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
+	logger.Info("cloning repo", log.String("tmp", tmpDir), log.String("dst", dstPath))
 
 	progressReader, progressWriter := io.Pipe()
 	defer progressWriter.Close()
@@ -1503,16 +1502,16 @@ func (s *Server) doClone(
 	}
 
 	if testRepoCorrupter != nil {
-		testRepoCorrupter(ctx, tmp)
+		testRepoCorrupter(ctx, common.GitDir(tmpPath))
 	}
 
-	if err := postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, tmp, remoteURL, syncer); err != nil {
+	if err := postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, common.GitDir(tmpPath), remoteURL, syncer); err != nil {
 		return err
 	}
 
 	if opts.Overwrite {
 		// remove the current repo by putting it into our temporary directory
-		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
+		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpDir), "old"))
 		if err != nil && !os.IsNotExist(err) {
 			return errors.Wrapf(err, "failed to remove old clone")
 		}
@@ -1608,12 +1607,14 @@ func postRepoFetchActions(
 	// Note: We use a multi error in this function to try to make as many of the
 	// post repo fetch actions succeed.
 
-	if err := git.RemoveBadRefs(ctx, dir); err != nil {
-		errs = errors.Append(errs, errors.Wrapf(err, "failed to remove bad refs for repo %q", repo))
-	}
-
+	// We run setHEAD first, because other commands further down can fail when no
+	// head exists.
 	if err := setHEAD(ctx, logger, rcf, repo, dir, syncer, remoteURL); err != nil {
 		errs = errors.Append(errs, errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo))
+	}
+
+	if err := git.RemoveBadRefs(ctx, dir); err != nil {
+		errs = errors.Append(errs, errors.Wrapf(err, "failed to remove bad refs for repo %q", repo))
 	}
 
 	if err := git.SetRepositoryType(rcf, reposDir, dir, syncer.Type()); err != nil {
@@ -1880,6 +1881,8 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	defer git.CleanTmpPackFiles(s.Logger, dir)
 
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
+	// TODO: Move the redaction also into the VCSSyncer layer here, to be in line
+	// with what clone does.
 	redactedOutput := urlredactor.New(remoteURL).Redact(string(output))
 	// best-effort update the output of the fetch
 	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {

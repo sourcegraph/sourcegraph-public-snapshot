@@ -458,7 +458,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
+	assertRepoState := func(status types.CloneStatus, size int64, wantErr string) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
@@ -466,15 +466,11 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		}
 		assert.Equal(t, status, fromDB.CloneStatus)
 		assert.Equal(t, size, fromDB.RepoSizeBytes)
-		var errString string
-		if wantErr != nil {
-			errString = wantErr.Error()
-		}
-		assert.Equal(t, errString, fromDB.LastError)
+		assert.Equal(t, wantErr, fromDB.LastError)
 	}
 
 	// Verify the gitserver repo entry exists.
-	assertRepoState(types.CloneStatusNotCloned, 0, nil)
+	assertRepoState(types.CloneStatusNotCloned, 0, "")
 
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
@@ -482,7 +478,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	for _, tc := range []struct {
 		name         string
 		getVCSSyncer func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error)
-		wantErr      error
+		wantErr      string
 	}{
 		{
 			name: "Not cloneable",
@@ -493,18 +489,20 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 				})
 				return m, nil
 			},
-			wantErr: errors.New("error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable"),
+			wantErr: "error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable",
 		},
 		{
 			name: "Failing clone",
 			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
 				m := vcssyncer.NewMockVCSSyncer()
-				m.CloneFunc.SetDefaultHook(func(context.Context, api.RepoName, *vcs.URL, common.GitDir, string, io.Writer) error {
-					return errors.New("fatal: repository '/dev/null' does not exist: exit status 128")
+				m.CloneFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ *vcs.URL, _ common.GitDir, _ string, w io.Writer) error {
+					_, err := fmt.Fprint(w, "fatal: repository '/dev/null' does not exist")
+					require.NoError(t, err)
+					return &exec.ExitError{ProcessState: &os.ProcessState{}}
 				})
 				return m, nil
 			},
-			wantErr: errors.New("failed to clone example.com/foo/bar: clone failed. Output: fatal: repository '/dev/null' does not exist: exit status 128"),
+			wantErr: "failed to clone example.com/foo/bar: clone failed. Output: fatal: repository '/dev/null' does not exist: exit status 0",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -868,19 +866,10 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		t.Cleanup(func() { testRepoCorrupter = nil })
 		// Use block so we get clone errors right here and don't have to rely on the
 		// clone queue. There's no other reason for blocking here, just convenience/simplicity.
-		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true}); err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+		_, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
+		require.NoError(t, err)
 
 		dst := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
-		for i := 0; i < 1000; i++ {
-			_, cloning := s.Locker.Status(dst)
-			if !cloning {
-				break
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
-
 		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
 			t.Fatal("expected a reconstituted HEAD, but no file exists")
