@@ -136,7 +136,7 @@
     },
     {
       "Name": "get_topics",
-      "Definition": "CREATE OR REPLACE FUNCTION public.get_topics(external_service_type text, metadata jsonb)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE\nRETURN CASE external_service_type WHEN 'github'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text(jsonb_path_query_array(get_topics.metadata, '$.\"RepositoryTopics\".\"Nodes\"[*].\"Topic\".\"Name\"'::jsonpath)) jsonb_array_elements_text(value)) WHEN 'gitlab'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text((get_topics.metadata -\u003e 'topics'::text)) jsonb_array_elements_text(value)) ELSE '{}'::text[] END\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.get_topics(external_service_type text, metadata jsonb)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE\nAS $function$\n    SELECT CASE external_service_type\n    WHEN 'github' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))\n    WHEN 'gitlab' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata-\u003e'topics'))\n    ELSE\n        '{}'::text[]\n    END;\n$function$\n"
     },
     {
       "Name": "invalidate_session_for_userid_on_password_change",

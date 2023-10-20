@@ -2,7 +2,8 @@ CREATE OR REPLACE FUNCTION get_topics(external_service_type text, metadata jsonb
     RETURNS text[]
     LANGUAGE SQL
     IMMUTABLE
-    RETURN CASE external_service_type
+AS $$
+    SELECT CASE external_service_type
     WHEN 'github' THEN
         ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))
     WHEN 'gitlab' THEN
@@ -10,6 +11,7 @@ CREATE OR REPLACE FUNCTION get_topics(external_service_type text, metadata jsonb
     ELSE
         '{}'::text[]
     END;
+$$;
 
 
 ALTER TABLE IF EXISTS repo

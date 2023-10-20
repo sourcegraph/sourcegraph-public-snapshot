@@ -441,7 +441,16 @@ $$;
 
 CREATE FUNCTION get_topics(external_service_type text, metadata jsonb) RETURNS text[]
     LANGUAGE sql IMMUTABLE
-    RETURN CASE external_service_type WHEN 'github'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text(jsonb_path_query_array(get_topics.metadata, '$."RepositoryTopics"."Nodes"[*]."Topic"."Name"'::jsonpath)) jsonb_array_elements_text(value)) WHEN 'gitlab'::text THEN ARRAY(SELECT jsonb_array_elements_text.value FROM jsonb_array_elements_text((get_topics.metadata -> 'topics'::text)) jsonb_array_elements_text(value)) ELSE '{}'::text[] END;
+    AS $_$
+    SELECT CASE external_service_type
+    WHEN 'github' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))
+    WHEN 'gitlab' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata->'topics'))
+    ELSE
+        '{}'::text[]
+    END;
+$_$;
 
 CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigger
     LANGUAGE plpgsql
