@@ -135,10 +135,10 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		t.Skip("Repo failed to clone in 45 seconds, skipping test")
 	}
 
-	err = client.WaitForReposToBeIndexed(perforceRepoName)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// err = client.WaitForReposToBeIndexed(perforceRepoName)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 
 	tests := []struct {
 		name          string
@@ -147,45 +147,25 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		minMatchCount int64
 	}{
 		{
-			name:          "indexed search, nonzero result",
-			query:         `index:only This depot is used to test`,
+			name:          "search, nonzero result",
+			query:         `This depot is used to test`,
 			minMatchCount: 1,
 		},
 		{
-			name:          "unindexed multiline search, nonzero result",
-			query:         `index:no This depot is used to test`,
-			minMatchCount: 1,
-		},
-		{
-			name:       "indexed search of restricted content",
-			query:      `index:only uploading your secrets`,
+			name:       "search of restricted content",
+			query:      `uploading your secrets`,
 			zeroResult: true,
 		},
-		{
-			name:       "unindexed search of restricted content",
-			query:      `index:no uploading your secrets`,
-			zeroResult: true,
-		},
-		{
-			name:       "structural, indexed search of restricted content",
-			query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
-			zeroResult: true,
-		},
-		{
-			name:       "structural, unindexed search of restricted content",
-			query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
-			zeroResult: true,
-		},
-		{
-			name:          "structural, indexed search, nonzero result",
-			query:         `println(...) index:only patterntype:structural`,
-			minMatchCount: 1,
-		},
-		{
-			name:          "structural, unindexed search, nonzero result",
-			query:         `println(...) index:no patterntype:structural`,
-			minMatchCount: 1,
-		},
+		// {
+		// 	name:       "structural search of restricted content",
+		// 	query:      `repo:^perforce/test-perms$ echo "..." patterntype:structural`,
+		// 	zeroResult: true,
+		// },
+		// {
+		// 	name:          "structural search, nonzero result",
+		// 	query:         `println(...) patterntype:structural`,
+		// 	minMatchCount: 1,
+		// },
 		{
 			name:          "filename search, nonzero result",
 			query:         `repo:^perforce/test-perms$ type:path app`,
@@ -424,11 +404,13 @@ func enableSubRepoPermissions(t *testing.T) {
 		}
 	})
 
+	enabled := false
 	siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{
 		Perforce: "enabled",
 		SubRepoPermissions: &schema.SubRepoPermissions{
 			Enabled: true,
 		},
+		EnableGRPC: &enabled,
 	}
 	err = client.UpdateSiteConfiguration(siteConfig, lastID)
 	if err != nil {

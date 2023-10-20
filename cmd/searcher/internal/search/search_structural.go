@@ -385,8 +385,10 @@ type filePatterns interface {
 func (universalSet) Value() {}
 func (subset) Value()       {}
 
-type universalSet struct{}
-type subset []string
+type (
+	universalSet struct{}
+	subset       []string
+)
 
 var all universalSet = struct{}{}
 

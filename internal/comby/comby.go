@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os/exec"
 	"strconv"
@@ -102,6 +103,7 @@ func toOutput(b []byte) (Result, error) {
 }
 
 func Run(ctx context.Context, logger log.Logger, args Args, unmarshal unmarshaller) (results []Result, err error) {
+	fmt.Println(args)
 	cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return nil, err

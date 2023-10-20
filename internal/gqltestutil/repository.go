@@ -80,7 +80,7 @@ mutation {
 	return errors.Wrap(err, "deleting repo from disk")
 }
 
-// WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories
+// WaitForReposToBeIndexed waits (up to 180 seconds) for all repositories
 // in the list to be indexed.
 //
 // This method requires the authenticated user to be a site admin.
@@ -99,7 +99,7 @@ func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 
 		const query = `
 query Repositories {
-	repositories(first: 1000, notIndexed: false, notCloned: false) {
+	repositories(first: 1000, indexed: false, notCloned: false) {
 		nodes {
 			name
 		}
