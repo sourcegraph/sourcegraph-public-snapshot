@@ -2,6 +2,7 @@ import React, {
     createContext,
     type FC,
     PropsWithChildren,
+    RefObject,
     Suspense,
     useContext,
     useEffect,
@@ -285,21 +286,22 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 }
 
 interface RepoContainerRootContextData {
-    rootElement: HTMLDivElement | null
+    rootElement: RefObject<HTMLElement>
 }
 
 const RepoContainerRootContext = createContext<RepoContainerRootContextData>({
-    rootElement: null,
+    rootElement: { current: null },
 })
 
 const RepoContainerRoot: FC<PropsWithChildren<{}>> = props => {
     const { children } = props
     const rootElementRef = useRef<HTMLDivElement>(null)
 
-    const context = useMemo(() => ({ rootElement: rootElementRef.current }), [rootElementRef.current])
     return (
         <div ref={rootElementRef} className={classNames('w-100 d-flex flex-row')}>
-            <RepoContainerRootContext.Provider value={context}>{children}</RepoContainerRootContext.Provider>
+            <RepoContainerRootContext.Provider value={{ rootElement: rootElementRef }}>
+                {children}
+            </RepoContainerRootContext.Provider>
         </div>
     )
 }
@@ -308,11 +310,11 @@ const RepoContainerRootPortal: FC<PropsWithChildren<{}>> = props => {
     const { children } = props
     const { rootElement } = useContext(RepoContainerRootContext)
 
-    if (!rootElement) {
+    if (!rootElement.current) {
         return null
     }
 
-    return createPortal(children, rootElement)
+    return createPortal(children, rootElement.current)
 }
 
 interface RepoUserContainerProps extends RepoContainerProps {
