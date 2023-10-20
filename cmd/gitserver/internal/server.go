@@ -1479,16 +1479,20 @@ func (s *Server) doClone(
 	logger.Info("cloning repo", log.String("tmp", tmpDir), log.String("dst", dstPath))
 
 	progressReader, progressWriter := io.Pipe()
-	defer progressWriter.Close()
 	// We also capture the entire output in memory for the call to SetLastOutput
 	// further down.
 	// TODO: This might require a lot of memory depending on the amount of logs
 	// produced, the ideal solution would be that readCloneProgress stores it in
 	// chunks.
 	output := &linebasedBufferedWriter{}
-	go readCloneProgress(s.DB, logger, lock, io.TeeReader(progressReader, output), repo)
+	eg := readCloneProgress(s.DB, logger, lock, io.TeeReader(progressReader, output), repo)
 
 	cloneErr := syncer.Clone(ctx, repo, remoteURL, dir, tmpPath, progressWriter)
+	progressWriter.Close()
+
+	if err := eg.Wait(); err != nil {
+		s.Logger.Error("reading clone progress", log.Error(err))
+	}
 
 	// best-effort update the output of the clone
 	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, output.String()); err != nil {
@@ -1652,7 +1656,7 @@ func postRepoFetchActions(
 // as the lock status, writes to a log file if siteConfig.cloneProgressLog is
 // enabled, and optionally to the database when the feature flag `clone-progress-logging`
 // is enabled.
-func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, pr io.Reader, repo api.RepoName) *errgroup.Group {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
@@ -1675,29 +1679,37 @@ func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, p
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
 	store := db.GitserverRepos()
-	for scan.Scan() {
-		progress := scan.Text()
-		lock.SetStatus(progress)
 
-		if logFile != nil {
-			// Failing to write here is non-fatal and we don't want to spam our logs if there
-			// are issues
-			_, _ = fmt.Fprintln(logFile, progress)
-		}
-		// Only write to the database persisted status if line indicates progress
-		// which is recognized by presence of a '%'. We filter these writes not to waste
-		// rate-limit tokens on log lines that would not be relevant to the user.
-		if enableExperimentalDBCloneProgress {
-			if strings.Contains(progress, "%") && dbWritesLimiter.Allow() {
-				if err := store.SetCloningProgress(ctx, repo, progress); err != nil {
-					logger.Error("error updating cloning progress in the db", log.Error(err))
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		for scan.Scan() {
+			progress := scan.Text()
+			lock.SetStatus(progress)
+
+			if logFile != nil {
+				// Failing to write here is non-fatal and we don't want to spam our logs if there
+				// are issues
+				_, _ = fmt.Fprintln(logFile, progress)
+			}
+			// Only write to the database persisted status if line indicates progress
+			// which is recognized by presence of a '%'. We filter these writes not to waste
+			// rate-limit tokens on log lines that would not be relevant to the user.
+			if enableExperimentalDBCloneProgress {
+				if strings.Contains(progress, "%") && dbWritesLimiter.Allow() {
+					if err := store.SetCloningProgress(ctx, repo, progress); err != nil {
+						logger.Error("error updating cloning progress in the db", log.Error(err))
+					}
 				}
 			}
 		}
-	}
-	if err := scan.Err(); err != nil {
-		logger.Error("error reporting progress", log.Error(err))
-	}
+		if err := scan.Err(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return eg
 }
 
 // scanCRLF is similar to bufio.ScanLines except it splits on both '\r' and '\n'
