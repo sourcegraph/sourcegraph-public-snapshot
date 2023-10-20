@@ -80,7 +80,7 @@ mutation {
 	return errors.Wrap(err, "deleting repo from disk")
 }
 
-// WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories
+// WaitForReposToBeIndexed waits (up to 180 seconds) for all repositories
 // in the list to be indexed.
 //
 // This method requires the authenticated user to be a site admin.
