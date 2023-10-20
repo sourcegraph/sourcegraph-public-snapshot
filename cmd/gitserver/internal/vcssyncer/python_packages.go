@@ -35,6 +35,7 @@ func NewPythonPackagesSyncer(
 		svc:         svc,
 		configDeps:  connection.Dependencies,
 		source:      &pythonPackagesSyncer{client: client, reposDir: reposDir},
+		reposDir:    reposDir,
 	}
 }
 
@@ -152,22 +153,4 @@ func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) er
 	}
 
 	return stripSingleOutermostDirectory(workDir)
-}
-
-func writeZipToTemp(tmpdir string, pkg io.Reader) (*os.File, int64, error) {
-	// Create a temp file.
-	f, err := os.CreateTemp(tmpdir, "pypi-package-")
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Write contents to file.
-	read, err := io.Copy(f, pkg)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Reset read head.
-	_, err = f.Seek(0, 0)
-	return f, read, err
 }
