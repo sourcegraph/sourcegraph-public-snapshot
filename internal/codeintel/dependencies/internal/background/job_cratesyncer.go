@@ -229,7 +229,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 					Scheme:  pkg.Scheme,
 					Name:    pkg.Name,
 					Version: version.Version,
-				}, true); err != nil {
+				}); err != nil {
 					queueErrs = errors.Append(queueErrs, err)
 				}
 			}
