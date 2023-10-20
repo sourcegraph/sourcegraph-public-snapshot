@@ -102,6 +102,9 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 		"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 		"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
 		"--noColor", "true",
+		// We don't want an empty commit for a sane merge base across branches,
+		// since we don't use them and the empty commit breaks changelist parsing.
+		"--noBaseCommit", "true",
 	)
 }
 
