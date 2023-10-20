@@ -14,7 +14,6 @@ import {
     Input,
     Link,
     Badge,
-    type BadgeProps,
     Icon,
     Text,
 } from '@sourcegraph/wildcard'
@@ -34,6 +33,7 @@ import { ExternalRepositoryIcon } from '../../../../site-admin/components/Extern
 import { PermissionsSyncJobsTable } from '../../../../site-admin/permissions-center/PermissionsSyncJobsTable'
 import { Table, type IColumn } from '../../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../../tracking/eventLogger'
+import { PermissionReasonBadgeProps } from '../../../settings/permissons'
 
 import { scheduleUserPermissionsSync, UserPermissionsInfoQuery } from './backend'
 
@@ -213,19 +213,6 @@ const TableColumns: IColumn<INode>[] = [
         ),
     },
 ]
-
-const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
-    'Permissions Sync': {
-        variant: 'success',
-        tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
-    },
-    Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
-    'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
-    'Explicit API': {
-        variant: 'success',
-        tooltip: 'The permission was granted through explicit permissions API.',
-    },
-}
 
 interface ScheduleUserPermissionsSyncActionContainerProps {
     user: { id: string; username: string }

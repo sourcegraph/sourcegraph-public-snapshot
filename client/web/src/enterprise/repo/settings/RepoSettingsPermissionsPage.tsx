@@ -15,7 +15,6 @@ import {
     Link,
     Input,
     Badge,
-    type BadgeProps,
     useDebounce,
     PageSwitcher,
     Icon,
@@ -42,6 +41,7 @@ import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
 import { PermissionsSyncJobsTable } from '../../../site-admin/permissions-center/PermissionsSyncJobsTable'
 import { Table, type IColumn } from '../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { PermissionReasonBadgeProps } from '../../settings/permissons'
 
 import { RepoPermissionsInfoQuery } from './backend'
 
@@ -106,6 +106,8 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                 {!repo.isPrivate ? (
                     <Alert className="mb-0" variant="info">
                         Access to this repository is <strong>not restricted</strong>, all Sourcegraph users have access.
+                        This could be because the repository is a public repository, or because a code host connection
+                        that this repository belongs to does not have authorization enabled.
                     </Alert>
                 ) : !permissionsInfo ? (
                     <Alert className="mb-0" variant="info">
@@ -251,19 +253,6 @@ export const RenderUsernameAndEmail: FC<{ user: IUser }> = ({ user }) => {
             </Popover>
         </div>
     )
-}
-
-const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
-    'Permissions Sync': {
-        variant: 'success',
-        tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
-    },
-    Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
-    'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
-    'Explicit API': {
-        variant: 'success',
-        tooltip: 'The permission was granted through explicit permissions API.',
-    },
 }
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {
