@@ -16,7 +16,7 @@ import (
 const (
 	perforceRepoName = "perforce/test-perms"
 	testPermsDepot   = "test-perms"
-	aliceEmail       = "alice@perforce-tests.sgdev.org"
+	aliceEmail       = "alice@perforce.sgdev.org"
 	aliceUsername    = "alice"
 )
 
@@ -85,14 +85,15 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSymbols(t *testing.T) {
-	t.Skip("SKIPPED because this fails in Aspect Workflows CI")
+	// t.Skip("SKIPPED because this fails in Aspect Workflows CI")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
 	t.Cleanup(cleanup)
 	userClient, repoName, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
-		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+		t.Fatal(err)
+		// t.Skip("Repo failed to clone in 45 seconds, skipping test")
 	}
 
 	err = client.WaitForReposToBeIndexed(perforceRepoName)
@@ -125,11 +126,12 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	time.Sleep(10 * time.Second) // Try to sleep for 10 seconds after editing site config
+	// time.Sleep(10 * time.Second) // Try to sleep for 10 seconds after editing site config
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
 	t.Cleanup(cleanup)
 	userClient, _, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
+		t.Fatal(err)
 		t.Skip("Repo failed to clone in 45 seconds, skipping test")
 	}
 
@@ -351,7 +353,7 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 		t.Fatal(err)
 	}
 
-	err = userClient.WaitForReposToBeClonedWithin(5*time.Second, perforceRepoName)
+	err = client.WaitForReposToBeClonedWithin(120*time.Second, perforceRepoName)
 	if err != nil {
 		return nil, "", err
 	}
@@ -374,7 +376,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if userPermsInfo != nil && !userPermsInfo.SyncedAt.IsZero() {
+		if userPermsInfo != nil && !userPermsInfo.UpdatedAt.IsZero() {
 			return nil
 		}
 		return gqltestutil.ErrContinueRetry
