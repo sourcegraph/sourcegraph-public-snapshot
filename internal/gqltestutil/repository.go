@@ -99,7 +99,7 @@ func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 
 		const query = `
 query Repositories {
-	repositories(first: 1000, indexed: false, notCloned: false) {
+	repositories(first: 1000, notIndexed: false, notCloned: false) {
 		nodes {
 			name
 		}
