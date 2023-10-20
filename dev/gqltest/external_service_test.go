@@ -197,7 +197,7 @@ func TestExternalService_Perforce(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			blob, err := client.GitBlob(repoName, "master", tc.blobPath)
+			blob, err := client.GitBlob(repoName, "main", tc.blobPath)
 			if err != nil {
 				t.Fatal(err)
 			}
