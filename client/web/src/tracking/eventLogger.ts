@@ -12,7 +12,7 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
+import { getPreviousMonday, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -26,6 +26,8 @@ export const SESSION_REFERRER_KEY = 'sessionReferrer'
 export const SESSION_FIRST_URL_KEY = 'sessionFirstUrl'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
+
+const isSourcegraphDotComMode = window.context?.sourcegraphDotComMode || false
 
 /**
  * Indicates if the webapp ever receives a message from the user's Sourcegraph browser extension,
@@ -224,93 +226,67 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     public getFirstSourceURL(): string {
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
-
-        const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
-
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        // Always set to renew expiry and migrate from localStorage
-        cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-
         this.firstSourceURL = firstSourceURL
+
+        cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, this.cookieSettings)
         return firstSourceURL
     }
 
     public getLastSourceURL(): string {
         // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
         // lives in Google Tag Manager.
+
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
-
-        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
-
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        // Always set to renew expiry and migrate from localStorage
-        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
-
         this.lastSourceURL = lastSourceURL
+
+        cookies.set(LAST_SOURCE_URL_KEY, lastSourceURL, this.cookieSettings)
         return lastSourceURL
     }
 
     public getOriginalReferrer(): string {
         // Gets the original referrer from the cookie or if it doesn't exist, the mkto_referrer from the URL.
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const originalReferrer =
             this.originalReferrer ||
             cookies.get(ORIGINAL_REFERRER_KEY) ||
             cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
             document.referrer
-        try {
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            const url = new URL(originalReferrer)
-            const regexp = new RegExp('.sourcegraph.com')
-            if (url.hostname === 'sourcegraph.com' || regexp.test(url.hostname)) {
-                this.originalReferrer = ''
-                cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
-                return this.originalReferrer
-            }
-            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
-            return originalReferrer
-        } catch {
-            this.originalReferrer = ''
-            cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
-            return this.originalReferrer
-        }
+        this.originalReferrer = originalReferrer
+
+        cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+        return originalReferrer
     }
 
     public getSessionReferrer(): string {
         // Gets the session referrer from the cookie
-        const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
-        const regexp = new RegExp('.sourcegraph.com')
-        try {
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            const url = new URL(sessionReferrer)
-            if (url.hostname === 'sourcegraph.com' || regexp.test(url.hostname)) {
-                this.sessionReferrer = ''
-                cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
-                return this.sessionReferrer
-            }
-            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
-            return sessionReferrer
-        } catch {
-            this.sessionReferrer = ''
-            cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
-            return this.sessionReferrer
+        if (!isSourcegraphDotComMode) {
+            return ''
         }
+        const sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
+        this.sessionReferrer = sessionReferrer
+
+        cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
+        return sessionReferrer
     }
 
     public getSessionFirstURL(): string {
+        if (!isSourcegraphDotComMode) {
+            return ''
+        }
         const sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
+        this.sessionFirstURL = sessionFirstURL
 
-        const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstURL)
-
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        // Always set to renew expiry and migrate from localStorage
-        cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
-        this.sessionFirstURL = redactedURL
-        return this.sessionFirstURL
+        cookies.set(SESSION_FIRST_URL_KEY, sessionFirstURL, this.deviceSessionCookieSettings)
+        return sessionFirstURL
     }
 
     public getDeviceSessionID(): string {
@@ -349,18 +325,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getReferrer(): string {
         const referrer = document.referrer
-        try {
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            const url = new URL(referrer)
-            if (url.hostname === 'sourcegraph.com') {
-                return 'sourcegraph.com'
-            }
+        if (isSourcegraphDotComMode) {
             return referrer
-        } catch {
-            return ''
         }
+        return ''
     }
 
     public getClient(): string {
