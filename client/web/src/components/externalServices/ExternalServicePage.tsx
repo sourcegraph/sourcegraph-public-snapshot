@@ -164,6 +164,12 @@ export const ExternalServicePage: FC<Props> = props => {
                 />
             )
         }
+
+        const parsedConfig = JSON.parse(externalService.config)
+        const noAuthorization = parsedConfig['authorization'] === undefined
+        const noAuthProvider =
+            window.context.authProviders.filter(ap => ap.serviceID === externalService.parsedConfig?.url).length === 0
+
         const externalServiceCategory = resolveExternalServiceCategory(externalService)
         return (
             <Container className="mb-3">
@@ -246,6 +252,19 @@ export const ExternalServicePage: FC<Props> = props => {
                 {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
                 {externalServiceAvailabilityStatus}
                 <H2>Information</H2>
+                {noAuthorization && (
+                    <Alert className="mt-2" variant="warning">
+                        This code host connection does not have authorization configured. Any repositories added by this
+                        code host will be accessible by all users on the instance.
+                    </Alert>
+                )}
+                {!noAuthorization && noAuthProvider && (
+                    <Alert className="mt-2" variant="warning">
+                        This code host connection has authorization configured, but no authorization provider is
+                        configured. Users may not be able to access repositories. If this is intentional, you can safely
+                        ignore this warning.
+                    </Alert>
+                )}
                 {externalServiceCategory && (
                     <ExternalServiceInformation
                         displayName={externalService.displayName}
