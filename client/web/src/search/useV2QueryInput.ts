@@ -11,7 +11,7 @@ export function useV2QueryInput(): [boolean, UseTemporarySettingsReturnType<'sea
         features =>
             features.searchQueryInput === 'v2' ||
             // support the old `experimental` name that refers to the same thing as `v2`
-            features.searchQueryInput === 'experimental'
+            (features.searchQueryInput as any) === 'experimental'
     )
     const [userSettingEnabled, setUserSetting] = useTemporarySetting('search.input.experimental', true)
 
