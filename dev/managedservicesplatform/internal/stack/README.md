@@ -20,3 +20,4 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
   // ...
 }
 ```
+Hello World
