@@ -53,7 +53,7 @@ import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, type SearchStreamingProps } from '../search'
-import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
 import type { RouteV6Descriptor } from '../util/contributions'
@@ -402,11 +402,10 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const [enableExperimentalQueryInput] = useExperimentalQueryInput()
+    const [enableV2QueryInput] = useV2QueryInput()
     const queryPrefix = useMemo(
-        () =>
-            enableExperimentalQueryInput && selectedSearchContextSpec ? `context:${selectedSearchContextSpec} ` : '',
-        [enableExperimentalQueryInput, selectedSearchContextSpec]
+        () => (enableV2QueryInput && selectedSearchContextSpec ? `context:${selectedSearchContextSpec} ` : ''),
+        [enableV2QueryInput, selectedSearchContextSpec]
     )
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
