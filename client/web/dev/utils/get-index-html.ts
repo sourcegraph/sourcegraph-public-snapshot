@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 
 import type { SourcegraphContext } from '../../src/jscontext'
-import { WEB_BUILD_MANIFEST_FILENAME } from '../esbuild/manifestPlugin'
+import { assetPathPrefix, WEB_BUILD_MANIFEST_FILENAME, type WebBuildManifest } from '../esbuild/manifest'
 
 import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL } from '.'
 
@@ -13,19 +13,6 @@ export const HTML_INDEX_PATH = path.resolve(STATIC_ASSETS_PATH, 'index.html')
 
 export const getWebBuildManifest = (): WebBuildManifest =>
     JSON.parse(readFileSync(WEB_BUILD_MANIFEST_PATH, 'utf-8')) as WebBuildManifest
-
-export interface WebBuildManifest {
-    /** Main JS bundle */
-    'main.js': string
-    /** Main CSS bundle, only used in production mode */
-    'main.css': string
-    /** Embed entry bundle */
-    'embed.js'?: string
-    /** If script files should be treated as JS modules. Required for esbuild bundle. */
-    isModule?: boolean
-    /** The node env value `production | development` */
-    environment?: 'development' | 'production'
-}
 
 interface GetHTMLPageOptions {
     manifestFile: WebBuildManifest
@@ -49,7 +36,7 @@ interface GetHTMLPageOptions {
 export function getIndexHTML(options: GetHTMLPageOptions): string {
     const { manifestFile, jsContext, jsContextScript } = options
 
-    const { 'main.js': mainBundle, 'main.css': mainBundleCSS, isModule } = manifestFile
+    const { 'main.js': mainJS, 'main.css': mainCSS } = manifestFile
 
     return `
 <!DOCTYPE html>
@@ -60,7 +47,7 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
         <meta name="viewport" content="width=device-width, viewport-fit=cover" />
         <meta name="referrer" content="origin-when-cross-origin"/>
         <meta name="color-scheme" content="light dark"/>
-        ${mainBundleCSS ? `<link rel="stylesheet" href="${mainBundleCSS}">` : ''}
+        <link rel="stylesheet" href="${assetPathPrefix}/${mainCSS}">
         ${
             ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE
                 ? '<script src="https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js" crossorigin="anonymous"></script>'
@@ -81,7 +68,7 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
             }
         </script>
 
-        <script src="${mainBundle}" ${isModule ? 'type="module"' : ''}></script>
+        <script src="${assetPathPrefix}/${mainJS}" type="module"></script>
     </body>
 </html>
 `

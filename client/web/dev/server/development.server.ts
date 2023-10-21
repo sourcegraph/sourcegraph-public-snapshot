@@ -1,9 +1,8 @@
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
-import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
-import { ENVIRONMENT_CONFIG, getAPIProxySettings, getIndexHTML } from '../utils'
+import { ENVIRONMENT_CONFIG, getAPIProxySettings, getIndexHTML, getWebBuildManifest } from '../utils'
 
 const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
@@ -24,20 +23,17 @@ async function startDevelopmentServer(): Promise<void> {
 }
 
 async function startEsbuildDevelopmentServer({ apiURL }: DevelopmentServerInit): Promise<void> {
-    const manifestFile = getManifest()
-    const htmlPage = getIndexHTML({ manifestFile })
-
     const { proxyRoutes, ...proxyMiddlewareOptions } = getAPIProxySettings({
         apiURL,
         getLocalIndexHTML(jsContextScript) {
-            return getIndexHTML({ manifestFile, jsContextScript })
+            return getIndexHTML({ manifestFile: getWebBuildManifest(), jsContextScript })
         },
     })
 
     await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTP_PORT }, app => {
         app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))
         app.get(/.*/, (_request, response) => {
-            response.send(htmlPage)
+            response.send(getIndexHTML({ manifestFile: getWebBuildManifest() }))
         })
     })
 }

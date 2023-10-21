@@ -2125,7 +2125,7 @@ esbuild(
     ],
     minify = True,
     splitting = True,
-    visibility = ["//ui/assets:__subpackages__"],
+    visibility = ["//client/web/dist:__subpackages__"],
     deps = ESBUILD_CONFIG_DEPS,
 )
 

@@ -1,18 +1,8 @@
 package assets
 
 type WebBuildManifest struct {
-	// MainJSBundlePath contains the file name of the main
-	// bundle that serves as the entrypoint
-	// for the webapp code.
-	MainJSBundlePath string `json:"main.js"`
-	// EmbedJSBundlePath contains the file name of the
-	// bundle that serves as the entrypoint
-	// for the embeddable webapp code.
-	EmbedJSBundlePath string `json:"embed.js"`
-	// IsModule is whether the JavaScript files are modules (<script type="module">).
-	IsModule bool `json:"isModule"`
-	// Main CSS bundle, only present in production.
-	MainCSSBundlePath *string `json:"main.css"`
-	// Embed CSS bundle, only present in production.
-	EmbedCSSBundlePath *string `json:"embed.css"`
+	MainJSBundlePath   string `json:"main.js"`
+	MainCSSBundlePath  string `json:"main.css"`
+	EmbedJSBundlePath  string `json:"embed.js"`
+	EmbedCSSBundlePath string `json:"embed.css"`
 }

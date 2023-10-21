@@ -19,6 +19,8 @@ ts_project(
     name = "dev",
     srcs = [
         "esbuild/build.ts",
+        "esbuild/manifest.test.ts",
+        "esbuild/manifest.ts",
         "esbuild/manifestPlugin.ts",
         "esbuild/server.ts",
         "mocks/mockEventLogger.ts",
