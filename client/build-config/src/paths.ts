@@ -22,15 +22,7 @@ function resolveAssetsPath(root: string): string {
         return resolveWithSymlink(root, process.env.WEB_BUNDLE_PATH)
     }
 
-    if (process.env.NODE_ENV && process.env.NODE_ENV === 'development') {
-        return resolveWithSymlink(root, 'ui/assets')
-    }
-
-    // With Bazel we changed how assets gets bundled. Previsouly, we would just put the assets at /ui/assets/.assets
-    // and be done with it. With Bazel, we have different loaders on the backend where the assets gets embedded. So
-    // what we do here is "simulate" what happens in bazel, by putting the assets in the correct relative directory
-    // so that when the backend is compiled the assets gets embedded properly
-    return resolveWithSymlink(root, 'ui/assets/enterprise')
+    return resolveWithSymlink(root, 'client/web/dist')
 }
 
 export const ROOT_PATH = IS_BAZEL ? process.cwd() : resolveWithSymlink(__dirname, '../../../')

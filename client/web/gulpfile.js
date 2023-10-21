@@ -6,11 +6,8 @@ require('ts-node').register({
   project: path.resolve(__dirname, './dev/tsconfig.json'),
 })
 
-const compression = require('compression')
 const gulp = require('gulp')
 const { createProxyMiddleware } = require('http-proxy-middleware')
-const signale = require('signale')
-const { spawn } = require('child_process')
 
 const {
   graphQlOperations,
@@ -23,16 +20,7 @@ const {
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
-const {
-  ENVIRONMENT_CONFIG,
-  HTTPS_WEB_SERVER_URL,
-  DEV_SERVER_LISTEN_ADDR,
-  DEV_SERVER_PROXY_TARGET_ADDR,
-  shouldCompressResponse,
-  printSuccessBanner,
-} = require('./dev/utils')
-
-const { SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT } = ENVIRONMENT_CONFIG
+const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR } = require('./dev/utils')
 
 const webBuild = buildEsbuild
 

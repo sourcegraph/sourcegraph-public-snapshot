@@ -1,13 +1,6 @@
 const path = require('path')
 
-function relativeAssets(base) {
-  if (process.env.NODE_ENV !== undefined && process.env.NODE_ENV === 'development') {
-    return path.join(base, '../../ui/assets')
-  }
-  return path.join(base, '../../ui/assets/enterprise')
-}
-
-const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || relativeAssets(__dirname)
+const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(__dirname, 'dist')
 
 const config = {
   files: [
@@ -15,7 +8,7 @@ const config = {
      * Our main entry JavaScript bundles, contains core logic that is loaded on every page.
      */
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/main*.js'),
+      path: path.join(STATIC_ASSETS_PATH, 'main*.js'),
       /**
        * Note: Temporary increase from 400kb.
        * Primary cause is due to multiple ongoing migrations that mean we are duplicating similar dependencies.
@@ -24,7 +17,7 @@ const config = {
       maxSize: '500kb',
     },
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/embedMain*.js'),
+      path: path.join(STATIC_ASSETS_PATH, 'embedMain*.js'),
       maxSize: '155kb',
     },
     {
@@ -35,14 +28,14 @@ const config = {
      * Our main entry CSS bundle, contains core styles that are loaded on every page.
      */
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/main*.css'),
+      path: path.join(STATIC_ASSETS_PATH, 'main*.css'),
       maxSize: '350kb',
     },
     /**
      * Notebook embed main entry CSS bundle.
      */
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/embedMain*.css'),
+      path: path.join(STATIC_ASSETS_PATH, 'embedMain*.css'),
       maxSize: '350kb',
     },
     {

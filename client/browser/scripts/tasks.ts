@@ -129,8 +129,8 @@ export function copyIntegrationAssets(): void {
     copyInlineExtensions('build/integration')
     // Copy to the ui/assets directory so that these files can be served by
     // the webapp.
-    shelljs.mkdir('-p', '../../ui/assets/extension')
-    shelljs.cp('-r', 'build/integration/*', '../../ui/assets/extension')
+    shelljs.mkdir('-p', '../../client/web/dist/extension')
+    shelljs.cp('-r', 'build/integration/*', '../../client/web/dist/extension')
 }
 
 const BROWSER_TITLES = {

@@ -35,10 +35,10 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     format: 'esm',
     logLevel: 'error',
     jsx: 'automatic',
-    jsxDev: IS_DEVELOPMENT && !process.env.BAZEL_BIN,
+    jsxDev: IS_DEVELOPMENT,
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
-    entryNames: 'scripts/[name]-[hash]',
+    entryNames: '[name]-[hash]',
     outdir: STATIC_ASSETS_PATH,
     plugins: [
         stylePlugin,
@@ -74,7 +74,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
                   authToken: ENVIRONMENT_CONFIG.SENTRY_DOT_COM_AUTH_TOKEN,
                   silent: true,
                   release: { name: `frontend@${ENVIRONMENT_CONFIG.VERSION}` },
-                  sourcemaps: { assets: path.join(ENVIRONMENT_CONFIG.STATIC_ASSETS_PATH, 'scripts', '*.map') },
+                  sourcemaps: { assets: [path.join('dist', '*.map'), path.join('dist', 'chunks', '*.map')] },
               })
             : null,
     ].filter((plugin): plugin is esbuild.Plugin => plugin !== null),
@@ -98,10 +98,13 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
 }
 
 export const build = async (): Promise<void> => {
+    if (!BUILD_OPTIONS.outdir) {
+        throw new Error('no outdir')
+    }
+
     const metafile = process.env.ESBUILD_METAFILE
     const options: esbuild.BuildOptions = {
         ...BUILD_OPTIONS,
-        outdir: STATIC_ASSETS_PATH,
         metafile: Boolean(metafile),
     }
     const result = await esbuild.build(options)
@@ -109,7 +112,7 @@ export const build = async (): Promise<void> => {
         writeFileSync(metafile, JSON.stringify(result.metafile), 'utf-8')
     }
     if (!omitSlowDeps) {
-        const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        const ctx = await buildMonaco(BUILD_OPTIONS.outdir)
         await ctx.rebuild()
         await ctx.dispose()
     }
