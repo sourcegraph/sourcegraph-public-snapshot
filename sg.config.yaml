@@ -1613,7 +1613,7 @@ tests:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
   client:
-    cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
+    cmd: pnpm jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression --testPathIgnorePatterns integration --testPathIgnorePatterns storybook
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
