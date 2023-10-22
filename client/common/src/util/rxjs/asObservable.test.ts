@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { describe, it } from '@jest/globals'
 import { of } from 'rxjs'
 
 import { asObservable } from './asObservable'

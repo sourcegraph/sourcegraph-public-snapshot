@@ -52,6 +52,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":observability-server",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@types/node",
     ],
 )

@@ -1,15 +1,14 @@
+import { describe, expect, it } from '@jest/globals'
+
 // Note: This tests the pattern matcher implementation but also acts as a
 // verifier that patterns are properly typed against their input value.
 // Usage of the @ts-expect-error is intentional and should be kept in place
 
 import { every, matchesValue, some, oneOf, allOf, not, type PatternOfNoInfer } from './patternMatcher'
 
-declare global {
-    // eslint-disable-next-line @typescript-eslint/no-namespace
-    namespace jest {
-        interface Matchers<R, T> {
-            toBeMatchedBy<Data>(pattern: PatternOfNoInfer<T, Data>, expectedData?: Data, initialData?: Data): R
-        }
+declare module '@jest/expect' {
+    export interface Matchers<R, T> {
+        toBeMatchedBy<Data>(pattern: PatternOfNoInfer<T, Data>, expectedData?: Data, initialData?: Data): R
     }
 }
 

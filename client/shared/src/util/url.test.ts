@@ -1,3 +1,5 @@
+import { describe, expect, it, test } from '@jest/globals'
+
 import { isExternalLink } from '@sourcegraph/common'
 
 import { SearchPatternType } from '../graphql-operations'

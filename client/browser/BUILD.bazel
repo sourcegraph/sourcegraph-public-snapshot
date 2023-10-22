@@ -11,6 +11,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -247,12 +248,12 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@mdi/js",
         "//:node_modules/@reach/combobox",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/history",
-        "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mz",
         "//:node_modules/@types/node",
@@ -303,6 +304,7 @@ ts_project(
         "src/shared/code-hosts/shared/codeViews.test.ts",
         "src/shared/code-hosts/shared/views.test.ts",
         "src/shared/code-hosts/sourcegraph/inject.test.tsx",
+        "src/testGlobals.d.ts",  #keep
     ],
     tsconfig = ":tsconfig",
     deps = [
@@ -313,6 +315,8 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",  #keep
         ":node_modules/sourcegraph",
+        "//:node_modules/@jest/globals",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mz",
@@ -330,9 +334,22 @@ ts_project(
     ],
 )
 
+js_library(
+    name = "jest_config",
+    testonly = True,
+    srcs = [
+        "jest.config.js",
+    ],
+    data = [
+        "src/shared/jestSetupAfterEnv.js",
+    ],
+    deps = ["//:jest_config"],
+)
+
 jest_test(
     name = "test",
     timeout = "moderate",
+    config = ":jest_config",
     data = [
         ":browser_tests",
     ],

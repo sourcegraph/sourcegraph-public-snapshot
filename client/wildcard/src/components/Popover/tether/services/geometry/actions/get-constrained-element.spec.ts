@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { createRectangle } from '../../../models/geometry/rectangle'
 
 import { getConstrainedElement } from './get-constrained-element'

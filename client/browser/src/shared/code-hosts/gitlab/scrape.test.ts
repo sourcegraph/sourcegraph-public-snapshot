@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { getPageKindFromPathName, GitLabPageKind } from './scrape'
 
 describe('getPageKindFromPathName()', () => {
