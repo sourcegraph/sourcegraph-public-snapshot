@@ -721,9 +721,6 @@ importers:
       '@types/isomorphic-fetch':
         specifier: ^0.0.36
         version: 0.0.36
-      '@types/jest':
-        specifier: 28.1.0
-        version: 28.1.0
       '@types/js-cookie':
         specifier: 2.2.6
         version: 2.2.6
@@ -871,6 +868,9 @@ importers:
       browserslist:
         specifier: ^4.21.3
         version: 4.21.4
+      bun-types:
+        specifier: ^1.0.7
+        version: 1.0.7
       bundlesize2:
         specifier: ^0.0.31
         version: 0.0.31
@@ -14770,6 +14770,10 @@ packages:
   /builtin-status-codes@3.0.0:
     resolution: {integrity: sha512-HpGFw18DgFWlncDfjTa2rcQ4W88O1mC8e8yZ2AvQY5KDaktSTwo+KRf6nHK6FRI5FyRyb/5T6+TSxfP7QyGsmQ==}
     dev: false
+
+  /bun-types@1.0.7:
+    resolution: {integrity: sha512-zlIp+SCutbbugs6xDy+3WC3KO3zKySpF/bRfiTk/VJUdKt+WHAzlCtLplS7XglRYDFzhRhlzXMW/R5BHkw+u2Q==}
+    dev: true
 
   /bundle-name@3.0.0:
     resolution: {integrity: sha512-PKA4BeSvBpQKQ8iPOGCSiell+N8P+Tf1DlwqmYhpe2gAhKPHn8EYOxVT+ShuGmhg8lN8XiSlS80yiExKXrURlw==}

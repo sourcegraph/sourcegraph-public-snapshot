@@ -68,7 +68,6 @@ ts_project(
         "//:node_modules/@pollyjs/core",
         "//:node_modules/@pollyjs/persister-fs",
         "//:node_modules/@testing-library/react",
-        "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mime-types",
         "//:node_modules/@types/mocha",

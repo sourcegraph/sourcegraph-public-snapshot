@@ -176,7 +176,6 @@
     "@types/highlight.js": "9.12.4",
     "@types/history": "^4.7.11",
     "@types/isomorphic-fetch": "^0.0.36",
-    "@types/jest": "28.1.0",
     "@types/js-cookie": "2.2.6",
     "@types/js-yaml": "4.0.3",
     "@types/jsdom": "12.2.4",

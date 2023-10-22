@@ -44,7 +44,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
     # Add standard test libraries for the repo test frameworks
     if kwargs.get("testonly", False):
         deps = deps + [d for d in [
-            "//:node_modules/@types/jest",
+            "//:node_modules/@jest/globals",
             "//:node_modules/@types/mocha",
             "//:node_modules/@types/testing-library__jest-dom",
         ] if not d in deps]

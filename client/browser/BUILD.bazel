@@ -252,7 +252,6 @@ ts_project(
         "//:node_modules/@sentry/browser",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/history",
-        "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mz",
         "//:node_modules/@types/node",
