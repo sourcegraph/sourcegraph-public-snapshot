@@ -226,6 +226,7 @@
     "babel-jest": "^28.1.0",
     "babel-plugin-istanbul": "6.1.1",
     "browserslist": "^4.21.3",
+    "bun-types": "^1.0.7",
     "bundlesize2": "^0.0.31",
     "chalk": "^4.1.0",
     "chokidar-cli": "^2.1.0",
@@ -496,5 +497,10 @@
     "history": "4.5.1",
     "cssnano": "4.1.10",
     "tslib": "2.1.0"
-  }
+  },
+  "workspaces": [
+    "client/*",
+    "schema",
+    "dev/release"
+  ]
 }
