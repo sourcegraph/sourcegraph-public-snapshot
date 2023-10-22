@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -64,6 +65,12 @@ func (c *fireworksClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
+	// HACK: Cody Gateway expects model names in <provider>/<model> format, but if we're connecting directly to
+	// the Fireworks API, we need to strip the "fireworks" provider prefix
+	if components := strings.Split(requestParams.Model, "/"); components[0] == "fireworks" {
+		requestParams.Model = strings.Join(components[1:], "/")
+	}
+
 	resp, err := c.makeRequest(ctx, requestParams, true)
 	if err != nil {
 		return err
