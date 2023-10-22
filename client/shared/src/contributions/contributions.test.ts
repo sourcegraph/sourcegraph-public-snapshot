@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { ContributableMenu } from '@sourcegraph/client-api'
 
 import type { ActionItemAction } from '../actions/ActionItem'

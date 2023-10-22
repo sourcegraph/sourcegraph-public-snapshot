@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
 import { type Observer, of } from 'rxjs'
 import type { Hover } from 'sourcegraph'

@@ -1,3 +1,4 @@
+import { describe, expect } from '@jest/globals'
 import expect from 'expect'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'

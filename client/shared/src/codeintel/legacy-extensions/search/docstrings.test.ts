@@ -1,3 +1,4 @@
+import { describe, it } from '@jest/globals'
 import * as assert from 'assert'
 
 import { cStyleComment, javaStyleComment, leadingHashPattern, pythonStyleComment } from '../language-specs/comments'

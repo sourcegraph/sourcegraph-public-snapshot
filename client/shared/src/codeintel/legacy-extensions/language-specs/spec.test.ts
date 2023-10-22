@@ -1,3 +1,4 @@
+import { test } from '@jest/globals'
 import type { FilterContext, Result } from './language-spec'
 
 /**

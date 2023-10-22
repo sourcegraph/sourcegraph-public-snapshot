@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import React from 'react'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { scanPredicate, resolveAccess, PREDICATES } from './predicates'
 
 expect.addSnapshotSerializer({

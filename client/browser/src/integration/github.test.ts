@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, it } from '@jest/globals'
 import assert from 'assert'
 
 import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'

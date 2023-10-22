@@ -1,3 +1,4 @@
+import { describe } from '@jest/globals'
 import { testToolbarMountGetter } from '../shared/codeHostTestUtils'
 
 import { commitCodeView, diffCodeView } from './codeHost'

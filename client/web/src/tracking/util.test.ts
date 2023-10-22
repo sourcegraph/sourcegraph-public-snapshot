@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { getPreviousMonday } from './util'
 
 describe(`${getPreviousMonday.name}()`, () => {

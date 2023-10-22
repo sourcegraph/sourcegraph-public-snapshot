@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ToggleRenderedFileMode } from './ToggleRenderedFileMode'

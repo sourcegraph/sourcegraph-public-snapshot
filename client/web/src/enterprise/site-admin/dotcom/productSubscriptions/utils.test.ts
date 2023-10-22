@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { prettyInterval } from './utils'
 
 describe('prettyInterval', () => {

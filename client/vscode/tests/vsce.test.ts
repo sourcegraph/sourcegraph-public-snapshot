@@ -1,3 +1,4 @@
+import { beforeEach, describe, it } from '@jest/globals'
 import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 
 import {

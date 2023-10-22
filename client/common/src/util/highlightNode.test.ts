@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, test } from '@jest/globals'
 import * as dom from './highlightNode'
 
 describe('util/dom', () => {

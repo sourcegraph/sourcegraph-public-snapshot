@@ -1,3 +1,4 @@
+import { describe, test } from '@jest/globals'
 import { describe, test, before, after } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'

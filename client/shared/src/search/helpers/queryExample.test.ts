@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { FilterType } from '../query/filters'
 
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from './queryExample'

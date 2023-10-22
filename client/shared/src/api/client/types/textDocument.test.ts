@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import type { Position } from '@sourcegraph/extension-api-types'
 
 import type { DocumentSelector, TextDocument } from '../../../codeintel/legacy-extensions/api'

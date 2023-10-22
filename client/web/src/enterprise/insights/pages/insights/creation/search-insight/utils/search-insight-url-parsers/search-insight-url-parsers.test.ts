@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { decodeSearchInsightUrl, encodeSearchInsightUrl } from './search-insight-url-parsers'
 
 describe('decodeSearchInsightUrl', () => {

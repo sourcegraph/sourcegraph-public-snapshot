@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { type WebBuildManifest, createManifestFromBuildResult } from './manifest'
 
 describe('createManifestFromBuildResult', () => {

@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 // causes false positive on act()
 
 import { useMemo, useCallback } from 'react'

@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import type { Completion } from '@codemirror/autocomplete'
 
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'

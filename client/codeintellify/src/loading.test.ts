@@ -1,3 +1,4 @@
+import { describe, it } from '@jest/globals'
 import assert from 'assert'
 
 import { TestScheduler } from 'rxjs/testing'

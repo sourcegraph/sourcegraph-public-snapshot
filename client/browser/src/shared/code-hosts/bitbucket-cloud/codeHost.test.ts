@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { parseHash } from './codeHost'

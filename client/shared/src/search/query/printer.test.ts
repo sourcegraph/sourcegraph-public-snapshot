@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { stringHuman } from './printer'
 import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
 import type { Token } from './token'

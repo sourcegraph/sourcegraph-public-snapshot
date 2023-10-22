@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import type { SearchMatch, SearchType, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { searchResultsToFileContent, buildFileName } from './searchResultsExport'

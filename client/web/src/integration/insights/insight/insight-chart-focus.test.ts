@@ -1,3 +1,4 @@
+import { beforeEach, describe, it } from '@jest/globals'
 import assert from 'assert'
 
 import { Key } from 'ts-key-enum'

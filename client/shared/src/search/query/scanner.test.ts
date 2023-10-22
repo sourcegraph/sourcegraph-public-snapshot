@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { SearchPatternType } from '../../graphql-operations'
 
 import { scanSearchQuery, scanBalancedLiteral, toPatternResult } from './scanner'

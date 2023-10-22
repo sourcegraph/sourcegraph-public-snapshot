@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { formatDurationLong } from './time'
 
 describe('formatDurationLong', () => {

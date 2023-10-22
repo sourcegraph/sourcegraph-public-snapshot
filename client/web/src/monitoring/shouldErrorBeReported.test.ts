@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { AbortError } from '@sourcegraph/common'
 import { HTTPStatusError } from '@sourcegraph/http-client'
 

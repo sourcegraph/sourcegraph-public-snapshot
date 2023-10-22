@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { FilterType } from './filters'
 import { FilterKind, findFilter } from './query'
 import type { Filter } from './token'

@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { EditorState } from '@codemirror/state'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'

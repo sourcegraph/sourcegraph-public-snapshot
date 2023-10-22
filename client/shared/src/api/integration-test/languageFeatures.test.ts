@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import type { Remote } from 'comlink'
 import { asyncScheduler, type Observable, of, type Unsubscribable } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'

@@ -1,3 +1,4 @@
+import { describe } from '@jest/globals'
 import delay from 'delay'
 import { describe, before, test } from 'mocha'
 import { Key } from 'ts-key-enum'

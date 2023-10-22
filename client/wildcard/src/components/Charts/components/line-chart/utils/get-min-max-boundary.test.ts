@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { SeriesType, type SeriesWithData } from './data-series-processing'
 import { getMinMaxBoundaries } from './get-min-max-boundary'
 

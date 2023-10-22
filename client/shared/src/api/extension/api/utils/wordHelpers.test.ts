@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { getWordAtText } from './wordHelpers'
 
 describe('getWordAtText', () => {

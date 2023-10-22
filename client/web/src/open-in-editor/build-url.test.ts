@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { ExternalServiceKind } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 

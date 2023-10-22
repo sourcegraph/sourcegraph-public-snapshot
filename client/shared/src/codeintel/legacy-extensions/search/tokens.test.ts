@@ -1,3 +1,4 @@
+import { describe, it } from '@jest/globals'
 import * as assert from 'assert'
 
 import { cStyleBlockComment, slashPattern } from '../language-specs/comments'

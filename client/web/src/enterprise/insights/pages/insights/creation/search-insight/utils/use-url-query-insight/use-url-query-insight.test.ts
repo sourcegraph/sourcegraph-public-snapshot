@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { getInsightDataFromQuery } from './use-url-query-insight'
 
 describe('getInsightDataFromQuery', () => {

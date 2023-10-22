@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { dedupeWhitespace } from './strings'
 
 describe('utils/string', () => {

@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import type { Context } from '../types'
 
 import { parse, parseTemplate } from './evaluator'

@@ -1,3 +1,4 @@
+import { describe, test } from '@jest/globals'
 import { applyEdits, type JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 

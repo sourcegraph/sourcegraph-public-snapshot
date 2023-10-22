@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { getRelevantTokens } from './analyze'
 import { type Node, parseSearchQuery } from './parser'
 import { stringHuman } from './printer'

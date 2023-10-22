@@ -1,3 +1,4 @@
+import { describe, test } from '@jest/globals'
 import { describe, test } from 'mocha'
 import { merge } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'

@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { SearchPatternType } from '../../graphql-operations'
 
 import { getDiagnostics } from './diagnostics'

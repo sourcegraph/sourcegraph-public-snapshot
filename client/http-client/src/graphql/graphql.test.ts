@@ -1,3 +1,4 @@
+import { describe, expect } from '@jest/globals'
 import { expect, describe, test } from 'bun:test'
 
 import { GRAPHQL_URI } from './constants'

@@ -104,6 +104,7 @@
     "@graphql-codegen/typescript-operations": "2.5.10",
     "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@jest/globals": "^29.7.0",
     "@jest/types": "^28.1.0",
     "@mermaid-js/mermaid-cli": "^8.13.10",
     "@octokit/rest": "^16.36.0",

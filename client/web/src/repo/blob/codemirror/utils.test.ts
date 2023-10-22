@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { Text } from '@codemirror/state'
 
 import {

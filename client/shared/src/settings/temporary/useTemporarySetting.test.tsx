@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { useEffect } from 'react'
 
 import { gql } from '@apollo/client'

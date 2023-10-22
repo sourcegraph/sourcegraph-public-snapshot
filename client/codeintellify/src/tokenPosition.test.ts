@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals'
 import * as assert from 'assert'
 
 import type { Position, Range } from '@sourcegraph/extension-api-types'

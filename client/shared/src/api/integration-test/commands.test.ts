@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { integrationTestContext } from '../../testing/testHelpers'
 
 describe('Commands (integration)', () => {
