@@ -321,9 +321,6 @@ importers:
       minimatch:
         specifier: ^3.0.4
         version: 3.0.4
-      mockdate:
-        specifier: ^3.0.2
-        version: 3.0.2
       monaco-editor:
         specifier: ^0.24.0
         version: 0.24.0
@@ -1009,6 +1006,9 @@ importers:
       mock-require:
         specifier: ^3.0.3
         version: 3.0.3
+      mockdate:
+        specifier: ^3.0.2
+        version: 3.0.2
       mz:
         specifier: ^2.7.0
         version: 2.7.0
@@ -23547,7 +23547,7 @@ packages:
 
   /mockdate@3.0.2:
     resolution: {integrity: sha512-ldfYSUW1ocqSHGTK6rrODUiqAFPGAg0xaHqYJ5tvj1hQyFsjuHpuWgWFTZWwDVlzougN/s2/mhDr8r5nY5xDpA==}
-    dev: false
+    dev: true
 
   /module-details-from-path@1.0.3:
     resolution: {integrity: sha512-ySViT69/76t8VhE1xXHK6Ch4NcDd26gx0MzKXLO+F7NOtnqH68d9zF94nT8ZWSxXh8ELOERsnJO/sWt1xZYw5A==}

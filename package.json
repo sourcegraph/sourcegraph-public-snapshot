@@ -420,7 +420,6 @@
     "marked": "4.0.16",
     "mdi-react": "^8.1.0",
     "minimatch": "^3.0.4",
-    "mockdate": "^3.0.2",
     "monaco-editor": "^0.24.0",
     "monaco-yaml": "^3.2.1",
     "nice-ticks": "^1.0.1",
