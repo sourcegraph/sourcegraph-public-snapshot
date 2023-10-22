@@ -65,6 +65,9 @@ func (c *fireworksClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
+	logprobsInclude := uint8(0)
+	requestParams.Logprobs = &logprobsInclude
+
 	// HACK: Cody Gateway expects model names in <provider>/<model> format, but if we're connecting directly to
 	// the Fireworks API, we need to strip the "fireworks" provider prefix
 	if components := strings.Split(requestParams.Model, "/"); components[0] == "fireworks" {
