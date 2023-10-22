@@ -1,3 +1,5 @@
+import { expect, describe, test } from 'bun:test'
+
 import { GRAPHQL_URI } from './constants'
 import { buildGraphQLUrl, gql } from './graphql'
 

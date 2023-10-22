@@ -1,4 +1,5 @@
 import { Observable as ZenObservable, type ObservableQuery } from '@apollo/client'
+import { expect, describe, it } from 'bun:test'
 import delay from 'delay'
 import { isObservable } from 'rxjs'
 import sinon from 'sinon'
