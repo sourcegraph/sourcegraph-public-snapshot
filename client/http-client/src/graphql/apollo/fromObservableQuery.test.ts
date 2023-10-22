@@ -69,6 +69,7 @@ describe('fromObservableQueryPromise', () => {
 
         const subscription = observable.subscribe()
         await delay(0)
+        await delay(0)
         expect(subscription.closed).toBe(true)
     })
 })
