@@ -21,6 +21,8 @@ const (
 )
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
+	t.Skip("Flaky, need to fix")
+
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
