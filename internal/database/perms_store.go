@@ -1981,7 +1981,9 @@ var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(bases
 			if *source == authz.SourceRepoSync || *source == authz.SourceUserSync {
 				reason = UserRepoPermissionReasonPermissionsSync
 			}
-		} else if !repo.Private || unrestricted {
+		} else if !repo.Private {
+			reason = UserRepoPermissionReasonPublic
+		} else if unrestricted {
 			reason = UserRepoPermissionReasonUnrestricted
 		} else if repo.Private && !unrestricted && authzParams.BypassAuthzReasons.SiteAdmin {
 			reason = UserRepoPermissionReasonSiteAdmin
@@ -2013,6 +2015,11 @@ type RepoPermission struct {
 // and timestamp for each permission.
 func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID, args *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
 	authzParams, err := GetAuthzQueryParameters(context.Background(), s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := s.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -2081,6 +2088,10 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 		}
 
 		reason := UserRepoPermissionReasonPermissionsSync
+		if !repo.Private {
+			reason = UserRepoPermissionReasonPublic
+			updatedAt = time.Time{}
+		}
 		if unrestricted {
 			reason = UserRepoPermissionReasonUnrestricted
 			updatedAt = time.Time{}
@@ -2196,4 +2207,5 @@ const (
 	UserRepoPermissionReasonUnrestricted    UserRepoPermissionReason = "Unrestricted"
 	UserRepoPermissionReasonPermissionsSync UserRepoPermissionReason = "Permissions Sync"
 	UserRepoPermissionReasonExplicitPerms   UserRepoPermissionReason = "Explicit API"
+	UserRepoPermissionReasonPublic          UserRepoPermissionReason = "Public"
 )

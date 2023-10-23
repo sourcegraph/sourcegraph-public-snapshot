@@ -106,8 +106,6 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                 {!repo.isPrivate ? (
                     <Alert className="mb-0" variant="info">
                         Access to this repository is <strong>not restricted</strong>, all Sourcegraph users have access.
-                        This could be because the repository is a public repository, or because a code host connection
-                        that this repository belongs to does not have authorization enabled.
                     </Alert>
                 ) : !permissionsInfo ? (
                     <Alert className="mb-0" variant="info">
