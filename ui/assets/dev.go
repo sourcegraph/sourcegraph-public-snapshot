@@ -18,8 +18,7 @@ func UseDevAssetsProvider() {
 }
 
 // DevProvider is the development variant of the UseDevAssetsProvider
-// which expects assets to be generated on the fly by an external web builder process
-// under the ui/assets/ folder.
+// which expects assets to be generated on the fly by an external web builder process.
 type DevProvider struct {
 	assets http.FileSystem
 }
