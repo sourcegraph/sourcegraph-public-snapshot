@@ -46,9 +46,7 @@ var publicKey = func() ssh.PublicKey {
 
 // IsLicensePublicKeyOverridden checks if the hardcoded license public key has been overridden
 func IsLicensePublicKeyOverridden() bool {
-	configuredPublicKey := string(bytes.TrimSpace(ssh.MarshalAuthorizedKey(publicKey)))
-
-	return publicKeyData != configuredPublicKey
+	return publicKeyData != string(bytes.TrimSpace(ssh.MarshalAuthorizedKey(publicKey)))
 }
 
 // toInfo converts from the return type of license.ParseSignedKey to the return type of this
