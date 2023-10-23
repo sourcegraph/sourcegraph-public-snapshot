@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { render } from '@testing-library/react'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'

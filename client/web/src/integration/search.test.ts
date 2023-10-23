@@ -1,5 +1,5 @@
 import expect from 'expect'
-import { test } from 'mocha'
+import { afterEach, beforeEach, describe, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { type SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'

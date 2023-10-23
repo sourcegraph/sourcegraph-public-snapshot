@@ -51,6 +51,15 @@ const config = {
 
   roots: ['<rootDir>/src'],
   snapshotResolver: path.join(rootDir, 'jest.snapshot-resolver.js'),
+  snapshotFormat: {
+    escapeString: true,
+    printBasicPrototype: true,
+  },
+
+  injectGlobals: false,
+
+  // Only run JavaScript tests in Bazel; otherwise run TypeScript and JavaScript.
+  testMatch: [`**/?(*.)+(spec|test).(js|${SRC_EXT})?(x)`],
 
   transform: {
     [IS_BAZEL ? '\\.js$' : '\\.[jt]sx?$']: [
@@ -107,7 +116,7 @@ const config = {
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),
     require.resolve('regenerator-runtime/runtime'),
-    require.resolve('@testing-library/jest-dom'),
+    require.resolve('@testing-library/jest-dom/jest-globals'),
     toPackagePath(path.join(rootDir, 'client/shared/dev/reactCleanup.ts')),
   ],
   globalSetup: toPackagePath(path.join(rootDir, 'client/shared/dev/jestGlobalSetup.js')),

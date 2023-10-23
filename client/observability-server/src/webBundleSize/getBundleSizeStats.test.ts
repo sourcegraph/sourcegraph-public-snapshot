@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { describe, expect, it, jest } from '@jest/globals'
+
 import { getBundleSizeStats } from './getBundleSizeStats'
 
 const MOCK_ASSETS_PATH = path.join(__dirname, './__mocks__/assets')

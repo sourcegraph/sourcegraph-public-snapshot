@@ -1,5 +1,6 @@
 import { existsSync, readdirSync } from 'fs'
 
+import { afterAll, beforeAll, beforeEach, describe, expect, it, test } from '@jest/globals'
 import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
@@ -225,7 +226,7 @@ describe('isPrivateRepository', () => {
 
         beforeEach(() => {
             fetch.enableMocks()
-            fetch.mockClear()
+            fetch.resetMocks()
         })
 
         afterAll(() => {

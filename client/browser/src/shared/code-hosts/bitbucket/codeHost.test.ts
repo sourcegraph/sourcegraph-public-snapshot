@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
