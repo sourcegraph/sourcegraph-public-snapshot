@@ -255,7 +255,6 @@ ts_project(
         "src/cody/update/UpdateInfoContent.tsx",
         "src/cody/update/updater.tsx",
         "src/cody/useCodyChat.tsx",
-        "src/cody/useSizebarSize.tsx",
         "src/cody/widgets/CodyRecipesWidget.tsx",
         "src/cody/widgets/components/Recipe.tsx",
         "src/cody/widgets/components/RecipeAction.tsx",
