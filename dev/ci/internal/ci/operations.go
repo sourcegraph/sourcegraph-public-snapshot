@@ -151,8 +151,6 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS", "true"),
 		}
 
 		if opts.CacheBundleSize {
@@ -163,7 +161,7 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			cmds = append(cmds, bk.Cmd("pnpm --filter @sourcegraph/web run report-bundle-diff"))
 		}
 
-		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
+		pipeline.AddStep(":globe_with_meridians::moneybag: Enterprise build", cmds...)
 	}
 }
 

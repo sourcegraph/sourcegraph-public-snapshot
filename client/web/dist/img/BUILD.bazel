@@ -8,6 +8,6 @@ filegroup(
 
 copy_to_bin(
     name = "copy",
-    srcs = ["//ui/assets/img"],
+    srcs = ["//client/web/dist/img"],
     visibility = ["//client/web-sveltekit:__pkg__"],
 )

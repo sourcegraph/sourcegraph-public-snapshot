@@ -1,21 +1,4 @@
-import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
-import type { WebpackPluginInstance, RuleSetRule } from 'webpack'
-
-import { MONACO_EDITOR_PATH } from '../paths'
-
-// CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
-export const getMonacoCSSRule = (): RuleSetRule => ({
-    test: /\.css$/,
-    include: [MONACO_EDITOR_PATH],
-    use: ['style-loader', { loader: 'css-loader' }],
-})
-
-// TTF rule for monaco-editor
-export const getMonacoTTFRule = (): RuleSetRule => ({
-    test: /\.ttf$/,
-    include: [MONACO_EDITOR_PATH],
-    type: 'asset/resource',
-})
+import type MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 
 /**
  * Configuration for https://github.com/microsoft/monaco-editor-webpack-plugin.
@@ -48,6 +31,3 @@ export const MONACO_LANGUAGES_AND_FEATURES: Required<
         'suggest',
     ],
 }
-
-export const getMonacoWebpackPlugin = (): WebpackPluginInstance =>
-    new MonacoWebpackPlugin(MONACO_LANGUAGES_AND_FEATURES)

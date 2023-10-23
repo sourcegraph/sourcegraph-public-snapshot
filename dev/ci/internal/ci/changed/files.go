@@ -20,7 +20,6 @@ var clientRootFiles = []string{
 	"postcss.config.js",
 	"tsconfig.all.json",
 	"tsconfig.json",
-	"babel.config.js",
 	".percy.yml",
 	".eslintrc.js",
 	"gulpfile.js",

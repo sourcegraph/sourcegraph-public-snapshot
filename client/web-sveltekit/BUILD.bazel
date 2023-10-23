@@ -45,7 +45,7 @@ SRCS = [
     ".env.oss",
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
-    "//ui/assets/img:copy",
+    "//client/web/dist/img:copy",
 ] + glob(
     ["src/" + d for d in [
         "**/*.scss",
@@ -133,7 +133,7 @@ vite_bin.vite(
     env = {
         "BAZEL": "1",
     },
-    visibility = ["//ui/assets/enterprise:__pkg__"],
+    visibility = ["//client/web/dist:__pkg__"],
     # silent_on_success = False,
 )
 

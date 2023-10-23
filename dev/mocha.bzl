@@ -20,6 +20,9 @@ NON_BUNDLED = [
 
     # Dependencies with bundling issues
     "@sourcegraph/build-config",
+
+    # Used by require.resolve
+    "axe-core",
 ]
 
 # ... some of which are needed at runtime

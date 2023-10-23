@@ -20,7 +20,7 @@ console.log('report-bundle-diff env:', {
 })
 
 const ROOT_PATH = path.join(__dirname, '../../../')
-const STATIC_ASSETS_PATH = path.join(ROOT_PATH, process.env.WEB_BUNDLE_PATH || 'ui/assets')
+const STATIC_ASSETS_PATH = path.join(ROOT_PATH, process.env.WEB_BUNDLE_PATH || 'client/web/dist')
 const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/@statoscope/cli/bin/cli.js')
 
 const MERGE_BASE = execSync('git merge-base HEAD origin/main').toString().trim()

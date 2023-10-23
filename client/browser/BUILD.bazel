@@ -359,8 +359,6 @@ esbuild(
         ":package_styles",
 
         # BUNDLE CONFIG
-        "//:babel_config",
-        "//:browserslist",
         "//:package_json",
 
         # STATIC ASSETS
