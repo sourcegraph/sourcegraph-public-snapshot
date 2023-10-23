@@ -121,7 +121,7 @@ function generateComplexLayout(
                 const itemsPerRow = isManySeriesInsight(insight) ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
                 const columnsPerRow = COLUMNS[breakpointName]
                 const width = columnsPerRow / itemsPerRow
-                const lastRow = grid.at(-1)
+                const lastRow = grid.at(-1)!
                 const lastRowCurrentWidth = lastRow.reduce((sumWidth, element) => sumWidth + element.w, 0)
 
                 // Move element on new line (row)

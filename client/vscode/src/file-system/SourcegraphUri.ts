@@ -56,7 +56,7 @@ export class SourcegraphUri {
 
     public basename(): string {
         const parts = (this.path || '').split('/')
-        return parts.at(-1)
+        return parts.at(-1)!
     }
 
     public dirname(): string {

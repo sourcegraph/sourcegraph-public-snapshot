@@ -321,7 +321,7 @@ export class Notebook {
     }
 
     public getLastBlockId(): string | null {
-        return this.blockOrder.length > 0 ? this.blockOrder.at(-1) : null
+        return this.blockOrder.length > 0 ? this.blockOrder.at(-1)! : null
     }
 
     public getPreviousBlockId(id: string): string | null {

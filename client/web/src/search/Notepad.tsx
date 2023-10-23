@@ -342,7 +342,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             // Select next entry
                             return toggleSelection(
                                 selection,
-                                wrapPosition(selection.at(-1) + (key === 'ArrowDown' ? 1 : -1), reversedEntries.length)
+                                wrapPosition(selection.at(-1)! + (key === 'ArrowDown' ? 1 : -1), reversedEntries.length)
                             )
                         }
                         if (reversedEntries.length > 0) {
@@ -806,7 +806,7 @@ function toSearchQuery(entry: SearchEntry): string {
 
 function fileName(path: string): string {
     const parts = path.split('/')
-    return parts.at(-1)
+    return parts.at(-1)!
 }
 
 function formatLineRange(lineRange: HighlightLineRange): string {
@@ -864,7 +864,7 @@ function extendSelection(selection: Selection, newPosition: number): Selection {
 
     const newSelection = [...selection]
 
-    const lastSelectedPosition = newSelection.at(-1)
+    const lastSelectedPosition = newSelection.at(-1)!
     const direction = lastSelectedPosition > newPosition ? -1 : 1
     for (let position = lastSelectedPosition; position !== newPosition + direction; position += direction) {
         // Re-arrange selection as necessary
@@ -898,7 +898,7 @@ function growOrShrinkSelection(selection: Selection, direction: 'UP' | 'DOWN', t
     }
 
     const delta = direction === 'UP' ? -1 : 1
-    let nextPosition = wrapPosition(selection.at(-1) + delta, total)
+    let nextPosition = wrapPosition(selection.at(-1)! + delta, total)
 
     // Did we change direction and "deselected" the last position?
     // (it's enough to look at the penultimate selected position)

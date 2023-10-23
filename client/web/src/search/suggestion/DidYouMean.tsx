@@ -90,7 +90,7 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
 
     let matchResult = matchesLanguage(tokensWithoutWhitespace[0])
     if (!matchResult.success) {
-        matchResult = matchesLanguage(tokensWithoutWhitespace.at(-1))
+        matchResult = matchesLanguage(tokensWithoutWhitespace.at(-1)!)
     }
 
     if (matchResult.success) {

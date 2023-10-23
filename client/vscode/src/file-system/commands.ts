@@ -79,7 +79,7 @@ function getSelection(uri: SourcegraphUri, textDocument: vscode.TextDocument): v
     // function/class/struct/interface with the same name as the filename).
     if (uri.path && isFilenameThatMayDefineSymbols(uri.path)) {
         const fileNames = uri.path.split('/')
-        const fileName = fileNames.at(-1)
+        const fileName = fileNames.at(-1)!
         const symbolName = fileName.split('.')[0]
         const text = textDocument.getText()
         const symbolMatches = new RegExp(` ${symbolName}\\b`).exec(text)

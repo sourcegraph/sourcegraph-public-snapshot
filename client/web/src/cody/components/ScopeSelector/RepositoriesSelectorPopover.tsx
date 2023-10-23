@@ -560,7 +560,7 @@ const getTintedText = (item: string, searchText: string): React.ReactNode => {
 
 export const getFileName = (path: string): string => {
     const parts = path.split('/')
-    return parts.at(-1)
+    return parts.at(-1)!
 }
 
 export const getRepoName = (path: string): string => {

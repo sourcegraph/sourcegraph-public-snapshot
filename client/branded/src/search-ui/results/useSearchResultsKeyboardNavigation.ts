@@ -108,7 +108,8 @@ export function useSearchResultsKeyboardNavigation(
                 }
                 // Otherwise, find the last visible result in the group and select it.
                 const groupSelectables = group.querySelectorAll<HTMLElement>('[data-selectable-search-result="true"]')
-                selectElement(groupSelectables.at(-1))
+                // eslint-disable-next-line unicorn/prefer-at
+                selectElement(groupSelectables[groupSelectables.length - 1])
             }, 0)
         }
 

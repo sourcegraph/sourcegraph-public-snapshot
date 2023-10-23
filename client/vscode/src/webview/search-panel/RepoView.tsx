@@ -41,7 +41,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                     repoName: repositoryMatch.repository,
                     commitID: '',
                     revision: repositoryMatch.branches?.[0] ?? 'HEAD',
-                    filePath: directoryStack.length > 0 ? directoryStack.at(-1) : '',
+                    filePath: directoryStack.length > 0 ? directoryStack.at(-1)! : '',
                     requestGraphQL: platformContext.requestGraphQL,
                 }).pipe(
                     catchError(error => {

@@ -101,7 +101,7 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
             const baseShaElement = shaContainers[0].querySelector('a')
             if (baseShaElement) {
                 // e.g "https://github.com/gorilla/mux/commit/0b13a922203ebdbfd236c818efcd5ed46097d690"
-                baseCommitID = baseShaElement.href.split('/').at(-1)
+                baseCommitID = baseShaElement.href.split('/').at(-1)!
             }
             const headShaElement = shaContainers[1].querySelector('span.sha') as HTMLElement
             if (headShaElement) {

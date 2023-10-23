@@ -133,7 +133,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                       })),
                       content: match.content,
                       startLine: match.contentStart.line,
-                      endLine: match.ranges.at(-1).end.line,
+                      endLine: match.ranges.at(-1)!.end.line,
                       aggregableBadges: match.aggregableBadges,
                   })) ||
                   result.lineMatches?.map(match => ({

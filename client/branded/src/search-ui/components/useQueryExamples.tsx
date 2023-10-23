@@ -145,7 +145,7 @@ export function useQueryExamples(
 
         const { singleRepoExample, orgReposExample } = getRepoFilterExamples(repositoryName)
         const filePathParts = filePath.split('/')
-        const fileName = quoteIfNeeded(filePathParts.at(-1))
+        const fileName = quoteIfNeeded(filePathParts.at(-1)!)
 
         return basicSyntaxColumns(fileName, singleRepoExample, orgReposExample)
     }, [queryExamplesContent, isSourcegraphDotCom])
