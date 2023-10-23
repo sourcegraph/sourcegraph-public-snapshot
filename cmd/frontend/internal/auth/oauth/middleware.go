@@ -79,8 +79,8 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 
 func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		id := req.URL.Query().Get("pc")
+	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.URL.Query().Get("pc")
 		p := GetProvider(serviceType, id)
 		if p == nil {
 			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
@@ -88,10 +88,10 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		p.Login(p.OAuth2Config()).ServeHTTP(w, req)
+		p.Login(p.OAuth2Config()).ServeHTTP(w, r)
 	}))
-	mux.Handle("/callback", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		state, err := DecodeState(req.URL.Query().Get("state"))
+	mux.Handle("/callback", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		state, err := DecodeState(r.URL.Query().Get("state"))
 		if err != nil {
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not decode OAuth state from URL parameter.", http.StatusBadRequest)
 			return
@@ -103,7 +103,7 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not find provider that matches the OAuth state parameter.", http.StatusBadRequest)
 			return
 		}
-		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
+		p.Callback(p.OAuth2Config()).ServeHTTP(w, r)
 	}))
 	return mux
 }
@@ -116,7 +116,7 @@ func withOAuthExternalClient(r *http.Request) *http.Request {
 	if traceLogEnabled {
 		loggingClient := *client
 		loggingClient.Transport = &loggingRoundTripper{
-			log:        log.Scoped("oauth_external.transport", "transport logger for withOAuthExternalClient"),
+			log:        log.Scoped("oauth_external.transport"),
 			underlying: client.Transport,
 		}
 		client = &loggingClient

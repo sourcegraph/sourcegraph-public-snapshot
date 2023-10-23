@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { Card, Grid, H2, H3 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -28,7 +28,7 @@ const mockItems: RepoMetadataItem[] = [
     },
 ]
 
-export const RepoMetadataStory: Story = () => (
+export const RepoMetadataStory: StoryFn = () => (
     <BrandedStory>
         {() => (
             <Card className="p-3">

@@ -37,7 +37,7 @@ func NewCaptureGroupExecutor(db database.DB, clock func() time.Time) *CaptureGro
 			clock:  clock,
 		},
 		computeSearch: streamCompute,
-		logger:        log.Scoped("CaptureGroupExecutor", ""),
+		logger:        log.Scoped("CaptureGroupExecutor"),
 	}
 }
 

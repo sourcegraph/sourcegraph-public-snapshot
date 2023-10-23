@@ -41,7 +41,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 	copy(events, es)
 	sort.Sort(events)
 
-	logger := log.Scoped("SetDerivedState", "")
+	logger := log.Scoped("SetDerivedState")
 
 	// We need to ensure we're using an internal actor here, since we need to
 	// have access to the repo to set the derived state regardless of the actor

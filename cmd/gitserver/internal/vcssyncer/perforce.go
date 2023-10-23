@@ -102,6 +102,9 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 		"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 		"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
 		"--noColor", "true",
+		// We don't want an empty commit for a sane merge base across branches,
+		// since we don't use them and the empty commit breaks changelist parsing.
+		"--noBaseCommit", "true",
 	)
 }
 
@@ -234,8 +237,8 @@ func configureFusionClient(conn *schema.PerforceConnection) FusionConfig {
 		LookAhead:           2000,
 		NetworkThreads:      12,
 		NetworkThreadsFetch: 12,
-		PrintBatch:          10,
-		Refresh:             100,
+		PrintBatch:          100,
+		Refresh:             1000,
 		Retries:             10,
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
@@ -248,9 +251,11 @@ func configureFusionClient(conn *schema.PerforceConnection) FusionConfig {
 
 	// Required
 	fc.Enabled = conn.FusionClient.Enabled
-	fc.LookAhead = conn.FusionClient.LookAhead
 
 	// Optional
+	if conn.FusionClient.LookAhead > 0 {
+		fc.LookAhead = conn.FusionClient.LookAhead
+	}
 	if conn.FusionClient.NetworkThreads > 0 {
 		fc.NetworkThreads = conn.FusionClient.NetworkThreads
 	}

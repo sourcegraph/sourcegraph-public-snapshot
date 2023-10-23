@@ -159,6 +159,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				triggerAsync(buildOptions)))
 		}
 
+		if c.Diff.Has(changed.ClientBrowserExtensions) {
+			ops.Merge(operations.NewNamedSet("Browser Extensions",
+				addBrowserExtensionUnitTests,
+				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+			))
+		}
+
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
@@ -196,10 +203,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	case runtype.WolfiBaseRebuild:
-		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images and push to registry
+		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
+		// and push to registry, then open a PR
 		baseImageOps := wolfiRebuildAllBaseImages(c)
 		if baseImageOps != nil {
 			ops.Merge(baseImageOps)
+			ops.Merge(wolfiGenerateBaseImagePR())
 		}
 
 	case runtype.CandidatesNoTest:

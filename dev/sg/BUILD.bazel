@@ -11,7 +11,6 @@ go_library(
         "main.go",
         "os.go",
         "release.go",
-        "sg_adr.go",
         "sg_analytics.go",
         "sg_app.go",
         "sg_audit.go",
@@ -49,7 +48,6 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/embeddings/qa",
-        "//dev/sg/adr",
         "//dev/sg/buf",
         "//dev/sg/ci",
         "//dev/sg/dependencies",

@@ -31,7 +31,7 @@ import (
 func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (afterDone func(store *store.Store), err error) {
 	e := &executor{
 		client:            client,
-		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
+		logger:            logger.Scoped("executor"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
@@ -592,7 +592,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
+	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential, repo)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -648,7 +648,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
-		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp)
+		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp, e.remote)
 		if err != nil {
 			switch err {
 			case sources.ErrNoGitHubAppConfigured:

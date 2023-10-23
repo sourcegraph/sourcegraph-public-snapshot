@@ -25,7 +25,7 @@ func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTeleme
 	}
 
 	shutdownMetrics, err := maybeEnableMetrics(ctx,
-		logger.Scoped("metrics", "OpenTelemetry metrics"),
+		logger.Scoped("metrics"),
 		config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "maybeEnableMetrics")

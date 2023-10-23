@@ -26,7 +26,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 
 	mockTimeNow(eventDate)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	events := []database.Event{{
 		Name:      "ViewHome",

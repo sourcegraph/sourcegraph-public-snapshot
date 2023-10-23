@@ -3,6 +3,7 @@ package sgconf
 import (
 	"io"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 
@@ -38,6 +39,7 @@ func parseConfig(data []byte) (*Config, error) {
 
 	for name, cmd := range conf.Commands {
 		cmd.Name = name
+		normalizeCmd(&cmd)
 		conf.Commands[name] = cmd
 	}
 
@@ -48,10 +50,17 @@ func parseConfig(data []byte) (*Config, error) {
 
 	for name, cmd := range conf.Tests {
 		cmd.Name = name
+		normalizeCmd(&cmd)
 		conf.Tests[name] = cmd
 	}
 
 	return &conf, nil
+}
+
+func normalizeCmd(cmd *run.Command) {
+	// Trim trailing whitespace so extra args apply to last command (instead of being interpreted as
+	// a new shell command on a separate line).
+	cmd.Cmd = strings.TrimSpace(cmd.Cmd)
 }
 
 type Commandset struct {

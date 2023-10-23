@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -48,7 +48,7 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
     authMinPasswordLength: 0,
 }
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -64,7 +64,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const EmailForm: Story = () => (
+export const EmailForm: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -80,7 +80,7 @@ export const EmailForm: Story = () => (
     </WebStory>
 )
 
-export const InvalidSource: Story = () => (
+export const InvalidSource: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -96,7 +96,7 @@ export const InvalidSource: Story = () => (
     </WebStory>
 )
 
-export const OptimizationSignup: Story = () => (
+export const OptimizationSignup: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage

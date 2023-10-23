@@ -53,7 +53,7 @@ var (
 
 func getOperations() *operations {
 	opsOnce.Do(func() {
-		observationCtx := observation.NewContext(log.Scoped("npm", ""))
+		observationCtx := observation.NewContext(log.Scoped("npm"))
 
 		ops = newOperations(observationCtx)
 	})

@@ -21,14 +21,16 @@ func NewRustPackagesSyncer(
 	connection *schema.RustPackagesConnection,
 	svc *dependencies.Service,
 	client *crates.Client,
+	reposDir string,
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("RustPackagesSyncer", "sync Rust packages"),
+		logger:      log.Scoped("RustPackagesSyncer"),
 		typ:         "rust_packages",
 		scheme:      dependencies.RustPackagesScheme,
 		placeholder: reposource.ParseRustVersionedPackage("sourcegraph.com/placeholder@0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
+		reposDir:    reposDir,
 		source:      &rustDependencySource{client: client},
 	}
 }

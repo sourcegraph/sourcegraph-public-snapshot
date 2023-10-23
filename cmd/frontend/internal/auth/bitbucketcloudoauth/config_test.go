@@ -18,7 +18,7 @@ import (
 
 func TestParseConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	type args struct {
 		cfg *conf.Unified

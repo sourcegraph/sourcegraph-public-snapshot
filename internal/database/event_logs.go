@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -45,6 +46,10 @@ type EventLogStore interface {
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
+	// BulkInsert inserts a set of events.
+	//
+	// It does NOT respect context cancellation, as it is assumed that we never
+	// drop events once we attempt to queue it for export.
 	BulkInsert(ctx context.Context, events []*Event) error
 
 	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
@@ -289,8 +294,14 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	}
 	close(rowValues)
 
+	// Create a cancel-free context to avoid interrupting the insert when
+	// the parent context is cancelled, and add our own timeout on the insert
+	// to make sure things don't get stuck in an unbounded manner.
+	insertCtx, cancel := context.WithTimeout(xcontext.Detach(ctx), 5*time.Minute)
+	defer cancel()
+
 	return batch.InsertValues(
-		ctx,
+		insertCtx,
 		l.Handle(),
 		"event_logs",
 		batch.MaxNumPostgresParameters,

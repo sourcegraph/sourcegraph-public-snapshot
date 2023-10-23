@@ -44,7 +44,7 @@ func defaultEndpoints() *endpoint.Map {
 func LoadConfig() {
 	DefaultClient = &Client{
 		Endpoints:           defaultEndpoints(),
-		GRPCConnectionCache: defaults.NewConnectionCache(log.Scoped("symbolsConnectionCache", "grpc connection cache for clients of the symbols service")),
+		GRPCConnectionCache: defaults.NewConnectionCache(log.Scoped("symbolsConnectionCache")),
 		HTTPClient:          defaultDoer,
 		HTTPLimiter:         limiter.New(500),
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },

@@ -2371,7 +2371,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
@@ -2514,7 +2514,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
@@ -2645,7 +2645,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 func TestCleanDetachedChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 	rs := database.ReposWith(logger, s)

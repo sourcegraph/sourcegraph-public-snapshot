@@ -108,7 +108,7 @@ We value your feedback! You can <a href="https://about.sourcegraph.com/contact">
 
 ## What is Cody?
 
-Cody is a free, open-source AI coding assistant that writes, understands, and fixes code. Cody is powered by Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and uses knowledge of your entire codebase to give more accurate answers and generate idiomatic code.
+Cody is a free, open-source AI coding assistant that writes, understands, and fixes code. Cody is powered by Sourcegraph's <a href="https://docs.sourcegraph.com/cody/core-concepts/code-graph">code graph</a> and uses knowledge of your entire codebase to give more accurate answers and generate idiomatic code.
 
 Think of Cody as your personal AI coding assistant, equipped with a comprehensive understanding of three crucial elements:
 
@@ -129,8 +129,14 @@ To start using Cody, pick one of the following:
   </li>
   <li>
     <a class="card text-left" target="_blank" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph">
-      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (experimental)</h3>
+      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (beta)</h3>
       <p>Install Cody's free and open source extension for JetBrains.</p>
+    </a>
+  </li>
+    <li>
+    <a class="card text-left" target="_blank" href="https://github.com/sourcegraph/sg.nvim">
+      <h3><img alt="Neovim" src="https://storage.googleapis.com/sourcegraph-assets/Docs/neovim-logo.png" />Neovim Extension (experimental)</h3>
+      <p>Install Cody's free and open source extension for Neovim.</p>
     </a>
   </li>
   <li>
@@ -165,14 +171,14 @@ If you have any questions regarding Cody, you can always ask our community on [G
 
 ## Explanations
 
-- [Cody clients, plugins, and extensions](./../explanations/cody_clients.md)
+- [Cody clients, plugins, and extensions](./../core-concepts/cody_clients.md)
 - [Enabling Cody for Sourcegraph Enterprise customers](./../overview/enable-cody-enterprise.md)
 - [Enabling Cody for the Cody app](../overview/app/index.md)
 - [Enabling Cody for open source Sourcegraph.com users](./../overview/cody-with-sourcegraph.md)
 - [Installing the Cody VS Code extension](./../overview/install-vscode.md)
 - [Installing the Jetbrains extension (experimental)](./../overview/install-jetbrains.md)
-- [Configuring code graph context](./../explanations/code_graph_context.md)
-- [Sourcegraph Cody Gateway](./../explanations/cody_gateway.md)
+- [Configuring code graph context](./../core-concepts/code-graph.md)
+- [Sourcegraph Cody Gateway](./../core-concepts/cody_gateway.md)
 
 ## More resources
 

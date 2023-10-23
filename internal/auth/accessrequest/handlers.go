@@ -20,7 +20,7 @@ import (
 
 // HandleRequestAccess handles submission of the request access form.
 func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleRequestAccess", "request access request handler")
+	logger = logger.Scoped("HandleRequestAccess")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !conf.IsAccessRequestEnabled() {
 			logger.Error("experimental feature accessRequests is disabled, but received request")

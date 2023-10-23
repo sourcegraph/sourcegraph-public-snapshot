@@ -1,10 +1,10 @@
-import type { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 enum LicensingState {
     Licensed = 'Licensed',
@@ -40,25 +40,27 @@ function stateToInput(state: LicensingState): boolean | undefined {
     }
 }
 
-const Template: Story = ({ state, ...args }) => (
+const Template: StoryFn = ({ state, ...args }) => (
     <WebStory>
         {() => <BatchChangesListIntro viewerIsAdmin={false} isLicensed={stateToInput(args.licensed)} />}
     </WebStory>
 )
 
-export const Licensed = Template.bind({})
+type Story = StoryObj<typeof config>
+
+export const Licensed: Story = Template.bind({})
 Licensed.args = { state: LicensingState.Licensed }
 Licensed.argTypes = {
     licensed: {},
 }
 
-export const Unlicensed = Template.bind({})
+export const Unlicensed: Story = Template.bind({})
 Unlicensed.args = { state: LicensingState.Unlicensed }
 Unlicensed.argTypes = {
     licensed: {},
 }
 
-export const Loading = Template.bind({})
+export const Loading: Story = Template.bind({})
 Loading.args = { state: LicensingState.Loading }
 Loading.argTypes = {
     licensed: {},

@@ -171,7 +171,7 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 
 func TestUserCredentials_CreateUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 
 	// Authorisation failure tests. (We'll test the happy path below.)
@@ -252,7 +252,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 func TestUserCredentials_Delete(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -305,7 +305,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 
 func TestUserCredentials_GetByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -357,7 +357,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 
 func TestUserCredentials_GetByScope(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 
 	scope := UserCredentialScope{
@@ -405,7 +405,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 
 func TestUserCredentials_List(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 
 	githubScope := UserCredentialScope{
@@ -529,7 +529,7 @@ func TestUserCredentials_List(t *testing.T) {
 
 func TestUserCredentials_Invalid(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 	ctx := fx.internalCtx
 	key := fx.key

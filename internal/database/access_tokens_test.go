@@ -47,7 +47,7 @@ func TestAccessTokens(t *testing.T) {
 func testAccessTokens_Create(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -129,7 +129,7 @@ func testAccessTokens_Create(t *testing.T) {
 func testAccessTokens_Delete(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -204,7 +204,7 @@ func assertSecurityEventCount(t *testing.T, db DB, event SecurityEventName, expe
 func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -243,7 +243,7 @@ func testAccessTokens_List(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject1, err := db.Users().Create(ctx, NewUser{
@@ -324,7 +324,7 @@ func testAccessTokens_Lookup(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -395,7 +395,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	t.Run("subject", func(t *testing.T) {
@@ -478,9 +478,13 @@ func testAccessTokens_tokenSHA256Hash(t *testing.T) {
 		token     string
 		wantError bool
 	}{
-		{name: "empty", token: ""},
-		{name: "short", token: "abc123"},
+		{name: "old prefix-less format", token: "0123456789012345678901234567890123456789"},
+		{name: "old prefix format", token: "sgp_0123456789012345678901234567890123456789"},
+		{name: "new local identifier format", token: "sgp_local_0123456789012345678901234567890123456789"},
+		{name: "new identifier format", token: "sgp_abcdef0123456789_0123456789012345678901234567890123456789"},
+		{name: "empty", token: "", wantError: true},
 		{name: "invalid", token: "×", wantError: true},
+		{name: "invalid", token: "xxx", wantError: true},
 	}
 
 	for _, tc := range testCases {

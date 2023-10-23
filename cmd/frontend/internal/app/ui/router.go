@@ -138,20 +138,15 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
-	homeRouteMethods := []string{"GET"}
-	if envvar.SourcegraphDotComMode() {
-		homeRouteMethods = append(homeRouteMethods, "HEAD")
-	}
-
 	// Top-level routes.
-	r.Path("/").Methods(homeRouteMethods...).Name(routeHome)
+	r.Path("/").Methods(http.MethodGet, http.MethodHead).Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/search/cody").Methods("GET").Name(routeCodySearch)
-	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
+	r.Path("/sign-in").Methods(http.MethodGet, http.MethodHead).Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
 	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
@@ -250,7 +245,7 @@ func brandNameSubtitle(titles ...string) string {
 }
 
 func initRouter(db database.DB, router *mux.Router) {
-	logger := log.Scoped("router", "")
+	logger := log.Scoped("router")
 
 	uirouter.Router = router // make accessible to other packages
 
@@ -510,7 +505,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
-	logger := log.Scoped("ui", "logger for serveErrorNoDebug")
+	logger := log.Scoped("ui")
 
 	// Determine trace URL and log the error.
 	var traceURL string

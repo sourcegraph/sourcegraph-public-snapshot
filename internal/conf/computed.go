@@ -8,10 +8,10 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -495,41 +495,6 @@ func AuthLockout() *schema.AuthLockout {
 		val.LockoutPeriod = 1800
 	}
 	return val
-}
-
-type ExternalServiceMode int
-
-const (
-	ExternalServiceModeDisabled ExternalServiceMode = 0
-	ExternalServiceModePublic   ExternalServiceMode = 1
-	ExternalServiceModeAll      ExternalServiceMode = 2
-)
-
-func (e ExternalServiceMode) String() string {
-	switch e {
-	case ExternalServiceModeDisabled:
-		return "disabled"
-	case ExternalServiceModePublic:
-		return "public"
-	case ExternalServiceModeAll:
-		return "all"
-	default:
-		return "unknown"
-	}
-}
-
-// ExternalServiceUserMode returns the site level mode describing if users are
-// allowed to add external services for public and private repositories. It does
-// NOT take into account permissions granted to the current user.
-func ExternalServiceUserMode() ExternalServiceMode {
-	switch Get().ExternalServiceUserMode {
-	case "public":
-		return ExternalServiceModePublic
-	case "all":
-		return ExternalServiceModeAll
-	default:
-		return ExternalServiceModeDisabled
-	}
 }
 
 const defaultGitLongCommandTimeout = time.Hour
@@ -1076,7 +1041,11 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 		if config.App.DotcomAuthToken == "" {
 			return ""
 		}
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		authToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		if err != nil {
+			return ""
+		}
+		return authToken
 	}
 	// Otherwise, use the current license key to compute an access token.
 	if config.LicenseKey == "" {

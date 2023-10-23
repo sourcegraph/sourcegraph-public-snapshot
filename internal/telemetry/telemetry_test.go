@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
@@ -36,15 +37,17 @@ func TestRecorderEndToEnd(t *testing.T) {
 	var userID int32 = 123
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(userID))
 
-	// Context with FF enabled.
-	ff := featureflag.NewMemoryStore(
-		map[string]bool{database.FeatureFlagTelemetryExport: true}, nil, nil)
-	ctx = featureflag.WithFlags(ctx, ff)
+	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
+		Level: log.LevelDebug,
+	})
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	// Set a mock mode to ensure we are testing enabled exports
+	exportStore := db.TelemetryEventsExportQueue()
+	exportStore.(database.MockExportModeSetterTelemetryEventsExportQueueStore).
+		SetMockExportMode(licensing.TelemetryEventsExportAll)
 
-	recorder := telemetry.NewEventRecorder(teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs()))
+	recorder := telemetry.NewEventRecorder(teestore.NewStore(exportStore, db.EventLogs()))
 
 	wantEvents := 3
 	t.Run("Record and BatchRecord", func(t *testing.T) {

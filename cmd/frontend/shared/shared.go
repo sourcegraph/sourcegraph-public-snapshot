@@ -78,7 +78,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
-	logger := log.Scoped("enterprise", "frontend enterprise edition")
+	logger := log.Scoped("enterprise")
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		logger.Debug("enterprise edition")

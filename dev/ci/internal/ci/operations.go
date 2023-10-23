@@ -45,13 +45,6 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 	// Base set
 	ops := operations.NewSet()
 
-	// If the only thing that has change is the Client Jetbrains, then we skip:
-	// - BazelOperations
-	// - Sg Lint
-	if diff.Only(changed.ClientJetbrains) {
-		return ops
-	}
-
 	// Simple, fast-ish linter checks
 	ops.Append(BazelOperations(buildOpts, opts.IsMainBranch)...)
 	linterOps := operations.NewNamedSet("Linters and static analysis")
@@ -332,7 +325,7 @@ func frontendTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest: Test (all)",
 		withPnpmCache(),
-		bk.AnnotatedCmd("dev/ci/pnpm-test.sh --testPathIgnorePatterns client/web client/browser", bk.AnnotatedCmdOpts{
+		bk.AnnotatedCmd("dev/ci/pnpm-test.sh --testPathIgnorePatterns client/web --testPathIgnorePatterns client/browser", bk.AnnotatedCmdOpts{
 			TestReports: &bk.TestReportOpts{
 				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
 			},

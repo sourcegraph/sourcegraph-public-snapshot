@@ -238,9 +238,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         css: 'always',
         yaml: 'always',
         svg: 'always',
+        cjs: 'always',
       },
     ],
     'import/order': 'off',
+    'etc/no-deprecated': 'off',
   },
   overrides: [
     {

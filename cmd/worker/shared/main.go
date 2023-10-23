@@ -329,7 +329,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 	defer cancel()
 
 	for _, name := range jobNames(jobs) {
-		jobLogger := observationCtx.Logger.Scoped(name, jobs[name].Description())
+		jobLogger := observationCtx.Logger.Scoped(name)
 		observationCtx := observation.ContextWithLogger(jobLogger, observationCtx)
 
 		if !shouldRunJob(name) {
@@ -382,7 +382,7 @@ func jobNames(jobs map[string]workerjob.Job) []string {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders(ctx context.Context, observationCtx *observation.Context) {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider"), observationCtx)
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return

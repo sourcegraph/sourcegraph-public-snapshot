@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 )
 
 // NewTx opens a transaction off of the given database, returning that
@@ -63,7 +64,8 @@ var rngLock sync.Mutex
 
 // NewDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database.
-func NewDB(logger log.Logger, t testing.TB) *sql.DB {
+func NewDB(t testing.TB) *sql.DB {
+	logger := logtest.Scoped(t)
 	return newDB(logger, t, "migrated", schemas.Frontend, schemas.CodeIntel)
 }
 

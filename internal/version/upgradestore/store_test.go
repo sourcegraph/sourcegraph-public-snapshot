@@ -21,7 +21,7 @@ import (
 func TestGetServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	store := New(db)
 
@@ -76,7 +76,7 @@ func TestGetServiceVersion(t *testing.T) {
 func TestSetServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	store := New(db)
 
@@ -100,7 +100,7 @@ func TestSetServiceVersion(t *testing.T) {
 func TestGetFirstServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	store := New(db)
 
@@ -155,7 +155,7 @@ func TestGetFirstServiceVersion(t *testing.T) {
 func TestUpdateServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	store := New(db)
 
@@ -213,7 +213,7 @@ func TestUpdateServiceVersion(t *testing.T) {
 func TestValidateUpgrade(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	store := New(db)
 
@@ -233,7 +233,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 
 		store := New(db)
 
@@ -253,7 +253,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 	t.Run("basic sequential (first in-progress)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 
 		store := New(db)
 
@@ -282,7 +282,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 	t.Run("basic sequential (first failed)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 
 		store := New(db)
 
@@ -315,7 +315,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 	t.Run("basic sequential (first succeeded)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 
 		store := New(db)
 
@@ -348,7 +348,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 	t.Run("basic sequential (first succeeded, older version)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 
 		store := New(db)
 
@@ -381,7 +381,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 	t.Run("stale heartbeat", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 		clock := glock.NewMockClock()
 		store := newStore(basestore.NewWithHandle(db.Handle()), clock)
 

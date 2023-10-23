@@ -170,7 +170,7 @@ func TestAssignedOwners(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating 2 users.
@@ -346,7 +346,7 @@ func TestAssignedTeams(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating a user and 2 teams.

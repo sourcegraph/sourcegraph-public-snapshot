@@ -23,7 +23,7 @@ import (
 
 func TestToEventLogs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	testCases := []struct {
 		name            string

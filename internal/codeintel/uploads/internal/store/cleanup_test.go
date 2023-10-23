@@ -22,7 +22,7 @@ import (
 
 func TestHardDeleteUploadsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
@@ -50,7 +50,7 @@ func TestHardDeleteUploadsByIDs(t *testing.T) {
 
 func TestDeleteUploadsStuckUploading(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -98,7 +98,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	var uploads []shared.Upload
@@ -158,7 +158,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 
 func TestDeleteOldAuditLogs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
@@ -170,7 +170,7 @@ func TestDeleteOldAuditLogs(t *testing.T) {
 
 func TestReconcileCandidates(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 	ctx := context.Background()
 
@@ -220,11 +220,11 @@ func TestReconcileCandidates(t *testing.T) {
 
 func TestProcessStaleSourcedCommits(t *testing.T) {
 	log := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(log, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(log, sqlDB)
 	store := &store{
 		db:         basestore.NewWithHandle(db.Handle()),
-		logger:     logger.Scoped("autoindexing.store", ""),
+		logger:     logger.Scoped("autoindexing.store"),
 		operations: newOperations(&observation.TestContext),
 	}
 
@@ -335,7 +335,7 @@ type s2 interface {
 
 func TestGetStaleSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db).(s2)
 
@@ -389,7 +389,7 @@ func TestGetStaleSourcedCommits(t *testing.T) {
 
 func TestUpdateSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db).(s2)
 
@@ -431,7 +431,7 @@ func TestUpdateSourcedCommits(t *testing.T) {
 
 func TestGetQueuedUploadRank(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -481,7 +481,7 @@ func TestGetQueuedUploadRank(t *testing.T) {
 
 func TestDeleteSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db).(s2)
 
@@ -528,7 +528,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 
 func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	var indexes []uploadsshared.Index
@@ -567,7 +567,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 
 func TestExpireFailedRecords(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	ctx := context.Background()

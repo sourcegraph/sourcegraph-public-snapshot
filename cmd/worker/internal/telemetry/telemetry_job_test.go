@@ -107,7 +107,7 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 
 func TestHandlerLoadsEvents(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
+	dbHandle := dbtest.NewDB(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
@@ -242,7 +242,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
+	dbHandle := dbtest.NewDB(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
@@ -352,7 +352,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 
 func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
+	dbHandle := dbtest.NewDB(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
@@ -451,7 +451,7 @@ func validConfiguration() schema.SiteConfiguration {
 
 func TestHandleInvalidConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
+	dbHandle := dbtest.NewDB(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 	bookmarkStore := newBookmarkStore(db)
@@ -613,7 +613,7 @@ func Test_getBatchSize(t *testing.T) {
 
 func TestGetBookmark(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
+	dbHandle := dbtest.NewDB(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 	store := newBookmarkStore(db)
@@ -672,7 +672,7 @@ func TestGetBookmark(t *testing.T) {
 
 func TestUpdateBookmark(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
+	dbHandle := dbtest.NewDB(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 	store := newBookmarkStore(db)

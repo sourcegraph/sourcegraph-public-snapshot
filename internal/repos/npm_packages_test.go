@@ -101,7 +101,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.MinimalPackageRepoRef) *dependencies.Service {
 	t.Helper()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	depsSvc := dependencies.TestService(db)
 
 	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)

@@ -1,5 +1,5 @@
 {
-  "checksum": "6b6ba3c51455d45ee7ca8cffdf32b99d0347fd1e79ac8571c5345a9a6e3d0932",
+  "checksum": "71ecf92a04073e6a00ea002279ba6a43bf1d28cbbeb6399099fadd979b289c67",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -9704,7 +9704,7 @@
               "target": "tree_sitter_highlight"
             },
             {
-              "id": "tree-sitter-java 0.20.0",
+              "id": "tree-sitter-java 0.20.2",
               "target": "tree_sitter_java"
             },
             {
@@ -12662,13 +12662,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-java 0.20.0": {
+    "tree-sitter-java 0.20.2": {
       "name": "tree-sitter-java",
-      "version": "0.20.0",
+      "version": "0.20.2",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tree-sitter-java/0.20.0/download",
-          "sha256": "f0bf5d3f508cbffcbfe1805834101c0d24297a8b6c2184ad9c595556c46d2420"
+          "url": "https://crates.io/api/v1/crates/tree-sitter-java/0.20.2/download",
+          "sha256": "2adc5696bf5abf761081d7457d2bb82d0e3b28964f4214f63fd7e720ef462653"
         }
       },
       "targets": [
@@ -12703,14 +12703,14 @@
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-java 0.20.0",
+              "id": "tree-sitter-java 0.20.2",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.20.0"
+        "version": "0.20.2"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -16145,11 +16145,38 @@
     "syntect_server 1.0.1": "docker-images/syntax-highlighter"
   },
   "conditions": {
+    "aarch64-apple-darwin": [
+      "aarch64-apple-darwin"
+    ],
+    "aarch64-apple-ios": [
+      "aarch64-apple-ios"
+    ],
+    "aarch64-apple-ios-sim": [
+      "aarch64-apple-ios-sim"
+    ],
+    "aarch64-fuchsia": [
+      "aarch64-fuchsia"
+    ],
+    "aarch64-linux-android": [
+      "aarch64-linux-android"
+    ],
     "aarch64-pc-windows-gnullvm": [],
     "aarch64-pc-windows-msvc": [
       "aarch64-pc-windows-msvc"
     ],
+    "aarch64-unknown-linux-gnu": [
+      "aarch64-unknown-linux-gnu"
+    ],
     "aarch64-uwp-windows-msvc": [],
+    "arm-unknown-linux-gnueabi": [
+      "arm-unknown-linux-gnueabi"
+    ],
+    "armv7-linux-androideabi": [
+      "armv7-linux-androideabi"
+    ],
+    "armv7-unknown-linux-gnueabi": [
+      "armv7-unknown-linux-gnueabi"
+    ],
     "cfg(all(any(target_os = \"android\", target_os = \"linux\"), any(rustix_use_libc, miri, not(all(target_os = \"linux\", target_endian = \"little\", any(target_arch = \"arm\", all(target_arch = \"aarch64\", target_pointer_width = \"64\"), target_arch = \"riscv64\", all(rustix_use_experimental_asm, target_arch = \"powerpc64\"), all(rustix_use_experimental_asm, target_arch = \"mips\"), all(rustix_use_experimental_asm, target_arch = \"mips32r6\"), all(rustix_use_experimental_asm, target_arch = \"mips64\"), all(rustix_use_experimental_asm, target_arch = \"mips64r6\"), target_arch = \"x86\", all(target_arch = \"x86_64\", target_pointer_width = \"64\")))))))": [
       "aarch64-linux-android",
       "armv7-linux-androideabi",
@@ -16446,16 +16473,73 @@
       "i686-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
     ],
+    "i686-apple-darwin": [
+      "i686-apple-darwin"
+    ],
+    "i686-linux-android": [
+      "i686-linux-android"
+    ],
     "i686-pc-windows-gnu": [],
     "i686-pc-windows-msvc": [
       "i686-pc-windows-msvc"
     ],
+    "i686-unknown-freebsd": [
+      "i686-unknown-freebsd"
+    ],
+    "i686-unknown-linux-gnu": [
+      "i686-unknown-linux-gnu"
+    ],
     "i686-uwp-windows-gnu": [],
     "i686-uwp-windows-msvc": [],
+    "powerpc-unknown-linux-gnu": [
+      "powerpc-unknown-linux-gnu"
+    ],
+    "riscv32imc-unknown-none-elf": [
+      "riscv32imc-unknown-none-elf"
+    ],
+    "riscv64gc-unknown-none-elf": [
+      "riscv64gc-unknown-none-elf"
+    ],
+    "s390x-unknown-linux-gnu": [
+      "s390x-unknown-linux-gnu"
+    ],
+    "thumbv7em-none-eabi": [
+      "thumbv7em-none-eabi"
+    ],
+    "thumbv8m.main-none-eabi": [
+      "thumbv8m.main-none-eabi"
+    ],
+    "wasm32-unknown-unknown": [
+      "wasm32-unknown-unknown"
+    ],
+    "wasm32-wasi": [
+      "wasm32-wasi"
+    ],
+    "x86_64-apple-darwin": [
+      "x86_64-apple-darwin"
+    ],
+    "x86_64-apple-ios": [
+      "x86_64-apple-ios"
+    ],
+    "x86_64-fuchsia": [
+      "x86_64-fuchsia"
+    ],
+    "x86_64-linux-android": [
+      "x86_64-linux-android"
+    ],
     "x86_64-pc-windows-gnu": [],
     "x86_64-pc-windows-gnullvm": [],
     "x86_64-pc-windows-msvc": [
       "x86_64-pc-windows-msvc"
+    ],
+    "x86_64-unknown-freebsd": [
+      "x86_64-unknown-freebsd"
+    ],
+    "x86_64-unknown-linux-gnu": [
+      "x86_64-unknown-linux-gnu"
+    ],
+    "x86_64-unknown-none": [
+      "x86_64-unknown-none"
     ],
     "x86_64-uwp-windows-gnu": [],
     "x86_64-uwp-windows-msvc": []

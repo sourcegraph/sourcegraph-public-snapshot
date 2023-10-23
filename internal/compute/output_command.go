@@ -137,7 +137,7 @@ func (c *Output) Run(ctx context.Context, _ gitserver.Client, r result.Match) (R
 			return nil, err
 		}
 
-		textResult, err := toTextResult(ctx, log.Scoped("compute", ""), content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
+		textResult, err := toTextResult(ctx, log.Scoped("compute"), content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
 		if err != nil {
 			return nil, err
 		}

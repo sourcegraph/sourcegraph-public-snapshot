@@ -76,7 +76,7 @@ func NewUserResolver(ctx context.Context, db database.DB, user *types.User) *Use
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+		logger: log.Scoped("userResolver").With(log.String("user", user.Username)),
 		actor:  actor.FromContext(ctx),
 	}
 }
@@ -86,7 +86,7 @@ func newUserResolverFromActor(a *actor.Actor, db database.DB, user *types.User) 
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
+		logger: log.Scoped("userResolver").With(log.String("user", user.Username)),
 		actor:  a,
 	}
 }
@@ -399,7 +399,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	logger := r.logger.Scoped("UpdatePassword", "password update").
+	logger := r.logger.Scoped("UpdatePassword").
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {
@@ -427,7 +427,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	logger := r.logger.Scoped("CreatePassword", "password creation").
+	logger := r.logger.Scoped("CreatePassword").
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {

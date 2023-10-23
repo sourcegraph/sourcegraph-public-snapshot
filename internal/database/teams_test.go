@@ -20,7 +20,7 @@ import (
 func TestTeams_CreateUpdateDelete(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)
@@ -153,7 +153,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 func TestTeams_GetListCount(t *testing.T) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	johndoe, err := db.Users().Create(internalCtx, NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)

@@ -24,7 +24,7 @@ var enableCustomGitFetch = env.Get("ENABLE_CUSTOM_GIT_FETCH", "false", "Enable c
 func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {
 	// this is an edge case where a CustomGitFetchMapping has been made but enableCustomGitFetch is false
 	if c != nil && enableCustomGitFetch == "false" {
-		logger := log.Scoped("customfetch", "")
+		logger := log.Scoped("customfetch")
 		logger.Warn("a CustomGitFetchMapping is configured but ENABLE_CUSTOM_GIT_FETCH is not set")
 
 		return map[string][]string{}

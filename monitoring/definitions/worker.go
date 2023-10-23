@@ -127,6 +127,18 @@ func Worker() *monitoring.Dashboard {
 		Name:        "worker",
 		Title:       "Worker",
 		Description: "Manages background processes.",
+		Variables: []monitoring.ContainerVariable{
+			{
+				Label: "Instance",
+				Name:  "instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_worker_jobs",
+					LabelName:     "instance",
+					ExampleOption: "worker:6089",
+				},
+				Multi: true,
+			},
+		},
 		Groups: []monitoring.Group{
 			// src_worker_jobs
 			activeJobsGroup,
@@ -251,6 +263,11 @@ func Worker() *monitoring.Dashboard {
 			shared.SourcegraphOwn.NewOwnRepoIndexerWorkerGroup(containerName),
 			shared.SourcegraphOwn.NewOwnRepoIndexerResetterGroup(containerName),
 			shared.SourcegraphOwn.NewOwnRepoIndexerSchedulerGroup(containerName),
+
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "worker",
+				InstanceFilterRegex: `${instance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
 		},
 	}
 }

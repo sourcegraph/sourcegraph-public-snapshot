@@ -42,6 +42,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		placeholder: placeholder,
 		source:      depsSource,
 		svc:         depsService,
+		reposDir:    t.TempDir(),
 	}
 
 	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}

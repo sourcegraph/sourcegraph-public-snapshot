@@ -140,6 +140,10 @@ type fireworksRequest struct {
 	Stop        []string `json:"stop,omitempty"`
 }
 
+func (fr fireworksRequest) GetModel() string {
+	return fr.Model
+}
+
 type fireworksResponse struct {
 	Choices []struct {
 		Text         string `json:"text"`

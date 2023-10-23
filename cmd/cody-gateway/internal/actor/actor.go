@@ -189,7 +189,7 @@ func (a *Actor) Limiter(
 	}
 
 	return &concurrencyLimiter{
-		logger:             logger.Scoped("concurrency", "concurrency limiter"),
+		logger:             logger.Scoped("concurrency"),
 		actor:              a,
 		feature:            feature,
 		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),

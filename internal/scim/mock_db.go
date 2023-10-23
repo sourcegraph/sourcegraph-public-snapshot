@@ -107,9 +107,7 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 		}
 		return errors.New("user not found")
 	})
-
-	userExternalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
-	userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (*types.User, error) {
+	userStore.CreateWithExternalAccountFunc.SetDefaultHook(func(ctx context.Context, newUser database.NewUser, acct *extsvc.Account) (*types.User, error) {
 		nextID := 1
 		if len(users) > 0 {
 			nextID = int(users[len(users)-1].ID) + 1
@@ -118,6 +116,8 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 		users = append(users, &userToCreate)
 		return &userToCreate.User, nil
 	})
+
+	userExternalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.UpsertSCIMDataFunc.SetDefaultHook(func(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
 		for _, user := range users {
 			if user.ID == userID {

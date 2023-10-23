@@ -25,7 +25,7 @@ func newHandler(
 	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
 	operations *uploadhandler.Operations,
 ) http.Handler {
-	logger := log.Scoped("UploadHandler", "")
+	logger := log.Scoped("UploadHandler")
 
 	metadataFromRequest := func(ctx context.Context, r *http.Request) (uploads.UploadMetadata, int, error) {
 		commit := getQuery(r, "commit")

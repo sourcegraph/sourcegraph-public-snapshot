@@ -72,7 +72,7 @@ func NewHTTPClient(urn string, registryURL string, credentials string, httpfacto
 		registryURL:    registryURL,
 		uncachedClient: uncached,
 		cachedClient:   cached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("NPMClient", ""), urn)),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("NPMClient"), urn)),
 		credentials:    credentials,
 	}, nil
 }
