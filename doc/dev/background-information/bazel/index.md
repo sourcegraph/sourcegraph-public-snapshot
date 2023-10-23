@@ -116,7 +116,7 @@ Then instead of running `sg start oss` you can use the `bazel` variant instead.
 
 When `sg start` is booting up, the standard installation process will begin as usual for commands that are not built with Bazel, but you'll also see a new program running
 `[  bazel]` which will log the build process for all the targets required by your chosen commandset. Once it's done, these services will start and [`iBazel`](https://github.com/bazelbuild/bazel-watcher)
-will take the relay. It will watch the files that Bazel has indentified has dependencies for your services, and rebuild them accordingly.
+will take the relay. It will watch the files that Bazel has indentified as having dependencies for your services, and rebuild them accordingly.
 
 So when a change is detected, `iBazel` will build the affected target and it will be restarted once the build finishes.
 
