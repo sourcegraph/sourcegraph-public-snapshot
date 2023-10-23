@@ -103,7 +103,6 @@ function exec<C>(node: ExpressionNode, context: Context<C>): any {
                 return left >= right()
             }
             case '+': {
-                 
                 return left + right()
             }
             case '-': {
