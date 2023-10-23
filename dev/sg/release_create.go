@@ -17,7 +17,10 @@ import (
 
 // TODO sg release scaffold ...
 // TODO add PR body
-type createReleaseManifest struct {
+type ReleaseManifest struct {
+	// Meta defines information about the product being released, so we can
+	// track who is in charge of releasing this, what kind of artifacts is it producting,
+	// etc ...
 	Meta struct {
 		ProductName string   `yaml:"productName"`
 		Owners      []string `yaml:"owners"`
@@ -25,25 +28,53 @@ type createReleaseManifest struct {
 		Artifacts   []string `yaml:"artifacts"`
 		README      string   `yaml:"README"`
 	} `yaml:"meta"`
+	// Requirements is a list of commands that must exit without errors for the manifest to be
+	// considered to be valid. Alternatively, instead of defining Cmd, Env can be set to
+	// ensure an environment variable is defnined.
 	Requirements []struct {
 		Name            string `yaml:"name"`
 		Cmd             string `yaml:"cmd"`
 		Env             string `yaml:"env"`
 		FixInstructions string `yaml:"fixInstructions"`
 	} `yaml:"requirements"`
+	// Inputs defines a list of k=v strings, defining the required inputs for that release manifest.
+	// Typically, this is either empty or server=vX.Y.Z to build a release that uses that particular
+	// server version.
 	Inputs []input `yaml:"inputs"`
-	Create struct {
-		Steps struct {
-			Patch []cmdManifest `yaml:"patch"`
-			Minor []cmdManifest `yaml:"minor"`
-			Major []cmdManifest `yaml:"major"`
-		} `yaml:"steps"`
+	// Internal defines the steps to create an internal release.
+	Internal struct {
+		// Create defines the steps to create the release build. This is where we define changes that need
+		// to be applied on the code for the release to exist. Typically, that means updating images,
+		// fetching new container tags, etc ...
+		Create struct {
+			Steps struct {
+				Patch []cmdManifest `yaml:"patch"`
+				Minor []cmdManifest `yaml:"minor"`
+				Major []cmdManifest `yaml:"major"`
+			} `yaml:"steps"`
+		}
+		// Finalize defines the steps to execute once the internal release build and test phases have been successfully completed.
+		// Typically, this is where one would define commands to open a PR on a documentation repo to take note of this
+		// new release.
+		Finalize struct {
+			Steps []cmdManifest `yaml:"steps"`
+		} `yaml:"finalize"`
 	} `yaml:"create"`
-	Finalize struct {
+	// Test defines the steps to test the release build. These are not meant to be "normal tests", but instead
+	// extended testing to ensure the release is correct. These tests are to be executed both during the
+	// create and promote-to-public phase.
+	Test struct {
 		Steps []cmdManifest `yaml:"steps"`
-	} `yaml:"finalize"`
+	} `yaml:"test"`
+	// PromoteToPublic defines steps to execute when promoting the release to a public one. Typically that's where
+	// one would move release artifacts from a private place to one that is publicly accessible.
 	PromoteToPublic struct {
-		Steps []cmdManifest `yaml:"steps"`
+		Create struct {
+			Steps []cmdManifest `yaml:"steps"`
+		} `yaml:"create"`
+		Finalize struct {
+			Steps []cmdManifest `yaml:"steps"`
+		} `yaml:"create"`
 	} `yaml:"promoteToPublic"`
 }
 
@@ -59,7 +90,7 @@ type input struct {
 type releaseRunner struct {
 	vars    map[string]string
 	inputs  map[string]string
-	m       *createReleaseManifest
+	m       *ReleaseManifest
 	version string
 	pretend bool
 	typ     string
@@ -121,14 +152,13 @@ func NewReleaseRunner(workdir string, version string, inputsArg string, typ stri
 	}
 	defer f.Close()
 
-	var m createReleaseManifest
+	var m ReleaseManifest
 	dec := yaml.NewDecoder(f)
 	if err := dec.Decode(&m); err != nil {
 		say("setup", "failed to decode manifest")
 	}
 	saySuccess("setup", "Found manifest for %q (%s)", m.Meta.ProductName, m.Meta.Repository)
 
-	announce2("meta", "Will create a patch release %q", version)
 	say("meta", "Owners: %s", strings.Join(m.Meta.Owners, ", "))
 	say("meta", "Repository: %s", m.Meta.Repository)
 
@@ -216,8 +246,40 @@ func (r *releaseRunner) checkDeps(ctx context.Context) error {
 
 func (r *releaseRunner) Finalize(ctx context.Context) error {
 	// TODO skip check deps
+	if len(r.m.Internal.Finalize.Steps) == 0 {
+		announce2("finalize", "Skipping release finalization, none defined")
+		return nil
+	}
 	announce2("finalize", "Running finalize steps for %s", r.version)
-	return r.runSteps(ctx, r.m.Finalize.Steps)
+	return r.runSteps(ctx, r.m.Internal.Finalize.Steps)
+}
+
+func (r *releaseRunner) Test(ctx context.Context) error {
+	if len(r.m.Test.Steps) == 0 {
+		announce2("test", "Skipping release tests, none defined")
+		return nil
+	}
+	announce2("test", "Running testing steps for %s", r.version)
+	return r.runSteps(ctx, r.m.Test.Steps)
+}
+
+func (r *releaseRunner) CreateRelease(ctx context.Context) error {
+	if err := r.checkDeps(ctx); err != nil {
+		return nil
+	}
+
+	var steps []cmdManifest
+	switch r.typ {
+	case "patch":
+		steps = r.m.Internal.Create.Steps.Patch
+	case "minor":
+		steps = r.m.Internal.Create.Steps.Minor
+	case "major":
+		steps = r.m.Internal.Create.Steps.Major
+	}
+
+	announce2("create", "Will create a patch release %q", r.version)
+	return r.runSteps(ctx, steps)
 }
 
 func (r *releaseRunner) runSteps(ctx context.Context, steps []cmdManifest) error {
@@ -243,150 +305,6 @@ func (r *releaseRunner) runSteps(ctx context.Context, steps []cmdManifest) error
 	}
 	return nil
 }
-
-func (r *releaseRunner) CreateRelease(ctx context.Context) error {
-	if err := r.checkDeps(ctx); err != nil {
-		return nil
-	}
-
-	var steps []cmdManifest
-	switch r.typ {
-	case "patch":
-		steps = r.m.Create.Steps.Patch
-	case "minor":
-		steps = r.m.Create.Steps.Minor
-	case "major":
-		steps = r.m.Create.Steps.Major
-	}
-
-	return r.runSteps(ctx, steps)
-}
-
-// func createReleaseCommand(cctx *cli.Context) error {
-// 	pretend := cctx.Bool("pretend")
-// 	version := cctx.String("version")
-// 	inputs, err := parseInputs(cctx.String("inputs"))
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// 	vars := map[string]string{
-// 		"version": version,
-// 		"tag":     strings.TrimPrefix(version, "v"),
-// 	}
-// 	for k, v := range inputs {
-// 		// TODO sanitize input format
-// 		vars[fmt.Sprintf("inputs.%s.version", k)] = v
-// 		vars[fmt.Sprintf("inputs.%s.tag", k)] = strings.TrimPrefix(v, "v")
-// 	}
-//
-// 	workdir := cctx.String("workdir")
-// 	announce2("setup", "Finding release manifest in %q", workdir)
-// 	if err := os.Chdir(cctx.String("workdir")); err != nil {
-// 		return err
-// 	}
-//
-// 	f, err := os.Open("release.yaml")
-// 	if err != nil {
-// 		say("setup", "failed to find release manifest")
-// 		return err
-// 	}
-// 	defer f.Close()
-//
-// 	var m createReleaseManifest
-// 	dec := yaml.NewDecoder(f)
-// 	if err := dec.Decode(&m); err != nil {
-// 		say("setup", "failed to decode manifest")
-// 	}
-// 	saySuccess("setup", "Found manifest for %q (%s)", m.Meta.ProductName, m.Meta.Repository)
-//
-// 	announce2("meta", "Will create a patch release %q", version)
-// 	say("meta", "Owners: %s", strings.Join(m.Meta.Owners, ", "))
-// 	say("meta", "Repository: %s", m.Meta.Repository)
-//
-// 	for _, in := range m.Inputs {
-// 		var found bool
-// 		for k := range inputs {
-// 			if k == in.ReleaseID {
-// 				found = true
-// 			}
-// 		}
-// 		if !found {
-// 			sayFail("inputs", "Couldn't find input %q, required by manifest, but --inputs=%s=... flag is missing", in.ReleaseID, in.ReleaseID)
-// 			return errors.New("missing input")
-// 		}
-// 	}
-//
-// 	announce2("vars", "Variables")
-// 	for k, v := range vars {
-// 		say("vars", "%s=%q", k, v)
-// 	}
-//
-// 	announce2("reqs", "Checking requirements...")
-// 	var failed bool
-// 	for _, req := range m.Requirements {
-// 		if req.Env != "" && req.Cmd != "" {
-// 			return errors.Newf("requirement %q can't have both env and cmd defined", req.Name)
-// 		}
-// 		if req.Env != "" {
-// 			if _, ok := os.LookupEnv(req.Env); !ok {
-// 				failed = true
-// 				sayFail("reqs", "FAIL %s, $%s is not defined.", req.Name, req.Env)
-// 				continue
-// 			}
-// 			saySuccess("reqs", "OK %s", req.Name)
-// 			continue
-// 		}
-//
-// 		lines, err := run.Cmd(cctx.Context, req.Cmd).Run().Lines()
-// 		if err != nil {
-// 			failed = true
-// 			sayFail("reqs", "FAIL %s", req.Name)
-// 			sayFail("reqs", "  Error: %s", err.Error())
-// 			for _, line := range lines {
-// 				sayFail("reqs", "  "+line)
-// 			}
-// 		} else {
-// 			saySuccess("reqs", "OK %s", req.Name)
-// 		}
-// 	}
-// 	if failed {
-// 		announce2("reqs", "Requirement checks failed, aborting.")
-// 		return errors.New("failed requirements")
-// 	}
-//
-// 	var steps []cmdManifest
-// 	switch cctx.String("type") {
-// 	case "patch":
-// 		steps = m.Create.Steps.Patch
-// 	case "minor":
-// 		steps = m.Create.Steps.Minor
-// 	case "major":
-// 		steps = m.Create.Steps.Major
-// 	}
-//
-// 	for _, step := range steps {
-// 		cmd := interpolate(step.Cmd, vars)
-// 		if pretend {
-// 			announce2("step", "Pretending to run step %q", step.Name)
-// 			for _, line := range strings.Split(cmd, "\n") {
-// 				say(step.Name, line)
-// 			}
-// 			continue
-// 		}
-// 		announce2("step", "Running step %q", step.Name)
-// 		err := run.Bash(cctx.Context, cmd).Run().StreamLines(func(line string) {
-// 			say(step.Name, line)
-// 		})
-// 		if err != nil {
-// 			sayFail(step.Name, "Step failed: %v", err)
-// 			return err
-// 		} else {
-// 			saySuccess("step", "Step %q succeeded", step.Name)
-// 		}
-// 	}
-// 	return nil
-// }
 
 func interpolate(s string, m map[string]string) string {
 	for k, v := range m {
@@ -419,7 +337,7 @@ func sayKind(style output.Style, section string, format string, a ...any) {
 	std.Out.WriteLine(output.Linef("  ", style, fmt.Sprintf("[%10s] %s", section, format), a...))
 }
 
-func loadReleaseManifest(cctx *cli.Context) (*createReleaseManifest, error) {
+func loadReleaseManifest(cctx *cli.Context) (*ReleaseManifest, error) {
 	workdir := cctx.String("workdir")
 	announce2("setup", "Finding release manifest in %q", workdir)
 	if err := os.Chdir(cctx.String("workdir")); err != nil {
@@ -433,7 +351,7 @@ func loadReleaseManifest(cctx *cli.Context) (*createReleaseManifest, error) {
 	}
 	defer f.Close()
 
-	var m createReleaseManifest
+	var m ReleaseManifest
 	dec := yaml.NewDecoder(f)
 	if err := dec.Decode(&m); err != nil {
 		say("setup", "failed to decode manifest")
