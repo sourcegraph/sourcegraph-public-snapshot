@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use scip::types::Document;
 use scip_syntax::{get_locals, get_symbols};
 use scip_treesitter_languages::parsers::BundledParser;
 
@@ -22,6 +23,10 @@ enum Commands {
         #[arg(short, long)]
         out: Option<String>,
         filenames: Vec<String>,
+        #[arg(long)]
+        no_locals: bool,
+        #[arg(long)]
+        no_globals: bool,
     },
 }
 
@@ -33,11 +38,19 @@ pub fn main() {
             language,
             out,
             filenames,
-        } => index_command(&language, &filenames, &out),
+            no_locals,
+            no_globals,
+        } => index_command(&language, &filenames, &out, !no_locals, !no_globals),
     }
 }
 
-fn index_command(language: &String, filenames: &Vec<String>, out: &Option<String>) {
+fn index_command(
+    language: &String,
+    filenames: &Vec<String>,
+    out: &Option<String>,
+    locals: bool,
+    globals: bool,
+) {
     let p = BundledParser::get_parser(language).unwrap();
 
     let working_directory = Path::new("./");
@@ -59,24 +72,33 @@ fn index_command(language: &String, filenames: &Vec<String>, out: &Option<String
 
     for (_, filename) in filenames.iter().enumerate() {
         let contents = std::fs::read(filename).unwrap();
-        let mut document = get_symbols(&p, &contents).unwrap();
+        let mut document: Document; //= get_symbols(&p, &contents).unwrap();
 
-        document.relative_path = filename.clone();
-        let locals = get_locals(&p, &contents);
-
-        match locals {
-            Some(Ok(occurrences)) => {
-                for occ in occurrences {
-                    document.occurrences.push(occ);
-                }
-            }
-            Some(Err(msg)) => {
-                println!("Error extracting locals: {}", msg);
-            }
-            None => {}
+        if globals {
+            document = get_symbols(&p, &contents).unwrap();
+        } else {
+            document = Document::new();
         }
 
-        index.documents.push(document);
+        document.relative_path = filename.clone();
+
+        if locals {
+            let locals = get_locals(&p, &contents);
+
+            match locals {
+                Some(Ok(occurrences)) => {
+                    for occ in occurrences {
+                        document.occurrences.push(occ);
+                    }
+                }
+                Some(Err(msg)) => {
+                    println!("Error extracting locals: {}", msg);
+                }
+                None => {}
+            }
+
+            index.documents.push(document);
+        }
     }
 
     let out_name = out.clone().unwrap_or("index.scip".to_string());
@@ -116,7 +138,6 @@ mod tests {
     fn basic_test() {
         let out_dir = temp_dir();
         let java = include_str!("../../scip-syntax/testdata/globals.java");
-
 
         let result = 2 + 2;
         assert_eq!(result, 4);
