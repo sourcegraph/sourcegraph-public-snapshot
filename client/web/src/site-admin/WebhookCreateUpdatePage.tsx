@@ -204,7 +204,6 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                     disabled={loading || !webhook.codeHostKind}
                                 >
                                     {webhook.codeHostKind &&
-                                        kindsToUrls.get(webhook.codeHostKind) &&
                                         kindsToUrls.get(webhook.codeHostKind)?.map(urn => (
                                             <option value={urn} key={urn}>
                                                 {urn}

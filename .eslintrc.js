@@ -264,6 +264,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
     'etc/throw-error': 'warn',
     'rxjs/throw-error': 'warn',
     'prefer-promise-reject-errors': 'warn',
+    '@typescript-eslint/no-redundant-type-constituents': 'warn',
+    '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
+    '@typescript-eslint/prefer-optional-chain': 'warn',
+    '@typescript-eslint/no-duplicate-enum-values': 'warn',
+    '@typescript-eslint/no-floating-promises': 'warn',
 
     'jsdoc/check-alignment': 'off',
 

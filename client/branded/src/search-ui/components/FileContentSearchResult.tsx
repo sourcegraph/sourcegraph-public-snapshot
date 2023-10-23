@@ -111,8 +111,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             // Check if search.contextLines is configured in settings.
             const contextLinesSetting =
                 isSettingsValid(settingsCascade) &&
-                settingsCascade.final &&
-                settingsCascade.final['search.contextLines']
+                settingsCascade.final?.['search.contextLines']
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting

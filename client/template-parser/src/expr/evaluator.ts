@@ -103,7 +103,7 @@ function exec<C>(node: ExpressionNode, context: Context<C>): any {
                 return left >= right()
             }
             case '+': {
-                // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+                 
                 return left + right()
             }
             case '-': {

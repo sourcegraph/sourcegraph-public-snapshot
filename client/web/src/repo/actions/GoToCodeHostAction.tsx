@@ -92,7 +92,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch =
-        (!isErrorLike(props.repo) && props.repo && props.repo.defaultBranch && props.repo.defaultBranch.displayName) ||
+        (!isErrorLike(props.repo) && props.repo?.defaultBranch?.displayName) ||
         'HEAD'
 
     // If there's no repo or no file / commit message, return null to hide all code host icons

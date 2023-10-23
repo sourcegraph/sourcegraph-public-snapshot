@@ -650,7 +650,7 @@ const defaultKeyboardBindings: KeyBinding[] = [
         run(view) {
             const state = view.state.field(suggestionsStateField)
             const option = state.result.at(state.selectedOption)
-            if (state.open && option && option.alternativeAction) {
+            if (state.open && option?.alternativeAction) {
                 applyAction(view, option.alternativeAction, option, 'keyboard')
             }
             return true
