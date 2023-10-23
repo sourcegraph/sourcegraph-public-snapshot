@@ -32,7 +32,7 @@ async function buildWorker(
 
 /**
  * An esbuild plugin that bundles a Web Worker (classic, not a module worker) given an import of a
- * `.worker.ts` file. Similar to https://github.com/webpack-contrib/worker-loader.
+ * `.worker.ts` file.
  *
  * TODO(sqs): This could be improved to use the new `new Worker(new URL(..., import.meta.url))`
  * worker syntax that many bundlers are starting to prefer.

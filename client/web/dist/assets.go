@@ -1,4 +1,4 @@
-package enterprise
+package dist
 
 import (
 	"embed"

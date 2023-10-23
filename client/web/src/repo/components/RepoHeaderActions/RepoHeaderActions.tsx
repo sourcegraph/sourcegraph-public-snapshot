@@ -22,7 +22,6 @@ type RepoHeaderButtonLinkProps = ButtonLinkProps & {
     file?: boolean
 }
 
-// eslint-disable-next-line react/display-name
 export const RepoHeaderActionButtonLink = React.forwardRef(
     ({ children, className, file, ...rest }: React.PropsWithChildren<RepoHeaderButtonLinkProps>, reference) => (
         <ButtonLink
@@ -51,7 +50,6 @@ export type RepoHeaderActionAnchorProps = Omit<ButtonLinkProps, 'as' | 'href'> &
     file?: boolean
 }
 
-// eslint-disable-next-line react/display-name
 export const RepoHeaderActionAnchor = React.forwardRef((props: RepoHeaderActionAnchorProps, reference) => {
     const { children, className, file, ...rest } = props
 

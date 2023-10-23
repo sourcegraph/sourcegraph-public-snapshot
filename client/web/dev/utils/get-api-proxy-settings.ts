@@ -37,7 +37,7 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
         cookieDomainRewrite: '',
         // Prevent automatic call of res.end() in `onProxyRes`. It is handled by `responseInterceptor`.
         selfHandleResponse: true,
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises, @typescript-eslint/require-await
+        // eslint-disable-next-line @typescript-eslint/require-await
         onProxyRes: conditionalResponseInterceptor(STREAMING_ENDPOINTS, async (responseBuffer, proxyRes) => {
             // Propagate cookies to enable authentication on the remote server.
             if (proxyRes.headers['set-cookie']) {

@@ -8,15 +8,13 @@ declare module '*.css' {
 }
 
 /**
- * For Web Worker entrypoints using Webpack's worker-loader.
- *
- * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
+ * For Web Worker entrypoints using workerPlugin.
  */
 declare module '*.worker.ts' {
-    class WebpackWorker extends Worker {
+    class _Worker extends Worker {
         constructor()
     }
-    export default WebpackWorker
+    export default _Worker
 }
 
 /**

@@ -128,7 +128,7 @@ export const WrapDisabledIcon: React.FunctionComponent<React.PropsWithChildren<I
 )
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
+
 export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
     <svg
         ref={reference}
@@ -158,7 +158,7 @@ export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
 CloudAlertIconRefresh.displayName = 'CloudAlertIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
+
 export const CloudSyncIconRefresh = React.forwardRef((props, reference) => (
     <svg
         ref={reference}
@@ -214,7 +214,7 @@ export const CloudInfoIconRefresh = React.forwardRef((props, reference) => (
 CloudInfoIconRefresh.displayName = 'CloudInfoIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
+
 export const CloudCheckIconRefresh = React.forwardRef((props, reference) => (
     <svg
         ref={reference}

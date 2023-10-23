@@ -1,6 +1,5 @@
 # Developing the EmbeddedWebApp
 
-- To enable the development of the `embed` bundle, you'll have to set the `EMBED_DEVELOPMENT=true` env variable
 - To test your local changes on 3rd party sites, you will have to proxy your dev environment using [ngrok](https://ngrok.com/)
 - Run ngrok using this command: `./ngrok http 3080 --host-header=rewrite`
 - Copy the Forwarding https:// address and use it to replace the `externalURL` property in your `site-config.json`

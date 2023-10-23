@@ -1706,7 +1706,12 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.
 func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
+			// The commits are returned from git log, so we are sure they exist and
+			// don't need to ensure the revision.
+			NoEnsureRevision: true,
+		})
+		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
 	}
@@ -2170,7 +2175,11 @@ func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName) (_ stri
 	}
 	commitID := string(out)
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
+			// We expect the HEAD reference to not be broken, let's not ensure the
+			// revision here.
+			NoEnsureRevision: true,
+		}); err != nil {
 			return checkError(err)
 		}
 	}
@@ -2252,7 +2261,11 @@ func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
+			// Don't ensure the revision here, the branch command below will fail
+			// anyways.
+			NoEnsureRevision: true,
+		}); err != nil {
 			return nil, err
 		}
 	}
@@ -2338,7 +2351,11 @@ func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
 ) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
+			// The commits are returned from git already, so they must exist.
+			NoEnsureRevision: true,
+		})
+		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
 	}
@@ -2429,7 +2446,11 @@ lineLoop:
 func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
+			// The show command below will fail anyways, so no need to ensure
+			// that the revision exists here.
+			NoEnsureRevision: true,
+		}); err != nil {
 			return "", time.Time{}, false, nil
 		}
 	}
@@ -2727,7 +2748,11 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 
 		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{})
+			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{
+				// The commitID comes from git, so surely it knows about it and
+				// there's no need to ensure the revision exists.
+				NoEnsureRevision: true,
+			})
 			if err != nil {
 				return nil, err
 			}
