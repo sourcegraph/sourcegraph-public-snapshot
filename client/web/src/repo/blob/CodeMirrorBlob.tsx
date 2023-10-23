@@ -348,8 +348,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
-            const trimmedContent = blobInfo.content.trimEnd()
-            const state = EditorState.create({ doc: trimmedContent, extensions })
+            const trimmed = blobInfo.content.slice(0, -1)
+            const state = EditorState.create({ doc: trimmed, extensions })
             editor.setState(state)
 
             if (navigateToLineOnAnyClick) {
