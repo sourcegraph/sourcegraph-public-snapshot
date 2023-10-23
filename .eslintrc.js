@@ -52,6 +52,15 @@ const config = {
     ],
     // This converts 'import {type foo} from ...' to 'import type {foo} from ...'
     '@typescript-eslint/no-import-type-side-effects': ['warn'],
+
+    // These rules are very slow on-save.
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/unbound-method': 'off',
+    '@typescript-eslint/no-misused-promises': 'off',
+    '@typescript-eslint/no-unnecessary-qualifier': 'off',
+    '@typescript-eslint/no-unused-vars': 'off', // also duplicated by tsconfig noUnused{Locals,Parameters}
+    'etc/no-deprecated': 'off',
+
     'no-restricted-imports': [
       'error',
       {
@@ -244,7 +253,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     ],
     'import/order': 'off',
-    'etc/no-deprecated': 'off',
+    'unicorn/expiring-todo-comments': 'off',
   },
   overrides: [
     {

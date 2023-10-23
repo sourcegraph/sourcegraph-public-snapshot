@@ -261,7 +261,7 @@ export function searchQueryAutocompletion(sources: StandardSuggestionSource[], n
                     key: 'Enter',
                     run(view) {
                         const selected = selectedCompletion(view.state)
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
                         const url = (selected as any)?.url
                         if (navigate && typeof url === 'string') {
                             navigate(url)

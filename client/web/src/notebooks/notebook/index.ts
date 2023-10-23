@@ -1,6 +1,6 @@
 import { escapeRegExp } from 'lodash'
 // We're using marked import here to access the `marked` package type definitions.
-// eslint-disable-next-line no-restricted-imports
+
 import { type marked, Renderer } from 'marked'
 import { type Observable, forkJoin, of } from 'rxjs'
 import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'

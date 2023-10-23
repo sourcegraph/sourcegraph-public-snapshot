@@ -80,7 +80,6 @@ export async function migrateLocalStorageToTemporarySettings(storage: TemporaryS
         const temporarySetting = await storage.get(migration.temporarySettingsKey).pipe(take(1)).toPromise()
         if (typeof temporarySetting === 'undefined') {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const value = parse(migration.type, localStorage.getItem(migration.localStorageKey))
                 if (!value) {
                     continue

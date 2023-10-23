@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { Badge, BadgeVariantType } from '@sourcegraph/wildcard'
+import { Badge, type BadgeVariantType } from '@sourcegraph/wildcard'
 
-import { SearchJobNode, SearchJobState } from '../../../graphql-operations'
+import { type SearchJobNode, SearchJobState } from '../../../graphql-operations'
 
 import styles from './SearchJobBadge.module.scss'
 

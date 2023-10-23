@@ -10,7 +10,7 @@ import type { ModifierKey } from './keys'
 describe('ShortcutManager', () => {
     // We only want to preserve the original implementation, not call it as a
     // function.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+
     const originalGetModifierState = KeyboardEvent.prototype.getModifierState
 
     beforeAll(() => {

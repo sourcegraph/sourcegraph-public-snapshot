@@ -27,7 +27,7 @@ module.exports = class TestEnvironmentGlobal extends TestEnvironment {
 
     // jsdom doesn't support document.queryCommandSupported(), needed for monaco-editor.
     // https://github.com/testing-library/react-testing-library/issues/546
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+
     this.dom.window.document.queryCommandSupported = () => false
 
     this.global.jsdom = this.dom

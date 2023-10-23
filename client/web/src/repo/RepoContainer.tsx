@@ -1,8 +1,8 @@
 import React, {
     createContext,
     type FC,
-    PropsWithChildren,
-    RefObject,
+    type PropsWithChildren,
+    type RefObject,
     Suspense,
     useContext,
     useEffect,
@@ -60,7 +60,7 @@ import type { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, Repo } from './backend'
+import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, type Repo } from './backend'
 import { AskCodyButton } from './cody/AskCodyButton'
 import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, type RepoHeaderActionButton, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'

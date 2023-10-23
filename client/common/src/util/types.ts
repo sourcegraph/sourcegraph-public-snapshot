@@ -4,8 +4,6 @@
  * @template U The type to check for (explicitly specify this)
  * @template T The actual type (inferred, don't specify this)
  */
-// needed for type parameter
-// eslint-disable-next-line unicorn/consistent-function-scoping
 export const subtypeOf =
     <U>() =>
     <T extends U>(value: T): T =>
