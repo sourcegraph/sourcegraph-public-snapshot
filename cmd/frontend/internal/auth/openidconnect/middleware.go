@@ -345,7 +345,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Add a ?signup= or ?signin= parameter to the redirect URL.
-	redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated)
+	redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OpenIDConnect")
 
 	user, err := db.Users().GetByID(r.Context(), actor.UID)
 	if err != nil {

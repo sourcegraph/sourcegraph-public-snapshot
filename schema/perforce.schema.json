@@ -112,7 +112,7 @@
         "printBatch": {
           "description": "The p4 print batch size",
           "type": "integer",
-          "default": 10,
+          "default": 100,
           "minimum": 1
         },
         "retries": {
@@ -124,7 +124,7 @@
         "refresh": {
           "description": "How many times a connection should be reused before it is refreshed",
           "type": "integer",
-          "default": 100,
+          "default": 1000,
           "minimum": 1
         },
         "lookAhead": {

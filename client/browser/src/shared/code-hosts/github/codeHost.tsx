@@ -160,9 +160,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.className = className
 
     // new GitHub code view: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view
-    const container =
-        codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
-            ?.childNodes[2] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+    const container = codeViewElement.querySelector('#repos-sticky-header .react-blob-header-edit-and-raw-actions')
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
