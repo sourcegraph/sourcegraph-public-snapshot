@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals'
 import type { Remote } from 'comlink'
 import { throwError, of, Subscription, type Unsubscribable, type Subscribable } from 'rxjs'
 import type * as sourcegraph from 'sourcegraph'

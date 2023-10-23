@@ -40,11 +40,11 @@ ts_project(
     tsconfig = ":tsconfig",
     visibility = ["//client/web:__subpackages__"],
     deps = [
+        "//:node_modules/@jest/globals",
         "//:node_modules/@sentry/esbuild-plugin",
         "//:node_modules/@types/compression",
         "//:node_modules/@types/connect-history-api-fallback",
         "//:node_modules/@types/express",
-        "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/signale",

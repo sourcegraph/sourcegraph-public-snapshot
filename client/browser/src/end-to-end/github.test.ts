@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import { startCase } from 'lodash'
+import { describe, it } from 'mocha'
 import type { Target, Page } from 'puppeteer'
 import { fromEvent } from 'rxjs'
 import { first, filter, timeout, mergeMap } from 'rxjs/operators'

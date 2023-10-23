@@ -1,3 +1,5 @@
+import { describe, expect, it, test } from '@jest/globals'
+
 import { renderMarkdown, registerHighlightContributions, escapeMarkdown } from '.'
 
 registerHighlightContributions()

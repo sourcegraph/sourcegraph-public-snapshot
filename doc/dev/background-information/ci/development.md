@@ -144,9 +144,6 @@ Will result in a single trace span for the `./dev/check/docsite.sh` script. But 
     // ...
     bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
     bk.Cmd("pnpm --filter @sourcegraph/browser -s run build"),
-    bk.Cmd("pnpm run cover-browser-integration"),
-    bk.Cmd("pnpm nyc report -r json"),
-    bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 ```
 
 Therefore, it's beneficial for tracing purposes to split the step in multiple commands, if possible.

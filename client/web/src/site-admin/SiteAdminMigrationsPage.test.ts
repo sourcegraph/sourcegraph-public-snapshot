@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { parse } from 'semver'
 
 import type { OutOfBandMigrationFields } from '../graphql-operations'

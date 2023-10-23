@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { cleanup, fireEvent, act } from '@testing-library/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

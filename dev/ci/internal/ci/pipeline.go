@@ -151,14 +151,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(baseImageOps)
 		}
 
-		// Now we set up conditional operations that only apply to pull requests.
-		if c.Diff.Has(changed.Client) {
-			// triggers a slow pipeline, currently only affects web. It's optional so we
-			// set it up separately from CoreTestOperations
-			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-				triggerAsync(buildOptions)))
-		}
-
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
 			ops.Merge(operations.NewNamedSet("Browser Extensions",
 				addBrowserExtensionUnitTests,
@@ -279,10 +271,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
-		// Slow async pipeline
-		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-			triggerAsync(buildOptions)))
-
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds

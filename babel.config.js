@@ -1,21 +1,9 @@
 // @ts-check
-const path = require('path')
-
-const logger = require('signale')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {
   const isTest = api.env('test')
   api.cache.forever()
-
-  /**
-   * Whether to instrument files with istanbul for code coverage.
-   * This is needed for e2e test coverage.
-   */
-  const instrument = Boolean(process.env.COVERAGE_INSTRUMENT && JSON.parse(process.env.COVERAGE_INSTRUMENT))
-  if (instrument) {
-    logger.info('Instrumenting code for coverage tracking')
-  }
 
   /**
    * Do no use babel-preset-env for mocha tests transpilation in Bazel.
@@ -25,8 +13,6 @@ module.exports = api => {
 
   return {
     presets: [
-      // Can't put this in plugins because it needs to run as the last plugin.
-      ...(instrument ? [{ plugins: [['babel-plugin-istanbul', { cwd: path.resolve(__dirname) }]] }] : []),
       ...(disablePresetEnv
         ? []
         : [

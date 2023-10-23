@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals'
+
 // Inspired by React's packages/dom-event-testing-library/domEnvironment.js
 
 const originalPlatform = window.navigator.platform

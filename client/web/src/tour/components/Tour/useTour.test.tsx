@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, describe, expect, test } from '@jest/globals'
 import { renderHook, cleanup, act } from '@testing-library/react'
 import type { WrapperComponent } from '@testing-library/react-hooks'
 
@@ -34,13 +35,13 @@ describe('useTour.ts', () => {
     test('returns initial state from temporary settings', () => {
         const initialState: TourState = { completedStepIds: [], status: 'closed' }
         const { result } = setup({ [TourId]: initialState })
-        expect(getFieldsAsObject(result.current)).toMatchObject(initialState)
+        expect(getFieldsAsObject(result.current)).toMatchObject(initialState as unknown as Record<string, unknown>)
     })
 
     test('clears state when restart called', () => {
         const initialState: TourState = { completedStepIds: [], status: 'closed' }
         const { result } = setup({ [TourId]: initialState })
-        expect(getFieldsAsObject(result.current)).toMatchObject(initialState)
+        expect(getFieldsAsObject(result.current)).toMatchObject(initialState as unknown as Record<string, unknown>)
         act(() => result.current.restart())
         expect(getFieldsAsObject(result.current)).toMatchObject({})
     })
