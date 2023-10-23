@@ -27,7 +27,6 @@ const TestApp = () => (
 )
 
 describe('useScrollManager', () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalScrollTo = Element.prototype.scrollTo
     const scrollToMock = spy()
     beforeAll(() => {

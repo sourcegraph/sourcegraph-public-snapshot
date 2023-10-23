@@ -61,7 +61,6 @@ export const stylePlugin: esbuild.Plugin = {
 
             const isCSSModule = outputPath.endsWith('.module.css')
             const result = await postcss(
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 isCSSModule ? [...postcssConfig.plugins, modulesPlugin] : postcssConfig.plugins
             ).process(css, {
                 from: outputPath,
@@ -147,7 +146,7 @@ export const stylePlugin: esbuild.Plugin = {
         build.onResolve({ filter: /\.css$/, namespace: 'css-module' }, args => ({
             path: args.path,
             namespace: 'css',
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             pluginData: { contents: args.pluginData?.contents },
         }))
 
@@ -159,13 +158,13 @@ import ${JSON.stringify(args.path)}
 export default ${modulesMap.get(args.path) || '{}'}`,
             loader: 'js',
             resolveDir: path.dirname(args.path),
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
             pluginData: args.pluginData,
         }))
 
         // Load the contents of all CSS files. The transformed CSS was passed through `pluginData.contents`.
         build.onLoad({ filter: /\.css$/, namespace: 'css' }, args => ({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             contents: args.pluginData?.contents,
             resolveDir: path.dirname(args.path),
             loader: 'css',

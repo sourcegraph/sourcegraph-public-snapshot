@@ -139,6 +139,7 @@ export const CodeInsightsExamplesSliderItem = forwardRef((props, publicReference
 
     return <Comp ref={mergedReference} {...attributes} />
 }) as ForwardReferenceComponent<'div', CodeInsightsExamplesSliderItemProps>
+CodeInsightsExamplesSliderItem.displayName = 'CodeInsightsExamplesSliderItem'
 
 interface ArrowIconProps {
     side: 'right' | 'left'

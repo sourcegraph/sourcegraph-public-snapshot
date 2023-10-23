@@ -13,7 +13,6 @@ const getFieldsAsObject = (value: object): object =>
     Object.entries(Object.getOwnPropertyDescriptors(value))
         // eslint-disable-next-line no-prototype-builtins
         .filter(([, desc]) => desc.hasOwnProperty('value') && typeof desc.value !== 'function')
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         .reduce((result, [key]) => ({ ...result, [key]: (value as any)[key] }), {})
 
 const TourId = 'MockTour'
