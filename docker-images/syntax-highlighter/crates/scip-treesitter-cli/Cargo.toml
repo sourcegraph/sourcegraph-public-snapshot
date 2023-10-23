@@ -8,8 +8,12 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.0"
 paste = "1.0.6"
+assert_cmd = "2.0.12"
+predicates = "3.0.4"
+
 protobuf.workspace = true
 scip.workspace = true
+anyhow.workspace = true
 
 sg-syntax = { path = "../sg-syntax" }
 scip-syntax = { path = "../scip-syntax" }
