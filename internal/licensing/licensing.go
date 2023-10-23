@@ -44,7 +44,7 @@ var publicKey = func() ssh.PublicKey {
 	return publicKey
 }()
 
-// IsLicensePublicKeyOverridden checks if the hardcoded license public key has been overridden
+// IsLicensePublicKeyOverridden checks if the hardcoded license public key has been overridden with a *different* key
 func IsLicensePublicKeyOverridden() bool {
 	return publicKeyData != string(bytes.TrimSpace(ssh.MarshalAuthorizedKey(publicKey)))
 }
