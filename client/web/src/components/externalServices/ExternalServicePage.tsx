@@ -249,7 +249,8 @@ export const ExternalServicePage: FC<Props> = props => {
                 {externalService.unrestricted && (
                     <Alert className="mt-2" variant="warning">
                         This code host connection does not have authorization configured. Any repositories added by this
-                        code host will be accessible by all users on the instance.
+                        code host will be accessible by all users on the instance, even if another code host connection
+                        with authorization syncs the same repository.
                     </Alert>
                 )}
                 {externalServiceCategory && (

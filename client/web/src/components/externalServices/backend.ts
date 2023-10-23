@@ -69,6 +69,7 @@ export const externalServiceFragment = gql`
         createdAt
         webhookURL
         hasConnectionCheck
+        unrestricted
     }
 `
 
