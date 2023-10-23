@@ -3,7 +3,6 @@ import { Observable } from 'rxjs'
 
 /**
  * Highlights a node using recursive node walking.
- *
  * @param node the node to highlight
  * @param start the current character position (starts at 0).
  * @param length the number of characters to highlight.
@@ -31,7 +30,6 @@ export function highlightNode(node: HTMLElement, start: number, length: number):
 
 /**
  * Highlights match ranges within visibleRows, with support for highlighting match ranges that span multiple lines.
- *
  * @param visibleRows the visible rows of the HTML table containing the code excerpt
  * @param startRow the row within the table where highlighting should begin
  * @param endRow the row within the table where highlighting should end
@@ -77,7 +75,6 @@ interface HighlightResult {
 
 /**
  * Highlights a node using recursive node walking.
- *
  * @param currNode the current node being walked.
  * @param currOffset the current character position (starts at 0).
  * @param start the offset character where highlting starts.

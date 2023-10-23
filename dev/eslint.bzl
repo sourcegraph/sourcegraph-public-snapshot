@@ -30,9 +30,8 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
     js_library(
         name = name,
         testonly = True,
-        srcs = [".eslintrc.js"],
+        srcs = ["//:eslint_config"],
         data = [
-            ".eslintignore",
             "package.json",
             ":tsconfig",
         ],

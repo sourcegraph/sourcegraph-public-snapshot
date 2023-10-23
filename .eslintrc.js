@@ -1,6 +1,32 @@
 // @ts-check
 
+// Use faster experimental way of doing multi-project TypeScript linting. See
+// https://github.com/typescript-eslint/typescript-eslint/pull/6754.
+process.env.TYPESCRIPT_ESLINT_EXPERIMENTAL_TSSERVER = 'true'
+
 const config = {
+  root: true,
+  ignorePatterns: [
+    '**/graphql-operations.ts',
+    '**/node_modules/**',
+    'out/',
+    'dist/',
+    'src/schema/*',
+    'graphql-operations.ts',
+    'GH2SG.bookmarklet.js',
+    '**/vendor/*.js',
+    'svelte.config.js',
+    'vite.config.ts',
+    'playwright.config.ts',
+    '.vscode-test',
+    '**/*.json',
+    '**/*.d.ts',
+    'eslint-relative-formatter.js',
+    'jest.config.js',
+    'gulpfile.js',
+    'typedoc.js',
+    'bundlesize.config.js',
+  ],
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
     browser: true,
@@ -13,8 +39,8 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
-    project: __dirname + '/tsconfig.eslint.json',
+    EXPERIMENTAL_projectService: true,
+    project: __dirname + '/tsconfig.all.json',
   },
   settings: {
     react: {
@@ -118,6 +144,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             group: ['**/out/*'],
             message:
               "Please don't import stuff from the 'out' directory. It’s generated code. Remove the 'out/' part and you should be good go to.",
+          },
+          {
+            group: ['!@sourcegraph/cody-shared/*', '!@sourcegraph/cody-ui/*'],
+            message:
+              "Allowed imports from @sourcegraph/cody-* packages while those packages' APIs are being stabilized.",
           },
         ],
       },
@@ -289,10 +320,30 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     },
     {
-      files: ['**/gulpfile.js', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx'],
+      files: [
+        '**/dev/**/*.ts',
+        '**/gulpfile.js',
+        '**/story/**.tsx',
+        '**/story/**.ts',
+        '*.story.tsx',
+        'client/build-config/**',
+      ],
+      rules: {
+        'no-console': 'off',
+        'no-sync': 'off',
+      },
+    },
+    {
+      files: ['client/vscode/**', 'client/browser/**', 'client/jetbrains/**'],
       rules: {
         'no-console': 'off',
       },
+    },
+
+    // client/web
+    {
+      files: ['client/web/src/stores/**.ts', 'client/web/src/__mocks__/zustand.ts'],
+      rules: { 'no-restricted-imports': 'off' },
     },
   ],
 }
