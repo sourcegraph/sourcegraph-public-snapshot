@@ -188,5 +188,5 @@ comby -matcher .py \
   "${repository_root}/tools/release/schema_deps.bzl"
 
 echo "--- Summary"
-tar tvf $output_path
+tar tvf "$output_path"
 echo "Uploaded ${bucket}/dist/${output_basename} sha256:${checksum}"
