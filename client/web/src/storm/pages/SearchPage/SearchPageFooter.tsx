@@ -29,12 +29,12 @@ export const SearchPageFooter: FC = () => {
                           href: 'https://about.sourcegraph.com/cody',
                       },
                       {
-                          name: 'App',
-                          href: 'https://about.sourcegraph.com/app',
-                      },
-                      {
                           name: 'Enterprise',
                           href: 'https://about.sourcegraph.com/get-started?t=enterprise',
+                      },
+                      {
+                          name: 'Security',
+                          href: 'https://about.sourcegraph.com/security',
                       },
                       { name: 'Discord', href: 'https://srcgr.ph/discord-server' },
                   ]
