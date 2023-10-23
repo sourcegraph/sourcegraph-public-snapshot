@@ -12,6 +12,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
@@ -1140,7 +1141,6 @@ ts_project(
         "src/marketing/toast/SurveyUserRatingToast.tsx",
         "src/marketing/toast/Toast.tsx",
         "src/marketing/toast/index.ts",
-        "src/marketing/util.tsx",
         "src/monitoring/index.ts",
         "src/monitoring/initMonitoring.ts",
         "src/monitoring/opentelemetry/initOpenTelemetry.ts",
@@ -1992,6 +1992,7 @@ ts_project(
         "src/stores/navbarSearchQueryState.test.ts",
         "src/stores/notepad.test.ts",
         "src/team/area/testContext.mock.ts",
+        "src/testGlobals.d.ts",  #keep
         "src/tour/components/Tour/Tour.test.tsx",
         "src/tour/components/Tour/useTour.test.tsx",
         "src/tracking/util.test.ts",
@@ -2023,12 +2024,16 @@ ts_project(
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/state",
         "//:node_modules/@codemirror/view",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@testing-library/dom",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/react-hooks",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
         "//:node_modules/@types/semver",
@@ -2041,6 +2046,7 @@ ts_project(
         "//:node_modules/history",
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
+        "//:node_modules/mocha",
         "//:node_modules/react",
         "//:node_modules/react-dom",
         "//:node_modules/react-router-dom",

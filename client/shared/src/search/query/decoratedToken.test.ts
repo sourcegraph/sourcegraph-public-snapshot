@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { SearchPatternType } from '../../graphql-operations'
 
 import { type DecoratedToken, decorate } from './decoratedToken'

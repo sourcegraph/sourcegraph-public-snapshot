@@ -261,7 +261,7 @@ async function createOrUpdateComment(body: string): Promise<void> {
         try {
             await octokit.rest.issues.updateComment({
                 ...repo,
-                // eslint-disable-next-line camelcase
+
                 comment_id: sizeLimitComment.id,
                 body,
             })

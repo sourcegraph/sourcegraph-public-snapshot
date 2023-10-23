@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { describe, expect, test, jest } from '@jest/globals'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ErrorBoundary } from './ErrorBoundary'

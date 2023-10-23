@@ -1,3 +1,4 @@
+import { describe } from '@jest/globals'
 import { startCase } from 'lodash'
 
 import { testDOMFunctions } from '../shared/codeHostTestUtils'

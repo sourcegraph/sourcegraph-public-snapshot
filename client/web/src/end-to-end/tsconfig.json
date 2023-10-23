@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "types": ["mocha", "node"],
+    "types": ["node"],
     "module": "commonjs",
   },
   "references": [{ "path": "../../../shared/src/testing" }, { "path": "../../../../schema" }],

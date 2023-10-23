@@ -36,7 +36,6 @@ ts_project(
     srcs = [
         "MockIntersectionObserver.ts",
         "accessibility.ts",
-        "apollo/createGraphQLClientGetter.ts",
         "apollo/index.ts",
         "apollo/mockedTestProvider.tsx",
         "batches.ts",
@@ -62,12 +61,12 @@ ts_project(
     deps = [
         "//:node_modules/@apollo/client",
         "//:node_modules/@axe-core/puppeteer",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@percy/puppeteer",
         "//:node_modules/@pollyjs/adapter",
         "//:node_modules/@pollyjs/core",
         "//:node_modules/@pollyjs/persister-fs",
         "//:node_modules/@testing-library/react",
-        "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mime-types",
         "//:node_modules/@types/mocha",
@@ -88,7 +87,6 @@ ts_project(
         "//:node_modules/expect",
         "//:node_modules/graphql",
         "//:node_modules/jest",  #keep
-        "//:node_modules/jest-mock-extended",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/mime-types",

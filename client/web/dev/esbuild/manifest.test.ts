@@ -1,3 +1,5 @@
+import { expect, describe, test } from '@jest/globals'
+
 import { type WebBuildManifest, createManifestFromBuildResult } from './manifest'
 
 describe('createManifestFromBuildResult', () => {
@@ -24,12 +26,12 @@ describe('createManifestFromBuildResult', () => {
                     },
                 }
             )
-        ).toEqual<WebBuildManifest>({
+        ).toEqual({
             'main.js': 'main-AAA.js',
             'main.css': 'main-BBB.css',
             'embed.js': 'embedMain-CCC.js',
             'embed.css': 'embedMain-DDD.css',
-        }))
+        } satisfies WebBuildManifest))
 
     test('bazel', () =>
         expect(
@@ -55,10 +57,10 @@ describe('createManifestFromBuildResult', () => {
                 },
                 true
             )
-        ).toEqual<WebBuildManifest>({
+        ).toEqual({
             'main.js': 'main-AAA.js',
             'main.css': 'main-BBB.css',
             'embed.js': 'embedMain-CCC.js',
             'embed.css': 'embedMain-DDD.css',
-        }))
+        } satisfies WebBuildManifest))
 })
