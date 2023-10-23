@@ -52,14 +52,14 @@ type ReleaseManifest struct {
 				Minor []cmdManifest `yaml:"minor"`
 				Major []cmdManifest `yaml:"major"`
 			} `yaml:"steps"`
-		}
+		} `yaml:"create"`
 		// Finalize defines the steps to execute once the internal release build and test phases have been successfully completed.
 		// Typically, this is where one would define commands to open a PR on a documentation repo to take note of this
 		// new release.
 		Finalize struct {
 			Steps []cmdManifest `yaml:"steps"`
 		} `yaml:"finalize"`
-	} `yaml:"create"`
+	} `yaml:"internal"`
 	// Test defines the steps to test the release build. These are not meant to be "normal tests", but instead
 	// extended testing to ensure the release is correct. These tests are to be executed both during the
 	// create and promote-to-public phase.
