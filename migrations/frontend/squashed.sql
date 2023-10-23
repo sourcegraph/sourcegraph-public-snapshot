@@ -1312,7 +1312,7 @@ CREATE TABLE repo (
     id integer NOT NULL,
     name citext NOT NULL,
     description text,
-    fork boolean,
+    fork boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone,
     external_id text,
