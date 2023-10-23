@@ -641,13 +641,13 @@ func TestExternalServices(t *testing.T) {
 		{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 		{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 		{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
-		{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
+		{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit, Unrestricted: true},
 	}
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.AfterID > 0 || opt.RepoID == 42 {
 			return []*types.ExternalService{
 				{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
-				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
+				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit, Unrestricted: true},
 			}, nil
 		}
 
@@ -813,6 +813,7 @@ func TestExternalServices(t *testing.T) {
 				externalServices(repo: "%s") {
 					nodes {
 						id
+						unrestricted
 					}
 				}
 			}
@@ -821,8 +822,8 @@ func TestExternalServices(t *testing.T) {
 			{
 				"externalServices": {
 					"nodes": [
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=","unrestricted":false},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=","unrestricted":true}
                     ]
                 }
 			}
