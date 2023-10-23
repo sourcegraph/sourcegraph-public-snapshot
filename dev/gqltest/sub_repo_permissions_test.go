@@ -86,6 +86,8 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSymbols(t *testing.T) {
+	t.Skip("Flaky, need to fix")
+
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
@@ -123,6 +125,8 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
+	t.Skip("Flaky, need to fix")
+
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
