@@ -1,4 +1,4 @@
-import type { Meta, Decorator, StoryFn } from '@storybook/react'
+import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -46,19 +46,21 @@ const Template: StoryFn = ({ state, ...args }) => (
     </WebStory>
 )
 
-export const Licensed = Template.bind({})
+type Story = StoryObj<typeof config>
+
+export const Licensed: Story = Template.bind({})
 Licensed.args = { state: LicensingState.Licensed }
 Licensed.argTypes = {
     licensed: {},
 }
 
-export const Unlicensed = Template.bind({})
+export const Unlicensed: Story = Template.bind({})
 Unlicensed.args = { state: LicensingState.Unlicensed }
 Unlicensed.argTypes = {
     licensed: {},
 }
 
-export const Loading = Template.bind({})
+export const Loading: Story = Template.bind({})
 Loading.args = { state: LicensingState.Loading }
 Loading.argTypes = {
     licensed: {},
