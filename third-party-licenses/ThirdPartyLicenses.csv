@@ -1575,7 +1575,6 @@ Go,github.com/googleapis/gax-go/v2,v2.12.0,New BSD,github.com/googleapis/gax-go,
 Go,github.com/gorilla/context,v1.1.1,New BSD,github.com/gorilla/context,Approved
 Go,github.com/gorilla/csrf,v1.7.1,New BSD,github.com/gorilla/csrf,Approved
 Go,github.com/gorilla/css,v1.0.0,New BSD,github.com/gorilla/css,Approved
-Go,github.com/gorilla/handlers,v1.5.1,Simplified BSD,github.com/gorilla/handlers,Approved
 Go,github.com/gorilla/mux,v1.8.0,New BSD,github.com/gorilla/mux,Approved
 Go,github.com/gorilla/schema,v1.2.0,New BSD,github.com/gorilla/schema,Approved
 Go,github.com/gorilla/securecookie,v1.1.1,New BSD,github.com/gorilla/securecookie,Approved
@@ -1719,8 +1718,6 @@ Go,github.com/sirupsen/logrus,v1.9.0,MIT,github.com/sirupsen/logrus,Approved
 Go,github.com/skeema/knownhosts,v1.1.1,Apache 2.0,github.com/skeema/knownhosts,Approved
 Go,github.com/slack-go/slack,v0.10.1,"MIT,Simplified BSD",github.com/slack-go/slack,Approved
 Go,github.com/smacker/go-tree-sitter,v0.0.0-20220209044044-0d3022e933c3,MIT,github.com/smacker/go-tree-sitter,Approved
-Go,github.com/snabb/diagio,v1.0.0,MIT,github.com/snabb/diagio,Approved
-Go,github.com/snabb/sitemap,v1.0.0,MIT,github.com/snabb/sitemap,Approved
 Go,github.com/sourcegraph/alertmanager,v0.21.1-0.20211110092431-863f5b1ee51b,Apache 2.0,github.com/sourcegraph/alertmanager,Approved
 Go,github.com/sourcegraph/conc,v0.2.0,MIT,github.com/sourcegraph/conc,Approved
 Go,github.com/sourcegraph/embedded-postgres,v1.19.1-0.20230624001757-345a8df15ded,MIT,github.com/sourcegraph/embedded-postgres,Approved
@@ -1732,16 +1729,16 @@ Go,github.com/sourcegraph/go-lsp,v0.0.0-20200429204803-219e11d77f5d,MIT,github.c
 Go,github.com/sourcegraph/go-rendezvous,v0.0.0-20210910070954-ef39ade5591d,MIT,github.com/sourcegraph/go-rendezvous,Approved
 Go,github.com/sourcegraph/httpgzip,v0.0.0-20211015085752-0bad89b3b4df,MIT,github.com/sourcegraph/httpgzip,Approved
 Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,github.com/sourcegraph/jsonx,Approved
-Go,github.com/sourcegraph/log,v0.0.0-20230918165208-4a174e4ec4cf,Apache 2.0,github.com/sourcegraph/log,Approved
+Go,github.com/sourcegraph/log,v0.0.0-20231018134238-fbadff7458bb,Apache 2.0,github.com/sourcegraph/log,Approved
 Go,github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare,v0.0.0-20230822024612-edb48c530722,MIT,github.com/sourcegraph/managed-services-platform-cdktf,Approved
 Go,github.com/sourcegraph/managed-services-platform-cdktf/gen/google,v0.0.0-20230822024612-edb48c530722,MIT,github.com/sourcegraph/managed-services-platform-cdktf,Approved
 Go,github.com/sourcegraph/managed-services-platform-cdktf/gen/random,v0.0.0-20230822024612-edb48c530722,MIT,github.com/sourcegraph/managed-services-platform-cdktf,Approved
-Go,github.com/sourcegraph/mountinfo,v0.0.0-20230106004439-7026e28cef67,Apache 2.0,github.com/sourcegraph/mountinfo,Approved
+Go,github.com/sourcegraph/mountinfo,v0.0.0-20231018142932-e00da332dac5,Apache 2.0,github.com/sourcegraph/mountinfo,Approved
 Go,github.com/sourcegraph/run,v0.12.0,Apache 2.0,github.com/sourcegraph/run,Approved
 Go,github.com/sourcegraph/scip,v0.3.1-0.20230627154934-45df7f6d33fc,Apache 2.0,github.com/sourcegraph/scip,Approved
 Go,github.com/sourcegraph/tiktoken-go,v0.0.0-20230905173153-caab340cf008,MIT,github.com/sourcegraph/tiktoken-go,Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,github.com/sourcegraph/yaml,Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20231005061020-cc1b5cda7073,Apache 2.0,github.com/sourcegraph/zoekt,Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20231018143538-16e2ff8c98ee,Apache 2.0,github.com/sourcegraph/zoekt,Approved
 Go,github.com/spf13/pflag,v1.0.5,New BSD,github.com/spf13/pflag,Approved
 Go,github.com/stretchr/testify,v1.8.4,MIT,github.com/stretchr/testify,Approved
 Go,github.com/throttled/throttled/v2,v2.12.0,New BSD,github.com/throttled/throttled,Approved
@@ -1787,7 +1784,6 @@ PNPM,globjoin,0.1.4,MIT,"",Approved
 PNPM,glogg,1.0.1,MIT,"",Approved
 PNPM,glur,1.1.2,MIT,"",Approved
 Go,go.bobheadxi.dev/streamline,v1.2.2,MIT,go.bobheadxi.dev/streamline,Approved
-Go,go.etcd.io/bbolt,v1.3.6,MIT,go.etcd.io/bbolt,Approved
 Go,go.mongodb.org/mongo-driver,v1.11.3,Apache 2.0,go.mongodb.org/mongo-driver,Approved
 Go,go.opencensus.io,v0.24.0,Apache 2.0,go.opencensus.io,Approved
 Go,go.opentelemetry.io/collector,v0.81.0,Apache 2.0,go.opentelemetry.io/collector,Approved
@@ -2896,7 +2892,7 @@ PNPM,trim-newlines,3.0.1,MIT,"",Approved
 PNPM,ts-dedent,2.2.0,MIT,"",Approved
 PNPM,ts-essentials,7.0.3,MIT,"",Approved
 PNPM,ts-invariant,0.10.3,MIT,"",Approved
-PNPM,ts-key-enum,2.0.8,MIT,"",Approved
+PNPM,ts-key-enum,2.0.12,MIT,"",Approved
 PNPM,ts-loader,9.4.2,MIT,"",Approved
 PNPM,ts-log,2.2.3,MIT,"",Approved
 PNPM,ts-node,10.9.1,MIT,"",Approved

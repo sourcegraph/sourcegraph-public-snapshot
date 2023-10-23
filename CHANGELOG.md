@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The experimental GraphQL query `User.invitableCollaborators`.
 - The following experimental settings in site-configuration are now deprecated and will not be read anymore: `maxReorderQueueSize`, `maxQueueMatchCount`, `maxReorderDurationMS`. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
 - The feature-flag `search-ranking`, which allowed to disable the improved ranking introduced in 5.1, is now deprecated and will not be read anymore. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
+- The GitHub Proxy service is no longer required and has been removed from deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
 
 ## Unreleased 5.2.2
 
