@@ -1,5 +1,27 @@
 # Release tooling
 
+## Usage
+
+### Generating a database schemas tarball
+
+Generating a database schemas tarball is achieved by downloading all known schemas plus the current schema. There are two options for the current version database schemas: either we are cutting a new release and we need to inject the current one, or we are regenerating the tarball to fix a problem.
+
+To control which approach we take, we use the second parameter of the following command:
+
+```
+bazel run //tools/release:generate_schemas_archive -- vX.Y.Z [ACTION] $HOME/[PATH-TO-YOUR-REPO]
+```
+
+If ran with `fetch-current-schemas`, the script will ensure that the schemas archive in the bucket correctly
+contains the given version database schemas. It will also prompt the user for confirmation if the associated
+tarball with that version exists in the bucket.
+
+If ran with `inject-current-schemas`, the script will ensure that the schemas archive in the bucket doesn't
+contain the schemas for the new version and will instead create them by injecting the `internal/database/schemas*.json` schemas into the tarball, properly renamed to the expected convention.
+
+Finally, in both cases, the tarball will be uploaded in the bucket, and the third party dependency, located in
+`tools/release/schema_deps.bzl` will be updated accordingly, allowing builds past that point to use those schemas.
+
 ## Database schemas
 
 Database schemas are necessary for Multi-Version Upgrades, so we need to populate
@@ -119,7 +141,7 @@ transactional, i.e it's not possible to list a file until it's fully uploaded.
 > What happens if a release build fails. Can it mess with ulterior release builds?
 
 It cannot, because the only time the schemas are finally added to `schemas/` is when the release build succeeds. This is why when we're regenerating the tarball, we are fetching
-all the known schemas _and_ adding the new one from the source tree at that point. Had we uploaded the new schemas at the beginning of the build instead, to then fetch everything to  
+all the known schemas _and_ adding the new one from the source tree at that point. Had we uploaded the new schemas at the beginning of the build instead, to then fetch everything to
 build the tarball, including the new one, we would have had the problem.
 
 > How do we ensure that the `schema.*.json` in the source, at the revision we're cutting the release are correct?
