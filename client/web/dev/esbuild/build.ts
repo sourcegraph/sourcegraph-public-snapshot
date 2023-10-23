@@ -4,18 +4,16 @@ import path from 'path'
 import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin'
 import * as esbuild from 'esbuild'
 
+import { ROOT_PATH, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import {
-    MONACO_LANGUAGES_AND_FEATURES,
-    ROOT_PATH,
-    STATIC_ASSETS_PATH,
     stylePlugin,
     packageResolutionPlugin,
     monacoPlugin,
     RXJS_RESOLUTIONS,
     buildMonaco,
     buildTimerPlugin,
-} from '@sourcegraph/build-config'
-import { isDefined } from '@sourcegraph/common'
+} from '@sourcegraph/build-config/src/esbuild/plugins'
+import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config/src/monaco-editor'
 
 import { ENVIRONMENT_CONFIG, IS_DEVELOPMENT, IS_PRODUCTION } from '../utils'
 
@@ -25,20 +23,22 @@ const isCodyApp = ENVIRONMENT_CONFIG.CODY_APP
 const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
-    entryPoints: {
-        'scripts/app': isCodyApp
-            ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-main.tsx')
-            : path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
-    },
+    entryPoints: isCodyApp
+        ? [path.join(ROOT_PATH, 'client/web/src/enterprise/app/main.tsx')]
+        : [
+              path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
+              path.join(ROOT_PATH, 'client/web/src/enterprise/embed/embedMain.tsx'),
+          ],
     bundle: true,
     minify: IS_PRODUCTION,
+
     format: 'esm',
     logLevel: 'error',
     jsx: 'automatic',
     jsxDev: IS_DEVELOPMENT,
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
-    entryNames: IS_PRODUCTION ? 'scripts/[name]-[hash]' : undefined,
+    entryNames: '[name]-[hash]',
     outdir: STATIC_ASSETS_PATH,
     plugins: [
         stylePlugin,
@@ -74,10 +74,10 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
                   authToken: ENVIRONMENT_CONFIG.SENTRY_DOT_COM_AUTH_TOKEN,
                   silent: true,
                   release: { name: `frontend@${ENVIRONMENT_CONFIG.VERSION}` },
-                  sourcemaps: { assets: path.join(ENVIRONMENT_CONFIG.STATIC_ASSETS_PATH, 'scripts', '*.map') },
+                  sourcemaps: { assets: [path.join('dist', '*.map'), path.join('dist', 'chunks', '*.map')] },
               })
             : null,
-    ].filter(isDefined),
+    ].filter((plugin): plugin is esbuild.Plugin => plugin !== null),
     define: {
         ...Object.fromEntries(
             Object.entries({ ...ENVIRONMENT_CONFIG, SOURCEGRAPH_API_URL: undefined }).map(([key, value]) => [
@@ -98,19 +98,29 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
 }
 
 export const build = async (): Promise<void> => {
+    if (!BUILD_OPTIONS.outdir) {
+        throw new Error('no outdir')
+    }
+
     const metafile = process.env.ESBUILD_METAFILE
-    const result = await esbuild.build({
+    const options: esbuild.BuildOptions = {
         ...BUILD_OPTIONS,
-        outdir: STATIC_ASSETS_PATH,
         metafile: Boolean(metafile),
-    })
+    }
+    const result = await esbuild.build(options)
     if (metafile) {
         writeFileSync(metafile, JSON.stringify(result.metafile), 'utf-8')
     }
     if (!omitSlowDeps) {
-        const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        const ctx = await buildMonaco(BUILD_OPTIONS.outdir)
         await ctx.rebuild()
         await ctx.dispose()
+    }
+
+    if (process.env.WATCH) {
+        const ctx = await esbuild.context(options)
+        await ctx.watch()
+        await new Promise(() => {}) // wait forever
     }
 }
 

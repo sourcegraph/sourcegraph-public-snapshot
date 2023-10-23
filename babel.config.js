@@ -1,7 +1,6 @@
 // @ts-check
 const path = require('path')
 
-const semver = require('semver')
 const logger = require('signale')
 
 /** @type {import('@babel/core').ConfigFunction} */
@@ -36,51 +35,14 @@ module.exports = api => {
               {
                 // Node (used for testing) doesn't support modules, so compile to CommonJS for testing.
                 modules: process.env.BABEL_MODULE ?? (isTest ? 'commonjs' : false),
-                bugfixes: true,
-                useBuiltIns: 'entry',
-                include: [
-                  // Polyfill URL because Chrome and Firefox are not spec-compliant
-                  // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
-                  'web.url',
-                  // URLSearchParams.prototype.keys() is not iterable in Firefox
-                  'web.url-search-params',
-                  // Commonly needed by extensions (used by vscode-jsonrpc)
-                  'web.immediate',
-                  // Always define Symbol.observable before libraries are loaded, ensuring interopability between different libraries.
-                  'esnext.symbol.observable',
-                ],
-                // See https://github.com/zloirock/core-js#babelpreset-env
-                corejs: semver.minVersion(require('./package.json').dependencies['core-js']),
               },
             ],
           ]),
-      '@babel/preset-typescript',
+      ['@babel/preset-typescript', { isTSX: true, allExtensions: true }],
       [
         '@babel/preset-react',
         {
           runtime: 'automatic',
-        },
-      ],
-    ],
-    plugins: [
-      '@babel/plugin-transform-runtime',
-      ['@babel/plugin-transform-typescript', { isTSX: true }],
-      'babel-plugin-lodash',
-      [
-        'webpack-chunkname',
-        {
-          /**
-           * Autogenerate `webpackChunkName` for dynamic imports.
-           *
-           * import('./pages/Home') -> import(/* webpackChunkName: 'sg_pages_Home' *\/'./pages/Home')
-           */
-          getChunkName: (/** @type string */ importPath) => {
-            const chunkName = importPath
-              .replace(/[./]+/g, '_') // replace "." and "/" with "_".
-              .replace(/(^_+)/g, '') // remove all leading "_".
-
-            return `sg_${chunkName}`
-          },
         },
       ],
     ],

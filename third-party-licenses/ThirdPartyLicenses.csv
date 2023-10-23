@@ -900,8 +900,6 @@ PNPM,babel-plugin-polyfill-corejs2,0.3.3,MIT,"",Approved
 PNPM,babel-plugin-polyfill-corejs3,0.6.0,MIT,"",Approved
 PNPM,babel-plugin-polyfill-regenerator,0.4.1,MIT,"",Approved
 PNPM,babel-plugin-syntax-trailing-function-commas,7.0.0-beta.0,MIT,"",Approved
-PNPM,babel-plugin-transform-flow-enums,0.0.2,MIT,"",Approved
-PNPM,babel-plugin-webpack-chunkname,1.2.0,MIT,"",Approved
 PNPM,babel-preset-current-node-syntax,1.0.1,MIT,"",Approved
 PNPM,babel-preset-fbjs,3.4.0,MIT,"",Approved
 PNPM,babel-preset-jest,28.1.3,MIT,"",Approved

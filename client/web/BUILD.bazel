@@ -5,7 +5,8 @@ load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
-load("//dev:webpack.bzl", "webpack_bundle", "webpack_web_app")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("//dev:esbuild.bzl", "esbuild_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
@@ -399,10 +400,10 @@ ts_project(
         "src/devsettings/settings/eventLoggingDebug.tsx",
         "src/devsettings/utils.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
-        "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/components/index.ts",
         "src/enterprise/app/components/zero-states/AppZeroStates.tsx",
+        "src/enterprise/app/main.tsx",
         "src/enterprise/app/routes.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/about/AboutPage.tsx",
@@ -722,7 +723,7 @@ ts_project(
         "src/enterprise/dotcom/productSubscriptions/features.ts",
         "src/enterprise/embed/EmbeddedWebApp.tsx",
         "src/enterprise/embed/OpenNewTabAnchorLink.tsx",
-        "src/enterprise/embed/main.tsx",
+        "src/enterprise/embed/embedMain.tsx",
         "src/enterprise/executors/ExecutorsSiteAdminArea.tsx",
         "src/enterprise/executors/ExecutorsUserArea.tsx",
         "src/enterprise/executors/instances/ExecutorCompatibilityAlert.tsx",
@@ -2078,29 +2079,17 @@ jest_test(
     ],
 )
 
-# webpack dev environment -------------------
-WEBPACK_CONFIG_DEPS = [
+# esbuild dev environment -------------------
+ESBUILD_CONFIG_DEPS = [
     ":node_modules/@sourcegraph/build-config",
-    "//:node_modules/@babel/runtime",
-    "//:node_modules/@pmmmwh/react-refresh-webpack-plugin",
-    "//:node_modules/@sentry/webpack-plugin",
     "//:node_modules/buffer",
-    "//:node_modules/css-loader",
-    "//:node_modules/style-loader",
-    "//:node_modules/css-minimizer-webpack-plugin",
     "//:node_modules/lodash",
-    "//:node_modules/mini-css-extract-plugin",
     "//:node_modules/path-browserify",
     "//:node_modules/punycode",
     "//:node_modules/util",
     "//:node_modules/events",
-    "//:node_modules/webpack-manifest-plugin",
-    "//:node_modules/webpack-stats-plugin",
     "//:node_modules/monaco-editor",
-    "//:node_modules/babel-loader",
-    "//:node_modules/compression-webpack-plugin",
-    "//:node_modules/webpack",
-    "//:node_modules/react-refresh",
+    "//:node_modules/esbuild",
     "//client/web/dev",
     "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
     "//:postcss_config_js",
@@ -2117,62 +2106,51 @@ BUNDLE_DATA_DEPS = [
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
+    "//client/web/dev:esbuild-config",
 ]
 
-[
-    webpack_bundle(
-        name = "bundle" if prod else "bundle-dev",
-        srcs = BUNDLE_DATA_DEPS + [
-            ":web_lib",
-            "//:babel_config",
-            "//:browserslist",
-            "//:package_json",
-        ],
-        entry_points = {
-            "src/enterprise/main.js": "app",
-            "src/enterprise/embed/main.js": "embed",
-        },
-        env = {
-            "NODE_ENV": "production" if prod else "development",
-            "INTEGRATION_TESTS": "false",
-            "WEBPACK_BUNDLE_ANALYZER": "false",
-            "WEBPACK_USE_NAMED_CHUNKS": "false",
-        },
-        output_dir = True,
-        visibility = ["//ui/assets:__subpackages__"],
-        webpack_config = "webpack.bazel.config.js",
-        deps = WEBPACK_CONFIG_DEPS,
-    )
-    for prod in [
-        True,
-        False,
-    ]
-]
-
-# Used for integration tests and has bigger bundle size
-# because of the inlined source-maps.
-webpack_web_app(
-    name = "app",
+esbuild(
+    name = "bundle",
     srcs = BUNDLE_DATA_DEPS + [
-        "//:babel_config",
-        "//:browserslist",
+        ":web_lib",
         "//:package_json",
     ],
-    entry_points = {
-        "src/enterprise/main.js": "app",
+    config = "//client/web/dev:esbuild-config",
+    define = {
+        "process.env.NODE_ENV": "\"production\"",
     },
-    env = {
-        "NODE_ENV": "production",
-        "INTEGRATION_TESTS": "true",
+    entry_points = [
+        "src/enterprise/main.js",
+        "src/enterprise/embed/embedMain.js",
+    ],
+    minify = True,
+    splitting = True,
+    visibility = ["//client/web/dist:__subpackages__"],
+    deps = ESBUILD_CONFIG_DEPS,
+)
+
+# Used for integration tests.
+esbuild_web_app(
+    name = "app",
+    srcs = BUNDLE_DATA_DEPS + [
+        ":web_lib",
+        "//:package_json",
+    ],
+    config = "//client/web/dev:esbuild-config",
+    define = {
+        "process.env.NODE_ENV": "\"production\"",
+        "process.env.INTEGRATION_TESTS": "true",
     },
-    output_dir = True,
+    entry_points = [
+        "src/enterprise/main.js",
+        "src/enterprise/embed/embedMain.js",
+    ],
     visibility = ["//visibility:public"],
-    webpack_config = "webpack.bazel.config.js",
-    deps = WEBPACK_CONFIG_DEPS,
+    deps = ESBUILD_CONFIG_DEPS,
 )
 
 build_test(
-    name = "webpack_test",
+    name = "esbuild_test",
     size = "enormous",
     targets = [
         ":bundle",

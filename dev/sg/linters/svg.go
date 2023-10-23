@@ -18,7 +18,7 @@ func checkSVGCompression() *linter {
 	const header = "SVG Compression"
 
 	return runCheck(header, func(ctx context.Context, out *std.Output, state *repo.State) error {
-		const lintDir = "ui/assets/img"
+		const lintDir = "client/web/dist/img"
 
 		diff, err := state.GetDiff(filepath.Join(lintDir, "*.svg"))
 		if err != nil {

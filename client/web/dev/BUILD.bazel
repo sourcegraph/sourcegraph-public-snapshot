@@ -1,12 +1,10 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
 
 # dev/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
 # gazelle:js_test_files there-are-no-tests
-
-# TODO(bazel): wip - currently broken
-# gazelle:exclude **/server/development.server.ts
 
 ts_config(
     name = "tsconfig",
@@ -20,8 +18,13 @@ ts_config(
 ts_project(
     name = "dev",
     srcs = [
+        "esbuild/build.ts",
+        "esbuild/manifest.test.ts",
+        "esbuild/manifest.ts",
+        "esbuild/manifestPlugin.ts",
+        "esbuild/server.ts",
         "mocks/mockEventLogger.ts",
-        "server/bazel.server.ts",
+        "server/development.server.ts",
         "server/production.server.ts",
         "utils/constants.ts",
         "utils/create-js-context.ts",
@@ -37,6 +40,7 @@ ts_project(
     tsconfig = ":tsconfig",
     visibility = ["//client/web:__subpackages__"],
     deps = [
+        "//:node_modules/@sentry/esbuild-plugin",
         "//:node_modules/@types/compression",
         "//:node_modules/@types/connect-history-api-fallback",
         "//:node_modules/@types/express",
@@ -47,15 +51,25 @@ ts_project(
         "//:node_modules/chalk",
         "//:node_modules/compression",
         "//:node_modules/connect-history-api-fallback",
+        "//:node_modules/esbuild",
         "//:node_modules/express",
         "//:node_modules/express-static-gzip",
         "//:node_modules/http-proxy-middleware",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/signale",
-        "//:node_modules/webpack",
-        "//:node_modules/webpack-dev-server",
         "//client/web:node_modules/@sourcegraph/build-config",
         "//client/web:web_lib",
+    ],
+)
+
+js_library(
+    name = "esbuild-config",
+    srcs = ["esbuild/esbuild.bazel.js"],
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//client/build-config:build-config_lib",
+        "//client/web:node_modules/@sourcegraph/build-config",
+        "//client/web/dev",
     ],
 )

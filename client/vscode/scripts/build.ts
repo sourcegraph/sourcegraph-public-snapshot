@@ -10,7 +10,7 @@ import {
     workerPlugin,
     RXJS_RESOLUTIONS,
     buildTimerPlugin,
-} from '@sourcegraph/build-config'
+} from '@sourcegraph/build-config/src/esbuild/plugins'
 
 const minify = process.env.NODE_ENV === 'production'
 const outdir = path.join(__dirname, '../dist')

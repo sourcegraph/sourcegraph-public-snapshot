@@ -40,7 +40,7 @@ const folder = [
     { id: 8, name: 'bundle.js', children: [], parent: 7 },
     { id: 9, name: '.npmignore', children: [], parent: 0 },
     { id: 10, name: 'package.json', children: [], parent: 0 },
-    { id: 11, name: 'webpack.config.js', children: [], parent: 0 },
+    { id: 11, name: 'foo.config.js', children: [], parent: 0 },
 ] satisfies TreeNode[]
 
 export const Basic: StoryFn = () => (
