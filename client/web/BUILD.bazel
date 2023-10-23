@@ -2134,8 +2134,6 @@ esbuild_web_app(
     name = "app",
     srcs = BUNDLE_DATA_DEPS + [
         ":web_lib",
-        "//:babel_config",
-        "//:browserslist",
         "//:package_json",
     ],
     config = "//client/web/dev:esbuild-config",

@@ -26,7 +26,6 @@
     "lint": "pnpm lint:js && pnpm:lint:css",
     "lint:js": "NODE_OPTIONS=\"--max_old_space_size=16192\" eslint --cache '**/*.[tj]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss' --quiet",
-    "browserslist": "pnpm exec browserslist",
     "bundlesize": "pnpm exec bundlesize --config=./bundlesize.config.js",
     "report-bundle-diff": "ts-node-transpile-only scripts/report-bundle-diff"
   },

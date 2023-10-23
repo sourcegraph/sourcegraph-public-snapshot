@@ -76,12 +76,6 @@ js_library(
 )
 
 copy_to_bin(
-    name = "browserslist",
-    srcs = [".browserslistrc"],
-    visibility = ["//visibility:public"],
-)
-
-copy_to_bin(
     name = "package_json",
     srcs = ["package.json"],
     visibility = ["//visibility:public"],

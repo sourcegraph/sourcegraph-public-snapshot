@@ -868,9 +868,6 @@ importers:
       babel-plugin-istanbul:
         specifier: 6.1.1
         version: 6.1.1
-      browserslist:
-        specifier: ^4.21.3
-        version: 4.21.4
       bundlesize2:
         specifier: ^0.0.31
         version: 0.0.31
@@ -14680,17 +14677,6 @@ packages:
     resolution: {integrity: sha512-Z942RysHXmJrhqk88FmKBVq/v5tqmSkDz7p54G/MGyjMnCFFnC79XWNbg+Vta8W6Wb2qtSZTSxIGkJrRpCFEiA==}
     dependencies:
       pako: 1.0.11
-    dev: true
-
-  /browserslist@4.21.4:
-    resolution: {integrity: sha512-CBHJJdDmgjl3daYjN5Cp5kbTf1mUhZoS+beLklHIvkOWscs83YAhLlF3Wsh/lciQYAcbBJgTOD44VtG31ZM4Hw==}
-    engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
-    hasBin: true
-    dependencies:
-      caniuse-lite: 1.0.30001546
-      electron-to-chromium: 1.4.544
-      node-releases: 2.0.13
-      update-browserslist-db: 1.0.13(browserslist@4.21.4)
     dev: true
 
   /browserslist@4.22.1:
@@ -29260,17 +29246,6 @@ packages:
   /upath@1.2.0:
     resolution: {integrity: sha512-aZwGpamFO61g3OlfT7OQCHqhGnW43ieH9WZeP7QxN/G/jS4jfqUkZxoryvJgVPEcrl5NL/ggHsSmLMHuH64Lhg==}
     engines: {node: '>=4'}
-    dev: true
-
-  /update-browserslist-db@1.0.13(browserslist@4.21.4):
-    resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
-    hasBin: true
-    peerDependencies:
-      browserslist: '>= 4.21.0'
-    dependencies:
-      browserslist: 4.21.4
-      escalade: 3.1.1
-      picocolors: 1.0.0
     dev: true
 
   /update-browserslist-db@1.0.13(browserslist@4.22.1):
