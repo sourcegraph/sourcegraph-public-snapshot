@@ -908,13 +908,16 @@ importers:
         specifier: ^0.17.14
         version: 0.17.14
       eslint:
-        specifier: ^8.13.0
+        specifier: ^8.52.0
         version: 8.52.0
       eslint-plugin-monorepo:
         specifier: ^0.3.2
         version: 0.3.2(@typescript-eslint/parser@5.62.0)
+      eslint-plugin-react:
+        specifier: ^7.33.2
+        version: 7.33.2(eslint@8.52.0)
       eslint-plugin-storybook:
-        specifier: ^0.6.12
+        specifier: ^0.6.15
         version: 0.6.15(eslint@8.52.0)(typescript@5.0.2)
       events:
         specifier: ^3.3.0
@@ -1288,7 +1291,7 @@ importers:
   client/eslint-plugin-wildcard:
     dependencies:
       eslint-plugin-react:
-        specifier: ^7.32.1
+        specifier: ^7.33.2
         version: 7.33.2(eslint@8.52.0)
 
   client/extension-api:
