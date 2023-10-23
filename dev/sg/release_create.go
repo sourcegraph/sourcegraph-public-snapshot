@@ -74,7 +74,7 @@ type ReleaseManifest struct {
 		} `yaml:"create"`
 		Finalize struct {
 			Steps []cmdManifest `yaml:"steps"`
-		} `yaml:"create"`
+		} `yaml:"finalize"`
 	} `yaml:"promoteToPublic"`
 }
 
@@ -244,13 +244,22 @@ func (r *releaseRunner) checkDeps(ctx context.Context) error {
 	return nil
 }
 
-func (r *releaseRunner) Finalize(ctx context.Context) error {
+func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
 	// TODO skip check deps
 	if len(r.m.Internal.Finalize.Steps) == 0 {
-		announce2("finalize", "Skipping release finalization, none defined")
+		announce2("finalize", "Skipping internal release finalization, none defined")
 		return nil
 	}
 	announce2("finalize", "Running finalize steps for %s", r.version)
+	return r.runSteps(ctx, r.m.Internal.Finalize.Steps)
+}
+func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
+	// TODO skip check deps
+	if len(r.m.PromoteToPublic.Finalize.Steps) == 0 {
+		announce2("finalize", "Skipping public release finalization, none defined")
+		return nil
+	}
+	announce2("finalize", "Running promote finalize steps for %s", r.version)
 	return r.runSteps(ctx, r.m.Internal.Finalize.Steps)
 }
 
@@ -280,6 +289,14 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 
 	announce2("create", "Will create a patch release %q", r.version)
 	return r.runSteps(ctx, steps)
+}
+
+func (r *releaseRunner) Promote(ctx context.Context) error {
+	if err := r.checkDeps(ctx); err != nil {
+		return nil
+	}
+	announce2("promote", "Will promote %q to a public release", r.version)
+	return r.runSteps(ctx, r.m.PromoteToPublic.Create.Steps)
 }
 
 func (r *releaseRunner) runSteps(ctx context.Context, steps []cmdManifest) error {
