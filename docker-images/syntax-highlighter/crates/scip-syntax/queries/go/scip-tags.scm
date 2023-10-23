@@ -27,7 +27,11 @@
 (type_declaration
   (type_spec
     name: (type_identifier) @descriptor.type @kind.typealias
-    type: (type_identifier))) @scope
+    type: (type_identifier)))
+
+(type_declaration
+  (type_alias
+    name: (type_identifier) @descriptor.type @kind.typealias))
 
 ;; For fields, we have nested struct definitions.
 ;;   To get the scope properly

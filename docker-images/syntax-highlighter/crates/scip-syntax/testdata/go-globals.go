@@ -22,7 +22,8 @@ type SomeInterface interface {
 	Incredible() int
 }
 
-type TypeAlias uint8
+type TypeDef uint8
+type TypeAlias = uint8
 
 // Go calls the given function in a new goroutine.
 //

@@ -38,8 +38,9 @@ expression: dumped
 // ^^^^^^^^^^ definition(Method) scip-ctags multierror/SomeInterface#Incredible().
   }
   
-  type TypeAlias uint8
-//     ^^^^^^^^^ definition(TypeAlias) scip-ctags multierror/TypeAlias#
+  type TypeDef uint8
+//     ^^^^^^^ definition(TypeAlias) scip-ctags multierror/TypeDef#
+  type TypeAlias = uint8
   
   // Go calls the given function in a new goroutine.
   //
