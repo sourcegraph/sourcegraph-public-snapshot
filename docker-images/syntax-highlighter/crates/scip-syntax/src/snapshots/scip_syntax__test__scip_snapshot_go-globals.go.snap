@@ -41,6 +41,7 @@ expression: dumped
   type TypeDef uint8
 //     ^^^^^^^ definition(TypeAlias) scip-ctags multierror/TypeDef#
   type TypeAlias = uint8
+//     ^^^^^^^^^ definition(TypeAlias) scip-ctags multierror/TypeAlias#
   
   // Go calls the given function in a new goroutine.
   //
