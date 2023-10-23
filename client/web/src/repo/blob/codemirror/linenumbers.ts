@@ -60,7 +60,7 @@ const selectedLinesTheme = EditorView.theme({
      * To remove this gap we move padding from `.cm-line` to the last gutter.
      */
     '.cm-gutter:last-child .cm-gutterElement': {
-        paddingRight: '1rem',
+        paddingRight: '0.2rem',
     },
 })
 
