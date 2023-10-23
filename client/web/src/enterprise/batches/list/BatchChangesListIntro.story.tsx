@@ -31,12 +31,15 @@ export default config
 
 function stateToInput(state: LicensingState): boolean | undefined {
     switch (state) {
-        case LicensingState.Licensed:
+        case LicensingState.Licensed: {
             return true
-        case LicensingState.Unlicensed:
+        }
+        case LicensingState.Unlicensed: {
             return false
-        default:
+        }
+        default: {
             return undefined
+        }
     }
 }
 

@@ -54,7 +54,7 @@ function entryIcon(entryType: EntryType): JSX.Element {
     const sharedProps = { height: 14, width: 14, inline: false }
 
     switch (entryType) {
-        case 'error':
+        case 'error': {
             return (
                 <Icon
                     {...sharedProps}
@@ -63,7 +63,8 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="Error"
                 />
             )
-        case 'warning':
+        }
+        case 'warning': {
             return (
                 <Icon
                     {...sharedProps}
@@ -72,7 +73,8 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="Warning"
                 />
             )
-        case 'success':
+        }
+        case 'success': {
             return (
                 <Icon
                     {...sharedProps}
@@ -81,7 +83,8 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="Success"
                 />
             )
-        case 'progress':
+        }
+        case 'progress': {
             return (
                 <Icon
                     {...sharedProps}
@@ -90,7 +93,8 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="In progress"
                 />
             )
-        case 'indexing':
+        }
+        case 'indexing': {
             return (
                 <Icon
                     {...sharedProps}
@@ -99,7 +103,8 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="Indexing"
                 />
             )
-        case 'info':
+        }
+        case 'info': {
             return (
                 <Icon
                     {...sharedProps}
@@ -108,36 +113,47 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="Information"
                 />
             )
+        }
     }
 }
 
 const getMessageColor = (entryType: EntryType): string => {
     switch (entryType) {
-        case 'error':
+        case 'error': {
             return styles.messageError
-        case 'warning':
+        }
+        case 'warning': {
             return styles.messageWarning
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }
 
 const getBorderClassname = (entryType: EntryType): string => {
     switch (entryType) {
-        case 'error':
+        case 'error': {
             return styles.entryBorderError
-        case 'warning':
+        }
+        case 'warning': {
             return styles.entryBorderWarning
-        case 'success':
+        }
+        case 'success': {
             return styles.entryBorderSuccess
-        case 'progress':
+        }
+        case 'progress': {
             return styles.entryBorderProgress
-        case 'indexing':
+        }
+        case 'indexing': {
             return styles.entryBorderProgress
-        case 'info':
+        }
+        case 'info': {
             return styles.entryBorderInfo
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }
 

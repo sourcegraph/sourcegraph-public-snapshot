@@ -41,10 +41,12 @@ import styles from './CodeInsightsTemplates.module.scss'
 
 function getTemplateURL(template: Template): string {
     switch (template.type) {
-        case InsightType.CaptureGroup:
+        case InsightType.CaptureGroup: {
             return `/insights/create/capture-group?${encodeCaptureInsightURL(template.templateValues)}`
-        case InsightType.SearchBased:
+        }
+        case InsightType.SearchBased: {
             return `/insights/create/search?${encodeSearchInsightUrl(template.templateValues)}`
+        }
     }
 }
 

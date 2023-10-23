@@ -570,7 +570,7 @@ describe('Repository', () => {
                 () => document.querySelector('[data-testid="repo-blob"] .cm-content')?.textContent
             )
             // CodeMirror blob content has no newline characters
-            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replace(/\n/g, '')
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replaceAll('\n', '')
             assert.strictEqual(blobContent, expectedBlobContent)
         })
 

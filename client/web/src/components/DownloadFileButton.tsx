@@ -101,5 +101,5 @@ const getFileNameFromURL = (url: string | null): string => {
     }
 
     const parts = url.split('/')
-    return parts[parts.length - 1]
+    return parts.at(-1)
 }

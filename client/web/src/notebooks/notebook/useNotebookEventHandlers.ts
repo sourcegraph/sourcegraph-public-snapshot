@@ -141,7 +141,7 @@ export function useNotebookEventHandlers({
                     const menuItems = document.querySelectorAll<HTMLAnchorElement>(
                         `[data-block-id="${previousBlockId}"] .block-menu [role="menuitem"]`
                     )
-                    menuItems[menuItems.length - 1]?.focus()
+                    menuItems.at(-1)?.focus()
                 }
             }
 

@@ -18,7 +18,7 @@ export function count(string: string, ...patterns: RegExp[]): number {
 }
 
 export function numberWithCommas(number: string | number): string {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return number.toString().replaceAll(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
@@ -29,7 +29,7 @@ export function pluralize(string: string, count: number | bigint, plural = strin
  * Replaces all non alphabetic characters with `-` and lowercases the result.
  */
 export function sanitizeClass(value: string): string {
-    return value.replace(/[^A-Za-z]/g, '-').toLowerCase()
+    return value.replaceAll(/[^A-Za-z]/g, '-').toLowerCase()
 }
 
 /**
@@ -37,7 +37,7 @@ export function sanitizeClass(value: string): string {
  * E.g: " a  b  c  " => " a b c "
  */
 export function dedupeWhitespace(value: string): string {
-    return value.replace(/\s+/g, ' ').trim()
+    return value.replaceAll(/\s+/g, ' ').trim()
 }
 
 /**

@@ -22,10 +22,12 @@ interface NotebookOutlineProps {
 
 function getHeadingStyle(depth: number): string {
     switch (depth) {
-        case 1:
+        case 1: {
             return styles.heading1
-        case 2:
+        }
+        case 2: {
             return styles.heading2
+        }
     }
     return ''
 }

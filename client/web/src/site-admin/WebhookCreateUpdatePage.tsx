@@ -288,18 +288,24 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
 
 function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
     switch (kind) {
-        case ExternalServiceKind.BITBUCKETSERVER:
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return true
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return true
-        case ExternalServiceKind.GITHUB:
+        }
+        case ExternalServiceKind.GITHUB: {
             return true
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return true
-        case ExternalServiceKind.AZUREDEVOPS:
+        }
+        case ExternalServiceKind.AZUREDEVOPS: {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 

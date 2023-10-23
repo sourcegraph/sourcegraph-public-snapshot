@@ -47,5 +47,5 @@ export class RedactingLogger {
 function redact(value: any): string {
     const stringValue = typeof value === 'string' ? value : inspect(value, { depth: Infinity })
 
-    return stringValue.replace(/(https?:\/\/)[^/@]+@([^\s$]+)/g, '$1$2')
+    return stringValue.replaceAll(/(https?:\/\/)[^/@]+@([^\s$]+)/g, '$1$2')
 }

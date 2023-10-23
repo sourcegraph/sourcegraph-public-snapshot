@@ -23,8 +23,8 @@ export async function translateToQuery(input: string, user: AuthenticatedUser | 
             ?.reduce((content, match) => `${content}${match.replace('<filters>', ' ').replace('</filters>', ' ')}`, '')
             ?.trim() || ''
     const query = `${contents} ${filters}`
-        .replace(/\n/g, ' ')
-        .replace(/\s{2,}/g, ' ')
+        .replaceAll('\n', ' ')
+        .replaceAll(/\s{2,}/g, ' ')
         .trim()
 
     return query

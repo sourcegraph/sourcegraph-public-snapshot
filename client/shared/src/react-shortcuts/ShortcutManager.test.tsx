@@ -20,14 +20,18 @@ describe('ShortcutManager', () => {
         // https://github.com/jsdom/jsdom/issues/3126
         KeyboardEvent.prototype.getModifierState = function (key: string): boolean {
             switch (key) {
-                case 'Alt':
+                case 'Alt': {
                     return this.altKey
-                case 'Control':
+                }
+                case 'Control': {
                     return this.ctrlKey
-                case 'Meta':
+                }
+                case 'Meta': {
                     return this.metaKey
-                case 'Shift':
+                }
+                case 'Shift': {
                     return this.shiftKey
+                }
             }
             return false
         }

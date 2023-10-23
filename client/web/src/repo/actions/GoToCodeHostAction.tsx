@@ -289,21 +289,29 @@ export function serviceKindDisplayNameAndIcon(serviceKind: ExternalServiceKind |
     }
 
     switch (serviceKind) {
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             return { displayName: 'GitHub', icon: GithubIcon }
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return { displayName: 'GitLab', icon: GitlabIcon }
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
-        case ExternalServiceKind.PERFORCE:
+        }
+        case ExternalServiceKind.PERFORCE: {
             return { displayName: 'Swarm', icon: HelixSwarmIcon }
-        case ExternalServiceKind.PHABRICATOR:
+        }
+        case ExternalServiceKind.PHABRICATOR: {
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case ExternalServiceKind.AWSCODECOMMIT: {
             return { displayName: 'AWS CodeCommit' }
-        default:
+        }
+        default: {
             return { displayName: upperFirst(toLower(serviceKind)) }
+        }
     }
 }

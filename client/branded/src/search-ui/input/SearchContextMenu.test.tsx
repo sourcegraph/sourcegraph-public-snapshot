@@ -189,6 +189,6 @@ describe('SearchContextMenu', () => {
         })
 
         const items = screen.getAllByTestId('search-context-menu-item')
-        expect(items[items.length - 1]).toHaveTextContent('Error occurred while loading search contexts')
+        expect(items.at(-1)).toHaveTextContent('Error occurred while loading search contexts')
     })
 })

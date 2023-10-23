@@ -1419,7 +1419,6 @@ ts_project(
         "src/search/input/V2SearchInput.tsx",
         "src/search/input/suggestions.ts",
         "src/search/input/useRecentSearches.ts",
-        "src/search/results/ComputeResults.tsx",
         "src/search/results/CreateActionsMenu.tsx",
         "src/search/results/SearchActionsMenu.tsx",
         "src/search/results/SearchAlert.tsx",

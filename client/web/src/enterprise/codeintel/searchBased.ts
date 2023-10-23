@@ -104,7 +104,7 @@ export function repositoryKindTerms(
 }
 /** Returns a regular expression matching the given repository. */
 function makeRepositoryPattern(repo: string): string {
-    return `^${repo.replace(/ /g, '\\ ')}$`
+    return `^${repo.replaceAll(' ', '\\ ')}$`
 }
 
 /** The time in ms to delay between unindexed search request and the fallback indexed search request. */

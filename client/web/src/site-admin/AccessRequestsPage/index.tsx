@@ -52,7 +52,7 @@ import styles from './index.module.scss'
  */
 function toUsername(name: string, randomize?: boolean): string {
     // Remove all non-alphanumeric characters from the name and convert to lowercase.
-    const username = name.replace(/[^\dA-Za-z]/g, '').toLowerCase()
+    const username = name.replaceAll(/[^\dA-Za-z]/g, '').toLowerCase()
     if (!randomize) {
         return username
     }
