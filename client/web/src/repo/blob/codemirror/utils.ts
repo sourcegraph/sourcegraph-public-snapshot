@@ -194,3 +194,22 @@ export function isValidLineRange(
 
     return true
 }
+
+/**
+ * Trims any trailing newline character from the end of the given content string.
+ *
+ * This handles \n, \r, and \r\n to support all newline conventions.
+ *
+ * @param content The content string to trim
+ * @returns The content with any trailing newline character removed
+ */
+export function trimTrailingNewline(content: string): string {
+    const lastLineIsNewLine = /\n|\r$/
+    const lastChar = content.slice(-1)
+
+    if (lastLineIsNewLine.test(lastChar)) {
+        return content.slice(0, -1)
+    }
+
+    return content
+}

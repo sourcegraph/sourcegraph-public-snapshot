@@ -52,7 +52,7 @@ import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
-import { isValidLineRange } from './codemirror/utils'
+import { isValidLineRange, trimTrailingNewline } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
 // Logical grouping of props that are only used by the CodeMirror blob view
@@ -345,11 +345,13 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     useEffect(() => {
         const editor = editorRef.current
         if (editor) {
+            // Trim trailing newline if present
+            let content = trimTrailingNewline(blobInfo.content)
+
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
-            const trimmed = blobInfo.content.slice(0, -1)
-            const state = EditorState.create({ doc: trimmed, extensions })
+            const state = EditorState.create({ doc: content, extensions })
             editor.setState(state)
 
             if (navigateToLineOnAnyClick) {
