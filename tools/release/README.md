@@ -126,7 +126,7 @@ Step by step process (work-in-progress):
 1. We want to create a new release, which is materialized by a pull-request automatically created by `sg`
 1. `sg release create ...` runs `bazel run //tools/release:generate_schemas_archive -- v5.3.4444`
 1. it fetches all schemas whose version are below 5.3.4444
-1. it copies the current `schema.*.json` files into `v5.3.4444-internal_database.schema.*.json`, to match the convention of the other schemas.
+1. it copies the current `schema.*.json` files to `v5.3.4444-internal_database.schema.*.json`, to match the convention of the other schemas.
 1. it creates a tarball named `schemas-v5.3.4444.tar.gz`
 1. it uploads it under the `dist/` folder in the bucket.
 1. it updates `tools/release/schema_deps.bzl` with the new tarball URL and its checksum.
