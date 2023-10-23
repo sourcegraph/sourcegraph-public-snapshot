@@ -16,8 +16,14 @@ fi
 bucket='gs://schemas-migrations'
 
 tmp_dir=$(mktemp -d)
-# shellcheck disable=SC2064
-trap "rm -Rf $tmp_dir" EXIT
+trap 'rm -Rf $tmp_dir' EXIT
+
+echo "--- Ensuring that databases schemas do not exist for this version"
+if gsutil -q ls "${bucket}/schemas/${version}-internal_database_schema*.json"; then
+  echo "⚠️  Found the above schemas in the bucket."
+  echo "--- ❌ Database schemas for version ${version} already exists: aborting."
+  exit 1
+fi
 
 echo "--- Copying internal/database/schemas*.json to ${version}-internal_database_schema*.json"
 cp internal/database/schema.json "${tmp_dir}/${version}-internal_database_schema.json"

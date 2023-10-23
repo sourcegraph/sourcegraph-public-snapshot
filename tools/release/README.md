@@ -22,6 +22,21 @@ contain the schemas for the new version and will instead create them by injectin
 Finally, in both cases, the tarball will be uploaded in the bucket, and the third party dependency, located in
 `tools/release/schema_deps.bzl` will be updated accordingly, allowing builds past that point to use those schemas.
 
+### Uploading the current database schemas
+
+Once a release is considered to be correct (upcoming in RFC 795) the release tooling runs another command
+to store the current database schemas in the bucket, under the `schemas` folder, to capture how the database
+looks at that point.
+
+This enables to build migrator binaries that will be able to use that particular release as a migration point.
+
+```
+bazel run //tools/release:upload_current_schemas -- vX.Y.Z
+```
+
+The script will ensure that there are no existing database schemas for that version before uploading anything. This way
+we prevent accidentally breaking previously generated database schemas.
+
 ## Database schemas
 
 Database schemas are necessary for Multi-Version Upgrades, so we need to populate
