@@ -34,11 +34,7 @@
     "test-integration": "NODE_ENV=production pnpm _test-integration \"./client/web/src/integration/**/*.test.ts\"",
     "test-integration:debug": "BROWSER=chrome KEEP_BROWSER=true DEVTOOLS=true DISABLE_APP_ASSETS_MOCKING=true WINDOW_WIDTH=1920 WINDOW_HEIGHT=1080 pnpm _test-integration --retries=0 --jobs=1",
     "test-browser-integration": "pnpm --filter @sourcegraph/browser run test-integration",
-    "_cover-integration": "nyc --hook-require=false --silent pnpm _test-integration",
-    "cover-integration": "nyc --hook-require=false --silent pnpm test-integration",
-    "cover-browser-integration": "nyc --hook-require=false --silent pnpm --filter @sourcegraph/browser test-integration",
     "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/**/*.test.ts",
-    "cover-e2e": "nyc --hook-require=false --silent pnpm test-e2e",
     "test-regression": "pnpm --filter @sourcegraph/web run test:regression",
     "storybook": "pnpm --filter @sourcegraph/storybook run start",
     "storybook:dll": "pnpm --filter @sourcegraph/storybook run start:dll",
@@ -49,31 +45,12 @@
     "storybook:web": "pnpm --filter @sourcegraph/web run storybook",
     "storybook:wildcard": "pnpm --filter @sourcegraph/wildcard run storybook",
     "storybook:build": "pnpm --filter @sourcegraph/storybook run build",
-    "cover-storybook": "nyc --hook-require=false --silent pnpm jest client/storybook/src/coverage",
     "release": "cd dev/release && pnpm run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "chromatic": "CHROMATIC=true pnpm run _chromatic --storybook-config-dir client/storybook/src --build-script-name=storybook:build",
     "_chromatic": "chromatic"
-  },
-  "nyc": {
-    "extends": "@istanbuljs/nyc-config-typescript",
-    "all": true,
-    "extension": [
-      ".tsx",
-      ".ts"
-    ],
-    "include": [
-      "client/*/src/**/*.ts?(x)"
-    ],
-    "exclude": [
-      "node_modules",
-      "**/*.d.ts",
-      "**/*.@(test|story).ts?(x)",
-      "client/storybook",
-      "client/shared/src/testing"
-    ]
   },
   "jscpd": {
     "gitignore": true,
@@ -103,7 +80,6 @@
     "@graphql-codegen/typescript-apollo-client-helpers": "^2.2.6",
     "@graphql-codegen/typescript-operations": "2.5.10",
     "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
-    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@jest/types": "^28.1.0",
     "@mermaid-js/mermaid-cli": "^8.13.10",
     "@octokit/rest": "^16.36.0",
@@ -130,8 +106,6 @@
     "@storybook/addon-controls": "^7.4.6",
     "@storybook/addon-designs": "^7.0.5",
     "@storybook/addon-links": "^7.4.6",
-    "@storybook/addon-storyshots": "^7.4.6",
-    "@storybook/addon-storyshots-puppeteer": "^7.4.6",
     "@storybook/addon-storysource": "^7.4.6",
     "@storybook/addon-toolbars": "^7.4.6",
     "@storybook/addons": "^7.4.6",
@@ -223,7 +197,6 @@
     "autoprefixer": "^10.2.1",
     "axe-core": "^4.4.1",
     "babel-jest": "^28.1.0",
-    "babel-plugin-istanbul": "6.1.1",
     "bundlesize2": "^0.0.31",
     "chalk": "^4.1.0",
     "chokidar-cli": "^2.1.0",
@@ -275,7 +248,6 @@
     "mz": "^2.7.0",
     "node-fetch": "^2.6.7",
     "nodemon": "^2.0.20",
-    "nyc": "^15.1.0",
     "octokit": "^2.0.7",
     "open": "^7.0.4",
     "p-retry": "^4.2.0",

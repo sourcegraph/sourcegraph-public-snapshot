@@ -18,13 +18,11 @@ Also see [testing Go code](../background-information/languages/testing_go_code.m
 - First run `pnpm install` in the Sourcegraph root directory if it is a fresh clone.
 - To run all unit tests, run `pnpm test` from the root directory.
 - To run unit tests in development (only running the tests related to uncommitted code), run `pnpm test --watch`.
-  - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
+  - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true`
 - To debug tests in VS Code, use [vscode-jest](https://github.com/jest-community/vscode-jest) and click the **Debug** code lens next to any `test('name ...', ...)` definition in your test file (be sure to set a breakpoint or break on uncaught exceptions by clicking in the left gutter).
 - You can also run `pnpm test` from any of the individual project dirs (`client/shared/`, `client/web/`, `client/browser/`).
 
 Usually while developing you will either have `pnpm test --watch` running in a terminal or you will use vscode-jest.
-
-Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the `unit` flag.
 
 ### React component snapshot tests
 
@@ -197,8 +195,6 @@ The role of these integration tests is to provide in-browser testing of complex 
 All backend interactions are stubbed or recorded and replayed.
 The integration test suite for the webapp can be found in [`web/src/integration`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/integration).
 
-Test coverage from integration tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `integration`.
-
 #### Running integration tests
 
 To run integration tests for the web app:
@@ -254,8 +250,6 @@ End-to-end tests test the whole app: JavaScript, CSS styles, and backend.
 They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/web/src/end-to-end).
 
 The **regression test suite** is a special end-to-end test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
-
-Test coverage by end-to-end tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `e2e`.
 
 #### Running end-to-end tests
 
