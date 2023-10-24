@@ -26,7 +26,7 @@ rust_test(
     ) + [":scip-treesitter-cli"],
     env = {
         "RUST_BACKTRACE": "1",
-        "SCIP_CLI_LOCATION": "$(execpath :scip-treesitter-cli)",
+        "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter-cli)",
     },
     deps = all_crate_deps(
         normal = True,
