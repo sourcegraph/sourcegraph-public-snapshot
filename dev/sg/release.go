@@ -68,7 +68,7 @@ var releaseCommand = &cli.Command{
 		},
 		{
 			Name:     "run",
-			Usage:    "Run steps defined in release manifest. Those are meant to be run in CI.",
+			Usage:    "Run steps defined in release manifest. Those are meant to be run in CI",
 			Category: category.Util,
 			Subcommands: []*cli.Command{
 				{
@@ -84,7 +84,8 @@ var releaseCommand = &cli.Command{
 					},
 				},
 				{
-					Name: "internal",
+					Name:  "internal",
+					Usage: "todo",
 					Subcommands: []*cli.Command{
 						{
 							Name:  "finalize",
@@ -101,7 +102,8 @@ var releaseCommand = &cli.Command{
 					},
 				},
 				{
-					Name: "promote-to-public",
+					Name:  "promote-to-public",
+					Usage: "TODO",
 					Subcommands: []*cli.Command{
 						{
 							Name:  "finalize",
