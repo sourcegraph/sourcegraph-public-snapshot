@@ -200,7 +200,10 @@ mod tests {
     fn e2e() {
         let mut cmd: Command;
         match std::env::var("SCIP_CLI_LOCATION") {
-            Ok(va) => cmd = Command::new(va),
+            Ok(va) => cmd = {
+                let cwd = std::env::current_dir().unwrap().join(va);
+                Command::new(cwd)
+            },
             _ => cmd = Command::cargo_bin("scip-treesitter-cli").unwrap(),
         }
 
@@ -216,10 +219,11 @@ mod tests {
 
         write_file(&path, include_str!("../testdata/globals.java").to_string());
 
-        cmd
-            .args(["index", "-l", "java", "-o", &out_path, "globals.java"]);
 
-        cmd.assert().success();
+        cmd.args(["index", "-l", "java", "-o", &out_path, "globals.java"])
+            .current_dir(out_dir)
+            .assert()
+            .success();
 
         let index = read_index_from_file(&out_path);
 
