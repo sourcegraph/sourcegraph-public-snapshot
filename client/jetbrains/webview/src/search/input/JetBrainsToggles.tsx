@@ -1,5 +1,4 @@
 // This file is a fork from Toggles.tsx and contains JetBrains specific UI changes
-/* eslint-disable no-restricted-imports */
 
 import React, { useCallback, useMemo } from 'react'
 

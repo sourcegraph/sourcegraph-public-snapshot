@@ -256,14 +256,17 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
     return fromFetch(`/-/check-username-taken/${username}`).pipe(
         switchMap(response => {
             switch (response.status) {
-                case 200:
+                case 200: {
                     return of('Username is already taken.')
-                case 404:
+                }
+                case 404: {
                     // Username is unique
                     return of(undefined)
+                }
 
-                default:
+                default: {
                     return of('Unknown error validating username')
+                }
             }
         }),
         catchError(() => of('Unknown error validating username'))

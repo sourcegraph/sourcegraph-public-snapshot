@@ -375,7 +375,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                                           className="mr-2"
                                                           variant="secondary"
                                                           disabled={selection !== 'all' && selection.size === 0}
-                                                          // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                                           onClick={onReindex}
                                                       >
                                                           <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
@@ -399,7 +398,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                                   className="mr-2"
                                                   variant="danger"
                                                   disabled={selection !== 'all' && selection.size === 0}
-                                                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                                   onClick={onDelete}
                                               >
                                                   <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete{' '}

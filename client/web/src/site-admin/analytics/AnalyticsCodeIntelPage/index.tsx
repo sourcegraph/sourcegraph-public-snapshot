@@ -432,11 +432,14 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
 
 const color = (precision: string): string => {
     switch (precision) {
-        case 'precise':
+        case 'precise': {
             return 'rgb(255, 184, 109)'
-        case 'search-based':
+        }
+        case 'search-based': {
             return 'rgb(155, 211, 255)'
-        default:
+        }
+        default: {
             return 'gray'
+        }
     }
 }

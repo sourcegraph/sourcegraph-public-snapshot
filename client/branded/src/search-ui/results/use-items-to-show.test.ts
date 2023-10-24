@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it } from '@jest/globals'
 import { act, renderHook } from '@testing-library/react'
 import { times } from 'lodash'
 
@@ -11,7 +12,7 @@ function renderUseItemsToShowHook(query = 'Hello there!') {
 
 function scrollToViewMoreResults(scrollNumber: number, handleBottomHit: () => void) {
     // Do not await `act` call with sync logic. It's not a promise.
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     act(() => {
         times(scrollNumber, handleBottomHit)
     })

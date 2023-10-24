@@ -1,6 +1,6 @@
 <style>
 
-  .markdown-body .cards {
+.markdown-body .cards {
   display: flex;
   align-items: stretch;
 }
@@ -39,12 +39,12 @@
 }
 
 .limg a {
-    display: flex;
-    flex-direction: column;
-    transition-property: all;
-   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-     transition-duration: 350ms;
-     border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 350ms;
+  border-radius: 0.75rem;
   padding-top: 1rem;
   padding-bottom: 1rem;
 

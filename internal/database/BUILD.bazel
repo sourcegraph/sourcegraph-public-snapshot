@@ -373,3 +373,11 @@ write_generated_to_source_files(
     },
     target = ":generate_schemas",
 )
+
+exports_files(
+    srcs = [
+        "schema.codeinsights.json",
+        "schema.codeintel.json",
+        "schema.json",
+    ],
+)

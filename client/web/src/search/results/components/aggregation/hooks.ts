@@ -68,18 +68,24 @@ type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | 'repo-me
 
 const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => {
     switch (mode) {
-        case SearchAggregationMode.REPO:
+        case SearchAggregationMode.REPO: {
             return 'repo'
-        case SearchAggregationMode.PATH:
+        }
+        case SearchAggregationMode.PATH: {
             return 'path'
-        case SearchAggregationMode.AUTHOR:
+        }
+        case SearchAggregationMode.AUTHOR: {
             return 'author'
-        case SearchAggregationMode.CAPTURE_GROUP:
+        }
+        case SearchAggregationMode.CAPTURE_GROUP: {
             return 'group'
-        case SearchAggregationMode.REPO_METADATA:
+        }
+        case SearchAggregationMode.REPO_METADATA: {
             return 'repo-metadata'
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }
 
@@ -87,19 +93,25 @@ const aggregationModeDeserializer = (
     serializedValue: SerializedAggregationMode | null
 ): SearchAggregationMode | null => {
     switch (serializedValue) {
-        case 'repo':
+        case 'repo': {
             return SearchAggregationMode.REPO
-        case 'path':
+        }
+        case 'path': {
             return SearchAggregationMode.PATH
-        case 'author':
+        }
+        case 'author': {
             return SearchAggregationMode.AUTHOR
-        case 'group':
+        }
+        case 'group': {
             return SearchAggregationMode.CAPTURE_GROUP
-        case 'repo-metadata':
+        }
+        case 'repo-metadata': {
             return SearchAggregationMode.REPO_METADATA
+        }
 
-        default:
+        default: {
             return null
+        }
     }
 }
 
@@ -129,21 +141,25 @@ type SerializedAggregationUIMode = '' | null
 
 const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => {
     switch (uiMode) {
-        case AggregationUIMode.SearchPage:
+        case AggregationUIMode.SearchPage: {
             return ''
+        }
         // Null means here that we will delete uiMode query param from the URL
-        case AggregationUIMode.Sidebar:
+        case AggregationUIMode.Sidebar: {
             return null
+        }
     }
 }
 
 const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
     switch (serializedValue) {
-        case '':
+        case '': {
             return AggregationUIMode.SearchPage
+        }
 
-        default:
+        default: {
             return AggregationUIMode.Sidebar
+        }
     }
 }
 

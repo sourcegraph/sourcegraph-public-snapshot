@@ -69,6 +69,8 @@ export const ChatUI: React.FC<IChatUIProps> = ({
         toggleIncludeInferredFile,
         abortMessageInProgress,
         fetchRepositoryNames,
+        storageQuotaExceeded,
+        clearHistory,
     } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
@@ -121,6 +123,23 @@ export const ChatUI: React.FC<IChatUIProps> = ({
 
     if (!loaded) {
         return <></>
+    }
+
+    if (storageQuotaExceeded) {
+        return (
+            <div className={styles.storageQuotaError}>
+                <H2 className="text-center">Storage Limit Reached</H2>
+                <Text className="text-center mb-4">
+                    Cody can’t save your chat history right now because your browser’s storage space is full.
+                    <br />
+                    Please free up some space by clearing your browser’s storage or deleting chat history, and then give
+                    it another try.
+                </Text>
+                <Button onClick={clearHistory} variant="secondary">
+                    Clear Chat History
+                </Button>
+            </div>
+        )
     }
 
     return (

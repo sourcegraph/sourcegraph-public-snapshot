@@ -196,7 +196,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
 }
 
 function getChangelogUrl(version: string): string | null {
-    const versionAnchor = version.replace(/\./g, '-')
+    const versionAnchor = version.replaceAll('.', '-')
     // Only show changelog link for versions that match the X.Y.Z format.
     // Other versions don't have a changelog entry.
     return version.match(/^\d+-\d+-\d+$/)

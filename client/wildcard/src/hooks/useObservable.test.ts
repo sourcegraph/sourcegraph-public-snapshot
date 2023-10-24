@@ -1,7 +1,10 @@
 // causes false positive on act()
 
+import { fail } from 'assert'
+
 import { useMemo, useCallback } from 'react'
 
+import { describe, expect, it } from '@jest/globals'
 import { renderHook, act } from '@testing-library/react'
 import { Observable, type Subscriber } from 'rxjs'
 import { map } from 'rxjs/operators'

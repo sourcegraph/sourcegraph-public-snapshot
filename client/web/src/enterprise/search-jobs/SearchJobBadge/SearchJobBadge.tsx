@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { Badge, BadgeVariantType } from '@sourcegraph/wildcard'
+import { Badge, type BadgeVariantType } from '@sourcegraph/wildcard'
 
-import { SearchJobNode, SearchJobState } from '../../../graphql-operations'
+import { type SearchJobNode, SearchJobState } from '../../../graphql-operations'
 
 import styles from './SearchJobBadge.module.scss'
 
@@ -34,18 +34,24 @@ export const SearchJobBadge: FC<SearchJobBadgeProps> = props => {
 
 const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType | undefined => {
     switch (jobStatus) {
-        case SearchJobState.COMPLETED:
+        case SearchJobState.COMPLETED: {
             return 'success'
-        case SearchJobState.QUEUED:
+        }
+        case SearchJobState.QUEUED: {
             return 'secondary'
-        case SearchJobState.ERRORED:
+        }
+        case SearchJobState.ERRORED: {
             return 'warning'
-        case SearchJobState.FAILED:
+        }
+        case SearchJobState.FAILED: {
             return 'danger'
-        case SearchJobState.PROCESSING:
+        }
+        case SearchJobState.PROCESSING: {
             return 'primary'
+        }
 
-        default:
+        default: {
             return
+        }
     }
 }

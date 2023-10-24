@@ -75,7 +75,7 @@ const gitCommitNode: GitCommitFields = {
         'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.',
 }
 
-export const FullCustomizable: Story = args => (
+export const FullCustomizable: StoryFn = args => (
     <WebStory>
         {() => (
             <Card>

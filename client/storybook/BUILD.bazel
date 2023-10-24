@@ -71,20 +71,6 @@ ts_project(
     ],
 )
 
-ts_project(
-    name = "storybook_tests",
-    testonly = True,
-    srcs = ["src/coverage.test.ts"],
-    tsconfig = ":tsconfig",
-    deps = [
-        ":node_modules/@sourcegraph/shared",
-        "//:node_modules/@storybook/addon-storyshots",
-        "//:node_modules/@storybook/addon-storyshots-puppeteer",
-        "//:node_modules/@types/node",
-        "//:node_modules/url",
-    ],
-)
-
 npm_package(
     name = "storybook_pkg",
     srcs = [

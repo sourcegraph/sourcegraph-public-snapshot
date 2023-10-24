@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { createRectangle, getIntersection } from './rectangle'
 
 describe('rectangle should calculate intersection', () => {

@@ -129,7 +129,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if bzlCmd == "" {
 			return nil, errors.Newf("no bazel command was given")
 		}
-	case runtype.PullRequest:
+	case runtype.ManuallyTriggered, runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
 		ops.Merge(CoreTestOperations(buildOptions, c.Diff, CoreTestOperationsOptions{
@@ -149,14 +149,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		if baseImageOps != nil {
 			ops.Merge(baseImageOps)
-		}
-
-		// Now we set up conditional operations that only apply to pull requests.
-		if c.Diff.Has(changed.Client) {
-			// triggers a slow pipeline, currently only affects web. It's optional so we
-			// set it up separately from CoreTestOperations
-			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-				triggerAsync(buildOptions)))
 		}
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
@@ -279,10 +271,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
-		// Slow async pipeline
-		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-			triggerAsync(buildOptions)))
-
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds

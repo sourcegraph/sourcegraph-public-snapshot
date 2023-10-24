@@ -45,13 +45,14 @@ import styles from './index.module.scss'
 
 /**
  * Converts a name to a username by removing all non-alphanumeric characters and converting to lowercase.
+ *
  * @param name user's name / full name
  * @param randomize whether to add a random suffix to the username to avoid collisions
  * @returns username
  */
 function toUsername(name: string, randomize?: boolean): string {
     // Remove all non-alphanumeric characters from the name and convert to lowercase.
-    const username = name.replace(/[^\dA-Za-z]/g, '').toLowerCase()
+    const username = name.replaceAll(/[^\dA-Za-z]/g, '').toLowerCase()
     if (!randomize) {
         return username
     }

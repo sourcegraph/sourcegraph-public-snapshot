@@ -10,7 +10,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchJobsOrderBy, SearchJobState } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,

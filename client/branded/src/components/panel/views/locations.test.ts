@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import type { Location } from '@sourcegraph/extension-api-types'
 
 import { type GroupedLocations, groupLocations } from './locations'
