@@ -14,4 +14,13 @@
 (constructor_declaration name: (_) @descriptor.method) @local
 
 (field_declaration (variable_declarator name: (_) @descriptor.term))
+
+; formal_parameters node is also used in method_declaration
+; so we narrow the search to record_declaration children
+(record_declaration
+    (formal_parameters
+        (formal_parameter
+          name: (identifier) @descriptor.term)
+    )
+)
 (enum_constant name: (_) @descriptor.term)

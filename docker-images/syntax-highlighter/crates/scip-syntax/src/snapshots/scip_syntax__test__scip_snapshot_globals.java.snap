@@ -37,6 +37,8 @@ expression: dumped
   
       public record Person (String name, String address) {}
 //                  ^^^^^^ definition scip-ctags globals#Person#
+//                                 ^^^^ definition scip-ctags globals#Person#name.
+//                                              ^^^^^^^ definition scip-ctags globals#Person#address.
   
       public class ClassInAClass {
 //                 ^^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#
