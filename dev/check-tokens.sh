@@ -7,12 +7,20 @@
 
 set -eu
 
-files=$(git diff --name-only --staged)
+# Select the files to inspect. We don't want to list files which are deleted, as it makes no sense
+# to look for a token being committed in those.
+#
+# So we use --diff-filter, that tells git to only include in the diff files that were
+# - "A" added
+# - "C" copied
+# - "M" modified
+# - "R" renamed
+files=$(git diff --name-only --staged --diff-filter ACMR)
 
 function check() {
   local file="$1"
 
-  if grep -qE "s(?:g[psd]|lk)_[0-9a-fA-F]{40,}" "$file"; then
+  if ! grep -qE "(?:(?:\/\/)|(?:#)|(?:--)) ?pre-commit:ignore_sourcegraph_token$" "$file" && grep -qE "s(?:g[psd]|lk)_[0-9a-fA-F]{40,}" "$file" ; then
     echo "Found a Sourcegraph token in git staged file: $file. Please remove it."
     exit 1
   fi
@@ -33,8 +41,11 @@ function check() {
     exit 1
   fi
   if grep -qE "https://hooks.slack.com/services/[0-9A-Za-z/]{44}" "$file"; then
-    echo "Found a Slack webhook in git staged file: $file. Please remove it."
-    exit 1
+    # In some places, we use this placeholder for webhooks.
+    if ! grep -qE "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX" "$file"; then
+      echo "Found a Slack webhook in git staged file: $file. Please remove it."
+      exit 1
+    fi
   fi
   if grep -qE "xoxb-[0-9a-zA-Z-]{49}" "$file"; then
     echo "Found a Slack bot token in git staged file: $file. Please remove it."
