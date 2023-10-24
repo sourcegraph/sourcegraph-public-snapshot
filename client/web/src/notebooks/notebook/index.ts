@@ -144,7 +144,7 @@ export class Notebook {
             return
         }
         switch (block.type) {
-            case 'md':
+            case 'md': {
                 this.blocks.set(block.id, {
                     ...block,
                     output: renderMarkdown(block.input.text, {
@@ -153,9 +153,10 @@ export class Notebook {
                     }),
                 })
                 break
+            }
             case 'query': {
                 // Removes comments
-                const query = block.input.query.replace(/\/\/.*/g, '')
+                const query = block.input.query.replaceAll(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(of(query), {
@@ -168,7 +169,7 @@ export class Notebook {
                 })
                 break
             }
-            case 'file':
+            case 'file': {
                 this.blocks.set(block.id, {
                     ...block,
                     output: this.dependencies
@@ -187,6 +188,7 @@ export class Notebook {
                         ),
                 })
                 break
+            }
             case 'symbol': {
                 // Start by searching for the symbol at the latest HEAD (main) revision.
                 const output = findSymbolAtRevision(block.input, 'HEAD').pipe(
@@ -319,7 +321,7 @@ export class Notebook {
     }
 
     public getLastBlockId(): string | null {
-        return this.blockOrder.length > 0 ? this.blockOrder[this.blockOrder.length - 1] : null
+        return this.blockOrder.length > 0 ? this.blockOrder.at(-1)! : null
     }
 
     public getPreviousBlockId(id: string): string | null {

@@ -254,6 +254,25 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
     ],
     'import/order': 'off',
     'unicorn/expiring-todo-comments': 'off',
+
+    // These rules were newly introduced in @sourcegraph/eslint-config@0.35.0 and have not yet been
+    // fixed in our existing code.
+    'unicorn/prefer-top-level-await': 'warn',
+    'unicorn/prefer-logical-operator-over-ternary': 'warn',
+    'unicorn/prefer-blob-reading-methods': 'warn',
+    'unicorn/prefer-event-target': 'warn',
+    'etc/throw-error': 'warn',
+    'rxjs/throw-error': 'warn',
+    'prefer-promise-reject-errors': 'warn',
+    '@typescript-eslint/no-redundant-type-constituents': 'warn',
+    '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
+    '@typescript-eslint/prefer-optional-chain': 'warn',
+    '@typescript-eslint/no-duplicate-enum-values': 'warn',
+    '@typescript-eslint/no-floating-promises': 'warn',
+
+    'jsdoc/check-alignment': 'off',
+
+    'unicorn/no-negated-condition': 'off', // this one reduces code readability, should remove it from @sourcegraph/eslint-config too
   },
   overrides: [
     {

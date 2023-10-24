@@ -92,7 +92,7 @@ function formatReactNodeList(list: ReactNode[]): ReactNode {
 
     return (
         <>
-            {list.slice(0, -1).reduce((previous, current) => [previous, ', ', current])} and {list[list.length - 1]}
+            {list.slice(0, -1).reduce((previous, current) => [previous, ', ', current])} and {list.at(-1)}
         </>
     )
 }

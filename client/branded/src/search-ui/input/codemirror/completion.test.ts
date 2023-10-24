@@ -334,7 +334,7 @@ describe('codmirror completions', () => {
     test('inserts file: prefix for global suggestions', async () => {
         const query = 'repo:x local'
         const tokens = getTokens(query)
-        const lastToken = tokens[tokens.length - 1]
+        const lastToken = tokens.at(-1)!
         expect(
             (
                 await getCompletionItems(

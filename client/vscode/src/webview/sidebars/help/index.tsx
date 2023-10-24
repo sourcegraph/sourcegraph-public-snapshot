@@ -10,7 +10,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
 
 import type { ExtensionCoreAPI, HelpSidebarAPI } from '../../../contract'
-import { type VsCodeApi } from '../../../vsCodeApi'
+import type { VsCodeApi } from '../../../vsCodeApi'
 import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
 import { createPlatformContext } from '../../platform/context'
 

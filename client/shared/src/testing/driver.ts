@@ -383,12 +383,14 @@ export class Driver {
         // Pasting does not work on macOS. See:  https://github.com/GoogleChrome/puppeteer/issues/1313
         method = os.platform() === 'darwin' ? 'type' : method
         switch (method) {
-            case 'type':
+            case 'type': {
                 await this.page.keyboard.type(text)
                 break
-            case 'paste':
+            }
+            case 'paste': {
                 await this.paste(text)
                 break
+            }
         }
     }
 

@@ -31,7 +31,7 @@ export const NewTeamPage: React.FunctionComponent<React.PropsWithChildren<NewTea
     })
 
     const onNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const hyphenatedName = event.currentTarget.value.replace(/\s/g, '-')
+        const hyphenatedName = event.currentTarget.value.replaceAll(/\s/g, '-')
         setName(hyphenatedName)
     }
 

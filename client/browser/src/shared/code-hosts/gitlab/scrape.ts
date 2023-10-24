@@ -34,14 +34,18 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
         return GitLabPageKind.Other
     }
     switch (pageKindMatch[2]) {
-        case 'commit':
+        case 'commit': {
             return GitLabPageKind.Commit
-        case 'merge_requests':
+        }
+        case 'merge_requests': {
             return GitLabPageKind.MergeRequest
-        case 'blob':
+        }
+        case 'blob': {
             return GitLabPageKind.File
-        default:
+        }
+        default: {
             return GitLabPageKind.Other
+        }
     }
 }
 

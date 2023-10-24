@@ -53,13 +53,16 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
     logRedirectEvent(sourcegraphUrl)
     // Open in browser or Copy file link
     switch (action) {
-        case 'open':
+        case 'open': {
             await vscode.env.openExternal(vscode.Uri.parse(decodedUri))
             break
-        case 'copy':
+        }
+        case 'copy': {
             await env.clipboard.writeText(decodedUri).then(() => vscode.window.showInformationMessage('Copied!'))
             break
-        default:
+        }
+        default: {
             throw new Error(`Failed to ${action} file link: invalid URL`)
+        }
     }
 }

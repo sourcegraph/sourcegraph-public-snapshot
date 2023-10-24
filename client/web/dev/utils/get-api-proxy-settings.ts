@@ -43,7 +43,7 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
             if (proxyRes.headers['set-cookie']) {
                 // Remove `Secure` and `SameSite` from `set-cookie` headers.
                 const cookies = proxyRes.headers['set-cookie'].map(cookie =>
-                    cookie.replace(/; secure/gi, '').replace(/; samesite=.+/gi, '')
+                    cookie.replaceAll(/; secure/gi, '').replaceAll(/; samesite=.+/gi, '')
                 )
 
                 proxyRes.headers['set-cookie'] = cookies
@@ -167,17 +167,21 @@ function decompress<TReq extends http.IncomingMessage = http.IncomingMessage>(
     let decompress
 
     switch (contentEncoding) {
-        case 'gzip':
+        case 'gzip': {
             decompress = zlib.createGunzip()
             break
-        case 'br':
+        }
+        case 'br': {
             decompress = zlib.createBrotliDecompress()
             break
-        case 'deflate':
+        }
+        case 'deflate': {
             decompress = zlib.createInflate()
             break
-        default:
+        }
+        default: {
             break
+        }
     }
 
     if (decompress) {

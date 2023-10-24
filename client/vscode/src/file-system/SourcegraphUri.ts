@@ -56,7 +56,7 @@ export class SourcegraphUri {
 
     public basename(): string {
         const parts = (this.path || '').split('/')
-        return parts[parts.length - 1]
+        return parts.at(-1)!
     }
 
     public dirname(): string {
@@ -144,7 +144,7 @@ export class SourcegraphUri {
         return this.revision ? `@${this.revision}` : ''
     }
     public positionSuffix(): string {
-        return typeof this.position === 'undefined' ? '' : `?L${this.position.line}:${this.position.character}`
+        return this.position === undefined ? '' : `?L${this.position.line}:${this.position.character}`
     }
 
     // Debt: refactor and use shared functions. Below is based on parseBrowserRepoURL

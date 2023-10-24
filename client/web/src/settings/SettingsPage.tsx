@@ -28,7 +28,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         return (
             <Container className="mb-3">
                 <SettingsFile
-                    settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
+                    settings={this.props.data.subjects.at(-1)!.latestSettings}
                     commitError={this.state.commitError}
                     onDidCommit={this.onDidCommit}
                     onDidDiscard={this.onDidDiscard}

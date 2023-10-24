@@ -93,11 +93,13 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
 
 const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {
     switch (block.type) {
-        case NotebookBlockType.MARKDOWN:
+        case NotebookBlockType.MARKDOWN: {
             return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
-        case NotebookBlockType.QUERY:
+        }
+        case NotebookBlockType.QUERY: {
             return { __typename: 'QueryBlock', id: block.id, queryInput: block.queryInput ?? '' }
-        case NotebookBlockType.FILE:
+        }
+        case NotebookBlockType.FILE: {
             return {
                 __typename: 'FileBlock',
                 id: block.id,
@@ -113,7 +115,8 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookField
                     },
                 },
             }
-        case NotebookBlockType.SYMBOL:
+        }
+        case NotebookBlockType.SYMBOL: {
             return {
                 __typename: 'SymbolBlock',
                 id: block.id,
@@ -128,6 +131,7 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookField
                     symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
                 },
             }
+        }
     }
 }
 

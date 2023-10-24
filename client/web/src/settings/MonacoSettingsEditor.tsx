@@ -251,8 +251,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                             column: monacoEdits[0].range.startColumn,
                         },
                         {
-                            lineNumber: monacoEdits[monacoEdits.length - 1].range.endLineNumber,
-                            column: monacoEdits[monacoEdits.length - 1].range.endColumn,
+                            lineNumber: monacoEdits.at(-1)!.range.endLineNumber,
+                            column: monacoEdits.at(-1)!.range.endColumn,
                         }
                     )
                 }

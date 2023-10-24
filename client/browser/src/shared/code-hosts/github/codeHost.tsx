@@ -451,14 +451,18 @@ const getSourcegraphResultType = (): SourcegraphResultType | '' => {
     const githubResultType = getGithubResultType()
 
     switch (githubResultType) {
-        case 'repositories':
+        case 'repositories': {
             return 'repo'
-        case 'commits':
+        }
+        case 'commits': {
             return 'commit'
-        case 'code':
+        }
+        case 'code': {
             return ''
-        default:
+        }
+        default: {
             return isSimpleSearchPage() || isAdvancedSearchPage() ? 'repo' : ''
+        }
     }
 }
 

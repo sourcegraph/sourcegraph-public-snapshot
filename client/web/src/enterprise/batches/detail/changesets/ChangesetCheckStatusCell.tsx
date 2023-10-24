@@ -16,12 +16,15 @@ export const ChangesetCheckStatusCell: React.FunctionComponent<
     React.PropsWithChildren<ChangesetCheckStatusCellProps>
 > = ({ className, checkState }) => {
     switch (checkState) {
-        case ChangesetCheckState.PENDING:
+        case ChangesetCheckState.PENDING: {
             return <ChangesetCheckStatusPending className={className} />
-        case ChangesetCheckState.PASSED:
+        }
+        case ChangesetCheckState.PASSED: {
             return <ChangesetCheckStatusPassed className={className} />
-        case ChangesetCheckState.FAILED:
+        }
+        case ChangesetCheckState.FAILED: {
             return <ChangesetCheckStatusFailed className={className} />
+        }
     }
 }
 

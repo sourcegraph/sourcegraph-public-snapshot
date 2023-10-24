@@ -22,27 +22,35 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<
 
     const statusBadge = useMemo(() => {
         switch (status) {
-            case EventStatus.ERROR:
+            case EventStatus.ERROR: {
                 return 'danger'
-            case EventStatus.PENDING:
+            }
+            case EventStatus.PENDING: {
                 return 'warning'
-            case EventStatus.SUCCESS:
+            }
+            case EventStatus.SUCCESS: {
                 return 'primary'
-            case 'skipped':
+            }
+            case 'skipped': {
                 return 'warning'
+            }
         }
     }, [status])
 
     const statusText = useMemo(() => {
         switch (status) {
-            case EventStatus.ERROR:
+            case EventStatus.ERROR: {
                 return 'Error'
-            case EventStatus.PENDING:
+            }
+            case EventStatus.PENDING: {
                 return 'Pending'
-            case EventStatus.SUCCESS:
+            }
+            case EventStatus.SUCCESS: {
                 return 'Success'
-            case 'skipped':
+            }
+            case 'skipped': {
                 return 'Skipped'
+            }
         }
     }, [status])
 

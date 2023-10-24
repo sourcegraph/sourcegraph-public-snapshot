@@ -115,8 +115,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch:
-            routeMatches && routeMatches.length > 0 ? routeMatches[routeMatches.length - 1].pathname : undefined,
+        routeMatch: routeMatches && routeMatches.length > 0 ? routeMatches.at(-1)!.pathname : undefined,
     })
 
     useLayoutEffect(() => {

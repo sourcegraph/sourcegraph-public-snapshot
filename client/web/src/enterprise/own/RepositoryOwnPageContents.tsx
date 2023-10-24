@@ -124,11 +124,14 @@ const getCodeHostName = (repo: RepositoryFields): string => {
     const externalServiceKind = repo.externalURLs[0]?.serviceKind
 
     switch (externalServiceKind) {
-        case 'GITHUB':
+        case 'GITHUB': {
             return 'GitHub'
-        case 'GITLAB':
+        }
+        case 'GITLAB': {
             return 'GitLab'
-        default:
+        }
+        default: {
             return 'code host'
+        }
     }
 }
