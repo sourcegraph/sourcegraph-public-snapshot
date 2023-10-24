@@ -4,6 +4,7 @@ import { byLengthAsc, extendedMatch, Fzf, type FzfOptions, type FzfResultItem } 
 
 // This module implements suggestions for the experimental search input
 
+// eslint-disable-next-line no-restricted-imports
 import {
     type Group,
     type Option,

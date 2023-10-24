@@ -4,7 +4,6 @@ import { tryCatch } from '../errors'
 
 /**
  * Provide one.
- *
  * @param position either 1-indexed partial position
  * @param range or 1-indexed partial range spec
  */
