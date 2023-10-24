@@ -91,7 +91,7 @@ export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
 }
 
 export function changelogURL(version: string): string {
-    const versionAnchor = version.replace(/\./g, '-')
+    const versionAnchor = version.replaceAll('.', '-')
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 

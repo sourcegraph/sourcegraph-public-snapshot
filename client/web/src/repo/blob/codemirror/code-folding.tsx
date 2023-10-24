@@ -62,12 +62,12 @@ function computeFoldableRanges(state: EditorState): Map<number, number> {
             continue
         }
 
-        let previous = previousRanges[previousRanges.length - 1]
+        let previous = previousRanges.at(-1)!
         if (previous.indent > indent) {
             // remove ranges with larger indent
             do {
                 previousRanges.pop()
-                previous = previousRanges[previousRanges.length - 1]
+                previous = previousRanges.at(-1)!
             } while (previous.indent > indent)
 
             // new folding range

@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals'
+
 import { getRelevantTokens } from './analyze'
 import { type Node, parseSearchQuery } from './parser'
 import { stringHuman } from './printer'
@@ -8,7 +10,7 @@ export const parse = (input: string, filter = (_node: Node) => true): string => 
         throw new Error('Query must indicate cursor position via |.')
     }
 
-    input = input.replace(/\|/g, '')
+    input = input.replaceAll('|', '')
     const result = parseSearchQuery(input)
     if (result.type !== 'success') {
         throw new Error(`Expected '${input}' to be a valid query.`)

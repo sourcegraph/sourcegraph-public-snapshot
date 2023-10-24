@@ -1,4 +1,3 @@
-/* eslint-disable jsdoc/check-indentation */
 import React, {
     forwardRef,
     type MutableRefObject,

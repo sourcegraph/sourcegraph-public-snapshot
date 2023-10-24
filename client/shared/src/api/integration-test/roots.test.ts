@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import type { WorkspaceRoot } from '../../codeintel/legacy-extensions/api'
 import { collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
 

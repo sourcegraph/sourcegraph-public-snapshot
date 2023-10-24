@@ -11,13 +11,17 @@ export enum CodeInsightTrackType {
 
 export const getTrackingTypeByInsightType = (insightType: InsightType): CodeInsightTrackType => {
     switch (insightType) {
-        case InsightType.CaptureGroup:
+        case InsightType.CaptureGroup: {
             return CodeInsightTrackType.CaptureGroupInsight
-        case InsightType.SearchBased:
+        }
+        case InsightType.SearchBased: {
             return CodeInsightTrackType.SearchBasedInsight
-        case InsightType.LangStats:
+        }
+        case InsightType.LangStats: {
             return CodeInsightTrackType.LangStatsInsight
-        case InsightType.Compute:
+        }
+        case InsightType.Compute: {
             return CodeInsightTrackType.ComputeInsight
+        }
     }
 }

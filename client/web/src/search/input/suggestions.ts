@@ -4,6 +4,7 @@ import { byLengthAsc, extendedMatch, Fzf, type FzfOptions, type FzfResultItem } 
 
 // This module implements suggestions for the experimental search input
 
+// eslint-disable-next-line no-restricted-imports
 import {
     type Group,
     type Option,
@@ -326,8 +327,9 @@ const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType
     [FilterType.type]: filter => {
         switch (filter.value?.value) {
             case 'diff':
-            case 'commit':
+            case 'commit': {
                 return [FilterType.author, FilterType.before, FilterType.after, FilterType.message]
+            }
         }
         return []
     },
@@ -550,7 +552,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                     // we need to handle these here explicitly. We can't change
                     // the filter definition without breaking the current
                     // search input.
-                    case FilterType.context:
+                    case FilterType.context: {
                         return caches.context.query(value, entries => {
                             entries = value.trim() === '' ? entries.slice(0, ALL_FILTER_VALUE_LIST_SIZE) : entries
                             return [
@@ -561,6 +563,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                 contextActions,
                             ]
                         })
+                    }
                     default: {
                         const options = staticFilterValueOptions(token, resolvedFilter)
                         return options.length > 0 ? { result: [{ title: '', options }] } : null
@@ -851,7 +854,7 @@ function createCaches({
         return sharedCaches
     }
 
-    const cleanRegex = (value: string): string => value.replace(/^\^|\\\.|\$$/g, '')
+    const cleanRegex = (value: string): string => value.replaceAll(/^\^|\\\.|\$$/g, '')
 
     const repoFzfOptions: FzfOptions<Repo> = {
         selector: item => item.name,

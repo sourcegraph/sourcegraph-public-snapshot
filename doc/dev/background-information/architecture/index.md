@@ -112,7 +112,7 @@ If you want to learn more about batch changes:
 ## Code insights
 
 Code insights surface higher-level, aggregated information to leaders in engineering organizations in dashboards.
-For example, code insights can track the number of matches of a search query over time, the number of code navigation diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
+For example, code insights can track the number of matches of a search query over time, the number of code navigation diagnostic warnings in a code base or usage of different programming languages.
 Sample use cases for this are for tracking migrations, usage of libraries across an organization, tech debt, code base health, and much more.
 
 Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../api/graphql/managing-code-insights-with-api.md).

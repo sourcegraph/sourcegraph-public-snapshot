@@ -255,8 +255,9 @@ function keyDownHandler(event: KeyboardEvent, view: EditorView): boolean {
             return true
         }
 
-        default:
+        default: {
             return false
+        }
     }
 }
 

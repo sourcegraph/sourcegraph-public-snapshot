@@ -247,7 +247,7 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         if (byPassValue === '' && event.key === Key.Backspace) {
             // If the next item is permanent, stop removing items.
-            const nextItem = orderedSelectedItems[orderedSelectedItems.length - 1]
+            const nextItem = orderedSelectedItems.at(-1)
             if (getItemIsPermanent(nextItem)) {
                 return
             }

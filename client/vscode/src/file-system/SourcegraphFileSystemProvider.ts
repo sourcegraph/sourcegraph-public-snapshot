@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as vscode from 'vscode'
 
 import { getBlobContent } from '../backend/blobContent'

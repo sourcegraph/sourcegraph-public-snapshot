@@ -25,7 +25,7 @@ export function navFromPath(path: string, repo: string): [string, string][] {
             part,
             resolvePath(TREE_ROUTE_ID, { repo, path: all.slice(0, index + 1).join('/') }),
         ])
-        .concat([[parts[parts.length - 1], '']])
+        .concat([[parts.at(-1), '']])
 }
 
 export function getRevisionLabel(

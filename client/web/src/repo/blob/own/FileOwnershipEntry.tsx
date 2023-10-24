@@ -150,15 +150,20 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
 
 const getOwnershipReasonPriority = (reason: OwnershipReason): number => {
     switch (reason.__typename ?? '') {
-        case 'CodeownersFileEntry':
+        case 'CodeownersFileEntry': {
             return 4
-        case 'AssignedOwner':
+        }
+        case 'AssignedOwner': {
             return 3
-        case 'RecentContributorOwnershipSignal':
+        }
+        case 'RecentContributorOwnershipSignal': {
             return 2
-        case 'RecentViewOwnershipSignal':
+        }
+        case 'RecentViewOwnershipSignal': {
             return 1
-        default:
+        }
+        default: {
             return 0
+        }
     }
 }

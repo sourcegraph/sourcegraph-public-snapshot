@@ -6,7 +6,7 @@
 
 // You must also import the embedded assets:
 //
-//	import _ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+//	import _ "github.com/sourcegraph/sourcegraph/client/web/dist"
 //
 // And to support working with dev assets, with the web builder process handling them for you, you can use:
 //

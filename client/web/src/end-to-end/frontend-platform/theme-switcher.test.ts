@@ -2,7 +2,6 @@ import expect from 'expect'
 import { describe, test, before, after } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -20,7 +19,6 @@ describe('Theme switcher', () => {
     after('Close browser', () => driver?.close())
 
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEachRecordCoverage(() => driver)
 
     const getActiveThemeClasses = (): Promise<string[]> =>
         driver.page.evaluate(() => {

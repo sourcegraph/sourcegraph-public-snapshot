@@ -7,6 +7,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:exclude **/testing/globals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_ignore_imports **/global-styles/index.scss
@@ -541,14 +542,17 @@ ts_project(
         "src/hooks/useCookieStorage.test.ts",
         "src/hooks/useObservable.test.ts",
         "src/hooks/useTimeoutManager.test.ts",
+        "src/testing/globals.d.ts",  #keep
         "src/utils/linkClickHandler.test.tsx",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/testing",
         ":wildcard_lib",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@mdi/js",
         "//:node_modules/@storybook/react",  #keep
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",
@@ -556,7 +560,6 @@ ts_project(
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/sinon",
-        "//:node_modules/expect",
         "//:node_modules/history",
         "//:node_modules/js-cookie",
         "//:node_modules/mdi-react",

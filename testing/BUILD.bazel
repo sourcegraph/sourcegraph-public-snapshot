@@ -43,6 +43,7 @@ server_integration_test(
 
 server_integration_test(
     name = "backend_integration_test",
+    timeout = "long",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
@@ -78,6 +79,7 @@ server_integration_test(
 
 server_integration_test(
     name = "grpc_backend_integration_test",
+    timeout = "long",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test

@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { render, screen, within } from '@testing-library/react'
 
 import { LineChart } from './LineChart'

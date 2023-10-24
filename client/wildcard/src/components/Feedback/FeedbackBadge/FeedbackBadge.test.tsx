@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { render } from '@testing-library/react'
 
 import { FEEDBACK_BADGES_STATUS } from './constant'

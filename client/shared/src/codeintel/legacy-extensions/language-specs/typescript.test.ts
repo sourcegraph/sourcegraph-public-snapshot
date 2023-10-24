@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from '@jest/globals'
+
 import { nilFilterContext, nilResult } from './spec.test'
 import { typescriptSpec } from './typescript'
 

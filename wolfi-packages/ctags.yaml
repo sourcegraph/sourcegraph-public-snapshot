@@ -3,8 +3,8 @@
 
 package:
   name: ctags
-  version: 5.9.20220403.0
-  epoch: 2
+  version: 6.0.0
+  epoch: 3
   description: "A maintained ctags implementation"
   target-architecture:
     - x86_64
@@ -34,8 +34,8 @@ environment:
 pipeline:
   - uses: fetch
     with:
-      uri: https://github.com/universal-ctags/ctags/archive/refs/tags/p${{package.version}}.tar.gz
-      expected-sha256: df966f73ae6082acb9f4f7fe4e27f53a593782380f28ccf65f0ac38aaf697888
+      uri: https://github.com/universal-ctags/ctags/archive/refs/tags/v${{package.version}}.tar.gz
+      expected-sha256: 71229a73f25529c9e3dabb2cb7310c55405d31caee8e8a9ab5c71b2406d4005a
   - name: Autogen
     runs: |
       ./autogen.sh

@@ -1,5 +1,6 @@
 // Taken from https://github.com/pmndrs/zustand/wiki/Testing
 
+import { afterAll, afterEach } from '@jest/globals'
 import type { Act } from '@testing-library/react-hooks'
 import { act } from 'react-dom/test-utils'
 import actualCreate, { type StateCreator, type UseStore } from 'zustand'

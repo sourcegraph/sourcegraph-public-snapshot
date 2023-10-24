@@ -3,8 +3,8 @@
 const gulp = require('gulp')
 
 const { graphQlOperations, schema, watchGraphQlOperations } = require('./client/shared/gulpfile')
-const { webpack: webWebpack, developmentServer, generate, watchGenerators } = require('./client/web/gulpfile')
 const { buildSvelteKit } = require('./client/web-sveltekit/gulpfile.cjs')
+const { build: webBuild, developmentServer, generate, watchGenerators } = require('./client/web/gulpfile')
 
 /**
  * Generates files needed for builds whenever files change.
@@ -14,7 +14,7 @@ const watchGenerate = gulp.series(generate, watchGenerators)
 /**
  * Builds everything.
  */
-const build = gulp.series(generate, webWebpack)
+const build = gulp.series(generate, webBuild)
 
 const tasks = [watchGenerators, developmentServer]
 
