@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 362
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   package main
@@ -313,9 +312,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
   func Min[T Comparable](a, b T) T {
 //^^^^ Keyword
-//     ^^^ Identifier
-//         ^ Identifier
-//           ^^^^^^^^^^ IdentifierFunction
+//     ^^^ IdentifierFunction
+//         ^ IdentifierParameter
+//           ^^^^^^^^^^ IdentifierType
 //                       ^ IdentifierParameter
 //                          ^ IdentifierParameter
 //                            ^ IdentifierType
@@ -340,16 +339,16 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
    fmt.Println(Min[int](5, 10))       // 5
 // ^^^ Identifier
 //     ^^^^^^^ IdentifierFunction
-//             ^^^ Identifier
-//                 ^^^ Identifier
+//             ^^^ IdentifierFunction
+//                 ^^^ IdentifierBuiltinType
 //                      ^ NumericLiteral
 //                         ^^ NumericLiteral
 //                                    ^^^^ Comment
    fmt.Println(Min[string]("a", "b")) // "a"
 // ^^^ Identifier
 //     ^^^^^^^ IdentifierFunction
-//             ^^^ Identifier
-//                 ^^^^^^ Identifier
+//             ^^^ IdentifierFunction
+//                 ^^^^^^ IdentifierBuiltinType
 //                         ^^^ StringLiteral
 //                              ^^^ StringLiteral
 //                                    ^^^^^^ Comment
