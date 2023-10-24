@@ -401,7 +401,7 @@ export const ListGroups: StoryFn = () => (
 
 ListGroups.storyName = 'List groups'
 
-export const Meter: Story = args => (
+export const Meter: StoryFn = args => (
     <>
         <H1>Meter</H1>
         <Text>

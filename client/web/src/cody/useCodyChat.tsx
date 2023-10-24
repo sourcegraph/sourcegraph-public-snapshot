@@ -45,6 +45,7 @@ export interface CodyChatStore
     > {
     readonly transcriptHistory: TranscriptJSON[]
     readonly loaded: boolean
+    readonly storageQuotaExceeded: boolean
     clearHistory: () => void
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
@@ -57,6 +58,7 @@ export const codyChatStoreMock: CodyChatStore = {
     chatMessages: [],
     isMessageInProgress: false,
     messageInProgress: null,
+    storageQuotaExceeded: false,
     submitMessage: () => Promise.resolve(null),
     editMessage: () => Promise.resolve(null),
     initializeNewChat: () => null,
@@ -112,12 +114,26 @@ export const useCodyChat = ({
     // preserve the history as we migrate to a new key that is differentiated by user.
     const oldJSON = window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY)
     // eslint-disable-next-line no-restricted-syntax
-    const [transcriptHistoryInternal, setTranscriptHistoryState] = useLocalStorage<TranscriptJSON[]>(
+    const [transcriptHistoryInternal, setTranscriptHistoryStateInternal] = useLocalStorage<TranscriptJSON[]>(
         // Users have distinct transcript histories, so we use the user ID as a key.
         `${CODY_TRANSCRIPT_HISTORY_KEY}:${userID}`,
         []
     )
+    const [storageQuotaExceeded, setStorageQuotaExceeded] = useState(false)
     const transcriptHistory = useMemo(() => transcriptHistoryInternal || [], [transcriptHistoryInternal])
+    const setTranscriptHistoryState = useCallback<typeof setTranscriptHistoryStateInternal>(
+        value => {
+            try {
+                setTranscriptHistoryStateInternal(value)
+                setStorageQuotaExceeded(false)
+            } catch (error) {
+                if (error.name === 'QuotaExceededError') {
+                    setStorageQuotaExceeded(true)
+                }
+            }
+        },
+        [setTranscriptHistoryStateInternal, setStorageQuotaExceeded]
+    )
 
     const {
         transcript,
@@ -519,6 +535,7 @@ export const useCodyChat = ({
         toggleIncludeInferredFile,
         abortMessageInProgress,
         fetchRepositoryNames,
+        storageQuotaExceeded,
     }
 }
 

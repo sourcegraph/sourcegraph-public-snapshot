@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useState, FC } from 'react'
+import { useCallback, useMemo, useState, type FC } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
-import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
 import { CountContent, getProgressText } from './StreamingProgressCount'

@@ -35,10 +35,12 @@ type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logEventName:
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
-        case 'notebooks':
+        case 'notebooks': {
             return 'notebooks'
-        case 'getting-started':
+        }
+        case 'getting-started': {
             return 'getting-started'
+        }
     }
     return authenticatedUser ? 'notebooks' : 'getting-started'
 }
@@ -81,7 +83,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     const [hasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
 
     useEffect(() => {
-        if (typeof hasSeenGettingStartedTab !== 'undefined' && !hasSeenGettingStartedTab) {
+        if (hasSeenGettingStartedTab !== undefined && !hasSeenGettingStartedTab) {
             setSelectedTab('getting-started')
         }
     }, [hasSeenGettingStartedTab, setSelectedTab])

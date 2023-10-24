@@ -551,8 +551,9 @@ const applyAdditionalFilters = (query: string, additionalFilters: string[]): str
 function isSmartSearchAlert(kind: AlertKind): kind is SmartSearchAlertKind {
     switch (kind) {
         case 'smart-search-additional-results':
-        case 'smart-search-pure-results':
+        case 'smart-search-pure-results': {
             return true
+        }
     }
     return false
 }

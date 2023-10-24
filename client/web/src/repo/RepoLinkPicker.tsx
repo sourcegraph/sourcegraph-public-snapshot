@@ -1,4 +1,4 @@
-import { FC, useRef, useState } from 'react'
+import { type FC, useRef, useState } from 'react'
 
 import {
     mdiAws,
@@ -34,8 +34,8 @@ import {
 
 import {
     ExternalServiceKind,
-    RepositoriesSuggestionsResult,
-    RepositoriesSuggestionsVariables,
+    type RepositoriesSuggestionsResult,
+    type RepositoriesSuggestionsVariables,
 } from '../graphql-operations'
 
 import styles from './RepoLinkPicker.module.scss'
@@ -167,21 +167,29 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
 
 export const getCodeHostIconPath = (codeHostType?: ExternalServiceKind): string => {
     switch (codeHostType) {
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             return mdiGithub
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return mdiBitbucket
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return mdiBitbucket
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return mdiGitlab
-        case ExternalServiceKind.GITOLITE:
+        }
+        case ExternalServiceKind.GITOLITE: {
             return mdiGit
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case ExternalServiceKind.AWSCODECOMMIT: {
             return mdiAws
-        case ExternalServiceKind.AZUREDEVOPS:
+        }
+        case ExternalServiceKind.AZUREDEVOPS: {
             return mdiMicrosoftAzure
-        default:
+        }
+        default: {
             return mdiSourceRepository
+        }
     }
 }

@@ -33,18 +33,21 @@ interface LineType {
 
 const lineType = (kind: DiffHunkLineType): LineType => {
     switch (kind) {
-        case DiffHunkLineType.DELETED:
+        case DiffHunkLineType.DELETED: {
             return {
                 hunkContent: styles.lineDeletion,
             }
-        case DiffHunkLineType.ADDED:
+        }
+        case DiffHunkLineType.ADDED: {
             return {
                 hunkContent: styles.lineAddition,
             }
-        default:
+        }
+        default: {
             return {
                 hunkContent: '',
             }
+        }
     }
 }
 

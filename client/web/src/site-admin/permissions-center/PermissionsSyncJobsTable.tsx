@@ -541,13 +541,16 @@ const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = pr
         let nextValue = null
         let partial = false
         switch (event.target.value) {
-            case '':
+            case '': {
                 break
-            case 'partial':
+            }
+            case 'partial': {
                 partial = true
                 break
-            default:
+            }
+            default: {
                 nextValue = event.target.value as PermissionsSyncJobState
+            }
         }
         onChange(nextValue)
         onPartialSuccessChange(partial)
@@ -637,12 +640,15 @@ const finalState = (state: PermissionsSyncJobState): boolean =>
 
 const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResultMessage): string => {
     switch (message) {
-        case CancelPermissionsSyncJobResultMessage.SUCCESS:
+        case CancelPermissionsSyncJobResultMessage.SUCCESS: {
             return 'Permissions sync job canceled.'
-        case CancelPermissionsSyncJobResultMessage.NOT_FOUND:
+        }
+        case CancelPermissionsSyncJobResultMessage.NOT_FOUND: {
             return 'Permissions sync job is already dequeued and cannot be canceled.'
-        case CancelPermissionsSyncJobResultMessage.ERROR:
+        }
+        case CancelPermissionsSyncJobResultMessage.ERROR: {
             return 'Error during permissions sync job cancelling.'
+        }
     }
 }
 

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { mdiChevronRight, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 // We're using marked import here to access the `marked` package type definitions.
+
 // eslint-disable-next-line no-restricted-imports
 import { type marked, Slugger } from 'marked'
 import ReactDOM from 'react-dom'
@@ -22,10 +23,12 @@ interface NotebookOutlineProps {
 
 function getHeadingStyle(depth: number): string {
     switch (depth) {
-        case 1:
+        case 1: {
             return styles.heading1
-        case 2:
+        }
+        case 2: {
             return styles.heading2
+        }
     }
     return ''
 }

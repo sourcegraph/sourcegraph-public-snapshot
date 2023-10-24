@@ -1083,7 +1083,7 @@ export function createHoverifier<C extends object, D, A>({
                     // We assume that the first element is always the top most
                     // element and the last element is the bottom most element.
                     const topRectangle = codeElements[0].element.getBoundingClientRect()
-                    const bottomRectangle = codeElements[codeElements.length - 1].element.getBoundingClientRect()
+                    const bottomRectangle = codeElements.at(-1)!.element.getBoundingClientRect()
                     const rectangle = {
                         top: topRectangle.top,
                         bottom: bottomRectangle.bottom,

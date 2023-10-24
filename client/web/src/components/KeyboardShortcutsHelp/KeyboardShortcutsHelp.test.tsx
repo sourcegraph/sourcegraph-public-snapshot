@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { describe, expect, test } from '@jest/globals'
 import { fireEvent, screen } from '@testing-library/react'
 
 import { Shortcut, ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'

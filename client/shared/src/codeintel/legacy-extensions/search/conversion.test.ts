@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from '@jest/globals'
+
 import * as scip from '../../scip'
 
 import { resultToLocation, searchResultToResults } from './conversion'

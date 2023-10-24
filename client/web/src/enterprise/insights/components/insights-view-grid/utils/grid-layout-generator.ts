@@ -71,10 +71,12 @@ export const insightLayoutGenerator = (
 
     function generateLayout(breakpointName: BreakpointName, persistedLayouts: ReactGridLayouts | null): Layout[] {
         switch (breakpointName) {
-            case 'lg':
+            case 'lg': {
                 return generateComplexLayout(insights, breakpointName, persistedLayouts?.lg ?? [])
-            default:
+            }
+            default: {
                 return generatePlainLayout(insights, breakpointName)
+            }
         }
     }
 }
@@ -119,7 +121,7 @@ function generateComplexLayout(
                 const itemsPerRow = isManySeriesInsight(insight) ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
                 const columnsPerRow = COLUMNS[breakpointName]
                 const width = columnsPerRow / itemsPerRow
-                const lastRow = grid[grid.length - 1]
+                const lastRow = grid.at(-1)!
                 const lastRowCurrentWidth = lastRow.reduce((sumWidth, element) => sumWidth + element.w, 0)
 
                 // Move element on new line (row)

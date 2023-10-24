@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { renderHook } from '@testing-library/react'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
