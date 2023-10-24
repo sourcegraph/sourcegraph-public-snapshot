@@ -337,7 +337,7 @@ func TestCloneRepo(t *testing.T) {
 	reposDir := t.TempDir()
 
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	if _, err := db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true); err != nil {
 		t.Fatal(err)
 	}
@@ -447,7 +447,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	logger := logtest.Scoped(t)
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -544,7 +544,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -658,7 +658,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -993,7 +993,7 @@ func TestSyncRepoState(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	remoteDir := t.TempDir()
 
 	cmd := func(name string, arg ...string) {
@@ -1324,7 +1324,7 @@ func TestLogIfCorrupt(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	remoteDir := t.TempDir()
 
 	reposDir := t.TempDir()

@@ -399,12 +399,15 @@ function useAccessTokenValidator(input: useAccessTokenValidatorInput): AsyncVali
 
                 switch (externalService.checkConnection.__typename) {
                     // Everything is ok, code host successfully checked and connected
-                    case 'ExternalServiceAvailable':
+                    case 'ExternalServiceAvailable': {
                         return
-                    case 'ExternalServiceUnavailable':
+                    }
+                    case 'ExternalServiceUnavailable': {
                         return externalService.checkConnection.suspectedReason
-                    case 'ExternalServiceAvailabilityUnknown':
+                    }
+                    case 'ExternalServiceAvailabilityUnknown': {
                         return "Check your access token, we couldn't reach out to code host by the current token"
+                    }
                 }
             }
 
@@ -422,12 +425,15 @@ function useAccessTokenValidator(input: useAccessTokenValidatorInput): AsyncVali
 
 function getViewKindByIndex(index: number): string | null {
     switch (index) {
-        case GithubConnectFormTab.Form:
+        case GithubConnectFormTab.Form: {
             return 'form-ui'
-        case GithubConnectFormTab.JSONC:
+        }
+        case GithubConnectFormTab.JSONC: {
             return 'json-editor'
+        }
 
-        default:
+        default: {
             return null
+        }
     }
 }

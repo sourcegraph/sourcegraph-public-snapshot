@@ -381,9 +381,10 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 }
 
                 switch (block.type) {
-                    case 'md':
+                    case 'md': {
                         return <NotebookMarkdownBlock {...block} {...blockProps} isEmbedded={isEmbedded} />
-                    case 'file':
+                    }
+                    case 'file': {
                         return (
                             <NotebookFileBlock
                                 {...block}
@@ -392,7 +393,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                             />
                         )
-                    case 'query':
+                    }
+                    case 'query': {
                         return (
                             <NotebookQueryBlock
                                 {...block}
@@ -407,7 +409,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 authenticatedUser={authenticatedUser}
                             />
                         )
-                    case 'symbol':
+                    }
+                    case 'symbol': {
                         return (
                             <NotebookSymbolBlock
                                 {...block}
@@ -417,6 +420,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 platformContext={platformContext}
                             />
                         )
+                    }
                 }
             },
             [

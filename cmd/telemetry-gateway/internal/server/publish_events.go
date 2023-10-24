@@ -40,8 +40,10 @@ func handlePublishEvents(
 	tr.SetAttributes(resultAttribute)
 	payloadMetrics.length.Record(ctx, int64(len(events)),
 		metric.WithAttributes(resultAttribute))
-	payloadMetrics.failedEvents.Add(ctx, int64(len(summary.failedEvents)),
-		metric.WithAttributes(resultAttribute))
+	payloadMetrics.processedEvents.Add(ctx, int64(len(summary.succeededEvents)),
+		metric.WithAttributes(attribute.Bool("succeeded", true), resultAttribute))
+	payloadMetrics.processedEvents.Add(ctx, int64(len(summary.failedEvents)),
+		metric.WithAttributes(attribute.Bool("succeeded", false), resultAttribute))
 
 	// Generate a log message for convenience
 	summaryFields := []log.Field{

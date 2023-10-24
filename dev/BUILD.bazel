@@ -1,14 +1,6 @@
-load("@aspect_rules_webpack//webpack:defs.bzl", "webpack_binary")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
-webpack_binary(
-    name = "webpack",
-    node_modules = "//:node_modules",
-)
-
-exports_files(srcs = [
-    "eslint-report-test.sh",
-])
+exports_files(srcs = ["eslint-report-test.sh"])
 
 write_source_files(
     name = "write_all_generated",

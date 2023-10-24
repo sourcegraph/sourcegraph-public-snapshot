@@ -14,6 +14,7 @@ import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import type { ExtensionCoreAPI } from '../../../contract'
+import type { VsCodeApi } from '../../../vsCodeApi'
 import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
 import { createPlatformContext, type WebviewPageProps } from '../../platform/context'
 import { adaptSourcegraphThemeToEditorTheme } from '../../theming/sourcegraphTheme'
@@ -24,7 +25,9 @@ import { createSearchSidebarAPI } from './api'
 import { ContextInvalidatedSidebarView } from './ContextInvalidatedSidebarView'
 import { SearchSidebarView } from './SearchSidebarView'
 
-const vsCodeApi = window.acquireVsCodeApi()
+declare const acquireVsCodeApi: () => VsCodeApi
+
+const vsCodeApi = acquireVsCodeApi()
 
 const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 

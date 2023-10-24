@@ -19,7 +19,7 @@ import (
 func TestRelevantSettings(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	settingsService := NewService(db)
 
 	createOrg := func(name string) *types.Org {

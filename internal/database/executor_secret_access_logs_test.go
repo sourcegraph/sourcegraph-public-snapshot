@@ -17,7 +17,7 @@ import (
 func TestExecutorSecretAccessLogs_Create(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +48,7 @@ func TestExecutorSecretAccessLogs_Create(t *testing.T) {
 func TestExecutorSecretAccessLogs_GetListCount(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)

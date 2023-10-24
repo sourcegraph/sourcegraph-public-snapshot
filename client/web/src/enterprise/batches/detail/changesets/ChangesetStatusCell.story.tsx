@@ -1,48 +1,50 @@
-import type { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { ChangesetState } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-const config: Meta = {
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
+const config: Meta<typeof ChangesetStatusCell> = {
     title: 'web/batches/ChangesetStatusCell',
     decorators: [decorator],
 }
 
 export default config
 
-const Template: Story<{ state: ChangesetState }> = ({ state }) => (
+const Template: StoryFn<{ state: ChangesetState }> = ({ state }) => (
     <WebStory>{() => <ChangesetStatusCell state={state} className="d-flex text-muted" />}</WebStory>
 )
 
-export const Unpublished = Template.bind({})
+type Story = StoryObj<typeof config>
+
+export const Unpublished: Story = Template.bind({})
 Unpublished.args = { state: ChangesetState.UNPUBLISHED }
 
-export const Failed = Template.bind({})
+export const Failed: Story = Template.bind({})
 Failed.args = { state: ChangesetState.FAILED }
 
-export const Retrying = Template.bind({})
+export const Retrying: Story = Template.bind({})
 Retrying.args = { state: ChangesetState.RETRYING }
 
-export const Scheduled = Template.bind({})
+export const Scheduled: Story = Template.bind({})
 Scheduled.args = { state: ChangesetState.SCHEDULED }
 
-export const Processing = Template.bind({})
+export const Processing: Story = Template.bind({})
 Processing.args = { state: ChangesetState.PROCESSING }
 
-export const Open = Template.bind({})
+export const Open: Story = Template.bind({})
 Open.args = { state: ChangesetState.OPEN }
 
-export const Draft = Template.bind({})
+export const Draft: Story = Template.bind({})
 Draft.args = { state: ChangesetState.DRAFT }
 
-export const Closed = Template.bind({})
+export const Closed: Story = Template.bind({})
 Closed.args = { state: ChangesetState.CLOSED }
 
-export const Merged = Template.bind({})
+export const Merged: Story = Template.bind({})
 Merged.args = { state: ChangesetState.MERGED }
 
-export const Deleted = Template.bind({})
+export const Deleted: Story = Template.bind({})
 Deleted.args = { state: ChangesetState.DELETED }

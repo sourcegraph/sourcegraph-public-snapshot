@@ -12,7 +12,7 @@
 
         <title>{{.Title}}</title>
         {{if .Manifest.EmbedCSSBundlePath}}
-        <link rel="stylesheet" href="{{.Manifest.EmbedCSSBundlePath}}" />
+        <link rel="stylesheet" href="{{assetURL .Manifest.EmbedCSSBundlePath}}" />
         {{end}}
 
         <script ignore-csp>
@@ -37,12 +37,7 @@
             <br />
             You need to enable JavaScript to run this app.
         </noscript>
-        {{if .Manifest.AppJSRuntimeBundlePath}}
-        <script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>
-        {{end}}
-        <script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module" {{end}}></script>
-        <script src="{{.Manifest.OpenTelemetryJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-        <script src="{{.Manifest.EmbedJSBundlePath}}" {{if .Manifest.IsModule}}type="module" {{end}}></script>
+        <script src="{{assetURL .Manifest.EmbedJSBundlePath}}" type="module"></script>
         {{.Injected.BodyBottom}}
     </body>
 </html>

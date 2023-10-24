@@ -36,7 +36,7 @@ const repoFzfOptions: FzfOptions<Repo> = {
     forward: false,
 }
 
-const cleanRegex = (value: string): string => value.replace(/^\^|\\\.|\$$/g, '')
+const cleanRegex = (value: string): string => value.replaceAll(/^\^|\\\.|\$$/g, '')
 
 export function createRepositoryCompletionSource<T, ExtraArgs extends any[]>(
     request: RequestGraphQL<SuggestionsRepoResult, SuggestionsRepoVariables>,

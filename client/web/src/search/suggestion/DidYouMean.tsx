@@ -54,13 +54,15 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
     // This is used later to reconstruct the query
     const tokensWithoutContext = scanResult.term.filter(term => {
         switch (term.type) {
-            case 'filter':
+            case 'filter': {
                 if (term.field.value === 'context') {
                     return false
                 }
                 return true
-            default:
+            }
+            default: {
                 return true
+            }
         }
     })
 
@@ -68,10 +70,12 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
     const tokensWithoutWhitespace = tokensWithoutContext.filter(term => {
         switch (term.type) {
             case 'comment':
-            case 'whitespace':
+            case 'whitespace': {
                 return false
-            default:
+            }
+            default: {
                 return true
+            }
         }
     })
 
@@ -86,7 +90,7 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
 
     let matchResult = matchesLanguage(tokensWithoutWhitespace[0])
     if (!matchResult.success) {
-        matchResult = matchesLanguage(tokensWithoutWhitespace[tokensWithoutWhitespace.length - 1])
+        matchResult = matchesLanguage(tokensWithoutWhitespace.at(-1)!)
     }
 
     if (matchResult.success) {

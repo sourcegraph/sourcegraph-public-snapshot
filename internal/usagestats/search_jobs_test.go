@@ -25,7 +25,7 @@ func TestSearchJobsUsageStatistics(t *testing.T) {
 	mockTimeNow(now)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	_, err := db.ExecContext(context.Background(), `
 		INSERT INTO event_logs

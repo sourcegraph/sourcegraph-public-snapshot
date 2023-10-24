@@ -61,7 +61,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Cleanup(func() { httpcli.InternalDoer = orig })
 
 	ctx := context.Background()
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	tx := dbtest.NewTx(t, sqlDB)
 	db := database.NewDB(logger, sqlDB)
 	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)

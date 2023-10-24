@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, test } from '@jest/globals'
 import sinon from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'

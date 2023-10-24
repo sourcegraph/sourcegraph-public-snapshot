@@ -19,7 +19,7 @@ import (
 
 func TestOneClickExportHandler(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("non-admins cannot download the archive", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "", nil)

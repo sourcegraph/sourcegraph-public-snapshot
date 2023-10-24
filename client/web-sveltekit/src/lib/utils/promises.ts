@@ -65,10 +65,10 @@ export function createPromiseStore<D, E = Error>(): PromiseStore<Awaited<D>, E> 
                     pending.set(false)
                 }
             },
-            errorValue => {
+            error_ => {
                 if (currentPromise === promise) {
                     value.set(null)
-                    error.set(errorValue)
+                    error.set(error_)
                     pending.set(false)
                 }
             }

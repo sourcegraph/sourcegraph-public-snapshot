@@ -56,6 +56,7 @@ ts_project(
         "src/testutils/fixtures.ts",
         "src/testutils/generate.ts",
         "src/testutils/github/generate.ts",
+        "src/testutils/globals.d.ts",
         "src/testutils/mouse.ts",
         "src/testutils/revision.ts",
         "src/testutils/sourcegraph/generate.ts",
@@ -71,6 +72,8 @@ ts_project(
         ":codeintellify_lib",
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",
+        "//:node_modules/@jest/globals",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/lodash",

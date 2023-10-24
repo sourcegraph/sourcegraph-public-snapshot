@@ -88,7 +88,7 @@ func (x *Identifier) GetLicensedInstance() *Identifier_LicensedInstanceIdentifie
 	return nil
 }
 
-func (x *Identifier) GetUnlicensedInstance() *Identifier_UnlicensedInstanceIdenfitier {
+func (x *Identifier) GetUnlicensedInstance() *Identifier_UnlicensedInstanceIdentifier {
 	if x, ok := x.GetIdentifier().(*Identifier_UnlicensedInstance); ok {
 		return x.UnlicensedInstance
 	}
@@ -106,7 +106,7 @@ type Identifier_LicensedInstance struct {
 
 type Identifier_UnlicensedInstance struct {
 	// An unlicensed Sourcegraph instance.
-	UnlicensedInstance *Identifier_UnlicensedInstanceIdenfitier `protobuf:"bytes,2,opt,name=unlicensed_instance,json=unlicensedInstance,proto3,oneof"`
+	UnlicensedInstance *Identifier_UnlicensedInstanceIdentifier `protobuf:"bytes,2,opt,name=unlicensed_instance,json=unlicensedInstance,proto3,oneof"`
 }
 
 func (*Identifier_LicensedInstance) isIdentifier_Identifier() {}
@@ -922,7 +922,7 @@ func (x *Identifier_LicensedInstanceIdentifier) GetInstanceId() string {
 	return ""
 }
 
-type Identifier_UnlicensedInstanceIdenfitier struct {
+type Identifier_UnlicensedInstanceIdentifier struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -931,8 +931,8 @@ type Identifier_UnlicensedInstanceIdenfitier struct {
 	InstanceId string `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
 }
 
-func (x *Identifier_UnlicensedInstanceIdenfitier) Reset() {
-	*x = Identifier_UnlicensedInstanceIdenfitier{}
+func (x *Identifier_UnlicensedInstanceIdentifier) Reset() {
+	*x = Identifier_UnlicensedInstanceIdentifier{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_telemetrygateway_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -940,13 +940,13 @@ func (x *Identifier_UnlicensedInstanceIdenfitier) Reset() {
 	}
 }
 
-func (x *Identifier_UnlicensedInstanceIdenfitier) String() string {
+func (x *Identifier_UnlicensedInstanceIdentifier) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Identifier_UnlicensedInstanceIdenfitier) ProtoMessage() {}
+func (*Identifier_UnlicensedInstanceIdentifier) ProtoMessage() {}
 
-func (x *Identifier_UnlicensedInstanceIdenfitier) ProtoReflect() protoreflect.Message {
+func (x *Identifier_UnlicensedInstanceIdentifier) ProtoReflect() protoreflect.Message {
 	mi := &file_telemetrygateway_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -958,12 +958,12 @@ func (x *Identifier_UnlicensedInstanceIdenfitier) ProtoReflect() protoreflect.Me
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Identifier_UnlicensedInstanceIdenfitier.ProtoReflect.Descriptor instead.
-func (*Identifier_UnlicensedInstanceIdenfitier) Descriptor() ([]byte, []int) {
+// Deprecated: Use Identifier_UnlicensedInstanceIdentifier.ProtoReflect.Descriptor instead.
+func (*Identifier_UnlicensedInstanceIdentifier) Descriptor() ([]byte, []int) {
 	return file_telemetrygateway_proto_rawDescGZIP(), []int{0, 1}
 }
 
-func (x *Identifier_UnlicensedInstanceIdenfitier) GetInstanceId() string {
+func (x *Identifier_UnlicensedInstanceIdentifier) GetInstanceId() string {
 	if x != nil {
 		return x.InstanceId
 	}
@@ -1144,7 +1144,7 @@ var file_telemetrygateway_proto_rawDesc = []byte{
 	0x01, 0x28, 0x0b, 0x32, 0x3c, 0x2e, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x67,
 	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69,
 	0x66, 0x69, 0x65, 0x72, 0x2e, 0x55, 0x6e, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x64, 0x49,
-	0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x65, 0x6e, 0x66, 0x69, 0x74, 0x69, 0x65,
+	0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65,
 	0x72, 0x48, 0x00, 0x52, 0x12, 0x75, 0x6e, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x64, 0x49,
 	0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x1a, 0x5e, 0x0a, 0x1a, 0x4c, 0x69, 0x63, 0x65, 0x6e,
 	0x73, 0x65, 0x64, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x65, 0x6e, 0x74,
@@ -1154,7 +1154,7 @@ var file_telemetrygateway_proto_rawDesc = []byte{
 	0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e, 0x73,
 	0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x1a, 0x3f, 0x0a, 0x1c, 0x55, 0x6e, 0x6c, 0x69, 0x63,
 	0x65, 0x6e, 0x73, 0x65, 0x64, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x65,
-	0x6e, 0x66, 0x69, 0x74, 0x69, 0x65, 0x72, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61,
+	0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61,
 	0x6e, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e,
 	0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x42, 0x0c, 0x0a, 0x0a, 0x69, 0x64, 0x65, 0x6e,
 	0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x22, 0x7d, 0x0a, 0x1b, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
@@ -1357,7 +1357,7 @@ var file_telemetrygateway_proto_goTypes = []interface{}{
 	(*EventFeatureFlags)(nil),                       // 9: telemetrygateway.v1.EventFeatureFlags
 	(*EventMarketingTracking)(nil),                  // 10: telemetrygateway.v1.EventMarketingTracking
 	(*Identifier_LicensedInstanceIdentifier)(nil),   // 11: telemetrygateway.v1.Identifier.LicensedInstanceIdentifier
-	(*Identifier_UnlicensedInstanceIdenfitier)(nil), // 12: telemetrygateway.v1.Identifier.UnlicensedInstanceIdenfitier
+	(*Identifier_UnlicensedInstanceIdentifier)(nil), // 12: telemetrygateway.v1.Identifier.UnlicensedInstanceIdentifier
 	(*RecordEventsRequest_EventsPayload)(nil),       // 13: telemetrygateway.v1.RecordEventsRequest.EventsPayload
 	(*EventSource_Server)(nil),                      // 14: telemetrygateway.v1.EventSource.Server
 	(*EventSource_Client)(nil),                      // 15: telemetrygateway.v1.EventSource.Client
@@ -1368,7 +1368,7 @@ var file_telemetrygateway_proto_goTypes = []interface{}{
 }
 var file_telemetrygateway_proto_depIdxs = []int32{
 	11, // 0: telemetrygateway.v1.Identifier.licensed_instance:type_name -> telemetrygateway.v1.Identifier.LicensedInstanceIdentifier
-	12, // 1: telemetrygateway.v1.Identifier.unlicensed_instance:type_name -> telemetrygateway.v1.Identifier.UnlicensedInstanceIdenfitier
+	12, // 1: telemetrygateway.v1.Identifier.unlicensed_instance:type_name -> telemetrygateway.v1.Identifier.UnlicensedInstanceIdentifier
 	0,  // 2: telemetrygateway.v1.RecordEventsRequestMetadata.identifier:type_name -> telemetrygateway.v1.Identifier
 	1,  // 3: telemetrygateway.v1.RecordEventsRequest.metadata:type_name -> telemetrygateway.v1.RecordEventsRequestMetadata
 	13, // 4: telemetrygateway.v1.RecordEventsRequest.events:type_name -> telemetrygateway.v1.RecordEventsRequest.EventsPayload
@@ -1545,7 +1545,7 @@ func file_telemetrygateway_proto_init() {
 			}
 		}
 		file_telemetrygateway_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Identifier_UnlicensedInstanceIdenfitier); i {
+			switch v := v.(*Identifier_UnlicensedInstanceIdentifier); i {
 			case 0:
 				return &v.state
 			case 1:

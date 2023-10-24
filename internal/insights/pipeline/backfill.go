@@ -67,7 +67,7 @@ type BackfillerConfig struct {
 }
 
 func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
-	logger := log.Scoped("insightsBackfiller", "")
+	logger := log.Scoped("insightsBackfiller")
 	searchJobGenerator := makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit, config.HistoricRateLimiter)
 	searchRunner := makeRunSearchFunc(config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
 	persister := makeSaveResultsFunc(logger, config.InsightStore)

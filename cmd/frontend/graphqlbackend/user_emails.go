@@ -198,7 +198,7 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 		return nil, err
 	}
 
-	logger := r.logger.Scoped("AddUserEmail", "adding email to user").
+	logger := r.logger.Scoped("AddUserEmail").
 		With(log.Int32("userID", userID))
 
 	userEmails := backend.NewUserEmailsService(r.db, logger)

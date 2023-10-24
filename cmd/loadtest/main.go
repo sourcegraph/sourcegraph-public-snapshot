@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
@@ -29,8 +28,12 @@ type GQLSearchVars struct {
 
 func main() {
 	sanitycheck.Pass()
-	if err := run(); err != nil {
-		log.Fatal(err)
+
+	log.Init(log.Resource{Name: "loadtest"})
+	logger := log.Scoped("loadtest")
+
+	if err := run(logger); err != nil {
+		logger.Fatal("run failed", log.Error(err))
 	}
 }
 
@@ -38,7 +41,7 @@ func frontendURL(thePath string) string {
 	return fmt.Sprintf("%s:%s%s", FrontendHost, FrontendPort, thePath)
 }
 
-func run() error {
+func run(logger log.Logger) error {
 	var searchQueries []GQLSearchVars
 	if err := json.Unmarshal([]byte(SearchQueriesEnv), &searchQueries); err != nil {
 		return err
@@ -50,7 +53,7 @@ func run() error {
 	}
 
 	if len(searchQueries) == 0 {
-		log.Printf("No search queries specified. Hanging indefinitely")
+		logger.Warn("No search queries specified. Hanging indefinitely")
 		select {}
 	}
 
@@ -60,9 +63,9 @@ func run() error {
 			<-ticker.C
 			go func(v GQLSearchVars) {
 				if count, err := search(v); err != nil {
-					log15.Error("Error issuing search query", "query", v.Query, "error", err)
+					logger.Error("Error issuing search query", log.String("query", v.Query), log.Error(err))
 				} else {
-					log15.Info("Search results", "query", v.Query, "matchCount", count)
+					logger.Info("Search results", log.String("query", v.Query), log.Int("matchCount", count))
 				}
 			}(v)
 		}

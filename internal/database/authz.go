@@ -76,12 +76,15 @@ type noopAuthzStore struct{}
 func (*noopAuthzStore) GrantPendingPermissions(_ context.Context, _ *GrantPendingPermissionsArgs) error {
 	return nil
 }
+
 func (*noopAuthzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([]*types.Repo, error) {
 	return []*types.Repo{}, nil
 }
+
 func (*noopAuthzStore) RevokeUserPermissions(_ context.Context, _ *RevokeUserPermissionsArgs) error {
 	return nil
 }
+
 func (*noopAuthzStore) RevokeUserPermissionsList(_ context.Context, _ []*RevokeUserPermissionsArgs) error {
 	return nil
 }

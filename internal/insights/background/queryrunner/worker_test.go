@@ -24,7 +24,7 @@ import (
 func TestJobQueue(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	mainAppDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mainAppDB := database.NewDB(logger, dbtest.NewDB(t))
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -83,7 +83,7 @@ func TestJobQueue(t *testing.T) {
 func TestJobQueueDependencies(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	mainAppDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mainAppDB := database.NewDB(logger, dbtest.NewDB(t))
 
 	ctx := actor.WithInternalActor(context.Background())
 	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
@@ -162,7 +162,7 @@ func TestQueryJobsStatus(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	workerBaseStore := basestore.NewWithHandle(db.Handle())
 
 	_, err := db.ExecContext(ctx, `

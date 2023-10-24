@@ -129,7 +129,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if bzlCmd == "" {
 			return nil, errors.Newf("no bazel command was given")
 		}
-	case runtype.PullRequest:
+	case runtype.ManuallyTriggered, runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
 		ops.Merge(CoreTestOperations(buildOptions, c.Diff, CoreTestOperationsOptions{
@@ -143,14 +143,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(securityOps)
 
 		// Wolfi package and base images
-		addWolfiOps(c, ops)
+		packageOps, baseImageOps := addWolfiOps(c)
+		if packageOps != nil {
+			ops.Merge(packageOps)
+		}
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+		}
 
-		// Now we set up conditional operations that only apply to pull requests.
-		if c.Diff.Has(changed.Client) {
-			// triggers a slow pipeline, currently only affects web. It's optional so we
-			// set it up separately from CoreTestOperations
-			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-				triggerAsync(buildOptions)))
+		if c.Diff.Has(changed.ClientBrowserExtensions) {
+			ops.Merge(operations.NewNamedSet("Browser Extensions",
+				addBrowserExtensionUnitTests,
+				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+			))
 		}
 
 	case runtype.ReleaseNightly:
@@ -188,6 +193,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			addVsceTests,
 		)
+
+	case runtype.WolfiBaseRebuild:
+		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
+		// and push to registry, then open a PR
+		baseImageOps := wolfiRebuildAllBaseImages(c)
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+			ops.Merge(wolfiGenerateBaseImagePR())
+		}
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
@@ -257,10 +271,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
-		// Slow async pipeline
-		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-			triggerAsync(buildOptions)))
-
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
@@ -303,7 +313,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 
 		// Wolfi package and base images
-		addWolfiOps(c, ops)
+		packageOps, baseImageOps := addWolfiOps(c)
+		if packageOps != nil {
+			ops.Merge(packageOps)
+		}
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
+		}
 
 		// All operations before this point are required
 		ops.Append(wait)
@@ -409,34 +425,4 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
-}
-
-// addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
-func addWolfiOps(c Config, ops *operations.Set) {
-	// Rebuild Wolfi packages that have config changes
-	var updatedPackages []string
-	if c.Diff.Has(changed.WolfiPackages) {
-		var packageOps *operations.Set
-		packageOps, updatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
-		ops.Merge(packageOps)
-	}
-
-	// Rebuild Wolfi base images
-	// Inspect package dependencies, and rebuild base images with updated packages
-	_, imagesWithChangedPackages, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
-	if err != nil {
-		panic(err)
-	}
-	// Rebuild base images with package changes AND with config changes
-	imagesToRebuild := append(imagesWithChangedPackages, c.ChangedFiles[changed.WolfiBaseImages]...)
-	imagesToRebuild = sortUniq(imagesToRebuild)
-
-	if len(imagesToRebuild) > 0 {
-		baseImageOps, _ := WolfiBaseImagesOperations(
-			imagesToRebuild,
-			c.Version,
-			(len(updatedPackages) > 0),
-		)
-		ops.Merge(baseImageOps)
-	}
 }

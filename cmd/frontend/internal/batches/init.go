@@ -45,7 +45,7 @@ func Init(
 
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient()
-	logger := sglog.Scoped("Batches", "batch changes webhooks")
+	logger := sglog.Scoped("Batches")
 	enterpriseServices.BatchChangesResolver = resolvers.New(db, bstore, gitserverClient, logger)
 	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient, logger)

@@ -46,6 +46,10 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventGitHubAuthFailed
 }
 
+func (s *sessionIssuerHelper) GetServiceID() string {
+	return s.ServiceID
+}
+
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 
@@ -194,7 +198,7 @@ func derefInt64(i *int64) int64 {
 
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewV3Client(log.Scoped("session.github.v3", "github v3 client for session issuer"),
+	return githubsvc.NewV3Client(log.Scoped("session.github.v3"),
 		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
 }
 

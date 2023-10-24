@@ -94,5 +94,5 @@ export function displayRepoName(repoName: string): string {
  */
 export function splitPath(path: string): [string, string] {
     const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components[components.length - 1]]
+    return [components.slice(0, -1).join('/'), components.at(-1)]
 }

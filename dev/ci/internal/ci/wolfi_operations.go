@@ -11,9 +11,11 @@ import (
 	"gopkg.in/yaml.v2"
 
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const wolfiImageDir = "wolfi-images"
@@ -46,7 +48,7 @@ func WolfiPackagesOperations(changedFiles []string) (*operations.Set, []string) 
 // WolfiBaseImagesOperations rebuilds any base images whose configurations have changed
 func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChanged bool) (*operations.Set, int) {
 	ops := operations.NewNamedSet("Base image builds")
-	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
+	logger := log.Scoped("gen-pipeline")
 
 	var buildStepKeys []string
 	for _, c := range changedFiles {
@@ -100,8 +102,15 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 
 	return func(pipeline *bk.Pipeline) {
 
+		cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
 		opts := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)),
+			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					Type:            bk.AnnotationTypeInfo,
+					IncludeNames:    false,
+					MultiJobContext: "wolfi-images",
+				},
+			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			bk.Env("DOCKER_BAZEL", "true"),
@@ -260,8 +269,85 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to parse YAML file '%s'", configFile)
 	}
 
 	return config.Contents.Packages, nil
+}
+
+// addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
+func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
+	// Rebuild Wolfi packages that have config changes
+	var updatedPackages []string
+	if c.Diff.Has(changed.WolfiPackages) {
+		packageOps, updatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
+	}
+
+	// Rebuild Wolfi base images
+	// Inspect package dependencies, and rebuild base images with updated packages
+	_, imagesWithChangedPackages, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
+	if err != nil {
+		panic(err)
+	}
+	// Rebuild base images with package changes AND with config changes
+	imagesToRebuild := append(imagesWithChangedPackages, c.ChangedFiles[changed.WolfiBaseImages]...)
+	imagesToRebuild = sortUniq(imagesToRebuild)
+
+	if len(imagesToRebuild) > 0 {
+		baseImageOps, _ = WolfiBaseImagesOperations(
+			imagesToRebuild,
+			c.Version,
+			(len(updatedPackages) > 0),
+		)
+	}
+
+	return packageOps, baseImageOps
+}
+
+// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
+func wolfiRebuildAllBaseImages(c Config) *operations.Set {
+	// List all YAML files in wolfi-images/
+	dir := "wolfi-images"
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	var wolfiBaseImages []string
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".yaml" {
+			fullPath := filepath.Join(dir, f.Name())
+			wolfiBaseImages = append(wolfiBaseImages, fullPath)
+		}
+	}
+
+	// Rebuild all images
+	var baseImageOps *operations.Set
+	if len(wolfiBaseImages) > 0 {
+		baseImageOps, _ = WolfiBaseImagesOperations(
+			wolfiBaseImages,
+			c.Version,
+			false,
+		)
+	}
+
+	return baseImageOps
+}
+
+// wolfiGenerateBaseImagePR updates base image hashes and creates a PR in GitHub
+func wolfiGenerateBaseImagePR() *operations.Set {
+	ops := operations.NewNamedSet("Base Image Update PR")
+
+	ops.Append(
+		func(pipeline *bk.Pipeline) {
+			pipeline.AddStep(":whale::hash: Update Base Image Hashes",
+				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
+				bk.Agent("queue", "bazel"),
+				bk.DependsOn("buildAllBaseImages"),
+				bk.Key("updateBaseImageHashes"),
+			)
+		},
+	)
+
+	return ops
 }

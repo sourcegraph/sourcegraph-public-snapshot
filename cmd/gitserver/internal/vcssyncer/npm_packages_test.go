@@ -104,12 +104,13 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(t)))
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
 		depsSvc,
 		&client,
+		dir,
 	).(*vcsPackagesSyncer)
 
 	bareGitDirectory := path.Join(dir, "git")

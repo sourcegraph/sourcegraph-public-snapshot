@@ -24,7 +24,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating 2 users.
@@ -136,7 +136,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *tes
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating 2 users.
@@ -258,7 +258,7 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating a user.
@@ -342,7 +342,7 @@ func TestRecentViewSignalStore_InsertPaths(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating a user.
@@ -406,7 +406,7 @@ func TestRecentViewSignalStore_InsertPaths_OverBatchSize(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating a user.
@@ -446,7 +446,7 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	d := NewDB(logger, dbtest.NewDB(logger, t))
+	d := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating 2 users.

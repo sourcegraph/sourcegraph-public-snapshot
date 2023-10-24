@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 
-import { type Args, useMemo } from '@storybook/addons'
-import type { Meta, Story } from '@storybook/react'
+import { useMemo } from '@storybook/addons'
+import type { Meta, StoryFn, Args } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -84,7 +84,7 @@ const OpenByDefaultWrapper: React.FunctionComponent<{
     return children({ menuButtonRef: menuButtonReference })
 }
 
-export const SiteAdmin: Story = args => {
+export const SiteAdmin: StoryFn = args => {
     const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>
@@ -97,7 +97,7 @@ export const SiteAdmin: Story = args => {
     )
 }
 
-export const WithAvatar: Story = args => {
+export const WithAvatar: StoryFn = args => {
     const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>

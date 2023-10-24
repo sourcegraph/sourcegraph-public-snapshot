@@ -27,8 +27,7 @@ const (
 
 	Registry = "registry"
 
-	RepoShield  = "repo.shield"
-	RepoRefresh = "repo.refresh"
+	RepoShield = "repo.shield"
 
 	Webhooks                = "webhooks"
 	GitHubWebhooks          = "github.webhooks"
@@ -96,7 +95,6 @@ func New(base *mux.Router) *mux.Router {
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Name(RepoShield)
-	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 
 	return base
 }

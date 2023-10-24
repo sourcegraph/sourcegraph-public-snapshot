@@ -265,7 +265,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
             <>
                 <PageTitle title="Index settings" />
                 <PageHeader
-                    path={[{ text: 'Indexing' }]}
+                    path={[{ text: 'Search Indexing' }]}
                     headingElement="h2"
                     className="mb-3"
                     description={

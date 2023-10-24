@@ -185,12 +185,13 @@ export const FilesCard: FC<FilePanelProps> = props => {
     let sortedEntries = [...entriesWithSingleChildExpanded]
     const { column, direction } = sortColumn
     switch (column) {
-        case 'Files':
+        case 'Files': {
             if (direction === 'desc') {
                 sortedEntries.reverse()
             }
             break
-        case 'Activity':
+        }
+        case 'Activity': {
             sortedEntries = [...entriesWithSingleChildExpanded]
             if (diffStats) {
                 sortedEntries.sort((entry1, entry2) => {
@@ -205,6 +206,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
                 })
             }
             break
+        }
     }
 
     const sortCallback = useCallback(

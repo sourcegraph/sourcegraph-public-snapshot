@@ -176,16 +176,19 @@ const TaskIcon: FC<{ icon: TourIcon }> = ({ icon }) => {
     let className = ''
 
     switch (icon) {
-        case TourIcon.Search:
+        case TourIcon.Search: {
             svgPath = mdiMagnify
             break
-        case TourIcon.Extension:
+        }
+        case TourIcon.Extension: {
             svgPath = mdiPuzzleOutline
             break
-        case TourIcon.Check:
+        }
+        case TourIcon.Check: {
             className = 'text-success'
             svgPath = mdiCheckCircle
             break
+        }
     }
 
     return (

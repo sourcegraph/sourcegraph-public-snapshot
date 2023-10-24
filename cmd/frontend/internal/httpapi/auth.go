@@ -29,7 +29,7 @@ const authAuditEntity = "httpapi/auth"
 // AccessTokenAuthMiddleware authenticates the user based on the
 // token query parameter or the "Authorization" header.
 func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.Handler) http.Handler {
-	baseLogger = baseLogger.Scoped("accessTokenAuth", "Access token authentication middleware")
+	baseLogger = baseLogger.Scoped("accessTokenAuth")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// SCIM uses an auth token which is checked separately in the SCIM package.
 		if strings.HasPrefix(r.URL.Path, "/.api/scim/v2") {
@@ -55,7 +55,7 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 		if headerValue := r.Header.Get("Authorization"); headerValue != "" && token == "" {
 			// Handle Authorization header
 			var err error
-			token, sudoUser, err = authz.ParseAuthorizationHeader(logger, r, headerValue)
+			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
 			if err != nil {
 				if !envvar.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.

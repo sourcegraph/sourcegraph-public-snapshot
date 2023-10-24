@@ -1,5 +1,0 @@
-filegroup(
-    name = "img",
-    srcs = glob(["**/*.*"]),
-    visibility = ["//visibility:public"],
-)

@@ -150,16 +150,16 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 // at a regular interval. It uses a redsync.Mutex to ensure only one worker is running
 // at a time.
 func (s *Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootInterval time.Duration) goroutine.BackgroundRoutine {
-	logger := obCtx.Logger.Scoped("sources.worker", "sources background routie")
+	logger := obCtx.Logger.Scoped("sources.worker")
 
 	return &redisLockedBackgroundRoutine{
-		logger: logger.Scoped("redisLock", "distributed lock layer for sources sync"),
+		logger: logger.Scoped("redisLock"),
 		rmux:   rmux,
 
 		routine: goroutine.NewPeriodicGoroutine(
 			context.Background(),
 			&sourcesSyncHandler{
-				logger:       logger.Scoped("handler", "handler for actor sources sync"),
+				logger:       logger.Scoped("handler"),
 				rmux:         rmux,
 				sources:      s,
 				syncInterval: rootInterval,

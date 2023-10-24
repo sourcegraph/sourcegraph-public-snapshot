@@ -161,11 +161,11 @@ func newGitHubSource(
 	urn := svc.URN()
 
 	var (
-		v3ClientLogger = log.Scoped("source", "github client for github source")
+		v3ClientLogger = log.Scoped("source")
 		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
 		v4Client       = github.NewV4Client(urn, apiURL, auther, cli)
 
-		searchClientLogger = log.Scoped("search", "github client for search")
+		searchClientLogger = log.Scoped("search")
 		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, auther, cli)
 	)
 

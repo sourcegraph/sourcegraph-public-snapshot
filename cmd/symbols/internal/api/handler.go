@@ -90,7 +90,7 @@ func NewHandler(
 		return searchFunc(ctx, args)
 	}
 
-	rootLogger := logger.Scoped("symbolsServer", "symbols RPC server")
+	rootLogger := logger.Scoped("symbolsServer")
 
 	// Initialize the gRPC server
 	grpcServer := defaults.NewServer(rootLogger)
@@ -98,10 +98,10 @@ func NewHandler(
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
-		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
+		logger:       rootLogger.Scoped("grpc"),
 	})
 
-	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
+	jsonLogger := rootLogger.Scoped("jsonrpc")
 
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()

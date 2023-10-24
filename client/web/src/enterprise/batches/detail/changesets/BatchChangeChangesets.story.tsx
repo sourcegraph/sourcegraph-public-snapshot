@@ -1,4 +1,4 @@
-import type { Story, Meta, DecoratorFn } from '@storybook/react'
+import type { StoryFn, Meta, Decorator } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
@@ -13,7 +13,7 @@ import { CHANGESETS, type queryExternalChangesetWithFileDiffs } from '../backend
 import { BatchChangeChangesets } from './BatchChangeChangesets'
 import { BATCH_CHANGE_CHANGESETS_RESULT, EMPTY_BATCH_CHANGE_CHANGESETS_RESULT } from './BatchChangeChangesets.mock'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/BatchChangeChangesets',
@@ -52,11 +52,12 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     switch (externalChangeset) {
         case 'somechangesetCLOSED':
         case 'somechangesetMERGED':
-        case 'somechangesetDELETED':
+        case 'somechangesetDELETED': {
             return of({
                 diff: null,
             })
-        default:
+        }
+        default: {
             return of({
                 diff: {
                     __typename: 'PreviewRepositoryComparison',
@@ -70,10 +71,11 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
                     },
                 },
             })
+        }
     }
 }
 
-export const ListOfChangesets: Story = args => (
+export const ListOfChangesets: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
@@ -93,7 +95,7 @@ export const ListOfChangesets: Story = args => (
 
 ListOfChangesets.storyName = 'List of changesets'
 
-export const ListOfExpandedChangesets: Story = args => (
+export const ListOfExpandedChangesets: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
@@ -114,7 +116,7 @@ export const ListOfExpandedChangesets: Story = args => (
 
 ListOfExpandedChangesets.storyName = 'List of expanded changesets'
 
-export const DraftWithoutChangesets: Story = args => {
+export const DraftWithoutChangesets: StoryFn = args => {
     const batchChangeState = args.batchChangeState
 
     return (

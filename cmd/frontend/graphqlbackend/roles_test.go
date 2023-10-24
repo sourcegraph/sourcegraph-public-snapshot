@@ -24,7 +24,7 @@ func TestRoleConnectionResolver(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := createTestUser(t, db, false).ID
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
@@ -132,7 +132,7 @@ func TestUserRoleListing(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := createTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))

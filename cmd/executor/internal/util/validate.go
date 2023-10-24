@@ -33,8 +33,8 @@ func ValidateGitVersion(ctx context.Context, runner CmdRunner) error {
 // ValidateSrcCLIVersion queries the latest recommended version of src-cli and makes sure it
 // matches what is installed. If not, an error recommending to use a different
 // version is returned.
-func ValidateSrcCLIVersion(ctx context.Context, runner CmdRunner, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
-	latestVersion, err := LatestSrcCLIVersion(ctx, client, options)
+func ValidateSrcCLIVersion(ctx context.Context, runner CmdRunner, client *apiclient.BaseClient) error {
+	latestVersion, err := LatestSrcCLIVersion(ctx, client)
 	if err != nil {
 		return errors.Wrap(err, "cannot retrieve latest compatible src-cli version")
 	}

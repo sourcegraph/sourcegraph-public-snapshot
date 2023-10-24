@@ -39,23 +39,29 @@ export const humanTheme = createMappingStore(
     theme,
     theme => {
         switch (theme) {
-            case Theme.Light:
+            case Theme.Light: {
                 return 'Light'
-            case Theme.Dark:
+            }
+            case Theme.Dark: {
                 return 'Dark'
-            case Theme.System:
+            }
+            case Theme.System: {
                 return 'System'
+            }
         }
     },
     value => {
         console.log(value)
         switch (value) {
-            case 'Light':
+            case 'Light': {
                 return Theme.Light
-            case 'Dark':
+            }
+            case 'Dark': {
                 return Theme.Dark
-            case 'System':
+            }
+            case 'System': {
                 return Theme.System
+            }
         }
     }
 )

@@ -39,10 +39,10 @@ import (
 // User hooks
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	BeforeCreateUser func(ctx context.Context, db DB, spec *extsvc.AccountSpec) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
 	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
@@ -59,6 +59,12 @@ type UserStore interface {
 	Count(context.Context, *UsersListOptions) (int, error)
 	CountForSCIM(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
+	// CreateWithExternalAccount is used to create a new Sourcegraph user account from an external account
+	// (e.g., "signup from SAML").
+	//
+	// It creates a new user and associates it with the specified external account. If the user to
+	// create already exists, it returns an error.
+	CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
 	Delete(context.Context, int32) error
@@ -256,6 +262,26 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 		logAccountCreatedEvent(ctx, NewDBWith(u.logger, u), newUser, "")
 	}
 	return newUser, err
+}
+
+func (u *userStore) CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (_ *types.User, err error) {
+	tx, err := u.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	createdUser, err := tx.CreateInTransaction(ctx, newUser, &acct.AccountSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	acct.UserID = createdUser.ID
+	acct, err = ExternalAccountsWith(u.logger, tx).Insert(ctx, acct)
+	if err == nil {
+		logAccountCreatedEvent(ctx, NewDBWith(u.logger, tx), createdUser, acct.AccountSpec.ServiceType)
+	}
+	return createdUser, err
 }
 
 // CheckPassword returns an error depending on the method used for validation

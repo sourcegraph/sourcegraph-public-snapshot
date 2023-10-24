@@ -1,5 +1,5 @@
 <script lang="ts">
-    import '@sourcegraph/wildcard/src/global-styles/highlight.scss'
+    import '$lib/highlight.scss'
 
     import { DiffHunkLineType, type FileDiffFields } from '$lib/graphql-operations'
 

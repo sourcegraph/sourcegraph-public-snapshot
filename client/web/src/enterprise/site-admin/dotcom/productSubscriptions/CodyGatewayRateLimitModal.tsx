@@ -147,7 +147,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         message={
                             <>
                                 {numberFormatter.format(BigInt(limit))} {mode === 'embeddings' ? 'tokens' : 'requests'}{' '}
-                                per {prettyInterval(limitInterval!)}
+                                per {prettyInterval(limitInterval)}
                             </>
                         }
                     />

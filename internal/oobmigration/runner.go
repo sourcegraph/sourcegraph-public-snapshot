@@ -53,7 +53,7 @@ func newRunner(observationCtx *observation.Context, store storeIface, refreshTic
 
 	return &Runner{
 		store:         store,
-		logger:        observationCtx.Logger.Scoped("oobmigration", ""),
+		logger:        observationCtx.Logger.Scoped("oobmigration"),
 		refreshTicker: refreshTicker,
 		operations:    newOperations(observationCtx),
 		migrators:     map[int]migratorAndOption{},

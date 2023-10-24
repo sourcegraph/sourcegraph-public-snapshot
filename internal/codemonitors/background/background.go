@@ -9,7 +9,7 @@ import (
 )
 
 func NewBackgroundJobs(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs", "code monitors background jobs"), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs"), observationCtx)
 
 	codeMonitorsStore := db.CodeMonitors()
 
@@ -30,5 +30,5 @@ func NewBackgroundJobs(observationCtx *observation.Context, db database.DB) []go
 }
 
 func scopedContext(operation string, parent *observation.Context) *observation.Context {
-	return observation.ContextWithLogger(parent.Logger.Scoped(operation, ""), parent)
+	return observation.ContextWithLogger(parent.Logger.Scoped(operation), parent)
 }

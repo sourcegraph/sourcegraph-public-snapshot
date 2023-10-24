@@ -96,7 +96,7 @@ async function main(): Promise<void> {
 
     let previousSubscription: Subscription
     subscriptions.add(
-        // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
+        // eslint-disable-next-line rxjs/no-async-subscribe
         observeSourcegraphURL(IS_EXTENSION).subscribe(async sourcegraphURL => {
             if (previousSubscription) {
                 console.log('Sourcegraph detached code navigation')

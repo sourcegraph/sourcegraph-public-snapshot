@@ -52,13 +52,6 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
-
-	// NOTE: This field is no longer read. It is always assumed to be true.
-	//
-	// FeatHybrid is a feature flag which enables hybrid search. Hybrid search
-	// will only search what has changed since Zoekt has indexed as well as
-	// including Zoekt results.
-	FeatHybrid bool `json:"feat_hybrid,omitempty"`
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields
@@ -205,7 +198,6 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			Select:                       r.PatternInfo.Select,
 		},
 		FetchTimeout: durationpb.New(r.FetchTimeout),
-		FeatHybrid:   r.FeatHybrid,
 	}
 }
 
@@ -235,7 +227,6 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 		},
 		FetchTimeout: req.FetchTimeout.AsDuration(),
 		Indexed:      req.Indexed,
-		FeatHybrid:   req.FeatHybrid,
 	}
 }
 

@@ -597,4 +597,16 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_can_do_java() -> Result<()> {
+        let mut config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
+        let source_code = include_str!("../testdata/locals.java");
+        let doc = parse_file_for_lang(&mut config, source_code)?;
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
 }
