@@ -4,6 +4,7 @@ import { Prec } from '@codemirror/state'
 
 // This component makes the experimental search input accessible in the web app
 
+// eslint-disable-next-line no-restricted-imports
 import {
     type Action,
     CodeMirrorQueryInputWrapper,

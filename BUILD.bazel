@@ -56,8 +56,8 @@ ts_config(
 )
 
 ts_config(
-    name = "tsconfig-eslint",
-    src = "tsconfig.eslint.json",
+    name = "tsconfig-all",
+    src = "tsconfig.all.json",
     visibility = ["//visibility:public"],
     deps = [
         ":tsconfig",
@@ -179,7 +179,6 @@ js_library(
         ".eslintrc.js",
     ],
     data = [
-        ".eslintignore",
         "package.json",
         ":eslint-relative-formatter",
     ],
@@ -204,7 +203,7 @@ js_library(
         ":node_modules/eslint-plugin-unicorn",
         ":node_modules/eslint-plugin-unused-imports",
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
-        ":tsconfig-eslint",
+        ":tsconfig-all",
         "//:node_modules/tslib",
     ],
 )

@@ -39,6 +39,7 @@ const appShellReady = (payload: AppShellReadyPayload): void => {
     }
     logger.log('app-shell-ready', payload)
     launchWithSignInUrl(payload.sign_in_url).catch(error =>
+        // eslint-disable-next-line no-console
         console.error(`failed to launch with sign-in URL: ${error}`)
     )
 }
