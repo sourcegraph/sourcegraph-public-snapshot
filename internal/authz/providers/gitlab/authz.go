@@ -85,18 +85,20 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 		}
 
 		return NewOAuthProvider(OAuthProviderOp{
-			URN:       urn,
-			BaseURL:   glURL,
-			Token:     token,
-			TokenType: tokenType,
-			DB:        db,
+			URN:                         urn,
+			BaseURL:                     glURL,
+			Token:                       token,
+			TokenType:                   tokenType,
+			DB:                          db,
+			SyncInternalRepoPermissions: a.SyncInternalRepoPermissions,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
-			URN:               urn,
-			BaseURL:           glURL,
-			SudoToken:         token,
-			UseNativeUsername: true,
+			URN:                         urn,
+			BaseURL:                     glURL,
+			SudoToken:                   token,
+			UseNativeUsername:           true,
+			SyncInternalRepoPermissions: a.SyncInternalRepoPermissions,
 		}), nil
 	case idp.External != nil:
 		ext := idp.External
@@ -113,9 +115,10 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 						Type: ext.AuthProviderType,
 						ID:   ext.AuthProviderID,
 					},
-					GitLabProvider:    ext.GitlabProvider,
-					SudoToken:         token,
-					UseNativeUsername: false,
+					GitLabProvider:              ext.GitlabProvider,
+					SudoToken:                   token,
+					UseNativeUsername:           false,
+					SyncInternalRepoPermissions: a.SyncInternalRepoPermissions,
 				}), nil
 			}
 		}

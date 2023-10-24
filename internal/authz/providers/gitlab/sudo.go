@@ -32,6 +32,8 @@ type SudoProvider struct {
 	gitlabProvider    string
 	authnConfigID     providers.ConfigID
 	useNativeUsername bool
+
+	syncInternalRepoPermissions bool
 }
 
 var _ authz.Provider = (*SudoProvider)(nil)
@@ -60,19 +62,22 @@ type SudoProviderOp struct {
 	// instead of the authn provider user ID. This is *very* insecure (Sourcegraph usernames can be
 	// changed at the user's will) and should only be used in development environments.
 	UseNativeUsername bool
+
+	SyncInternalRepoPermissions bool
 }
 
 func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 	return &SudoProvider{
 		sudoToken: op.SudoToken,
 
-		urn:               op.URN,
-		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
-		clientURL:         op.BaseURL,
-		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
-		authnConfigID:     op.AuthnConfigID,
-		gitlabProvider:    op.GitLabProvider,
-		useNativeUsername: op.UseNativeUsername,
+		urn:                         op.URN,
+		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientURL:                   op.BaseURL,
+		codeHost:                    extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
+		authnConfigID:               op.AuthnConfigID,
+		gitlabProvider:              op.GitLabProvider,
+		useNativeUsername:           op.UseNativeUsername,
+		syncInternalRepoPermissions: op.SyncInternalRepoPermissions,
 	}
 }
 
@@ -212,14 +217,14 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 	}
 
 	client := p.clientProvider.GetPATClient(p.sudoToken, strconv.Itoa(int(user.ID)))
-	return listProjects(ctx, client)
+	return listProjects(ctx, client, p.syncInternalRepoPermissions)
 }
 
 // listProjects is a helper function to request for all private projects that are accessible
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
-func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
+func listProjects(ctx context.Context, client *gitlab.Client, listInternalRepos bool) (*authz.ExternalUserPermissions, error) {
 	flags := featureflag.FromContext(ctx)
 	experimentalVisibility := flags.GetBoolOr("gitLabProjectVisibilityExperimental", false)
 
@@ -233,8 +238,13 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUs
 	// when appending the first 100 results to the slice.
 	projectIDs := make([]extsvc.RepoID, 0, 100)
 
+	repoVisibility := []string{"private"}
+	if listInternalRepos {
+		repoVisibility = append(repoVisibility, "internal")
+	}
+
 	// This method is meant to return only private or internal projects
-	for _, visibility := range []string{"private", "internal"} {
+	for _, visibility := range repoVisibility {
 		q.Set("visibility", visibility)
 
 		// The next URL to request for projects, and it is reused in the succeeding for loop.
