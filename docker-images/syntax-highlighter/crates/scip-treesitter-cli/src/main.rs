@@ -102,7 +102,7 @@ fn index_command(
     for (_, filename) in filenames.iter().enumerate() {
         let contents = std::fs::read(filename).unwrap();
         eprintln!("Processing {filename}");
-        match index_content(contents, &p, &options) {
+        match index_content(contents, p, &options) {
             Ok(mut document) => {
                 document.relative_path = filename.to_string();
                 index.documents.push(document);
@@ -129,7 +129,7 @@ fn index_command(
     write_message_to_file(path, index).expect("to write the file");
 }
 
-fn index_content(contents: Vec<u8>, parser: &BundledParser, options: &Options) -> Result<Document> {
+fn index_content(contents: Vec<u8>, parser: BundledParser, options: &Options) -> Result<Document> {
     let mut document: Document;
 
     if options.globals {
