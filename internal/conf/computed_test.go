@@ -468,11 +468,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModelMaxTokens:       8000,
 				FastChatModel:            "gpt-3.5-turbo",
 				FastChatModelMaxTokens:   4000,
-				CompletionModel:          "gpt-3.5-turbo",
+				CompletionModel:          "gpt-3.5-turbo-instruct",
 				CompletionModelMaxTokens: 4000,
 				AccessToken:              "asdf",
 				Provider:                 "openai",
-				Endpoint:                 "https://api.openai.com/v1/chat/completions",
+				Endpoint:                 "https://api.openai.com",
 			},
 		},
 		{

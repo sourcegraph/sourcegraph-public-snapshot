@@ -72,12 +72,22 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	resp, err := c.makeRequest(ctx, requestParams, true)
+	var resp *http.Response
+	var err error
+
+	defer (func() {
+		if resp != nil {
+			resp.Body.Close()
+		}
+	})()
+	if feature == types.CompletionsFeatureCode {
+		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
+	} else {
+		resp, err = c.makeRequest(ctx, requestParams, true)
+	}
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-
 	dec := NewDecoder(resp.Body)
 	var content string
 	for dec.Scan() {
@@ -97,7 +107,11 @@ func (c *openAIChatCompletionStreamClient) Stream(
 		}
 
 		if len(event.Choices) > 0 {
-			content += event.Choices[0].Delta.Content
+			if feature == types.CompletionsFeatureCode {
+				content += event.Choices[0].Text
+			} else {
+				content += event.Choices[0].Delta.Content
+			}
 			ev := types.CompletionResponse{
 				Completion: content,
 				StopReason: event.Choices[0].FinishReason,
@@ -197,6 +211,7 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	}
 
 	payload := openAICompletionsRequestParameters{
+		Model:       requestParams.Model,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
 		N:           1,
@@ -222,7 +237,7 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("api-key", c.accessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	resp, err := c.cli.Do(req)
 	if err != nil {
@@ -230,7 +245,7 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("AzureOpenAI", resp)
+		return nil, types.NewErrStatusNotOK("OpenAI", resp)
 	}
 
 	return resp, nil
@@ -252,6 +267,7 @@ type openAIChatCompletionsRequestParameters struct {
 }
 
 type openAICompletionsRequestParameters struct {
+	Model            string             `json:"model"`
 	Prompt           string             `json:"prompt"`
 	Temperature      float32            `json:"temperature,omitempty"`
 	TopP             float32            `json:"top_p,omitempty"`
