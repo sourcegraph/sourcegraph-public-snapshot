@@ -182,7 +182,7 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
     // so that we can update the browser URL.
 
     private onEditQuery = (newQuery?: string): void =>
-        this.updateStateParameters(parameters => ({ ...parameters, query: newQuery }))
+        this.updates.next({...this.state.parameters, query: newQuery})
 
     private onEditVariables = (newVariables: string): void =>
         this.updateStateParameters(parameters => ({ ...parameters, variables: newVariables }))
