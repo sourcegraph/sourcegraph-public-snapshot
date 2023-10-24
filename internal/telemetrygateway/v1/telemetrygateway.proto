@@ -103,8 +103,8 @@ message Event {
   // 🚨 SECURITY: This metadata is NEVER exported from an instance, and is only
   // exported for events tracked in the public Sourcegraph.com instance.
   optional EventMarketingTracking marketing_tracking = 9;
-  // Optional metadata identifying the request that generated the event.
-  optional EventRequest request = 10;
+  // Optional metadata identifying the interaction that generated the event.
+  optional EventInteraction interaction = 10;
 }
 
 message EventSource {
@@ -201,7 +201,7 @@ message EventMarketingTracking {
   optional string session_first_url = 8;
 }
 
-message EventRequest {
-  // OpenTelemetry trace ID associated with the event.
+message EventInteraction {
+  // OpenTelemetry trace ID representing the interaction associated with the event.
   string trace_id = 1;
 }

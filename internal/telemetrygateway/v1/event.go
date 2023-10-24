@@ -24,7 +24,7 @@ func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() 
 	return &Event{
 		Id:        newEventID(),
 		Timestamp: timestamppb.New(now),
-		Request: func() *EventRequest {
+		Interaction: func() *EventInteraction {
 			// Trace associated with event is the same trace on the event recording
 			// request where the event is being created, as they should all happen
 			// within the interaction, even when recording a set of events e.g. from
@@ -33,7 +33,7 @@ func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() 
 			if !eventTrace.IsValid() {
 				return nil
 			}
-			return &EventRequest{
+			return &EventInteraction{
 				TraceId: eventTrace.TraceID().String(),
 			}
 		}(),

@@ -29,7 +29,7 @@ func TestNewEventWithDefaults(t *testing.T) {
 		ctx := context.Background()
 		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
 		assert.Nil(t, got.User)
-		assert.Nil(t, got.Request)
+		assert.Nil(t, got.Interaction)
 		assert.Nil(t, got.FeatureFlags)
 	})
 
@@ -63,7 +63,7 @@ func TestNewEventWithDefaults(t *testing.T) {
 		require.NoError(t, err)
 		autogold.Expect(`{
   "id": "id",
-  "request": {
+  "interaction": {
     "traceId": "01020304050607080102040810203040"
   },
   "timestamp": "2023-02-24T14:48:30Z",

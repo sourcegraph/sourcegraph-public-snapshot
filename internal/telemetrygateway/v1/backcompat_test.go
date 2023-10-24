@@ -32,7 +32,7 @@ var (
 		Feature:   "Feature",
 		Action:    "Action",
 		Timestamp: timestamppb.New(must(time.Parse(time.RFC3339, "2023-02-24T14:48:30Z"))),
-		Request: &telemetrygatewayv1.EventRequest{
+		Interaction: &telemetrygatewayv1.EventInteraction{
 			TraceId: "01020304050607080102040810203040",
 		},
 		Source: &telemetrygatewayv1.EventSource{

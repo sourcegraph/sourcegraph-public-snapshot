@@ -15,10 +15,10 @@ This page contains generated documentation for telemetry event data that gets ex
     - [EventBillingMetadata](#telemetrygateway-v1-EventBillingMetadata)
     - [EventFeatureFlags](#telemetrygateway-v1-EventFeatureFlags)
     - [EventFeatureFlags.FlagsEntry](#telemetrygateway-v1-EventFeatureFlags-FlagsEntry)
+    - [EventInteraction](#telemetrygateway-v1-EventInteraction)
     - [EventMarketingTracking](#telemetrygateway-v1-EventMarketingTracking)
     - [EventParameters](#telemetrygateway-v1-EventParameters)
     - [EventParameters.MetadataEntry](#telemetrygateway-v1-EventParameters-MetadataEntry)
-    - [EventRequest](#telemetrygateway-v1-EventRequest)
     - [EventSource](#telemetrygateway-v1-EventSource)
     - [EventSource.Client](#telemetrygateway-v1-EventSource-Client)
     - [EventSource.Server](#telemetrygateway-v1-EventSource-Server)
@@ -61,7 +61,7 @@ This page contains generated documentation for telemetry event data that gets ex
 | user | [EventUser](#telemetrygateway-v1-EventUser) | optional | <p>Optional user associated with the event.</p><p>This field should be hydrated by the Sourcegraph server, and not provided</p><p>by clients.</p> |
 | feature_flags | [EventFeatureFlags](#telemetrygateway-v1-EventFeatureFlags) | optional | <p>Optional feature flags configured in the context of the event.</p> |
 | marketing_tracking | [EventMarketingTracking](#telemetrygateway-v1-EventMarketingTracking) | optional | <p>Optional marketing campaign tracking parameters.</p><p>🚨 SECURITY: This metadata is NEVER exported from an instance, and is only</p><p>exported for events tracked in the public Sourcegraph.com instance.</p> |
-| request | [EventRequest](#telemetrygateway-v1-EventRequest) | optional | <p>Optional metadata identifying the request that generated the event.</p> |
+| interaction | [EventInteraction](#telemetrygateway-v1-EventInteraction) | optional | <p>Optional metadata identifying the interaction that generated the event.</p> |
 
 
 
@@ -109,6 +109,21 @@ This page contains generated documentation for telemetry event data that gets ex
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  | <p></p> |
 | value | [string](#string) |  | <p></p> |
+
+
+
+
+
+
+<a name="telemetrygateway-v1-EventInteraction"></a>
+
+### EventInteraction
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| trace_id | [string](#string) |  | <p>OpenTelemetry trace ID representing the interaction associated with the event.</p> |
 
 
 
@@ -169,21 +184,6 @@ Sourcegraph.com instance.
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  | <p></p> |
 | value | [int64](#int64) |  | <p></p> |
-
-
-
-
-
-
-<a name="telemetrygateway-v1-EventRequest"></a>
-
-### EventRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| trace_id | [string](#string) |  | <p>OpenTelemetry trace ID associated with the event.</p> |
 
 
 
