@@ -133,27 +133,32 @@ describe('blob/codemirror/utils', () => {
             content: string
             expected: string
         }[] = [
-            {
-                name: 'no change',
-                content: 'line 1\nline 2\nline 3',
-                expected: 'line 1\nline 2\nline 3',
-            },
-            {
-                name: 'should remove trailing new line (windows - "\\r\\n")',
-                content: 'line 1\nline 2\r\n',
-                expected: 'line 1\nline 2',
-            },
-            {
-                name: 'should remove trailing new line (linux/unix - "\\n")',
-                content: 'let x = 12\nlet y = 4\nconsole.log(x * y) // prints 48\n',
-                expected: 'let x = 12\nlet y = 4\nconsole.log(x * y) // prints 48',
-            },
-            {
-                name: 'should remove one of the two trailing new lines',
-                content: "var test = 'test'\n\n\n",
-                expected: "var test = 'test'\n\n",
-            },
-        ]
+                {
+                    name: 'should remove linebreak from file containing only line breaks',
+                    content: '\n\n\n\n\n',
+                    expected: '',
+                },
+                {
+                    name: 'no change',
+                    content: 'line 1\nline 2\nline 3',
+                    expected: 'line 1\nline 2\nline 3',
+                },
+                {
+                    name: 'should remove trailing new line (windows - "\\r\\n")',
+                    content: 'line 1\nline 2\r\n',
+                    expected: 'line 1\nline 2',
+                },
+                {
+                    name: 'should remove trailing new line (linux/unix - "\\n")',
+                    content: 'let x = 12\nlet y = 4\nconsole.log(x * y) // prints 48\n',
+                    expected: 'let x = 12\nlet y = 4\nconsole.log(x * y) // prints 48',
+                },
+                {
+                    name: 'should remove one of the two trailing new lines',
+                    content: "var test = 'test'\n\n\n",
+                    expected: "var test = 'test'\n\n",
+                },
+            ]
 
         for (let i = 0; i < tests.length; i++) {
             let t = tests[i]
