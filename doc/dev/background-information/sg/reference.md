@@ -1803,7 +1803,7 @@ Flags:
 
 ### sg release run
 
-Run steps defined in release manifest. Those are meant to be run in CI..
+Run steps defined in release manifest. Those are meant to be run in CI.
 
 
 #### sg release run test
@@ -1823,7 +1823,7 @@ Flags:
 
 #### sg release run internal
 
-
+todo.
 
 
 ##### sg release run internal finalize
@@ -1843,7 +1843,7 @@ Flags:
 
 #### sg release run promote-to-public
 
-
+TODO.
 
 
 ##### sg release run promote-to-public finalize
