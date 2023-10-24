@@ -23,9 +23,10 @@ rust_test(
     srcs = ["src/main.rs"],
     data = glob(
         ["testdata/**"],
-    ),
+    ) + [":scip-treesitter-cli"],
     env = {
         "RUST_BACKTRACE": "1",
+        "SCIP_CLI_LOCATION": "$(execpath :scip-treesitter-cli)",
     },
     deps = all_crate_deps(
         normal = True,
