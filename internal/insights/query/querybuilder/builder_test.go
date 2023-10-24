@@ -891,7 +891,7 @@ func TestPointDiffQuery(t *testing.T) {
 			autogold.Expect(BasicQuery(`after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff patterntype:regexp content:"TEST"`)),
 		},
 		{
-			// Test for #57323. Previously, a slash in a regex pattern would not be escaped when we wrapped it with slashes.
+			// Test for #57877. Previously, a slash in a regex pattern would not be escaped when we wrapped it with slashes.
 			"no mangle slashes",
 			PointDiffQueryOpts{
 				Before:      before,
