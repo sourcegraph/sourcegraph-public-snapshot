@@ -35,7 +35,13 @@ import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
-import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
+import {
+    buildSearchURLQueryFromQueryState,
+    setSearchMode,
+    useDeveloperSettings,
+    useNavbarQueryState,
+    useNotepad
+} from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../tour/hooks'
 import { submitSearch } from '../helpers'
@@ -107,6 +113,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     // Derived state
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
+    const {searchOptions} = useDeveloperSettings(settings => settings.zoekt)
     const featureOverrides = useFeatureFlagOverrides()
     const { addRecentSearch } = useRecentSearches()
 
@@ -119,6 +126,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
             searchMode,
             chunkMatches: true,
+            zoektSearchOptions: searchOptions,
         }),
         [caseSensitive, patternType, searchMode, trace, featureOverrides]
     )

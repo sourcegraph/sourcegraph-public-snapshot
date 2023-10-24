@@ -20,6 +20,7 @@ import (
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -113,6 +114,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		} else {
 			return err
 		}
+	}
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, h.db); err == nil {
+		// Used for development to quickly test different zoekt.SearchOptions without having
+		// to change the code.
+		inputs.Features.SearchOptionsOverride = args.SearchOptionsOverride
 	}
 
 	// Display is the number of results we send down. If display is < 0 we
@@ -210,12 +217,13 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 }
 
 type args struct {
-	Query              string
-	Version            string
-	PatternType        string
-	Display            int
-	EnableChunkMatches bool
-	SearchMode         int
+	Query                 string
+	Version               string
+	PatternType           string
+	Display               int
+	EnableChunkMatches    bool
+	SearchMode            int
+	SearchOptionsOverride string
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -228,9 +236,10 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:       get("q", ""),
-		Version:     get("v", "V3"),
-		PatternType: get("t", ""),
+		Query:                 get("q", ""),
+		Version:               get("v", "V3"),
+		PatternType:           get("t", ""),
+		SearchOptionsOverride: get("x-zoekt-search-options", ""),
 	}
 
 	if a.Query == "" {
