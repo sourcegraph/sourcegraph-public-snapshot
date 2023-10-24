@@ -8,7 +8,7 @@ import { getEnvironmentBoolean, STATIC_ASSETS_PATH } from '@sourcegraph/build-co
 
 import { DEFAULT_SITE_CONFIG_PATH } from './constants'
 
-const NODE_ENV = process.env.NODE_ENV || (process.env.BAZEL_BIN ? 'production' : 'development')
+const NODE_ENV = (process.env.NODE_ENV || 'development') as 'production' | 'development'
 
 const NODE_DEBUG = process.env.NODE_DEBUG
 
@@ -78,6 +78,8 @@ export const ENVIRONMENT_CONFIG = {
     SITE_CONFIG_PATH: process.env.SITE_CONFIG_PATH || DEFAULT_SITE_CONFIG_PATH,
     CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT: process.env.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT || '-/debug/otlp',
 }
+
+export type EnvironmentConfig = typeof ENVIRONMENT_CONFIG
 
 const { SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
