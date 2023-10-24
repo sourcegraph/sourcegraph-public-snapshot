@@ -312,8 +312,8 @@ type openaiResponse struct {
 }
 
 func getPrompt(messages []types.Message) (string, error) {
-	if len(messages) != 1 {
-		return "", errors.New("Expected to receive exactly one message with the prompt")
+	if l := len(messages); l != 1 {
+		return "", errors.Errof("expected to receive exactly one message with the prompt (got %d)", l)
 	}
 
 	return messages[0].Text, nil
