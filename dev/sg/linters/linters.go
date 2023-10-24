@@ -37,7 +37,6 @@ var Targets = []Target{
 		Checks: []*linter{
 			goGenerateLinter,
 			goDBConnImport,
-			goEnterpriseImport,
 			noLocalHost,
 			lintGoDirectives(),
 			lintLoggingLibraries(),
@@ -61,31 +60,14 @@ var Targets = []Target{
 		},
 	},
 	{
-		Name:        "dockerfiles",
-		Description: "Check Dockerfiles for Sourcegraph best practices",
-		Checks: []*linter{
-			// TODO move to pre-commit
-			hadolint(),
-		},
-	},
-	{
 		Name:        "client",
 		Description: "Check client code for linting errors, forbidden imports, etc",
 		Checks: []*linter{
-			tsEnterpriseImport,
 			inlineTemplates,
 			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
 			// we only run this linter locally, since on CI it has it's own job
 			onlyLocal(runScript("pnpm list:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
 			checkUnversionedDocsLinks(),
-		},
-	},
-	{
-		Name:        "svg",
-		Description: "Check svg assets",
-		Enabled:     disabled("reported as unreliable"),
-		Checks: []*linter{
-			checkSVGCompression(),
 		},
 	},
 	{
