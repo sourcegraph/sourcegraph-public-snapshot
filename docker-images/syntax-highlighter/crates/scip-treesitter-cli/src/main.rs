@@ -77,7 +77,7 @@ fn index_command(
 ) {
     let p = BundledParser::get_parser(language).unwrap();
 
-    let working_directory: String = cwd.clone().unwrap_or("./".to_string()); //= cwd.map(|p| Path::new(p.as_str())).unwrap_or(Path::new("./"));
+    let working_directory: String = cwd.clone().unwrap_or("./".to_string());
     let working_path = Path::new(&working_directory);
 
     let mut index = scip::types::Index {
@@ -210,9 +210,7 @@ mod tests {
         );
 
         cmd.current_dir(out_dir)
-            .arg("index")
-            .args(["-l", "java", "-o", &out_path])
-            .arg("globals.java");
+            .args(["index", "-l", "java", "-o", &out_path, "globals.java"]);
 
         cmd.assert().success();
 
