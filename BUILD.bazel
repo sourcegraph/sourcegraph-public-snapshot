@@ -57,7 +57,7 @@ ts_config(
 
 ts_config(
     name = "tsconfig-all",
-    src = "tsconfig.all.json",
+    src = "tsconfig.json",
     visibility = ["//visibility:public"],
     deps = [
         ":tsconfig",
