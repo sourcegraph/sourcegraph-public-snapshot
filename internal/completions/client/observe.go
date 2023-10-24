@@ -46,6 +46,9 @@ func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFe
 				Metadata: telemetry.EventMetadata{
 					"feature": int64(feature.ID()),
 				},
+				PrivateMetadata: map[string]any{
+					"stop_reason": event.StopReason,
+				},
 			})
 		} else {
 			tr.AddEvent("completion", attribute.Int("len", len(event.Completion)))
