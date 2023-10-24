@@ -10450,7 +10450,7 @@ packages:
       '@storybook/node-logger': 7.4.6
       '@storybook/telemetry': 7.4.6
       '@storybook/types': 7.4.6
-      '@types/semver': 7.3.12
+      '@types/semver': 7.5.4
       '@yarnpkg/fslib': 2.10.3
       '@yarnpkg/libzip': 2.3.0
       chalk: 4.1.2
@@ -12101,9 +12101,6 @@ packages:
       '@types/tough-cookie': 2.3.5
     dev: false
 
-  /@types/json-schema@7.0.11:
-    resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
-
   /@types/json-schema@7.0.14:
     resolution: {integrity: sha512-U3PUjAudAdJBeC2pgN8uTIKgxrb4nlDF3SF0++EldXQvQBGkpFZMSnwQiIoDU77tv45VgNkl/L4ouD+rEomujw==}
 
@@ -12386,10 +12383,6 @@ packages:
     resolution: {integrity: sha512-ooD/FJ8EuwlDKOI6D9HWxgIgJjMg2cuziXm/42npDC8y4NjxplBUn9loewZiBNCt44450lHAU0OSb51/UqXeag==}
     dependencies:
       '@types/node': 18.17.15
-    dev: true
-
-  /@types/semver@7.3.12:
-    resolution: {integrity: sha512-WwA1MW0++RfXmCr12xeYOOC5baSC9mSb0ZqCquFzKhcoF4TvHu5MKOuXsncgZcpVFhB1pXd5hZmM0ryAoCp12A==}
     dev: true
 
   /@types/semver@7.5.4:
@@ -21236,7 +21229,7 @@ packages:
     engines: {node: '>=10.0.0'}
     hasBin: true
     dependencies:
-      '@types/json-schema': 7.0.11
+      '@types/json-schema': 7.0.14
       '@types/lodash': 4.14.182
       '@types/prettier': 2.7.2
       cli-color: 2.0.0
@@ -22822,7 +22815,7 @@ packages:
     peerDependencies:
       monaco-editor: '>=0.22'
     dependencies:
-      '@types/json-schema': 7.0.11
+      '@types/json-schema': 7.0.14
       js-yaml: 4.1.0
       monaco-editor: 0.24.0
       path-browserify: 1.0.1
