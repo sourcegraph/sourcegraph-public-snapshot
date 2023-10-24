@@ -207,6 +207,22 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 				Url:                   "https://gitlab.com",
 				RepositoryPathPattern: "gl/{pathWithNamespace}",
 			},
+		}, {
+			name: "internal-repo-public",
+			schema: &schema.GitLabConnection{
+				Url: "https://gitlab.com",
+				Authorization: &schema.GitLabAuthorization{
+					MarkInternalReposAsPublic: true,
+				},
+			},
+		}, {
+			name: "internal-repo-private",
+			schema: &schema.GitLabConnection{
+				Url: "https://gitlab.com",
+				Authorization: &schema.GitLabAuthorization{
+					MarkInternalReposAsPublic: false,
+				},
+			},
 		},
 	}
 	for _, test := range tests {
@@ -277,6 +293,9 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestGitlabSource_InternalRepos(t *testing.T) {
 }
 
 func TestGitlabSource_ListRepos(t *testing.T) {
