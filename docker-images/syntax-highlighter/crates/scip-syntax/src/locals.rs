@@ -600,7 +600,7 @@ mod test {
 
     #[test]
     fn test_can_do_java() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Java).unwrap();
         let source_code = include_str!("../testdata/locals.java");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 

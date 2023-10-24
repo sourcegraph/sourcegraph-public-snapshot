@@ -91,7 +91,7 @@ fn main() {
         ..Default::default()
     };
 
-    let config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
+    let config = scip_syntax::languages::get_local_configuration(&BundledParser::Go).unwrap();
     index
         .documents
         .extend(parse_files(config, directory, directory));
