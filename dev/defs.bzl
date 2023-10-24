@@ -44,9 +44,9 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
     # Add standard test libraries for the repo test frameworks
     if kwargs.get("testonly", False):
         deps = deps + [d for d in [
-            "//:node_modules/@types/jest",
+            "//:node_modules/@jest/globals",
             "//:node_modules/@types/mocha",
-            "//:node_modules/@types/testing-library__jest-dom",
+            "//:node_modules/@jest/expect",
         ] if not d in deps]
 
     # Default arguments for ts_project.
@@ -130,7 +130,7 @@ def npm_package(name, srcs = [], **kwargs):
 def jest_test(name, data = [], **kwargs):
     _jest_test(
         name = name,
-        config = "//:jest_config",
+        config = kwargs.pop("config", "//:jest_config"),
         snapshots = kwargs.pop("snapshots", True),
         data = data + native.glob(["**/__fixtures__/**/*"]),
         **kwargs

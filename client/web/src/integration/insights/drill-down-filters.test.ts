@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import delay from 'delay'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'

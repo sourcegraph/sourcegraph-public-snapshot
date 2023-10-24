@@ -1,11 +1,11 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
-import { SearchJobNode, SearchJobState } from '../../../graphql-operations'
+import { type SearchJobNode, SearchJobState } from '../../../graphql-operations'
 import { SearchJobCard } from '../SearchJobCard/SearchJobCard'
 
 import styles from './SearchJobModal.module.scss'

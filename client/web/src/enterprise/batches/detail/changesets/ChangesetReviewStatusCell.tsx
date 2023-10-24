@@ -16,16 +16,21 @@ export const ChangesetReviewStatusCell: React.FunctionComponent<
     React.PropsWithChildren<ChangesetReviewStatusCellProps>
 > = ({ className, reviewState }) => {
     switch (reviewState) {
-        case ChangesetReviewState.APPROVED:
+        case ChangesetReviewState.APPROVED: {
             return <ChangesetReviewStatusApproved className={className} />
-        case ChangesetReviewState.CHANGES_REQUESTED:
+        }
+        case ChangesetReviewState.CHANGES_REQUESTED: {
             return <ChangesetReviewStatusChangesRequested className={className} />
-        case ChangesetReviewState.COMMENTED:
+        }
+        case ChangesetReviewState.COMMENTED: {
             return <ChangesetReviewStatusCommented className={className} />
-        case ChangesetReviewState.DISMISSED:
+        }
+        case ChangesetReviewState.DISMISSED: {
             return <ChangesetReviewStatusDismissed className={className} />
-        case ChangesetReviewState.PENDING:
+        }
+        case ChangesetReviewState.PENDING: {
             return <ChangesetReviewStatusPending className={className} />
+        }
     }
 }
 

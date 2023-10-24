@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { beforeEach, describe, expect, it } from '@jest/globals'
 import { readFile } from 'mz/fs'
 import Simmer, { type Options as SimmerOptions } from 'simmerjs'
 import type { SetIntersection } from 'utility-types'
@@ -75,7 +76,7 @@ export async function getFixtureBody({
  * @param mayReturnNull Whether the mount getter might be called with containers where the mount does not belong.
  * It will be tested to return `null` in that case.
  */
-export function testMountGetter(
+function testMountGetter(
     htmlFixturePath: string,
     getMount: MountGetter,
     isFullDocument: boolean,

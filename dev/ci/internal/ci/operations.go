@@ -136,8 +136,7 @@ func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
 				TestReports: &bk.TestReportOpts{
 					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
 				},
-			}),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+			}))
 	}
 }
 
@@ -151,8 +150,6 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS", "true"),
 		}
 
 		if opts.CacheBundleSize {
@@ -163,7 +160,7 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			cmds = append(cmds, bk.Cmd("pnpm --filter @sourcegraph/web run report-bundle-diff"))
 		}
 
-		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
+		pipeline.AddStep(":globe_with_meridians::moneybag: Enterprise build", cmds...)
 	}
 }
 
@@ -203,9 +200,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
 				bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 				bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
-				bk.Cmd("pnpm run cover-browser-integration"),
-				bk.Cmd("pnpm nyc report -r json"),
-				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.Cmd("pnpm run test-browser-integration"),
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
@@ -239,8 +234,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 			TestReports: &bk.TestReportOpts{
 				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
 			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+		}))
 }
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
@@ -266,7 +260,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		bk.Key(prepStepKey),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("INTEGRATION_TESTS", "true"),
-		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
@@ -325,12 +318,11 @@ func frontendTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest: Test (all)",
 		withPnpmCache(),
-		bk.AnnotatedCmd("dev/ci/pnpm-test.sh --testPathIgnorePatterns client/web client/browser", bk.AnnotatedCmdOpts{
+		bk.AnnotatedCmd("dev/ci/pnpm-test.sh --testPathIgnorePatterns client/web --testPathIgnorePatterns client/browser", bk.AnnotatedCmdOpts{
 			TestReports: &bk.TestReportOpts{
 				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
 			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+		}))
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -389,17 +381,6 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
-}
-
-// Trigger the async pipeline to run. See pipeline.async.yaml.
-func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":snail: Trigger async", "sourcegraph-async",
-			bk.Key("trigger:async"),
-			bk.Async(true),
-			bk.Build(buildOptions),
-		)
-	}
 }
 
 func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {

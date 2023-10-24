@@ -101,7 +101,7 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
             const baseShaElement = shaContainers[0].querySelector('a')
             if (baseShaElement) {
                 // e.g "https://github.com/gorilla/mux/commit/0b13a922203ebdbfd236c818efcd5ed46097d690"
-                baseCommitID = baseShaElement.href.split('/').slice(-1)[0]
+                baseCommitID = baseShaElement.href.split('/').at(-1)!
             }
             const headShaElement = shaContainers[1].querySelector('span.sha') as HTMLElement
             if (headShaElement) {
@@ -264,10 +264,12 @@ export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     switch (pageType) {
         case 'commit':
         case 'pull':
-        case 'compare':
+        case 'compare': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 
@@ -281,19 +283,22 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
     const rawRepoName = `${host}/${repoName}`
     switch (pageType) {
         case 'blob':
-        case 'tree':
+        case 'tree': {
             return {
                 pageType,
                 rawRepoName,
                 revisionAndFilePath: decodeURIComponent(rest.join('/')),
                 repoName,
             }
+        }
         case 'pull':
         case 'commit':
-        case 'compare':
+        case 'compare': {
             return { pageType, rawRepoName, repoName }
-        default:
+        }
+        default: {
             return { pageType: 'other', rawRepoName, repoName }
+        }
     }
 }
 

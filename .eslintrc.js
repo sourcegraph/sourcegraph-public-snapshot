@@ -52,6 +52,15 @@ const config = {
     ],
     // This converts 'import {type foo} from ...' to 'import type {foo} from ...'
     '@typescript-eslint/no-import-type-side-effects': ['warn'],
+
+    // These rules are very slow on-save.
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/unbound-method': 'off',
+    '@typescript-eslint/no-misused-promises': 'off',
+    '@typescript-eslint/no-unnecessary-qualifier': 'off',
+    '@typescript-eslint/no-unused-vars': 'off', // also duplicated by tsconfig noUnused{Locals,Parameters}
+    'etc/no-deprecated': 'off',
+
     'no-restricted-imports': [
       'error',
       {
@@ -99,6 +108,8 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               '!@sourcegraph/branded/src/search-ui/experimental',
               '!@sourcegraph/*/src/testing',
               '!@sourcegraph/*/src/stories',
+              '!@sourcegraph/build-config/src/esbuild/*',
+              '!@sourcegraph/build-config/src/*',
             ],
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
@@ -242,6 +253,26 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     ],
     'import/order': 'off',
+    'unicorn/expiring-todo-comments': 'off',
+
+    // These rules were newly introduced in @sourcegraph/eslint-config@0.35.0 and have not yet been
+    // fixed in our existing code.
+    'unicorn/prefer-top-level-await': 'warn',
+    'unicorn/prefer-logical-operator-over-ternary': 'warn',
+    'unicorn/prefer-blob-reading-methods': 'warn',
+    'unicorn/prefer-event-target': 'warn',
+    'etc/throw-error': 'warn',
+    'rxjs/throw-error': 'warn',
+    'prefer-promise-reject-errors': 'warn',
+    '@typescript-eslint/no-redundant-type-constituents': 'warn',
+    '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
+    '@typescript-eslint/prefer-optional-chain': 'warn',
+    '@typescript-eslint/no-duplicate-enum-values': 'warn',
+    '@typescript-eslint/no-floating-promises': 'warn',
+
+    'jsdoc/check-alignment': 'off',
+
+    'unicorn/no-negated-condition': 'off', // this one reduces code readability, should remove it from @sourcegraph/eslint-config too
   },
   overrides: [
     {

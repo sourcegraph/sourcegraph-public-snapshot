@@ -35,12 +35,14 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, sugges
     let tokenValue = ''
 
     switch (tokenAtColumn.type) {
-        case 'filter':
+        case 'filter': {
             tokenValue = tokenAtColumn.value?.value ?? ''
             break
-        case 'pattern':
+        }
+        case 'pattern': {
             tokenValue = tokenAtColumn.value
             break
+        }
     }
 
     if (!tokenValue) {

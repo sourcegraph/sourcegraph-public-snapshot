@@ -115,7 +115,7 @@ export const Simple: StoryFn = () => {
 
 // props must be undefined somewhere, and Storybook docs addon causes Storybook to crash.
 // Setting a default parameter is a workaround to this issue
-export const WithChildren: Story = (props = {}) => {
+export const WithChildren: StoryFn = (props = {}) => {
     const [tabIndex, setTabIndex] = React.useState(0)
     const activeTab = panels[tabIndex]
 

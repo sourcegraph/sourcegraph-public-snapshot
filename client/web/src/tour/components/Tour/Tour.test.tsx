@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, describe, expect, test } from '@jest/globals'
 import { render, cleanup, type RenderResult, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
@@ -64,13 +65,13 @@ describe('Tour.tsx', () => {
 
     test('renders and triggers initial event log', () => {
         const { getByTestId } = setup()
-        expect(getByTestId('tour-content')).toBeTruthy()
+        expect(getByTestId('tour-content')).toBeInTheDocument()
         expect(mockedTelemetryService.log.withArgs('TourShown', { tourId }).calledOnce).toBeTruthy()
     })
 
     test('handles closing tour and triggers event log', () => {
         const { getByTestId } = setup()
-        expect(getByTestId('tour-content')).toBeTruthy()
+        expect(getByTestId('tour-content')).toBeInTheDocument()
 
         fireEvent.click(getByTestId('tour-close-btn'))
 
@@ -82,7 +83,7 @@ describe('Tour.tsx', () => {
         const { getByTestId, getByText } = setup()
         // clicking video step will open a video modal
         fireEvent.click(getByText(StepVideo.label))
-        expect(getByTestId('modal-video')).toBeTruthy()
+        expect(getByTestId('modal-video')).toBeInTheDocument()
 
         // click somewhere outside to close video modal
         fireEvent.click(getByTestId('modal-video-close'))

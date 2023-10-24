@@ -180,7 +180,7 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 	if err != nil || licenseInfo == nil {
 		isDevInstance = true
 	} else {
-		isDevInstance = licenseInfo.HasTag("dev")
+		isDevInstance = licensing.IsLicensePublicKeyOverridden()
 	}
 
 	token, b, err := accesstoken.GeneratePersonalAccessToken(includeInstanceIdentifier, config.LicenseKey, isDevInstance)

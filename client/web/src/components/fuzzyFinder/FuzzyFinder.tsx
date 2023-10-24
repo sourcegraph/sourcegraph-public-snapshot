@@ -65,8 +65,9 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 switch (tab) {
                     case 'files':
                     case 'symbols':
-                    case 'all':
+                    case 'all': {
                         toggleScope()
+                    }
                 }
             } else {
                 const newTab = tabsRef.current.focusNamedTab(tab)

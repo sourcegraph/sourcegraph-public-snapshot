@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals'
+
 import { formatDuration } from './utils'
 
 describe('Repo Settings Utils', () => {

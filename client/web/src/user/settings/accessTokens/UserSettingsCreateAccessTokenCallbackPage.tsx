@@ -213,13 +213,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     }
 
                                     switch (requester.callbackType) {
-                                        case 'new-tab':
+                                        case 'new-tab': {
                                             window.open(uri, '_blank')
+                                        }
 
                                         // falls through
-                                        default:
+                                        default: {
                                             // open the redirect link in the same tab
                                             window.location.replace(uri)
+                                        }
                                     }
                                 }
                             }),

@@ -196,16 +196,20 @@ function calculateEstimatedFinish(
 
 function getRepoEmbeddingJobStateBadgeVariant(state: RepoEmbeddingJobState): BadgeVariantType {
     switch (state) {
-        case RepoEmbeddingJobState.COMPLETED:
+        case RepoEmbeddingJobState.COMPLETED: {
             return 'success'
-        case RepoEmbeddingJobState.CANCELED:
+        }
+        case RepoEmbeddingJobState.CANCELED: {
             return 'warning'
+        }
         case RepoEmbeddingJobState.ERRORED:
-        case RepoEmbeddingJobState.FAILED:
+        case RepoEmbeddingJobState.FAILED: {
             return 'danger'
+        }
         case RepoEmbeddingJobState.QUEUED:
-        case RepoEmbeddingJobState.PROCESSING:
+        case RepoEmbeddingJobState.PROCESSING: {
             return 'info'
+        }
     }
 }
 

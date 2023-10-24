@@ -1,4 +1,5 @@
 import { Text } from '@codemirror/state'
+import { describe, expect, it } from '@jest/globals'
 
 import {
     isValidLineRange,

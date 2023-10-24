@@ -76,12 +76,6 @@ js_library(
 )
 
 copy_to_bin(
-    name = "browserslist",
-    srcs = [".browserslistrc"],
-    visibility = ["//visibility:public"],
-)
-
-copy_to_bin(
     name = "package_json",
     srcs = ["package.json"],
     visibility = ["//visibility:public"],
@@ -134,14 +128,10 @@ js_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//:node_modules/@babel/plugin-transform-runtime",
-        "//:node_modules/@babel/plugin-transform-typescript",
         "//:node_modules/@babel/preset-env",
         "//:node_modules/@babel/preset-react",
         "//:node_modules/@babel/preset-typescript",
         "//:node_modules/@babel/runtime",
-        "//:node_modules/babel-plugin-lodash",
-        "//:node_modules/babel-plugin-webpack-chunkname",
         "//:node_modules/semver",
         "//:node_modules/signale",
     ],

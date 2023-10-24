@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+
+go_library(
+    name = "dist",
+    srcs = ["assets.go"],
+    embedsrcs = ["copy_bundle"],  # keep
+    importpath = "github.com/sourcegraph/sourcegraph/client/web/dist",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "//ui/assets",
+    ],
+)
+
+copy_to_directory(
+    name = "copy_bundle",
+    srcs = [
+        "//:CONTRIBUTING.md",
+        "//client/browser:integration-assets",
+        "//client/web:bundle",
+        "//client/web-sveltekit",
+        "//client/web/dist/img",
+    ],
+    out = "dist",
+    replace_prefixes = {
+        "client/web/bundle": "",
+        "client/web-sveltekit/build": "",
+        "client/web/dist/img": "img",
+        "client/browser/integration-assets": "",
+    },
+)

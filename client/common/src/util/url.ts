@@ -118,7 +118,7 @@ export function toViewStateHash(viewState: string | undefined): string {
  * `%`-encoding for URLs.
  */
 export const encodeURIPathComponent = (component: string): string =>
-    component.split('/').map(encodeURIComponent).join('/').replace(/%2B/g, '+')
+    component.split('/').map(encodeURIComponent).join('/').replaceAll('%2B', '+')
 
 /**
  * Returns true if the given URL points outside the current site.
@@ -131,7 +131,7 @@ export const isExternalLink = (url: string): boolean =>
  * and removes trailing `=`.
  */
 export const formatSearchParameters = (searchParameters: URLSearchParams): string =>
-    searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/=&/g, '&').replace(/=$/, '')
+    searchParameters.toString().replaceAll('%2F', '/').replaceAll('%3A', ':').replaceAll('=&', '&').replace(/=$/, '')
 
 export const addLineRangeQueryParameter = (
     searchParameters: URLSearchParams,

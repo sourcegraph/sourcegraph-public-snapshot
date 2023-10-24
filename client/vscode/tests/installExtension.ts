@@ -50,7 +50,7 @@ function extractZip(zipfile: ZipFile, targetPath: string): Promise<void> {
             }
         })
         zipfile.readEntry()
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+
         zipfile.on('entry', async (entry: Entry) => {
             const fileName = entry.fileName // .replace(options.sourcePathRegex, '')
 

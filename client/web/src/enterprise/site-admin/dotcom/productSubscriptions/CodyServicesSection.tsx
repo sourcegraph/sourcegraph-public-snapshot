@@ -235,7 +235,7 @@ export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
     className?: string
 }> = ({ source, className }) => {
     switch (source) {
-        case CodyGatewayRateLimitSource.OVERRIDE:
+        case CodyGatewayRateLimitSource.OVERRIDE: {
             return (
                 <Tooltip content="The limit has been specified by a custom override">
                     <Badge variant="primary" className={className}>
@@ -243,7 +243,8 @@ export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
                     </Badge>
                 </Tooltip>
             )
-        case CodyGatewayRateLimitSource.PLAN:
+        }
+        case CodyGatewayRateLimitSource.PLAN: {
             return (
                 <Tooltip content="The limit is derived from the current subscription plan">
                     <Badge variant="primary" className={className}>
@@ -251,6 +252,7 @@ export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
                     </Badge>
                 </Tooltip>
             )
+        }
     }
 }
 
