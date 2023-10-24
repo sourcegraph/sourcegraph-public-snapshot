@@ -129,7 +129,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     // port number inside requestFrom, we have a single query parameter just like with VS Code.
     if (requestFrom?.includes('-')) {
         const [requestFrom1, port1, ...rest] = requestFrom?.split('-')
-        if (requestFrom1 && port1 && rest.length === 0 && port1.match(/^[0-9]/)) {
+        if (requestFrom1 && port1 && rest.length === 0 && port1.match(/^\d/)) {
             requestFrom = requestFrom1
             port = port1
         }
