@@ -10,7 +10,7 @@ import { buildMonaco } from '@sourcegraph/build-config/src/esbuild/monacoPlugin'
 
 import { ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, printSuccessBanner } from '../utils'
 
-import { BUILD_OPTIONS } from './build'
+import { esbuildBuildOptions } from './config'
 import { assetPathPrefix } from './manifest'
 
 export const esbuildDevelopmentServer = async (
@@ -27,7 +27,7 @@ export const esbuildDevelopmentServer = async (
         await ctx.dispose()
     }
 
-    const ctx = await esbuildContext(BUILD_OPTIONS)
+    const ctx = await esbuildContext(esbuildBuildOptions(ENVIRONMENT_CONFIG))
 
     await ctx.watch()
 
