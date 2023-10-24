@@ -126,6 +126,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	return dec.Err()
 }
 
+// makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
 func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
@@ -197,6 +198,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 	return resp, nil
 }
 
+// makeCompletionRequest formats the request and calls the completions endpoint for code_completion requests
 func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
@@ -251,35 +253,37 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	return resp, nil
 }
 
+// openAIChatCompletionsRequestParameters request object for openAI chat endpoint https://platform.openai.com/docs/api-reference/chat/create
 type openAIChatCompletionsRequestParameters struct {
-	Model            string             `json:"model"`
-	Messages         []message          `json:"messages"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
-	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
-	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
-	User             string             `json:"user,omitempty"`
+	Model            string             `json:"model"`                       // request.Model
+	Messages         []message          `json:"messages"`                    // request.Messages
+	Temperature      float32            `json:"temperature,omitempty"`       // request.Temperature
+	TopP             float32            `json:"top_p,omitempty"`             // request.TopP
+	N                int                `json:"n,omitempty"`                 // always 1
+	Stream           bool               `json:"stream,omitempty"`            // request.Stream
+	Stop             []string           `json:"stop,omitempty"`              // request.StopSequences
+	MaxTokens        int                `json:"max_tokens,omitempty"`        // request.MaxTokensToSample
+	PresencePenalty  float32            `json:"presence_penalty,omitempty"`  // unused
+	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
+	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
+	User             string             `json:"user,omitempty"`              // unused
 }
 
+// openAICompletionsRequestParameters payload for openAI completions endpoint https://platform.openai.com/docs/api-reference/completions/create
 type openAICompletionsRequestParameters struct {
-	Model            string             `json:"model"`
-	Prompt           string             `json:"prompt"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
-	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
-	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
-	Suffix           string             `json:"suffix,omitempty"`
-	User             string             `json:"user,omitempty"`
+	Model            string             `json:"model"`                       // request.Model
+	Prompt           string             `json:"prompt"`                      // request.Messages[0] - formatted prompt expected to be the only message
+	Temperature      float32            `json:"temperature,omitempty"`       // request.Temperature
+	TopP             float32            `json:"top_p,omitempty"`             // request.TopP
+	N                int                `json:"n,omitempty"`                 // always 1
+	Stream           bool               `json:"stream,omitempty"`            // request.Stream
+	Stop             []string           `json:"stop,omitempty"`              // request.StopSequences
+	MaxTokens        int                `json:"max_tokens,omitempty"`        // request.MaxTokensToSample
+	PresencePenalty  float32            `json:"presence_penalty,omitempty"`  // unused
+	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
+	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
+	Suffix           string             `json:"suffix,omitempty"`            // unused
+	User             string             `json:"user,omitempty"`              // unused
 }
 
 type message struct {
@@ -313,7 +317,7 @@ type openaiResponse struct {
 
 func getPrompt(messages []types.Message) (string, error) {
 	if l := len(messages); l != 1 {
-		return "", errors.Errof("expected to receive exactly one message with the prompt (got %d)", l)
+		return "", errors.Errorf("expected to receive exactly one message with the prompt (got %d)", l)
 	}
 
 	return messages[0].Text, nil
