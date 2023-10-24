@@ -392,7 +392,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 	}
 	svc := types.ExternalService{
 		Kind:   extsvc.KindGitLab,
-		Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.sgdev.org", "authorization": {"identityProvider": {"type": "oauth"}}, "token": "abc", "projectQuery": [ "projects?membership=true&archived=no" ]}`),
+		Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.sgdev.org", "authorization": {"identityProvider": {"type": "oauth"}, "syncInternalRepoPermissions": true}, "token": "abc", "projectQuery": [ "projects?membership=true&archived=no" ]}`),
 	}
 	uri, err := url.Parse("https://gitlab.sgdev.org")
 	if err != nil {
