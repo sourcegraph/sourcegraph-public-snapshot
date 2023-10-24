@@ -4,7 +4,7 @@ expression: dumped
 ---
   import socket
   import encode
-  
+
   # RemoteCollector is a remote collector that operates over a standard, and
   # synchronous, Python socket.
   #
@@ -30,52 +30,50 @@ expression: dumped
       # collector.
       sock = None
 //    ^^^^ definition scip-ctags RemoteCollector#sock.
-  
+
       _debug = False
 //    ^^^^^^ definition scip-ctags RemoteCollector#_debug.
-  
+
       def __init__(self, sock=None, debug=False):
-//        ^^^^^^^^ definition scip-ctags RemoteCollector#__init__().
+//        ^^^^^^^^ definition(Field) scip-ctags RemoteCollector#__init__().
           self.sock = sock
           self._debug = debug
-  
+
       def _log(self, *args):
-//        ^^^^ definition scip-ctags RemoteCollector#_log().
+//        ^^^^ definition(Field) scip-ctags RemoteCollector#_log().
           if self._debug:
               print "appdash: %s" % (" ".join(args))
-  
+
       # connect connects the underlying socket to the given address, waiting at
       # max for the given timeout before raising an exception.
       def connect(self, host="localhost", port=7701, timeout=10):
-//        ^^^^^^^ definition scip-ctags RemoteCollector#connect().
+//        ^^^^^^^ definition(Field) scip-ctags RemoteCollector#connect().
           # Use the given socket, or create a new one.
           if self.sock is None:
               self.sock = socket.create_connection((host, port), timeout=timeout)
           else:
               self.sock.connect()
-  
+
       # collect collects annotations for the given spanID.
       #
       # The annotations are sent to the remote server immediately, and this
       # function does not return until all have been sent out or an exception has
       # occured (e.g. disconnection).
       def collect(self, spanID, *annotations):
-//        ^^^^^^^ definition scip-ctags RemoteCollector#collect().
+//        ^^^^^^^ definition(Field) scip-ctags RemoteCollector#collect().
           self._log("collecting", str(len(annotations)), "annotations for", str(spanID))
           packet = encode._collect(spanID, *annotations)
           buf = encode._msg(packet)
-  
+
           totalSent = 0
           while totalSent < len(buf):
               sent = self.sock.send(buf[totalSent:])
               if sent == 0:
                   raise RuntimeError("socket connection broken")
               totalSent = totalSent + sent
-  
+
       # close closes the underlying socket.
       def close(self):
-//        ^^^^^ definition scip-ctags RemoteCollector#close().
+//        ^^^^^ definition(Field) scip-ctags RemoteCollector#close().
           self.sock.close()
           self.sock = None
-  
-

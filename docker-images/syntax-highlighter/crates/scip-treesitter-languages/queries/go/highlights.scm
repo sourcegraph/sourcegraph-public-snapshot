@@ -136,10 +136,8 @@
 
 (package_identifier) @variable.module
 (type_identifier) @type
-(keyed_element . (field_identifier) @identifier.attribute)
+(keyed_element . (literal_element (identifier) @identifier.attribute))
 ((identifier) @constant (#match? @constant "^[A-Z][A-Z\\d_]+$"))
 ((identifier) @constant (#eq? @constant "_"))
 (identifier) @variable
 (field_identifier) @identifier.property
-
-

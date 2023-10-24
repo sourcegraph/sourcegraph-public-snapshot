@@ -4,26 +4,25 @@ expression: dumped
 ---
   package example
 //        ^^^^^^^ definition(Package) scip-ctags example/
-  
+
   import (
    f "fmt"
 // ^ definition scip-ctags example/f.
   )
-  
+
   func Something() {
 //     ^^^^^^^^^ definition(Function) scip-ctags example/Something().
    x := true
    f.Println(x)
   }
-  
+
   func Another() float64 { return 5 / 3 }
 //     ^^^^^^^ definition(Function) scip-ctags example/Another().
-  
-  type MyThing struct{}
-//     ^^^^^^^ definition scip-ctags example/MyThing#
-  
-  func (m *MyThing) DoSomething()    {}
-//                  ^^^^^^^^^^^ definition scip-ctags example/MyThing#DoSomething().
-  func (m MyThing) DoSomethingElse() {}
-//                 ^^^^^^^^^^^^^^^ definition scip-ctags example/MyThing#DoSomethingElse().
 
+  type MyThing struct{}
+//     ^^^^^^^ definition(Struct) scip-ctags example/MyThing#
+
+  func (m *MyThing) DoSomething()    {}
+//                  ^^^^^^^^^^^ definition(Method) scip-ctags example/MyThing#DoSomething().
+  func (m MyThing) DoSomethingElse() {}
+//                 ^^^^^^^^^^^^^^^ definition(Method) scip-ctags example/MyThing#DoSomethingElse().

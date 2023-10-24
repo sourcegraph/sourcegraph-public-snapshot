@@ -22,8 +22,13 @@ pub fn captures_to_kind(kind: &Option<&String>) -> symbol_information::Kind {
 
     kind.map_or(UnspecifiedKind, |kind| match kind.as_str() {
         "kind.constant" => Constant,
-        "kind.package" => Package,
+        "kind.field" => Field,
         "kind.function" => Function,
+        "kind.interface" => Interface,
+        "kind.method" => Method,
+        "kind.package" => Package,
+        "kind.struct" => Struct,
+        "kind.typealias" => TypeAlias,
         _ => UnspecifiedKind,
     })
 }
@@ -33,8 +38,13 @@ pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'st
 
     match kind {
         Constant => Some("constant"),
-        Package => Some("package"),
+        Field => Some("field"),
         Function => Some("function"),
+        Interface => Some("interface"),
+        Method => Some("method"),
+        Package => Some("package"),
+        Struct => Some("struct"),
+        TypeAlias => Some("typealias"),
         _ => None,
     }
 }
