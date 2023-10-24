@@ -17,7 +17,6 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Adds files to myapp
     Index {
         #[arg(short, long)]
         language: String,
@@ -25,12 +24,16 @@ enum Commands {
         #[arg(short, long)]
         out: Option<String>,
         filenames: Vec<String>,
+
         #[arg(long)]
         no_locals: bool,
+
         #[arg(long)]
         no_globals: bool,
+
         #[arg(long)]
         strict: bool,
+
         #[arg(long)]
         cwd: Option<String>,
     },
@@ -55,11 +58,11 @@ pub fn main() {
             strict,
             cwd,
         } => index_command(
-            &language,
-            &filenames,
-            &out,
-            &cwd,
-            &Options {
+            language,
+            filenames,
+            out,
+            cwd,
+            Options {
                 locals: !no_locals,
                 globals: !no_globals,
                 strict,
@@ -69,13 +72,13 @@ pub fn main() {
 }
 
 fn index_command(
-    language: &String,
-    filenames: &Vec<String>,
-    out: &Option<String>,
-    cwd: &Option<String>,
-    options: &Options,
+    language: String,
+    filenames: Vec<String>,
+    out: Option<String>,
+    cwd: Option<String>,
+    options: Options,
 ) {
-    let p = BundledParser::get_parser(language).unwrap();
+    let p = BundledParser::get_parser(&language).unwrap();
 
     let working_directory: String = cwd.clone().unwrap_or("./".to_string());
     let working_path = Path::new(&working_directory);
@@ -99,7 +102,7 @@ fn index_command(
     for (_, filename) in filenames.iter().enumerate() {
         let contents = std::fs::read(filename).unwrap();
         eprintln!("Processing {filename}");
-        match index_content(contents, &p, options) {
+        match index_content(contents, &p, &options) {
             Ok(mut document) => {
                 document.relative_path = filename.to_string();
                 index.documents.push(document);
@@ -189,9 +192,9 @@ fn read_index_from_file(file: &str) -> scip::types::Index {
 #[cfg(test)]
 mod tests {
     use crate::read_index_from_file;
-    use assert_cmd::prelude::*; // Add methods on commands
+    use assert_cmd::prelude::*;
     use std::process::Command;
-    use std::{env::temp_dir, path::Path}; // Run programs
+    use std::{env::temp_dir, path::Path};
 
     #[test]
     fn e2e() {
