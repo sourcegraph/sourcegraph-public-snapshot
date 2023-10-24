@@ -42,7 +42,7 @@ func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFe
 		if event.StopReason != "" {
 			tr.AddEvent("stopped", attribute.String("reason", event.StopReason))
 
-			o.events.Record(ctx, "cody.completions.stream", "done", &telemetry.EventParameters{
+			o.events.Record(ctx, "cody.completions", "stream", &telemetry.EventParameters{
 				Metadata: telemetry.EventMetadata{
 					"feature": int64(feature.ID()),
 				},
@@ -64,7 +64,7 @@ func (o *observedClient) Complete(ctx context.Context, feature types.Completions
 	})
 	defer endObservation(1, observation.Args{})
 
-	defer o.events.Record(ctx, "cody.completions.complete", "done", &telemetry.EventParameters{
+	defer o.events.Record(ctx, "cody.completions", "complete", &telemetry.EventParameters{
 		Metadata: telemetry.EventMetadata{
 			"feature": int64(feature.ID()),
 		},
