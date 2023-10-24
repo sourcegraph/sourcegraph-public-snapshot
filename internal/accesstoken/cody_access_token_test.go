@@ -4,6 +4,11 @@ import (
 	"testing"
 )
 
+// This file contains tests for token generation code, so it legitimately contains what
+// appears to be valid tokens. This is fine because those are test tokens. The comment
+// just below tells the pre-commit hook to simply skip this file.
+// pre-commit:ignore_sourcegraph_token
+
 func TestGenerateDotcomUserGatewayAccessToken(t *testing.T) {
 	type args struct {
 		apiToken string
