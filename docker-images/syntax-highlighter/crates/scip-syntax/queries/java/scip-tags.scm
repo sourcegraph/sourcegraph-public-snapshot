@@ -7,6 +7,7 @@
 
 (class_declaration name: (_) @descriptor.type) @scope
 (interface_declaration name: (_) @descriptor.type) @scope
+(record_declaration name: (_) @descriptor.type) @scope
 (enum_declaration name: (_) @descriptor.type) @scope
 
 (method_declaration name: (_) @descriptor.method) @local
