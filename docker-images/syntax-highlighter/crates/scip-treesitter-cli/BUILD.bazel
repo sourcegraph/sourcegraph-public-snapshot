@@ -21,7 +21,17 @@ rust_binary(
 rust_test(
     name = "unit_test",
     srcs = ["src/main.rs"],
+    data = glob(
+        ["testdata/**"],
+    ),
     env = {
         "RUST_BACKTRACE": "1",
     },
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+        "//docker-images/syntax-highlighter/crates/sg-syntax",
+    ],
 )

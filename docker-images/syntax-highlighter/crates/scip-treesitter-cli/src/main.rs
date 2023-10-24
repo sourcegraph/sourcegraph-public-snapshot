@@ -209,7 +209,7 @@ mod tests {
 
         write_file(
             &path,
-            include_str!("../../scip-syntax/testdata/globals.java").to_string(),
+            include_str!("../testdata/globals.java").to_string(),
         );
 
         cmd.current_dir(out_dir)
