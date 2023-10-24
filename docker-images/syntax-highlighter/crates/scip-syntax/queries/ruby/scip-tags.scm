@@ -1,33 +1,36 @@
-(assignment left: [(identifier) (constant)] @descriptor.term)
-(class name: (_) @descriptor.type) @scope
-(method name: (_) @descriptor.method) @local
+(module name: (_) @descriptor.namespace @kind.module) @scope
 
-(singleton_method name: (_) @descriptor.method) @local
+(assignment left: (identifier) @descriptor.term @kind.variable)
+(assignment left: (constant) @descriptor.term @kind.constant)
+(class name: (_) @descriptor.type @kind.class) @scope
+(method name: (_) @descriptor.method @kind.method) @local
+
+(singleton_method name: (_) @descriptor.method @kind.method) @local
 [(do_block) (block) (unless) (case) (begin) (if) (while) (for)] @local
 
 ;; attr_accessor :bar -> bar, bar=
 ((call
    method: (identifier) @_attr_accessor
-   arguments: (argument_list (simple_symbol) @descriptor.method))
+   arguments: (argument_list (simple_symbol) @descriptor.method @kind.property))
  (#eq? @_attr_accessor "attr_accessor")
  (#transform! ":(.*)" "$1")
  (#transform! ":(.*)" "$1="))
 
 ((call
    method: (identifier) @_attr_reader
-   arguments: (argument_list (simple_symbol) @descriptor.method))
+   arguments: (argument_list (simple_symbol) @descriptor.method @kind.property))
  (#eq? @_attr_reader "attr_reader")
  (#transform! ":(.*)" "$1"))
 
 ((call
    method: (identifier) @_attr_writer
-   arguments: (argument_list (simple_symbol) @descriptor.method))
+   arguments: (argument_list (simple_symbol) @descriptor.method @kind.property))
  (#eq? @_attr_writer "attr_writer")
  (#transform! ":(.*)" "$1="))
 
 ;; alias_method :baz, :bar
 ((call
-   method: (identifier) @_alias_method
+   method: (identifier) @_alias_method @kind.method
    arguments: (argument_list
                 .
                 (simple_symbol) @descriptor.method))
