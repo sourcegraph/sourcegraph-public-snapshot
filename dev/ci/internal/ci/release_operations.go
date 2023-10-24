@@ -11,8 +11,7 @@ func finalizeReleasePatch(_ Config) operations.Operation {
 
 	cmds = append(cmds,
 		bazelAnnouncef("bazel run //tools/release:finalize_release_patch"),
-		// bk.Cmd(bazelCmd("run //tools/release:finalize_release_patch")),
-		bk.Cmd(`echo "pretending to finalize"`),
+		bk.Cmd(bazelCmd("run //dev/sg --run_under=\"cd $PWD &&\" -- release run internal finalize --workdir=. --config-from-commit ")),
 	)
 
 	return func(pipeline *bk.Pipeline) {
