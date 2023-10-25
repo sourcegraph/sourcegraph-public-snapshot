@@ -200,7 +200,7 @@ where
     Ok(())
 }
 
-fn read_index_from_file(file: &str) -> scip::types::Index {
+fn read_index_from_file(file: PathBuf) -> scip::types::Index {
     let mut candidate_idx = scip::types::Index::new();
     let candidate_f = File::open(file).unwrap();
 
@@ -214,52 +214,95 @@ fn read_index_from_file(file: &str) -> scip::types::Index {
 #[cfg(test)]
 mod tests {
     use crate::read_index_from_file;
+    use assert_cmd::cargo::cargo_bin;
     use assert_cmd::prelude::*;
+    use std::collections::HashMap;
     use std::process::Command;
-    use std::{env::temp_dir, path::Path};
+    use std::{env::temp_dir, path::PathBuf};
 
-    #[test]
-    fn e2e() {
-        let mut cmd: Command;
-        match std::env::var("SCIP_CLI_LOCATION") {
-            Ok(va) => cmd = {
-                let cwd = std::env::current_dir().unwrap().join(va);
-                Command::new(cwd)
-            },
-            _ => cmd = Command::cargo_bin("scip-treesitter-cli").unwrap(),
-        }
+    lazy_static::lazy_static! {
+        static ref BINARY_LOCATION: PathBuf = {
+            let mut c: PathBuf;
+            match std::env::var("SCIP_CLI_LOCATION") {
+                Ok(va) => {
+                    c = {
+                        std::env::current_dir().unwrap().join(va)
+                    }
+                }
+                _ => c = cargo_bin("scip-treesitter-cli")
+            }
 
-        println!("{:?}", std::env::var("SCIP_CLI_LOCATION"));
-
-        let out_dir = temp_dir();
-        let path = out_dir.join("globals.java");
-        let out_path = out_dir
-            .join("index-java.scip")
-            .to_str()
-            .unwrap()
-            .to_string();
-
-        write_file(&path, include_str!("../testdata/globals.java").to_string());
-
-
-        cmd.args(["index", "-l", "java", "-o", &out_path, "globals.java"])
-            .current_dir(out_dir)
-            .assert()
-            .success();
-
-        let index = read_index_from_file(&out_path);
-
-        assert!(index.documents.len() == 1);
-        assert_eq!(index.documents[0].relative_path, "globals.java");
-        assert!(index.documents[0].symbols.len() > 0);
+            c
+        };
     }
 
-    fn write_file(path: &Path, contents: String) {
+    use scip_treesitter::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
+
+    fn snapshot_syntax_document(doc: &scip::types::Document, source: &str) -> String {
+        dump_document_with_config(
+            doc,
+            source,
+            SnapshotOptions {
+                emit_symbol: EmitSymbol::All,
+                ..Default::default()
+            },
+        )
+        .expect("dump document")
+    }
+
+    #[test]
+    fn java_e2e() {
+        let out_dir = temp_dir();
+        let setup = HashMap::from([(
+            PathBuf::from("globals.java"),
+            include_str!("../testdata/globals.java").to_string(),
+        )]);
+
+        run_index(&out_dir, &setup, vec!["--language", "java"]);
+
+        let index = read_index_from_file(out_dir.join("index.scip"));
+
+        for doc in &index.documents {
+            let path = &doc.relative_path;
+            let dumped =
+                snapshot_syntax_document(doc, setup.get(&PathBuf::from(&path)).expect("??"));
+
+            insta::assert_snapshot!(path.clone(), dumped);
+        }
+
+    }
+
+    fn prepare(temp: &PathBuf, files: &HashMap<PathBuf, String>) {
+        for (path, contents) in files.iter() {
+            let file_path = temp.join(path);
+            write_file(&file_path, contents);
+        }
+    }
+
+    fn run_index(location: &PathBuf, files: &HashMap<PathBuf, String>, extra_arguments: Vec<&str>) {
+        prepare(location, files);
+
+        let mut base_args = vec!["index"];
+        base_args.extend(extra_arguments);
+
+        let mut cmd = Command::new(BINARY_LOCATION.to_str().unwrap());
+
+        cmd.args(base_args);
+
+        for (path, _) in files.iter() {
+            cmd.arg(path.to_str().unwrap());
+        }
+
+        cmd.current_dir(location);
+
+        cmd.assert().success();
+    }
+
+    fn write_file(path: &PathBuf, contents: &String) {
         use std::io::Write;
 
-        let res = contents.into_bytes();
         let output = std::fs::File::create(path).unwrap();
         let mut writer = std::io::BufWriter::new(output);
-        writer.write_all(&res).unwrap();
+        writer.write_all(contents.as_bytes()).unwrap();
     }
 }
