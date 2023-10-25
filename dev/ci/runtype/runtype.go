@@ -202,6 +202,8 @@ func (t RunType) String() string {
 		return "Release branch nightly healthcheck build"
 	case BextNightly:
 		return "Browser extension nightly release build"
+	case BextManualNightly:
+		return "Manually triggered browser extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
 	case WolfiBaseRebuild:
