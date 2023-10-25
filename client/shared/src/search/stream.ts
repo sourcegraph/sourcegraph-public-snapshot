@@ -490,7 +490,7 @@ export interface StreamSearchOptions {
     displayLimit?: number
     chunkMatches?: boolean
     enableRepositoryMetadata?: boolean
-    zoektSearchOptions: string | undefined
+    zoektSearchOptions?: string
 }
 
 function initiateSearchStream(
