@@ -22,7 +22,6 @@ import (
 func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
-	// TODO: More fine-grained.
 	repo, err := backend.NewRepos(logger, db, gitserver.NewClient("http.getrepo")).GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
@@ -38,7 +37,6 @@ func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[st
 // getRepoRev resolves the repository and commit specified in the route vars.
 func getRepoRev(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	// TODO: More fine-grained.
 	gsClient := gitserver.NewClient("http.getreporev")
 	repo, err := backend.NewRepos(logger, db, gsClient).Get(ctx, repoID)
 	if err != nil {

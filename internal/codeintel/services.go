@@ -56,7 +56,6 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 		UploadsService:      uploadsSvc,
 		SentinelService:     sentinelService,
 		ContextService:      contextService,
-		// TODO: Find references and add more fine-grained scopes.
-		GitserverClient: gitserverClient,
+		GitserverClient:     gitserverClient,
 	}, nil
 }
