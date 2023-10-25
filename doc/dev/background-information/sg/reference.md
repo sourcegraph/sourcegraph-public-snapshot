@@ -270,6 +270,7 @@ This command is useful when:
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
 * _manually_triggered_external - Manually Triggered External Build
+* bext-nightly - Manually triggered browser extension nightly release build
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
