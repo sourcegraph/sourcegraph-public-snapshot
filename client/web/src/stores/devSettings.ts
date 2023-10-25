@@ -9,7 +9,7 @@ interface DeveloperSettingsState {
     showDialog: boolean
     selectedTab: number
     zoekt: {
-        searchOptions:   string
+        searchOptions: string
     }
     featureFlags: {
         view: string

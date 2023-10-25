@@ -1,9 +1,9 @@
-import {type FC, memo, useMemo, useState, type MouseEvent} from 'react'
+import { type FC, memo, useMemo, useState, type MouseEvent } from 'react'
 
 import { json } from '@codemirror/lang-json'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import {mdiChevronDown, mdiChevronRight, mdiClose } from '@mdi/js'
+import { mdiChevronDown, mdiChevronRight, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -414,33 +414,34 @@ const TemporarySettingOverride: FC<{ setting: keyof TemporarySettings; filter: s
     }
 )
 
-
 const ZoektSettings: FC<{}> = () => {
-    const {searchOptions} = useDeveloperSettings(settings => settings.zoekt)
+    const { searchOptions } = useDeveloperSettings(settings => settings.zoekt)
 
-    const [inputValue, setInputValue] = useState<string>(searchOptions);
+    const [inputValue, setInputValue] = useState<string>(searchOptions)
 
-    const handleChange = (event:any) => {
-        setInputValue(event.target.value); // Update the state with the input value
-    };
+    const handleChange = (event: any) => {
+        setInputValue(event.target.value) // Update the state with the input value
+    }
 
     const handleClick = () => {
         // Call a function with the input field's content (inputValue)
         // For example, you can log it to the console here
-        setDeveloperSettingsSearchOptions(  {searchOptions: inputValue})
-    };
+        setDeveloperSettingsSearchOptions({ searchOptions: inputValue })
+    }
 
     return (
         <div className="mt-2 d-flex flex-column">
             <h4>Search Options</h4>
             <TextArea
                 style={{ width: '100%' }}
-                rows = {5}
+                rows={5}
                 value={inputValue}
                 onChange={handleChange}
                 placeholder="Enter zoekt.SearchOptions JSON here"
             />
-            <Button variant="primary" className="mt-2 align-self-end" onClick={handleClick}>Apply</Button>
+            <Button variant="primary" className="mt-2 align-self-end" onClick={handleClick}>
+                Apply
+            </Button>
         </div>
     )
 }

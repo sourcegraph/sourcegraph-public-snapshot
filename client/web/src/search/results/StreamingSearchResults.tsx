@@ -40,7 +40,7 @@ import {
     setSearchMode,
     useDeveloperSettings,
     useNavbarQueryState,
-    useNotepad
+    useNotepad,
 } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../tour/hooks'
@@ -113,7 +113,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     // Derived state
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
-    const {searchOptions} = useDeveloperSettings(settings => settings.zoekt)
+    const { searchOptions } = useDeveloperSettings(settings => settings.zoekt)
     const featureOverrides = useFeatureFlagOverrides()
     const { addRecentSearch } = useRecentSearches()
 
