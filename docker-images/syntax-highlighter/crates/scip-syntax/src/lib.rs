@@ -9,7 +9,7 @@ pub mod locals;
 pub mod symbols;
 pub mod ts_scip;
 
-pub fn get_symbols(parser: &BundledParser, source_bytes: &[u8]) -> Result<scip::types::Document> {
+pub fn get_symbols(parser: BundledParser, source_bytes: &[u8]) -> Result<scip::types::Document> {
     let config = match crate::languages::get_tag_configuration(parser) {
         Some(config) => config,
         None => return Err(anyhow::anyhow!("Missing config for language")),
@@ -22,7 +22,7 @@ pub fn get_symbols(parser: &BundledParser, source_bytes: &[u8]) -> Result<scip::
 }
 
 pub fn get_globals(
-    parser: &BundledParser,
+    parser: BundledParser,
     source_bytes: &[u8],
 ) -> Option<Result<(globals::Scope, usize)>> {
     let config = languages::get_tag_configuration(parser)?;
@@ -64,7 +64,7 @@ mod test {
                 let parser =
                     BundledParser::get_parser_from_extension(extension).expect("to have parser");
                 let config =
-                    crate::languages::get_tag_configuration(&parser).expect("to have rust parser");
+                    crate::languages::get_tag_configuration(parser).expect("to have rust parser");
                 let doc = crate::globals::test::parse_file_for_lang(config, &source_code)
                     .expect("to parse document");
                 let dumped = dump_document(&doc, &source_code).expect("to dumb document");
