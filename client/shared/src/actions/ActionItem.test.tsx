@@ -163,7 +163,9 @@ describe('ActionItem', () => {
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
-        await new Promise<void>(resolve => setTimeout(resolve))
+        await waitFor(() => {
+            expect(screen.queryByTestId('action-item-spinner')).not.toBeInTheDocument()
+        })
         expect(asFragment()).toMatchSnapshot()
     })
 
