@@ -49,7 +49,7 @@ pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'st
         Constant => Some("constant"),
         Constructor => Some("constructor"),
         Enum => Some("enum"),
-        EnumMember => Some("enumerator"),
+        EnumMember => Some("enummember"),
         Event => Some("event"),
         Field => Some("field"),
         Function => Some("function"),
