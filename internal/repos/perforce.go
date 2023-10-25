@@ -36,7 +36,7 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService) (*Perfor
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newPerforceSource(gitserver.NewClient(), svc, &c)
+	return newPerforceSource(gitserver.NewClient("repos.perforcesource"), svc, &c)
 }
 
 func newPerforceSource(gitserverClient gitserver.Client, svc *types.ExternalService, c *schema.PerforceConnection) (*PerforceSource, error) {
