@@ -6,12 +6,14 @@ import (
 	"testing"
 	"time"
 
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -25,7 +27,11 @@ func TestRecordedCommandsResolver(t *testing.T) {
 	startTime, err := time.Parse(timeFormat, "2023-07-20T15:04:05Z")
 	require.NoError(t, err)
 
+	fs := fakedb.New()
 	db := dbmocks.NewMockDB()
+	fs.Wire(db)
+	userID := fs.AddUser(types.User{Username: "bob", SiteAdmin: true})
+	ctx := userCtx(userID)
 
 	repoName := "github.com/sourcegraph/sourcegraph"
 	backend.Mocks.Repos.GetByName = func(context.Context, api.RepoName) (*types.Repo, error) {
@@ -38,7 +44,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 	t.Run("gitRecoreder not configured for repository", func(t *testing.T) {
 		// When gitRecorder isn't set, we return an empty list.
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
 			Query: `
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -84,7 +91,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
 			Query: `
 					{
 						repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -141,7 +149,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		require.NoError(t, err)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
 			Query: `
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -227,7 +236,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 		t.Run("limit within bounds", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
 				Query: `
 						{
 							repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -280,7 +290,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 		t.Run("limit exceeds bounds", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
 				Query: `
 						{
 							repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -340,7 +351,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 		t.Run("offset exceeds total count", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
 				Query: `
 						{
 							repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -378,7 +390,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 		t.Run("valid offset and limit", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
 				Query: `
 						{
 							repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -437,7 +450,8 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				MockGetRecordedCommandMaxLimit = nil
 			})
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
 				Query: `
 						{
 							repository(name: "github.com/sourcegraph/sourcegraph") {
@@ -480,6 +494,42 @@ func TestRecordedCommandsResolver(t *testing.T) {
 					`,
 			})
 		})
+	})
+
+	t.Run("user is not a site-admin", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
+		t.Cleanup(func() { conf.Mock(nil) })
+
+		repos := dbmocks.NewMockRepoStore()
+		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
+
+		userID := fs.AddUser(types.User{Username: "will", SiteAdmin: false})
+		ctx := userCtx(userID)
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `
+					{
+						repository(name: "github.com/sourcegraph/sourcegraph") {
+							recordedCommands {
+								nodes {
+									command
+								}
+							}
+						}
+					}
+				`,
+			ExpectedResult: `{"repository": null}`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "must be site admin",
+					Path:    []any{string("repository"), string("recordedCommands")},
+				},
+			},
+		})
+
 	})
 }
 
