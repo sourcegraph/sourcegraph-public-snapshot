@@ -45,6 +45,7 @@
     "@sourcegraph/observability-client": "workspace:*",
     "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/telemetry": "^0.9.0",
     "@sourcegraph/wildcard": "workspace:*"
   }
 }
