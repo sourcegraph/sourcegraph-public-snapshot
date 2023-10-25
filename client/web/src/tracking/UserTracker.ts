@@ -1,7 +1,6 @@
-import cookies from 'js-cookie'
 import * as uuid from 'uuid'
 
-import { userCookieSettings, deviceSessionCookieSettings } from './cookieSettings'
+import { type Cookies, defaultCookies, userCookieSettings, deviceSessionCookieSettings } from './cookies'
 import { getPreviousMonday } from './util'
 
 const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
@@ -14,6 +13,8 @@ const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
  *
  * All values are configured and initialized once on the constructor, as values
  * are unlikely to change.
+ *
+ * Prefer the global userTracker instance.
  */
 export class UserTracker {
     /**
@@ -37,7 +38,7 @@ export class UserTracker {
      */
     public readonly deviceSessionID: string
 
-    constructor() {
+    constructor(cookies: Cookies = defaultCookies()) {
         /**
          * Gets the anonymous user ID and cohort ID of the user from cookies.
          * If user doesn't have an anonymous user ID yet, a new one is generated, along with
@@ -84,3 +85,8 @@ export class UserTracker {
         this.deviceSessionID = deviceSessionID
     }
 }
+
+/**
+ * Configures and loads cookie properties for user tracking purposes.
+ */
+export const userTracker = new UserTracker()

@@ -11,8 +11,8 @@ import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
-import { SessionTracker } from './SessionTracker'
-import { UserTracker } from './UserTracker'
+import { sessionTracker } from './sessionTracker'
+import { userTracker } from './userTracker'
 import { stripURLParameters } from './util'
 
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
@@ -70,17 +70,14 @@ const browserExtensionMessageReceived: Observable<{ platform?: string; version?:
 )
 
 export class EventLogger implements TelemetryService, SharedEventLogger {
-    public readonly user: UserTracker
-    public readonly session: SessionTracker
+    public readonly user = userTracker
+    public readonly session = sessionTracker
 
     private hasStrippedQueryParameters = false
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
 
     constructor() {
-        this.user = new UserTracker()
-        this.session = new SessionTracker()
-
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
         browserExtensionMessageReceived.subscribe(({ platform, version }) => {

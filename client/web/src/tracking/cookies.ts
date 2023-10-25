@@ -1,4 +1,25 @@
-import { type CookieAttributes } from 'js-cookie'
+import cookies, { type CookieAttributes } from 'js-cookie'
+
+/**
+ * Cookies is a simple interface over real cookies from 'js-cookie'.
+ */
+export interface Cookies {
+    /**
+     * Read cookie
+     */
+    get(name: string): string | undefined
+    /**
+     * Create a cookie
+     */
+    set(name: string, value: string, options?: CookieAttributes): string | undefined
+}
+
+/**
+ * Alias for 'js-cookie' default implementation, behind the Cookies interface.
+ */
+export function defaultCookies(): Cookies {
+    return cookies
+}
 
 export const userCookieSettings: CookieAttributes = {
     // 365 days expiry, but renewed on activity.

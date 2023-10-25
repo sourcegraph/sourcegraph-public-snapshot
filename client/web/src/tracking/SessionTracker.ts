@@ -1,6 +1,4 @@
-import cookies from 'js-cookie'
-
-import { userCookieSettings, deviceSessionCookieSettings } from './cookieSettings'
+import { type Cookies, defaultCookies, userCookieSettings, deviceSessionCookieSettings } from './cookies'
 
 const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
@@ -10,7 +8,7 @@ const SESSION_REFERRER_KEY = 'sessionReferrer'
 const SESSION_FIRST_URL_KEY = 'sessionFirstUrl'
 
 /**
- * Configures and loads cookie properties for session tracking purposes.
+ * Prefer the global sessionTracker instance.
  */
 export class SessionTracker {
     /**
@@ -29,7 +27,7 @@ export class SessionTracker {
     private firstSourceURL: string
     private lastSourceURL: string
 
-    constructor() {
+    constructor(private cookies: Cookies = defaultCookies()) {
         this.originalReferrer = this.getOriginalReferrer()
         this.sessionReferrer = this.getSessionReferrer()
         this.sessionFirstURL = this.getSessionFirstURL()
@@ -47,11 +45,11 @@ export class SessionTracker {
          */
         this.originalReferrer =
             this.originalReferrer ||
-            cookies.get(ORIGINAL_REFERRER_KEY) ||
-            cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
+            this.cookies.get(ORIGINAL_REFERRER_KEY) ||
+            this.cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
             document.referrer
 
-        cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, userCookieSettings)
+        this.cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, userCookieSettings)
 
         return this.originalReferrer
     }
@@ -61,9 +59,9 @@ export class SessionTracker {
         if (!this.isSourcegraphDotComMode) {
             return ''
         }
-        this.sessionReferrer = this.sessionReferrer || cookies.get(SESSION_REFERRER_KEY) || document.referrer
+        this.sessionReferrer = this.sessionReferrer || this.cookies.get(SESSION_REFERRER_KEY) || document.referrer
 
-        cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, deviceSessionCookieSettings)
+        this.cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, deviceSessionCookieSettings)
         return this.sessionReferrer
     }
 
@@ -71,9 +69,9 @@ export class SessionTracker {
         if (!this.isSourcegraphDotComMode) {
             return ''
         }
-        this.sessionFirstURL = this.sessionFirstURL || cookies.get(SESSION_FIRST_URL_KEY) || location.href
+        this.sessionFirstURL = this.sessionFirstURL || this.cookies.get(SESSION_FIRST_URL_KEY) || location.href
 
-        cookies.set(SESSION_FIRST_URL_KEY, this.sessionFirstURL, deviceSessionCookieSettings)
+        this.cookies.set(SESSION_FIRST_URL_KEY, this.sessionFirstURL, deviceSessionCookieSettings)
         return this.sessionFirstURL
     }
 
@@ -81,9 +79,9 @@ export class SessionTracker {
         if (!this.isSourcegraphDotComMode) {
             return ''
         }
-        this.firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
+        this.firstSourceURL = this.firstSourceURL || this.cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        cookies.set(FIRST_SOURCE_URL_KEY, this.firstSourceURL, userCookieSettings)
+        this.cookies.set(FIRST_SOURCE_URL_KEY, this.firstSourceURL, userCookieSettings)
         return this.firstSourceURL
     }
 
@@ -96,9 +94,9 @@ export class SessionTracker {
          * The cookie value gets overwritten each time a user visits a *.sourcegraph.com property.
          * This code lives in Google Tag Manager.
          */
-        this.lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
+        this.lastSourceURL = this.lastSourceURL || this.cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
-        cookies.set(LAST_SOURCE_URL_KEY, this.lastSourceURL, userCookieSettings)
+        this.cookies.set(LAST_SOURCE_URL_KEY, this.lastSourceURL, userCookieSettings)
 
         return this.lastSourceURL
     }
@@ -110,3 +108,8 @@ export class SessionTracker {
         return ''
     }
 }
+
+/**
+ * Configures and loads cookie properties for session tracking purposes.
+ */
+export const sessionTracker = new SessionTracker()
