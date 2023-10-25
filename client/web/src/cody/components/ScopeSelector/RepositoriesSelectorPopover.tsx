@@ -560,7 +560,7 @@ const getTintedText = (item: string, searchText: string): React.ReactNode => {
 
 export const getFileName = (path: string): string => {
     const parts = path.split('/')
-    return parts[parts.length - 1]
+    return parts.at(-1)!
 }
 
 export const getRepoName = (path: string): string => {
@@ -600,48 +600,54 @@ const getEmbeddingStatus = ({
 
     const job = embeddingJobs.nodes[0]
     switch (job.state) {
-        case 'QUEUED':
+        case 'QUEUED': {
             return {
                 status: RepoEmbeddingStatus.QUEUED,
                 tooltip: 'Repository is queued for indexing',
                 icon: mdiDatabaseClockOutline,
                 className: 'text-warning',
             }
-        case 'PROCESSING':
+        }
+        case 'PROCESSING': {
             return {
                 status: RepoEmbeddingStatus.INDEXING,
                 tooltip: 'Repository is being indexed',
                 icon: mdiDatabaseRefreshOutline,
                 className: 'text-warning',
             }
-        case 'COMPLETED':
+        }
+        case 'COMPLETED': {
             return {
                 status: RepoEmbeddingStatus.INDEXED,
                 tooltip: 'Repository is indexed',
                 icon: mdiDatabaseCheckOutline,
                 className: 'text-success',
             }
-        case 'ERRORED':
+        }
+        case 'ERRORED': {
             return {
                 status: RepoEmbeddingStatus.FAILED,
                 tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
                 icon: mdiDatabaseRemoveOutline,
                 className: 'text-danger',
             }
-        case 'FAILED':
+        }
+        case 'FAILED': {
             return {
                 status: RepoEmbeddingStatus.FAILED,
                 tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
                 icon: mdiDatabaseRemoveOutline,
                 className: 'text-danger',
             }
-        default:
+        }
+        default: {
             return {
                 status: RepoEmbeddingStatus.NOT_INDEXED,
                 tooltip: 'Repository is not indexed',
                 icon: mdiDatabaseRemoveOutline,
                 className: 'text-warning',
             }
+        }
     }
 }
 

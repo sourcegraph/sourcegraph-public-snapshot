@@ -9,6 +9,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_resolve ../graphql-operations //client/shared:graphql_operations
@@ -463,6 +464,7 @@ ts_project(
         "src/search/query/validate.test.ts",
         "src/settings/settings.test.ts",
         "src/settings/temporary/useTemporarySetting.test.tsx",
+        "src/testGlobals.d.ts",  #keep
         "src/tracking/utm.test.ts",
         "src/util/dom.test.ts",
         "src/util/url.test.ts",
@@ -482,8 +484,10 @@ ts_project(
         ":node_modules/sourcegraph",
         ":shared_lib",
         "//:node_modules/@apollo/client",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@sourcegraph/extension-api-stubs",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",

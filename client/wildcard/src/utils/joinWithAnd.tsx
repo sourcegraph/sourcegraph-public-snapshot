@@ -45,7 +45,7 @@ export function joinWithAnd<T>(
             {array.slice(0, -1).map(item => (
                 <React.Fragment key={getKey(item)}>{formatItem(item)}, </React.Fragment>
             ))}
-            and {formatItem(array[array.length - 1])}
+            and {formatItem(array.at(-1)!)}
         </>
     )
 }

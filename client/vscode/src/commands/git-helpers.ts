@@ -46,7 +46,7 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         const repoRoot = await gitHelpers.rootDirectory(fileDirectory)
         // Determine file path relative to repository root, then replace slashes
         // as \\ does not work in Sourcegraphl links
-        const fileRelative = filePath.slice(repoRoot.length + 1).replace(/\\/g, '/')
+        const fileRelative = filePath.slice(repoRoot.length + 1).replaceAll('\\', '/')
         let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
         // check if the default branch or branch exist remotely

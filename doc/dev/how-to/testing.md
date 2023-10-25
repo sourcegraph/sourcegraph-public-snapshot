@@ -18,13 +18,11 @@ Also see [testing Go code](../background-information/languages/testing_go_code.m
 - First run `pnpm install` in the Sourcegraph root directory if it is a fresh clone.
 - To run all unit tests, run `pnpm test` from the root directory.
 - To run unit tests in development (only running the tests related to uncommitted code), run `pnpm test --watch`.
-  - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
+  - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true`
 - To debug tests in VS Code, use [vscode-jest](https://github.com/jest-community/vscode-jest) and click the **Debug** code lens next to any `test('name ...', ...)` definition in your test file (be sure to set a breakpoint or break on uncaught exceptions by clicking in the left gutter).
 - You can also run `pnpm test` from any of the individual project dirs (`client/shared/`, `client/web/`, `client/browser/`).
 
 Usually while developing you will either have `pnpm test --watch` running in a terminal or you will use vscode-jest.
-
-Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the `unit` flag.
 
 ### React component snapshot tests
 
@@ -197,8 +195,6 @@ The role of these integration tests is to provide in-browser testing of complex 
 All backend interactions are stubbed or recorded and replayed.
 The integration test suite for the webapp can be found in [`web/src/integration`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/integration).
 
-Test coverage from integration tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `integration`.
-
 #### Running integration tests
 
 To run integration tests for the web app:
@@ -254,8 +250,6 @@ End-to-end tests test the whole app: JavaScript, CSS styles, and backend.
 They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/web/src/end-to-end).
 
 The **regression test suite** is a special end-to-end test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
-
-Test coverage by end-to-end tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `e2e`.
 
 #### Running end-to-end tests
 
@@ -482,19 +476,6 @@ If `Bundlesize` fails, it is likely because one of the generated bundles has gon
 2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
-
-#### Analyzing the Bundlesize check failure
-
-To analyze web application bundles, we use [the Statoscope webpack-plugin](https://github.com/statoscope/statoscope/tree/master/packages/webpack-plugin) that generates HTML reports from webpack-stats. The best way to understand the bundlesize increase is to compare webpack-stats generated in the failing branch vs. the stats on the `main` branch. From the repo root, run the following commands:
-
-1. Install [the Statoscope CLI](https://github.com/statoscope/statoscope/tree/master/packages/cli) locally: `npm i @statoscope/cli -g`.
-2. Generate Webpack stats on the `main` branch: `WEBPACK_STATS_NAME=main pnpm --filter @sourcegraph/web run analyze-bundle`.
-3. Generate Webpack stats on the failing branch: `WEBPACK_STATS_NAME=my-branch pnpm --filter @sourcegraph/web run analyze-bundle`.
-4. Compare stats using Statoscope CLI: `statoscope generate -i ./ui/assets/stats-main-XXX.json -r ./ui/assets/stats-my-branch-XXX.json -o -t ./ui/assets/compare-report.html`
-5. The generated HTML report should be automatically opened in the new browser tab.
-6. Click "Diff" at the top right corner and select the `reference.json` stats.
-7. Go to "chunks" and inspect the chunk diff failing in the CI check. Clicking on the chunk should reveal the list of modules added or removed from the chunk.
-8. 🎉
 
 ### Assessing flaky client steps
 

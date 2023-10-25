@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { afterEach, describe, expect, it } from '@jest/globals'
 import { cleanup, fireEvent } from '@testing-library/react'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

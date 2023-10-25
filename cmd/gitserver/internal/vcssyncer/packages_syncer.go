@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -39,6 +40,7 @@ type vcsPackagesSyncer struct {
 	configDeps  []string
 	source      packagesSource
 	svc         dependenciesService
+	reposDir    string
 }
 
 var _ VCSSyncer = &vcsPackagesSyncer{}
@@ -302,7 +304,7 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
 func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.VersionedPackage) error {
-	workDir, err := os.MkdirTemp("", s.Type())
+	workDir, err := gitserverfs.TempDir(s.reposDir, s.Type())
 	if err != nil {
 		return err
 	}
@@ -439,4 +441,22 @@ func isPotentiallyMaliciousFilepathInArchive(filepath, destinationDir string) bo
 	// For security reasons, skip file if it's not a child
 	// of the target directory. See "Zip Slip Vulnerability".
 	return !strings.HasPrefix(cleanedOutputPath, destinationDir)
+}
+
+func writeZipToTemp(tmpdir string, pkg io.Reader) (*os.File, int64, error) {
+	// Create a temp file.
+	f, err := os.CreateTemp(tmpdir, "packages-zip-")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Write contents to file.
+	read, err := io.Copy(f, pkg)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Reset read head.
+	_, err = f.Seek(0, 0)
+	return f, read, err
 }

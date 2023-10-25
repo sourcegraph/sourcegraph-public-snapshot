@@ -126,7 +126,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.CoursierCacheDir), nil
+		return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.CoursierCacheDir, opts.ReposDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -137,7 +137,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewNpmPackagesSyncer(c, opts.DepsSvc, cli), nil
+		return NewNpmPackagesSyncer(c, opts.DepsSvc, cli, opts.ReposDir), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -145,7 +145,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return NewGoModulesSyncer(&c, opts.DepsSvc, cli), nil
+		return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
 		urn, err := extractOptions(&c)
@@ -167,7 +167,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli), nil
+		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
 		urn, err := extractOptions(&c)
@@ -178,7 +178,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli), nil
+		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	}
 
 	return NewGitRepoSyncer(opts.Logger, opts.RecordingCommandFactory), nil

@@ -8,10 +8,10 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -624,7 +624,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.openai.com/v1/chat/completions"
+			completionsConfig.Endpoint = "https://api.openai.com"
 		}
 
 		// If not access token is set, we cannot talk to OpenAI. Bail.
@@ -644,7 +644,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "gpt-3.5-turbo"
+			completionsConfig.CompletionModel = "gpt-3.5-turbo-instruct"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
 		// If no endpoint is configured, use a default value.
@@ -1041,7 +1041,11 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 		if config.App.DotcomAuthToken == "" {
 			return ""
 		}
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		authToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		if err != nil {
+			return ""
+		}
+		return authToken
 	}
 	// Otherwise, use the current license key to compute an access token.
 	if config.LicenseKey == "" {
@@ -1117,7 +1121,7 @@ func openaiDefaultMaxPromptTokens(model string) int {
 		return 8_000
 	case "gpt-4-32k":
 		return 32_000
-	case "gpt-3.5-turbo":
+	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct":
 		return 4_000
 	case "gpt-3.5-turbo-16k":
 		return 16_000

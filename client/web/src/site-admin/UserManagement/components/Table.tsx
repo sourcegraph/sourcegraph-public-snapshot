@@ -394,7 +394,7 @@ function Row<T>({
                             <Text alignment={align || 'left'} className="mb-0">
                                 {typeof accessor === 'function'
                                     ? accessor(data)
-                                    : typeof accessor !== 'undefined'
+                                    : accessor !== undefined
                                     ? data[accessor]
                                     : 'n/a'}
                             </Text>

@@ -21,7 +21,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
     let description = <Text />
 
     switch (kind) {
-        case ExternalServiceKind.BITBUCKETSERVER:
+        case ExternalServiceKind.BITBUCKETSERVER: {
             description = (
                 <Text>
                     <Link
@@ -46,14 +46,17 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
                 </Text>
             )
             break
+        }
 
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             description = commonDescription('github')
             break
+        }
 
-        case ExternalServiceKind.GITLAB:
+        case ExternalServiceKind.GITLAB: {
             description = commonDescription('gitlab')
             break
+        }
     }
 
     return (

@@ -50,6 +50,7 @@ func (c PackageRepoConfig) DoBaseImageBuild(name string, buildDir string) error 
 		"-v", fmt.Sprintf("%s:/keys", c.KeyDir),
 		"-v", fmt.Sprintf("%s:/images", c.ImageDir),
 		"-e", fmt.Sprintf("SOURCE_DATE_EPOCH=%d", time.Now().Unix()),
+		"-w", "/work",
 		"cgr.dev/chainguard/apko", "build",
 		"--debug",
 		"--arch", "x86_64",

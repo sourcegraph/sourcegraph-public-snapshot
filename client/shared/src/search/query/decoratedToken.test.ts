@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { SearchPatternType } from '../../graphql-operations'
 
 import { type DecoratedToken, decorate } from './decoratedToken'
@@ -23,28 +25,31 @@ const getTokens = (tokens: Token[]): { startIndex: number; scopes: string }[] =>
                 case 'closingParen':
                 case 'metaFilterSeparator':
                 case 'metaRepoRevisionSeparator':
-                case 'metaContextPrefix':
+                case 'metaContextPrefix': {
                     return {
                         startIndex: token.range.start,
                         scopes: token.type,
                     }
+                }
                 case 'metaPath':
                 case 'metaRevision':
                 case 'metaRegexp':
                 case 'metaStructural':
-                case 'metaPredicate':
+                case 'metaPredicate': {
                     // The scopes value is derived from the token type and its kind.
                     // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
                     return {
                         startIndex: token.range.start,
                         scopes: `${token.type}${token.kind}`,
                     }
+                }
 
-                default:
+                default: {
                     return {
                         startIndex: token.range.start,
                         scopes: 'identifier',
                     }
+                }
             }
         })
     )

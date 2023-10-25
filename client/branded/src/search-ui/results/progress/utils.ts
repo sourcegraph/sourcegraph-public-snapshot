@@ -5,12 +5,15 @@ export const limitHit = (progress: Progress): boolean =>
 
 const severityToNumber = (severity: Skipped['severity']): number => {
     switch (severity) {
-        case 'error':
+        case 'error': {
             return 1
-        case 'warn':
+        }
+        case 'warn': {
             return 2
-        case 'info':
+        }
+        case 'info': {
             return 3
+        }
     }
 }
 

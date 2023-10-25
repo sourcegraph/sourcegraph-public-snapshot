@@ -127,10 +127,10 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/css/contentPage.main.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
     copyInlineExtensions('build/integration')
-    // Copy to the ui/assets directory so that these files can be served by
+    // Copy to the dist directory so that these files can be served by
     // the webapp.
-    shelljs.mkdir('-p', '../../ui/assets/extension')
-    shelljs.cp('-r', 'build/integration/*', '../../ui/assets/extension')
+    shelljs.mkdir('-p', '../../client/web/dist/extension')
+    shelljs.cp('-r', 'build/integration/*', '../../client/web/dist/extension')
 }
 
 const BROWSER_TITLES = {

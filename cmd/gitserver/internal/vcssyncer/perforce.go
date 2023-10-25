@@ -184,7 +184,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 	return nil
 }
 
-// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
+// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100 --noColor true --noBaseCommit true
 func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, port string) *exec.Cmd {
 	return exec.CommandContext(ctx, "p4-fusion",
 		"--path", depot+"...",
@@ -201,6 +201,9 @@ func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 		"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 		"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
 		"--noColor", "true",
+		// We don't want an empty commit for a sane merge base across branches,
+		// since we don't use them and the empty commit breaks changelist parsing.
+		"--noBaseCommit", "true",
 	)
 }
 
@@ -335,8 +338,8 @@ func configureFusionClient(conn *schema.PerforceConnection) fusionConfig {
 		LookAhead:           2000,
 		NetworkThreads:      12,
 		NetworkThreadsFetch: 12,
-		PrintBatch:          10,
-		Refresh:             100,
+		PrintBatch:          100,
+		Refresh:             1000,
 		Retries:             10,
 		MaxChanges:          -1,
 		IncludeBinaries:     false,

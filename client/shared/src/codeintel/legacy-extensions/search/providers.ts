@@ -582,5 +582,5 @@ function repositoryKindTerms(includeFork: boolean, includeArchived: boolean): st
 
 /** Returns a regular expression matching the given repository. */
 function makeRepositoryPattern(repo: string): string {
-    return `^${repo.replace(/ /g, '\\ ')}$`
+    return `^${repo.replaceAll(' ', '\\ ')}$`
 }

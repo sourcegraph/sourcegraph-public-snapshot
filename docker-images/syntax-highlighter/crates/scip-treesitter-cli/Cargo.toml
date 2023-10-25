@@ -1,0 +1,23 @@
+[package]
+name = "scip-treesitter-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lazy_static = "1.0"
+paste = "1.0.6"
+assert_cmd = "2.0.12"
+predicates = "3.0.4"
+insta = "1.34.0"
+indicatif = "0.17.7"
+
+protobuf = { workspace = true }
+scip = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+
+scip-syntax = { path = "../scip-syntax" }
+scip-treesitter-languages = { path = "../scip-treesitter-languages" }
+scip-treesitter= { path = "../scip-treesitter" }
