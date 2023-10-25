@@ -14,17 +14,29 @@ rust_binary(
     ) + [
         "//docker-images/syntax-highlighter/crates/scip-syntax",
         "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
-        "//docker-images/syntax-highlighter/crates/sg-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter",
     ],
 )
 
 rust_test(
     name = "unit_test",
     srcs = ["src/main.rs"],
+    compile_data = glob(
+        [
+            "testdata/**",
+        ],
+        allow_empty = False,
+    ),
+    crate = ":scip-treesitter-cli",
     data = glob(
-        ["testdata/**"],
-    ) + [":scip-treesitter-cli"],
+               ["testdata/**"],
+           ) + [":scip-treesitter-cli"] +
+           glob(
+               ["src/snapshots/**"],
+               allow_empty = False,
+           ),
     env = {
+        "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
         "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter-cli)",
     },
@@ -33,6 +45,6 @@ rust_test(
     ) + [
         "//docker-images/syntax-highlighter/crates/scip-syntax",
         "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
-        "//docker-images/syntax-highlighter/crates/sg-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter",
     ],
 )
