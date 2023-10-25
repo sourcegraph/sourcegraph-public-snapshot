@@ -1,5 +1,5 @@
 {
-  "checksum": "a30200fddef89273f32721d5e5e6b1e44a4d56104443ffb9e2bc722f6ca165ab",
+  "checksum": "0397d517b64ca57b239cabd3398d438b26b5aa3761586563cd70cefdf63c68a2",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -1927,6 +1927,56 @@
         "version": "1.0.0"
       },
       "license": "MIT OR Apache-2.0"
+    },
+    "colored 2.0.4": {
+      "name": "colored",
+      "version": "2.0.4",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/colored/2.0.4/download",
+          "sha256": "2674ec482fbc38012cf31e6c42ba0177b431a0cb6f15fe40efa5aab1bda516f6"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "colored",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "colored",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "is-terminal 0.4.9",
+              "target": "is_terminal"
+            },
+            {
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            }
+          ],
+          "selects": {
+            "cfg(windows)": [
+              {
+                "id": "windows-sys 0.48.0",
+                "target": "windows_sys"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "2.0.4"
+      },
+      "license": "MPL-2.0"
     },
     "console 0.15.7": {
       "name": "console",
@@ -10362,6 +10412,10 @@
               "target": "clap"
             },
             {
+              "id": "colored 2.0.4",
+              "target": "colored"
+            },
+            {
               "id": "indicatif 0.17.7",
               "target": "indicatif"
             },
@@ -10384,6 +10438,10 @@
             {
               "id": "scip 0.1.1",
               "target": "scip"
+            },
+            {
+              "id": "walkdir 2.3.3",
+              "target": "walkdir"
             }
           ],
           "selects": {}
