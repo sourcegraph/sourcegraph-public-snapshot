@@ -26,7 +26,7 @@ export interface GitLabInfo extends RawRepoSpec, RepoSpec {
 /**
  * Information about single file pages.
  */
-interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevisionSpec {}
+interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevisionSpec { }
 
 export const getPageKindFromPathName = (owner: string, projectName: string, pathname: string): GitLabPageKind => {
     const pageKindMatch = pathname.match(new RegExp(`^/${owner}/${projectName}(/-)?/(commit|merge_requests|blob)/`))
@@ -57,7 +57,7 @@ export const getGitlabRepoURL = (): string => {
     if (!projectLink) {
         throw new Error('Unable to determine project name')
     }
-    return projectLink.href // e.g. 'https://gitlab.com/sourcegraph/jsonrpc2'
+    return projectLink.href // e.g. 'https://gitlab.com/SourcegraphCody/jsonrpc2'
 }
 
 const parseFullProjectName = (fullProjectName: string): { owner: string; projectName: string } => {
@@ -75,7 +75,7 @@ const parseGitLabRepoURL = (): { hostname: string; projectFullName: string; owne
 }
 
 /**
- * Subject to store repo name on the Sourcegraph instance (e.g. 'gitlab.com/sourcegraph/jsonrpc2').
+ * Subject to store repo name on the Sourcegraph instance (e.g. 'gitlab.com/SourcegraphCody/jsonrpc2').
  * It may be different from the repo name on the code host because of the name transformations applied
  * (see {@link https://docs.sourcegraph.com/admin/external_service/gitlab#nameTransformations}).
  * Set in `gitlabCodeHost.prepareCodeHost` method.
