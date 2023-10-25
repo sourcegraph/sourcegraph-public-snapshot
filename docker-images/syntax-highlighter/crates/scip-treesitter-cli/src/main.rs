@@ -67,6 +67,9 @@ enum Commands {
 
 struct Options {
     analysis_mode: AnalysisMode,
+    /// When true, fail on first encountered error
+    /// Otherwise errors are logged but they don't
+    /// interrupt the process
     strict: bool,
 }
 
