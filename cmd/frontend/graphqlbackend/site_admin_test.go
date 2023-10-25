@@ -32,7 +32,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -54,7 +54,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -438,7 +438,7 @@ func TestSetIsSiteAdmin(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
-			s := newSchemaResolver(db, gitserver.NewClient())
+			s := newSchemaResolver(db, gitserver.NewTestClient(t))
 
 			actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
