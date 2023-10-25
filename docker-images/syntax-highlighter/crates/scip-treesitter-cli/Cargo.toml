@@ -18,7 +18,6 @@ scip = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 
-sg-syntax = { path = "../sg-syntax" }
 scip-syntax = { path = "../scip-syntax" }
 scip-treesitter-languages = { path = "../scip-treesitter-languages" }
 scip-treesitter= { path = "../scip-treesitter" }

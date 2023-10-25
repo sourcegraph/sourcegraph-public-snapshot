@@ -1901,7 +1901,6 @@ dependencies = [
  "scip-syntax",
  "scip-treesitter",
  "scip-treesitter-languages",
- "sg-syntax",
 ]
 
 [[package]]
