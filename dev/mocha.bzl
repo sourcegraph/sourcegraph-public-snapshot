@@ -20,6 +20,9 @@ NON_BUNDLED = [
 
     # Dependencies with bundling issues
     "@sourcegraph/build-config",
+
+    # Used by require.resolve
+    "axe-core",
 ]
 
 # ... some of which are needed at runtime
@@ -91,7 +94,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         "INTEGRATION_TESTS": "true",
 
         # Puppeteer config
-        "DISPLAY": ":99",
+        "DISPLAY": "$(DISPLAY)",
     })
 
     if is_percy_enabled:

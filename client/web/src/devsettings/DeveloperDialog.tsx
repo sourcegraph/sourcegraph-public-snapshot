@@ -229,15 +229,18 @@ const FeatureFlagOverride: FC<{ featureFlag: FeatureFlagName; filter: string; se
 
         function onClick(): void {
             switch (overrideValue) {
-                case null:
+                case null: {
                     setFeatureFlagOverride(featureFlag, true)
                     break
-                case true:
+                }
+                case true: {
                     setFeatureFlagOverride(featureFlag, false)
                     break
-                case false:
+                }
+                case false: {
                     removeFeatureFlagOverride(featureFlag)
                     break
+                }
             }
             updateOverrideCounter()
             setOverrideValue(getFeatureFlagOverride(featureFlag))

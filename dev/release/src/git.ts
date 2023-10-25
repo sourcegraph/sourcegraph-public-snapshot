@@ -38,7 +38,7 @@ export function getPreviousVersion(
         return lowest
     }
     if (!version) {
-        return new SemVer(tags[tags.length - 1])
+        return new SemVer(tags.at(-1))
     }
 
     for (

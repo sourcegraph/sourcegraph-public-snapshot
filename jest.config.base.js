@@ -49,12 +49,17 @@ const config = {
   // for example to change the URL in window.location
   testEnvironment: toPackagePath(path.join(rootDir, 'client/shared/dev/jest-environment.js')),
 
-  collectCoverage: !!process.env.CI,
-  collectCoverageFrom: [`<rootDir>/src/**/*.{${SRC_EXT},${SRC_EXT}x}`],
-  coverageDirectory: '<rootDir>/coverage',
-  coveragePathIgnorePatterns: [/\/node_modules\//.source, /\.(test|story)\.[jt]sx?$/.source, /\.d\.ts$/.source],
   roots: ['<rootDir>/src'],
   snapshotResolver: path.join(rootDir, 'jest.snapshot-resolver.js'),
+  snapshotFormat: {
+    escapeString: true,
+    printBasicPrototype: true,
+  },
+
+  injectGlobals: false,
+
+  // Only run JavaScript tests in Bazel; otherwise run TypeScript and JavaScript.
+  testMatch: [`**/?(*.)+(spec|test).(js|${SRC_EXT})?(x)`],
 
   transform: {
     [IS_BAZEL ? '\\.js$' : '\\.[jt]sx?$']: [
@@ -94,10 +99,6 @@ const config = {
   },
   modulePaths: ['node_modules', '<rootDir>/src'],
 
-  // By default, don't clutter `pnpm run test --watch` output with the full coverage table. To see it, use the
-  // `--coverageReporters text` jest option.
-  coverageReporters: ['json', 'lcov', 'text-summary'],
-
   setupFiles: [
     path.join(rootDir, 'client/shared/dev/mockDate.js'),
     // Needed for reusing API functions that use fetch
@@ -115,7 +116,7 @@ const config = {
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),
     require.resolve('regenerator-runtime/runtime'),
-    require.resolve('@testing-library/jest-dom'),
+    require.resolve('@testing-library/jest-dom/jest-globals'),
     toPackagePath(path.join(rootDir, 'client/shared/dev/reactCleanup.ts')),
   ],
   globalSetup: toPackagePath(path.join(rootDir, 'client/shared/dev/jestGlobalSetup.js')),

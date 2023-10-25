@@ -17,7 +17,6 @@
     "node_modules",
     "../../node_modules",
     "./build/**/*",
-    "coverage",
     "stories", // TODO fix type errors and include
     "src/end-to-end",
   ],

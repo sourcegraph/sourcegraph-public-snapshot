@@ -1,5 +1,6 @@
 import expect from 'expect'
 import { isEqual } from 'lodash'
+import { describe, it } from 'mocha'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'

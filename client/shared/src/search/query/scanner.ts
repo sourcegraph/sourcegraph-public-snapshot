@@ -538,17 +538,21 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword:
+        case SearchPatternType.keyword: {
             return scanStandard(query)
-        case SearchPatternType.literal:
+        }
+        case SearchPatternType.literal: {
             patternKind = PatternKind.Literal
             break
-        case SearchPatternType.regexp:
+        }
+        case SearchPatternType.regexp: {
             patternKind = PatternKind.Regexp
             break
-        case SearchPatternType.structural:
+        }
+        case SearchPatternType.structural: {
             patternKind = PatternKind.Structural
             break
+        }
     }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)

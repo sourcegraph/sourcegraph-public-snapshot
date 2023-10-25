@@ -147,12 +147,15 @@ async function execTemplate(
     const name = releaseName(version)
     const content = await getContent(octokit, template)
     return content
-        .replace(/\$MAJOR/g, version.major.toString())
-        .replace(/\$MINOR/g, version.minor.toString())
-        .replace(/\$PATCH/g, version.patch.toString())
-        .replace(/\$SECURITY_REVIEW_DATE/g, dateMarkdown(securityReviewDate, `One working week before ${name} release`))
-        .replace(/\$CODE_FREEZE_DATE/g, dateMarkdown(codeFreezeDate, `Three working days before ${name} release`))
-        .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
+        .replaceAll('$MAJOR', version.major.toString())
+        .replaceAll('$MINOR', version.minor.toString())
+        .replaceAll('$PATCH', version.patch.toString())
+        .replaceAll(
+            '$SECURITY_REVIEW_DATE',
+            dateMarkdown(securityReviewDate, `One working week before ${name} release`)
+        )
+        .replaceAll('$CODE_FREEZE_DATE', dateMarkdown(codeFreezeDate, `Three working days before ${name} release`))
+        .replaceAll('$RELEASE_DATE', dateMarkdown(releaseDate, `${name} release date`))
 }
 
 interface MaybeIssue {
@@ -570,9 +573,10 @@ async function createBranchWithChanges(
     // Apply edits
     for (const edit of edits) {
         switch (typeof edit) {
-            case 'function':
+            case 'function': {
                 edit(workdir)
                 break
+            }
             case 'string': {
                 const editScript = `set -ex
 

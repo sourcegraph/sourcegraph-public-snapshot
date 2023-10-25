@@ -1,3 +1,4 @@
+import { beforeAll, describe, expect, it } from '@jest/globals'
 import { act } from '@testing-library/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'

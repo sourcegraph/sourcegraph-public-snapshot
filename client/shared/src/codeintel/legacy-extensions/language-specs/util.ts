@@ -63,9 +63,9 @@ export function removeExtension(filePath: string): string {
 }
 
 export function slashToDot(value: string): string {
-    return value.replace(/\//g, '.')
+    return value.replaceAll('/', '.')
 }
 
 export function dotToSlash(value: string): string {
-    return value.replace(/\./g, '/')
+    return value.replaceAll('.', '/')
 }

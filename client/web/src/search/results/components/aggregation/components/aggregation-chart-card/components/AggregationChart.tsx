@@ -118,10 +118,12 @@ const getTruncationFormatter = (
         // These types possible have long labels with the same pattern at the start of the string,
         // so we truncate their labels from the end
         case SearchAggregationMode.REPO:
-        case SearchAggregationMode.PATH:
+        case SearchAggregationMode.PATH: {
             return getTruncatedTickFromTheEnd(maxLength)
+        }
 
-        default:
+        default: {
             return getTruncatedTick(maxLength)
+        }
     }
 }

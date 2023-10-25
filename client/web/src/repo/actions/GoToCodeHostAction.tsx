@@ -91,9 +91,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
     const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
 
     // If the default branch is undefined, set to HEAD
-    const defaultBranch =
-        (!isErrorLike(props.repo) && props.repo && props.repo.defaultBranch && props.repo.defaultBranch.displayName) ||
-        'HEAD'
+    const defaultBranch = (!isErrorLike(props.repo) && props.repo?.defaultBranch?.displayName) || 'HEAD'
 
     // If there's no repo or no file / commit message, return null to hide all code host icons
     if (!props.repo || (isErrorLike(fileExternalLinksOrError) && !perforceCommitMessage)) {
@@ -289,21 +287,29 @@ export function serviceKindDisplayNameAndIcon(serviceKind: ExternalServiceKind |
     }
 
     switch (serviceKind) {
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             return { displayName: 'GitHub', icon: GithubIcon }
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return { displayName: 'GitLab', icon: GitlabIcon }
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
-        case ExternalServiceKind.PERFORCE:
+        }
+        case ExternalServiceKind.PERFORCE: {
             return { displayName: 'Swarm', icon: HelixSwarmIcon }
-        case ExternalServiceKind.PHABRICATOR:
+        }
+        case ExternalServiceKind.PHABRICATOR: {
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case ExternalServiceKind.AWSCODECOMMIT: {
             return { displayName: 'AWS CodeCommit' }
-        default:
+        }
+        default: {
             return { displayName: upperFirst(toLower(serviceKind)) }
+        }
     }
 }

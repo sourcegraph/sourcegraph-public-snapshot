@@ -48,7 +48,7 @@ function dirname(path: string): string | undefined {
  * Returns the last element of path, or "." if path is empty.
  */
 function basename(path: string): string {
-    return path.split('/').slice(-1)[0] || '.'
+    return path.split('/').at(-1) || '.'
 }
 
 function createSuggestions(item: SearchMatch): Suggestion[] {
@@ -91,8 +91,9 @@ function createSuggestions(item: SearchMatch): Suggestion[] {
                 urlLabel: 'go to definition',
             }))
         }
-        default:
+        default: {
             return []
+        }
     }
 }
 

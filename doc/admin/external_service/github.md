@@ -298,6 +298,7 @@ If you would like internal repositories to remain private, but you're experienci
   }
 }
 ```
+> NOTE: An explanation on visibility options in GitHub Enterprise. `public`- Only index public GitHub Enterprise repositories visible to all users. This excludes private and internal repos. `private` - Index both public and private GitHub Enterprise repositories. This allows accessing private repos the token has access to. `internal` - Include GitHub Enterprise internal repositories in addition to public/private repos. Internal repos are only visible to org members.
 
 ### Trigger permissions sync from GitHub webhooks
 

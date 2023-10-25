@@ -1,4 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
+import { describe, expect, it } from '@jest/globals'
 import { fireEvent } from '@testing-library/react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'

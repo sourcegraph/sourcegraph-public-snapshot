@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals'
+
 import { getTracingURL, TRACING_URL_SUFFIX } from '../getTracingUrl'
 
 const BASE_URL = 'https://sourcegraph.test:3443'

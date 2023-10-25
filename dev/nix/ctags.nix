@@ -20,13 +20,13 @@ in
 # yoinked from github.com/nixos/nixpkgs
 unNixifyDylibs { inherit pkgs; } (stdenv.mkDerivation rec {
   pname = "universal-ctags";
-  version = "5.9.20220403.0";
+  version = "6.0.0";
 
   src = fetchFromGitHub {
     owner = "universal-ctags";
     repo = "ctags";
-    rev = "p${version}";
-    sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
+    rev = "v${version}";
+    sha256 = "sha256-XlqBndo8g011SDGp3zM7S+AQ0aCp6rpQlqJF6e5Dd6w=";
   };
 
   depsBuildBuild = [

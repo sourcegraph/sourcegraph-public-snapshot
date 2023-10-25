@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { screen } from '@testing-library/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

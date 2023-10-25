@@ -4,7 +4,7 @@ import { mdiClipboardPulseOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { Progress, StreamingResultsState } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './StreamingProgressCount'

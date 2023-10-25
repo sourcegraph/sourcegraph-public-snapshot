@@ -58,6 +58,7 @@ ts_project(
     deps = [
         ":http-client_lib",
         "//:node_modules/@apollo/client",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@types/sinon",
         "//:node_modules/delay",
         "//:node_modules/rxjs",
