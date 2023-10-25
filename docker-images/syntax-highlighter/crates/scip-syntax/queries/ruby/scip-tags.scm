@@ -30,10 +30,10 @@
 
 ;; alias_method :baz, :bar
 ((call
-   method: (identifier) @_alias_method @descriptor.method @kind.methodalias
+   method: (identifier) @_alias_method
    arguments: (argument_list
                 .
-                (simple_symbol)))
+                (simple_symbol) @descriptor.method @kind.methodalias))
 
  (#eq? @_alias_method "alias_method")
  (#transform! ":(.*)" "$1"))
