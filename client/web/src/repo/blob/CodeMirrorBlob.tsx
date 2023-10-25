@@ -6,7 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
 
@@ -52,7 +52,7 @@ import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
-import { isValidLineRange, trimTrailingNewline } from './codemirror/utils'
+import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
 // Logical grouping of props that are only used by the CodeMirror blob view
@@ -113,6 +113,22 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     snapshotData?: { offset: number; data: string; additional: string[] | null }[] | null
 }
 
+class NoLineBreakWidget extends WidgetType {
+    constructor(private noLineBreakComment: string) {
+        super()
+    }
+
+    public eq(other: NoLineBreakWidget): boolean {
+        return this.noLineBreakComment === other.noLineBreakComment
+    }
+
+    public toDOM(): HTMLElement {
+        const div = document.createElement('div')
+        div.textContent = this.noLineBreakComment
+        return div
+    }
+}
+
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
     EditorView.editable.of(false),
@@ -157,6 +173,17 @@ const staticExtensions: Extension = [
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+    }),
+    EditorView.decorations.compute(['doc'], state => {
+        const lastLine = state.doc.line(state.doc.lines)
+        const decoReplace = Decoration.replace({}).range(lastLine.from - 1, lastLine.from)
+
+        if (lastLine.length === 0) {
+            return Decoration.set(decoReplace)
+        }
+        const widget = new NoLineBreakWidget('<-- File does not end with a linebreak -->')
+        const decoBlock = Decoration.replace({ widget, block: true }).range(lastLine.from - 1, lastLine.from)
+        return Decoration.set(decoBlock)
     }),
 ]
 
@@ -345,13 +372,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     useEffect(() => {
         const editor = editorRef.current
         if (editor) {
-            // Trim trailing newline if present
-            let content = trimTrailingNewline(blobInfo.content)
-
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
-            const state = EditorState.create({ doc: content, extensions })
+            const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
 
             if (navigateToLineOnAnyClick) {

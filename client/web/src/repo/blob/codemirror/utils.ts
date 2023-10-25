@@ -194,15 +194,3 @@ export function isValidLineRange(
 
     return true
 }
-
-/**
- * Trims any trailing newline character from the end of the given content string.
- *
- * This handles \n (unix/linux), and \r\n (windows) to support all newline conventions.
- *
- * @param content The content string to trim
- * @returns The content with any trailing newline character removed
- */
-export function trimTrailingNewline(content: string): string {
-    return content.replace(/\r?\n$/, '')
-}

@@ -6,7 +6,6 @@ import {
     offsetToUIPosition,
     positionToOffset,
     sortRangeValuesByStart,
-    trimTrailingNewline,
     uiPositionToOffset,
     zeroToOneBasedPosition,
     zeroToOneBasedRange,
@@ -125,46 +124,5 @@ describe('blob/codemirror/utils', () => {
             expect(isValidLineRange({ line: 3, character: 2, endLine: 4, endCharacter: 8 }, textDocument)).toBe(false)
             expect(isValidLineRange({ line: 3, character: 8, endLine: 4, endCharacter: 1 }, textDocument)).toBe(false)
         })
-    })
-
-    describe('trimTrailingNewLine', () => {
-        const tests: {
-            name: string
-            content: string
-            expected: string
-        }[] = [
-                {
-                    name: 'should remove linebreak from file containing only line breaks',
-                    content: '\n\n\n\n\n',
-                    expected: '',
-                },
-                {
-                    name: 'no change',
-                    content: 'line 1\nline 2\nline 3',
-                    expected: 'line 1\nline 2\nline 3',
-                },
-                {
-                    name: 'should remove trailing new line (windows - "\\r\\n")',
-                    content: 'line 1\nline 2\r\n',
-                    expected: 'line 1\nline 2',
-                },
-                {
-                    name: 'should remove trailing new line (linux/unix - "\\n")',
-                    content: 'let x = 12\nlet y = 4\nconsole.log(x * y) // prints 48\n',
-                    expected: 'let x = 12\nlet y = 4\nconsole.log(x * y) // prints 48',
-                },
-                {
-                    name: 'should remove one of the two trailing new lines',
-                    content: "var test = 'test'\n\n\n",
-                    expected: "var test = 'test'\n\n",
-                },
-            ]
-
-        for (let i = 0; i < tests.length; i++) {
-            let t = tests[i]
-            it(t.name, () => {
-                expect(trimTrailingNewline(t.content)).toBe(t.expected)
-            })
-        }
     })
 })
