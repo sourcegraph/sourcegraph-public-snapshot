@@ -1195,6 +1195,9 @@ importers:
       '@sourcegraph/extension-api-types':
         specifier: workspace:*
         version: link:../extension-api-types
+      '@sourcegraph/testing':
+        specifier: workspace:*
+        version: link:../testing
       sourcegraph:
         specifier: workspace:*
         version: link:../extension-api
@@ -1295,6 +1298,9 @@ importers:
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
+      '@sourcegraph/testing':
+        specifier: workspace:*
+        version: link:../testing
 
   client/jetbrains:
     dependencies:
