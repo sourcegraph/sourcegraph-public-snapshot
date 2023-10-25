@@ -128,7 +128,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             chunkMatches: true,
             zoektSearchOptions: searchOptions,
         }),
-        [caseSensitive, patternType, searchMode, trace, featureOverrides]
+        [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
