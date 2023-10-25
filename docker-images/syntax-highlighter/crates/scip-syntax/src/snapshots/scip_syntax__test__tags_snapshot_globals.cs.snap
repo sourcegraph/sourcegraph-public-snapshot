@@ -27,7 +27,7 @@ expression: "String::from_utf8_lossy(buf_writer.buffer())"
 {"_type":"tag","name":"PublicImplicitGetterSetter","path":"globals.cs","language":"c_sharp","line":53,"kind":"property","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"_speed","path":"globals.cs","language":"c_sharp","line":52,"kind":"field","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"Changed","path":"globals.cs","language":"c_sharp","line":50,"kind":"event","scope":"Longer.Namespace.Class"}
-{"_type":"tag","name":"MyDelegate","path":"globals.cs","language":"c_sharp","line":48,"kind":"method","scope":"Longer.Namespace.Class"}
+{"_type":"tag","name":"MyDelegate","path":"globals.cs","language":"c_sharp","line":48,"kind":"delegate","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"ImplicitGetterPrivateSetter","path":"globals.cs","language":"c_sharp","line":28,"kind":"property","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"ImplicitGetterSetter","path":"globals.cs","language":"c_sharp","line":22,"kind":"property","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"_val","path":"globals.cs","language":"c_sharp","line":20,"kind":"field","scope":"Longer.Namespace.Class"}

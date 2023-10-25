@@ -15,4 +15,4 @@
 (event_field_declaration (variable_declaration (variable_declarator (identifier) @kind.event @descriptor.term)))
 (property_declaration name: (identifier) @descriptor.term @kind.property)
 (enum_member_declaration name: (_) @descriptor.term @kind.enummember)
-(delegate_declaration name: (identifier) @descriptor.method @kind.method)
+(delegate_declaration name: (identifier) @descriptor.method @kind.delegate)

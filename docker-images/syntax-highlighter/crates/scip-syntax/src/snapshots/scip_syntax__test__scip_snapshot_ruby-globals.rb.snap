@@ -51,7 +51,7 @@ expression: dumped
   module MyModule
 //       ^^^^^^^^ definition(Module) scip-ctags MyModule/
     def self.abc(base)
-//           ^^^ definition(Method) scip-ctags MyModule/abc().
+//           ^^^ definition(SingletonMethod) scip-ctags MyModule/abc().
     end
   
     class MyClass
@@ -61,7 +61,7 @@ expression: dumped
       end
   
       def self.woo(base)
-//             ^^^ definition(Method) scip-ctags MyModule/MyClass#woo().
+//             ^^^ definition(SingletonMethod) scip-ctags MyModule/MyClass#woo().
       end
     end
   end
@@ -69,12 +69,12 @@ expression: dumped
   class Foo
 //      ^^^ definition(Class) scip-ctags Foo#
     attr_accessor :bar
-//                ^^^^ definition(Property) scip-ctags Foo#`bar=`().
-//                ^^^^ definition(Property) scip-ctags Foo#bar().
+//                ^^^^ definition(Accessor) scip-ctags Foo#`bar=`().
+//                ^^^^ definition(Accessor) scip-ctags Foo#bar().
     attr_reader :baz
-//              ^^^^ definition(Property) scip-ctags Foo#baz().
+//              ^^^^ definition(Getter) scip-ctags Foo#baz().
     attr_writer :qux
-//              ^^^^ definition(Property) scip-ctags Foo#`qux=`().
+//              ^^^^ definition(Setter) scip-ctags Foo#`qux=`().
   end
   
   class Aliased
@@ -84,7 +84,7 @@ expression: dumped
     end
   
     alias_method :baz, :bar
-//               ^^^^ definition(Method) scip-ctags Aliased#baz().
+//  ^^^^^^^^^^^^ definition(MethodAlias) scip-ctags Aliased#alias_method().
   end
   
   class Parental

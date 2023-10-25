@@ -62,7 +62,7 @@ expression: dumped
           }
   
           delegate int MyDelegate();
-//                     ^^^^^^^^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#MyDelegate().
+//                     ^^^^^^^^^^ definition(Delegate) scip-ctags `Longer.Namespace`/Class#MyDelegate().
   
           public event ChangedEventHandler Changed;
 //                                         ^^^^^^^ definition(Event) scip-ctags `Longer.Namespace`/Class#Changed.
