@@ -61,7 +61,15 @@ type DiffOptions struct {
 // Diff returns an iterator that can be used to access the diff between two
 // commits on a per-file basis. The iterator must be closed with Close when no
 // longer required.
-func (c *clientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
+func (c *clientImplementor) Diff(ctx context.Context, opts DiffOptions) (_ *DiffFileIterator, err error) {
+	ctx, _, endObservation := c.operations.diff.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			opts.Repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
@@ -275,6 +283,14 @@ type CommitGraphOptions struct {
 // be rooted at the given commit. If a non-zero limit is supplied, at most that
 // many commits will be returned.
 func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+	ctx, _, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
 		args = append(args, "--all")
@@ -302,7 +318,16 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 // CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
 // is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
 // into component parts separately.
-func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
+func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) (_ []CommitLog, err error) {
+	ctx, _, endObservation := c.operations.commitLog.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.Stringer("after", after),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
 	if !after.IsZero() {
 		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
@@ -364,7 +389,15 @@ func parseTimestamp(timestamp string) (time.Time, error) {
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) (_ []*diff.Hunk, err error) {
+	ctx, _, endObservation := c.operations.diffPath.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
 		return nil, err
@@ -394,7 +427,17 @@ func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 }
 
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ []byte, err error) {
+	ctx, _, endObservation := c.operations.diffSymbols.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commitA", string(commitA)),
+			attribute.String("commitB", string(commitB)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	return command.Output(ctx)
 }
@@ -709,7 +752,16 @@ func decodeOID(sha string) (gitdomain.OID, error) {
 	return oid, nil
 }
 
-func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (err error) {
+	ctx, _, endObservation := c.operations.logReverseEach.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			api.RepoName(repo).Attr(),
+			attribute.String("commit", commit),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -1055,7 +1107,17 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 }
 
 // LsFiles returns the output of `git ls-files`.
-func (c *clientImplementor) LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
+func (c *clientImplementor) LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) (_ []string, err error) {
+	ctx, _, endObservation := c.operations.lsFiles.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+			attribute.Bool("hasPathSpecs", len(pathspecs) > 0),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{
 		"ls-files",
 		"-z",
@@ -1106,7 +1168,17 @@ func (c *clientImplementor) ListDirectoryChildren(
 	repo api.RepoName,
 	commit api.CommitID,
 	dirnames []string,
-) (map[string][]string, error) {
+) (_ map[string][]string, err error) {
+	ctx, _, endObservation := c.operations.listDirectoryChildren.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+			attribute.Int("dirs", len(dirnames)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
 	cmd := c.gitCommand(repo, args...)
@@ -1252,6 +1324,14 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
+	ctx, _, endObservation := c.operations.getDefaultBranch.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
@@ -1718,6 +1798,15 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 // supplied branch name is the default branch, then this method instead returns
 // all commits reachable from HEAD.
 func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	ctx, _, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("branch", branchName),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"log", "--pretty=format:%H:%cI"}
 	if maxAge != nil {
 		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
@@ -2082,7 +2171,16 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 }
 
 // CommitExists determines if the given commit exists in the given repository.
-func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error) {
+func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (_ bool, err error) {
+	ctx, _, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(id)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	commit, err := c.getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
 	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return false, nil
@@ -2214,6 +2312,14 @@ func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.Re
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
 func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
+	ctx, _, endObservation := c.operations.head.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	cmd := c.gitCommand(repo, "rev-parse", "HEAD")
 
 	out, err := cmd.Output(ctx)
@@ -2305,7 +2411,16 @@ func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 
 // BranchesContaining returns a map from branch names to branch tip hashes for
 // each branch containing the given commit.
-func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ []string, err error) {
+	ctx, _, endObservation := c.operations.branchesContaining.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
 		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
@@ -2345,7 +2460,16 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error) {
+func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (_ map[string][]gitdomain.RefDescription, err error) {
+	ctx, _, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.Int("objects", len(gitObjs)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
 		format := strings.Join([]string{
 			derefField("objectname"),
@@ -2491,6 +2615,15 @@ lineLoop:
 // revision does not exist, a false-valued flag is returned along with a nil
 // error and zero-valued time.
 func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
+	ctx, _, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
 		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{

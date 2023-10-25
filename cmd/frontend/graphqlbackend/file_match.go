@@ -34,7 +34,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 		Commit: fm.Commit(),
 		Stat:   CreateFileInfo(fm.Path, false),
 	}
-	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient("graphql.filematch"), opts)
+	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient("graphql.filematch.tree"), opts)
 }
 
 func (fm *FileMatchResolver) Commit() *GitCommitResolver {

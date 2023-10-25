@@ -51,7 +51,7 @@ func newPerforceSource(gitserverClient gitserver.Client, svc *types.ExternalServ
 // For Perforce, it uses the host (p4.port), username (p4.user) and password (p4.passwd)
 // from the code host configuration.
 func (s PerforceSource) CheckConnection(ctx context.Context) error {
-	gclient := gitserver.NewClient("perforce.connection-check")
+	gclient := gitserver.NewClient("perforce.connectioncheck")
 	conn := protocol.PerforceConnectionDetails{
 		P4Port:   s.config.P4Port,
 		P4User:   s.config.P4User,
