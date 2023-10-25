@@ -1,11 +1,11 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use protobuf::{CodedInputStream, Message};
 use scip::types::Document;
 use scip_syntax::{get_locals, get_symbols};
 use scip_treesitter_languages::parsers::BundledParser;
 
 use anyhow::Result;
-use std::{fs::File, io::BufReader, path::Path};
+use std::{fs::File, io::BufReader, path::PathBuf};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -15,33 +15,57 @@ struct Cli {
     command: Commands,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum AnalysisMode {
+    /// Only extract occurrences of local definitions
+    Locals,
+    /// Only extract globally-accessible symbols
+    Globals,
+    /// Locals + Globals, extract everything
+    Full,
+}
+
+impl AnalysisMode {
+    fn locals(self) -> bool {
+        return self == AnalysisMode::Locals || self == AnalysisMode::Full;
+    }
+    fn globals(self) -> bool {
+        return self == AnalysisMode::Globals || self == AnalysisMode::Full;
+    }
+}
+
 #[derive(Subcommand)]
 enum Commands {
+    /// Index source files using Tree Sitter parser for a given language
+    /// and produce a SCIP file
     Index {
+        ///
         #[arg(short, long)]
         language: String,
 
-        #[arg(short, long)]
-        out: Option<String>,
+        /// Path where the SCIP index will be written
+        #[arg(short, long, default_value = "./index.scip")]
+        out: String,
+
+        /// List of files to analyse
         filenames: Vec<String>,
 
-        #[arg(long)]
-        no_locals: bool,
+        /// Analysis mode
+        #[arg(short, long, default_value = "full")]
+        mode: AnalysisMode,
 
-        #[arg(long)]
-        no_globals: bool,
-
-        #[arg(long)]
+        /// Fail on first error
+        #[arg(long, default_value_t = false)]
         strict: bool,
 
-        #[arg(long)]
-        cwd: Option<String>,
+        /// Project root to write to SCIP index
+        #[arg(short, long, default_value = "./")]
+        project_root: String,
     },
 }
 
 struct Options {
-    locals: bool,
-    globals: bool,
+    analysis_mode: AnalysisMode,
     strict: bool,
 }
 
@@ -53,18 +77,16 @@ pub fn main() {
             language,
             out,
             filenames,
-            no_locals,
-            no_globals,
+            mode,
             strict,
-            cwd,
+            project_root,
         } => index_command(
             language,
             filenames,
-            out,
-            cwd,
+            PathBuf::from(out),
+            PathBuf::from(project_root),
             Options {
-                locals: !no_locals,
-                globals: !no_globals,
+                analysis_mode: mode,
                 strict,
             },
         ),
@@ -74,14 +96,11 @@ pub fn main() {
 fn index_command(
     language: String,
     filenames: Vec<String>,
-    out: Option<String>,
-    cwd: Option<String>,
+    out: PathBuf,
+    project_root: PathBuf,
     options: Options,
 ) {
     let p = BundledParser::get_parser(&language).unwrap();
-
-    let working_directory: String = cwd.clone().unwrap_or("./".to_string());
-    let working_path = Path::new(&working_directory);
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
@@ -92,7 +111,13 @@ fn index_command(
                 ..Default::default()
             })
             .into(),
-            project_root: format!("file://{}", working_directory),
+            project_root: format!(
+                "file://{}",
+                project_root
+                    .canonicalize()
+                    .expect("Failed to canonicalize project root")
+                    .display()
+            ),
             ..Default::default()
         })
         .into(),
@@ -117,28 +142,25 @@ fn index_command(
         }
     }
 
-    let out_name = out.clone().unwrap_or("index.scip".to_string());
-    let path = working_path.join(out_name);
-
     eprintln!(
         "Writing index for {} documents into {}",
         index.documents.len(),
-        path.display()
+        out.display()
     );
 
-    write_message_to_file(path, index).expect("to write the file");
+    write_message_to_file(out, index).expect("to write the file");
 }
 
 fn index_content(contents: Vec<u8>, parser: BundledParser, options: &Options) -> Result<Document> {
     let mut document: Document;
 
-    if options.globals {
+    if options.analysis_mode.globals() {
         document = get_symbols(parser, &contents).unwrap();
     } else {
         document = Document::new();
     }
 
-    if options.locals {
+    if options.analysis_mode.locals() {
         let locals = get_locals(parser, &contents);
 
         match locals {
