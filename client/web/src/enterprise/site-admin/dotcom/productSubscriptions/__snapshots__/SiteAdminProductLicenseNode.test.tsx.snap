@@ -49,7 +49,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
             <span
               class="mr-3"
             >
-              <accountname />
+              AccountName
             </span>
           </div>
           <div
@@ -262,7 +262,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
             <span
               class="mr-3"
             >
-              <accountname />
+              AccountName
             </span>
           </div>
           <div
