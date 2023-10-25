@@ -13,8 +13,8 @@ rust_binary(
         normal = True,
     ) + [
         "//docker-images/syntax-highlighter/crates/scip-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
         "//docker-images/syntax-highlighter/crates/scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
     ],
 )
 
@@ -47,7 +47,7 @@ rust_test(
         normal = True,
     ) + [
         "//docker-images/syntax-highlighter/crates/scip-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
         "//docker-images/syntax-highlighter/crates/scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
     ],
 )
