@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use indicatif::{ProgressBar, ProgressStyle};
 use protobuf::{CodedInputStream, Message};
 use scip::types::Document;
 use scip_syntax::{get_locals, get_symbols};
@@ -105,7 +106,7 @@ fn index_command(
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
             tool_info: Some(scip::types::ToolInfo {
-                name: "scip-treesitter".to_string(),
+                name: "scip-treesitter-cli".to_string(),
                 version: clap::crate_version!().to_string(),
                 arguments: vec![],
                 ..Default::default()
@@ -124,9 +125,20 @@ fn index_command(
         ..Default::default()
     };
 
+    let bar = ProgressBar::new(filenames.len() as u64);
+
+    bar.set_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7}\n {msg}",
+        )
+        .unwrap()
+        .progress_chars("##-"),
+    );
+
     for (_, filename) in filenames.iter().enumerate() {
         let contents = std::fs::read(filename).unwrap();
-        eprintln!("Processing {filename}");
+        bar.set_message(filename.clone());
+        bar.inc(1);
         match index_content(contents, p, &options) {
             Ok(mut document) => {
                 document.relative_path = filename.to_string();
@@ -136,11 +148,15 @@ fn index_command(
                 if options.strict {
                     other.unwrap();
                 } else {
-                    eprintln!("Failed to extract locals: {:?}", other)
+                    eprintln!("Failed to extract locals from {filename}: {:?}", other)
                 }
             }
         }
     }
+
+    bar.finish();
+
+    eprintln!("");
 
     eprintln!(
         "Writing index for {} documents into {}",
@@ -269,7 +285,6 @@ mod tests {
 
             insta::assert_snapshot!(path.clone(), dumped);
         }
-
     }
 
     fn prepare(temp: &PathBuf, files: &HashMap<PathBuf, String>) {

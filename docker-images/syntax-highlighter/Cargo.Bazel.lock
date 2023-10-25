@@ -1,5 +1,5 @@
 {
-  "checksum": "a9ad7637adc5f733c0847427d9fc062a905b727781d8ee3a777c754a11478880",
+  "checksum": "7c3b88f110f55336ad2c100aed4f36d0c862c706f6b296f33cb26a78f9feac71",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -1953,6 +1953,13 @@
         "compile_data_glob": [
           "**"
         ],
+        "crate_features": {
+          "common": [
+            "ansi-parsing",
+            "unicode-width"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [
             {
@@ -1962,6 +1969,10 @@
             {
               "id": "libc 0.2.147",
               "target": "libc"
+            },
+            {
+              "id": "unicode-width 0.1.10",
+              "target": "unicode_width"
             }
           ],
           "selects": {
@@ -4992,6 +5003,71 @@
       },
       "license": "Apache-2.0 OR MIT"
     },
+    "indicatif 0.17.7": {
+      "name": "indicatif",
+      "version": "0.17.7",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/indicatif/0.17.7/download",
+          "sha256": "fb28741c9db9a713d93deb3bb9515c20788cef5815265bee4980e87bde7e0f25"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "indicatif",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "indicatif",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "unicode-width"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "console 0.15.7",
+              "target": "console"
+            },
+            {
+              "id": "number_prefix 0.4.0",
+              "target": "number_prefix"
+            },
+            {
+              "id": "portable-atomic 1.5.0",
+              "target": "portable_atomic"
+            },
+            {
+              "id": "unicode-width 0.1.10",
+              "target": "unicode_width"
+            }
+          ],
+          "selects": {
+            "cfg(target_arch = \"wasm32\")": [
+              {
+                "id": "instant 0.1.12",
+                "target": "instant"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "0.17.7"
+      },
+      "license": "MIT"
+    },
     "inlinable_string 0.1.15": {
       "name": "inlinable_string",
       "version": "0.1.15",
@@ -5022,13 +5098,13 @@
       },
       "license": "Apache-2.0/MIT"
     },
-    "insta 1.31.0": {
+    "insta 1.34.0": {
       "name": "insta",
-      "version": "1.31.0",
+      "version": "1.34.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/insta/1.31.0/download",
-          "sha256": "a0770b0a3d4c70567f0d58331f3088b0e4c4f56c9b8d764efe654b4a5d46de3a"
+          "url": "https://crates.io/api/v1/crates/insta/1.34.0/download",
+          "sha256": "5d64600be34b2fcfc267740a243fa7744441bb4947a619ac4e5bb6507f35fbfc"
         }
       },
       "targets": [
@@ -5081,9 +5157,48 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.31.0"
+        "version": "1.34.0"
       },
       "license": "Apache-2.0"
+    },
+    "instant 0.1.12": {
+      "name": "instant",
+      "version": "0.1.12",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/instant/0.1.12/download",
+          "sha256": "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "instant",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "instant",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cfg-if 1.0.0",
+              "target": "cfg_if"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.1.12"
+      },
+      "license": "BSD-3-Clause"
     },
     "is-terminal 0.4.9": {
       "name": "is-terminal",
@@ -6593,6 +6708,43 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "number_prefix 0.4.0": {
+      "name": "number_prefix",
+      "version": "0.4.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/number_prefix/0.4.0/download",
+          "sha256": "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "number_prefix",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "number_prefix",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
+        "edition": "2015",
+        "version": "0.4.0"
+      },
+      "license": "MIT"
+    },
     "object 0.31.1": {
       "name": "object",
       "version": "0.31.1",
@@ -7510,6 +7662,66 @@
         "version": "0.3.5"
       },
       "license": "MIT"
+    },
+    "portable-atomic 1.5.0": {
+      "name": "portable-atomic",
+      "version": "1.5.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/portable-atomic/1.5.0/download",
+          "sha256": "b559898e0b4931ed2d3b959ab0c2da4d99cc644c4b0b1a35b4d344027f474023"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "portable_atomic",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "portable_atomic",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "fallback"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "portable-atomic 1.5.0",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "1.5.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "Apache-2.0 OR MIT"
     },
     "ppv-lite86 0.2.17": {
       "name": "ppv-lite86",
@@ -10028,7 +10240,7 @@
               "target": "clap"
             },
             {
-              "id": "insta 1.31.0",
+              "id": "insta 1.34.0",
               "target": "insta"
             },
             {
@@ -10148,6 +10360,14 @@
             {
               "id": "clap 4.3.23",
               "target": "clap"
+            },
+            {
+              "id": "indicatif 0.17.7",
+              "target": "indicatif"
+            },
+            {
+              "id": "insta 1.34.0",
+              "target": "insta"
             },
             {
               "id": "lazy_static 1.4.0",
@@ -10716,7 +10936,7 @@
         "deps_dev": {
           "common": [
             {
-              "id": "insta 1.31.0",
+              "id": "insta 1.34.0",
               "target": "insta"
             },
             {
@@ -17036,6 +17256,10 @@
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-none"
+    ],
+    "cfg(target_arch = \"wasm32\")": [
+      "wasm32-unknown-unknown",
+      "wasm32-wasi"
     ],
     "cfg(target_os = \"dragonfly\")": [],
     "cfg(target_os = \"hermit\")": [],
