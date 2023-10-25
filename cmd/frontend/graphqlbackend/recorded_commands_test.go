@@ -515,15 +515,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 						repository(name: "github.com/sourcegraph/sourcegraph") {
 							recordedCommands {
 								nodes {
-									start
-									duration
 									command
-									dir
-									path
-								}
-								totalCount
-								pageInfo {
-									hasNextPage
 								}
 							}
 						}
@@ -532,7 +524,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			ExpectedResult: `{"repository": null}`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: "only site admins can view recorded commands",
+					Message: "must be site admin",
 					Path:    []any{string("repository"), string("recordedCommands")},
 				},
 			},

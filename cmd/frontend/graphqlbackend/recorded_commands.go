@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // recordedCommandMaxLimit is the maximum number of recorded commands that can be
@@ -33,11 +32,10 @@ type RecordedCommandsArgs struct {
 }
 
 func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (graphqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
-
+	// 🚨 SECURITY: Only site admins are allowed to view recorded commands
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
-
 	if err != nil {
-		return nil, errors.New("only site admins can view recorded commands")
+		return nil, err
 	}
 
 	offset := int(args.Offset)
