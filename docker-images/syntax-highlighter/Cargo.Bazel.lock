@@ -10449,7 +10449,7 @@
               "target": "tree_sitter_cpp"
             },
             {
-              "id": "tree-sitter-go 0.19.1",
+              "id": "tree-sitter-go 0.20.0",
               "target": "tree_sitter_go"
             },
             {
@@ -13332,13 +13332,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-go 0.19.1": {
+    "tree-sitter-go 0.20.0": {
       "name": "tree-sitter-go",
-      "version": "0.19.1",
+      "version": "0.20.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tree-sitter-go/0.19.1/download",
-          "sha256": "71967701c8214be4aa77e0260e98361e6fd71ceec1d9d03abb37a22c9f60d0ff"
+          "url": "https://crates.io/api/v1/crates/tree-sitter-go/0.20.0/download",
+          "sha256": "1ad6d11f19441b961af2fda7f12f5d0dac325f6d6de83836a1d3750018cc5114"
         }
       },
       "targets": [
@@ -13373,14 +13373,14 @@
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-go 0.19.1",
+              "id": "tree-sitter-go 0.20.0",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.19.1"
+        "version": "0.20.0"
       },
       "build_script_attrs": {
         "data_glob": [
