@@ -26,7 +26,7 @@ export interface GitLabInfo extends RawRepoSpec, RepoSpec {
 /**
  * Information about single file pages.
  */
-interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevisionSpec { }
+interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevisionSpec {}
 
 export const getPageKindFromPathName = (owner: string, projectName: string, pathname: string): GitLabPageKind => {
     const pageKindMatch = pathname.match(new RegExp(`^/${owner}/${projectName}(/-)?/(commit|merge_requests|blob)/`))

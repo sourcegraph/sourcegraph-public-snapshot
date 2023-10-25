@@ -23,7 +23,7 @@ describe('GitLab', () => {
     after(() => driver?.close())
 
     let testContext: BrowserIntegrationTestContext
-    beforeEach(async function() {
+    beforeEach(async function () {
         testContext = await createBrowserIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -117,7 +117,8 @@ describe('GitLab', () => {
 
         const repoName = 'gitlab.com/SourcegraphCody/jsonrpc2'
 
-        const url = 'https://gitlab.com/SourcegraphCody/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+        const url =
+            'https://gitlab.com/SourcegraphCody/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         await driver.page.goto(url)
 
         await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]', {
