@@ -212,6 +212,11 @@ const TableColumns: IColumn<INode>[] = [
             <div className={styles.updatedAtCell}>{updatedAt ? <Timestamp date={updatedAt} /> : '-'}</div>
         ),
     },
+    {
+        key: 'connections',
+        header: 'Code host connections',
+        render: ({ id }: INode) => <Link to={`/site-admin/external-services?repoID=${id}`}>View</Link>,
+    },
 ]
 
 interface ScheduleUserPermissionsSyncActionContainerProps {

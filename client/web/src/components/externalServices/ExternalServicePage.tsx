@@ -251,10 +251,11 @@ export const ExternalServicePage: FC<Props> = props => {
                         <H3>All repositories will be unrestricted</H3>
                         This code host connection does not have authorization configured. Any repositories added by this
                         code host will be accessible by all users on the instance, even if another code host connection
-                        with authorization syncs the same repository.
-
-                        See <Link to="https://docs.sourcegraph.com/admin/permissions#getting-started">the documentation</Link> for
-                        instructions on configuring authorization.
+                        with authorization syncs the same repository. See{' '}
+                        <Link to="https://docs.sourcegraph.com/admin/permissions#getting-started">
+                            the documentation
+                        </Link>{' '}
+                        for instructions on configuring authorization.
                     </Alert>
                 )}
                 {externalServiceCategory && (
