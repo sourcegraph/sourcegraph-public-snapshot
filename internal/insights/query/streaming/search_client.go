@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -19,7 +20,7 @@ func NewInsightsSearchClient(db database.DB) SearchClient {
 	logger := log.Scoped("insightsSearchClient")
 	return &insightsSearchClient{
 		db:           db,
-		searchClient: client.New(logger, db),
+		searchClient: client.New(logger, db, gitserver.NewClient("insights.search")),
 	}
 }
 

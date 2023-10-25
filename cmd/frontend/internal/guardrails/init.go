@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -26,7 +27,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	opts := attribution.ServiceOpts{
-		SearchClient: client.New(observationCtx.Logger, db),
+		SearchClient: client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search")),
 	}
 
 	// TODO(keegancsmith) configuration for access token and enabling.

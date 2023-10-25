@@ -68,7 +68,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 	})
 
 	patternType := "regexp"
-	searchClient := client.New(logger, db)
+	searchClient := client.New(logger, db, gitserver.NewClient("http.compute.search"))
 	inputs, err := searchClient.Plan(
 		ctx,
 		"",
