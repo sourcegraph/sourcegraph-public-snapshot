@@ -295,9 +295,6 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestGitlabSource_InternalRepos(t *testing.T) {
-}
-
 func TestGitlabSource_ListRepos(t *testing.T) {
 	// The GitLabSource uses the gitlab.Client under the hood, which
 	// uses rcache, a caching layer that uses Redis.
