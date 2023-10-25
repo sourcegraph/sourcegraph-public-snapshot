@@ -12,6 +12,7 @@ assert_cmd = "2.0.12"
 predicates = "3.0.4"
 insta = "1.34.0"
 indicatif = "0.17.7"
+colored = "2.0.4"
 walkdir = "2"
 
 protobuf = { workspace = true }

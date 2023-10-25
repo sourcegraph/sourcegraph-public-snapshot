@@ -1,8 +1,9 @@
 use clap::{Parser, Subcommand, ValueEnum};
 use indicatif::{ProgressBar, ProgressStyle};
 use protobuf::{CodedInputStream, Message};
-use scip::types::Document;
+use scip::types::{Document, Index};
 use scip_syntax::{get_locals, get_symbols};
+use scip_treesitter::types::PackedRange;
 use scip_treesitter_languages::parsers::BundledParser;
 
 use anyhow::Result;
@@ -76,6 +77,22 @@ enum Commands {
         #[arg(short, long, default_value = "./")]
         project_root: String,
     },
+
+    /// Fuzzily evaluate candidate SCIP index against known ground truth
+    ScipEvaluate {
+        #[arg(long)]
+        candidate: String,
+        #[arg(long)]
+        ground_truth: String,
+        #[arg(long)]
+        print_mapping: bool,
+        #[arg(long)]
+        print_true_positives: bool,
+        #[arg(long)]
+        print_false_positives: bool,
+        #[arg(long)]
+        print_false_negatives: bool,
+    },
 }
 
 struct IndexOptions {
@@ -84,6 +101,13 @@ struct IndexOptions {
     /// Otherwise errors are logged but they don't
     /// interrupt the process
     fail_fast: bool,
+}
+
+pub struct ScipEvaluateOptions {
+    print_mapping: bool,
+    print_true_positives: bool,
+    print_false_positives: bool,
+    print_false_negatives: bool,
 }
 
 pub fn main() {
@@ -126,9 +150,298 @@ pub fn main() {
             )
         }
 
+        Commands::ScipEvaluate {
+            candidate,
+            ground_truth,
+            print_mapping,
+            print_true_positives,
+            print_false_positives,
+            print_false_negatives,
+        } => evaluate_command(
+            candidate,
+            ground_truth,
+            ScipEvaluateOptions {
+                print_mapping,
+                print_true_positives,
+                print_false_positives,
+                print_false_negatives,
             },
         ),
     }
+}
+
+#[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
+struct SymbolPair {
+    ground_truth: String,
+    candidate: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Default, Hash, Clone, PartialOrd, Ord)]
+struct Location {
+    rng: PackedRange,
+    file: String,
+}
+
+#[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
+struct SymbolOccurrence {
+    location: Location,
+    symbol: String,
+}
+
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
+struct Overlap {
+    total: u32,
+    common: u32,
+}
+
+impl Overlap {
+    fn jaccard(&self) -> f32 {
+        self.common as f32 / self.total as f32
+    }
+}
+
+pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: ScipEvaluateOptions) {
+    let candidate_occs: HashMap<Location, String> =
+        index_occurrences(&read_index_from_file(candidate.into()));
+
+    let ground_truth_occs: HashMap<Location, String> =
+        index_occurrences(&read_index_from_file(ground_truth.into()));
+
+    let mut overlaps: HashMap<SymbolPair, Overlap> = HashMap::new();
+    let mut lookup: HashMap<String, HashSet<SymbolPair>> = HashMap::new();
+
+    for (candidate_loc, candidate_symbol_orig) in candidate_occs.clone() {
+        match ground_truth_occs.get(&candidate_loc) {
+            None => {}
+            Some(ground_truth_symbol) => {
+                let candidate_symbol = candidate_symbol_orig.clone();
+                let pair = SymbolPair {
+                    ground_truth: ground_truth_symbol.clone(),
+                    candidate: candidate_symbol,
+                };
+
+                match lookup.get_mut(ground_truth_symbol) {
+                    None => {
+                        let mut set = HashSet::new();
+                        set.insert(pair.clone());
+                        lookup.insert(ground_truth_symbol.clone(), set);
+                        ()
+                    }
+                    Some(s) => {
+                        s.insert(pair.clone());
+                        ()
+                    }
+                }
+
+                let overlap = overlaps.get_mut(&pair.clone());
+
+                match overlap {
+                    None => {
+                        overlaps.insert(
+                            pair,
+                            Overlap {
+                                total: 0,
+                                common: 1,
+                            },
+                        );
+                    }
+                    Some(overlap) => overlap.common += 1,
+                }
+            }
+        }
+    }
+
+    for (_, gt_symbol) in ground_truth_occs.clone() {
+        for pairs in lookup.get(&gt_symbol).into_iter() {
+            for pair in pairs {
+                let overlap = overlaps.get_mut(&pair);
+
+                overlap.map(|x| x.total += 1);
+            }
+        }
+    }
+
+    let mapping: HashMap<SymbolPair, f32> = overlaps
+        .clone()
+        .into_iter()
+        .map(|c| (c.0, c.1.jaccard()))
+        .collect();
+
+    let mut overlaps_vec: Vec<(SymbolPair, Overlap)> = overlaps.into_iter().collect();
+    overlaps_vec.sort_by_key(|k| k.0.clone());
+
+    if options.print_mapping {
+        for (pair, ov) in overlaps_vec {
+            eprintln!(
+                "{} -- {}    {} (ambiguity: {})",
+                ov.jaccard().to_string().bold(),
+                pair.ground_truth.green(),
+                pair.candidate.red(),
+                lookup
+                    .get(&pair.ground_truth)
+                    .map(|s| s.len() - 1)
+                    .unwrap_or(0)
+            )
+        }
+    }
+
+    let mut results: Vec<ClassifiedLocation> = Vec::new();
+
+    for (rng, occ) in ground_truth_occs.clone() {
+        match candidate_occs.get(&rng) {
+            None => results.push((rng, occ, Mark::FalseNegative(1.0))),
+            //results.push((rng, occ)),
+            Some(c) => {
+                let similarity = mapping.get(&SymbolPair {
+                    ground_truth: occ.clone(),
+                    candidate: c.clone(),
+                });
+                match similarity {
+                    None => eprintln!("Couldn't find a mapping for symbol {}", occ.red()),
+                    Some(v) => results.push((rng, occ, Mark::TruePositive(*v))),
+                }
+            } // true_positives.push((rng, c.to_string())),
+        }
+    }
+
+    for (rng, occ) in candidate_occs.clone() {
+        if !ground_truth_occs.contains_key(&rng) {
+            // false_positives.push((rng, occ));
+
+            results.push((rng, occ, Mark::FalsePositive(1.0)));
+        }
+    }
+
+    summarise(results, options);
+}
+
+enum Mark {
+    TruePositive(f32),
+    FalsePositive(f32),
+    FalseNegative(f32),
+}
+
+type ClassifiedLocation = (Location, String, Mark);
+type Occ = (Location, String);
+
+fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) {
+    let mut true_positives: Vec<Occ> = Vec::new();
+    let mut false_positives: Vec<Occ> = Vec::new();
+    let mut false_negatives: Vec<Occ> = Vec::new();
+
+    let mut tps = 0 as f32;
+    let mut fps = 0 as f32;
+    let mut fns = 0 as f32;
+
+    for cl in classified {
+        match cl.2 {
+            Mark::TruePositive(a) => {
+                true_positives.push((cl.0, cl.1));
+                tps += a
+            }
+            Mark::FalseNegative(a) => {
+                false_negatives.push((cl.0, cl.1));
+                fns += a
+            }
+            Mark::FalsePositive(a) => {
+                false_positives.push((cl.0, cl.1));
+                fps += a
+            }
+        }
+    }
+
+    let precision = 100.0 * tps / (tps + fps);
+    let recall = 100.0 * tps / (tps + fns);
+
+    println!("{{\"precision_percent\": {precision:.2}, \"recall_percent\": {recall:.2}, \"true_positives\": {tps:.0}, \"false_positives\": {fps:.0}, \"false_negatives\": {fns:.0} }}");
+
+    if options.print_false_negatives {
+        eprintln!("");
+
+        eprintln!(
+            "{}: {}",
+            "False negatives".red(),
+            false_negatives.len().to_string().bold()
+        );
+        eprintln!(
+            "{}",
+            "How many actual occurrences we DIDN'T find compared to compiler?".italic()
+        );
+
+        for (rng, occ) in false_negatives {
+            let file = rng.file;
+            println!(
+                "{file}: L{} C{} -- {occ}",
+                rng.rng.start_line, rng.rng.start_col
+            );
+        }
+    }
+
+    if options.print_false_positives {
+        println!("");
+        println!(
+            "{}: {}",
+            "False positives".red(),
+            false_positives.len().to_string().bold()
+        );
+        println!(
+            "{}",
+            "How many extra occurrences we reported compared to compiler?".italic()
+        );
+
+        for (rng, occ) in false_positives {
+            let file = rng.file;
+            println!(
+                "{file}: L{} C{} -- {occ}",
+                rng.rng.start_line, rng.rng.start_col
+            );
+        }
+    }
+
+    if options.print_true_positives {
+        if true {
+            println!("");
+            println!(
+                "{}: {}",
+                "True positives".green(),
+                true_positives.len().to_string().bold()
+            );
+
+            for (rng, occ) in &true_positives {
+                let file = &rng.file;
+                let header = format!("{file}: L{} C{} -- ", rng.rng.start_line, rng.rng.start_col);
+
+                println!(
+                    "{} {}",
+                    header.yellow(),
+                    occ // ground_truth_occs.get(&rng).unwrap().bold()
+                );
+            }
+        }
+    }
+}
+
+fn index_occurrences(idx: &Index) -> HashMap<Location, String> {
+    let mut mp: HashMap<Location, String> = HashMap::new();
+
+    for doc in &idx.documents {
+        for occ in &doc.occurrences {
+            let rng = PackedRange::from_vec(&occ.range).unwrap();
+            let mut new_sym = occ.symbol.clone();
+            if occ.symbol.starts_with("local ") {
+                // doc.relative_path.to_string() + " " + occ.symbol
+                new_sym = format!("{} {}", doc.relative_path, occ.symbol)
+            }
+
+            let loc = Location {
+                rng,
+                file: doc.relative_path.to_string(),
+            };
+            mp.insert(loc, new_sym.to_string());
+        }
+    }
+
+    return mp;
 }
 
 enum IndexMode {
