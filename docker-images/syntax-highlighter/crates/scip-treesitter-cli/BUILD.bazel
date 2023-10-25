@@ -27,6 +27,9 @@ rust_test(
         ],
         allow_empty = False,
     ),
+    # Make sure this name matches the crate name in cargo configuration
+    # This is to ensure that snapshots produced by Bazel tests and
+    # ones produced by `cargo test` command - otherwise insta testing will fail!
     crate = ":scip-treesitter-cli",
     data = glob(
                ["testdata/**"],
