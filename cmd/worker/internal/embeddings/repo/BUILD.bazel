@@ -51,7 +51,6 @@ go_test(
     embed = [":repo"],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/conf/conftypes",
         "//internal/embeddings/embed",
         "//internal/gitserver",

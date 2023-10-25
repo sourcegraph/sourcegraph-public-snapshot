@@ -56,8 +56,8 @@ ts_config(
 )
 
 ts_config(
-    name = "tsconfig-eslint",
-    src = "tsconfig.eslint.json",
+    name = "tsconfig-all",
+    src = "tsconfig.all.json",
     visibility = ["//visibility:public"],
     deps = [
         ":tsconfig",
@@ -73,12 +73,6 @@ js_library(
         "//:node_modules/postcss-focus-visible",
         "//:node_modules/postcss-inset",
     ],
-)
-
-copy_to_bin(
-    name = "browserslist",
-    srcs = [".browserslistrc"],
-    visibility = ["//visibility:public"],
 )
 
 copy_to_bin(
@@ -134,14 +128,10 @@ js_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//:node_modules/@babel/plugin-transform-runtime",
-        "//:node_modules/@babel/plugin-transform-typescript",
         "//:node_modules/@babel/preset-env",
         "//:node_modules/@babel/preset-react",
         "//:node_modules/@babel/preset-typescript",
         "//:node_modules/@babel/runtime",
-        "//:node_modules/babel-plugin-lodash",
-        "//:node_modules/babel-plugin-webpack-chunkname",
         "//:node_modules/semver",
         "//:node_modules/signale",
     ],
@@ -189,7 +179,6 @@ js_library(
         ".eslintrc.js",
     ],
     data = [
-        ".eslintignore",
         "package.json",
         ":eslint-relative-formatter",
     ],
@@ -210,10 +199,11 @@ js_library(
         ":node_modules/eslint-plugin-react",
         ":node_modules/eslint-plugin-react-hooks",
         ":node_modules/eslint-plugin-rxjs",
+        ":node_modules/eslint-plugin-storybook",
         ":node_modules/eslint-plugin-unicorn",
         ":node_modules/eslint-plugin-unused-imports",
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
-        ":tsconfig-eslint",
+        ":tsconfig-all",
         "//:node_modules/tslib",
     ],
 )

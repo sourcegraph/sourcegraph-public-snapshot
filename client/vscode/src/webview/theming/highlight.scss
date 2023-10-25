@@ -267,10 +267,6 @@ body[data-vscode-theme-name^='Dark (Visual Studio)'].sourcegraph-extension.theme
 
 // Default Light VS Code theme.
 body[data-vscode-theme-name^='Light+ (default light)'].sourcegraph-extension.theme-light {
-    .monaco-list.list_id_1 .monaco-list-row.focused {
-        background-color: var(--vscode-editor-selectionBackground);
-    }
-
     // Functions
     .hl-entity.hl-name.hl-function,
     .hl-meta.hl-require,
@@ -319,10 +315,6 @@ body[data-vscode-theme-name^='Light+ (default light)'].sourcegraph-extension.the
 
 // Light Visual Studio (minimalistic) theme
 body[data-vscode-theme-name^='Light (Visual Studio)'].sourcegraph-extension.theme-light {
-    .monaco-list.list_id_1 .monaco-list-row.focused {
-        background-color: var(--vscode-editor-selectionBackground);
-    }
-
     .hl-keyword {
         color: var(--vscode-debugTokenExpression-boolean);
     }

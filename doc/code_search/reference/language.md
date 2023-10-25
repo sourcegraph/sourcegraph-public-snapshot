@@ -654,11 +654,11 @@ ComplexDiagram(
     Terminal(")")).addTo();
 </script>
 
-Search only inside repositories that have the given GitHub topic.
+Search only inside repositories that have the given GitHub/GitLab topic.
 
 **Example:** [`repo:has.topic(code-search)` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3Ahas.topic%28code-search%29&patternType=standard&sm=1&groupBy=repo)
 
-_Note:_ Topic search is currently only supported for GitHub repos.
+_Note:_ Topic search is currently only supported for GitHub and GitLab repos.
 
 ### Repo has commit after
 

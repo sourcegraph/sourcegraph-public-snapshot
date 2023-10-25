@@ -693,6 +693,11 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 		s.CodeHostID = &chID
+
+		// Ensure CreatedAt is set.
+		if s.CreatedAt.IsZero() {
+			s.CreatedAt = timeutil.Now()
+		}
 	}
 
 	// Get the list services that are marked as deleted. We don't know at this point

@@ -15,15 +15,14 @@ import {
     type SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { Notices } from '../../../global/Notices'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { submitSearch } from '../../../search/helpers'
-import { LazyExperimentalSearchInput } from '../../../search/input/LazyExperimentalSearchInput'
+import { LazyV2SearchInput } from '../../../search/input/LazyV2SearchInput'
 import { useRecentSearches } from '../../../search/input/useRecentSearches'
-import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../../../search/useV2QueryInput'
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
 import { SimpleSearch } from './SimpleSearch'
@@ -72,9 +71,8 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     const location = useLocation()
     const navigate = useNavigate()
 
-    const isLightTheme = useIsLightTheme()
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [v2QueryInput] = useV2QueryInput()
 
     const { recentSearches } = useRecentSearches()
 
@@ -93,7 +91,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     searchMode,
                     // In the new query input, context is either omitted (-> global)
                     // or explicitly specified.
-                    selectedSearchContextSpec: experimentalQueryInput ? undefined : selectedSearchContextSpec,
+                    selectedSearchContextSpec: v2QueryInput ? undefined : selectedSearchContextSpec,
                     ...parameters,
                 })
             }
@@ -106,7 +104,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             patternType,
             caseSensitive,
             searchMode,
-            experimentalQueryInput,
+            v2QueryInput,
         ]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
@@ -130,15 +128,14 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     )
 
     // TODO (#48103): Remove/simplify when new search input is released
-    const input = experimentalQueryInput ? (
-        <LazyExperimentalSearchInput
+    const input = v2QueryInput ? (
+        <LazyV2SearchInput
             telemetryService={telemetryService}
             patternType={patternType}
             interpretComments={false}
             queryState={queryState}
             onChange={setQueryState}
             onSubmit={onSubmit}
-            isLightTheme={isLightTheme}
             platformContext={platformContext}
             authenticatedUser={authenticatedUser}
             fetchSearchContexts={fetchSearchContexts}
@@ -161,7 +158,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 showSmartSearchButton={false}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
-        </LazyExperimentalSearchInput>
+        </LazyV2SearchInput>
     ) : (
         <SearchBox
             platformContext={platformContext}
@@ -186,7 +183,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             onChange={setQueryState}
             onSubmit={onSubmit}
             autoFocus={!isTouchOnlyDevice}
-            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
             structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             showSearchHistory={true}
             recentSearches={recentSearches}

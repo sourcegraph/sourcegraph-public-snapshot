@@ -124,7 +124,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	}
 
 	// Explicitly don't scope Store logger under the parent logger
-	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
+	storeObservationCtx := observation.NewContext(log.Scoped("Store"))
 
 	// todo: can we get more fine grained here?
 	git := gitserver.NewClient("searcher")
@@ -136,7 +136,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
 				// searcher needs access to all data in the archive.
 				ctx = actor.WithInternalActor(ctx)
-				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
+				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
 					Format:  gitserver.ArchiveFormatTar,
 				})
@@ -149,7 +149,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
 				// searcher needs access to all data in the archive.
 				ctx = actor.WithInternalActor(ctx)
-				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
+				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
 					Format:    gitserver.ArchiveFormatTar,
 					Pathspecs: pathspecs,

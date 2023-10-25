@@ -19,7 +19,7 @@ import (
 // NewFilter calls gitserver to retrieve the ignore-file. If the file doesn't
 // exist we return an empty ignore.Matcher.
 func NewFilter(ctx context.Context, client gitserver.Client, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
-	ignoreFile, err := client.ReadFile(ctx, nil, repo, commit, ignore.IgnoreFile)
+	ignoreFile, err := client.ReadFile(ctx, repo, commit, ignore.IgnoreFile)
 	if err != nil {
 		// We do not ignore anything if the ignore file does not exist.
 		if strings.Contains(err.Error(), "file does not exist") {

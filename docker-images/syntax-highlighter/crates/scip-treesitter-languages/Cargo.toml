@@ -18,8 +18,8 @@ tree-sitter-highlight.workspace = true
 tree-sitter-c = "0.20.2"
 tree-sitter-c-sharp = "0.20.0"
 tree-sitter-cpp = "0.20.3"
-tree-sitter-go = "0.19.1"
-tree-sitter-java = "0.20.0"
+tree-sitter-go = "0.20.0"
+tree-sitter-java = "0.20.2"
 tree-sitter-javascript = "0.20.0"
 tree-sitter-scala = "0.20.1"
 tree-sitter-python = "0.20.2"
@@ -29,6 +29,7 @@ tree-sitter-typescript = "0.20.2"
 
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
 tree-sitter-kotlin = { git = "https://github.com/fwcd/tree-sitter-kotlin", rev = "100d79fd96b56a1b99099a8d2f3c114b8687acfb" }
+tree-sitter-matlab = { git = "https://github.com/acristoffers/tree-sitter-matlab", rev = "6071891a8c39600203eba20513666cf93b4d650a" }
 tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel", rev = "d6c7eeb751038f934b5b1aa7ff236376d0235c56" }
 tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "e1b4844afd17b7dc019a436b1ac890568d79a1f2" }
 tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev = "f422a0dca6847c692e811f06fd92c6a75d647222" }

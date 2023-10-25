@@ -1,9 +1,19 @@
 import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import { noop } from 'lodash'
-import { Link } from 'react-router-dom'
 
-import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink, Checkbox } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Container,
+    Button,
+    Input,
+    Label,
+    Text,
+    PageHeader,
+    ButtonLink,
+    Checkbox,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

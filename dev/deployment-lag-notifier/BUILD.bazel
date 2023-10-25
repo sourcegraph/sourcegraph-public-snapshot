@@ -1,0 +1,30 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "deployment-lag-notifier_lib",
+    srcs = [
+        "github.go",
+        "main.go",
+        "slack.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/deployment-lag-notifier",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/errors",
+        "@com_github_joho_godotenv//autoload",
+    ],
+)
+
+go_binary(
+    name = "deployment-lag-notifier",
+    embed = [":deployment-lag-notifier_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deployment-lag-notifier_test",
+    timeout = "short",
+    srcs = ["main_test.go"],
+    embed = [":deployment-lag-notifier_lib"],
+)

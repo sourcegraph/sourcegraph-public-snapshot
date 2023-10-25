@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "accesstoken",
+    srcs = [
+        "cody_access_token.go",
+        "personal_access_token.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/accesstoken",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/hashutil",
+        "//internal/lazyregexp",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "accesstoken_test",
+    srcs = [
+        "cody_access_token_test.go",
+        "personal_access_token_test.go",
+    ],
+    embed = [":accesstoken"],
+)

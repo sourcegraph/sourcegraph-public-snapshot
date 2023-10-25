@@ -47,7 +47,7 @@ func newExternalHTTPHandler(
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) (http.Handler, error) {
-	logger := log.Scoped("external", "external http handlers")
+	logger := log.Scoped("external")
 
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
@@ -148,7 +148,7 @@ func newInternalHTTPHandler(
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 ) http.Handler {
 	internalMux := http.NewServeMux()
-	logger := log.Scoped("internal", "internal http handlers")
+	logger := log.Scoped("internal")
 
 	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
 	internalhttpapi.RegisterInternalServices(
@@ -274,7 +274,7 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	// we do not write ANY Access-Control-Allow-* CORS headers, which triggers the browser's default
 	// (and strict) behavior of not allowing cross-origin requests.
 	//
-	// We allow cross-origin requests for assets in the `./ui/assets/extension` folder because they
+	// We allow cross-origin requests for assets in the `./client/web/dist/extension` folder because they
 	// are required for the native Phabricator extension.
 	if policy == crossOriginPolicyAssets && !strings.HasPrefix(r.URL.Path, "/extension/") {
 		return false

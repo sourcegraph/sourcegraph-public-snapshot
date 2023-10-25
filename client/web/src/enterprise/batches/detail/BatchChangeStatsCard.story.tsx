@@ -1,11 +1,11 @@
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeState, type ChangesetsStatsFields } from '../../../graphql-operations'
 
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/BatchChangeStatsCard',
@@ -35,7 +35,7 @@ const calculatePercentComplete = <T extends MockStatsArgs>(stats: T, total: numb
 const calculateTotal = <T extends MockStatsArgs>(stats: T): number =>
     stats.closed + stats.deleted + stats.merged + stats.draft + stats.open + stats.archived + stats.unpublished
 
-export const Draft: Story<MockStatsArgs> = args => {
+export const Draft: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>
@@ -72,51 +72,53 @@ export const Draft: Story<MockStatsArgs> = args => {
 Draft.argTypes = {
     closed: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     deleted: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     merged: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     draft: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     open: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     archived: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     unpublished: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     failed: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     retrying: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     scheduled: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     processing: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
 }
+Draft.args = {
+    closed: 0,
+    deleted: 0,
+    merged: 0,
+    draft: 0,
+    open: 0,
+    archived: 0,
+    unpublished: 0,
+    failed: 0,
+    retrying: 0,
+    scheduled: 0,
+    processing: 0,
+}
 
-export const Open: Story<MockStatsArgs> = args => {
+export const Open: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>
@@ -153,51 +155,53 @@ export const Open: Story<MockStatsArgs> = args => {
 Open.argTypes = {
     closed: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     deleted: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     merged: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     draft: {
         control: { type: 'number' },
-        defaultValue: 5,
     },
     open: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     archived: {
         control: { type: 'number' },
-        defaultValue: 18,
     },
     unpublished: {
         control: { type: 'number' },
-        defaultValue: 55,
     },
     failed: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     retrying: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     scheduled: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     processing: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
 }
+Open.args = {
+    closed: 10,
+    deleted: 10,
+    merged: 10,
+    draft: 5,
+    open: 10,
+    archived: 18,
+    unpublished: 55,
+    failed: 0,
+    retrying: 0,
+    scheduled: 0,
+    processing: 0,
+}
 
-export const OpenAndComplete: Story<MockStatsArgs> = args => {
+export const OpenAndComplete: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>
@@ -234,53 +238,55 @@ export const OpenAndComplete: Story<MockStatsArgs> = args => {
 OpenAndComplete.argTypes = {
     closed: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     deleted: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     merged: {
         control: { type: 'number' },
-        defaultValue: 80,
     },
     draft: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     open: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     archived: {
         control: { type: 'number' },
-        defaultValue: 18,
     },
     unpublished: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     failed: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     retrying: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     scheduled: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     processing: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
+}
+OpenAndComplete.args = {
+    closed: 10,
+    deleted: 10,
+    merged: 80,
+    draft: 0,
+    open: 0,
+    archived: 18,
+    unpublished: 0,
+    failed: 0,
+    retrying: 0,
+    scheduled: 0,
+    processing: 0,
 }
 
 OpenAndComplete.storyName = 'open and complete'
 
-export const Closed: Story<MockStatsArgs> = args => {
+export const Closed: StoryFn<MockStatsArgs> = args => {
     const total = calculateTotal(args)
     return (
         <WebStory>
@@ -317,46 +323,48 @@ export const Closed: Story<MockStatsArgs> = args => {
 Closed.argTypes = {
     closed: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     deleted: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     merged: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     draft: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     open: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
     archived: {
         control: { type: 'number' },
-        defaultValue: 18,
     },
     unpublished: {
         control: { type: 'number' },
-        defaultValue: 60,
     },
     failed: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     retrying: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     scheduled: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
     processing: {
         control: { type: 'number' },
-        defaultValue: 0,
     },
+}
+Closed.args = {
+    closed: 10,
+    deleted: 10,
+    merged: 10,
+    draft: 0,
+    open: 10,
+    archived: 18,
+    unpublished: 60,
+    failed: 0,
+    retrying: 0,
+    scheduled: 0,
+    processing: 0,
 }

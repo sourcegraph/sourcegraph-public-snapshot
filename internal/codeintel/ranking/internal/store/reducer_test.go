@@ -26,7 +26,7 @@ func TestInsertPathRanks(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
@@ -136,7 +136,7 @@ func TestInsertPathRanks(t *testing.T) {
 func TestVacuumStaleRanks(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `

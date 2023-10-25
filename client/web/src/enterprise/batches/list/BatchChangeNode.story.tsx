@@ -1,4 +1,4 @@
-import type { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
 import classNames from 'classnames'
 import { subDays } from 'date-fns'
 
@@ -11,7 +11,7 @@ import { nodes, now } from './testData'
 
 import styles from './BatchChangeListPage.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className={classNames(styles.grid, styles.narrow, 'p-3 container')}>{story()}</div>
 )
 
@@ -22,7 +22,6 @@ const config: Meta = {
         displayNamespace: {
             name: 'Display namespace',
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         node: {
             table: {
@@ -30,11 +29,14 @@ const config: Meta = {
             },
         },
     },
+    args: {
+        displayNamespace: true,
+    },
 }
 
 export default config
 
-const Template: Story /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => (
+const Template: StoryFn /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => (
     <WebStory>
         {props => (
             <BatchChangeNode
@@ -47,18 +49,21 @@ const Template: Story /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) => 
         )}
     </WebStory>
 )
-export const OpenBatchChange = Template.bind({})
+
+type Story = StoryObj<typeof config>
+
+export const OpenBatchChange: Story = Template.bind({})
 OpenBatchChange.args = { node: nodes['Open batch change'] }
 OpenBatchChange.storyName = 'Open batch change'
 
-export const FailedDraft = Template.bind({})
+export const FailedDraft: Story = Template.bind({})
 FailedDraft.args = { node: nodes['Failed draft'] }
 FailedDraft.storyName = 'Failed draft'
 
-export const NoDescription = Template.bind({})
+export const NoDescription: Story = Template.bind({})
 NoDescription.args = { node: nodes['No description'] }
 NoDescription.storyName = 'No description'
 
-export const ClosedBatchChange = Template.bind({})
+export const ClosedBatchChange: Story = Template.bind({})
 ClosedBatchChange.args = { node: nodes['Closed batch change'] }
 ClosedBatchChange.storyName = 'Closed batch change'

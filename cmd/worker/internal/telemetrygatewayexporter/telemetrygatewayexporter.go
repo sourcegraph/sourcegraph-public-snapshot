@@ -2,16 +2,13 @@ package telemetrygatewayexporter
 
 import (
 	"context"
+	"net/url"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/telemetrygateway"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,7 +31,7 @@ var (
 type config struct {
 	env.BaseConfig
 
-	ExportAddress string
+	ExportAddress *url.URL
 
 	ExportInterval     time.Duration
 	MaxExportBatchSize int
@@ -46,11 +43,24 @@ type config struct {
 
 var ConfigInst = &config{}
 
+const defaultTelemetryGatewayExporterAddress = "https://telemetry-gateway.sourcegraph.com:443"
+
 func (c *config) Load() {
-	// exportAddress currently has no default value, as the feature is not enabled
-	// by default. In a future release, the default will be something like
-	// 'https://telemetry-gateway.sourcegraph.com', and eventually, won't be configurable.
-	c.ExportAddress = env.Get("TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR", "", "Target Telemetry Gateway address")
+	// ExportAddress currently remains disable-able for 5.2.1 purely as a
+	// last resort escape hatch.
+	// TODO(5.2.2): Make ExportAddress a hard requirement, and only allow it to
+	// be configurable from the default in dev.
+	if exportAddress := env.Get(
+		"TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR",
+		defaultTelemetryGatewayExporterAddress,
+		"Target Telemetry Gateway address",
+	); exportAddress != "" {
+		var err error
+		c.ExportAddress, err = url.Parse(exportAddress)
+		if err != nil {
+			c.AddError(errors.Wrap(err, "TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR value is invalid"))
+		}
+	}
 
 	c.ExportInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL", defaultExportInterval,
 		"Interval at which to export telemetry")
@@ -86,36 +96,20 @@ func (t *telemetryGatewayExporter) Config() []env.Config {
 }
 
 func (t *telemetryGatewayExporter) Routines(initCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if ConfigInst.ExportAddress == "" {
+	if ConfigInst.ExportAddress == nil {
+		observationCtx.Logger.Warn("Telemetry Gateway export has been manually disabled. This capability will be removed in Sourcegraph 5.2.2")
 		return nil, nil
 	}
-
-	observationCtx.Logger.Info("Telemetry Gateway export enabled - initializing background routines")
 
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	exporter, err := telemetrygateway.NewExporter(
-		initCtx,
-		observationCtx.Logger.Scoped("exporter", "exporter client"),
-		conf.DefaultClient(),
-		db.GlobalState(),
-		ConfigInst.ExportAddress,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "initializing export client")
-	}
-
-	observationCtx.Logger.Info("connected to Telemetry Gateway",
-		log.String("address", ConfigInst.ExportAddress))
-
 	return []goroutine.BackgroundRoutine{
 		newExporterJob(
 			observationCtx,
-			db.TelemetryEventsExportQueue(),
-			exporter,
+			db,
 			*ConfigInst,
 		),
 		newQueueCleanupJob(observationCtx, db.TelemetryEventsExportQueue(), *ConfigInst),

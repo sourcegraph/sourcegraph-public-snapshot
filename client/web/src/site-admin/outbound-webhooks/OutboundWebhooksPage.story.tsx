@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,7 +9,7 @@ import { WebStory } from '../../components/WebStory'
 import { buildOutboundWebhooksConnectionLink } from './mocks'
 import { OutboundWebhooksPage } from './OutboundWebhooksPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/outgoing/OutboundWebhooksPage',
@@ -18,7 +18,7 @@ const config: Meta = {
 
 export default config
 
-export const Empty: Story = () => (
+export const Empty: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink([buildOutboundWebhooksConnectionLink(0)])}>
@@ -30,7 +30,7 @@ export const Empty: Story = () => (
 
 Empty.storyName = 'Empty'
 
-export const NotEmpty: Story = () => (
+export const NotEmpty: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink([buildOutboundWebhooksConnectionLink(20)])}>

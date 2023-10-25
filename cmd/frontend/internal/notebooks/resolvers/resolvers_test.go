@@ -174,7 +174,7 @@ func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapi
 func TestSingleNotebookCRUD(t *testing.T) {
 	logger := logtest.Scoped(t)
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
@@ -543,7 +543,7 @@ func createNotebookStars(t *testing.T, db database.DB, notebookID int64, userIDs
 
 func TestListNotebooks(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
 	o := db.Orgs()
@@ -704,7 +704,7 @@ func TestListNotebooks(t *testing.T) {
 
 func TestGetNotebookWithSoftDeletedUserColumns(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
 	n := notebooks.Notebooks(db)

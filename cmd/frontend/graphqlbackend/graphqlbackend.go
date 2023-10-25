@@ -629,7 +629,7 @@ func NewSchema(
 		}
 	}
 
-	logger := log.Scoped("GraphQL", "general GraphQL logging")
+	logger := log.Scoped("GraphQL")
 	opts := []graphql.SchemaOpt{
 		graphql.Tracer(&requestTracer{
 			DB: db,
@@ -694,7 +694,7 @@ type OptionalResolver struct {
 // defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
 	r := &schemaResolver{
-		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
+		logger:            log.Scoped("schemaResolver"),
 		db:                db,
 		gitserverClient:   gitserverClient,
 		repoupdaterClient: repoupdater.DefaultClient,

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { describe, expect, test, jest } from '@jest/globals'
+
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,

@@ -4,11 +4,15 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "perforce",
     srcs = [
+        "changelist.go",
         "cloneable.go",
         "depots.go",
+        "groups.go",
         "login.go",
         "perforce.go",
+        "protects.go",
         "url.go",
+        "users.go",
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce",
@@ -17,6 +21,7 @@ go_library(
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/executil",
         "//internal/api",
+        "//internal/byteutils",
         "//internal/conf",
         "//internal/database",
         "//internal/extsvc",
@@ -34,7 +39,10 @@ go_library(
 go_test(
     name = "perforce_test",
     srcs = [
+        "changelist_test.go",
+        "groups_test.go",
         "perforce_test.go",
+        "protects_test.go",
         "url_test.go",
         "util_test.go",
     ],
@@ -48,6 +56,7 @@ go_test(
         "//internal/extsvc",
         "//internal/gitserver",
         "//internal/observation",
+        "//internal/perforce",
         "//internal/types",
         "//internal/vcs",
         "//schema",

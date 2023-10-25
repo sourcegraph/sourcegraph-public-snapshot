@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { render, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
@@ -49,7 +50,7 @@ const generateMockFetchMonitors =
 describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
         const component = render(
-            <MemoryRouter initialEntries={['/code-monitoring']}>
+            <MemoryRouter initialEntries={['/code-monitoring?tab=list']}>
                 <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
             </MemoryRouter>
         )
@@ -60,7 +61,7 @@ describe('CodeMonitoringListPage', () => {
 
     test('Switching tabs from getting started to empty list works', () => {
         const component = render(
-            <MemoryRouter initialEntries={['/code-monitoring']}>
+            <MemoryRouter initialEntries={['/code-monitoring?tab=getting-started']}>
                 <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
@@ -73,7 +74,7 @@ describe('CodeMonitoringListPage', () => {
 
     test('Switching tabs from list to getting started works', () => {
         const component = render(
-            <MemoryRouter initialEntries={['/code-monitoring']}>
+            <MemoryRouter initialEntries={['/code-monitoring?tab=list']}>
                 <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )

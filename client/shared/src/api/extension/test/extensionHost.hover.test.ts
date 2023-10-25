@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
 import { type Observer, of } from 'rxjs'
 import type { Hover } from 'sourcegraph'
@@ -64,13 +65,13 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
             .subscribe(observe(value => results.push(value)))
 
         // first provider results
-        expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+        expect(results).toEqual([
             { isLoading: true, result: null },
             {
                 isLoading: false,
                 result: { contents: [textHover('a1').contents], aggregatedBadges: [] },
             },
-        ])
+        ] as MaybeLoadingResult<HoverMerged | null>[])
         results = []
 
         const subscription = extensionAPI.languages.registerHoverProvider([{ pattern: '*.ts' }], {
@@ -78,7 +79,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
         })
 
         // second and first
-        expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+        expect(results).toEqual([
             {
                 isLoading: true,
                 result: { contents: [textHover('a2').contents], aggregatedBadges: [] },
@@ -90,18 +91,18 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
                     aggregatedBadges: [],
                 },
             },
-        ])
+        ] as MaybeLoadingResult<HoverMerged | null>[])
         results = []
 
         subscription.unsubscribe()
 
         // just first was queried for the third time
-        expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+        expect(results).toEqual([
             { isLoading: true, result: null },
             {
                 isLoading: false,
                 result: { contents: [textHover('a3').contents], aggregatedBadges: [] },
             },
-        ])
+        ] as MaybeLoadingResult<HoverMerged | null>[])
     })
 })

@@ -13,9 +13,9 @@ import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/theme'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import type { ExtensionCoreAPI } from '../../contract'
+import type { VsCodeApi } from '../../vsCodeApi'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
 import { createPlatformContext, WebviewPageContext, type WebviewPageProps } from '../platform/context'
-import { adaptMonacoThemeToEditorTheme } from '../theming/monacoTheme'
 import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 
 import { searchPanelAPI } from './api'
@@ -24,7 +24,9 @@ import { SearchResultsView } from './SearchResultsView'
 
 import './index.module.scss'
 
-const vsCodeApi = window.acquireVsCodeApi()
+declare const acquireVsCodeApi: () => VsCodeApi
+
+const vsCodeApi = acquireVsCodeApi()
 
 const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
@@ -33,7 +35,6 @@ Comlink.expose(searchPanelAPI, expose)
 export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(proxy)
 
 const themes = adaptSourcegraphThemeToEditorTheme()
-adaptMonacoThemeToEditorTheme()
 
 extensionCoreAPI.panelInitialized(document.documentElement.dataset.panelId!).catch(() => {
     // noop (TODO?)

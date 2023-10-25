@@ -3,7 +3,6 @@ package inttests
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
@@ -80,7 +79,7 @@ func TestGetCommits(t *testing.T) {
 		}
 
 		source := gitserver.NewTestClientSource(t, GitserverAddresses)
-		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, nil, repoCommits, true)
+		commits, err := gitserver.NewTestClient(t).WithClientSource(source).GetCommits(ctx, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -119,7 +118,10 @@ func TestGetCommits(t *testing.T) {
 		}
 		source := gitserver.NewTestClientSource(t, GitserverAddresses)
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
+		client := gitserver.NewTestClient(t).
+			WithClientSource(source).
+			WithChecker(getTestSubRepoPermsChecker("file1", "file3"))
+		commits, err := client.GetCommits(ctx, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -151,7 +153,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 
 func TestHead(t *testing.T) {
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(t).WithClientSource(source)
 	t.Run("basic", func(t *testing.T) {
 		gitCommands := []string{
 			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -159,7 +161,7 @@ func TestHead(t *testing.T) {
 		repo := MakeGitRepository(t, gitCommands...)
 		ctx := context.Background()
 
-		head, exists, err := client.Head(ctx, nil, repo)
+		head, exists, err := client.Head(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -183,8 +185,9 @@ func TestHead(t *testing.T) {
 			UID: 1,
 		})
 		checker := getTestSubRepoPermsChecker("file")
+		client = client.WithChecker(checker)
 		// call Head() when user doesn't have access to view the commit
-		_, exists, err := client.Head(ctx, checker, repo)
+		_, exists, err := client.Head(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -192,8 +195,9 @@ func TestHead(t *testing.T) {
 			t.Fatalf("exists should be false since the user doesn't have access to view the commit")
 		}
 		readAllChecker := getTestSubRepoPermsChecker()
+		client = client.WithChecker(readAllChecker)
 		// call Head() when user has access to view the commit; should return expected commit
-		head, exists, err := client.Head(ctx, readAllChecker, repo)
+		head, exists, err := client.Head(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -5,6 +5,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -105,6 +106,7 @@ ts_project(
         "src/search-ui/documentation/ModalVideo.tsx",
         "src/search-ui/experimental.ts",
         "src/search-ui/index.ts",
+        "src/search-ui/input/BaseCodeMirrorQueryInput.tsx",
         "src/search-ui/input/CodeMirrorQueryInput.tsx",
         "src/search-ui/input/LazyQueryInput.tsx",
         "src/search-ui/input/QueryInput.ts",
@@ -117,11 +119,15 @@ ts_project(
         "src/search-ui/input/codemirror/active-filter.ts",
         "src/search-ui/input/codemirror/completion.ts",
         "src/search-ui/input/codemirror/diagnostics.ts",
+        "src/search-ui/input/codemirror/event-handlers.ts",
         "src/search-ui/input/codemirror/history.ts",
         "src/search-ui/input/codemirror/index.ts",
         "src/search-ui/input/codemirror/loading-indicator.ts",
+        "src/search-ui/input/codemirror/multiline.ts",
         "src/search-ui/input/codemirror/parsedQuery.ts",
         "src/search-ui/input/codemirror/placeholder.ts",
+        "src/search-ui/input/codemirror/queryState.ts",
+        "src/search-ui/input/codemirror/react.ts",
         "src/search-ui/input/codemirror/syntax-highlighting.ts",
         "src/search-ui/input/codemirror/token-info.ts",
         "src/search-ui/input/experimental/CodeMirrorQueryInputWrapper.tsx",
@@ -207,6 +213,7 @@ ts_project(
         "//:node_modules/react-visibility-sensor",
         "//:node_modules/rxjs",
         "//:node_modules/ts-key-enum",
+        "//:node_modules/use-callback-ref",
         "//:node_modules/use-resize-observer",
         "//client/shared:graphql_operations",
         "//client/shared:shared_lib",
@@ -244,6 +251,7 @@ ts_project(
         "src/search-ui/results/sidebar/SearchFilterSection.test.tsx",
         "src/search-ui/results/sidebar/helpers.test.ts",
         "src/search-ui/results/use-items-to-show.test.ts",
+        "src/testGlobals.d.ts",  #keep
     ],
     tsconfig = ":tsconfig",
     deps = [
@@ -254,6 +262,8 @@ ts_project(
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@codemirror/autocomplete",
         "//:node_modules/@codemirror/state",
+        "//:node_modules/@jest/globals",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",

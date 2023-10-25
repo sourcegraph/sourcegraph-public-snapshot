@@ -210,7 +210,7 @@ func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 
 	v := &editorRequest{
 		db:     db,
-		logger: log.Scoped("editor", "requests from editors."),
+		logger: log.Scoped("editor"),
 	}
 
 	if search := q.Get("search"); search != "" {

@@ -15,7 +15,7 @@ import (
 func NewCVEDownloader(store store.Store, observationCtx *observation.Context, config *Config) goroutine.BackgroundRoutine {
 	cveParser := &CVEParser{
 		store:  store,
-		logger: log.Scoped("sentinel.parser", ""),
+		logger: log.Scoped("sentinel.parser"),
 	}
 	metrics := newMetrics(observationCtx)
 
@@ -48,7 +48,7 @@ type CVEParser struct {
 
 func NewCVEParser() *CVEParser {
 	return &CVEParser{
-		logger: log.Scoped("sentinel.parser", ""),
+		logger: log.Scoped("sentinel.parser"),
 	}
 }
 

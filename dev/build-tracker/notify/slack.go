@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 
@@ -112,7 +112,7 @@ func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Clie
 	history := make(map[int]*SlackNotification)
 
 	return &Client{
-		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		logger:  logger.Scoped("notificationClient"),
 		slack:   *slackClient,
 		team:    teamResolver,
 		channel: channel,
@@ -248,7 +248,6 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 		return nil, err
 	}
 	return result, nil
-
 }
 
 func (c *Client) createMessageBlocks(info *BuildNotification, author string) []slack.Block {

@@ -37,6 +37,7 @@ It's common to need to update a package to the most recent release in order to p
 
 - Depending on the package, this step may download a binary or source code. Projects release code in different ways, so the pipeline may check out a Git repository on a specific branch or download a `.tar.gz` file containing source code.
 - You should also reset the `package.epoch` field to 0 when updating the version.
+  - The `version` is the version of the dependency being packaged, but the `epoch` is like the version of the _package itself_. It should be incremented whenever making changes, and reset to 0 when the dependency version increases.
 
 3. Optionally, build the package locally with `sg wolfi package <package-name>`.
 
@@ -97,7 +98,7 @@ It is not necessary to change the package version in `wolfi-packages/<package>.y
 
 We maintain our own package repository for custom dependencies that aren't in the Wolfi repository.
 
-This is implemented as a GCP bucket. Buildkite is used to build and upload packages, as well as to [build and sign](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/scripts/wolfi/build-repo-index.sh) the repository index.
+This is implemented as a GCP bucket. Buildkite is used to build and upload packages, as well as to [build and sign](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/ci/scripts/wolfi/build-repo-index.sh) the repository index.
 
 The package repository is segmented by production and development:
 

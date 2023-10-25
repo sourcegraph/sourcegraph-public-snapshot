@@ -22,7 +22,7 @@ import (
 func TestRepoCommitsChangelists(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	repos := db.Repos()
 	err := repos.Create(ctx, &types.Repo{ID: 1, Name: "foo"})

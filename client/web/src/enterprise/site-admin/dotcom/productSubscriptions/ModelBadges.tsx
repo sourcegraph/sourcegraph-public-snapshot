@@ -51,16 +51,20 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'fireworks/accounts/fireworks/models/llama-v2-7b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':
-            case 'fireworks/accounts/fireworks/models/wizardcoder-15b':
+            case 'fireworks/accounts/fireworks/models/wizardcoder-15b': {
                 return 'secondary'
-            default:
+            }
+            default: {
                 return 'danger'
+            }
         }
     }
     switch (model) {
-        case 'openai/text-embedding-ada-002':
+        case 'openai/text-embedding-ada-002': {
             return 'secondary'
-        default:
+        }
+        default: {
             return 'danger'
+        }
     }
 }

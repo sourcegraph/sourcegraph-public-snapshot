@@ -18,7 +18,7 @@ function getURLsForInlineExtension(extensionID: string, assetsURL: string): { ma
      * In a browser extension environment, we need to find the absolute URL in the browser extension assets directory.
      * We assume extension bundles exist (e.g. were built using [build-inline-extensions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a2190db3ee4b7e61f02f821cd2e5b58fa9814540/-/blob/client/browser/scripts/build-inline-extensions.js) script).
      */
-    if (typeof window.browser !== 'undefined') {
+    if (window.browser !== undefined) {
         return {
             manifestURL: browser.runtime.getURL(manifestPath),
             scriptURL: browser.runtime.getURL(scriptPath),

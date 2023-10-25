@@ -11,6 +11,7 @@ var treesitterSupportedFiletypes = map[string]struct{}{
 	"jsonnet":    {},
 	"jsx":        {},
 	"kotlin":     {},
+	"matlab":     {},
 	"nickel":     {},
 	"perl":       {},
 	"python":     {},

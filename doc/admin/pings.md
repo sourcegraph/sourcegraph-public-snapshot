@@ -213,7 +213,11 @@ Prior to 5.2.0, allowlist the full [Cloudflare IP ranges](https://www.cloudflare
 
 The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry requests.
 
+
+Be sure to update the enviornment variable like so : ```TELEMETRY_HTTP_PROXY:"http://proxy.example.com:8080"```
+
 ## Connections to Sourcegraph-managed services
+
 
 Sourcegraph only connects to Sourcegraph-managed services for three purposes:
 
@@ -248,7 +252,7 @@ The most common scenario in which Sourcegraph stops sending pings is a change to
 ```
 "update.channel": "release",
 ```
-*This setting [must be set to "release"](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/app/updatecheck/client%5C.go+channel+%21%3D+%22release%22&patternType=literal) in order for the telemetry goroutine to run.*
+*This setting [must be set to "release"](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/updatecheck/client.go?L803-806) in order for the telemetry goroutine to run.*
 
 
 ### Check if the goroutine is running

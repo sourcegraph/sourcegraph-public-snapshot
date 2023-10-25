@@ -3,7 +3,7 @@ package githuboauth
 import (
 	"fmt"
 
-	"github.com/dghubble/gologin"
+	"github.com/dghubble/gologin/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -17,7 +17,7 @@ import (
 
 func Init(logger log.Logger, db database.DB) {
 	const pkgName = "githuboauth"
-	logger = logger.Scoped(pkgName, "GitHub OAuth config watch")
+	logger = logger.Scoped(pkgName)
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(logger, cfg, db)
 		return problems

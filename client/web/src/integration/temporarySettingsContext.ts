@@ -40,7 +40,7 @@ export class TemporarySettingsContext {
 
     private editTemporarySettings(contents: string): EditTemporarySettingsResult {
         // This parsing is safe in integration tests
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         this.settings = { ...this.settings, ...JSON.parse(contents) }
 
         return {

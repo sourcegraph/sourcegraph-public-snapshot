@@ -163,25 +163,28 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 
 func TestExternalService_Perforce(t *testing.T) {
 	for _, tc := range []struct {
-		name      string
-		depot     string
-		useFusion bool
-		blobPath  string
-		wantBlob  string
+		name       string
+		depot      string
+		useFusion  bool
+		headBranch string
+		blobPath   string
+		wantBlob   string
 	}{
 		{
-			name:      "git p4",
-			depot:     "test-perms",
-			useFusion: false,
-			blobPath:  "README.md",
+			name:       "git p4",
+			depot:      "test-perms",
+			useFusion:  false,
+			blobPath:   "README.md",
+			headBranch: "master",
 			wantBlob: `This depot is used to test user and group permissions.
 `,
 		},
 		{
-			name:      "p4 fusion",
-			depot:     "integration-test-depot",
-			useFusion: true,
-			blobPath:  "path.txt",
+			name:       "p4 fusion",
+			depot:      "integration-test-depot",
+			useFusion:  true,
+			blobPath:   "path.txt",
+			headBranch: "main",
 			wantBlob: `./
 `,
 		},
@@ -197,7 +200,7 @@ func TestExternalService_Perforce(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			blob, err := client.GitBlob(repoName, "master", tc.blobPath)
+			blob, err := client.GitBlob(repoName, tc.headBranch, tc.blobPath)
 			if err != nil {
 				t.Fatal(err)
 			}

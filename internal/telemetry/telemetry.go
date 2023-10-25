@@ -46,6 +46,11 @@ type EventParameters struct {
 	BillingMetadata *EventBillingMetadata
 }
 
+// EventsStore backs event recorders with storage of events for export.
+// In general, prefer to use the telemetryrecorder.New() constructor for a
+// default implementation.
+//
+// In tests, you can use the telemetrytest.NewMockEventsStore() implementation.
 type EventsStore interface {
 	StoreEvents(context.Context, []*telemetrygatewayv1.Event) error
 }
@@ -58,8 +63,8 @@ type EventRecorder struct{ store EventsStore }
 // implementation. In general, prefer to use the telemetryrecorder.New()
 // constructor instead.
 //
-// If you don't care about event recording failures, consider using a
-// BestEffortEventRecorder instead.
+// In tests, you may want to use this constructor alongside the
+// the telemetrytest.NewMockEventsStore() implementation of EventsStore.
 func NewEventRecorder(store EventsStore) *EventRecorder {
 	return &EventRecorder{store: store}
 }

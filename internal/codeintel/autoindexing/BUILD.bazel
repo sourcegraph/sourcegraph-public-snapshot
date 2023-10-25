@@ -13,7 +13,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/autoindexing/internal/background",
         "//internal/codeintel/autoindexing/internal/background/dependencies",
         "//internal/codeintel/autoindexing/internal/background/scheduler",
@@ -30,7 +29,6 @@ go_library(
         "//internal/goroutine",
         "//internal/metrics",
         "//internal/observation",
-        "//internal/repoupdater",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",

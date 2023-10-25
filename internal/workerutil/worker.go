@@ -115,7 +115,7 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 
 	// Initialize the logger
 	if options.Metrics.logger == nil {
-		options.Metrics.logger = log.Scoped("worker."+options.Name, "a worker process for "+options.WorkerHostname)
+		options.Metrics.logger = log.Scoped("worker." + options.Name)
 	}
 	options.Metrics.logger = options.Metrics.logger.With(log.String("name", options.Name))
 

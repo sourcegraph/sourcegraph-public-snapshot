@@ -23,7 +23,7 @@ import { createRoot, type Root } from 'react-dom/client'
 
 import { compatNavigate, type HistoryOrNavigate } from '@sourcegraph/common'
 
-import { getSelectedMode, modeChanged, modesFacet, setModeEffect } from './modes'
+import { getSelectedMode, modeChanged, setModeEffect } from './modes'
 import { Suggestions } from './Suggestions'
 
 const ASYNC_THROTTLE_TIME = 300
@@ -274,7 +274,6 @@ class Result {
         return new Result(result.result, result.valid)
     }
 
-    // eslint-disable-next-line id-length
     public at(index: number): Option | undefined {
         return this.allOptions[index]
     }
@@ -551,7 +550,7 @@ function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
 
 function applyAction(view: EditorView, action: Action, option: Option, source: SelectionSource): void {
     switch (action.type) {
-        case 'completion':
+        case 'completion': {
             {
                 const to = action.to ?? view.state.selection.main.to
                 const value = action.insertValue ?? option.label
@@ -583,11 +582,13 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                 notifySelectionListeners(view.state, option, action, source)
             }
             break
-        case 'command':
+        }
+        case 'command': {
             notifySelectionListeners(view.state, option, action, source)
             action.apply(option, view)
             break
-        case 'goto':
+        }
+        case 'goto': {
             {
                 const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
                 if (historyOrNavigate) {
@@ -597,6 +598,7 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                 }
             }
             break
+        }
     }
 }
 
@@ -648,7 +650,7 @@ const defaultKeyboardBindings: KeyBinding[] = [
         run(view) {
             const state = view.state.field(suggestionsStateField)
             const option = state.result.at(state.selectedOption)
-            if (state.open && option && option.alternativeAction) {
+            if (state.open && option?.alternativeAction) {
                 applyAction(view, option.alternativeAction, option, 'keyboard')
             }
             return true
@@ -693,7 +695,6 @@ interface ExternalConfig extends Config {
 }
 
 export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalConfig): Extension => [
-    modesFacet.of([]), // makes sure the facet is defined
     suggestionsConfig.of({ historyOrNavigate, id }),
     suggestionSources.of(source),
     ViewPlugin.define(view => new SuggestionView(id, view, parent)),

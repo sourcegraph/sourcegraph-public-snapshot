@@ -11,7 +11,6 @@ internal/database/migration/shared/data/**/*.json
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
-ui/assets/
 src-tauri/assets/
 src-tauri/target/
 vendor/
@@ -47,6 +46,7 @@ code-intel-extensions.json
 pnpm-lock.yaml
 node_modules/
 client/web-sveltekit/.svelte-kit
+client/web-sveltekit/build
 *.module.scss.d.ts
 .vscode-test
 

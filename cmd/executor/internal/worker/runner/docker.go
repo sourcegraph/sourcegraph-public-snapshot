@@ -43,7 +43,7 @@ func NewDockerRunner(
 	return &dockerRunner{
 		cmd:              cmd,
 		dir:              dir,
-		internalLogger:   log.Scoped("docker-runner", ""),
+		internalLogger:   log.Scoped("docker-runner"),
 		commandLogger:    logger,
 		options:          options,
 		dockerAuthConfig: actualDockerAuthConfig,

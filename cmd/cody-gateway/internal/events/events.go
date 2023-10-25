@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -12,6 +13,7 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -110,7 +112,9 @@ func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err err
 		return errors.Wrap(err, "marshaling metadata")
 	}
 	if err := l.tableInserter.Put(
-		backgroundContextWithSpan(spanCtx),
+		// Create a cancel-free context to avoid interrupting the log when
+		// the parent context is cancelled.
+		xcontext.Detach(spanCtx),
 		bigQueryEvent{
 			Name:       string(event.Name),
 			Source:     event.Source,
@@ -134,7 +138,7 @@ func NewStdoutLogger(logger log.Logger) Logger {
 	// demo tracing in dev.
 	return &instrumentedLogger{
 		Scope:  "stdoutLogger",
-		Logger: &stdoutLogger{logger: logger.Scoped("events", "event logger")},
+		Logger: &stdoutLogger{logger: logger.Scoped("events")},
 	}
 }
 
@@ -144,6 +148,7 @@ func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
 			log.String("name", string(event.Name)),
 			log.String("source", event.Source),
 			log.String("identifier", event.Identifier),
+			log.String("metadata", fmt.Sprint(event.Metadata)),
 		),
 	)
 	return nil

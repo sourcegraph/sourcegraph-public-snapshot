@@ -19,7 +19,7 @@ func TestCodeHostStore_CRUDCodeHost(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ten := int32(10)
 	twenty := int32(20)
@@ -122,7 +122,7 @@ func TestCodeHostStore_List(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ten := int32(10)
 	twenty := int32(20)
@@ -293,7 +293,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	quotaOne := int32(10)
 	quotaTwo := int32(20)

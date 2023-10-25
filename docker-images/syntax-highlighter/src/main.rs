@@ -75,7 +75,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         None => return json!({"error": "Could not infer parser from extension"}),
     };
 
-    let document = match scip_syntax::get_symbols(&parser, q.content.as_bytes()) {
+    let document = match scip_syntax::get_symbols(parser, q.content.as_bytes()) {
         Ok(vals) => vals,
         Err(err) => {
             return jsonify_err(err);

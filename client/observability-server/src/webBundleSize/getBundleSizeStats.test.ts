@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { describe, expect, it, jest } from '@jest/globals'
+
 import { getBundleSizeStats } from './getBundleSizeStats'
 
 const MOCK_ASSETS_PATH = path.join(__dirname, './__mocks__/assets')
@@ -9,11 +11,11 @@ jest.mock(
     () => ({
         files: [
             {
-                path: MOCK_ASSETS_PATH + '/scripts/*.br',
+                path: MOCK_ASSETS_PATH + '/scripts/*.js',
                 maxSize: '10kb',
             },
             {
-                path: MOCK_ASSETS_PATH + '/styles/*.br',
+                path: MOCK_ASSETS_PATH + '/styles/*.css',
                 maxSize: '10kb',
             },
         ],
@@ -22,10 +24,10 @@ jest.mock(
 )
 
 jest.mock(
-    'webpack.manifest.json',
+    'web.manifest.json',
     () => ({
-        'app.js': '/.assets/scripts/app.bundle.js',
-        'app.css': '/.assets/styles/app.123.bundle.css',
+        'main.js': '/.assets/scripts/main.js',
+        'main.css': '/.assets/styles/main.css',
     }),
     { virtual: true }
 )
@@ -35,37 +37,21 @@ describe('getBundleSizeStats', () => {
         const stats = getBundleSizeStats({
             staticAssetsPath: MOCK_ASSETS_PATH,
             bundlesizeConfigPath: 'bundlesize.config.js',
-            webpackManifestPath: 'webpack.manifest.json',
+            webBuildManifestPath: 'web.manifest.json',
         })
 
         expect(stats).toEqual({
-            'scripts/app.bundle.js': {
+            'scripts/main.js': {
                 raw: 15,
-                gzip: 6,
-                brotli: 4,
                 isInitial: true,
                 isDynamicImport: false,
-                isDefaultVendors: false,
                 isCss: false,
                 isJs: true,
             },
-            'scripts/sg_home.js': {
-                brotli: 4,
-                gzip: 6,
-                isCss: false,
-                isDefaultVendors: false,
-                isDynamicImport: true,
-                isInitial: false,
-                isJs: true,
-                raw: 15,
-            },
-            'styles/app.123.bundle.css': {
+            'styles/main.css': {
                 raw: 25,
-                gzip: 6,
-                brotli: 4,
                 isInitial: true,
                 isDynamicImport: false,
-                isDefaultVendors: false,
                 isCss: true,
                 isJs: false,
             },

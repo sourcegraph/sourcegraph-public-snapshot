@@ -17,11 +17,11 @@ import (
 	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared"
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
+	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
-	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
 
+	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 	"github.com/sourcegraph/sourcegraph/ui/assets"
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
 // services is a list of services to run.
@@ -42,7 +42,7 @@ var services = []service.Service{
 
 func main() {
 	sanitycheck.Pass()
-	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
+	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
 	osscmd.MainOSS(services, os.Args)

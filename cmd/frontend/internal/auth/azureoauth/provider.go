@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/dghubble/gologin"
+	"github.com/dghubble/gologin/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -31,7 +31,7 @@ const (
 
 func Init(logger log.Logger, db database.DB) {
 	const pkgName = "azureoauth"
-	logger = logger.Scoped(pkgName, "Azure DevOps OAuth config watch")
+	logger = logger.Scoped(pkgName)
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(logger, cfg, db)
 		return problems

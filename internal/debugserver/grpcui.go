@@ -22,7 +22,7 @@ const gRPCWebUIPath = "/debug/grpcui"
 //
 // serviceName is the name of the gRPC service that will be displayed on the debug page.
 func NewGRPCWebUIEndpoint(serviceName, target string) Endpoint {
-	logger := log.Scoped("gRPCWebUI", "HTTP handler for serving the gRPC Web UI explore page")
+	logger := log.Scoped("gRPCWebUI")
 
 	var handler http.Handler = &grpcHandler{
 		target:   target,

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	goauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
@@ -35,6 +35,7 @@ type SessionIssuerHelper interface {
 	SessionData(token *oauth2.Token) SessionData
 	AuthSucceededEventName() database.SecurityEventName
 	AuthFailedEventName() database.SecurityEventName
+	GetServiceID() string
 }
 
 func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
@@ -145,7 +146,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			logger.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
 		}
 
-		redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated)
+		redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OAuth::"+s.GetServiceID())
 		http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)
 	})
 }

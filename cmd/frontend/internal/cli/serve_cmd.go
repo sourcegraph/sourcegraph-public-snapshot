@@ -396,7 +396,7 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 		return nil, err
 	}
 
-	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), store), nil
+	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher"), store), nil
 }
 
 // redispoolRegisterDB registers our postgres backed redis. These package

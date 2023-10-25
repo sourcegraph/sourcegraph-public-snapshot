@@ -1,6 +1,8 @@
 # How to set up Telemetry Gateway locally
 
 > WARNING: This is a guide intended for development reference.
+>
+> To learn more about telemetry export, refer to the [Sourcegraph adminstrator documentation on telemetry](../../admin/telemetry/index.md).
 
 Telemetry Gateway is a managed service that ingests events exported from Sourcegraph instances, manipulates them as needed, and exports them to designated Pub/Sub topics or other destinations for processing.
 

@@ -4,10 +4,6 @@
 
 In short, we are open to nearly all contributions! We love feedback in all forms, issues, comments, PRs, etc!
 
-## Contributing to `enterprise/` code
-
-Anyone is free to contribute changes to any file in this repository, including `enterprise/` code. Once you open a pull request, the CLA bot will require you sign our contributor CLA before we can accept the change.
-
 ## Contributing large changes, new features, etc.
 
 Unless you feel confident your change will be accepted (trivial bug fixes, code cleanup, etc) you should first create an issue or a [Sourcegraph RFC](https://handbook.sourcegraph.com/communication/rfcs#external-contributors) (preferred for bigger changes) to discuss your change with us. This lets us all discuss the design and proposed implementation of your change, which helps ensure your time is well spent and that your contribution will be accepted.

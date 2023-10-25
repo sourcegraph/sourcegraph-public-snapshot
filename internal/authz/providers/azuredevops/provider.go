@@ -107,7 +107,7 @@ func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Ac
 }
 
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	logger := log.Scoped("azuredevops.FetchuserPerms", "logger for azuredevops provider")
+	logger := log.Scoped("azuredevops.FetchuserPerms")
 	logger.Debug("starting FetchUserPerms", log.String("user ID", fmt.Sprintf("%#v", account.UserID)))
 
 	profile, token, err := azuredevops.GetExternalAccountData(ctx, &account.AccountData)

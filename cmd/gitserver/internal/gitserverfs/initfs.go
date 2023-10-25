@@ -43,7 +43,7 @@ func InitGitserverFileSystem(logger log.Logger, reposDir string) error {
 // setupAndClearTmp sets up the tempdir for reposDir as well as clearing it
 // out. It returns the temporary directory location.
 func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
-	logger = logger.Scoped("setupAndClearTmp", "sets up the the tempdir for ReposDir as well as clearing it out")
+	logger = logger.Scoped("setupAndClearTmp")
 
 	// Additionally, we create directories with the prefix .tmp-old which are
 	// asynchronously removed. We do not remove in place since it may be a

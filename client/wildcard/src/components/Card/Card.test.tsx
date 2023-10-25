@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 
 import { Card, CardBody, CardHeader, CardSubtitle, CardText, CardTitle } from '.'

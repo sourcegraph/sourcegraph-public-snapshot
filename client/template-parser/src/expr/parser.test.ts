@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { TokenType } from './lexer'
 import { type ExpressionNode, Parser, TemplateParser } from './parser'
 

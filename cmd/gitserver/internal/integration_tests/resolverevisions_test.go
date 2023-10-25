@@ -3,7 +3,6 @@ package inttests
 import (
 	"container/list"
 	"context"
-	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
@@ -99,7 +98,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	addrs := []string{u.Host}
 	source := gitserver.NewTestClientSource(t, addrs)
 
-	cli := gitserver.NewTestClient(&http.Client{}, source)
+	cli := gitserver.NewTestClient(t).WithClientSource(source)
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {

@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/conc/iter"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -76,7 +75,7 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.F
 	})
 
 	commitResolver := graphqlbackend.NewGitCommitResolver(r.db, r.gitserverClient, repoResolver, chunk.CommitID, nil)
-	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, chunk.RepoName, chunk.CommitID, chunk.Path)
+	stat, err := r.gitserverClient.Stat(ctx, chunk.RepoName, chunk.CommitID, chunk.Path)
 	if err != nil {
 		return nil, err
 	}

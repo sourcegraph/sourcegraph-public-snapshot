@@ -18,7 +18,7 @@ func TestPermissionGetByID(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	created, err := store.Create(ctx, CreatePermissionOpts{
@@ -57,7 +57,7 @@ func TestPermissionCreate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	t.Run("invalid namespace", func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestPermissionCreate(t *testing.T) {
 func TestPermissionList(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	role, user, totalPerms := seedPermissionDataForList(ctx, t, store, db)
@@ -164,7 +164,7 @@ func TestPermissionDelete(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	p, err := store.Create(ctx, CreatePermissionOpts{
@@ -201,7 +201,7 @@ func TestPermissionBulkCreate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	t.Run("invalid namespace", func(t *testing.T) {
@@ -236,7 +236,7 @@ func TestPermissionBulkDelete(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	var perms []CreatePermissionOpts
@@ -286,7 +286,7 @@ func TestPermissionBulkDelete(t *testing.T) {
 func TestPermissionCount(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	role, user, totalPerms := seedPermissionDataForList(ctx, t, store, db)
@@ -320,7 +320,7 @@ func TestPermissionCount(t *testing.T) {
 func TestGetPermissionForUser(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Permissions()
 
 	u1, err := db.Users().Create(ctx, NewUser{Username: "username-1"})

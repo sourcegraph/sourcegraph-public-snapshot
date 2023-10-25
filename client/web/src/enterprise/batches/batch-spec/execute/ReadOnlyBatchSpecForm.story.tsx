@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecSource, BatchSpecState } from '../../../../graphql-operations'
@@ -7,7 +7,7 @@ import { BatchSpecContextProvider } from '../BatchSpecContext'
 
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
         {story()}
     </div>
@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-export const Executing: Story = args => (
+export const Executing: StoryFn = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -37,13 +37,15 @@ Executing.argTypes = {
     state: {
         name: 'batch spec state',
         control: { type: 'select', options: [BatchSpecState.PROCESSING, BatchSpecState.QUEUED] },
-        defaultValue: BatchSpecState.PROCESSING,
     },
+}
+Executing.args = {
+    state: BatchSpecState.PROCESSING,
 }
 
 Executing.storyName = 'while executing'
 
-export const ExecutionFinished: Story = args => (
+export const ExecutionFinished: StoryFn = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -70,13 +72,15 @@ ExecutionFinished.argTypes = {
                 BatchSpecState.PENDING,
             ],
         },
-        defaultValue: BatchSpecState.COMPLETED,
     },
+}
+ExecutionFinished.args = {
+    state: BatchSpecState.COMPLETED,
 }
 
 ExecutionFinished.storyName = 'after execution finishes'
 
-export const LocallyExecutedSpec: Story = () => (
+export const LocallyExecutedSpec: StoryFn = () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider

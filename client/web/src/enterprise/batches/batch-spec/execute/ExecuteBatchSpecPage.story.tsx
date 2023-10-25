@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addMinutes } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, type MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
@@ -34,7 +34,7 @@ import {
 } from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3" style={{ height: '95vh', width: '100%' }}>
         {story()}
     </div>
@@ -104,7 +104,6 @@ const buildMocks = (batchSpec: BatchSpecExecutionFields): MockedResponses => [
 
 const buildWorkspacesQuery =
     (workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>): typeof _queryWorkspacesList =>
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     () =>
         of(mockWorkspaces(50, workspaceFields).node.workspaceResolution!.workspaces)
 
@@ -117,7 +116,7 @@ const EXECUTING_BATCH_SPEC_WITH_END_TIME = {
     finishedAt: addMinutes(Date.parse(EXECUTING_BATCH_SPEC.startedAt!), 15).toISOString(),
 }
 
-export const Executing: Story = () => (
+export const Executing: StoryFn = () => (
     <WebStory
         path="/users/:username/batch-changes/:batchChangeName/executions/:batchSpecID/*"
         initialEntries={['/users/my-username/batch-changes/my-batch-change/executions/spec1234']}
@@ -153,7 +152,7 @@ const PROCESSING_WORKSPACE_WITH_END_TIMES = {
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
 
-export const ExecuteWithAWorkspaceSelected: Story = () => (
+export const ExecuteWithAWorkspaceSelected: StoryFn = () => (
     <WebStory
         path="/users/:username/batch-changes/:batchChangeName/executions/:batchSpecID/*"
         initialEntries={[
@@ -191,7 +190,7 @@ ExecuteWithAWorkspaceSelected.storyName = 'executing, with a workspace selected'
 
 const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC)
 
-export const Completed: Story = () => (
+export const Completed: StoryFn = () => (
     <WebStory initialEntries={['/my-batch-change/spec1234/execution']} path="/:batchChangeName/:batchSpecID/*">
         {props => (
             <MockedTestProvider link={new WildcardMockLink(COMPLETED_MOCKS)}>
@@ -208,7 +207,7 @@ export const Completed: Story = () => (
 
 const COMPLETED_WITH_ERRORS_MOCKS = buildMocks(COMPLETED_WITH_ERRORS_BATCH_SPEC)
 
-export const CompletedWithErrors: Story = () => (
+export const CompletedWithErrors: StoryFn = () => (
     <WebStory initialEntries={['/my-batch-change/spec1234/execution']} path="/:batchChangeName/:batchSpecID/*">
         {props => (
             <MockedTestProvider link={new WildcardMockLink(COMPLETED_WITH_ERRORS_MOCKS)}>
@@ -227,7 +226,7 @@ CompletedWithErrors.storyName = 'completed with errors'
 
 const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
 
-export const LocallyExecutedSpec: Story = () => (
+export const LocallyExecutedSpec: StoryFn = () => (
     <WebStory initialEntries={['/my-local-batch-change/spec1234/execution']} path="/:batchChangeName/:batchSpecID/*">
         {props => (
             <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>

@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals'
+
 /* eslint-disable ban/ban */
 
 /**

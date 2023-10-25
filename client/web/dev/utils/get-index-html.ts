@@ -1,39 +1,21 @@
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import path from 'path'
 
-import type { WebpackPluginFunction } from 'webpack'
-
 import type { SourcegraphContext } from '../../src/jscontext'
+import { assetPathPrefix, WEB_BUILD_MANIFEST_FILENAME, type WebBuildManifest } from '../esbuild/manifest'
 
-import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, STATIC_INDEX_PATH } from '.'
+import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL } from '.'
 
-const { NODE_ENV, STATIC_ASSETS_PATH } = ENVIRONMENT_CONFIG
+const { STATIC_ASSETS_PATH } = ENVIRONMENT_CONFIG
 
-export const WEBPACK_MANIFEST_PATH = path.resolve(STATIC_ASSETS_PATH, 'webpack.manifest.json')
+const WEB_BUILD_MANIFEST_PATH = path.resolve(STATIC_ASSETS_PATH, WEB_BUILD_MANIFEST_FILENAME)
 export const HTML_INDEX_PATH = path.resolve(STATIC_ASSETS_PATH, 'index.html')
 
-export const getWebpackManifest = (): WebpackManifest =>
-    JSON.parse(readFileSync(WEBPACK_MANIFEST_PATH, 'utf-8')) as WebpackManifest
-
-export interface WebpackManifest {
-    /** Main app entry JS bundle */
-    'app.js': string
-    /** Main app entry CSS bundle, only used in production mode */
-    'app.css'?: string
-    /** Runtime bundle, only used in development mode */
-    'runtime.js'?: string
-    /** React entry bundle, only used in production mode */
-    'react.js'?: string
-    /** Opentelemetry entry bundle, only used in production mode */
-    'opentelemetry.js'?: string
-    /** If script files should be treated as JS modules. Required for esbuild bundle. */
-    isModule?: boolean
-    /** The node env value `production | development` */
-    environment?: 'development' | 'production'
-}
+export const getWebBuildManifest = (): WebBuildManifest =>
+    JSON.parse(readFileSync(WEB_BUILD_MANIFEST_PATH, 'utf-8')) as WebBuildManifest
 
 interface GetHTMLPageOptions {
-    manifestFile: WebpackManifest
+    manifestFile: WebBuildManifest
     /**
      * Used to inject dummy `window.context` in integration tests.
      */
@@ -54,14 +36,7 @@ interface GetHTMLPageOptions {
 export function getIndexHTML(options: GetHTMLPageOptions): string {
     const { manifestFile, jsContext, jsContextScript } = options
 
-    const {
-        'app.js': appBundle,
-        'app.css': cssBundle,
-        'runtime.js': runtimeBundle,
-        'react.js': reactBundle,
-        'opentelemetry.js': oTelBundle,
-        isModule,
-    } = manifestFile
+    const { 'main.js': mainJS, 'main.css': mainCSS } = manifestFile
 
     return `
 <!DOCTYPE html>
@@ -72,7 +47,7 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
         <meta name="viewport" content="width=device-width, viewport-fit=cover" />
         <meta name="referrer" content="origin-when-cross-origin"/>
         <meta name="color-scheme" content="light dark"/>
-        ${cssBundle ? `<link rel="stylesheet" href="${cssBundle}">` : ''}
+        <link rel="stylesheet" href="${assetPathPrefix}/${mainCSS}">
         ${
             ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE
                 ? '<script src="https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js" crossorigin="anonymous"></script>'
@@ -82,9 +57,6 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
     <body>
         <div id="root"></div>
         <script>
-            // Optional value useful for checking if index.html is created by HtmlWebpackPlugin with the right NODE_ENV.
-            window.webpackBuildEnvironment = '${NODE_ENV}'
-
             ${
                 jsContextScript ||
                 `
@@ -96,17 +68,8 @@ export function getIndexHTML(options: GetHTMLPageOptions): string {
             }
         </script>
 
-        ${runtimeBundle ? `<script src="${runtimeBundle}"></script>` : ''}
-        ${reactBundle ? `<script src="${reactBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
-        ${oTelBundle ? `<script src="${oTelBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
-        <script src="${appBundle}" ${isModule ? 'type="module"' : ''}></script>
+        <script src="${assetPathPrefix}/${mainJS}" type="module"></script>
     </body>
 </html>
 `
-}
-
-export const writeIndexHTMLPlugin: WebpackPluginFunction = compiler => {
-    compiler.hooks.done.tap('WriteIndexHTMLPlugin', () => {
-        writeFileSync(STATIC_INDEX_PATH, getIndexHTML({ manifestFile: getWebpackManifest() }), 'utf-8')
-    })
 }

@@ -10,7 +10,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -56,7 +56,7 @@ var auditCommand = &cli.Command{
 				&oauth2.Token{AccessToken: auditPRGitHubToken},
 			)))
 
-			logger := log.Scoped("auditPR", "sg audit pr")
+			logger := log.Scoped("auditPR")
 			logger.Debug("fetching issues")
 			issues, err := fetchIssues(ctx.Context, logger, ghc)
 			if err != nil {
@@ -146,7 +146,7 @@ func presentIssues(ctx context.Context, ghc *github.Client, slack *slack.Client,
 		res = append(res, prAuditIssue{
 			Title:     title,
 			Url:       issue.GetHTMLURL(),
-			CreatedAt: fmt.Sprintf("%d days ago", time.Since(issue.GetCreatedAt())/(time.Hour*24)),
+			CreatedAt: fmt.Sprintf("%d days ago", time.Since(issue.GetCreatedAt().Time)/(time.Hour*24)),
 			Author:    author.SlackName, // Use author.SlackID in the next iteration, when automating the posting of this message
 		})
 

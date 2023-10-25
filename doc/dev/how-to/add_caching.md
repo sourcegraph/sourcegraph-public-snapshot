@@ -4,8 +4,6 @@
 
 Sourcegraph is backed by two Redis caches, `redis-cache` and `redis-store`. 
 
-`redis-cache` should be favored as the two instances are [to be consolidated into one](../adr/1657287546-consolidate-redis-store-and-redis-cache-in-a-single-instance.md).
-
 ## Usage
 
 Engineers are welcome to cache data as they see fit.

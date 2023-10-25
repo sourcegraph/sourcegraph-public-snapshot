@@ -45,7 +45,11 @@ genrule(
         mkdir -p sg_config_grafana/provisioning/dashboards/sourcegraph/ && \
         mv monitoring/grafana/* sg_config_grafana/provisioning/dashboards/sourcegraph/ &&\
 
-        tar -cf $@ usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        if tar --version | grep -q bsdtar; then
+          tar -cf $@ --uid=0 --gid=0 --numeric-owner usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        else
+          tar -cf $@ --owner=:0 --group=:0 --numeric-owner usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        fi
         """,
     tools = ["//monitoring"],
     visibility = ["//visibility:public"],

@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/google/go-github/github"
-	gh "github.com/google/go-github/v43/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
@@ -26,7 +25,7 @@ type GitHubWebhook struct {
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped("ServeGitHubWebhook", "direct endpoint for github webhook")
+	logger := log.Scoped("ServeGitHubWebhook")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
@@ -81,8 +80,8 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 	ctx := actor.WithInternalActor(r.Context())
 
 	// parse event
-	eventType := gh.WebHookType(r)
-	e, err := gh.ParseWebHook(eventType, requestBody)
+	eventType := github.WebHookType(r)
+	e, err := github.ParseWebHook(eventType, requestBody)
 	if err != nil {
 		logger.Error("Error parsing github webhook event", log.Error(err))
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -188,7 +187,7 @@ func validateAnyConfiguredSecret(c *schema.GitHubConnection, sig string, body []
 			continue
 		}
 
-		if err := gh.ValidateSignature(sig, body, []byte(hook.Secret)); err == nil {
+		if err := github.ValidateSignature(sig, body, []byte(hook.Secret)); err == nil {
 			return nil
 		}
 	}

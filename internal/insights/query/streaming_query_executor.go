@@ -35,7 +35,7 @@ func NewStreamingExecutor(db database.DB, clock func() time.Time) *StreamingQuer
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
 		},
-		logger: log.Scoped("StreamingQueryExecutor", ""),
+		logger: log.Scoped("StreamingQueryExecutor"),
 	}
 }
 

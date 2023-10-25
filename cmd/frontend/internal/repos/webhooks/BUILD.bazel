@@ -22,7 +22,7 @@ go_library(
         "//internal/observation",
         "//internal/repoupdater",
         "//lib/errors",
-        "@com_github_google_go_github_v43//github",
+        "@com_github_google_go_github_v55//github",
         "@com_github_sourcegraph_log//:log",
     ],
 )

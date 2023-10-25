@@ -46,6 +46,7 @@ ts_project(
     deps = [
         ":client-api_lib",
         ":node_modules/@sourcegraph/extension-api-types",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@sourcegraph/extension-api-classes",
     ],
 )

@@ -44,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -231,7 +230,7 @@ func shortGitCommandSlow(args []string) time.Duration {
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
 func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
+		l := log.Scoped("gitserver")
 
 		// Do not apply the middleware to /ping and /git endpoints.
 		//
@@ -281,19 +280,19 @@ func (s *Server) Handler() http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		s.Logger.Scoped("archive.accesslog"),
 		conf.DefaultClient(),
 		s.handleArchive,
 	)))
 	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		s.Logger.Scoped("exec.accesslog"),
 		conf.DefaultClient(),
 		s.handleExec,
 	)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
 	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
+		s.Logger.Scoped("p4-exec.accesslog"),
 		conf.DefaultClient(),
 		s.handleP4Exec,
 	)))
@@ -308,6 +307,12 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-perforce-path-cloneable", trace.WithRouteName("is-perforce-path-cloneable", s.handleIsPerforcePathCloneable))
 	mux.HandleFunc("/check-perforce-credentials", trace.WithRouteName("check-perforce-credentials", s.handleCheckPerforceCredentials))
 	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", s.handleGetObject))
+	mux.HandleFunc("/perforce-users", trace.WithRouteName("perforce-users", s.handlePerforceUsers))
+	mux.HandleFunc("/perforce-protects-for-user", trace.WithRouteName("perforce-protects-for-user", s.handlePerforceProtectsForUser))
+	mux.HandleFunc("/perforce-protects-for-depot", trace.WithRouteName("perforce-protects-for-depot", s.handlePerforceProtectsForDepot))
+	mux.HandleFunc("/perforce-group-members", trace.WithRouteName("perforce-group-members", s.handlePerforceGroupMembers))
+	mux.HandleFunc("/is-perforce-super-user", trace.WithRouteName("is-perforce-super-user", s.handleIsPerforceSuperUser))
+	mux.HandleFunc("/perforce-get-changelist", trace.WithRouteName("perforce-get-changelist", s.handlePerforceGetChangelist))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -320,7 +325,7 @@ func (s *Server) Handler() http.Handler {
 	// scaling events and the new destination gitserver replica can directly clone from
 	// the gitserver replica which hosts the repository currently.
 	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
-		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
+		s.Logger.Scoped("git.accesslog"),
 		conf.DefaultClient(),
 		func(rw http.ResponseWriter, r *http.Request) {
 			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
@@ -407,7 +412,7 @@ func (p *clonePipelineRoutine) cloneJobProducer(ctx context.Context, tasks chan<
 }
 
 func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
-	logger := p.s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
+	logger := p.s.Logger.Scoped("cloneJobConsumer")
 
 	for task := range tasks {
 		logger := logger.With(log.String("job.repo", string(task.repo)))
@@ -530,31 +535,18 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
-	var syncer vcssyncer.VCSSyncer
 	// We use an internal actor here as the repo may be private. It is safe since all
 	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
 	// the only things that could leak here is whether a private repo exists although
 	// the endpoint is only available internally so it's low risk.
 	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
 	if err != nil {
-		// For non-not found errors, we should error out instead, and not attempt
-		// to try an authless git clone.
-		if !errcode.IsNotFound(err) {
-			return protocol.IsRepoCloneableResponse{}, err
-		}
+		return protocol.IsRepoCloneableResponse{}, errors.Wrap(err, "getRemoteURL")
+	}
 
-		// We use this endpoint to verify if a repo exists without consuming
-		// API rate limit, since many users visit private or bogus repos,
-		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL, _ = vcs.ParseURL("https://" + string(repo) + ".git")
-
-		// At this point we are assuming it's a git repo
-		syncer = vcssyncer.NewGitRepoSyncer(s.RecordingCommandFactory)
-	} else {
-		syncer, err = s.GetVCSSyncer(ctx, repo)
-		if err != nil {
-			return protocol.IsRepoCloneableResponse{}, err
-		}
+	syncer, err := s.GetVCSSyncer(ctx, repo)
+	if err != nil {
+		return protocol.IsRepoCloneableResponse{}, errors.Wrap(err, "GetVCSSyncer")
 	}
 
 	resp := protocol.IsRepoCloneableResponse{
@@ -589,7 +581,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
+	logger := s.Logger.Scoped("handleRepoUpdate")
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.ReposDir, req.Repo)
@@ -650,7 +642,7 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 // time out) call to clone a repository.
 // Asynchronous errors will have to be checked in the gitserver_repos table under last_error.
 func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
-	logger := s.Logger.Scoped("handleRepoClone", "asynchronous http handler for repo clones")
+	logger := s.Logger.Scoped("handleRepoClone")
 	var req protocol.RepoCloneRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -673,7 +665,7 @@ func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
-		logger    = s.Logger.Scoped("handleArchive", "http handler for repo archive")
+		logger    = s.Logger.Scoped("handleArchive")
 		q         = r.URL.Query()
 		treeish   = q.Get("treeish")
 		repo      = q.Get("repo")
@@ -730,7 +722,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	logger := s.Logger.Scoped("handleSearch", "http handler for search")
+	logger := s.Logger.Scoped("handleSearch")
 	tr, ctx := trace.New(r.Context(), "handleSearch")
 	defer tr.End()
 
@@ -1190,7 +1182,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 // execHTTP translates the results of an exec into the expected HTTP statuses and payloads
 func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
-	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
+	logger := s.Logger.Scoped("exec").With(log.Strings("req.Args", req.Args))
 
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
@@ -1227,197 +1219,6 @@ func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 		}
-	}
-}
-
-func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
-	var req protocol.P4ExecRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if len(req.Args) < 1 {
-		http.Error(w, "args must be greater than or equal to 1", http.StatusBadRequest)
-		return
-	}
-
-	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group", "changes"}
-	allowed := false
-	for _, arg := range allowlist {
-		if req.Args[0] == arg {
-			allowed = true
-			break
-		}
-	}
-	if !allowed {
-		http.Error(w, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Log which actor is accessing p4-exec.
-	//
-	// p4-exec is currently only used for fetching user based permissions information
-	// so, we don't have a repo name.
-	accesslog.Record(r.Context(), "<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-		log.Strings("args", req.Args),
-	)
-
-	// Make sure credentials are valid before heavier operation
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	s.p4execHTTP(w, r, &req)
-}
-
-func (s *Server) p4execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.P4ExecRequest) {
-	logger := s.Logger.Scoped("p4exec", "")
-
-	// Flush writes more aggressively than standard net/http so that clients
-	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(logger, w); fw != nil {
-		w = fw
-		defer fw.Close()
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
-	defer cancel()
-
-	w.Header().Set("Trailer", "X-Exec-Error")
-	w.Header().Add("Trailer", "X-Exec-Exit-Status")
-	w.Header().Add("Trailer", "X-Exec-Stderr")
-	w.WriteHeader(http.StatusOK)
-
-	execStatus := s.p4Exec(ctx, logger, req, r.UserAgent(), w)
-	w.Header().Set("X-Exec-Error", errorString(execStatus.Err))
-	w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(execStatus.ExitStatus))
-	w.Header().Set("X-Exec-Stderr", execStatus.Stderr)
-
-}
-
-func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) execStatus {
-	start := time.Now()
-	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := executil.UnsetExitStatus
-	var stdoutN, stderrN int64
-	var status string
-	var execErr error
-
-	// Instrumentation
-	{
-		cmd := ""
-		if len(req.Args) > 0 {
-			cmd = req.Args[0]
-		}
-		args := strings.Join(req.Args, " ")
-
-		var tr trace.Trace
-		tr, ctx = trace.New(ctx, "p4exec."+cmd, attribute.String("port", req.P4Port))
-		tr.SetAttributes(attribute.String("args", args))
-		logger = logger.WithTrace(trace.Context(ctx))
-
-		execRunning.WithLabelValues(cmd).Inc()
-		defer func() {
-			tr.AddEvent("done",
-				attribute.String("status", status),
-				attribute.Int64("stdout", stdoutN),
-				attribute.Int64("stderr", stderrN),
-			)
-			tr.SetError(execErr)
-			tr.End()
-
-			duration := time.Since(start)
-			execRunning.WithLabelValues(cmd).Dec()
-			execDuration.WithLabelValues(cmd, status).Observe(duration.Seconds())
-
-			var cmdDuration time.Duration
-			if !cmdStart.IsZero() {
-				cmdDuration = time.Since(cmdStart)
-			}
-
-			isSlow := cmdDuration > 30*time.Second
-			if honey.Enabled() || traceLogs || isSlow {
-				act := actor.FromContext(ctx)
-				ev := honey.NewEvent("gitserver-p4exec")
-				ev.SetSampleRate(honeySampleRate(cmd, act))
-				ev.AddField("p4port", req.P4Port)
-				ev.AddField("cmd", cmd)
-				ev.AddField("args", args)
-				ev.AddField("actor", act.UIDString())
-				ev.AddField("client", userAgent)
-				ev.AddField("duration_ms", duration.Milliseconds())
-				ev.AddField("stdout_size", stdoutN)
-				ev.AddField("stderr_size", stderrN)
-				ev.AddField("exit_status", exitStatus)
-				ev.AddField("status", status)
-				if execErr != nil {
-					ev.AddField("error", execErr.Error())
-				}
-				if !cmdStart.IsZero() {
-					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
-				}
-
-				if traceID := trace.ID(ctx); traceID != "" {
-					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
-				}
-
-				_ = ev.Send()
-
-				if traceLogs {
-					logger.Debug("TRACE gitserver p4exec", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-				}
-				if isSlow {
-					logger.Warn("Long p4exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-				}
-			}
-		}()
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		return execStatus{ExitStatus: -1, Err: err}
-	}
-
-	var stderrBuf bytes.Buffer
-	stdoutW := &writeCounter{w: w}
-	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
-
-	cmdStart = time.Now()
-	cmd := exec.CommandContext(ctx, "p4", req.Args...)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+req.P4Port,
-		"P4USER="+req.P4User,
-		"P4PASSWD="+req.P4Passwd,
-		"HOME="+p4home,
-	)
-	cmd.Stdout = stdoutW
-	cmd.Stderr = stderrW
-
-	exitStatus, execErr = executil.RunCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd))
-
-	status = strconv.Itoa(exitStatus)
-	stdoutN = stdoutW.n
-	stderrN = stderrW.n
-
-	stderr := stderrBuf.String()
-
-	return execStatus{
-		ExitStatus: exitStatus,
-		Stderr:     stderr,
-		Err:        execErr,
 	}
 }
 
@@ -1623,7 +1424,7 @@ func (s *Server) doClone(
 	remoteURL *vcs.URL,
 	opts CloneOptions,
 ) (err error) {
-	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
+	logger := s.Logger.Scoped("doClone").With(log.String("repo", string(repo)))
 
 	defer lock.Release()
 	defer func() {
@@ -1978,7 +1779,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
 func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
-	logger := s.Logger.Scoped("backgroundRepoUpdate", "").With(log.String("repo", string(repo)))
+	logger := s.Logger.Scoped("backgroundRepoUpdate").With(log.String("repo", string(repo)))
 
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
@@ -2270,6 +2071,300 @@ func (s *Server) handleGetObject(w http.ResponseWriter, r *http.Request) {
 
 	resp := protocol.GetObjectResponse{
 		Object: *obj,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceUsers(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceUsersRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	users, err := perforce.P4Users(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.PerforceUsersResponse{
+		Users: make([]protocol.PerforceUser, 0, len(users)),
+	}
+
+	for _, user := range users {
+		resp.Users = append(resp.Users, protocol.PerforceUser{
+			Username: user.Username,
+			Email:    user.Email,
+		})
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceProtectsForUser(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceProtectsForUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	protects, err := perforce.P4ProtectsForUser(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonProtects := make([]protocol.PerforceProtect, len(protects))
+	for i, p := range protects {
+		jsonProtects[i] = protocol.PerforceProtect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	resp := &protocol.PerforceProtectsForUserResponse{
+		Protects: jsonProtects,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceProtectsForDepot(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceProtectsForDepotRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	protects, err := perforce.P4ProtectsForDepot(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Depot)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonProtects := make([]protocol.PerforceProtect, len(protects))
+	for i, p := range protects {
+		jsonProtects[i] = protocol.PerforceProtect{
+			Level:       p.Level,
+			EntityType:  p.EntityType,
+			EntityName:  p.EntityName,
+			Match:       p.Match,
+			IsExclusion: p.IsExclusion,
+			Host:        p.Host,
+		}
+	}
+
+	resp := &protocol.PerforceProtectsForDepotResponse{
+		Protects: jsonProtects,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func (s *Server) handlePerforceGroupMembers(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceGroupMembersRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	members, err := perforce.P4GroupMembers(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.Group)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.PerforceGroupMembersResponse{
+		Usernames: members,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleIsPerforceSuperUser(w http.ResponseWriter, r *http.Request) {
+	var req protocol.IsPerforceSuperUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	err = perforce.P4UserIsSuperUser(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		if err == perforce.ErrIsNotSuperUser {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.IsPerforceSuperUserResponse{}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handlePerforceGetChangelist(w http.ResponseWriter, r *http.Request) {
+	var req protocol.PerforceGetChangelistRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	accesslog.Record(
+		r.Context(),
+		"<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+	)
+
+	changelist, err := perforce.GetChangelistByID(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd, req.ChangelistID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := &protocol.PerforceGetChangelistResponse{
+		Changelist: protocol.PerforceChangelist{
+			ID:           changelist.ID,
+			CreationDate: changelist.CreationDate,
+			State:        string(changelist.State),
+			Author:       changelist.Author,
+			Title:        changelist.Title,
+			Message:      changelist.Message,
+		},
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

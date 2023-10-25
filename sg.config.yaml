@@ -134,6 +134,9 @@ env:
 
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
 
+  # By default, allow temporary edits to external services.
+  EXTSVC_CONFIG_ALLOW_EDITS: true
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -165,7 +168,7 @@ commands:
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - lib
       - internal
@@ -231,7 +234,7 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
@@ -242,7 +245,7 @@ commands:
       - lib
       - internal
       - cmd/symbols
-      - enterprise/cmd/symbols
+      - cmd/symbols
       - internal/rockskip
 
   embeddings:
@@ -394,7 +397,7 @@ commands:
       pnpm install
       pnpm generate
     env:
-      WEBPACK_SERVE_INDEX: true
+      WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
@@ -403,7 +406,7 @@ commands:
     install: pnpm --filter @sourcegraph/web run build
     env:
       NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
+      WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
@@ -418,6 +421,20 @@ commands:
     env:
       INTEGRATION_TESTS: true
       NODE_ENV: production
+
+  web-sveltekit-standalone:
+    description: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
+    cmd: pnpm --filter @sourcegraph/web-sveltekit run dev
+    install: |
+      pnpm install
+      pnpm generate
+
+  web-sveltekit-prod-watch:
+    description: Builds the prod version of the SvelteKit web app and rebuilds on changes
+    cmd: pnpm --filter @sourcegraph/web-sveltekit run build --watch
+    install: |
+      pnpm install
+      pnpm generate
 
   docsite:
     description: Docsite instance serving the docs
@@ -935,7 +952,7 @@ commands:
     env:
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - cmd
       - enterprise
@@ -987,7 +1004,7 @@ bazelCommands:
       SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
       SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
   worker:
     target: //cmd/worker
     precmd: |
@@ -997,7 +1014,7 @@ bazelCommands:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   symbols:
-    target: //enterprise/cmd/symbols
+    target: //cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
@@ -1074,7 +1091,7 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      - docsite
+      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1098,7 +1115,7 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      - docsite
+      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1456,6 +1473,13 @@ commandsets:
       - web-standalone-http
       - caddy
 
+  web-sveltekit-standalone:
+    commands:
+      - web-sveltekit-standalone
+      - caddy
+    env:
+      SK_PORT: 3080
+
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
@@ -1529,12 +1553,41 @@ commandsets:
     env:
       QDRANT_ENDPOINT: 'localhost:6334'
 
+  enterprise-bazel-sveltekit:
+    <<: *enterprise_bazel_set
+    env:
+      SVELTEKIT: true
+
+  enterprise-sveltekit:
+    <<: *enterprise_set
+    env:
+      SVELTEKIT: true
 
 tests:
   # These can be run with `sg test [name]`
   backend:
     cmd: go test
     defaultArgs: ./...
+
+  bazel-e2e:
+    cmd: |
+      export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
+
+      if [[ $(uname) == "Darwin" ]]; then
+        BAZEL_FLAGS="--config darwin-docker"
+      else
+        BAZEL_FLAGS=""
+      fi
+      bazel test //testing:e2e_test $BAZEL_FLAGS --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY
+
+  bazel-web-integration:
+    cmd: |
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
+      bazel test //client/web/src/integration:integration-tests --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY --define=PERCY_TOKEN=$PERCY_TOKEN
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
@@ -1560,7 +1613,7 @@ tests:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
   client:
-    cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
+    cmd: pnpm jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression --testPathIgnorePatterns integration --testPathIgnorePatterns storybook
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

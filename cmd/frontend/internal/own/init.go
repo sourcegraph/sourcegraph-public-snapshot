@@ -24,6 +24,6 @@ func Init(
 ) error {
 	// TODO: More fine-grained needed?
 	g := gitserver.NewClient("graphql.own")
-	enterpriseServices.OwnResolver = resolvers.New(db, g, observationCtx.Logger.Scoped("own", "Code ownership"))
+	enterpriseServices.OwnResolver = resolvers.New(db, g, observationCtx.Logger.Scoped("own"))
 	return nil
 }

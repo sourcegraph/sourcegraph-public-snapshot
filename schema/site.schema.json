@@ -429,7 +429,7 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "description": "DEPRECATED: This setting has no effect.",
               "default": 24,
               "type": "integer",
               "group": "Search",
@@ -438,7 +438,7 @@
               }
             },
             "maxQueueMatchCount": {
-              "description": "The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.",
+              "description": "DEPRECATED: This setting has no effect.",
               "default": -1,
               "type": "integer",
               "group": "Search",
@@ -456,7 +456,7 @@
               }
             },
             "maxReorderDurationMS": {
-              "description": "The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.",
+              "description": "DEPRECATED: This setting has no effect.",
               "type": "integer",
               "default": 0,
               "group": "Search"
@@ -877,7 +877,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages", "symbols"],
+      "required": ["engine", "languages"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -1118,12 +1118,6 @@
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
       "type": "integer",
       "default": 5
-    },
-    "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
-      "type": "string",
-      "enum": ["public", "disabled", "all"],
-      "default": "disabled"
     },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",

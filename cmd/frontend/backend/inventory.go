@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -41,16 +40,16 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		return info.OID().String()
 	}
 
-	logger = logger.Scoped("InventoryContext", "returns the inventory context for computing the inventory for the repository at the given commit").
+	logger = logger.Scoped("InventoryContext").
 		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
 	invCtx := inventory.Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return gsClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
+			return gsClient.ReadDir(ctx, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return gsClient.NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path)
+			return gsClient.NewFileReader(ctx, repo, commitID, path)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)

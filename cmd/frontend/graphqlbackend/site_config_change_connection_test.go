@@ -30,7 +30,7 @@ func toStringPtr(n int) *string {
 
 func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usersToCreate := []database.NewUser{
@@ -92,7 +92,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		},
 		// ID: 6
 		{
-			AuthorUserID: 1,
+			AuthorUserID: 3, // This user no longer exists
 			// Existing line is removed.
 			Contents: `{
   "auth.Providers": []
@@ -257,11 +257,7 @@ func TestSiteConfigConnection(t *testing.T) {
 							"nodes": [
 								{
 									"id": %[1]q,
-									"author": {
-										"id": "VXNlcjox",
-										"username": "foo",
-										"displayName": "foo user"
-									},
+									"author": null,
 									"diff": %[3]q
 								},
 								{
@@ -479,11 +475,7 @@ func TestSiteConfigConnection(t *testing.T) {
 							"nodes": [
 								{
 									"id": %[1]q,
-									"author": {
-										"id": "VXNlcjox",
-										"username": "foo",
-										"displayName": "foo user"
-									},
+									"author": null,
 									"diff": %[3]q
 								},
 								{

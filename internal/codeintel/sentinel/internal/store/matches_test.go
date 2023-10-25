@@ -23,7 +23,7 @@ import (
 func TestVulnerabilityMatchByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	setupReferences(t, db)
@@ -58,7 +58,7 @@ func TestVulnerabilityMatchByID(t *testing.T) {
 func TestGetVulnerabilityMatches(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	/*
@@ -199,7 +199,7 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 func TestGetVulberabilityMatchesCountByRepository(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	/*
@@ -271,7 +271,7 @@ func TestGetVulberabilityMatchesCountByRepository(t *testing.T) {
 func TestGetVulnerabilityMatchesSummaryCount(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 	handle := basestore.NewWithHandle(db.Handle())
 

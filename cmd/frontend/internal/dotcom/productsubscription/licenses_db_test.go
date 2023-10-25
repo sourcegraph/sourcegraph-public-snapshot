@@ -22,7 +22,7 @@ import (
 
 func TestProductLicenses_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subscriptionStore := dbSubscriptions{db: db}
@@ -103,7 +103,7 @@ func TestProductLicenses_Create(t *testing.T) {
 
 func TestGetByToken(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := dbLicenses{db: db}
@@ -154,7 +154,7 @@ func TestAssignSiteID(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := dbLicenses{db: db}
@@ -200,7 +200,7 @@ func TestProductLicenses_List(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	subscriptionStore := dbSubscriptions{db: db}
 	store := dbLicenses{db: db}
@@ -350,7 +350,7 @@ func TestRevokeLicense(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subscriptionStore := dbSubscriptions{db: db}

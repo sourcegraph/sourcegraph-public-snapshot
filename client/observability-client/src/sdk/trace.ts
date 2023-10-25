@@ -37,7 +37,7 @@ export function addTimeEventsToSpan<T extends Record<string, TimeInput | undefin
     names: Extract<keyof T, string>[]
 ): void {
     for (const name of names) {
-        if (typeof timeEvents[name] !== 'undefined') {
+        if (timeEvents[name] !== undefined) {
             span.addEvent(name, timeEvents[name])
         }
     }

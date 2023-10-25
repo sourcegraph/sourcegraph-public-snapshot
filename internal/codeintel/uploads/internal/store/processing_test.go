@@ -17,7 +17,7 @@ import (
 
 func TestInsertUploadUploading(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "", false)
@@ -67,7 +67,7 @@ func TestInsertUploadUploading(t *testing.T) {
 
 func TestInsertUploadQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "", false)
@@ -120,7 +120,7 @@ func TestInsertUploadQueued(t *testing.T) {
 
 func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "", false)
@@ -177,7 +177,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 
 func TestAddUploadPart(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
@@ -201,7 +201,7 @@ func TestAddUploadPart(t *testing.T) {
 
 func TestMarkQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
@@ -228,7 +228,7 @@ func TestMarkQueued(t *testing.T) {
 
 func TestMarkQueuedNoSize(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
@@ -250,7 +250,7 @@ func TestMarkQueuedNoSize(t *testing.T) {
 
 func TestMarkFailed(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
@@ -279,7 +279,7 @@ func TestMarkFailed(t *testing.T) {
 
 func TestDeleteOverlappingDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
@@ -305,7 +305,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 
 func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
@@ -343,7 +343,7 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 
 func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 

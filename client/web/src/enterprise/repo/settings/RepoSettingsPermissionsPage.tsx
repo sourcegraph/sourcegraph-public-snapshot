@@ -91,9 +91,9 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
 
     return (
         <>
-            <PageTitle title="Permissions" />
+            <PageTitle title="Repo Permissions" />
             <PageHeader
-                path={[{ text: 'Permissions' }]}
+                path={[{ text: 'Repo Permissions' }]}
                 headingElement="h2"
                 className="mb-3"
                 description={
@@ -260,6 +260,10 @@ const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
     },
     Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
     'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
+    'Explicit API': {
+        variant: 'success',
+        tooltip: 'The permission was granted through explicit permissions API.',
+    },
 }
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {
