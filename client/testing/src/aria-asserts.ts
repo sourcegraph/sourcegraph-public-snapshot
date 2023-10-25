@@ -1,4 +1,4 @@
-import { expect } from '@jest/globals'
+import { expect } from 'vitest'
 
 // Since jest doesn't provide native matcher to check aria state of the element
 // see https://github.com/testing-library/jest-dom/issues/144 for more details.

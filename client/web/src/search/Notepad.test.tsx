@@ -1,8 +1,8 @@
-import { jest, afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { act, cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { of } from 'rxjs'
 import { spy } from 'sinon'
+import { vi, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'

@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from '@jest/globals'
 import { readFile } from 'mz/fs'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { getFixtureBody } from '../shared/codeHostTestUtils'
 

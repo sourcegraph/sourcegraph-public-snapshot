@@ -2,11 +2,11 @@
 import type { ReactElement } from 'react'
 
 import type { MockedResponse } from '@apollo/client/testing'
-import { beforeAll, describe, expect, it, jest } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import sinon from 'sinon'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -22,12 +22,12 @@ function mockRouterDom() {
     return {
         ...jest.requireActual<typeof import('react-router-dom')>('react-router-dom'),
         useNavigate: () => ({
-            push: jest.fn(),
+            push: vi.fn(),
         }),
     }
 }
 
-jest.mock('react-router-dom', () => mockRouterDom())
+vi.mock('react-router-dom', () => mockRouterDom())
 
 const mockTelemetryService = {
     log: sinon.spy(),

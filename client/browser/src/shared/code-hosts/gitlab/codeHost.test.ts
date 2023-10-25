@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, test } from '@jest/globals'
 import fetch from 'jest-fetch-mock'
 import { readFile } from 'mz/fs'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, test } from 'vitest'
 
 import { disableFetchCache, enableFetchCache, fetchCache, type LineOrPositionOrRange } from '@sourcegraph/common'
 

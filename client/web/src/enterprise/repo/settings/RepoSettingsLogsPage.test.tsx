@@ -1,7 +1,7 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import { describe, expect, test } from '@jest/globals'
 import { render, waitFor, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
+import { describe, expect, test } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

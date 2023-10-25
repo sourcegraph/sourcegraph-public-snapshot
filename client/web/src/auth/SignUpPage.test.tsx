@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals'
 import { Route, Routes } from 'react-router-dom'
+import { describe, expect, it } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals'
+import { describe, expect, it } from 'vitest'
 
 // Note: This tests the pattern matcher implementation but also acts as a
 // verifier that patterns are properly typed against their input value.

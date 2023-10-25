@@ -1,12 +1,12 @@
-import { jest } from '@jest/globals'
 import ResizeObserver from 'resize-observer-polyfill'
+import { vi } from 'vitest'
 
 if ('ResizeObserver' in window === false) {
     window.ResizeObserver = ResizeObserver
 }
 
-jest.mock('use-resize-observer', () => ({
+vi.mock('use-resize-observer', () => ({
     __esModule: true,
 
-    default: jest.requireActual('use-resize-observer/polyfilled'),
+    default: vi.requireActual('use-resize-observer/polyfilled'),
 }))

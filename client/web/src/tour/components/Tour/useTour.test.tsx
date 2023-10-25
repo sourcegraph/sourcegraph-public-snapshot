@@ -1,6 +1,6 @@
-import { afterAll, beforeEach, describe, expect, test } from '@jest/globals'
 import { renderHook, cleanup, act } from '@testing-library/react'
 import type { WrapperComponent } from '@testing-library/react-hooks'
+import { afterAll, beforeEach, describe, expect, test } from 'vitest'
 
 import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'

@@ -1,5 +1,5 @@
-import { afterEach } from '@jest/globals'
 import { cleanup } from '@testing-library/react'
+import { afterEach } from 'vitest'
 
 /**
  * Prevents an issue similar to the one reported here:

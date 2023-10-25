@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals'
 import fetch from 'jest-fetch-mock'
 import MockDate from 'mockdate'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearFetchCache, disableFetchCache, enableFetchCache, fetchCache, type FetchCacheResponse } from './fetchCache'
 
