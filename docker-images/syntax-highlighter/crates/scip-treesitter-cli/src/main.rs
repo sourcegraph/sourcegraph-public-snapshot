@@ -6,7 +6,14 @@ use scip_syntax::{get_locals, get_symbols};
 use scip_treesitter_languages::parsers::BundledParser;
 
 use anyhow::Result;
-use std::{fs::File, io::BufReader, path::PathBuf};
+use colored::*;
+use std::{
+    collections::{HashMap, HashSet},
+    fs::File,
+    io::BufReader,
+    path::PathBuf,
+};
+use walkdir::DirEntry;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -48,6 +55,12 @@ enum Commands {
         #[arg(short, long, default_value = "./index.scip")]
         out: String,
 
+        /// Folder to index - will be chosen as project root,
+        /// and files will be discovered according to
+        /// configured extensions for the selected language
+        #[arg(long)]
+        workspace: Option<String>,
+
         /// List of files to analyse
         filenames: Vec<String>,
 
@@ -65,7 +78,7 @@ enum Commands {
     },
 }
 
-struct Options {
+struct IndexOptions {
     analysis_mode: AnalysisMode,
     /// When true, fail on first encountered error
     /// Otherwise errors are logged but they don't
@@ -81,30 +94,68 @@ pub fn main() {
             language,
             out,
             filenames,
+            workspace,
             mode,
             fail_fast,
             project_root,
-        } => index_command(
-            language,
-            filenames,
-            PathBuf::from(out),
-            PathBuf::from(project_root),
-            Options {
-                analysis_mode: mode,
-                fail_fast,
+        } => {
+            let index_mode = {
+                match workspace {
+                    None => IndexMode::Files { list: filenames },
+                    Some(location) => {
+                        if !filenames.is_empty() {
+                            panic!("--workspace option cannot be combined with a list of files");
+                        } else {
+                            IndexMode::Workspace {
+                                location: location.into(),
+                            }
+                        }
+                    }
+                }
+            };
+
+            index_command(
+                language,
+                index_mode,
+                PathBuf::from(out),
+                PathBuf::from(project_root),
+                IndexOptions {
+                    analysis_mode: mode,
+                    fail_fast,
+                },
+            )
+        }
+
             },
         ),
     }
 }
 
+enum IndexMode {
+    Files { list: Vec<String> },
+    Workspace { location: PathBuf },
+}
+
 fn index_command(
     language: String,
-    filenames: Vec<String>,
+    index_mode: IndexMode,
     out: PathBuf,
     project_root: PathBuf,
-    options: Options,
+    options: IndexOptions,
 ) {
     let p = BundledParser::get_parser(&language).unwrap();
+    let canonical_project_root = {
+        match index_mode {
+            IndexMode::Files { .. } => project_root
+                .canonicalize()
+                .expect("Failed to canonicalize project root"),
+
+            IndexMode::Workspace { ref location } => location
+                .clone()
+                .canonicalize()
+                .expect("Failed to canonicalize project root"),
+        }
+    };
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
@@ -115,49 +166,99 @@ fn index_command(
                 ..Default::default()
             })
             .into(),
-            project_root: format!(
-                "file://{}",
-                project_root
-                    .canonicalize()
-                    .expect("Failed to canonicalize project root")
-                    .display()
-            ),
+            project_root: format!("file://{}", canonical_project_root.display()),
             ..Default::default()
         })
         .into(),
         ..Default::default()
     };
 
-    let bar = ProgressBar::new(filenames.len() as u64);
-
-    bar.set_style(
-        ProgressStyle::with_template(
-            "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7}\n {msg}",
-        )
-        .unwrap()
-        .progress_chars("##-"),
-    );
-
-    for (_, filename) in filenames.iter().enumerate() {
-        let contents = std::fs::read(filename).unwrap();
-        bar.set_message(filename.clone());
-        bar.inc(1);
+    let mut index_file = |filepath: &PathBuf| {
+        let contents = std::fs::read(filepath).unwrap();
+        let relative_path = filepath
+            .strip_prefix(canonical_project_root.clone())
+            .expect("Failed to strip project root prefix");
         match index_content(contents, p, &options) {
             Ok(mut document) => {
-                document.relative_path = filename.to_string();
+                document.relative_path = relative_path.display().to_string();
                 index.documents.push(document);
             }
             Err(error) => {
                 if options.fail_fast {
-                    panic!("Failed to index {filename}: {:?}", error);
+                    panic!("Failed to index {}: {:?}", filepath.display(), error);
                 } else {
-                    eprintln!("Failed to index {filename}: {:?}", error)
+                    eprintln!("Failed to index {}: {:?}", filepath.display(), error)
+                }
+            }
+        }
+    };
+
+    match index_mode {
+        IndexMode::Files { list } => {
+            let bar = ProgressBar::new(list.len() as u64);
+
+            bar.set_style(
+                ProgressStyle::with_template(
+                    "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7}\n {msg}",
+                )
+                .unwrap()
+                .progress_chars("##-"),
+            );
+
+            for filename in list {
+                let filepath = PathBuf::from(filename).canonicalize().expect("???b");
+                bar.set_message(filepath.display().to_string());
+                index_file(&filepath);
+                bar.inc(1);
+            }
+
+            bar.finish();
+        }
+        IndexMode::Workspace { location } => {
+            let extensions = BundledParser::get_language_extensions(&p);
+            let is_valid = |entry: &DirEntry| {
+                entry.file_type().is_dir()
+                    || entry
+                        .file_name()
+                        .to_str()
+                        .map(|s| {
+                            s.split('.')
+                                .last()
+                                .filter(|ext| extensions.contains(ext))
+                                .is_some()
+                        })
+                        .unwrap_or(false)
+            };
+
+            let bar = ProgressBar::new_spinner();
+
+            bar.set_style(
+                ProgressStyle::with_template("{spinner:.blue} {msg}")
+                    .unwrap()
+                    .tick_strings(&[
+                        "▹▹▹▹▹",
+                        "▸▹▹▹▹",
+                        "▹▸▹▹▹",
+                        "▹▹▸▹▹",
+                        "▹▹▹▸▹",
+                        "▹▹▹▹▸",
+                        "▪▪▪▪▪",
+                    ]),
+            );
+
+            for entry in walkdir::WalkDir::new(location)
+                .into_iter()
+                .filter_entry(|e| is_valid(e))
+            {
+                let entry = entry.unwrap();
+                if !entry.file_type().is_dir() {
+                    bar.set_message(entry.path().display().to_string());
+                    index_file(&entry.into_path());
+                    bar.tick();
                 }
             }
         }
     }
-
-    bar.finish();
 
     eprintln!("");
 
@@ -170,7 +271,11 @@ fn index_command(
     write_message_to_file(out, index).expect("to write the file");
 }
 
-fn index_content(contents: Vec<u8>, parser: BundledParser, options: &Options) -> Result<Document> {
+fn index_content(
+    contents: Vec<u8>,
+    parser: BundledParser,
+    options: &IndexOptions,
+) -> Result<Document> {
     let mut document: Document;
 
     if options.analysis_mode.globals() {
