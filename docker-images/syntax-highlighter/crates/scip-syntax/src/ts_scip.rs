@@ -57,7 +57,7 @@ pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'st
         Constructor => Some("constructor"),
         Delegate => Some("delegate"),
         Enum => Some("enum"),
-        EnumMember => Some("enummember"),
+        EnumMember => Some("enumMember"),
         Event => Some("event"),
         Field => Some("field"),
         Function => Some("function"),
@@ -72,7 +72,7 @@ pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'st
         Setter => Some("setter"),
         SingletonMethod => Some("singletonMethod"),
         Struct => Some("struct"),
-        TypeAlias => Some("typealias"),
+        TypeAlias => Some("typeAlias"),
         _ => None,
     }
 }
