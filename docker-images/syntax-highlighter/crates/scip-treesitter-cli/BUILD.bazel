@@ -1,0 +1,53 @@
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "scip-treesitter-cli",
+    srcs = ["src/main.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+    ],
+)
+
+rust_test(
+    name = "unit_test",
+    srcs = ["src/main.rs"],
+    compile_data = glob(
+        [
+            "testdata/**",
+        ],
+        allow_empty = False,
+    ),
+    # Make sure this name matches the crate name in cargo configuration
+    # This is to ensure that snapshots produced by Bazel tests and
+    # ones produced by `cargo test` command - otherwise insta testing will fail!
+    crate = ":scip-treesitter-cli",
+    data = glob(
+               ["testdata/**"],
+           ) + [":scip-treesitter-cli"] +
+           glob(
+               ["src/snapshots/**"],
+               allow_empty = False,
+           ),
+    env = {
+        "INSTA_WORKSPACE_ROOT": ".",
+        "RUST_BACKTRACE": "1",
+        "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter-cli)",
+    },
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+    ],
+)

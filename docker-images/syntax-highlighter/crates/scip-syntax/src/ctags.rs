@@ -194,7 +194,7 @@ pub fn generate_tags<W: std::io::Write>(
     let filepath = path.file_name()?.to_str()?;
 
     let parser = BundledParser::get_parser_from_extension(extension)?;
-    let (root_scope, _) = match get_globals(&parser, file_data)? {
+    let (root_scope, _) = match get_globals(parser, file_data)? {
         Ok(vals) => vals,
         Err(err) => {
             // TODO: Not sure I want to keep this or not
