@@ -123,7 +123,7 @@ This page contains generated documentation for telemetry event data that gets ex
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| trace_id | [string](#string) |  | <p>OpenTelemetry trace ID representing the interaction associated with the event.</p> |
+| trace_id | [string](#string) | optional | <p>OpenTelemetry trace ID representing the interaction associated with the event.</p> |
 
 
 

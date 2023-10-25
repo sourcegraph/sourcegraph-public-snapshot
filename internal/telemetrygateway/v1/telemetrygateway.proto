@@ -203,5 +203,5 @@ message EventMarketingTracking {
 
 message EventInteraction {
   // OpenTelemetry trace ID representing the interaction associated with the event.
-  string trace_id = 1;
+  optional string trace_id = 1;
 }

@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -33,7 +34,10 @@ var (
 		Action:    "Action",
 		Timestamp: timestamppb.New(must(time.Parse(time.RFC3339, "2023-02-24T14:48:30Z"))),
 		Interaction: &telemetrygatewayv1.EventInteraction{
-			TraceId: "01020304050607080102040810203040",
+			TraceId: func() *string {
+				tid, _ := (staticTraceIDGenerator{}).NewIDs(context.Background())
+				return pointers.Ptr(tid.String())
+			}(),
 		},
 		Source: &telemetrygatewayv1.EventSource{
 			Server: &telemetrygatewayv1.EventSource_Server{

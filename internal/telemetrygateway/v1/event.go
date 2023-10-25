@@ -34,7 +34,7 @@ func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() 
 				return nil
 			}
 			return &EventInteraction{
-				TraceId: eventTrace.TraceID().String(),
+				TraceId: pointers.Ptr(eventTrace.TraceID().String()),
 			}
 		}(),
 		User: func() *EventUser {
