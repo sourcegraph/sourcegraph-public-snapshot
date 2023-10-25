@@ -57,7 +57,7 @@ enum Commands {
 
         /// Fail on first error
         #[arg(long, default_value_t = false)]
-        strict: bool,
+        fail_fast: bool,
 
         /// Project root to write to SCIP index
         #[arg(short, long, default_value = "./")]
@@ -70,7 +70,7 @@ struct Options {
     /// When true, fail on first encountered error
     /// Otherwise errors are logged but they don't
     /// interrupt the process
-    strict: bool,
+    fail_fast: bool,
 }
 
 pub fn main() {
@@ -82,7 +82,7 @@ pub fn main() {
             out,
             filenames,
             mode,
-            strict,
+            fail_fast,
             project_root,
         } => index_command(
             language,
@@ -91,7 +91,7 @@ pub fn main() {
             PathBuf::from(project_root),
             Options {
                 analysis_mode: mode,
-                strict,
+                fail_fast,
             },
         ),
     }
@@ -147,11 +147,11 @@ fn index_command(
                 document.relative_path = filename.to_string();
                 index.documents.push(document);
             }
-            other => {
-                if options.strict {
-                    other.unwrap();
+            Err(error) => {
+                if options.fail_fast {
+                    panic!("Failed to index {filename}: {:?}", error);
                 } else {
-                    eprintln!("Failed to extract locals from {filename}: {:?}", other)
+                    eprintln!("Failed to index {filename}: {:?}", error)
                 }
             }
         }
@@ -188,13 +188,7 @@ fn index_content(contents: Vec<u8>, parser: BundledParser, options: &Options) ->
                     document.occurrences.push(occ);
                 }
             }
-            Some(other) => {
-                if options.strict {
-                    other.unwrap();
-                } else {
-                    eprintln!("Failed to extract locals: {:?}", other)
-                }
-            }
+            Some(Err(e)) => return Err(e),
             None => {}
         }
     }
