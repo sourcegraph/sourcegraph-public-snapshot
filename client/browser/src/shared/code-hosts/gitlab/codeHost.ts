@@ -186,6 +186,14 @@ export const parseHash = (hash: string): LineOrPositionOrRange => {
     return lpr
 }
 
+/**
+ * For testing only, used to set the window.location value.
+ * @internal
+ */
+export const windowLocation__testingOnly: { value: URL | null } = {
+    value: null,
+}
+
 export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
@@ -202,7 +210,10 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         // A view state means that a panel must be shown, and panels are currently only supported on
         // Sourcegraph (not code hosts).
         // Make sure the location is also on this Gitlab instance, return an absolute URL otherwise.
-        if (target.viewState || !target.rawRepoName.startsWith(window.location.hostname)) {
+        if (
+            target.viewState ||
+            !target.rawRepoName.startsWith((windowLocation__testingOnly.value ?? window.location).hostname)
+        ) {
             return toAbsoluteBlobURL(sourcegraphURL, target)
         }
 
@@ -217,7 +228,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
                     continue
                 }
                 if (!target.position) {
-                    const url = new URL(window.location.href)
+                    const url = new URL((windowLocation__testingOnly.value ?? window.location).href)
                     url.hash = codeView.id
                     return url.href
                 }
@@ -225,10 +236,14 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
                 const link = codeView.querySelector<HTMLAnchorElement>(
                     `${partSelector} a[data-linenumber="${target.position.line}"]`
                 )
-                if (!link) {
+
+                // Use link.getAttribute('href') because link.href silently resolves against the the
+                // jsdom current URL (https://localhost:3000) in testing.
+                const href = link?.getAttribute('href')
+                if (!href) {
                     break
                 }
-                return new URL(link.href).href
+                return new URL(href, windowLocation__testingOnly.value ?? window.location.href).href
             }
         }
 
@@ -267,7 +282,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     // despite the URL hash is updated.
     observeLineSelection: fromEvent(document, 'click').pipe(
         filter(event => (event.target as HTMLElement).matches('a[data-line-number]')),
-        map(() => parseHash(window.location.hash))
+        map(() => parseHash((windowLocation__testingOnly.value ?? window.location).hash))
     ),
 
     prepareCodeHost: async requestGraphQL =>

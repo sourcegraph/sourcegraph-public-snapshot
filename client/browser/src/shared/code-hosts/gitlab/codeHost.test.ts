@@ -6,7 +6,13 @@ import { disableFetchCache, enableFetchCache, fetchCache, type LineOrPositionOrR
 
 import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 
-import { getToolbarMount, gitlabCodeHost, isPrivateRepository, parseHash } from './codeHost'
+import {
+    getToolbarMount,
+    gitlabCodeHost,
+    isPrivateRepository,
+    parseHash,
+    windowLocation__testingOnly,
+} from './codeHost'
 import { repoNameOnSourcegraph } from './scrape'
 
 describe('gitlab/codeHost', () => {
@@ -23,11 +29,14 @@ describe('gitlab/codeHost', () => {
 
         beforeAll(async () => {
             document.documentElement.innerHTML = await readFile(__dirname + '/__fixtures__/merge-request.html', 'utf-8')
-            jsdom.reconfigure({ url: 'https://gitlab.com/SourcegraphCody/jsonrpc2/merge_requests/1/diffs' })
+            windowLocation__testingOnly.value = new URL(
+                'https://gitlab.com/SourcegraphCody/jsonrpc2/merge_requests/1/diffs'
+            )
             globalThis.gon = { gitlab_url: 'https://gitlab.com' }
         })
 
         afterAll(() => {
+            windowLocation__testingOnly.value = null
             // Reset resolved Sourcegraph repo name value
             repoNameOnSourcegraph.next('')
         })
