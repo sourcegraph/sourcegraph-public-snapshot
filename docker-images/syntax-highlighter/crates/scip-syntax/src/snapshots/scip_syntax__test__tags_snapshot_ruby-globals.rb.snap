@@ -13,7 +13,7 @@ expression: "String::from_utf8_lossy(buf_writer.buffer())"
 {"_type":"tag","name":"bar=","path":"ruby-globals.rb","language":"ruby","line":58,"kind":"accessor","scope":"Foo"}
 {"_type":"tag","name":"bar","path":"ruby-globals.rb","language":"ruby","line":58,"kind":"accessor","scope":"Foo"}
 {"_type":"tag","name":"Aliased","path":"ruby-globals.rb","language":"ruby","line":63,"kind":"class","scope":null}
-{"_type":"tag","name":"alias_method","path":"ruby-globals.rb","language":"ruby","line":67,"kind":"methodAlias","scope":"Aliased"}
+{"_type":"tag","name":"baz","path":"ruby-globals.rb","language":"ruby","line":67,"kind":"methodAlias","scope":"Aliased"}
 {"_type":"tag","name":"bar","path":"ruby-globals.rb","language":"ruby","line":64,"kind":"method","scope":"Aliased"}
 {"_type":"tag","name":"Parental","path":"ruby-globals.rb","language":"ruby","line":70,"kind":"class","scope":null}
 {"_type":"tag","name":"parental_func","path":"ruby-globals.rb","language":"ruby","line":71,"kind":"method","scope":"Parental"}

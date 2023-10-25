@@ -84,7 +84,7 @@ expression: dumped
     end
   
     alias_method :baz, :bar
-//  ^^^^^^^^^^^^ definition(MethodAlias) scip-ctags Aliased#alias_method().
+//               ^^^^ definition(MethodAlias) scip-ctags Aliased#baz().
   end
   
   class Parental
