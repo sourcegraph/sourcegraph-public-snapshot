@@ -50,6 +50,13 @@ http_archive(
 )
 
 http_archive(
+    name = "aspect_rules_swc",
+    sha256 = "8eb9e42ed166f20cacedfdb22d8d5b31156352eac190fc3347db55603745a2d8",
+    strip_prefix = "rules_swc-1.1.0",
+    url = "https://github.com/aspect-build/rules_swc/releases/download/v1.1.0/rules_swc-v1.1.0.tar.gz",
+)
+
+http_archive(
     name = "io_bazel_rules_go",
     sha256 = "51dc53293afe317d2696d4d6433a4c33feedb7748a9e352072e2ec3c0dafd2c6",
     urls = [
@@ -205,6 +212,18 @@ jest_repositories(
 load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
 
 jest_npm_repositories()
+
+# rules_swc setup ==============================
+load("@aspect_rules_swc//swc:dependencies.bzl", "rules_swc_dependencies")
+
+rules_swc_dependencies()
+
+load("@aspect_rules_swc//swc:repositories.bzl", "LATEST_SWC_VERSION", "swc_register_toolchains")
+
+swc_register_toolchains(
+    name = "swc",
+    swc_version = LATEST_SWC_VERSION,
+)
 
 # rules_esbuild setup ===========================
 http_archive(
