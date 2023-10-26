@@ -209,18 +209,6 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	}
 }
 
-// Adds the frontend tests (without the web app and browser extension tests).
-func frontendTests(pipeline *bk.Pipeline) {
-	// Shared tests
-	pipeline.AddStep(":jest: Test (all)",
-		withPnpmCache(),
-		bk.AnnotatedCmd("dev/ci/pnpm-test.sh --testPathIgnorePatterns client/web --testPathIgnorePatterns client/browser", bk.AnnotatedCmdOpts{
-			TestReports: &bk.TestReportOpts{
-				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-			},
-		}))
-}
-
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
