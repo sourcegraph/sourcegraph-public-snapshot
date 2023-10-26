@@ -188,9 +188,17 @@ struct SymbolOccurrence {
     symbol: String,
 }
 
+impl SymbolOccurrence {
+    fn range(&self) -> &PackedRange {
+        &self.location.rng
+    }
+}
+
 #[derive(Eq, Hash, PartialEq, Clone, Debug)]
 struct Overlap {
+    /// Total number of occurrence of a symbol from ground truth
     total: u32,
+    /// Number of common occurrences between a ground truth symbol and a candidate
     common: u32,
 }
 
@@ -203,41 +211,57 @@ impl Overlap {
 pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: ScipEvaluateOptions) {
     let bar = create_spinner();
     bar.set_message("Indexing candidate symbols by location");
-    let candidate_occs: HashMap<LocationInFile, String> =
+    let candidate_occurrences: HashMap<LocationInFile, String> =
         index_occurrences(&read_index_from_file(candidate.into()));
     bar.tick();
 
     bar.set_message("Indexing ground truth symbols by location");
-    let ground_truth_occs: HashMap<LocationInFile, String> =
+    let ground_truth_occurrences: HashMap<LocationInFile, String> =
         index_occurrences(&read_index_from_file(ground_truth.into()));
     bar.tick();
 
+    // For each symbol pair we maintain an Overlap instance
     let mut overlaps: HashMap<SymbolPair, Overlap> = HashMap::new();
+
+    // Lookup table where key is ground truth symbol, and the value
+    // is all the symbol pairs.
+    // Each symbol from ground truth dataset can be mapped to any number of
+    // symbols from the candidate set
     let mut lookup: HashMap<String, HashSet<SymbolPair>> = HashMap::new();
 
     bar.set_message("Analysing occurrences in candidate SCIP");
-    for (candidate_loc, candidate_symbol_orig) in candidate_occs.clone() {
-        match ground_truth_occs.get(&candidate_loc) {
+    for (candidate_loc, candidate_symbol) in candidate_occurrences.clone() {
+        // At given location from the candidate dataset, see
+        // if ground truth dataset contains any symbol at same location
+        match ground_truth_occurrences.get(&candidate_loc) {
+            // If ground truth dataset doesn't have any symbol at this location,
+            // we treat it as a false positive, to be handled later
             None => {}
             Some(ground_truth_symbol) => {
-                let candidate_symbol = candidate_symbol_orig.clone();
                 let pair = SymbolPair {
                     ground_truth: ground_truth_symbol.clone(),
                     candidate: candidate_symbol,
                 };
 
+                // See if we already have a lookup entry for this ground truth symbol
                 match lookup.get_mut(ground_truth_symbol) {
                     None => {
+                        // If this is the first time we're seeing this symbol,
+                        // create a lookup entry and put a single pair in there
                         lookup.insert(ground_truth_symbol.clone(), HashSet::from([pair.clone()]));
                     }
                     Some(s) => {
+                        // Otherwise, add the symbol pair to the set (it might already be there)
                         s.insert(pair.clone());
                     }
                 }
 
-                let overlap = overlaps.get_mut(&pair.clone());
-
-                match overlap {
+                // As we are currently iterating over candidate occurrences,
+                // we don't know how many occurrences there are in total in the
+                // ground truth dataset.
+                // That's why here we only manage the number of occurrences
+                // the datasets have in common
+                match overlaps.get_mut(&pair) {
                     None => {
                         overlaps.insert(
                             pair,
@@ -255,27 +279,33 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
     bar.tick();
 
     bar.set_message("Computing overlap with ground truth SCIP occurrences");
-    for (_, gt_symbol) in ground_truth_occs.clone() {
-        for pairs in lookup.get(&gt_symbol).into_iter() {
-            for pair in pairs {
-                let overlap = overlaps.get_mut(&pair);
-
-                overlap.map(|x| x.total += 1);
-            }
-        }
+    for (_, ground_truth_symbol) in &ground_truth_occurrences {
+        // now that we're iterating over all the ground truth occurrences,
+        // we can update the `total` counter for each symbol pair
+        // associated with that ground truth symbol
+        lookup
+            .get(ground_truth_symbol)
+            .into_iter()
+            .for_each(|pairs| {
+                for pair in pairs {
+                    overlaps.get_mut(&pair).map(|x| x.total += 1);
+                }
+            });
     }
     bar.tick();
 
-    let mapping: HashMap<SymbolPair, f32> = overlaps
+    // We have produced the final counts for all symbol pairs -
+    // it's time to produce final weights
+    let symbol_pair_weight: HashMap<SymbolPair, f32> = overlaps
         .clone()
         .into_iter()
-        .map(|c| (c.0, c.1.jaccard()))
+        .map(|(symbol_pair, overlap)| (symbol_pair, overlap.jaccard()))
         .collect();
 
-    let mut overlaps_vec: Vec<(SymbolPair, Overlap)> = overlaps.into_iter().collect();
-    overlaps_vec.sort_by_key(|k| k.0.clone());
-
     if options.print_mapping {
+        let mut overlaps_vec: Vec<(SymbolPair, Overlap)> = overlaps.into_iter().collect();
+        overlaps_vec.sort_by_key(|(symbol_pair, _)| symbol_pair.clone());
+
         for (pair, ov) in overlaps_vec {
             eprintln!(
                 "{} -- {}    {} (ambiguity: {})",
@@ -293,26 +323,64 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
     let mut results: Vec<ClassifiedLocation> = Vec::new();
 
     bar.set_message("Classifying occurrences into false negatives and true positives");
-    for (rng, occ) in ground_truth_occs.clone() {
-        match candidate_occs.get(&rng) {
-            None => results.push((rng, occ, Mark::FalseNegative { weight: 1.0 })),
-            Some(c) => {
-                let similarity = mapping.get(&SymbolPair {
-                    ground_truth: occ.clone(),
-                    candidate: c.clone(),
-                });
-                match similarity {
-                    None => eprintln!("Couldn't find a mapping for symbol {}", occ.red()),
-                    Some(v) => results.push((rng, occ, Mark::TruePositive { weight: *v })),
+    // Now that the mapping is fully built, iterate over all ground truth occurrences
+    // and see if the canidate contains it.
+    // By iterating over ground_truth_occurrences we can only identify false negatives
+    // and true positives.
+    // False negatives are counted later
+    for (ground_truth_location, ground_truth_symbol) in ground_truth_occurrences.clone() {
+        match candidate_occurrences.get(&ground_truth_location) {
+            // if this location is not marked in the candidate dataset,
+            // this is a false negative - with full weight 1.0, as
+            // there's no ambiguity to speak of - this location *should* contain
+            // some symbol but doesn't
+            None => results.push(ClassifiedLocation {
+                location: ground_truth_location,
+                symbol: ground_truth_symbol,
+                mark: Mark::FalseNegative { weight: 1.0 },
+            }),
+            Some(candidate_symbol) => {
+                let pair = SymbolPair {
+                    ground_truth: ground_truth_symbol.clone(),
+                    candidate: candidate_symbol.clone(),
+                };
+
+                match symbol_pair_weight.get(&pair) {
+                    // At this location we found both the ground truth
+                    // and candidate occurrence. We want to reward it - but with a
+                    // weight indicating how precisely we matched candidate symbols to
+                    // ground truth symbols - this weight comes from mapping we constructed earlier.
+                    Some(weight) => results.push(ClassifiedLocation {
+                        location: ground_truth_location,
+                        symbol: ground_truth_symbol,
+                        mark: Mark::TruePositive { weight: *weight },
+                    }),
+                    // This is an impossible situation by construction
+                    None => panic!(
+                        "Couldn't find a mapping for symbol {}",
+                        ground_truth_symbol.red()
+                    ),
                 }
             }
         }
     }
 
     bar.set_message("Identifying false positives");
-    for (rng, occ) in candidate_occs.clone() {
-        if !ground_truth_occs.contains_key(&rng) {
-            results.push((rng, occ, Mark::FalsePositive { weight: 1.0 }));
+    for (candidate_location, candidate_symbol) in &candidate_occurrences {
+        // If there are occurrences present in candidate dataset, but
+        // not present in the ground truth, we treat it as a false positive
+        // and penalise it will full strength.
+        //
+        // Technically this may be a mistake, in case the indexer
+        // that produces ground truth has bugs in it.
+        // But for simplicity we assume that scip-* indexers
+        // are "perfect"
+        if !ground_truth_occurrences.contains_key(candidate_location) {
+            results.push(ClassifiedLocation {
+                location: candidate_location.clone(),
+                symbol: candidate_symbol.clone(),
+                mark: Mark::FalsePositive { weight: 1.0 },
+            });
         }
     }
 
@@ -321,36 +389,45 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
     summarise(results, options);
 }
 
+#[derive(Debug, PartialEq)]
 enum Mark {
     TruePositive { weight: f32 },
     FalsePositive { weight: f32 },
     FalseNegative { weight: f32 },
 }
 
-type ClassifiedLocation = (LocationInFile, String, Mark);
-type Occ = (LocationInFile, String);
+#[derive(Debug, PartialEq)]
+struct ClassifiedLocation {
+    location: LocationInFile,
+    symbol: String,
+    mark: Mark,
+}
 
 fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) {
-    let mut true_positives: Vec<Occ> = Vec::new();
-    let mut false_positives: Vec<Occ> = Vec::new();
-    let mut false_negatives: Vec<Occ> = Vec::new();
+    let mut true_positives: Vec<SymbolOccurrence> = Vec::new();
+    let mut false_positives: Vec<SymbolOccurrence> = Vec::new();
+    let mut false_negatives: Vec<SymbolOccurrence> = Vec::new();
 
     let mut tps = 0 as f32;
     let mut fps = 0 as f32;
     let mut fns = 0 as f32;
 
-    for cl in classified {
-        match cl.2 {
+    for classified_location in classified {
+        let symbol_occurrence = SymbolOccurrence {
+            location: classified_location.location,
+            symbol: classified_location.symbol,
+        };
+        match classified_location.mark {
             Mark::TruePositive { weight } => {
-                true_positives.push((cl.0, cl.1));
+                true_positives.push(symbol_occurrence);
                 tps += weight
             }
             Mark::FalseNegative { weight } => {
-                false_negatives.push((cl.0, cl.1));
+                false_negatives.push(symbol_occurrence);
                 fns += weight
             }
             Mark::FalsePositive { weight } => {
-                false_positives.push((cl.0, cl.1));
+                false_positives.push(symbol_occurrence);
                 fps += weight
             }
         }
@@ -374,54 +451,55 @@ fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) 
             "How many actual occurrences we DIDN'T find compared to compiler?".italic()
         );
 
-        for (rng, occ) in false_negatives {
-            let file = rng.file;
-            println!(
-                "{file}: L{} C{} -- {occ}",
-                rng.rng.start_line, rng.rng.start_col
+        for symbol_occurrence in false_negatives {
+            eprintln!(
+                "{}: L{} C{} -- {}",
+                symbol_occurrence.location.file,
+                symbol_occurrence.range().start_line,
+                symbol_occurrence.range().start_col,
+                symbol_occurrence.symbol
             );
         }
     }
 
     if options.print_false_positives {
-        println!("");
-        println!(
+        eprintln!("");
+        eprintln!(
             "{}: {}",
             "False positives".red(),
             false_positives.len().to_string().bold()
         );
-        println!(
+        eprintln!(
             "{}",
             "How many extra occurrences we reported compared to compiler?".italic()
         );
 
-        for (rng, occ) in false_positives {
-            let file = rng.file;
-            println!(
-                "{file}: L{} C{} -- {occ}",
-                rng.rng.start_line, rng.rng.start_col
+        for symbol_occurrence in false_positives {
+            eprintln!(
+                "{}: L{} C{} -- {}",
+                symbol_occurrence.location.file,
+                symbol_occurrence.range().start_line,
+                symbol_occurrence.range().start_col,
+                symbol_occurrence.symbol
             );
         }
     }
 
     if options.print_true_positives {
         if true {
-            println!("");
-            println!(
+            eprintln!("");
+            eprintln!(
                 "{}: {}",
                 "True positives".green(),
                 true_positives.len().to_string().bold()
             );
 
-            for (rng, occ) in &true_positives {
-                let file = &rng.file;
-                let header = format!("{file}: L{} C{} -- ", rng.rng.start_line, rng.rng.start_col);
+            for symbol_occurrence in &true_positives {
+                let file = &symbol_occurrence.location.file;
+                let rng = symbol_occurrence.range();
+                let header = format!("{file}: L{} C{} -- ", rng.start_line, rng.start_col);
 
-                println!(
-                    "{} {}",
-                    header.yellow(),
-                    occ // ground_truth_occs.get(&rng).unwrap().bold()
-                );
+                eprintln!("{} {}", header.yellow(), symbol_occurrence.symbol);
             }
         }
     }
@@ -434,9 +512,18 @@ fn index_occurrences(idx: &Index) -> HashMap<LocationInFile, String> {
         for occ in &doc.occurrences {
             let rng = PackedRange::from_vec(&occ.range).unwrap();
             let mut new_sym = occ.symbol.clone();
+            let sanitised_relative_path: String = doc
+                .relative_path
+                .chars()
+                .filter(|c| c.is_alphanumeric() || *c == '-' || *c == '+' || *c == '$')
+                .collect();
+
             if occ.symbol.starts_with("local ") {
-                // doc.relative_path.to_string() + " " + occ.symbol
-                new_sym = format!("{} {}", doc.relative_path, occ.symbol)
+                new_sym = format!(
+                    "local {}-{}",
+                    sanitised_relative_path,
+                    occ.symbol.strip_prefix("local ").unwrap()
+                )
             }
 
             let loc = LocationInFile {
@@ -497,6 +584,7 @@ fn index_command(
         let relative_path = filepath
             .strip_prefix(canonical_project_root.clone())
             .expect("Failed to strip project root prefix");
+
         match index_content(contents, p, &options) {
             Ok(mut document) => {
                 document.relative_path = relative_path.display().to_string();
@@ -516,7 +604,9 @@ fn index_command(
         IndexMode::Files { list } => {
             let bar = create_progress_bar(list.len() as u64);
             for filename in list {
-                let filepath = PathBuf::from(filename).canonicalize().expect("???b");
+                let filepath = PathBuf::from(filename)
+                    .canonicalize()
+                    .unwrap();
                 bar.set_message(filepath.display().to_string());
                 index_file(&filepath);
                 bar.inc(1);
