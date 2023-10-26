@@ -178,7 +178,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addVsceReleaseSteps)
 
-	case runtype.BextNightly:
+	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(

@@ -23,7 +23,7 @@ describe('gitlab/codeHost', () => {
 
         beforeAll(async () => {
             document.documentElement.innerHTML = await readFile(__dirname + '/__fixtures__/merge-request.html', 'utf-8')
-            jsdom.reconfigure({ url: 'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs' })
+            jsdom.reconfigure({ url: 'https://gitlab.com/SourcegraphCody/jsonrpc2/merge_requests/1/diffs' })
             globalThis.gon = { gitlab_url: 'https://gitlab.com' }
         })
 
@@ -107,7 +107,7 @@ describe('gitlab/codeHost', () => {
             )
         })
         it('returns an URL to the file on the same merge request if possible', () => {
-            const rawRepoName = 'gitlab.com/sourcegraph/jsonrpc2'
+            const rawRepoName = 'gitlab.com/SourcegraphCody/jsonrpc2'
             // Update the resolved Sourcegraph repo name value
             repoNameOnSourcegraph.next(rawRepoName)
 
@@ -127,7 +127,7 @@ describe('gitlab/codeHost', () => {
                     { part: 'head' }
                 )
             ).toBe(
-                'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5'
+                'https://gitlab.com/SourcegraphCody/jsonrpc2/merge_requests/1/diffs#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5'
             )
         })
     })
