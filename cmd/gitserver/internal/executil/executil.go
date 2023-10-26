@@ -84,7 +84,6 @@ func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 
 	tr, _ := trace.New(ctx, "runCommand",
 		attribute.String("path", cmd.Unwrap().Path),
-		// TODO: Shouldn't this be redacted?
 		attribute.StringSlice("args", cmd.Unwrap().Args),
 		attribute.String("dir", cmd.Unwrap().Dir))
 	defer func() {
@@ -108,85 +107,6 @@ func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, er
 	cmd.Unwrap().Stderr = &buf
 	_, err := RunCommand(ctx, cmd)
 	return buf.Bytes(), err
-}
-
-type RedactorFunc func(string) string
-
-// The passed cmd should be bound to the passed context.
-func RunCommandWriteOutput(ctx context.Context, cmd wrexec.Cmder, writer io.Writer, redactor RedactorFunc) (int, error) {
-	exitStatus := UnsetExitStatus
-
-	// Create a cancel context so that on exit we always properly close the command
-	// pipes attached later by process.PipeOutputUnbuffered.
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// Make sure we only write to the writer from one goroutine at a time, either
-	// stdout or stderr.
-	syncWriter := newSynchronizedWriter(writer)
-
-	outputRedactor := func(w io.Writer, r io.Reader) error {
-		sc := process.NewOutputScannerWithSplit(r, scanLinesWithCRLF)
-		for sc.Scan() {
-			line := sc.Text()
-			if _, err := fmt.Fprint(w, redactor(line)); err != nil {
-				return err
-			}
-		}
-		// We can ignore ErrClosed because we get that if a process crashes, it will
-		// be handled by cmd.Wait.
-		if err := sc.Err(); err != nil && !errors.Is(err, fs.ErrClosed) {
-			return err
-		}
-		return nil
-	}
-
-	eg, err := process.PipeProcessOutput(
-		ctx,
-		cmd,
-		syncWriter,
-		syncWriter,
-		outputRedactor,
-	)
-	if err != nil {
-		return exitStatus, errors.Wrap(err, "failed to pipe output")
-	}
-
-	if err = cmd.Start(); err != nil {
-		return exitStatus, errors.Wrap(err, "failed to start command")
-	}
-
-	// Wait for either the command to finish (aka the pipewriters get closed), or
-	// for a context cancelation.
-	select {
-	case <-ctx.Done():
-	case err := <-watchErrGroup(eg):
-		if err != nil {
-			return exitStatus, errors.Wrap(err, "failed to read output")
-		}
-	}
-
-	err = cmd.Wait()
-
-	if ps := cmd.Unwrap().ProcessState; ps != nil && ps.Sys() != nil {
-		if ws, ok := ps.Sys().(syscall.WaitStatus); ok {
-			exitStatus = ws.ExitStatus()
-		}
-	}
-
-	return exitStatus, errors.Wrap(err, "command failed")
-}
-
-// watchErrGroup turns a pool.ErrorPool into a channel that will receive the error
-// returned from the pool once it returns.
-func watchErrGroup(g *pool.ErrorPool) <-chan error {
-	ch := make(chan error)
-	go func() {
-		ch <- g.Wait()
-		close(ch)
-	}()
-
-	return ch
 }
 
 // RunRemoteGitCommand runs the command after applying the remote options.
@@ -387,6 +307,85 @@ func WrapCmdError(cmd *exec.Cmd, err error) error {
 		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
 	}
 	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
+}
+
+type RedactorFunc func(string) string
+
+// The passed cmd should be bound to the passed context.
+func RunCommandWriteOutput(ctx context.Context, cmd wrexec.Cmder, writer io.Writer, redactor RedactorFunc) (int, error) {
+	exitStatus := UnsetExitStatus
+
+	// Create a cancel context so that on exit we always properly close the command
+	// pipes attached later by process.PipeOutputUnbuffered.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Make sure we only write to the writer from one goroutine at a time, either
+	// stdout or stderr.
+	syncWriter := newSynchronizedWriter(writer)
+
+	outputRedactor := func(w io.Writer, r io.Reader) error {
+		sc := process.NewOutputScannerWithSplit(r, scanLinesWithCRLF)
+		for sc.Scan() {
+			line := sc.Text()
+			if _, err := fmt.Fprint(w, redactor(line)); err != nil {
+				return err
+			}
+		}
+		// We can ignore ErrClosed because we get that if a process crashes, it will
+		// be handled by cmd.Wait.
+		if err := sc.Err(); err != nil && !errors.Is(err, fs.ErrClosed) {
+			return err
+		}
+		return nil
+	}
+
+	eg, err := process.PipeProcessOutput(
+		ctx,
+		cmd,
+		syncWriter,
+		syncWriter,
+		outputRedactor,
+	)
+	if err != nil {
+		return exitStatus, errors.Wrap(err, "failed to pipe output")
+	}
+
+	if err = cmd.Start(); err != nil {
+		return exitStatus, errors.Wrap(err, "failed to start command")
+	}
+
+	// Wait for either the command to finish (aka the pipewriters get closed), or
+	// for a context cancelation.
+	select {
+	case <-ctx.Done():
+	case err := <-watchErrGroup(eg):
+		if err != nil {
+			return exitStatus, errors.Wrap(err, "failed to read output")
+		}
+	}
+
+	err = cmd.Wait()
+
+	if ps := cmd.Unwrap().ProcessState; ps != nil && ps.Sys() != nil {
+		if ws, ok := ps.Sys().(syscall.WaitStatus); ok {
+			exitStatus = ws.ExitStatus()
+		}
+	}
+
+	return exitStatus, errors.Wrap(err, "command failed")
+}
+
+// watchErrGroup turns a pool.ErrorPool into a channel that will receive the error
+// returned from the pool once it returns.
+func watchErrGroup(g *pool.ErrorPool) <-chan error {
+	ch := make(chan error)
+	go func() {
+		ch <- g.Wait()
+		close(ch)
+	}()
+
+	return ch
 }
 
 // scanLinesWithCRLF is a modified version of bufio.ScanLines that retains
