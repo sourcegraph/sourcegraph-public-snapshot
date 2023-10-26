@@ -19,8 +19,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -116,7 +116,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		}
 	}
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, h.db); err == nil {
+	if actor.FromContext(ctx).IsAuthenticated() {
 		// Used for development to quickly test different zoekt.SearchOptions without having
 		// to change the code.
 		inputs.Features.SearchOptionsOverride = args.SearchOptionsOverride
@@ -239,7 +239,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 		Query:                 get("q", ""),
 		Version:               get("v", "V3"),
 		PatternType:           get("t", ""),
-		SearchOptionsOverride: get("x-zoekt-search-options", ""),
+		SearchOptionsOverride: get("search-opts", ""),
 	}
 
 	if a.Query == "" {

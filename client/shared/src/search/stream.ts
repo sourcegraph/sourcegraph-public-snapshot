@@ -528,7 +528,7 @@ function initiateSearchStream(
         }
 
         if (zoektSearchOptions) {
-            parameters.push(['x-zoekt-search-options', zoektSearchOptions])
+            parameters.push(['search-opts', zoektSearchOptions])
         }
         const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
