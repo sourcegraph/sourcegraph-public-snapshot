@@ -17,6 +17,7 @@ tasks:
           # looks like this is a big de-optimization since Bazel also downloads all test
           # logs even if coverage is disabled
           - --noexperimental_fetch_all_coverage_outputs
+          - --announce_rc
       env:
           CI: "true"
           PGUSER: postgres
