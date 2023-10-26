@@ -5,10 +5,9 @@
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "baseUrl": "./src",
     "jsx": "react-jsx",
   },
-  "include": ["src", "*.js"],
+  "include": ["src"],
   "references": [
     {
       "path": "../common",
