@@ -33,9 +33,9 @@ describe('SurveyToast', () => {
     })
 
     const mockClient = createMockClient(
-        { contents: JSON.stringify({}) },
+        { temporarySettings: { contents: JSON.stringify({}) } },
         gql`
-            query TemporarySettings {
+            query GetTemporarySettings {
                 temporarySettings {
                     contents
                 }

@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "^v18.17.1",
-    "pnpm": "^8.3.0"
+    "pnpm": "^8.9.2"
   },
   "scripts": {
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
@@ -23,7 +23,7 @@
     "lint:css:changed": "pnpm _lint:css --allow-empty-input \"*.none\" $(git diff --diff-filter=d --name-only origin/main... | grep -E '.s?css$' | xargs)",
     "lint:css:all": "pnpm _lint:css 'client/*/src/**/*.scss'",
     "lint:graphql": "graphql-schema-linter",
-    "build-ts": "tsc --build tsconfig.all.json --emitDeclarationOnly",
+    "build-ts": "tsc --build tsconfig.json --emitDeclarationOnly",
     "build-web": "pnpm --filter @sourcegraph/web run build",
     "build-app-shell": "pnpm --filter @sourcegraph/app-shell run build",
     "watch-web": "pnpm --filter @sourcegraph/web run watch",
@@ -436,7 +436,7 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
   },
-  "packageManager": "pnpm@8.3.0",
+  "packageManager": "pnpm@8.9.2",
   "pnpm": {
     "packageExtensions": {
       "hnswlib-node": {

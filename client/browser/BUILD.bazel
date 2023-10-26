@@ -313,6 +313,7 @@ ts_project(
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",  #keep
         ":node_modules/sourcegraph",
         "//:node_modules/@jest/globals",

@@ -4,7 +4,7 @@ import { from, type Observable, of, Subject, Subscription, NEVER } from 'rxjs'
 import { bufferCount, map, switchMap, toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 
-import { createBarrier } from '@sourcegraph/shared/src/testing/testHelpers'
+import { createBarrier } from '@sourcegraph/testing'
 
 import type { MutationRecordLike } from '../../util/dom'
 

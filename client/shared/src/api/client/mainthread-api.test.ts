@@ -118,7 +118,10 @@ describe('MainThreadAPI', () => {
                 clientApplication: 'other',
             }
 
-            const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
+            const { api } = initMainThreadAPI(
+                pretendRemote<FlatExtensionHostAPI>({ syncSettingsData: () => {} }),
+                platformContext
+            )
 
             const edit: SettingsEdit = { path: ['a'], value: 'newVal' }
             await api.applySettingsEdit(edit)

@@ -6,7 +6,7 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 import { mockLicenseContext } from './testUtils'
 
-jest.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: 'AccountName' }))
+jest.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: () => 'AccountName' }))
 
 describe('SiteAdminProductLicenseNode', () => {
     const origContext = window.context

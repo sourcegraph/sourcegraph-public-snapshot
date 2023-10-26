@@ -8,11 +8,7 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
     <div
       class="iconWrapper"
     >
-      <alertcircleicon
-        aria-hidden="true"
-        class="mdi-icon iconInline icon"
-        role="img"
-      />
+      AlertCircleIcon
     </div>
     <h1
       class="h1 title"
@@ -62,11 +58,7 @@ exports[`ErrorBoundary renders reload page if dynamic import error 1`] = `
     <div
       class="iconWrapper"
     >
-      <reloadicon
-        aria-hidden="true"
-        class="mdi-icon iconInline icon"
-        role="img"
-      />
+      ReloadIcon
     </div>
     <h1
       class="h1 title"

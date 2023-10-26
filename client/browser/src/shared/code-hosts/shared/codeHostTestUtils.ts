@@ -1,11 +1,13 @@
 import assert from 'assert'
 
-import { beforeEach, describe, expect, it } from '@jest/globals'
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { readFile } from 'mz/fs'
 import Simmer, { type Options as SimmerOptions } from 'simmerjs'
 import type { SetIntersection } from 'utility-types'
 
 import type { DiffPart } from '@sourcegraph/codeintellify'
+
+import { windowLocation__testingOnly as windowLocation__testingOnly__github } from '../github/util'
 
 import type { CodeHost, MountGetter } from './codeHost'
 import type { CodeView, DOMFunctions } from './codeViews'
@@ -154,9 +156,12 @@ export function testDOMFunctions(
     let codeViewElement: HTMLElement
     beforeEach(async () => {
         if (url) {
-            jsdom.reconfigure({ url })
+            windowLocation__testingOnly__github.value = new URL(url)
         }
         codeViewElement = await getFixtureBody({ htmlFixturePath, isFullDocument: false })
+    })
+    afterEach(() => {
+        windowLocation__testingOnly__github.value = null
     })
     for (const { diffPart, lineNumber, firstCharacterIsDiffIndicator } of codeElements) {
         describe(

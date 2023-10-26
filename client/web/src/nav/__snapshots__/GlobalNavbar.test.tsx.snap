@@ -13,10 +13,7 @@ exports[`GlobalNavbar default 1`] = `
         class="d-flex align-items-center"
         href="/search"
       >
-        <brandlogo
-          class="logo"
-          variant="symbol"
-        />
+        BrandLogo
       </a>
     </h1>
     <hr
@@ -212,13 +209,7 @@ exports[`GlobalNavbar default 1`] = `
   <div
     class="searchNavBar"
   >
-    <searchnavbaritem
-      platformcontext="[object Object]"
-      routes=""
-      selectedsearchcontextspec=""
-      settingscascade="[object Object]"
-      telemetryservice="[object Object]"
-    />
+    SearchNavbarItem
   </div>
 </DocumentFragment>
 `;

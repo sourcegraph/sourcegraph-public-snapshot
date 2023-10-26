@@ -13,5 +13,8 @@
     {
       "path": "../common",
     },
+    {
+      "path": "../testing",
+    },
   ],
 }
