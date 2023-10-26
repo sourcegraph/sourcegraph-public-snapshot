@@ -131,9 +131,9 @@ class NoLineBreakWidget extends WidgetType {
 }
 
 const replaceLastLineDeco = (lastLine: Line): Range<Decoration> => {
-    const deco = Decoration.replace({}).range(lastLine.from - 1, lastLine.from)
     // Subtract 1 to exclude newline character at end of line
     // when setting decoration range
+    const deco = Decoration.replace({}).range(lastLine.from - 1, lastLine.to)
     return deco
 }
 
@@ -142,9 +142,7 @@ const addEOFNoteDeco = (lastLine: Line): Range<Decoration> => {
     return Decoration.replace({
         widget,
         block: true,
-        // Subtract 1 to exclude newline character at end of line
-        // when setting decoration range
-    }).range(lastLine.from - 1, lastLine.from)
+    }).range(lastLine.to)
 }
 
 const staticExtensions: Extension = [
