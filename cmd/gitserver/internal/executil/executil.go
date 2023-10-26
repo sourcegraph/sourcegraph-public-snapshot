@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -21,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
 // ShortGitCommandTimeout returns the timeout for git commands that should not
@@ -105,6 +108,85 @@ func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, er
 	cmd.Unwrap().Stderr = &buf
 	_, err := RunCommand(ctx, cmd)
 	return buf.Bytes(), err
+}
+
+type RedactorFunc func(string) string
+
+// The passed cmd should be bound to the passed context.
+func RunCommandWriteOutput(ctx context.Context, cmd wrexec.Cmder, writer io.Writer, redactor RedactorFunc) (int, error) {
+	exitStatus := UnsetExitStatus
+
+	// Create a cancel context so that on exit we always properly close the command
+	// pipes attached later by process.PipeOutputUnbuffered.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Make sure we only write to the writer from one goroutine at a time, either
+	// stdout or stderr.
+	syncWriter := newSynchronizedWriter(writer)
+
+	outputRedactor := func(w io.Writer, r io.Reader) error {
+		sc := process.NewOutputScannerWithSplit(r, scanLinesWithCRLF)
+		for sc.Scan() {
+			line := sc.Text()
+			if _, err := fmt.Fprint(w, redactor(line)); err != nil {
+				return err
+			}
+		}
+		// We can ignore ErrClosed because we get that if a process crashes, it will
+		// be handled by cmd.Wait.
+		if err := sc.Err(); err != nil && !errors.Is(err, fs.ErrClosed) {
+			return err
+		}
+		return nil
+	}
+
+	eg, err := process.PipeProcessOutput(
+		ctx,
+		cmd,
+		syncWriter,
+		syncWriter,
+		outputRedactor,
+	)
+	if err != nil {
+		return exitStatus, errors.Wrap(err, "failed to pipe output")
+	}
+
+	if err = cmd.Start(); err != nil {
+		return exitStatus, errors.Wrap(err, "failed to start command")
+	}
+
+	// Wait for either the command to finish (aka the pipewriters get closed), or
+	// for a context cancelation.
+	select {
+	case <-ctx.Done():
+	case err := <-watchErrGroup(eg):
+		if err != nil {
+			return exitStatus, errors.Wrap(err, "failed to read output")
+		}
+	}
+
+	err = cmd.Wait()
+
+	if ps := cmd.Unwrap().ProcessState; ps != nil && ps.Sys() != nil {
+		if ws, ok := ps.Sys().(syscall.WaitStatus); ok {
+			exitStatus = ws.ExitStatus()
+		}
+	}
+
+	return exitStatus, errors.Wrap(err, "command failed")
+}
+
+// watchErrGroup turns a pool.ErrorPool into a channel that will receive the error
+// returned from the pool once it returns.
+func watchErrGroup(g *pool.ErrorPool) <-chan error {
+	ch := make(chan error)
+	go func() {
+		ch <- g.Wait()
+		close(ch)
+	}()
+
+	return ch
 }
 
 // RunRemoteGitCommand runs the command after applying the remote options.
@@ -307,10 +389,10 @@ func WrapCmdError(cmd *exec.Cmd, err error) error {
 	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
 }
 
-// ScanLinesWithCRLF is a modified version of bufio.ScanLines that retains
+// scanLinesWithCRLF is a modified version of bufio.ScanLines that retains
 // the trailing newline byte(s) in the returned token and splits on either CR
 // or LF.
-func ScanLinesWithCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func scanLinesWithCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
@@ -327,4 +409,19 @@ func ScanLinesWithCRLF(data []byte, atEOF bool) (advance int, token []byte, err 
 
 	// Request more data.
 	return 0, nil, nil
+}
+
+func newSynchronizedWriter(w io.Writer) *synchronizedWriter {
+	return &synchronizedWriter{writer: w}
+}
+
+type synchronizedWriter struct {
+	mu     sync.Mutex
+	writer io.Writer
+}
+
+func (sw *synchronizedWriter) Write(p []byte) (n int, err error) {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+	return sw.writer.Write(p)
 }

@@ -2,14 +2,11 @@ package vcssyncer
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
-	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
 // gitRepoSyncer is a syncer for Git repositories.
@@ -75,18 +71,6 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, 
 // We "clone" a repository by first creating a bare repo and then fetching the
 // configured refs into it from the remote.
 func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	redactor := urlredactor.New(remoteURL)
-
-	defer func() {
-		if err != nil {
-			// Print errors to the progressWriter for easier inspection.
-			tryWrite(s.logger, progressWriter, "Error: %s\n", redactor.Redact(err.Error()))
-		}
-	}()
-
 	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")
@@ -110,69 +94,15 @@ func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL 
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	executil.ConfigureRemoteGitCommand(cmd)
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return errors.Wrap(err, "failed to attach stdout pipe")
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return errors.Wrap(err, "failed to attach stdout pipe")
-	}
-
-	g := pool.New().WithErrors()
-
-	var writeMu sync.Mutex
-
-	g.Go(func() error {
-		sc := process.NewOutputScannerWithSplit(stdout, executil.ScanLinesWithCRLF)
-		for sc.Scan() {
-			line := sc.Text()
-			writeMu.Lock()
-			if _, err := fmt.Fprint(progressWriter, redactor.Redact(line)); err != nil {
-				return err
-			}
-			writeMu.Unlock()
-		}
-		return sc.Err()
-	})
-	g.Go(func() error {
-		sc := process.NewOutputScannerWithSplit(stderr, executil.ScanLinesWithCRLF)
-		for sc.Scan() {
-			line := sc.Text()
-			writeMu.Lock()
-			if _, err := fmt.Fprint(progressWriter, redactor.Redact(line)); err != nil {
-				return err
-			}
-			writeMu.Unlock()
-		}
-		return sc.Err()
-	})
-
-	go func() {
-		<-ctx.Done()
-		stdout.Close()
-		stderr.Close()
-	}()
-
-	wrCmd := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, cmd).WithRedactorFunc(redactor.Redact)
-
-	// Note: Using Start here does NOT store the output of the command as the
-	// command output of the wrexec command.
 	tryWrite(s.logger, progressWriter, "Fetching remote contents\n")
-	if err = wrCmd.Start(); err != nil {
-		return errors.Wrap(err, "failed to start fetch command")
-	}
-
-	select {
-	case <-ctx.Done():
-	case err := <-watchErrGroup(g):
-		if err != nil {
-			return errors.Wrap(err, "failed to read output")
-		}
-	}
-
-	if err := wrCmd.Wait(); err != nil {
-		return errors.Wrap(err, "fetch failed")
+	redactor := urlredactor.New(remoteURL)
+	wrCmd := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, cmd).WithRedactorFunc(redactor.Redact)
+	// Note: Using RunCommandWriteOutput here does NOT store the output of the
+	// command as the command output of the wrexec command, because the pipes are
+	// already used.
+	exitCode, err := executil.RunCommandWriteOutput(ctx, wrCmd, progressWriter, redactor.Redact)
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch: exit status %d", exitCode)
 	}
 
 	return nil

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -88,18 +87,6 @@ func (s *vcsPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 // repo at tmpPath by creating one head per version.
 // It reports redacted progress logs via the progressWriter.
 func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	redactor := urlredactor.New(remoteURL)
-
-	defer func() {
-		if err != nil {
-			// Print errors to the progressWriter for easier inspection.
-			tryWrite(s.logger, progressWriter, "Error: %s\n", redactor.Redact(err.Error()))
-		}
-	}()
-
 	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")

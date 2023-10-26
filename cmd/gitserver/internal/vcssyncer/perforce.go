@@ -2,15 +2,12 @@ package vcssyncer
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"sync"
 
-	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -23,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
 // perforceDepotSyncer is a syncer for Perforce depots.
@@ -74,18 +70,6 @@ func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 // Clone writes a Perforce depot into tmpPath, using a Perforce-to-git-conversion.
 // It reports redacted progress logs via the progressWriter.
 func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	redactor := urlredactor.New(remoteURL)
-
-	defer func() {
-		if err != nil {
-			// Print errors to the progressWriter for easier inspection.
-			tryWrite(s.logger, progressWriter, "Error: %s\n", redactor.Redact(err.Error()))
-		}
-	}()
-
 	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")
@@ -117,68 +101,14 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 	}
 	cmd.Env = s.p4CommandEnv(p4port, p4user, p4passwd)
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return errors.Wrap(err, "failed to attach stdout pipe")
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return errors.Wrap(err, "failed to attach stdout pipe")
-	}
-
-	g := pool.New().WithErrors()
-
-	var writeMu sync.Mutex
-
-	g.Go(func() error {
-		sc := process.NewOutputScannerWithSplit(stdout, executil.ScanLinesWithCRLF)
-		for sc.Scan() {
-			line := sc.Text()
-			writeMu.Lock()
-			if _, err := fmt.Fprintln(progressWriter, redactor.Redact(line)); err != nil {
-				return err
-			}
-			writeMu.Unlock()
-		}
-		return sc.Err()
-	})
-	g.Go(func() error {
-		sc := process.NewOutputScannerWithSplit(stderr, executil.ScanLinesWithCRLF)
-		for sc.Scan() {
-			line := sc.Text()
-			writeMu.Lock()
-			if _, err := fmt.Fprintln(progressWriter, redactor.Redact(line)); err != nil {
-				return err
-			}
-			writeMu.Unlock()
-		}
-		return sc.Err()
-	})
-
-	go func() {
-		<-ctx.Done()
-		stdout.Close()
-		stderr.Close()
-	}()
-
+	redactor := urlredactor.New(remoteURL)
 	wrCmd := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, cmd).WithRedactorFunc(redactor.Redact)
-
-	// Note: Using Start here does NOT store the output of the command as the
-	// command output of the wrexec command.
-	if err = wrCmd.Start(); err != nil {
-		return errors.Wrap(err, "failed to start p4 conversion command")
-	}
-
-	select {
-	case <-ctx.Done():
-	case err := <-watchErrGroup(g):
-		if err != nil {
-			return errors.Wrap(err, "failed to read output")
-		}
-	}
-
-	if err := wrCmd.Wait(); err != nil {
-		return errors.Wrap(err, "conversion failed")
+	// Note: Using RunCommandWriteOutput here does NOT store the output of the
+	// command as the command output of the wrexec command, because the pipes are
+	// already used.
+	exitCode, err := executil.RunCommandWriteOutput(ctx, wrCmd, progressWriter, redactor.Redact)
+	if err != nil {
+		return errors.Wrapf(err, "failed to run p4->git conversion: exit code %d", exitCode)
 	}
 
 	return nil

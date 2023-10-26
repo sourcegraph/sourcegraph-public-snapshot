@@ -218,10 +218,10 @@ func TestClone_Fail(t *testing.T) {
 
 	// Should have acquired a lock.
 	mockassert.CalledOnce(t, locker.TryAcquireFunc)
-	// Should have reported status. 8 lines is the output git currently produces.
+	// Should have reported status. 7 lines is the output git currently produces.
 	// This number might need to be adjusted over time, but before doing so please
 	// check that the calls actually use the args you would expect them to use.
-	mockassert.CalledN(t, lock.SetStatusFunc, 8)
+	mockassert.CalledN(t, lock.SetStatusFunc, 7)
 	// Should have released the lock.
 	mockassert.CalledOnce(t, lock.ReleaseFunc)
 
@@ -244,7 +244,7 @@ func TestClone_Fail(t *testing.T) {
 	// And that it was called for the right repo, setting the last error to empty.
 	mockassert.CalledWith(t, gsStore.SetLastErrorFunc, mockassert.Values(mockassert.Skip, repo, mockassert.Skip, "test-shard"))
 	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, "Creating bare repo\n")
-	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, "fetch failed: exit status 128")
+	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, "failed to fetch: exit status 128")
 
 	// Check that no repo is in the expected location on disk.
 	_, err = os.Stat(gitserverfs.RepoDirFromName(reposDir, repo).Path())

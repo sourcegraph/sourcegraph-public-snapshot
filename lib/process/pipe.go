@@ -8,7 +8,7 @@ import (
 	"io"
 	"io/fs"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -47,7 +47,7 @@ func NewOutputScannerWithSplit(r io.Reader, split bufio.SplitFunc) *bufio.Scanne
 // The passed in context should be canceled when done.
 //
 // See this issue for more details: https://github.com/golang/go/issues/21922
-func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
+func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*pool.ErrorPool, error) {
 	pipe := func(w io.Writer, r io.Reader) error {
 		scanner := NewOutputScanner(r)
 
@@ -58,12 +58,12 @@ func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.W
 		return scanner.Err()
 	}
 
-	return pipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
+	return PipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
 }
 
 // PipeOutputUnbuffered is the unbuffered version of PipeOutput and uses
 // io.Copy instead of piping output line-based to the output.
-func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
+func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*pool.ErrorPool, error) {
 	pipe := func(w io.Writer, r io.Reader) error {
 		_, err := io.Copy(w, r)
 		// We can ignore ErrClosed because we get that if a process crashes
@@ -73,18 +73,18 @@ func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrW
 		return nil
 	}
 
-	return pipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
+	return PipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
 }
 
-func pipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer, fn pipe) (*errgroup.Group, error) {
+func PipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer, fn pipe) (*pool.ErrorPool, error) {
 	stdoutPipe, err := c.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to attach stdout pipe")
 	}
 
 	stderrPipe, err := c.StderrPipe()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to attach stderr pipe")
 	}
 
 	go func() {
@@ -111,7 +111,7 @@ func pipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 		stderrPipe.Close()
 	}()
 
-	eg := &errgroup.Group{}
+	eg := pool.New().WithErrors()
 
 	eg.Go(func() error { return fn(stdoutWriter, stdoutPipe) })
 	eg.Go(func() error { return fn(stderrWriter, stderrPipe) })
