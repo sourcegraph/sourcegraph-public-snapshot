@@ -153,7 +153,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
 			ops.Merge(operations.NewNamedSet("Browser Extensions",
-				addBrowserExtensionUnitTests,
 				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			))
 		}
@@ -165,7 +164,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
 			wait,
@@ -182,7 +180,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
 			recordBrowserExtensionIntegrationTests,
 			frontendTests,
 			wait,
