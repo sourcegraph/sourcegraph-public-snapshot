@@ -22,6 +22,11 @@ type EnvironmentSpec struct {
 	// LivenessProbe is only provisioned if this field is set.
 	LivenessProbe *EnvironmentLivenessProbeSpec `json:"livenessProbe,omitempty"`
 
+	// Env is key-value pairs of environment variables to set on the service.
+	//
+	// Values can be subsituted with supported runtime values with gotemplate, e.g., "{{ .ProjectID }}"
+	// 	- ProjectID: The project ID of the service.
+	//	- ServiceDnsName: The DNS name of the service.
 	Env       map[string]string `json:"env,omitempty"`
 	SecretEnv map[string]string `json:"secretEnv,omitempty"`
 }
