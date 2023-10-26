@@ -12,6 +12,11 @@ tasks:
       bazel:
         rcfiles:
             - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
+        flags:
+          - --noexperimental_reuse_sandbox_directories
+          # looks like this is a big de-optimization since Bazel also downloads all test
+          # logs even if coverage is disabled
+          - --noexperimental_fetch_all_coverage_outputs
       env:
           CI: "true"
           PGUSER: postgres
@@ -21,10 +26,6 @@ tasks:
           REDIS_CACHE_ENDPOINT: ":6379"
           GIT_PAGER: ''
           DISPLAY: ":99"
-
-      coverage: false
-      flags:
-        - --noexperimental_reuse_sandbox_directories
       targets:
           - //...
           - //testing:grpc_backend_integration_test
