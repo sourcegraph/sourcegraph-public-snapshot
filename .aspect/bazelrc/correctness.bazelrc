@@ -72,4 +72,4 @@ common --incompatible_disallow_empty_glob
 # to generate a full coverage report.
 # Docs: https://bazel.build/reference/command-line-reference#flag--experimental_fetch_all_coverage_outputs
 # detching remote cache results
-test --experimental_fetch_all_coverage_outputs
+# test --experimental_fetch_all_coverage_outputs
