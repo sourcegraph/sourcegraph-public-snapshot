@@ -550,6 +550,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg generate bazel
+
+Run the bazel target //dev:write_all_generated.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg db
 
 Interact with local Sourcegraph databases for development.

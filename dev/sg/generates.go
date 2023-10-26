@@ -39,6 +39,22 @@ var allGenerateTargets = generateTargets{
 			return
 		},
 	},
+	{
+		Name:   "bazel",
+		Help:   "Run the bazel target //dev:write_all_generated",
+		Runner: generateBazelRunner,
+	},
+}
+
+func generateBazelRunner(ctx context.Context, args []string) *generate.Report {
+	// Run bazel run //dev:write_all_generated, but only in local
+	if os.Getenv("CI") != "true" {
+		if report := generate.RunScript("bazel run //dev:write_all_generated")(ctx, args); report.Err != nil {
+			return report
+		}
+	}
+
+	return &generate.Report{}
 }
 
 func generateGoRunner(ctx context.Context, args []string) *generate.Report {
