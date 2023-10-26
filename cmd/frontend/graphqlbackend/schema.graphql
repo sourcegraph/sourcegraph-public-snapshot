@@ -3383,7 +3383,7 @@ type ExternalService implements Node {
     supportsRepoExclusion: Boolean!
 
     """
-    True if this external service is unrestricted and marks all repositories added by it as accessible.
+    True if this external service is unrestricted and marks all repositories added by it as publicly accessible.
     """
     unrestricted: Boolean!
 }
