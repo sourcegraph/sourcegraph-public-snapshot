@@ -3,19 +3,18 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   using System.Collections.Generic;
-//      ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `System.Collections.Generic`#
   
   public void SurprisinglyValid(string firstParam) { }
-//            ^^^^^^^^^^^^^^^^^ definition scip-ctags SurprisinglyValid().
+//            ^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags SurprisinglyValid().
   
   namespace Longer.Namespace
-//          ^^^^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/
+//          ^^^^^^^^^^^^^^^^ definition(Namespace) scip-ctags `Longer.Namespace`/
   {
       public class Class
-//                 ^^^^^ definition scip-ctags `Longer.Namespace`/Class#
+//                 ^^^^^ definition(Class) scip-ctags `Longer.Namespace`/Class#
       {
           public int ExplicitGetterSetter
-//                   ^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ExplicitGetterSetter.
+//                   ^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#ExplicitGetterSetter.
           {
               get
               {
@@ -27,104 +26,104 @@ expression: dumped
               }
           }
           private int _val;
-//                    ^^^^ definition scip-ctags `Longer.Namespace`/Class#_val.
+//                    ^^^^ definition(Field) scip-ctags `Longer.Namespace`/Class#_val.
   
           protected virtual int ImplicitGetterSetter
-//                              ^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ImplicitGetterSetter.
+//                              ^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#ImplicitGetterSetter.
           {
               get;
               set;
           }
   
           internal int ImplicitGetterPrivateSetter
-//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ImplicitGetterPrivateSetter.
+//                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#ImplicitGetterPrivateSetter.
           {
               get;
               private set;
           }
   
           public struct Coords
-//                      ^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Coords#
+//                      ^^^^^^ definition(Struct) scip-ctags `Longer.Namespace`/Class#Coords#
           {
               public Coords(double x, double y)
-//                   ^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Coords#Coords().
+//                   ^^^^^^ definition(Constructor) scip-ctags `Longer.Namespace`/Class#Coords#Coords().
               {
                   X = x;
                   Y = y;
               }
   
               public double X { get; }
-//                          ^ definition scip-ctags `Longer.Namespace`/Class#Coords#X.
+//                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Coords#X.
               public double Y { get; }
-//                          ^ definition scip-ctags `Longer.Namespace`/Class#Coords#Y.
+//                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Coords#Y.
   
               public override string ToString() => $"({X}, {Y})";
-//                                   ^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Coords#ToString().
+//                                   ^^^^^^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#Coords#ToString().
           }
   
           delegate int MyDelegate();
-//                     ^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#MyDelegate().
+//                     ^^^^^^^^^^ definition(Delegate) scip-ctags `Longer.Namespace`/Class#MyDelegate().
   
           public event ChangedEventHandler Changed;
-//                                         ^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Changed.
+//                                         ^^^^^^^ definition(Event) scip-ctags `Longer.Namespace`/Class#Changed.
   
           int _speed;
-//            ^^^^^^ definition scip-ctags `Longer.Namespace`/Class#_speed.
+//            ^^^^^^ definition(Field) scip-ctags `Longer.Namespace`/Class#_speed.
           public string PublicImplicitGetterSetter { get; set; }
-//                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#PublicImplicitGetterSetter.
+//                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#PublicImplicitGetterSetter.
   
           public string LambdaFunction => PublicImplicitGetterSetter + " " + _speed + " speed";
-//                      ^^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#LambdaFunction.
+//                      ^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#LambdaFunction.
   
           public enum Swag
-//                    ^^^^ definition scip-ctags `Longer.Namespace`/Class#Swag#
+//                    ^^^^ definition(Enum) scip-ctags `Longer.Namespace`/Class#Swag#
           {
               Shirt,
-//            ^^^^^ definition scip-ctags `Longer.Namespace`/Class#Swag#Shirt.
+//            ^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#Swag#Shirt.
               Sweater,
-//            ^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Swag#Sweater.
+//            ^^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#Swag#Sweater.
               Socks = 42,
-//            ^^^^^ definition scip-ctags `Longer.Namespace`/Class#Swag#Socks.
+//            ^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#Swag#Socks.
               Pants
-//            ^^^^^ definition scip-ctags `Longer.Namespace`/Class#Swag#Pants.
+//            ^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#Swag#Pants.
           }
   
           public Swag SourcegraphSwag;
-//                    ^^^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#SourcegraphSwag.
+//                    ^^^^^^^^^^^^^^^ definition(Field) scip-ctags `Longer.Namespace`/Class#SourcegraphSwag.
   
           [Flags]
           public enum ZigFeatureSet
-//                    ^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#
+//                    ^^^^^^^^^^^^^ definition(Enum) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#
           {
               None = 0,
-//            ^^^^ definition scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#None.
+//            ^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#None.
               Errors = 1,
-//            ^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#Errors.
+//            ^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#Errors.
               Comptime = 2,
-//            ^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#Comptime.
+//            ^^^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#Comptime.
               BuildSystem = 4,
-//            ^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#BuildSystem.
+//            ^^^^^^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#BuildSystem.
               CoolCommunity = 8,
-//            ^^^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#CoolCommunity.
+//            ^^^^^^^^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#CoolCommunity.
               FullPackage = Errors | Comptime | BuildSystem | CoolCommunity
-//            ^^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#FullPackage.
+//            ^^^^^^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#FullPackage.
           }
   
           public static void Syntax() {}
-//                           ^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Syntax().
+//                           ^^^^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#Syntax().
       }
   }
   
   namespace OneClass
-//          ^^^^^^^^ definition scip-ctags OneClass/
+//          ^^^^^^^^ definition(Namespace) scip-ctags OneClass/
   {
       public class TheClass
-//                 ^^^^^^^^ definition scip-ctags OneClass/TheClass#
+//                 ^^^^^^^^ definition(Class) scip-ctags OneClass/TheClass#
       {
           public Clickable ClickAction { get; set; }
-//                         ^^^^^^^^^^^ definition scip-ctags OneClass/TheClass#ClickAction.
+//                         ^^^^^^^^^^^ definition(Property) scip-ctags OneClass/TheClass#ClickAction.
           public string Text { get; set; }
-//                      ^^^^ definition scip-ctags OneClass/TheClass#Text.
+//                      ^^^^ definition(Property) scip-ctags OneClass/TheClass#Text.
       }
   }
 
