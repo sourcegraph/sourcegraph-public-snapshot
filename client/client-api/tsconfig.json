@@ -22,5 +22,5 @@
       "path": "../template-parser",
     },
   ],
-  "include": ["src", "*.js"],
+  "include": ["src"],
 }

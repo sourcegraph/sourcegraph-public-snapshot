@@ -119,7 +119,6 @@ copy_to_bin(
 ts_project(
     name = "wildcard_lib",
     srcs = [
-        "globals.d.ts",
         "src/components/Alert/Alert.tsx",
         "src/components/Alert/AlertLink.tsx",
         "src/components/Alert/constants.ts",
@@ -377,6 +376,7 @@ ts_project(
         "src/global-styles/GlobalStylesStory/TextVariants/index.ts",
         "src/global-styles/GlobalStylesStory/constants.ts",
         "src/global-styles/GlobalStylesStory/utils.ts",
+        "src/globals.d.ts",
         "src/hooks/index.ts",
         "src/hooks/useAccordion.ts",
         "src/hooks/useAutoFocus.ts",

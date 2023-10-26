@@ -2,16 +2,15 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "baseUrl": ".",
     "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
+      "*": ["./src/types/*", "../shared/src/types/*", "../common/src/types/*"],
     },
     "jsx": "react-jsx",
     "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": "out",
   },
-  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts", "./code-intel-extensions.json"],
+  "include": ["src", "config", "gulpfile.js", "src/**/*.json", "src/types/**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": [
     "out",
     "node_modules",

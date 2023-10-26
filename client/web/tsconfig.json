@@ -51,8 +51,16 @@
       "path": "../wildcard",
     },
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
-  "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
+  "include": ["src", "scripts", "./src/**/*.json"],
+  "exclude": [
+    "dev",
+    "../../node_modules",
+    "./node_modules",
+    "./out",
+    "src/end-to-end",
+    "src/regression",
+    "src/integration",
+  ],
   "ts-node": {
     "moduleTypes": {
       "scripts/**/*": "cjs",

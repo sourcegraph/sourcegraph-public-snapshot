@@ -2094,7 +2094,6 @@ ESBUILD_CONFIG_DEPS = [
     "//:node_modules/events",
     "//:node_modules/monaco-editor",
     "//:node_modules/esbuild",
-    "//client/web/dev",
     "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
     "//:postcss_config_js",
 
