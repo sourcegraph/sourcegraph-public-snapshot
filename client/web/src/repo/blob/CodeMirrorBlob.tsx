@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, type Extension } from '@codemirror/state'
+import { Compartment, EditorState, Range, type Extension, Line } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
@@ -130,6 +130,23 @@ class NoLineBreakWidget extends WidgetType {
     }
 }
 
+const replaceLastLineDeco = (lastLine: Line): Range<Decoration> => {
+    const deco = Decoration.replace({}).range(lastLine.from - 1, lastLine.from)
+    // Subtract 1 to exclude newline character at end of line
+    // when setting decoration range
+    return deco
+}
+
+const addEOFNoteDeco = (lastLine: Line): Range<Decoration> => {
+    const widget = new NoLineBreakWidget('(No new line at end of file)')
+    return Decoration.replace({
+        widget,
+        block: true,
+        // Subtract 1 to exclude newline character at end of line
+        // when setting decoration range
+    }).range(lastLine.from - 1, lastLine.from)
+}
+
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
     EditorView.editable.of(false),
@@ -182,17 +199,13 @@ const staticExtensions: Extension = [
     }),
     EditorView.decorations.compute(['doc'], state => {
         const lastLine = state.doc.line(state.doc.lines)
-        const decoReplace = Decoration.replace({}).range(lastLine.from - 1, lastLine.from)
+        const decoRemoveLastLine = replaceLastLineDeco(lastLine)
+        const decoAddEOFNote = addEOFNoteDeco(lastLine)
 
         if (lastLine.length === 0) {
-            return Decoration.set(decoReplace)
+            return Decoration.set(decoRemoveLastLine)
         }
-        const widget = new NoLineBreakWidget('(No new line at end of file)')
-        const decoBlock = Decoration.replace({
-            widget,
-            block: true,
-        }).range(lastLine.from - 1, lastLine.from)
-        return Decoration.set(decoBlock)
+        return Decoration.set(decoAddEOFNote)
     }),
 ]
 
