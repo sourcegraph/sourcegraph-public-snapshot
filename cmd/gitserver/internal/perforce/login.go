@@ -22,9 +22,16 @@ func P4TestWithTrust(ctx context.Context, p4home, p4port, p4user, p4passwd strin
 		return nil // The test worked, session still valid for the user
 	}
 
+	if errors.Is(err, context.DeadlineExceeded) {
+		err = P4Test(ctx, p4home, p4port, p4user, p4passwd)
+	}
+
 	// If the output indicates that we have to run p4trust first, do that.
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {
 		err := P4Trust(ctx, p4home, p4port)
+		if errors.Is(err, context.DeadlineExceeded) {
+			err = P4Test(ctx, p4home, p4port, p4user, p4passwd)
+		}
 		if err != nil {
 			return errors.Wrap(err, "trust")
 		}
@@ -75,7 +82,6 @@ func P4UserIsSuperUser(ctx context.Context, p4home, p4port, p4user, p4passwd str
 	}
 
 	return nil
-
 }
 
 var ErrIsNotSuperUser = errors.New("the user does not have super access")
