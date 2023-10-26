@@ -1,6 +1,6 @@
-import fetch from 'jest-fetch-mock'
 import { readFile } from 'mz/fs'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, test } from 'vitest'
+import { afterAll, beforeAll, vi, beforeEach, describe, expect, it, test } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 
 import { disableFetchCache, enableFetchCache, fetchCache, type LineOrPositionOrRange } from '@sourcegraph/common'
 
@@ -14,6 +14,8 @@ import {
     windowLocation__testingOnly,
 } from './codeHost'
 import { repoNameOnSourcegraph } from './scrape'
+
+const fetch = createFetchMock(vi)
 
 describe('gitlab/codeHost', () => {
     describe('gitlabCodeHost', () => {

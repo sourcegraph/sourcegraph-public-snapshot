@@ -197,22 +197,6 @@ load("@aspect_rules_ts//ts:repositories.bzl", "rules_ts_dependencies")
 
 rules_ts_dependencies(ts_version = "4.9.5")
 
-# rules_jest setup ==============================
-load("@aspect_rules_jest//jest:dependencies.bzl", "rules_jest_dependencies")
-
-rules_jest_dependencies()
-
-load("@aspect_rules_jest//jest:repositories.bzl", "jest_repositories")
-
-jest_repositories(
-    name = "jest",
-    jest_version = "v28.1.0",
-)
-
-load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
-
-jest_npm_repositories()
-
 # rules_swc setup ==============================
 load("@aspect_rules_swc//swc:dependencies.bzl", "rules_swc_dependencies")
 

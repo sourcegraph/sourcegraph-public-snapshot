@@ -1,7 +1,7 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
@@ -9,7 +9,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
-# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_resolve ../graphql-operations //client/shared:graphql_operations
@@ -29,7 +28,6 @@ eslint_test_with_types(
     ]),
     config = ":eslint_config",
     deps = [
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )
@@ -365,7 +363,6 @@ ts_project(
         "//:node_modules/core-js",
         "//:node_modules/fast-json-stable-stringify",
         "//:node_modules/history",
-        "//:node_modules/jest",  #keep
         "//:node_modules/js-base64",
         "//:node_modules/lodash",
         "//:node_modules/lru-cache",
@@ -463,7 +460,7 @@ ts_project(
         "src/search/query/validate.test.ts",
         "src/settings/settings.test.ts",
         "src/settings/temporary/useTemporarySetting.test.tsx",
-        "src/testGlobals.d.ts",  #keep
+        "src/testSetup.test.ts",
         "src/tracking/utm.test.ts",
         "src/util/dom.test.ts",
         "src/util/url.test.ts",
@@ -483,7 +480,6 @@ ts_project(
         ":node_modules/sourcegraph",
         ":shared_lib",
         "//:node_modules/@apollo/client",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@sourcegraph/extension-api-stubs",
         "//:node_modules/@testing-library/jest-dom",  #keep
@@ -503,6 +499,7 @@ ts_project(
         "//:node_modules/react",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
+        "//:node_modules/vitest",
         "//client/shared/src/testing",
     ],
 )
@@ -525,15 +522,10 @@ filegroup(
     srcs = glob(["src/**/__snapshots__/*"]),
 )
 
-jest_test(
+vitest_test(
     name = "test",
-    size = "enormous",  # make sure bazel reserves enough RAM for this.
-    timeout = "moderate",
     data = [
         ":shared_tests",
         ":snapshots",
     ],
-    patch_node_fs = False,
-    shard_count = 6,
-    tags = ["no-sandbox"],
 )

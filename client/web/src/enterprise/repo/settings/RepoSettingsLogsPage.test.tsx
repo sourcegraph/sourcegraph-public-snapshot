@@ -162,7 +162,7 @@ describe('RepoSettingsLogsPage', () => {
         expect(cmp.asFragment()).toMatchSnapshot()
     })
 
-    test('should render a waring when recording is disabled', async () => {
+    test('should render a warning when recording is disabled', async () => {
         const mockRecordedCommandsQuery: MockedResponse<RepositoryRecordedCommandsResult> = {
             delay: 0,
             request: {

@@ -6,7 +6,7 @@
   "scripts": {
     "start:dev": "npx nodemon",
     "start":  "ts-node ./src/index.ts",
-    "test": "jest ./src/index.test.ts --forceExit"
+    "test": "vitest ./src/index.test.ts"
   },
   "keywords": [],
   "author": "",

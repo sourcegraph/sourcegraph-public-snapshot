@@ -18,16 +18,12 @@ import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
-function mockRouterDom() {
-    return {
-        ...jest.requireActual<typeof import('react-router-dom')>('react-router-dom'),
-        useNavigate: () => ({
-            push: vi.fn(),
-        }),
-    }
-}
-
-vi.mock('react-router-dom', () => mockRouterDom())
+vi.mock('react-router-dom', async () => ({
+    ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
+    useNavigate: () => ({
+        push: vi.fn(),
+    }),
+}))
 
 const mockTelemetryService = {
     log: sinon.spy(),
@@ -79,7 +75,7 @@ const mockedGQL: MockedResponse[] = [
                 },
             },
         },
-    } as MockedResponse<InsightsDashboardsResult>,
+    } satisfies MockedResponse<InsightsDashboardsResult>,
 ]
 
 const renderWithBrandedContext = (component: ReactElement, { route = '/', path = '*', api = {} } = {}) => ({

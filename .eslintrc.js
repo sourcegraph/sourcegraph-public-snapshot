@@ -22,7 +22,6 @@ const config = {
     '**/*.json',
     '**/*.d.ts',
     'eslint-relative-formatter.js',
-    'jest.config.js',
     'typedoc.js',
     'bundlesize.config.js',
   ],

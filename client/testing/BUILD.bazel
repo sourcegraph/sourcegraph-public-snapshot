@@ -24,7 +24,7 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
-        "//:node_modules/@jest/globals",  #keep
+        "//:node_modules/vitest",
     ],
 )
 

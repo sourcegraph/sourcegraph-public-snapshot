@@ -130,7 +130,7 @@ describe('Notepad', () => {
         })
 
         it('creates notebooks', () => {
-            const createNotebookSpy = jest
+            const createNotebookSpy = vi
                 .spyOn(backend, 'createNotebook')
                 .mockImplementation(() => of({} as unknown as NotebookFields))
 

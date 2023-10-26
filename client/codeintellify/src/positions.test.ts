@@ -11,9 +11,6 @@ describe('positions', () => {
 
     afterAll(dom.cleanup)
 
-    // Without this placeholder, jest throws an error saying there are no tests.
-    it('placeholder', () => {})
-
     for (const tokenize of [false, true]) {
         for (const codeView of testcases) {
             it((tokenize ? 'tokenizes' : 'does not tokenize') + ` the DOM when tokenize: ${String(tokenize)}`, () => {

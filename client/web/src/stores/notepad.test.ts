@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { setAct } from '../__mocks__/zustand'
+import { setAct } from '../../__mocks__/zustand'
 
 import {
     addNotepadEntry,

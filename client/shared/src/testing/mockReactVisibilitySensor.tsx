@@ -26,4 +26,4 @@ function mockVisibilitySensor({ children, onChange }: VisibilitySensorPropsType)
     )
 }
 
-vi.mock('react-visibility-sensor', (): typeof _VisibilitySensor => mockVisibilitySensor)
+vi.mock('react-visibility-sensor', () => ({ default: mockVisibilitySensor }))
