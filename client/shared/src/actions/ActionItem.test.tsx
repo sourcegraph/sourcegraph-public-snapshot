@@ -1,16 +1,15 @@
-import { describe, expect, it, test, jest } from '@jest/globals'
+import { afterEach, describe, expect, it, test, jest } from '@jest/globals'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
-import { assertAriaEnabled } from '@sourcegraph/testing'
+import { assertAriaEnabled, createBarrier } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { createBarrier } from '../testing/testHelpers'
 
-import { ActionItem } from './ActionItem'
+import { ActionItem, windowLocation__testingOnly } from './ActionItem'
 
 jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
@@ -163,7 +162,9 @@ describe('ActionItem', () => {
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
-        await new Promise<void>(resolve => setTimeout(resolve))
+        await waitFor(() => {
+            expect(screen.queryByTestId('action-item-spinner')).not.toBeInTheDocument()
+        })
         expect(asFragment()).toMatchSnapshot()
     })
 
@@ -195,8 +196,12 @@ describe('ActionItem', () => {
     })
 
     describe('"open" command', () => {
+        afterEach(() => {
+            windowLocation__testingOnly.value = null
+        })
+
         it('renders as link', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
@@ -212,7 +217,7 @@ describe('ActionItem', () => {
         })
 
         it('renders as link with icon and opens a new tab for a different origin', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
@@ -228,7 +233,7 @@ describe('ActionItem', () => {
         })
 
         it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem

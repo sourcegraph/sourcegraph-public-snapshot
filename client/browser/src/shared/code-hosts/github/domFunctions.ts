@@ -233,8 +233,7 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
 
 /**
  * Returns if the current view shows diffs with split (vs. unified) view.
- *
- * @param element, either an element contained in a code view or the code view itself
+ * @param element either an element contained in a code view or the code view itself
  */
 export function isDomSplitDiff(element: HTMLElement): boolean {
     const { pageType } = parseURL()
