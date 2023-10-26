@@ -1,5 +1,5 @@
 {
-  "checksum": "a30200fddef89273f32721d5e5e6b1e44a4d56104443ffb9e2bc722f6ca165ab",
+  "checksum": "288db33db039b863e97c43a6dc03bbb6fe334ab97e11d52e00b63dd3e6c17487",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10125,16 +10125,13 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.1.1": {
+    "scip 0.3.1": {
       "name": "scip",
-      "version": "0.1.1",
+      "version": "0.3.1",
       "repository": {
-        "Git": {
-          "remote": "https://github.com/sourcegraph/scip",
-          "commitish": {
-            "Rev": "1bf111e1cf175569970e95566b379fb2a548d70a"
-          },
-          "strip_prefix": "bindings/rust"
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/scip/0.3.1/download",
+          "sha256": "3e84d21062a3ba08d58870c8c36b0c005b2b2261c6ad1bf7042585427c781883"
         }
       },
       "targets": [
@@ -10163,7 +10160,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.1"
+        "version": "0.3.1"
       },
       "license": "Apache-2.0"
     },
@@ -10264,7 +10261,7 @@
               "target": "rustc_hash"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -10322,7 +10319,7 @@
               "target": "protobuf"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -10382,7 +10379,7 @@
               "target": "protobuf"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             }
           ],
@@ -10429,7 +10426,7 @@
               "target": "lazy_static"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -10907,7 +10904,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {
@@ -11774,7 +11771,7 @@
               "target": "rustyline"
             },
             {
-              "id": "scip 0.1.1",
+              "id": "scip 0.3.1",
               "target": "scip"
             },
             {

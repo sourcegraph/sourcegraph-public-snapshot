@@ -25,7 +25,7 @@ expression: dumped
   # A custom socket for the sock parameter to RemoteCollector's allows one to
   # specify e.g. a TLS socket.
   class RemoteCollector:
-//      ^^^^^^^^^^^^^^^ definition scip-ctags RemoteCollector#
+//      ^^^^^^^^^^^^^^^ definition(Class) scip-ctags RemoteCollector#
       # sock is literally the socket that is used to communicate with the remote
       # collector.
       sock = None
@@ -35,19 +35,19 @@ expression: dumped
 //    ^^^^^^ definition scip-ctags RemoteCollector#_debug.
   
       def __init__(self, sock=None, debug=False):
-//        ^^^^^^^^ definition(Field) scip-ctags RemoteCollector#__init__().
+//        ^^^^^^^^ definition(Method) scip-ctags RemoteCollector#__init__().
           self.sock = sock
           self._debug = debug
   
       def _log(self, *args):
-//        ^^^^ definition(Field) scip-ctags RemoteCollector#_log().
+//        ^^^^ definition(Method) scip-ctags RemoteCollector#_log().
           if self._debug:
               print "appdash: %s" % (" ".join(args))
   
       # connect connects the underlying socket to the given address, waiting at
       # max for the given timeout before raising an exception.
       def connect(self, host="localhost", port=7701, timeout=10):
-//        ^^^^^^^ definition(Field) scip-ctags RemoteCollector#connect().
+//        ^^^^^^^ definition(Method) scip-ctags RemoteCollector#connect().
           # Use the given socket, or create a new one.
           if self.sock is None:
               self.sock = socket.create_connection((host, port), timeout=timeout)
@@ -60,7 +60,7 @@ expression: dumped
       # function does not return until all have been sent out or an exception has
       # occured (e.g. disconnection).
       def collect(self, spanID, *annotations):
-//        ^^^^^^^ definition(Field) scip-ctags RemoteCollector#collect().
+//        ^^^^^^^ definition(Method) scip-ctags RemoteCollector#collect().
           self._log("collecting", str(len(annotations)), "annotations for", str(spanID))
           packet = encode._collect(spanID, *annotations)
           buf = encode._msg(packet)
@@ -74,7 +74,7 @@ expression: dumped
   
       # close closes the underlying socket.
       def close(self):
-//        ^^^^^ definition(Field) scip-ctags RemoteCollector#close().
+//        ^^^^^ definition(Method) scip-ctags RemoteCollector#close().
           self.sock.close()
           self.sock = None
   
