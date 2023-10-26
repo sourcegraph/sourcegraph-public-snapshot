@@ -19,5 +19,5 @@ expression: "String::from_utf8_lossy(buf_writer.buffer())"
 {"_type":"tag","name":"diffPath","path":"go-globals.go","language":"go","line":56,"kind":"variable","scope":"multierror"}
 {"_type":"tag","name":"Wait","path":"go-globals.go","language":"go","line":48,"kind":"method","scope":"multierror.Group"}
 {"_type":"tag","name":"Go","path":"go-globals.go","language":"go","line":32,"kind":"method","scope":"multierror.Group"}
-{"_type":"tag","name":"TypeAlias","path":"go-globals.go","language":"go","line":26,"kind":"typealias","scope":"multierror"}
-{"_type":"tag","name":"TypeDef","path":"go-globals.go","language":"go","line":25,"kind":"typealias","scope":"multierror"}
+{"_type":"tag","name":"TypeAlias","path":"go-globals.go","language":"go","line":26,"kind":"typeAlias","scope":"multierror"}
+{"_type":"tag","name":"TypeDef","path":"go-globals.go","language":"go","line":25,"kind":"typeAlias","scope":"multierror"}

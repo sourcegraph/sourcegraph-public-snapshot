@@ -8,16 +8,16 @@ expression: dumped
 //^^^^ definition scip-ctags bruh.
 
   class Bruh(object):
-//      ^^^^ definition scip-ctags Bruh#
+//      ^^^^ definition(Class) scip-ctags Bruh#
       a: int
 //    ^ definition scip-ctags Bruh#a.
 
       def __init__(self) -> None:
-//        ^^^^^^^^ definition(Field) scip-ctags Bruh#__init__().
+//        ^^^^^^^^ definition(Method) scip-ctags Bruh#__init__().
           pass
 
       def dab():
-//        ^^^ definition(Field) scip-ctags Bruh#dab().
+//        ^^^ definition(Method) scip-ctags Bruh#dab().
           print("yay!")
           def more():
               print("a function in a function!!")
@@ -40,52 +40,52 @@ expression: dumped
 
 
   async def my_function():
-//          ^^^^^^^^^^^ definition scip-ctags my_function().
+//          ^^^^^^^^^^^ definition(Function) scip-ctags my_function().
       pass
 
 
   class SomeAsyncStuffs:
-//      ^^^^^^^^^^^^^^^ definition scip-ctags SomeAsyncStuffs#
+//      ^^^^^^^^^^^^^^^ definition(Class) scip-ctags SomeAsyncStuffs#
       def __init__(self, obj):
-//        ^^^^^^^^ definition(Field) scip-ctags SomeAsyncStuffs#__init__().
+//        ^^^^^^^^ definition(Method) scip-ctags SomeAsyncStuffs#__init__().
           pass
 
       def __aiter__(self):
-//        ^^^^^^^^^ definition(Field) scip-ctags SomeAsyncStuffs#__aiter__().
+//        ^^^^^^^^^ definition(Method) scip-ctags SomeAsyncStuffs#__aiter__().
           pass
 
       async def __anext__(self):
-//              ^^^^^^^^^ definition(Field) scip-ctags SomeAsyncStuffs#__anext__().
+//              ^^^^^^^^^ definition(Method) scip-ctags SomeAsyncStuffs#__anext__().
           pass
 
   def does_nothing(f):
-//    ^^^^^^^^^^^^ definition scip-ctags does_nothing().
+//    ^^^^^^^^^^^^ definition(Function) scip-ctags does_nothing().
       return f
 
   def does_nothingwrapper(*args):
-//    ^^^^^^^^^^^^^^^^^^^ definition scip-ctags does_nothingwrapper().
+//    ^^^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags does_nothingwrapper().
       return does_nothing
 
   @does_nothing
   def has_a_name():
-//    ^^^^^^^^^^ definition scip-ctags has_a_name().
+//    ^^^^^^^^^^ definition(Function) scip-ctags has_a_name().
       pass
 
   @does_nothing
   def func02(): pass
-//    ^^^^^^ definition scip-ctags func02().
+//    ^^^^^^ definition(Function) scip-ctags func02().
 
   @does_nothing
   class ClassWithDecorators(object):
-//      ^^^^^^^^^^^^^^^^^^^ definition scip-ctags ClassWithDecorators#
+//      ^^^^^^^^^^^^^^^^^^^ definition(Class) scip-ctags ClassWithDecorators#
       @staticmethod
       def static_method():
-//        ^^^^^^^^^^^^^ definition(Field) scip-ctags ClassWithDecorators#static_method().
+//        ^^^^^^^^^^^^^ definition(Method) scip-ctags ClassWithDecorators#static_method().
           print("hello")
 
       @classmethod
       def class_method(cls):
-//        ^^^^^^^^^^^^ definition(Field) scip-ctags ClassWithDecorators#class_method().
+//        ^^^^^^^^^^^^ definition(Method) scip-ctags ClassWithDecorators#class_method().
           print("hi from %s" % cls.__name__)
 
       @does_nothingwrapper(1, 2, 3)
@@ -93,7 +93,7 @@ expression: dumped
       @   staticmethod
       @does_nothing
       def prints_something():
-//        ^^^^^^^^^^^^^^^^ definition(Field) scip-ctags ClassWithDecorators#prints_something().
+//        ^^^^^^^^^^^^^^^^ definition(Method) scip-ctags ClassWithDecorators#prints_something().
           print("something")
 
 
