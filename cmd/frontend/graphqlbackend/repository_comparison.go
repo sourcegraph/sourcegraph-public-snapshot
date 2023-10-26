@@ -192,7 +192,7 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
-func repositoryComparisonNewFile(db database.DB, r *FileDiffResolver) FileResolver {
+func repositoryComparisonNewFile(db database.DB, r *fileDiffResolver) FileResolver {
 	opts := GitTreeEntryResolverOpts{
 		Commit: r.Head,
 		Stat:   CreateFileInfo(r.FileDiff.NewName, false),
@@ -232,10 +232,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				base = string(cmp.base.OID())
 			}
 
-			var paths []string
-			if args.Paths != nil {
-				paths = *args.Paths
-			}
+			paths := pointers.Deref(args.Paths, nil)
 
 			var iter *gitserver.DiffFileIterator
 			iter, err = cmp.gitserverClient.Diff(ctx, gitserver.DiffOptions{
@@ -290,7 +287,7 @@ type ComputeDiffFunc func(ctx context.Context, args *FileDiffsConnectionArgs) ([
 
 // NewFileFunc is a function that returns the "new" file in a FileDiff as a
 // FileResolver.
-type NewFileFunc func(db database.DB, r *FileDiffResolver) FileResolver
+type NewFileFunc func(db database.DB, r *fileDiffResolver) FileResolver
 
 func NewFileDiffConnectionResolver(
 	db database.DB,
@@ -336,7 +333,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 
 	resolvers := make([]FileDiff, len(fileDiffs))
 	for i, fileDiff := range fileDiffs {
-		resolvers[i] = &FileDiffResolver{
+		resolvers[i] = &fileDiffResolver{
 			db:              r.db,
 			gitserverClient: r.gitserverClient,
 			newFile:         r.newFile,
@@ -398,7 +395,7 @@ func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error
 	return string(b), err
 }
 
-type FileDiffResolver struct {
+type fileDiffResolver struct {
 	FileDiff *diff.FileDiff
 	Base     *GitCommitResolver
 	Head     *GitCommitResolver
@@ -408,10 +405,10 @@ type FileDiffResolver struct {
 	newFile         NewFileFunc
 }
 
-func (r *FileDiffResolver) OldPath() *string { return diffPathOrNull(r.FileDiff.OrigName) }
-func (r *FileDiffResolver) NewPath() *string { return diffPathOrNull(r.FileDiff.NewName) }
+func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.FileDiff.OrigName) }
+func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.FileDiff.NewName) }
 
-func (r *FileDiffResolver) Hunks() []*DiffHunk {
+func (r *fileDiffResolver) Hunks() []*DiffHunk {
 	highlighter := &fileDiffHighlighter{
 		oldFile: r.OldFile(),
 		newFile: r.NewFile(),
@@ -423,12 +420,12 @@ func (r *FileDiffResolver) Hunks() []*DiffHunk {
 	return hunks
 }
 
-func (r *FileDiffResolver) Stat() *DiffStat {
+func (r *fileDiffResolver) Stat() *DiffStat {
 	stat := r.FileDiff.Stat()
 	return NewDiffStat(stat)
 }
 
-func (r *FileDiffResolver) OldFile() FileResolver {
+func (r *fileDiffResolver) OldFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.OrigName) == nil {
 		return nil
 	}
@@ -439,21 +436,21 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts)
 }
 
-func (r *FileDiffResolver) NewFile() FileResolver {
+func (r *fileDiffResolver) NewFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.NewName) == nil {
 		return nil
 	}
 	return r.newFile(r.db, r)
 }
 
-func (r *FileDiffResolver) MostRelevantFile() FileResolver {
+func (r *fileDiffResolver) MostRelevantFile() FileResolver {
 	if newFile := r.NewFile(); newFile != nil {
 		return newFile
 	}
 	return r.OldFile()
 }
 
-func (r *FileDiffResolver) InternalID() string {
+func (r *fileDiffResolver) InternalID() string {
 	b := sha256.Sum256([]byte(fmt.Sprintf("%d:%s:%s", len(r.FileDiff.OrigName), r.FileDiff.OrigName, r.FileDiff.NewName)))
 	return hex.EncodeToString(b[:])[:32]
 }
