@@ -390,6 +390,10 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		return gqltestutil.ErrContinueRetry
 	})
 
+	if err != nil {
+		t.Fatal("Waiting for authz providers to be added:", err)
+	}
+
 	// Wait up to 30 seconds for the user to have permissions synced
 	// from the code host at least once.
 	err = gqltestutil.Retry(30*time.Second, func() error {
@@ -404,9 +408,6 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	})
 	if err != nil {
 		t.Fatal("Waiting for user permissions to be synced:", err)
-	}
-	if err != nil {
-		t.Fatal("Waiting for authz providers to be added:", err)
 	}
 }
 
