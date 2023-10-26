@@ -153,7 +153,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
 			ops.Merge(operations.NewNamedSet("Browser Extensions",
-				addBrowserExtensionUnitTests,
 				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			))
 		}
@@ -164,16 +163,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
+		ops = BazelOpsSet(buildOptions,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
-			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
 
 	case runtype.VsceReleaseBranch:
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
-		ops = operations.NewSet(
+		ops = BazelOpsSet(buildOptions,
 			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
@@ -181,18 +178,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
+		ops = BazelOpsSet(buildOptions,
 			recordBrowserExtensionIntegrationTests,
-			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
 
 	case runtype.VsceNightly:
-		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
-		ops = operations.NewSet(
-			addVsceTests,
-		)
+		ops = BazelOpsSet(buildOptions, addVsceTests)
 
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
@@ -418,4 +410,13 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
+}
+
+func BazelOpsSet(buildOptions bk.BuildOptions, extra ...operations.Operation) *operations.Set {
+	var isMain = buildOptions.Branch == "main"
+	ops := operations.NewSet(
+		BazelOperations(buildOptions, isMain)...,
+	)
+	ops.Append(extra...)
+	return ops
 }
