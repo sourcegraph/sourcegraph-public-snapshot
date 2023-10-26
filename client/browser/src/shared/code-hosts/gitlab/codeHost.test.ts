@@ -156,18 +156,12 @@ describe('isPrivateRepository', () => {
     })
 
     describe('when on "gitlab.com"', () => {
-        const { location } = window
         const EMPTY_JSON = JSON.stringify({})
 
         beforeAll(() => {
             fetch.enableMocks()
 
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            delete window.location
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            window.location = new URL('https://gitlab.com')
+            windowLocation__testingOnly.value = new URL('https://gitlab.com')
         })
 
         beforeEach(() => {
@@ -177,7 +171,7 @@ describe('isPrivateRepository', () => {
         afterAll(() => {
             fetch.disableMocks()
 
-            window.location = location
+            windowLocation__testingOnly.value = null
         })
 
         it('makes request without credentials', async () => {
