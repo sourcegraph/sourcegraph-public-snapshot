@@ -124,6 +124,7 @@ class NoLineBreakWidget extends WidgetType {
 
     public toDOM(): HTMLElement {
         const div = document.createElement('div')
+        div.className = 'no-line-break-msg'
         div.textContent = this.noLineBreakComment
         return div
     }
@@ -173,6 +174,11 @@ const staticExtensions: Extension = [
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.no-line-break-msg': {
+            color: 'var(--text-muted)',
+            fontStyle: 'italic',
+            marginTop: '.2rem',
+        },
     }),
     EditorView.decorations.compute(['doc'], state => {
         const lastLine = state.doc.line(state.doc.lines)
@@ -181,8 +187,11 @@ const staticExtensions: Extension = [
         if (lastLine.length === 0) {
             return Decoration.set(decoReplace)
         }
-        const widget = new NoLineBreakWidget('<-- File does not end with a linebreak -->')
-        const decoBlock = Decoration.replace({ widget, block: true }).range(lastLine.from - 1, lastLine.from)
+        const widget = new NoLineBreakWidget('(No new line at end of file)')
+        const decoBlock = Decoration.replace({
+            widget,
+            block: true,
+        }).range(lastLine.from - 1, lastLine.from)
         return Decoration.set(decoBlock)
     }),
 ]
