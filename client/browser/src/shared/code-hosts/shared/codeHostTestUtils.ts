@@ -22,11 +22,13 @@ export function testCodeHostMountGetters<C extends CodeHost>(
     codeHost: C,
     containerHtmlFixturePaths: string | Record<SetIntersection<MountGetterKey, keyof C>, string>
 ): void {
+    let addedTest = false
     for (const mountGetterKey of mountGetterKeys) {
         const getMount = codeHost[mountGetterKey]
         if (!getMount) {
             continue
         }
+        addedTest = true
         describe(mountGetterKey, () => {
             const fixturePath =
                 typeof containerHtmlFixturePaths === 'string'
@@ -34,6 +36,9 @@ export function testCodeHostMountGetters<C extends CodeHost>(
                     : containerHtmlFixturePaths[mountGetterKey as keyof typeof containerHtmlFixturePaths]
             testMountGetter(fixturePath, getMount, true, true)
         })
+    }
+    if (!addedTest) {
+        it('no tests', () => {})
     }
 }
 

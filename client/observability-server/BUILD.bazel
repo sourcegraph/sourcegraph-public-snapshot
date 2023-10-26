@@ -61,14 +61,9 @@ jest_test(
     name = "test",
     data = [
         "src/webBundleSize/__mocks__/assets/scripts/main.js",
-        "src/webBundleSize/__mocks__/assets/scripts/main.js.br",
-        "src/webBundleSize/__mocks__/assets/scripts/main.js.gz",
-        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js",
-        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.br",
-        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.gz",
-        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css",
-        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css.br",
-        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css.gz",
+        "src/webBundleSize/__mocks__/assets/styles/main.css",
+        "src/webBundleSize/__mocks__/bundlesize.config.js",
+        "src/webBundleSize/__mocks__/web.manifest.json",
         ":observability-server_tests",
     ],
     # TODO(bazel): requires dev server setup for testing

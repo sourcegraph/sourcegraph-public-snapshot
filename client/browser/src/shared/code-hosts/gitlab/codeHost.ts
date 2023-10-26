@@ -128,7 +128,7 @@ export const isPrivateRepository = (
     repoName: string,
     _fetchCache: null | typeof fetchCache = null
 ): Promise<boolean> => {
-    if (window.location.hostname !== 'gitlab.com' || !repoName) {
+    if ((windowLocation__testingOnly.value ?? window.location).hostname !== 'gitlab.com' || !repoName) {
         return Promise.resolve(true)
     }
 
