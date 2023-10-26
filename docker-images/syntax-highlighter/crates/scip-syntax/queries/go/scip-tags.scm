@@ -53,5 +53,5 @@
 
 (const_spec name: (_) @descriptor.term) @kind.constant @enclosing
 (import_spec name: (_) @descriptor.term) @enclosing
-(method_spec name: (_) @descriptor.method @kind.method) @enclosing
+(method_spec name: (_) @descriptor.method @kind.methodspec) @enclosing
 (var_spec name: (_) @descriptor.term @kind.variable) @enclosing
