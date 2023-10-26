@@ -120,7 +120,14 @@ func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts
 		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
 	}
 
-	return cmd.CombinedOutput()
+	var buf bytes.Buffer
+	cmd.Unwrap().Stdout = &buf
+	cmd.Unwrap().Stderr = &buf
+
+	// We don't care about exitStatus, we just rely on error.
+	_, err := RunCommand(ctx, cmd)
+
+	return buf.Bytes(), err
 }
 
 // tlsExternal will create a new cache for this gitserer process and store the certificates set in
