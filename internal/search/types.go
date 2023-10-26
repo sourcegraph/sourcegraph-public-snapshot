@@ -206,7 +206,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 	if o.Features.SearchOptionsOverride != "" {
 		defer func() {
 			old := *searchOpts
-			err := json.Unmarshal([]byte(o.Features.SearchOptionsOverride), &searchOpts)
+			err := json.Unmarshal([]byte(o.Features.SearchOptionsOverride), searchOpts)
 			if err != nil {
 				searchOpts = &old
 			}
