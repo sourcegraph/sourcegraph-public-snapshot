@@ -28,6 +28,7 @@ import {
     Button,
     Code,
     H3,
+    H4,
     Icon,
     Input,
     Label,
@@ -419,11 +420,11 @@ const ZoektSettings: FC<{}> = () => {
 
     const [inputValue, setInputValue] = useState<string>(searchOptions)
 
-    const handleChange = (event: any) => {
+    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
         setInputValue(event.target.value) // Update the state with the input value
     }
 
-    const handleClick = () => {
+    const handleClick = (): void => {
         // Call a function with the input field's content (inputValue)
         // For example, you can log it to the console here
         setDeveloperSettingsSearchOptions({ searchOptions: inputValue })
@@ -431,7 +432,7 @@ const ZoektSettings: FC<{}> = () => {
 
     return (
         <div className="mt-2 d-flex flex-column">
-            <h4>Search Options</h4>
+            <H4>Search Options</H4>
             <TextArea
                 style={{ width: '100%' }}
                 rows={5}
