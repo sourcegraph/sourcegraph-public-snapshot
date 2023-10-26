@@ -93,7 +93,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
-	c.RunType = runtype.BextNightly
+	c.RunType = runtype.BextReleaseBranch
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
