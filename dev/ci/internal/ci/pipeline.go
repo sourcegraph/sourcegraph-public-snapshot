@@ -93,6 +93,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
+	c.RunType = runtype.BextNightly
+
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
@@ -165,15 +167,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// builds.
 		ops = BazelOpsSet(buildOptions,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
-			wait,
-			addBrowserExtensionReleaseSteps)
+		)
+		// wait,
+		// addBrowserExtensionReleaseSteps)
 
 	case runtype.VsceReleaseBranch:
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = BazelOpsSet(buildOptions,
 			addVsceTests,
-			wait,
-			addVsceReleaseSteps)
+		)
+		// wait,
+		// addVsceReleaseSteps)
 
 	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
