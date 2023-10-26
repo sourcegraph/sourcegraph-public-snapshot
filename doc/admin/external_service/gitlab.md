@@ -163,18 +163,6 @@ GitLab also has internal repositories in addition to the usual public and privat
 }
 ```
 
-If you would like internal repositories to remain private, but you're experiencing issues where user permission syncs aren't granting access to internal repositories, you can add the following field instead:
-
-```json
-{
-  // ...
-  "authorization": {
-    // ...
-    "syncInternalRepoPermissions": true
-  }
-}
-```
-
 ## Rate limits
 
 Always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).

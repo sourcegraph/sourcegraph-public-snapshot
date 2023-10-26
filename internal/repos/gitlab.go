@@ -209,7 +209,7 @@ func (s GitLabSource) ExternalServices() types.ExternalServices {
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	urn := s.svc.URN()
 
-	private := proj.Visibility == "private" || proj.Visibility == "internal"
+	private := proj.Visibility == gitlab.Private || proj.Visibility == gitlab.Internal
 	if proj.Visibility == gitlab.Internal && s.markInternalReposAsPublic {
 		private = false
 	}

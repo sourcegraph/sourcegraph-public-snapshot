@@ -203,13 +203,8 @@
             "taggedUnionType": true
           }
         },
-        "syncInternalRepoPermissions": {
-          "description": "If true, access to internal repositories will be synced as part of user permission syncs. This can lead to slower user permission syncs for organizations with many internal repositories. Defaults to false.",
-          "type": "boolean",
-          "default": false
-        },
         "markInternalReposAsPublic": {
-          "description": "If true, internal repositories will be accessible to all users on Sourcegraph as if they were public. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.",
+          "description": "If true, internal repositories will be accessible to all users on Sourcegraph as if they were public, and user permission syncs will no longer check for public repositories. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.",
           "type": "boolean",
           "default": false
         }
