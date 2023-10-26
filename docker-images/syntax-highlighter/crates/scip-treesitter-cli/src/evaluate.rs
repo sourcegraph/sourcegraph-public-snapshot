@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
 use colored::Colorize;
 use scip::types::Index;
@@ -6,16 +9,40 @@ use scip_treesitter::types::PackedRange;
 
 use crate::{io::read_index_from_file, progress::*};
 
-pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: ScipEvaluateOptions) {
+pub fn evaluate_command<'a>(
+    candidate: PathBuf,
+    ground_truth: PathBuf,
+    options: ScipEvaluateOptions,
+) {
+    let evaluation_result = evaluate_files(candidate, ground_truth, options);
+    print_evaluation_summary(evaluation_result, options);
+}
+
+pub fn evaluate_files<'a>(
+    candidate: PathBuf,
+    ground_truth: PathBuf,
+    options: ScipEvaluateOptions,
+) -> EvaluationResult {
+    evaluate_indexes(
+        &read_index_from_file(candidate),
+        &read_index_from_file(ground_truth),
+        options,
+    )
+}
+
+pub fn evaluate_indexes<'a>(
+    candidate: &Index,
+    ground_truth: &Index,
+    options: ScipEvaluateOptions,
+) -> EvaluationResult {
     let bar = create_spinner();
     bar.set_message("Indexing candidate symbols by location");
-    let candidate_occurrences: HashMap<LocationInFile, String> =
-        index_occurrences(&read_index_from_file(candidate.into()));
+    let candidate_occurrences: HashMap<LocationInFile, String> = index_occurrences(&candidate);
     bar.tick();
 
     bar.set_message("Indexing ground truth symbols by location");
     let ground_truth_occurrences: HashMap<LocationInFile, String> =
-        index_occurrences(&read_index_from_file(ground_truth.into()));
+        index_occurrences(&ground_truth);
     bar.tick();
 
     // For each symbol pair we maintain an Overlap instance
@@ -118,7 +145,7 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
         }
     }
 
-    let mut results: Vec<ClassifiedLocation> = Vec::new();
+    let mut classified_locations: Vec<ClassifiedLocation> = Vec::new();
 
     bar.set_message("Classifying occurrences into false negatives and true positives");
     // Now that the mapping is fully built, iterate over all ground truth occurrences
@@ -132,7 +159,7 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
             // this is a false negative - with full weight 1.0, as
             // there's no ambiguity to speak of - this location *should* contain
             // some symbol but doesn't
-            None => results.push(ClassifiedLocation {
+            None => classified_locations.push(ClassifiedLocation {
                 location: ground_truth_location,
                 symbol: ground_truth_symbol,
                 mark: Mark::FalseNegative { weight: 1.0 },
@@ -148,7 +175,7 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
                     // and candidate occurrence. We want to reward it - but with a
                     // weight indicating how precisely we matched candidate symbols to
                     // ground truth symbols - this weight comes from mapping we constructed earlier.
-                    Some(weight) => results.push(ClassifiedLocation {
+                    Some(weight) => classified_locations.push(ClassifiedLocation {
                         location: ground_truth_location,
                         symbol: ground_truth_symbol,
                         mark: Mark::TruePositive { weight: *weight },
@@ -174,7 +201,7 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
         // But for simplicity we assume that scip-* indexers
         // are "perfect"
         if !ground_truth_occurrences.contains_key(candidate_location) {
-            results.push(ClassifiedLocation {
+            classified_locations.push(ClassifiedLocation {
                 location: candidate_location.clone(),
                 symbol: candidate_symbol.clone(),
                 mark: Mark::FalsePositive { weight: 1.0 },
@@ -184,7 +211,7 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
 
     bar.finish_and_clear();
 
-    summarise(results, options);
+    EvaluationResult::new(classified_locations)
 }
 
 #[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
@@ -200,7 +227,7 @@ struct LocationInFile {
 }
 
 #[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
-struct SymbolOccurrence {
+pub struct SymbolOccurrence {
     location: LocationInFile,
     symbol: String,
 }
@@ -239,6 +266,7 @@ struct ClassifiedLocation {
     mark: Mark,
 }
 
+#[derive(Clone, Copy, Default)]
 pub struct ScipEvaluateOptions {
     pub print_mapping: bool,
     pub print_true_positives: bool,
@@ -246,40 +274,74 @@ pub struct ScipEvaluateOptions {
     pub print_false_negatives: bool,
 }
 
-fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) {
-    let mut true_positives: Vec<SymbolOccurrence> = Vec::new();
-    let mut false_positives: Vec<SymbolOccurrence> = Vec::new();
-    let mut false_negatives: Vec<SymbolOccurrence> = Vec::new();
+#[derive(serde::Serialize)]
+pub struct EvaluationSummary {
+    pub precision_percent: f32,
+    pub recall_percent: f32,
+    pub true_positives: f32,
+    pub false_positives: f32,
+    pub false_negatives: f32,
+}
 
-    let mut tps = 0 as f32;
-    let mut fps = 0 as f32;
-    let mut fns = 0 as f32;
+pub struct EvaluationResult {
+    pub summary: EvaluationSummary,
+    pub true_positives: Vec<SymbolOccurrence>,
+    pub false_positives: Vec<SymbolOccurrence>,
+    pub false_negatives: Vec<SymbolOccurrence>,
+}
 
-    for classified_location in classified {
-        let symbol_occurrence = SymbolOccurrence {
-            location: classified_location.location,
-            symbol: classified_location.symbol,
-        };
-        match classified_location.mark {
-            Mark::TruePositive { weight } => {
-                true_positives.push(symbol_occurrence);
-                tps += weight
-            }
-            Mark::FalseNegative { weight } => {
-                false_negatives.push(symbol_occurrence);
-                fns += weight
-            }
-            Mark::FalsePositive { weight } => {
-                false_positives.push(symbol_occurrence);
-                fps += weight
+impl EvaluationResult {
+    fn new(classified: Vec<ClassifiedLocation>) -> EvaluationResult {
+        let mut true_positives_occurrences: Vec<SymbolOccurrence> = Vec::new();
+        let mut false_positives_occurrences: Vec<SymbolOccurrence> = Vec::new();
+        let mut false_negatives_occurrences: Vec<SymbolOccurrence> = Vec::new();
+
+        let mut true_positives = 0 as f32;
+        let mut false_positives = 0 as f32;
+        let mut false_negatives = 0 as f32;
+
+        for classified_location in classified {
+            let symbol_occurrence = SymbolOccurrence {
+                location: classified_location.location,
+                symbol: classified_location.symbol,
+            };
+            match classified_location.mark {
+                Mark::TruePositive { weight } => {
+                    true_positives_occurrences.push(symbol_occurrence);
+                    true_positives += weight
+                }
+                Mark::FalseNegative { weight } => {
+                    false_negatives_occurrences.push(symbol_occurrence);
+                    false_negatives += weight
+                }
+                Mark::FalsePositive { weight } => {
+                    false_positives_occurrences.push(symbol_occurrence);
+                    false_positives += weight
+                }
             }
         }
+
+        let precision = 100.0 * true_positives / (true_positives + false_positives);
+        let recall = 100.0 * true_positives / (true_positives + false_negatives);
+
+        EvaluationResult {
+            summary: EvaluationSummary {
+                precision_percent: precision,
+                recall_percent: recall,
+                true_positives,
+                false_positives,
+                false_negatives,
+            },
+            true_positives: true_positives_occurrences,
+            false_positives: false_positives_occurrences,
+            false_negatives: false_negatives_occurrences,
+        }
     }
+}
 
-    let precision = 100.0 * tps / (tps + fps);
-    let recall = 100.0 * tps / (tps + fns);
-
-    println!("{{\"precision_percent\": {precision:.2}, \"recall_percent\": {recall:.2}, \"true_positives\": {tps:.0}, \"false_positives\": {fps:.0}, \"false_negatives\": {fns:.0} }}");
+pub fn print_evaluation_summary(eval: EvaluationResult, options: ScipEvaluateOptions) {
+    println!("{}", serde_json::to_string(&eval.summary).unwrap());
+    // println!("{{\"precision_percent\": {eval.summary.precision:.2}, \"recall_percent\": {recall:.2}, \"true_positives\": {tps:.0}, \"false_positives\": {fps:.0}, \"false_negatives\": {fns:.0} }}");
 
     if options.print_false_negatives {
         eprintln!("");
@@ -287,14 +349,14 @@ fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) 
         eprintln!(
             "{}: {}",
             "False negatives".red(),
-            false_negatives.len().to_string().bold()
+            eval.false_negatives.len().to_string().bold()
         );
         eprintln!(
             "{}",
             "How many actual occurrences we DIDN'T find compared to compiler?".italic()
         );
 
-        for symbol_occurrence in false_negatives {
+        for symbol_occurrence in eval.false_negatives {
             eprintln!(
                 "{}: L{} C{} -- {}",
                 symbol_occurrence.location.file,
@@ -310,14 +372,14 @@ fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) 
         eprintln!(
             "{}: {}",
             "False positives".red(),
-            false_positives.len().to_string().bold()
+            eval.false_positives.len().to_string().bold()
         );
         eprintln!(
             "{}",
             "How many extra occurrences we reported compared to compiler?".italic()
         );
 
-        for symbol_occurrence in false_positives {
+        for symbol_occurrence in eval.false_positives {
             eprintln!(
                 "{}: L{} C{} -- {}",
                 symbol_occurrence.location.file,
@@ -334,10 +396,10 @@ fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) 
             eprintln!(
                 "{}: {}",
                 "True positives".green(),
-                true_positives.len().to_string().bold()
+                eval.true_positives.len().to_string().bold()
             );
 
-            for symbol_occurrence in &true_positives {
+            for symbol_occurrence in &eval.true_positives {
                 let file = &symbol_occurrence.location.file;
                 let rng = symbol_occurrence.range();
                 let header = format!("{file}: L{} C{} -- ", rng.start_line, rng.start_col);

@@ -7,7 +7,11 @@ use scip_syntax::{get_locals, get_symbols};
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::DirEntry;
 
-use crate::progress::{create_progress_bar, create_spinner};
+use crate::{
+    evaluate::{evaluate_indexes, print_evaluation_summary},
+    io::read_index_from_file,
+    progress::{create_progress_bar, create_spinner},
+};
 
 pub struct IndexOptions {
     pub analysis_mode: AnalysisMode,
@@ -46,6 +50,7 @@ pub fn index_command(
     index_mode: IndexMode,
     out: PathBuf,
     project_root: PathBuf,
+    evaluate_against: Option<PathBuf>,
     options: IndexOptions,
 ) {
     let p = BundledParser::get_parser(&language).unwrap();
@@ -151,6 +156,19 @@ pub fn index_command(
         out.display()
     );
 
+    match evaluate_against {
+        Some(file) => {
+            eprintln!("Evaluating built index against {}", file.display());
+
+            let ground_truth = read_index_from_file(file);
+
+            let evaluation_result = evaluate_indexes(&index, &ground_truth, Default::default());
+
+            print_evaluation_summary(evaluation_result, Default::default());
+        }
+        _ => {}
+    }
+
     write_message_to_file(out, index).expect("to write the file");
 }
 
@@ -176,6 +194,7 @@ fn index_content(
                     document.occurrences.push(occ);
                 }
             }
+
             Some(Err(e)) => return Err(e),
             None => {}
         }

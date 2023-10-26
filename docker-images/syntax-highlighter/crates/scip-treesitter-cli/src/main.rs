@@ -46,6 +46,10 @@ enum Commands {
         /// Project root to write to SCIP index
         #[arg(short, long, default_value = "./")]
         project_root: String,
+
+        /// Evaluate the build index against an index from a file
+        #[arg(long)]
+        evaluate: Option<String>,
     },
 
     /// Fuzzily evaluate candidate SCIP index against known ground truth
@@ -77,6 +81,7 @@ pub fn main() {
             mode,
             fail_fast,
             project_root,
+            evaluate
         } => {
             let index_mode = {
                 match workspace {
@@ -98,6 +103,7 @@ pub fn main() {
                 index_mode,
                 PathBuf::from(out),
                 PathBuf::from(project_root),
+                evaluate.map(|p| PathBuf::from(p)),
                 IndexOptions {
                     analysis_mode: mode,
                     fail_fast,
@@ -113,8 +119,8 @@ pub fn main() {
             print_false_positives,
             print_false_negatives,
         } => scip_treesitter_cli::evaluate::evaluate_command(
-            candidate,
-            ground_truth,
+            PathBuf::from(candidate),
+            PathBuf::from(ground_truth),
             ScipEvaluateOptions {
                 print_mapping,
                 print_true_positives,
@@ -178,6 +184,11 @@ mod tests {
 
             insta::assert_snapshot!(path.clone(), dumped);
         }
+    }
+
+    #[test]
+    fn evaluation_basic_tests() {
+        let empty_index = todo!();
     }
 
     fn prepare(temp: &PathBuf, files: &HashMap<PathBuf, String>) {

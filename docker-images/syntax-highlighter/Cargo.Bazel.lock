@@ -1,5 +1,5 @@
 {
-  "checksum": "0397d517b64ca57b239cabd3398d438b26b5aa3761586563cd70cefdf63c68a2",
+  "checksum": "ec82c8383af3cd962ca9bd7d7187ed58a7be98771d10ea576ef5ffbb92d11f70",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10391,8 +10391,18 @@
       "name": "scip-treesitter-cli",
       "version": "0.1.0",
       "repository": null,
-      "targets": [],
-      "library_target_name": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_treesitter_cli",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_treesitter_cli",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -10438,6 +10448,14 @@
             {
               "id": "scip 0.1.1",
               "target": "scip"
+            },
+            {
+              "id": "serde 1.0.164",
+              "target": "serde"
+            },
+            {
+              "id": "serde_json 1.0.99",
+              "target": "serde_json"
             },
             {
               "id": "walkdir 2.3.3",
