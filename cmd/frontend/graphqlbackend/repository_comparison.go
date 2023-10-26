@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type RepositoryComparisonInput struct {
@@ -63,17 +64,8 @@ type FileDiff interface {
 }
 
 func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserver.Client, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
-	var baseRevspec, headRevspec string
-	if args.Base == nil {
-		baseRevspec = "HEAD"
-	} else {
-		baseRevspec = *args.Base
-	}
-	if args.Head == nil {
-		headRevspec = "HEAD"
-	} else {
-		headRevspec = *args.Head
-	}
+	baseRevspec := pointers.Deref(args.Base, "HEAD")
+	headRevspec := pointers.Deref(args.Head, "HEAD")
 
 	getCommit := func(ctx context.Context, repo api.RepoName, revspec string) (*GitCommitResolver, error) {
 		if revspec == gitserver.DevNullSHA {
