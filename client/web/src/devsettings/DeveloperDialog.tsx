@@ -41,9 +41,9 @@ import {
     TabPanels,
     Tabs,
     Text,
-    TextArea,
     Tooltip,
     Badge,
+    Container,
 } from '@sourcegraph/wildcard'
 
 import { FEATURE_FLAGS, type FeatureFlagName } from '../featureFlags/featureFlags'
@@ -420,26 +420,33 @@ const ZoektSettings: FC<{}> = () => {
 
     const [inputValue, setInputValue] = useState<string>(searchOptions)
 
-    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
-        setInputValue(event.target.value) // Update the state with the input value
-    }
-
     const handleClick = (): void => {
-        // Call a function with the input field's content (inputValue)
-        // For example, you can log it to the console here
         setDeveloperSettingsSearchOptions({ searchOptions: inputValue })
     }
+
+    const isLightTheme = useIsLightTheme()
+    const extensions = useMemo(
+        () => [
+            EditorView.darkTheme.of(!isLightTheme),
+            json(),
+            defaultEditorTheme,
+            jsonHighlighting,
+            EditorView.updateListener.of(update => {
+                if (update.docChanged) {
+                    setInputValue(update.state.sliceDoc())
+                }
+            }),
+        ],
+        [isLightTheme]
+    )
 
     return (
         <div className="mt-2 d-flex flex-column">
             <H4>Search Options</H4>
-            <TextArea
-                style={{ width: '100%' }}
-                rows={5}
-                value={inputValue}
-                onChange={handleChange}
-                placeholder="Enter zoekt.SearchOptions JSON here"
-            />
+            <Text>Enter a valid JSON below. Missing values are replaced with defaults.</Text>
+            <Container className="p-1">
+                <CodeMirrorEditor value={inputValue} extensions={extensions} />
+            </Container>
             <Button variant="primary" className="mt-2 align-self-end" onClick={handleClick}>
                 Apply
             </Button>
