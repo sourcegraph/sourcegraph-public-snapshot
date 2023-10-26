@@ -11,12 +11,12 @@ go_library(
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
+        "//cmd/worker/shared/init/codeinsights",
         "//cmd/worker/shared/init/db",
         "//internal/env",
         "//internal/goroutine",
         "//internal/insights",
         "//internal/insights/background",
-        "//internal/insights/database",
         "//internal/observation",
     ],
 )

@@ -29,7 +29,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 
@@ -45,7 +45,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -98,7 +98,7 @@ func TestSiteConfiguration(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 			if err != nil {
@@ -130,7 +130,7 @@ func TestSiteConfiguration(t *testing.T) {
 		})
 
 		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -164,7 +164,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}

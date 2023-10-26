@@ -21,6 +21,68 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+func TestGitTree_History(t *testing.T) {
+	gitserver.ClientMocks.LocalGitserver = true
+	defer gitserver.ResetClientMocks()
+
+	commands := []string{
+		// |- file1    (added)
+		// `- dir1     (added)
+		//    `- file2 (added)
+		"echo -n infile1 > file1",
+		"touch --date=2006-01-02T15:04:05Z file1 || touch -t 200601021704.05 file1",
+		"mkdir dir1",
+		"echo -n infile2 > dir1/file2",
+		"touch --date=2006-01-02T15:04:05Z dir1/file2 || touch -t 200601021704.05 dir1/file2",
+		"git add file1 dir1/file2",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+
+		// |- file1     (modified)
+		// `- dir1      (modified)
+		//    |- file2  (unchanged)
+		//    `- file3  (added)
+		"echo -n infile3 > dir1/file3",
+		"touch --date=2006-01-02T15:04:05Z dir1/file3 || touch -t 200601021704.05 dir1/file3",
+		"git add dir1/file2 dir1/file3",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	repoName := gitserver.MakeGitRepository(t, commands...)
+
+	ctx := context.Background()
+	gs := gitserver.NewTestClient(t)
+	db := dbmocks.NewMockDB()
+
+	oid, err := gs.ResolveRevision(ctx, repoName, "HEAD", gitserver.ResolveRevisionOptions{})
+	require.NoError(t, err)
+
+	rr := NewRepositoryResolver(db, gs, &types.Repo{Name: repoName})
+	gcr := NewGitCommitResolver(db, gs, rr, oid, nil)
+
+	tree, err := gcr.Tree(ctx, &TreeArgs{Path: ""})
+	require.NoError(t, err)
+
+	entries, err := tree.Entries(ctx, &gitTreeEntryConnectionArgs{})
+	require.NoError(t, err)
+	require.Len(t, entries, 2)
+
+	for _, entry := range entries {
+		historyNodes, err := entry.
+			History(ctx, HistoryArgs{}).
+			Nodes(ctx)
+		require.NoError(t, err)
+
+		switch entry.Path() {
+		case "file1":
+			require.Len(t, historyNodes, 1)
+		case "dir1":
+			require.Len(t, historyNodes, 2)
+		default:
+			panic("unknown")
+		}
+
+	}
+}
+
 func TestGitTree_Entries(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()

@@ -28,6 +28,7 @@ import {
     Button,
     Code,
     H3,
+    H4,
     Icon,
     Input,
     Label,
@@ -42,6 +43,7 @@ import {
     Text,
     Tooltip,
     Badge,
+    Container,
 } from '@sourcegraph/wildcard'
 
 import { FEATURE_FLAGS, type FeatureFlagName } from '../featureFlags/featureFlags'
@@ -54,6 +56,7 @@ import type { DeveloperSettingsEvaluatedFeatureFlagsResult } from '../graphql-op
 import {
     setDeveloperSettingsFeatureFlags,
     setDeveloperSettingsTemporarySettings,
+    setDeveloperSettingsSearchOptions,
     toggleDevSettingsDialog,
     updateOverrideCounter,
     useDeveloperSettings,
@@ -102,6 +105,7 @@ export const DeveloperDialog: FC<{}> = () => {
                         </Badge>
                     </Tab>
                     <Tab>Misc</Tab>
+                    <Tab>Zoekt</Tab>
                 </TabList>
                 <TabPanels className="overflow-hidden flex-1 min-w-0 d-flex">
                     <TabPanel className={styles.content}>
@@ -116,6 +120,9 @@ export const DeveloperDialog: FC<{}> = () => {
                                 <EventLoggingDebugToggle />
                             </li>
                         </ul>
+                    </TabPanel>
+                    <TabPanel className={styles.content}>
+                        <ZoektSettings />
                     </TabPanel>
                 </TabPanels>
             </Tabs>
@@ -407,6 +414,45 @@ const TemporarySettingOverride: FC<{ setting: keyof TemporarySettings; filter: s
         )
     }
 )
+
+const ZoektSettings: FC<{}> = () => {
+    const { searchOptions } = useDeveloperSettings(settings => settings.zoekt)
+
+    const [inputValue, setInputValue] = useState<string>(searchOptions)
+
+    const handleClick = (): void => {
+        setDeveloperSettingsSearchOptions({ searchOptions: inputValue })
+    }
+
+    const isLightTheme = useIsLightTheme()
+    const extensions = useMemo(
+        () => [
+            EditorView.darkTheme.of(!isLightTheme),
+            json(),
+            defaultEditorTheme,
+            jsonHighlighting,
+            EditorView.updateListener.of(update => {
+                if (update.docChanged) {
+                    setInputValue(update.state.sliceDoc())
+                }
+            }),
+        ],
+        [isLightTheme]
+    )
+
+    return (
+        <div className="mt-2 d-flex flex-column">
+            <H4>Search Options</H4>
+            <Text>Enter a valid JSON below. Missing values are replaced with defaults.</Text>
+            <Container className="p-1">
+                <CodeMirrorEditor value={inputValue} extensions={extensions} />
+            </Container>
+            <Button variant="primary" className="mt-2 align-self-end" onClick={handleClick}>
+                Apply
+            </Button>
+        </div>
+    )
+}
 
 const JSONView: FC<{ value: unknown }> = ({ value }) => {
     const isLightTheme = useIsLightTheme()

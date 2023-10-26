@@ -71,7 +71,6 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
             // we add it ourselves.
             proxyRequest.setHeader('Origin', apiURL)
         },
-        // TODO: share with `client/web/gulpfile.js`
         // Avoid crashing on "read ECONNRESET".
         onError: () => undefined,
         // Don't log proxy errors, these usually just contain

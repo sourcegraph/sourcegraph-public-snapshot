@@ -37,6 +37,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-instant-v1.1':
             case 'anthropic/claude-instant-v1.1-100k':
             case 'anthropic/claude-instant-v1.2':
+            case 'anthropic/claude-instant-1.2-cyan':
             // See here: https://platform.openai.com/docs/models/model-endpoint-compatibility
             // for currently available Anthropic models. Note that we also need to
             // allow list the models on the Cody Gateway side.
@@ -51,6 +52,8 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'fireworks/accounts/fireworks/models/llama-v2-7b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':
+            case 'fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct':
+            case 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k':
             case 'fireworks/accounts/fireworks/models/wizardcoder-15b': {
                 return 'secondary'
             }

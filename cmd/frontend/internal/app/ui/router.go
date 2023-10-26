@@ -141,7 +141,11 @@ func InitRouter(db database.DB) {
 		{path: "/search/cody", name: "cody-search", title: "Search (Cody)", index: false},
 		{path: "/app/coming-soon", name: "app-coming-soon", title: "Coming soon", index: false},
 		{path: "/app/auth/callback", name: "app-auth-callback", title: "Auth callback", index: false},
+		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
+		{path: "/cody/chat/{chatID}", name: "cody-chat", title: "Cody", index: false},
+		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
 		{path: "/cody", name: "cody", title: "Cody", index: false},
+		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
 		{path: "/cody/{chatID}", name: "cody-chat", title: "Cody", index: false},
 		{path: "/get-cody", name: "get-cody", title: "Cody", index: false},
 		{path: "/post-sign-up", name: "post-sign-up", title: "Cody", index: false},
@@ -269,7 +273,7 @@ func InitRouter(db database.DB) {
 		})))
 
 	// raw
-	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient())))
+	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient("http.raw"))))
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 

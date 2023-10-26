@@ -1312,7 +1312,7 @@ CREATE TABLE repo (
     id integer NOT NULL,
     name citext NOT NULL,
     description text,
-    fork boolean,
+    fork boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone,
     external_id text,
@@ -4219,6 +4219,7 @@ CREATE TABLE users (
     completions_quota integer,
     code_completions_quota integer,
     completed_post_signup boolean DEFAULT false NOT NULL,
+    cody_pro_enabled_at timestamp with time zone,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))

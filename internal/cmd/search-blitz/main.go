@@ -54,7 +54,7 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 
 	loopSearch := func(ctx context.Context, c genericClient, qc *QueryConfig) {
 		if qc.Interval == 0 {
-			qc.Interval = time.Minute
+			qc.Interval = 5 * time.Minute
 		}
 
 		log := log15.New("name", qc.Name, "query", qc.Query, "type", c.clientType())

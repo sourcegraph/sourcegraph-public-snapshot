@@ -3526,7 +3526,7 @@ Referenced by:
  id                    | integer                  |           | not null | nextval('repo_id_seq'::regclass)
  name                  | citext                   |           | not null | 
  description           | text                     |           |          | 
- fork                  | boolean                  |           |          | 
+ fork                  | boolean                  |           | not null | false
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           |          | 
  external_id           | text                     |           |          | 
@@ -4304,6 +4304,7 @@ Foreign-key constraints:
  completions_quota       | integer                  |           |          | 
  code_completions_quota  | integer                  |           |          | 
  completed_post_signup   | boolean                  |           | not null | false
+ cody_pro_enabled_at     | timestamp with time zone |           |          | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL

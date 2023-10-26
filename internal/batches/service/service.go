@@ -1687,6 +1687,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		btypes.ChangesetJobTypeMerge:     0,
 		btypes.ChangesetJobTypePublish:   0,
 		btypes.ChangesetJobTypeReenqueue: 0,
+		btypes.ChangesetJobTypeExport:    0,
 	}
 
 	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
@@ -1698,6 +1699,10 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	for _, changeset := range changesets {
+		// The assumption here is that all changesets should be exportable. That's why we always increment
+		// this for all changesets. The other operations depend on the changeset state.
+		bulkOperationsCounter[btypes.ChangesetJobTypeExport]++
+
 		isChangesetArchived := changeset.ArchivedIn(opts.BatchChange)
 		isChangesetDraft := changeset.ExternalState == btypes.ChangesetExternalStateDraft
 		isChangesetOpen := changeset.ExternalState == btypes.ChangesetExternalStateOpen
@@ -1710,8 +1715,8 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
 		isChangesetClosable := isChangesetOpen || isChangesetDraft
 
-		// check what operations this changeset support, most likely from the state
-		// so get the changeset then derive the operations from it's state.
+		// check what operations this changeset supports, most likely from the state
+		// so get the changeset then derive the operations from its state.
 
 		// No operations are available for read-only changesets.
 		if isChangesetReadOnly {
@@ -1765,6 +1770,29 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	return availableBulkOperations, nil
+}
+
+func (s *Service) GetChangesetsByIDs(ctx context.Context, batchChange int64, ids []int64) ([]*btypes.Changeset, error) {
+	bc, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChange})
+	if err != nil {
+		return nil, errors.Wrap(err, "loading batch change")
+	}
+
+	if err := s.checkViewerCanAdminister(ctx, bc.NamespaceOrgID, bc.NamespaceUserID, true); err != nil {
+		return nil, err
+	}
+
+	// We fetch all changesets with the given ID and check that the current user is authorized to access those changesets.
+	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChange,
+		EnforceAuthz:  true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return changesets, nil
 }
 
 func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, id graphql.ID) {

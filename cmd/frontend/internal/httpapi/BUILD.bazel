@@ -26,7 +26,6 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/httpapi/releasecache",
-        "//cmd/frontend/internal/httpapi/router",
         "//cmd/frontend/internal/httpapi/webhookhandlers",
         "//cmd/frontend/internal/routevar",
         "//cmd/frontend/internal/search",
@@ -98,7 +97,6 @@ go_test(
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/internal/httpapi/router",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -132,6 +130,7 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@com_github_throttled_throttled_v2//store/memstore",
+        "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_protobuf//testing/protocmp",
     ],
 )

@@ -267,3 +267,14 @@ func CheckSpecArgSafety(spec string) error {
 	}
 	return nil
 }
+
+// MakeBareRepo initializes a new bare repo at the given dir.
+func MakeBareRepo(ctx context.Context, dir string) error {
+	cmd := exec.CommandContext(ctx, "git", "init", "--bare", ".")
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "failed to create bare repo: %s", string(out))
+	}
+	return nil
+}

@@ -53,6 +53,9 @@ export const ENVIRONMENT_CONFIG = {
      */
     DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
 
+    /** Disable code splitting for faster dev builds and dev page navigation. */
+    DEV_WEB_BUILDER_NO_SPLITTING: Boolean(process.env.DEV_WEB_BUILDER_NO_SPLITTING),
+
     /**
      * ----------------------------------------
      * Application features configuration.

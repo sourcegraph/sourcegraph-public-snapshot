@@ -70,7 +70,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
-	gitserverClient := internalGitserver.NewClient()
+	gitserverClient := internalGitserver.NewClient("insights")
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
@@ -79,10 +79,10 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewGitserverFilter(logger, gitserverClient),
+			CompressionPlan:         compression.NewGitserverFilter(logger, gitserverClient.Scoped("compressionfilter")),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            gitserver.NewGitCommitClient(gitserverClient),
+			CommitClient:            gitserver.NewGitCommitClient(gitserverClient.Scoped("commitclient")),
 			SearchPlanWorkerLimit:   1,
 			SearchRunnerWorkerLimit: 1, // TODO: this can scale with the number of searcher endpoints
 			SearchRateLimiter:       searchRateLimiter,

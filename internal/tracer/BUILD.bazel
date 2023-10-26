@@ -8,7 +8,7 @@ go_library(
         "doc.go",
         "logged_otel.go",
         "otel.go",
-        "otel_should_trace.go",
+        "policy_sampler.go",
         "tracer.go",
         "watch.go",
     ],
@@ -39,7 +39,10 @@ go_library(
 go_test(
     name = "tracer_test",
     timeout = "short",
-    srcs = ["watch_test.go"],
+    srcs = [
+        "policy_sampler_test.go",
+        "watch_test.go",
+    ],
     embed = [":tracer"],
     deps = [
         "//internal/trace/policy",
@@ -49,5 +52,6 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk//trace/tracetest",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )

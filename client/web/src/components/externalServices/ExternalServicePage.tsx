@@ -9,7 +9,7 @@ import { Subject } from 'rxjs'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, ErrorAlert, H2, H3, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../../site/backend'
@@ -246,6 +246,16 @@ export const ExternalServicePage: FC<Props> = props => {
                 {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
                 {externalServiceAvailabilityStatus}
                 <H2>Information</H2>
+                {externalService.unrestricted && (
+                    <Alert className="mt-2" variant="warning">
+                        <H3>All repositories will be unrestricted</H3>
+                        This code host connection does not have authorization configured. Any repositories added by this
+                        code host will be accessible by all users on the instance, even if another code host connection
+                        with authorization syncs the same repository. See{' '}
+                        <Link to="/help/admin/permissions#getting-started">the documentation</Link> for instructions on
+                        configuring authorization.
+                    </Alert>
+                )}
                 {externalServiceCategory && (
                     <ExternalServiceInformation
                         displayName={externalService.displayName}

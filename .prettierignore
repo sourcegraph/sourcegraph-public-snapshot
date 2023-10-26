@@ -11,6 +11,7 @@ internal/database/migration/shared/data/**/*.json
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
+ui/assets/
 src-tauri/assets/
 src-tauri/target/
 vendor/
@@ -56,3 +57,4 @@ dev/backcompat/flakes.json
 client/browser/src/types/webextension-polyfill/index.d.ts
 
 dev/release/release-config.jsonc
+graphql-operations.ts

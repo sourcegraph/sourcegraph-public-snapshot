@@ -25,6 +25,17 @@ func Deref[T any](v *T, defaultValue T) T {
 	return defaultValue
 }
 
+// Deref safely dereferences a pointer. If pointer is nil, it returns a zero value,
+// otherwise returns dereferenced value.
+func DerefZero[T any](v *T) T {
+	if v != nil {
+		return *v
+	}
+
+	var defaultValue T
+	return defaultValue
+}
+
 type numberType interface {
 	~float32 | ~float64 |
 		~int | ~int8 | ~int16 | ~int32 | ~int64 |

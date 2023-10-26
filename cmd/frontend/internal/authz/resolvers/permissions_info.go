@@ -149,7 +149,7 @@ func (r permissionsInfoRepositoryResolver) Repository(ctx context.Context) (*gra
 	if err != nil && errcode.IsNotFound(err) {
 		return nil, nil
 	}
-	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), repo), err
+	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient("graphql.authz.permissions"), repo), err
 }
 
 func (r permissionsInfoRepositoryResolver) Reason() string {

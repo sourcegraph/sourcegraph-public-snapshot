@@ -133,6 +133,7 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
+  SRC_TELEMETRY_EVENTS_EXPORT_ALL: "true"
 
   # By default, allow temporary edits to external services.
   EXTSVC_CONFIG_ALLOW_EDITS: true
@@ -385,8 +386,10 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: ./node_modules/.bin/gulp --color dev
-    install: pnpm install
+    cmd: pnpm --filter @sourcegraph/web dev
+    install: |
+      pnpm install
+      pnpm run generate
     env:
       ENABLE_OPEN_TELEMETRY: true
 
@@ -395,10 +398,10 @@ commands:
     cmd: pnpm --filter @sourcegraph/web serve:dev --color
     install: |
       pnpm install
-      pnpm generate
+      pnpm run generate
     env:
       WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL

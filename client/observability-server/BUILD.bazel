@@ -42,6 +42,7 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/node-fetch",
         "//:node_modules/signale",
+        "//client/observability-client:observability-client_lib",
     ],
 )
 

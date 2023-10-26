@@ -1,4 +1,4 @@
-import { Facet, RangeSetBuilder } from '@codemirror/state'
+import { RangeSetBuilder } from '@codemirror/state'
 import {
     Decoration,
     type DecorationSet,
@@ -13,7 +13,6 @@ import { logger } from '@sourcegraph/common'
 import { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { getLinksFromString } from '../../linkifiy/get-links'
-import type { BlobInfo } from '../CodeMirrorBlob'
 
 import { syntaxHighlight } from './highlight'
 
@@ -145,8 +144,4 @@ class LinkBuilder implements PluginValue {
 /**
  * Transforms URLs within code comments and string literals into links.
  */
-export const buildLinks = Facet.define<BlobInfo>({
-    static: true,
-    compareInput: (blobInfoA, blobInfoB) => blobInfoA.lsif === blobInfoB.lsif,
-    enables: ViewPlugin.fromClass(LinkBuilder, { decorations: plugin => plugin.decorations }),
-})
+export const linkify = ViewPlugin.fromClass(LinkBuilder, { decorations: plugin => plugin.decorations })

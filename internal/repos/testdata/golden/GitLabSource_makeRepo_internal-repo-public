@@ -1,0 +1,125 @@
+[
+  {
+   "ID": 0,
+   "Name": "gitlab.com/gitlab-org/gitaly",
+   "URI": "gitlab.com/gitlab-org/gitaly",
+   "Description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "1",
+    "ServiceType": "gitlab",
+    "ServiceID": "https://gitlab.com/"
+   },
+   "Sources": {
+    "extsvc:gitlab:1": {
+     "ID": "extsvc:gitlab:1",
+     "CloneURL": "https://gitlab.com/gitlab-org/gitaly.git"
+    }
+   },
+   "Metadata": {
+    "id": 1,
+    "path_with_namespace": "gitlab-org/gitaly",
+    "description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+    "web_url": "https://gitlab.com/gitlab-org/gitaly",
+    "http_url_to_repo": "https://gitlab.com/gitlab-org/gitaly.git",
+    "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly.git",
+    "visibility": "public",
+    "archived": false,
+    "star_count": 0,
+    "forks_count": 0,
+    "empty_repo": false,
+    "default_branch": "main",
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gitlab.com/gitlab-org/gitaly-2",
+   "URI": "gitlab.com/gitlab-org/gitaly-2",
+   "Description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "2",
+    "ServiceType": "gitlab",
+    "ServiceID": "https://gitlab.com/"
+   },
+   "Sources": {
+    "extsvc:gitlab:1": {
+     "ID": "extsvc:gitlab:1",
+     "CloneURL": "https://gitlab.com/gitlab-org/gitaly-2.git"
+    }
+   },
+   "Metadata": {
+    "id": 2,
+    "path_with_namespace": "gitlab-org/gitaly-2",
+    "description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+    "web_url": "https://gitlab.com/gitlab-org/gitaly-2",
+    "http_url_to_repo": "https://gitlab.com/gitlab-org/gitaly-2.git",
+    "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly-2.git",
+    "visibility": "internal",
+    "archived": false,
+    "star_count": 0,
+    "forks_count": 0,
+    "empty_repo": false,
+    "default_branch": "main",
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gitlab.com/gitlab-org/gitaly-3",
+   "URI": "gitlab.com/gitlab-org/gitaly-3",
+   "Description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "3",
+    "ServiceType": "gitlab",
+    "ServiceID": "https://gitlab.com/"
+   },
+   "Sources": {
+    "extsvc:gitlab:1": {
+     "ID": "extsvc:gitlab:1",
+     "CloneURL": "https://gitlab.com/gitlab-org/gitaly-3.git"
+    }
+   },
+   "Metadata": {
+    "id": 3,
+    "path_with_namespace": "gitlab-org/gitaly-3",
+    "description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+    "web_url": "https://gitlab.com/gitlab-org/gitaly-3",
+    "http_url_to_repo": "https://gitlab.com/gitlab-org/gitaly-3.git",
+    "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly-3.git",
+    "visibility": "private",
+    "archived": false,
+    "star_count": 0,
+    "forks_count": 0,
+    "empty_repo": false,
+    "default_branch": "main",
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
+   }
+  }
+ ]

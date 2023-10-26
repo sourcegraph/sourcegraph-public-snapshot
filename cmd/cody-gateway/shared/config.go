@@ -107,6 +107,7 @@ func (c *Config) Load() {
 			"claude-instant-v1.1",
 			"claude-instant-v1.1-100k",
 			"claude-instant-v1.2",
+			"claude-instant-1.2-cyan",
 		}, ","),
 		"Anthropic models that can be used."))
 	if c.Anthropic.AccessToken != "" && len(c.Anthropic.AllowedModels) == 0 {
@@ -136,6 +137,8 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
+			"accounts/fireworks/models/llama-v2-34b-code-instruct",
+			"accounts/fireworks/models/mistral-7b-instruct-4k",
 			"accounts/fireworks/models/wizardcoder-15b",
 		}, ","),
 		"Fireworks models that can be used."))

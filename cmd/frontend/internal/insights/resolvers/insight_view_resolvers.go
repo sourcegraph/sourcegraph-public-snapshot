@@ -1317,7 +1317,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 	var dynamic bool
 	// Validate the query before creating anything; we don't want faulty insights running pointlessly.
 	if series.GroupBy != nil || series.GeneratedFromCaptureGroups != nil {
-		if _, err := querybuilder.ParseComputeQuery(series.Query, gitserver.NewClient()); err != nil {
+		if _, err := querybuilder.ParseComputeQuery(series.Query, gitserver.NewClient("graphql.insights.computequery")); err != nil {
 			return errors.Wrap(err, "query validation")
 		}
 	} else {
