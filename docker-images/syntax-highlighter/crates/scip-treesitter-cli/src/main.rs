@@ -177,14 +177,14 @@ struct SymbolPair {
 }
 
 #[derive(Debug, PartialEq, Eq, Default, Hash, Clone, PartialOrd, Ord)]
-struct Location {
+struct LocationInFile {
     rng: PackedRange,
     file: String,
 }
 
 #[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
 struct SymbolOccurrence {
-    location: Location,
+    location: LocationInFile,
     symbol: String,
 }
 
@@ -201,15 +201,21 @@ impl Overlap {
 }
 
 pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: ScipEvaluateOptions) {
-    let candidate_occs: HashMap<Location, String> =
+    let bar = create_spinner();
+    bar.set_message("Indexing candidate symbols by location");
+    let candidate_occs: HashMap<LocationInFile, String> =
         index_occurrences(&read_index_from_file(candidate.into()));
+    bar.tick();
 
-    let ground_truth_occs: HashMap<Location, String> =
+    bar.set_message("Indexing ground truth symbols by location");
+    let ground_truth_occs: HashMap<LocationInFile, String> =
         index_occurrences(&read_index_from_file(ground_truth.into()));
+    bar.tick();
 
     let mut overlaps: HashMap<SymbolPair, Overlap> = HashMap::new();
     let mut lookup: HashMap<String, HashSet<SymbolPair>> = HashMap::new();
 
+    bar.set_message("Analysing occurrences in candidate SCIP");
     for (candidate_loc, candidate_symbol_orig) in candidate_occs.clone() {
         match ground_truth_occs.get(&candidate_loc) {
             None => {}
@@ -222,14 +228,10 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
 
                 match lookup.get_mut(ground_truth_symbol) {
                     None => {
-                        let mut set = HashSet::new();
-                        set.insert(pair.clone());
-                        lookup.insert(ground_truth_symbol.clone(), set);
-                        ()
+                        lookup.insert(ground_truth_symbol.clone(), HashSet::from([pair.clone()]));
                     }
                     Some(s) => {
                         s.insert(pair.clone());
-                        ()
                     }
                 }
 
@@ -250,7 +252,9 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
             }
         }
     }
+    bar.tick();
 
+    bar.set_message("Computing overlap with ground truth SCIP occurrences");
     for (_, gt_symbol) in ground_truth_occs.clone() {
         for pairs in lookup.get(&gt_symbol).into_iter() {
             for pair in pairs {
@@ -260,6 +264,7 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
             }
         }
     }
+    bar.tick();
 
     let mapping: HashMap<SymbolPair, f32> = overlaps
         .clone()
@@ -287,10 +292,10 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
 
     let mut results: Vec<ClassifiedLocation> = Vec::new();
 
+    bar.set_message("Classifying occurrences into false negatives and true positives");
     for (rng, occ) in ground_truth_occs.clone() {
         match candidate_occs.get(&rng) {
-            None => results.push((rng, occ, Mark::FalseNegative(1.0))),
-            //results.push((rng, occ)),
+            None => results.push((rng, occ, Mark::FalseNegative { weight: 1.0 })),
             Some(c) => {
                 let similarity = mapping.get(&SymbolPair {
                     ground_truth: occ.clone(),
@@ -298,31 +303,32 @@ pub fn evaluate_command<'a>(candidate: String, ground_truth: String, options: Sc
                 });
                 match similarity {
                     None => eprintln!("Couldn't find a mapping for symbol {}", occ.red()),
-                    Some(v) => results.push((rng, occ, Mark::TruePositive(*v))),
+                    Some(v) => results.push((rng, occ, Mark::TruePositive { weight: *v })),
                 }
-            } // true_positives.push((rng, c.to_string())),
+            }
         }
     }
 
+    bar.set_message("Identifying false positives");
     for (rng, occ) in candidate_occs.clone() {
         if !ground_truth_occs.contains_key(&rng) {
-            // false_positives.push((rng, occ));
-
-            results.push((rng, occ, Mark::FalsePositive(1.0)));
+            results.push((rng, occ, Mark::FalsePositive { weight: 1.0 }));
         }
     }
+
+    bar.finish_and_clear();
 
     summarise(results, options);
 }
 
 enum Mark {
-    TruePositive(f32),
-    FalsePositive(f32),
-    FalseNegative(f32),
+    TruePositive { weight: f32 },
+    FalsePositive { weight: f32 },
+    FalseNegative { weight: f32 },
 }
 
-type ClassifiedLocation = (Location, String, Mark);
-type Occ = (Location, String);
+type ClassifiedLocation = (LocationInFile, String, Mark);
+type Occ = (LocationInFile, String);
 
 fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) {
     let mut true_positives: Vec<Occ> = Vec::new();
@@ -335,17 +341,17 @@ fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) 
 
     for cl in classified {
         match cl.2 {
-            Mark::TruePositive(a) => {
+            Mark::TruePositive { weight } => {
                 true_positives.push((cl.0, cl.1));
-                tps += a
+                tps += weight
             }
-            Mark::FalseNegative(a) => {
+            Mark::FalseNegative { weight } => {
                 false_negatives.push((cl.0, cl.1));
-                fns += a
+                fns += weight
             }
-            Mark::FalsePositive(a) => {
+            Mark::FalsePositive { weight } => {
                 false_positives.push((cl.0, cl.1));
-                fps += a
+                fps += weight
             }
         }
     }
@@ -421,8 +427,8 @@ fn summarise(classified: Vec<ClassifiedLocation>, options: ScipEvaluateOptions) 
     }
 }
 
-fn index_occurrences(idx: &Index) -> HashMap<Location, String> {
-    let mut mp: HashMap<Location, String> = HashMap::new();
+fn index_occurrences(idx: &Index) -> HashMap<LocationInFile, String> {
+    let mut mp: HashMap<LocationInFile, String> = HashMap::new();
 
     for doc in &idx.documents {
         for occ in &doc.occurrences {
@@ -433,7 +439,7 @@ fn index_occurrences(idx: &Index) -> HashMap<Location, String> {
                 new_sym = format!("{} {}", doc.relative_path, occ.symbol)
             }
 
-            let loc = Location {
+            let loc = LocationInFile {
                 rng,
                 file: doc.relative_path.to_string(),
             };
@@ -508,16 +514,7 @@ fn index_command(
 
     match index_mode {
         IndexMode::Files { list } => {
-            let bar = ProgressBar::new(list.len() as u64);
-
-            bar.set_style(
-                ProgressStyle::with_template(
-                    "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7}\n {msg}",
-                )
-                .unwrap()
-                .progress_chars("##-"),
-            );
-
+            let bar = create_progress_bar(list.len() as u64);
             for filename in list {
                 let filepath = PathBuf::from(filename).canonicalize().expect("???b");
                 bar.set_message(filepath.display().to_string());
@@ -543,21 +540,7 @@ fn index_command(
                         .unwrap_or(false)
             };
 
-            let bar = ProgressBar::new_spinner();
-
-            bar.set_style(
-                ProgressStyle::with_template("{spinner:.blue} {msg}")
-                    .unwrap()
-                    .tick_strings(&[
-                        "▹▹▹▹▹",
-                        "▸▹▹▹▹",
-                        "▹▸▹▹▹",
-                        "▹▹▸▹▹",
-                        "▹▹▹▸▹",
-                        "▹▹▹▹▸",
-                        "▪▪▪▪▪",
-                    ]),
-            );
+            let bar = create_spinner();
 
             for entry in walkdir::WalkDir::new(location)
                 .into_iter()
@@ -582,6 +565,40 @@ fn index_command(
     );
 
     write_message_to_file(out, index).expect("to write the file");
+}
+
+fn create_progress_bar(len: u64) -> ProgressBar {
+    let bar = ProgressBar::new(len);
+
+    bar.set_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7}\n {msg}",
+        )
+        .unwrap()
+        .progress_chars("##-"),
+    );
+
+    return bar;
+}
+
+fn create_spinner() -> ProgressBar {
+    let bar = ProgressBar::new_spinner();
+
+    bar.set_style(
+        ProgressStyle::with_template("{spinner:.blue} {msg}")
+            .unwrap()
+            .tick_strings(&[
+                "▹▹▹▹▹",
+                "▸▹▹▹▹",
+                "▹▸▹▹▹",
+                "▹▹▸▹▹",
+                "▹▹▹▸▹",
+                "▹▹▹▹▸",
+                "▪▪▪▪▪",
+            ]),
+    );
+
+    return bar;
 }
 
 fn index_content(
