@@ -12,6 +12,6 @@
     "outDir": "./out",
   },
   "references": [{ "path": "../common" }, { "path": "../testing" }],
-  "include": ["**/*", ".*"],
+  "include": ["src"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
 }

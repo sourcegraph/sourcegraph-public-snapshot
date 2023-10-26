@@ -3,5 +3,6 @@
   "compilerOptions": {
     "module": "commonjs",
   },
-  "include": ["**/*"],
+  "include": ["esbuild", "server", "utils", "../src/jscontext.ts", "../src/graphql-operations.ts"],
+  "exclude": [],
 }
