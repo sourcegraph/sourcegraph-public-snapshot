@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { EMPTY, of, Subject } from 'rxjs'
 import sinon from 'sinon'
 
@@ -14,7 +15,7 @@ import type { SettingsEdit } from './services/settings'
 
 describe('MainThreadAPI', () => {
     // TODO(tj): commands, notifications
-    const getGraphQLClient = () => getGraphQLClientBase({ headers: {}, cache })
+    const getGraphQLClient = () => getGraphQLClientBase({ cache })
 
     describe('graphQL', () => {
         test('PlatformContext#requestGraphQL is called with the correct arguments', async () => {
@@ -117,12 +118,15 @@ describe('MainThreadAPI', () => {
                 clientApplication: 'other',
             }
 
-            const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
+            const { api } = initMainThreadAPI(
+                pretendRemote<FlatExtensionHostAPI>({ syncSettingsData: () => {} }),
+                platformContext
+            )
 
             const edit: SettingsEdit = { path: ['a'], value: 'newVal' }
             await api.applySettingsEdit(edit)
 
-            expect(calledWith).toEqual<Parameters<PlatformContext['updateSettings']>>(['id2', edit])
+            expect(calledWith).toEqual(['id2', edit] as Parameters<PlatformContext['updateSettings']>)
         })
 
         test('changes of settings from platform propagated to the ext host', () => {
@@ -162,7 +166,7 @@ describe('MainThreadAPI', () => {
                 platformContext
             )
 
-            expect(passedToExtensionHost).toEqual<SettingsCascade<{ a: string }>[]>([values[0], values[2]])
+            expect(passedToExtensionHost).toEqual([values[0], values[2]] as SettingsCascade<{ a: string }>[])
         })
 
         test('changes of settings are not passed to ext host after unsub', () => {

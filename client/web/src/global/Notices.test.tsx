@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

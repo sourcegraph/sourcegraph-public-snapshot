@@ -61,8 +61,7 @@ export const RateLimitsTab: FC<RateLimitsTabProps> = props => {
                     {!error && loading && <LoadingSpinner />}
                     {!error && data && data.site.codyGatewayRateLimitStatus?.length === 0 && <NoRateLimitState />}
                     {!error &&
-                        data &&
-                        data.site.codyGatewayRateLimitStatus !== null &&
+                        data?.site.codyGatewayRateLimitStatus &&
                         data.site.codyGatewayRateLimitStatus.length > 0 && (
                             <RateLimitTable limits={data.site.codyGatewayRateLimitStatus} />
                         )}

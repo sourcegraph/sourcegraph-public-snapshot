@@ -4,6 +4,12 @@ import type { DiffResolvedRevisionSpec } from '../../repo'
 import { RepoURLParseError } from '../shared/errors'
 
 /**
+ * For testing only, used to set the window.location value.
+ * @internal
+ */
+export const windowLocation__testingOnly: { value: URL | null } = { value: null }
+
+/**
  * Returns the elements on the page which should be marked
  * up with tooltips & links:
  *
@@ -101,7 +107,7 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
             const baseShaElement = shaContainers[0].querySelector('a')
             if (baseShaElement) {
                 // e.g "https://github.com/gorilla/mux/commit/0b13a922203ebdbfd236c818efcd5ed46097d690"
-                baseCommitID = baseShaElement.href.split('/').slice(-1)[0]
+                baseCommitID = baseShaElement.href.split('/').at(-1)!
             }
             const headShaElement = shaContainers[1].querySelector('span.sha') as HTMLElement
             if (headShaElement) {
@@ -237,10 +243,10 @@ export function getFilePath(): string {
  * making the boundary between the branch name and file path ambiguous.
  * E.g., in URL "https://github.com/sourcegraph/sourcegraph/blob/bext/release/package.json" branch name is "bext/release".
  */
-export function getFilePathFromURL(rev: string): string {
+export function getFilePathFromURL(rev: string, windowLocation__testingOnly: URL | Location = window.location): string {
     // <empty>/<user>/<repo>/(blob|tree)/<commitID|rev>/<path/to/file>
     // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
-    const [, , , pageType, ...revAndPathParts] = window.location.pathname.split('/')
+    const [, , , pageType, ...revAndPathParts] = windowLocation__testingOnly.pathname.split('/')
     const revAndPath = revAndPathParts.join('/')
     if (!revAndPath.startsWith(rev) || (pageType !== 'tree' && revAndPath.length === rev.length)) {
         throw new Error('Failed to extract the file path from the URL.')
@@ -264,36 +270,41 @@ export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     switch (pageType) {
         case 'commit':
         case 'pull':
-        case 'compare':
+        case 'compare': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 
-export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> = window.location): GitHubURL {
-    const { host, pathname } = location
+export function parseURL(location?: Pick<Location, 'host' | 'pathname' | 'href'>): GitHubURL {
+    const { pathname, href, host } = location ?? windowLocation__testingOnly.value ?? window.location
     const [user, ghRepoName, pageType, ...rest] = pathname.slice(1).split('/')
     if (!user || !ghRepoName) {
-        throw new RepoURLParseError(`Could not parse repoName from GitHub url: ${location.href}`)
+        throw new RepoURLParseError(`Could not parse repoName from GitHub url: ${href}`)
     }
     const repoName = `${user}/${ghRepoName}`
     const rawRepoName = `${host}/${repoName}`
     switch (pageType) {
         case 'blob':
-        case 'tree':
+        case 'tree': {
             return {
                 pageType,
                 rawRepoName,
                 revisionAndFilePath: decodeURIComponent(rest.join('/')),
                 repoName,
             }
+        }
         case 'pull':
         case 'commit':
-        case 'compare':
+        case 'compare': {
             return { pageType, rawRepoName, repoName }
-        default:
+        }
+        default: {
             return { pageType: 'other', rawRepoName, repoName }
+        }
     }
 }
 

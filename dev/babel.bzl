@@ -79,7 +79,6 @@ def babel(name, srcs, module = None, use_preset_env = True, **kwargs):
         srcs = ts_srcs + [
             "//:babel_config",
             "//:package_json",
-            "//:browserslist",
         ],
         outs = outs,
         args = args,

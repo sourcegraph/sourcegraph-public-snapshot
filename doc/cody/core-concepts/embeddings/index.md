@@ -6,8 +6,6 @@
 
 Embeddings are a semantic representation of text that allow you to create a search index over your codebase. Cody splits your codebase into searchable chunks and sends them to an external service specified in your site's configuration for embedding. The resulting embedding index is stored in a managed object storage service.
 
->NOTE: Embeddings for relevant code files must be enabled for each repository that you want Cody to have context on.
-
 ## Enable embeddings
 
 By default, no embeddings are created. Embeddings are automatically enabled and configured when Cody is enabled. Admins must choose which code is sent to the third-party language model (LLM) for embedding (currently OpenAI). Once Sourcegraph provides first-party embeddings, they will be enabled for all repositories by default.

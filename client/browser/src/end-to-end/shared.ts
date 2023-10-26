@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import expect from 'expect'
+import { describe, it } from 'mocha'
 import type puppeteer from 'puppeteer'
 
 import type { Driver } from '@sourcegraph/shared/src/testing/driver'

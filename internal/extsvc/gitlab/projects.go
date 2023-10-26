@@ -35,6 +35,7 @@ type Project struct {
 	ForksCount        int            `json:"forks_count"`
 	EmptyRepo         bool           `json:"empty_repo"`
 	DefaultBranch     string         `json:"default_branch"`
+	Topics            []string       `json:"topics"`
 }
 
 type ProjectCommon struct {

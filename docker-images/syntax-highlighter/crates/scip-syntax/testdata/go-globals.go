@@ -22,6 +22,9 @@ type SomeInterface interface {
 	Incredible() int
 }
 
+type TypeDef uint8
+type TypeAlias = uint8
+
 // Go calls the given function in a new goroutine.
 //
 // If the function returns an error it is added to the group multierror which

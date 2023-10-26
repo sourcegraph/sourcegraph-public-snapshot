@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
 import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
@@ -53,7 +55,7 @@ describe('GitLab', () => {
             }),
             ResolveRepoName: () => ({
                 repository: {
-                    name: 'gitlab.com/sourcegraph/jsonrpc2',
+                    name: 'gitlab.com/SourcegraphCody/jsonrpc2',
                 },
             }),
             ResolveRev: () => ({
@@ -113,9 +115,10 @@ describe('GitLab', () => {
             }
         }
 
-        const repoName = 'gitlab.com/sourcegraph/jsonrpc2'
+        const repoName = 'gitlab.com/SourcegraphCody/jsonrpc2'
 
-        const url = 'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+        const url =
+            'https://gitlab.com/SourcegraphCody/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         await driver.page.goto(url)
 
         await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]', {
@@ -177,7 +180,7 @@ describe('GitLab', () => {
         })
 
         await driver.page.goto(
-            'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+            'https://gitlab.com/SourcegraphCody/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         )
         await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 

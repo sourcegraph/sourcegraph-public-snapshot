@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import type { Remote } from 'comlink'
 import { asyncScheduler, type Observable, of, type Unsubscribable } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'
@@ -6,8 +7,9 @@ import type * as sourcegraph from 'sourcegraph'
 import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import type { Location } from '@sourcegraph/extension-api-types'
+import { createBarrier } from '@sourcegraph/testing'
 
-import { assertToJSON, createBarrier, integrationTestContext } from '../../testing/testHelpers'
+import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
 import { wrapRemoteObservable } from '../client/api/common'
 import type { FlatExtensionHostAPI } from '../contract'
 

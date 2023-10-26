@@ -35,6 +35,11 @@ expression: dumped
       public static final String COOLEST_STRING = "probably this one";
 //                               ^^^^^^^^^^^^^^ definition scip-ctags globals#COOLEST_STRING.
   
+      public record Person (String name, String address) {}
+//                  ^^^^^^ definition scip-ctags globals#Person#
+//                                 ^^^^ definition scip-ctags globals#Person#name.
+//                                              ^^^^^^^ definition scip-ctags globals#Person#address.
+  
       public class ClassInAClass {
 //                 ^^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#
           boolean classy = true;

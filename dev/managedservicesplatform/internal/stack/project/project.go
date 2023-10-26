@@ -83,6 +83,9 @@ type Variables struct {
 	// EnableAuditLogs ships GCP audit logs to security cluster.
 	// TODO: Not yet implemented
 	EnableAuditLogs bool
+
+	// Services is a list of additional GCP services to enable.
+	Services []string
 }
 
 const StackName = "project"
@@ -144,7 +147,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			}),
 	}
 
-	for _, service := range gcpServices {
+	for _, service := range append(gcpServices, vars.Services...) {
 		projectservice.NewProjectService(stack,
 			id.ResourceID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
 			&projectservice.ProjectServiceConfig{

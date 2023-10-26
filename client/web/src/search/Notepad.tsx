@@ -229,10 +229,11 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                 blocks.push({ type: 'md', input: { text: entry.annotation } })
             }
             switch (entry.type) {
-                case 'search':
+                case 'search': {
                     blocks.push({ type: 'query', input: { query: toSearchQuery(entry) } })
                     break
-                case 'file':
+                }
+                case 'file': {
                     blocks.push({
                         type: 'file',
                         input: {
@@ -246,6 +247,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                         },
                     })
                     break
+                }
             }
         }
 
@@ -287,31 +289,35 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
 
             switch (event.key) {
                 // Select all entries
-                case 'a':
+                case 'a': {
                     if (hasMeta) {
                         // This prevents text selection
                         event.preventDefault()
                         setSelectedEntries(reversedEntries.map((_value, index) => index))
                     }
                     break
+                }
                 // Clear selection
-                case 'Escape':
+                case 'Escape': {
                     if (selectedEntries.length > 0) {
                         setSelectedEntries([])
                     }
                     break
+                }
                 // Delete selected entries
-                case 'Delete':
+                case 'Delete': {
                     if (selectedEntries.length > 0) {
                         deleteSelectedEntries()
                     }
                     break
+                }
                 // On macOS we also support CMD+Backpace for deletion
-                case 'Backspace':
+                case 'Backspace': {
                     if (hasMacMeta && selectedEntries.length > 0) {
                         deleteSelectedEntries()
                     }
                     break
+                }
                 // Select "next" entry
                 case 'ArrowUp':
                 case 'ArrowDown': {
@@ -336,10 +342,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             // Select next entry
                             return toggleSelection(
                                 selection,
-                                wrapPosition(
-                                    selection[selection.length - 1] + (key === 'ArrowDown' ? 1 : -1),
-                                    reversedEntries.length
-                                )
+                                wrapPosition(selection.at(-1)! + (key === 'ArrowDown' ? 1 : -1), reversedEntries.length)
                             )
                         }
                         if (reversedEntries.length > 0) {
@@ -532,7 +535,7 @@ interface AddEntryButtonProps {
 const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryButtonProps>> = ({ entry, addEntry }) => {
     let button: React.ReactElement
     switch (entry.type) {
-        case 'search':
+        case 'search': {
             button = (
                 <Button
                     outline={true}
@@ -549,7 +552,8 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                 </Button>
             )
             break
-        case 'file':
+        }
+        case 'file': {
             button = (
                 <span className="d-flex mx-0">
                     <Button
@@ -583,6 +587,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                     )}
                 </span>
             )
+        }
     }
 
     const { title } = getUIComponentsForEntry(entry)
@@ -700,14 +705,16 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                     onClick={stopPropagation}
                     onKeyDown={event => {
                         switch (event.key) {
-                            case 'Escape':
+                            case 'Escape': {
                                 event.currentTarget.blur()
                                 break
-                            case 'Enter':
+                            }
+                            case 'Enter': {
                                 if (isMetaKey(event, isMacPlatform())) {
                                     toggleAnnotationInput(false)
                                 }
                                 break
+                            }
                         }
                     }}
                 />
@@ -723,7 +730,7 @@ function getUIComponentsForEntry(entry: NotepadEntry | NotepadEntryInput): {
     body?: React.ReactElement
 } {
     switch (entry.type) {
-        case 'search':
+        case 'search': {
             return {
                 icon: <Icon aria-label="Search" svgPath={mdiMagnify} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
@@ -737,7 +744,8 @@ function getUIComponentsForEntry(entry: NotepadEntry | NotepadEntryInput): {
                     ),
                 },
             }
-        case 'file':
+        }
+        case 'file': {
             return {
                 icon: (
                     <Icon
@@ -763,19 +771,22 @@ function getUIComponentsForEntry(entry: NotepadEntry | NotepadEntryInput): {
                         : undefined,
                 }),
             }
+        }
     }
 }
 
 function getLabel(entry: NotepadEntry, selected: boolean): string {
     const selectedText = selected ? 'Selected, ' : ''
     switch (entry.type) {
-        case 'search':
+        case 'search': {
             return `${selectedText}search: ${toSearchQuery(entry)}`
-        case 'file':
+        }
+        case 'file': {
             if (entry.lineRange) {
                 return `${selectedText}line range: ${fileName(entry.path)}${formatLineRange(entry.lineRange)}`
             }
             return `${selectedText}file: ${fileName(entry.path)}`
+        }
     }
 }
 
@@ -795,7 +806,7 @@ function toSearchQuery(entry: SearchEntry): string {
 
 function fileName(path: string): string {
     const parts = path.split('/')
-    return parts[parts.length - 1]
+    return parts.at(-1)!
 }
 
 function formatLineRange(lineRange: HighlightLineRange): string {
@@ -853,7 +864,7 @@ function extendSelection(selection: Selection, newPosition: number): Selection {
 
     const newSelection = [...selection]
 
-    const lastSelectedPosition = newSelection[newSelection.length - 1]
+    const lastSelectedPosition = newSelection.at(-1)!
     const direction = lastSelectedPosition > newPosition ? -1 : 1
     for (let position = lastSelectedPosition; position !== newPosition + direction; position += direction) {
         // Re-arrange selection as necessary
@@ -887,11 +898,11 @@ function growOrShrinkSelection(selection: Selection, direction: 'UP' | 'DOWN', t
     }
 
     const delta = direction === 'UP' ? -1 : 1
-    let nextPosition = wrapPosition(selection[selection.length - 1] + delta, total)
+    let nextPosition = wrapPosition(selection.at(-1)! + delta, total)
 
     // Did we change direction and "deselected" the last position?
     // (it's enough to look at the penultimate selected position)
-    if (selection.length > 1 && selection[selection.length - 2] === nextPosition) {
+    if (selection.length > 1 && selection.at(-2) === nextPosition) {
         return selection.slice(0, -1)
     }
 

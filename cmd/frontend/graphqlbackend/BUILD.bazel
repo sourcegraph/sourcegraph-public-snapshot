@@ -553,6 +553,7 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@com_github_throttled_throttled_v2//store/memstore",
+        "@org_golang_google_protobuf//types/known/structpb",
     ],
 )
 

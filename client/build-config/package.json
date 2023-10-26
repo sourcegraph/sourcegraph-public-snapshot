@@ -13,14 +13,7 @@
   "devDependencies": {
     "@types/sass": "1.16.1"
   },
-  "peerDependencies": {
-    "css-loader": "*",
-    "postcss-loader": "*",
-    "sass-loader": "*",
-    "style-loader": "*"
-  },
   "dependencies": {
-    "@statoscope/webpack-plugin": "^5.24.0",
     "buffer": "^6.0.3",
     "enhanced-resolve": "^5.9.3",
     "esbuild": "^0.17.7",
@@ -31,8 +24,6 @@
     "process": "^0.11.10",
     "sass": "^1.32.4",
     "signale": "^1.4.0",
-    "terser-webpack-plugin": "^5.3.6",
-    "typed-scss-modules": "^4.1.1",
-    "webpack": "^5.75.0"
+    "typed-scss-modules": "^4.1.1"
   }
 }

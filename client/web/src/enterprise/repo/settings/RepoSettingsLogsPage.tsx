@@ -61,11 +61,13 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
     useEffect(() => {
         const numericTabIdx = parseInt(activeTab, 10)
         switch (numericTabIdx) {
-            case LogsPageTabs.SYNCLOGS:
+            case LogsPageTabs.SYNCLOGS: {
                 setActiveTab(LogsPageTabs.SYNCLOGS)
                 break
-            default:
+            }
+            default: {
                 setActiveTab(LogsPageTabs.COMMANDS)
+            }
         }
     }, [setActiveTab, activeTab])
 

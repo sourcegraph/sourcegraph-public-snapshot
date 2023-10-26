@@ -8,11 +8,7 @@ const exportedConfig = {
   ...config,
   displayName: 'web',
   rootDir: __dirname,
-  setupFiles: [
-    ...config.setupFiles,
-    'jest-canvas-mock', // mocking canvas is required for Monaco editor to work in unit tests
-    path.join(__dirname, 'dev/mocks/mockEventLogger.ts'),
-  ],
+  setupFiles: [...config.setupFiles, path.join(__dirname, '../shared/dev/mockEventLogger.ts')],
 }
 
 module.exports = exportedConfig

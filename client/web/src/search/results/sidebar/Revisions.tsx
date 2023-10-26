@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { FilterLink, type RevisionsProps, TabIndex } from '@sourcegraph/branded'
-import styles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchFilterSection.module.scss'
+import { styles } from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchFilterSection'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'

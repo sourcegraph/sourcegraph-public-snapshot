@@ -9,7 +9,7 @@ Embeddings will not be configured for any repository unless an admin takes an ac
 
 ## Policies
 
-The recommended way to configure embeddings is by using policies. Embeddings policies define which repositories are automatically scheduled for embedding. These policies are configured through your admin dashboard and will be automatically updated based on the update interval(*link*).
+The recommended way to configure embeddings is by using policies. Embeddings policies define which repositories are automatically scheduled for embedding. These policies are configured through your admin dashboard and will be automatically updated based on the update interval.
 
 ### Create an embeddings policy
 

@@ -36,7 +36,7 @@ contents:
     - ctags@sourcegraph
     - coursier@sourcegraph
     - p4cli@sourcegraph
-    - p4-fusion=1.12-r6@sourcegraph
+    - p4-fusion-sg@sourcegraph
     - s3proxy@sourcegraph
     - grafana@chainguard
 

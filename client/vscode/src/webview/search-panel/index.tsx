@@ -13,6 +13,7 @@ import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/theme'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import type { ExtensionCoreAPI } from '../../contract'
+import type { VsCodeApi } from '../../vsCodeApi'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
 import { createPlatformContext, WebviewPageContext, type WebviewPageProps } from '../platform/context'
 import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
@@ -23,7 +24,9 @@ import { SearchResultsView } from './SearchResultsView'
 
 import './index.module.scss'
 
-const vsCodeApi = window.acquireVsCodeApi()
+declare const acquireVsCodeApi: () => VsCodeApi
+
+const vsCodeApi = acquireVsCodeApi()
 
 const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 

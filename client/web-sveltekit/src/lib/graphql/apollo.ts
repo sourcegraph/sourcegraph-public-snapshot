@@ -122,4 +122,5 @@ export async function mutation<T, V extends OperationVariables = OperationVariab
     })
 }
 
-export { gql, FetchPolicy }
+export type { FetchPolicy }
+export { gql }
