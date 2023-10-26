@@ -32,6 +32,7 @@ export const FEATURE_FLAGS = [
     'enable-sveltekit',
     'search-content-based-lang-detection',
     'search-new-keyword',
+    'search-llm-rerank',
     'search-debug',
 ] as const
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 )
@@ -215,7 +216,8 @@ func (p Plan) ToQ() Q {
 //	    patterns (e.g., to repos, files, etc.).
 type Basic struct {
 	Parameters
-	Pattern Node
+	Pattern         Node
+	OriginalPattern string
 }
 
 func (b Basic) ToParseTree() Q {
@@ -665,4 +667,10 @@ func (f *Flat) ToBasic() Basic {
 		pattern = *f.Pattern
 	}
 	return Basic{Parameters: f.Parameters, Pattern: pattern}
+}
+
+// ZoektQueryWithPattern is a Zoekt query that retains the original query pattern.
+type ZoektQueryWithPattern struct {
+	zoektquery.Q
+	Pattern string
 }

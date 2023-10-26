@@ -19,6 +19,7 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { CopyQueryButton } from './CopyQueryButton'
+import { FlexibleSearchToggle } from './FlexibleSearchToggle'
 import { QueryInputToggle } from './QueryInputToggle'
 import { SmartSearchToggle } from './SmartSearchToggle'
 
@@ -36,6 +37,7 @@ export interface TogglesProps
     className?: string
     showCopyQueryButton?: boolean
     showSmartSearchButton?: boolean
+    showFlexibleSearchButton?: boolean
     /**
      * If set to false makes all buttons non-actionable. The main use case for
      * this prop is showing the toggles in examples. This is different from
@@ -75,6 +77,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitSearch,
         showCopyQueryButton = true,
         showSmartSearchButton = true,
+        showFlexibleSearchButton,
         structuralSearchDisabled,
     } = props
 
@@ -127,6 +130,14 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         },
         [setSearchMode, submitOnToggle]
     )
+
+    const onSelectFlexibleSearch = useCallback((): void => {
+        const newPatternType: SearchPatternType =
+            patternType !== SearchPatternType.keyword ? SearchPatternType.keyword : SearchPatternType.standard
+
+        setPatternType(newPatternType)
+        submitOnToggle({ newPatternType })
+    }, [patternType, setPatternType, submitOnToggle])
 
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
@@ -197,6 +208,14 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         className="test-smart-search-toggle"
                         isActive={searchMode === SearchMode.SmartSearch}
                         onSelect={onSelectSmartSearch}
+                        interactive={props.interactive}
+                    />
+                )}
+                {showFlexibleSearchButton && (
+                    <FlexibleSearchToggle
+                        className="test-flexible-search-toggle"
+                        isActive={patternType == SearchPatternType.keyword}
+                        onSelect={onSelectFlexibleSearch}
                         interactive={props.interactive}
                     />
                 )}

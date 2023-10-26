@@ -53,7 +53,12 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		endpoints = append(endpoints, endpoint) //nolint:staticcheck
 	}
 
-	flushSender := newFlushCollectSender(opts, endpoints, conf.RankingMaxQueueSizeBytes(), streamer)
+	rerankPattern := ""
+	if unwrapped, ok := q.(ZoektQueryWithPattern); ok {
+		q = unwrapped.Q
+		rerankPattern = unwrapped.Pattern
+	}
+	flushSender := newFlushCollectSender(opts, rerankPattern, endpoints, conf.RankingMaxQueueSizeBytes(), streamer)
 	defer flushSender.Flush()
 
 	// During re-balancing a repository can appear on more than one replica.

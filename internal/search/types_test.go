@@ -149,8 +149,7 @@ func TestZoektParameters(t *testing.T) {
 				MaxDocDisplayCount:  500,
 				ChunkMatches:        true,
 				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
-				UseKeywordScoring:   true},
+				DocumentRanksWeight: 4500},
 		},
 	}
 	for _, tt := range cases {

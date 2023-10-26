@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	proto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/rpc"
 	zoektstream "github.com/sourcegraph/zoekt/stream"
 	"google.golang.org/grpc"
@@ -125,4 +126,9 @@ func ZoektDialGRPC(endpoint string) zoekt.Streamer {
 		client:   proto.NewWebserverServiceClient(conn),
 		dialErr:  err,
 	})
+}
+
+type ZoektQueryWithPattern struct {
+	zoektquery.Q
+	Pattern string
 }

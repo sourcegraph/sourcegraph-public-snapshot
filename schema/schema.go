@@ -849,6 +849,8 @@ type ExperimentalFeatures struct {
 	EnableStorm bool `json:"enableStorm,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// FlexibleKeywordSearch description: Enables flexible keyword search.
+	FlexibleKeywordSearch string `json:"flexibleKeywordSearch,omitempty"`
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
@@ -937,6 +939,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "enablePermissionsWebhooks")
 	delete(m, "enableStorm")
 	delete(m, "eventLogging")
+	delete(m, "flexibleKeywordSearch")
 	delete(m, "gitServerPinnedRepos")
 	delete(m, "goPackages")
 	delete(m, "insightsAlternateLoadingStrategy")

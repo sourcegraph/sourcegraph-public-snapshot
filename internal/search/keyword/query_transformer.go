@@ -137,6 +137,7 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 		return nil, err
 	}
 
+	newBasic.OriginalPattern = strings.Join(patterns, " ")
 	return &keywordQuery{newBasic, transformedPatterns}, nil
 }
 
