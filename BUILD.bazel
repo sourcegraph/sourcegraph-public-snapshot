@@ -67,6 +67,7 @@ ts_config(
 js_library(
     name = "postcss_config_js",
     srcs = ["postcss.config.js"],
+    visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/autoprefixer",
         "//:node_modules/postcss-custom-media",
