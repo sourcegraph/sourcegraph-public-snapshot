@@ -1,10 +1,14 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
-rust_binary(
-    name = "scip-treesitter-cli",
-    srcs = ["src/main.rs"],
+rust_library(
+    name = "scip-treesitter-cli-lib",
+    srcs = glob([
+        "src/*.rs",
+    ]),
     aliases = aliases(),
+    crate_name = "scip_treesitter_cli",
+    crate_root = "src/lib.rs",
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
@@ -18,9 +22,27 @@ rust_binary(
     ],
 )
 
+rust_binary(
+    name = "scip-treesitter-cli",
+    srcs = glob(["src/*.rs"]),
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        ":scip-treesitter-cli-lib",
+        "//docker-images/syntax-highlighter/crates/scip-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+    ],
+)
+
 rust_test(
     name = "unit_test",
-    srcs = ["src/main.rs"],
+    srcs = glob(["src/*.rs"]),
     compile_data = glob(
         [
             "testdata/**",
