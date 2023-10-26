@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -511,11 +512,16 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			}
 			return lines, err
 		}
-		r.highlightedBase, r.highlightErr = highlightFile(ctx, r.oldFile)
-		if r.highlightErr != nil {
-			return
-		}
-		r.highlightedHead, r.highlightErr = highlightFile(ctx, r.newFile)
+		p := pool.New().WithErrors()
+		p.Go(func() (err error) {
+			r.highlightedBase, err = highlightFile(ctx, r.oldFile)
+			return err
+		})
+		p.Go(func() (err error) {
+			r.highlightedHead, err = highlightFile(ctx, r.newFile)
+			return err
+		})
+		r.highlightErr = p.Wait()
 	})
 	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
 }
