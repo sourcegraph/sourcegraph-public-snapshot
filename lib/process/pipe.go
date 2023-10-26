@@ -26,10 +26,8 @@ type cmdPiper interface {
 	StderrPipe() (io.ReadCloser, error)
 }
 
-func NewOutputScanner(r io.Reader) *bufio.Scanner {
-	return NewOutputScannerWithSplit(r, ScanLinesWithNewline)
-}
-
+// NewOutputScannerWithSplit creates a new bufio.Scanner using the given split
+// function with well-working defaults for the initial and max buf sizes.
 func NewOutputScannerWithSplit(r io.Reader, split bufio.SplitFunc) *bufio.Scanner {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(split)
@@ -49,10 +47,12 @@ func NewOutputScannerWithSplit(r io.Reader, split bufio.SplitFunc) *bufio.Scanne
 // See this issue for more details: https://github.com/golang/go/issues/21922
 func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*pool.ErrorPool, error) {
 	pipe := func(w io.Writer, r io.Reader) error {
-		scanner := NewOutputScanner(r)
+		scanner := NewOutputScannerWithSplit(r, scanLinesWithNewline)
 
 		for scanner.Scan() {
-			fmt.Fprint(w, scanner.Text())
+			if _, err := fmt.Fprint(w, scanner.Text()); err != nil {
+				return err
+			}
 		}
 
 		return scanner.Err()
@@ -119,9 +119,9 @@ func PipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 	return eg, nil
 }
 
-// ScanLinesWithNewline is a modified version of bufio.ScanLines that retains
+// scanLinesWithNewline is a modified version of bufio.ScanLines that retains
 // the trailing newline byte(s) in the returned token.
-func ScanLinesWithNewline(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func scanLinesWithNewline(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
