@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ExternalServiceForm create GitHub 1`] = `
+exports[`ExternalServiceForm > create GitHub 1`] = `
 <DocumentFragment>
   <form
     class="external-service-form"
@@ -44,7 +44,7 @@ exports[`ExternalServiceForm create GitHub 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ExternalServiceForm edit GitHub 1`] = `
+exports[`ExternalServiceForm > edit GitHub 1`] = `
 <DocumentFragment>
   <form
     class="external-service-form"
@@ -88,7 +88,7 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ExternalServiceForm edit GitHub, loading 1`] = `
+exports[`ExternalServiceForm > edit GitHub, loading 1`] = `
 <DocumentFragment>
   <form
     class="external-service-form"
