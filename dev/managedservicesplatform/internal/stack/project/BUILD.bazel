@@ -18,5 +18,7 @@ go_library(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//project",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectservice",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta//googleprojectserviceidentity:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta//provider:go_default_library",
     ],
 )

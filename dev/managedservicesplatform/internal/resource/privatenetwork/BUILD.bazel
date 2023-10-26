@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "privatenetwork",
+    srcs = ["privatenetwork.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computenetwork",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesubnetwork",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//vpcaccessconnector",
+    ],
+)

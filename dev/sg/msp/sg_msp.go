@@ -53,6 +53,11 @@ func init() {
 			Description: "Initialize a template Managed Services Platform service spec",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
+					Name:  "kind",
+					Usage: "Kind of service (one of: 'service', 'job')",
+					Value: "service",
+				},
+				&cli.StringFlag{
 					Name:    "output",
 					Aliases: []string{"o"},
 					Usage:   "Output directory for generated spec file",
@@ -64,55 +69,105 @@ func init() {
 				if c.Args().Len() != 1 {
 					return errors.New("exactly 1 argument required: service ID")
 				}
-				exampleSpec, err := (spec.Spec{
-					Service: spec.ServiceSpec{
-						ID: c.Args().First(),
-					},
-					Build: spec.BuildSpec{
-						Image: "index.docker.io/sourcegraph/" + c.Args().First(),
-					},
-					Environments: []spec.EnvironmentSpec{
-						{
-							ID: "dev",
-							// For dev deployment, specify category 'test'.
-							Category: pointers.Ptr(spec.EnvironmentCategoryTest),
 
-							Deploy: spec.EnvironmentDeploySpec{
-								Type: "manual",
-								Manual: &spec.EnvironmentDeployManualSpec{
-									Tag: "insiders",
+				var svc spec.Spec
+				switch c.String("kind") {
+				case "service":
+					svc = spec.Spec{
+						Service: spec.ServiceSpec{
+							ID: c.Args().First(),
+						},
+						Build: spec.BuildSpec{
+							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
+						},
+						Environments: []spec.EnvironmentSpec{
+							{
+								ID: "dev",
+								// For dev deployment, specify category 'test'.
+								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
+
+								Deploy: spec.EnvironmentDeploySpec{
+									Type: "manual",
+									Manual: &spec.EnvironmentDeployManualSpec{
+										Tag: "insiders",
+									},
 								},
-							},
-							Domain: spec.EnvironmentDomainSpec{
-								Type: "cloudflare",
-								Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
-									Subdomain: c.Args().First(),
-									Zone:      "sgdev.org",
-									Required:  false,
+								EnvironmentServiceSpec: &spec.EnvironmentServiceSpec{
+									Domain: &spec.EnvironmentServiceDomainSpec{
+										Type: "cloudflare",
+										Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
+											Subdomain: c.Args().First(),
+											Zone:      "sgdev.org",
+											Required:  false,
+										},
+									},
+									StatupProbe: &spec.EnvironmentServiceStartupProbeSpec{
+										// Disable startup probes by default, as it is
+										// prone to causing the entire initial Terraform
+										// apply to fail.
+										Disabled: pointers.Ptr(true),
+									},
 								},
-							},
-							Instances: spec.EnvironmentInstancesSpec{
-								Resources: spec.EnvironmentInstancesResourcesSpec{
-									CPU:    1,
-									Memory: "512Mi",
+								Instances: spec.EnvironmentInstancesSpec{
+									Resources: spec.EnvironmentInstancesResourcesSpec{
+										CPU:    1,
+										Memory: "512Mi",
+									},
+									Scaling: &spec.EnvironmentInstancesScalingSpec{
+										MaxCount: pointers.Ptr(1),
+									},
 								},
-								Scaling: spec.EnvironmentInstancesScalingSpec{
-									MaxCount: pointers.Ptr(1),
+								Env: map[string]string{
+									"SRC_LOG_LEVEL":  "info",
+									"SRC_LOG_FORMAT": "json_gcp",
 								},
-							},
-							StatupProbe: &spec.EnvironmentStartupProbeSpec{
-								// Disable startup probes by default, as it is
-								// prone to causing the entire initial Terraform
-								// apply to fail.
-								Disabled: pointers.Ptr(true),
-							},
-							Env: map[string]string{
-								"SRC_LOG_LEVEL":  "info",
-								"SRC_LOG_FORMAT": "json_gcp",
 							},
 						},
-					},
-				}).MarshalYAML()
+					}
+				case "job":
+					svc = spec.Spec{
+						Service: spec.ServiceSpec{
+							ID:   c.Args().First(),
+							Kind: pointers.Ptr(spec.ServiceKindJob),
+						},
+						Build: spec.BuildSpec{
+							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
+						},
+						Environments: []spec.EnvironmentSpec{
+							{
+								ID: "dev",
+								// For dev deployment, specify category 'test'.
+								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
+
+								Deploy: spec.EnvironmentDeploySpec{
+									Type: "manual",
+									Manual: &spec.EnvironmentDeployManualSpec{
+										Tag: "insiders",
+									},
+								},
+								EnvironmentJobSpec: &spec.EnvironmentJobSpec{
+									Schedule: &spec.EnvironmentJobScheduleSpec{
+										Cron: "0 * * * *",
+									},
+								},
+								Instances: spec.EnvironmentInstancesSpec{
+									Resources: spec.EnvironmentInstancesResourcesSpec{
+										CPU:    1,
+										Memory: "512Mi",
+									},
+								},
+								Env: map[string]string{
+									"SRC_LOG_LEVEL":  "info",
+									"SRC_LOG_FORMAT": "json_gcp",
+								},
+							},
+						},
+					}
+				default:
+					return errors.Newf("unsupported service kind: %q", c.String("kind"))
+				}
+
+				exampleSpec, err := svc.MarshalYAML()
 				if err != nil {
 					return err
 				}
@@ -125,7 +180,8 @@ func init() {
 					return err
 				}
 
-				std.Out.WriteSuccessf("Rendered template spec in %s", outputPath)
+				std.Out.WriteSuccessf("Rendered %s template spec in %s",
+					c.String("kind"), outputPath)
 				return nil
 			},
 		},
