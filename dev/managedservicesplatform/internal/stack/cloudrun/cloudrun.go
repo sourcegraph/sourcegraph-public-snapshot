@@ -367,6 +367,18 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 		}
 	}
 
+	containerEnvVars, err := makeContainerEnvVars(
+		vars.Environment.Env,
+		vars.Environment.SecretEnv,
+		envVariablesData{
+			ProjectID:      vars.ProjectID,
+			ServiceDnsName: fmt.Sprintf("%s.%s", vars.Environment.Domain.Cloudflare.Subdomain, vars.Environment.Domain.Cloudflare.Zone),
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "make container env vars")
+	}
+
 	return cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
 		Name:     pointers.Ptr(vars.Service.ID),
 		Location: pointers.Ptr(gcpRegion),
@@ -426,10 +438,7 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 				}},
 
 				Env: append(
-					makeContainerEnvVars(
-						vars.Environment.Env,
-						vars.Environment.SecretEnv,
-					),
+					containerEnvVars,
 					c.AdditionalEnv...),
 
 				// Do healthchecks with authorization based on MSP convention.
