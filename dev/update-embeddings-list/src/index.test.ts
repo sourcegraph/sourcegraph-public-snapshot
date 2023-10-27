@@ -1,6 +1,6 @@
-import { filter, sort, embeddedReposToMarkdown } from './index'
+import { describe, expect, test } from '@jest/globals'
 
-const fetch = require('node-fetch')
+import { filter, sort, embeddedReposToMarkdown } from './index'
 
 interface Repo {
     name: string
@@ -14,7 +14,7 @@ interface Embedding {
 }
 
 describe('filter', () => {
-    test('filters and sorts repo embedding jobs', done => {
+    test('filters and sorts repo embedding jobs', () => {
         const input: Embedding[] = [
             {
                 id: '1',
@@ -60,7 +60,6 @@ describe('filter', () => {
             },
         ]
         expect(filter(input)).toEqual(expected)
-        done()
     })
 })
 
@@ -127,7 +126,7 @@ Last updated: ${new Date().toLocaleString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             timeZoneName: 'short',
-        })} 
+        })}
 
 1. [golang/go](https://github.com/golang/go)
 1. [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph)

@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -12,6 +13,14 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
         "@io_k8s_sigs_yaml//:yaml",
     ],
+)
+
+go_test(
+    name = "spec_test",
+    srcs = ["service_test.go"],
+    embed = [":spec"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

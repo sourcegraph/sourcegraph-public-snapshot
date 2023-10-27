@@ -33,6 +33,7 @@
   "devDependencies": {
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/extension-api-types": "workspace:*",
+    "@sourcegraph/testing": "workspace:*",
     "sourcegraph": "workspace:*"
   },
   "dependencies": {

@@ -32,6 +32,9 @@ ts_project(
         "src/paths.ts",
         "src/utils/environment-config.ts",
     ],
+    data = [
+        "//:postcss_config_js",  #keep
+    ],
     module = "commonjs",
     tsconfig = ":tsconfig",
     deps = [

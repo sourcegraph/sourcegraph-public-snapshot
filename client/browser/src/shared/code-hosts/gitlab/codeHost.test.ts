@@ -6,7 +6,13 @@ import { disableFetchCache, enableFetchCache, fetchCache, type LineOrPositionOrR
 
 import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 
-import { getToolbarMount, gitlabCodeHost, isPrivateRepository, parseHash } from './codeHost'
+import {
+    getToolbarMount,
+    gitlabCodeHost,
+    isPrivateRepository,
+    parseHash,
+    windowLocation__testingOnly,
+} from './codeHost'
 import { repoNameOnSourcegraph } from './scrape'
 
 describe('gitlab/codeHost', () => {
@@ -23,11 +29,14 @@ describe('gitlab/codeHost', () => {
 
         beforeAll(async () => {
             document.documentElement.innerHTML = await readFile(__dirname + '/__fixtures__/merge-request.html', 'utf-8')
-            jsdom.reconfigure({ url: 'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs' })
+            windowLocation__testingOnly.value = new URL(
+                'https://gitlab.com/SourcegraphCody/jsonrpc2/merge_requests/1/diffs'
+            )
             globalThis.gon = { gitlab_url: 'https://gitlab.com' }
         })
 
         afterAll(() => {
+            windowLocation__testingOnly.value = null
             // Reset resolved Sourcegraph repo name value
             repoNameOnSourcegraph.next('')
         })
@@ -107,7 +116,7 @@ describe('gitlab/codeHost', () => {
             )
         })
         it('returns an URL to the file on the same merge request if possible', () => {
-            const rawRepoName = 'gitlab.com/sourcegraph/jsonrpc2'
+            const rawRepoName = 'gitlab.com/SourcegraphCody/jsonrpc2'
             // Update the resolved Sourcegraph repo name value
             repoNameOnSourcegraph.next(rawRepoName)
 
@@ -127,7 +136,7 @@ describe('gitlab/codeHost', () => {
                     { part: 'head' }
                 )
             ).toBe(
-                'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5'
+                'https://gitlab.com/SourcegraphCody/jsonrpc2/merge_requests/1/diffs#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5'
             )
         })
     })
@@ -147,18 +156,12 @@ describe('isPrivateRepository', () => {
     })
 
     describe('when on "gitlab.com"', () => {
-        const { location } = window
         const EMPTY_JSON = JSON.stringify({})
 
         beforeAll(() => {
             fetch.enableMocks()
 
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            delete window.location
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            window.location = new URL('https://gitlab.com')
+            windowLocation__testingOnly.value = new URL('https://gitlab.com')
         })
 
         beforeEach(() => {
@@ -168,7 +171,7 @@ describe('isPrivateRepository', () => {
         afterAll(() => {
             fetch.disableMocks()
 
-            window.location = location
+            windowLocation__testingOnly.value = null
         })
 
         it('makes request without credentials', async () => {

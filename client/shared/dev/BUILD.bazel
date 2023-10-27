@@ -68,6 +68,7 @@ ts_project(
     name = "mock_ts",
     srcs = [
         "mockDomRect.ts",
+        "mockEventLogger.ts",
         "mockMatchMedia.ts",
         "mockResizeObserver.ts",
         "mockSentryBrowser.ts",
