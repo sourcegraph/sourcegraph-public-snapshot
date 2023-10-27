@@ -278,11 +278,11 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}{
 		{
 			name:     "direct access to inaccessible commit",
-			revision: "87440329a7bae580b90280aaaafdc14ee7c1f8ef",
+			revision: "ce09ed9ea31ffa71c8de2d6029b93d4bd9568af8",
 		},
 		{
 			name:      "direct access to accessible commit",
-			revision:  "36d7eda16b9a881ef153126a4036efc4f6afb0c1",
+			revision:  "de3fac9e20a01dbda7f354c82bd6ed77f16a778c",
 			hasAccess: true,
 		},
 	}
@@ -314,7 +314,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	})
 
 	t.Run("code intel search", func(t *testing.T) {
-		result, err := userClient.SearchFiles("context:global \\bhack1337\\b type:file patternType:regexp count:500 case:yes file:\\.(go)$ repo:^perforce/test-perms$@8574314b8de445ec652cab87cbaa1a8dbe6ba6c4")
+		result, err := userClient.SearchFiles("context:global \\bhack1337\\b type:file patternType:regexp count:500 case:yes file:\\.(go)$ repo:^perforce/test-perms$@2a30922ef9f214d44de60e719a64473e17321684")
 		if err != nil {
 			t.Fatal(err)
 		}
