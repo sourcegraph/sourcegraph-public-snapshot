@@ -3323,7 +3323,14 @@ type ExternalService implements Node {
     """
     nextSyncAt: DateTime
 
+    """
+    The creator of this external service. Null if the user was deleted or created by a background routine.
+    """
     creator: User
+
+    """
+    The last updater of this external service. Null if the user was deleted or updated by a background routine.
+    """
     lastUpdater: User
 
     """
