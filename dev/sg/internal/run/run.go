@@ -464,7 +464,13 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	case installErr:
 		message = "Failed to build " + cmdName
 		if e.originalErr != nil {
-			message += ": " + e.originalErr.Error()
+			if errWithout, ok := e.originalErr.(errorWithoutOutputer); ok {
+				// If we can, let's strip away the output, otherwise this gets
+				// too noisy.
+				message += ": " + errWithout.ErrorWithoutOutput()
+			} else {
+				message += ": " + e.originalErr.Error()
+			}
 		}
 		cmdOut = e.output
 	case reinstallErr:
