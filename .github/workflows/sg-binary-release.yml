@@ -17,6 +17,8 @@ on:
       - 'internal/database/migration/**' # sg migration
       - 'monitoring/**'                  # sg monitoring
       - 'dev/managedservicesplatform/**' # sg msp
+  # manual release
+  workflow_dispatch: {}
 
 env:
   GOFLAGS: -trimpath
