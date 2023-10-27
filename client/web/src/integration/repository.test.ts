@@ -522,6 +522,7 @@ describe('Repository', () => {
                 `${driver.sourcegraphBaseUrl}/github.com/ggilmore/q-test/-/tree/Geoffrey's%20random%20queries.32r242442bf`
             )
             await driver.page.waitForSelector('.test-tree-file-link')
+            console.log(fileName)
             assert.strictEqual(
                 await driver.page.evaluate(
                     () =>
@@ -554,7 +555,7 @@ describe('Repository', () => {
                 const queryInput = await createEditorAPI(driver, '.test-query-input')
                 assert.strictEqual(
                     removeContextFromQuery((await queryInput.getValue()) ?? ''),
-                    "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
+                    "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql(No new line at end of file)"
                 )
             }
 
