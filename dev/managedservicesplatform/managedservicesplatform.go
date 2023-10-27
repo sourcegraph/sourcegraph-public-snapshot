@@ -84,6 +84,12 @@ func (r *Renderer) RenderEnvironment(
 			"environment": env.ID,
 			"msp":         "true",
 		},
+		Services: func() []string {
+			if svc.IAM != nil && len(svc.IAM.Services) > 0 {
+				return svc.IAM.Services
+			}
+			return nil
+		}(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create project stack")

@@ -10,10 +10,16 @@ export interface BitbucketRepoInfo {
     project: string
 }
 
+/**
+ * For testing only, used to set the window.location value.
+ * @internal
+ */
+export const windowLocation__testingOnly: { value: Pick<URL, 'hostname' | 'pathname'> | null } = { value: null }
+
 const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
 
 const bitbucketToSourcegraphRepoName = ({ repoSlug, project }: BitbucketRepoInfo): string =>
-    [window.location.hostname, project, repoSlug].join('/')
+    [(windowLocation__testingOnly.value ?? window.location).hostname, project, repoSlug].join('/')
 
 /**
  * Attempts to parse the file info from a link element contained in the given
@@ -278,7 +284,9 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     }
 
     // Get project and repo from the URL
-    const pathMatch = location.pathname.match(/\/projects\/(.*?)\/repos\/(.*?)\//)
+    const pathMatch = (windowLocation__testingOnly.value ?? window.location).pathname.match(
+        /\/projects\/(.*?)\/repos\/(.*?)\//
+    )
     if (!pathMatch) {
         throw new Error('Location did not match regexp')
     }
@@ -316,9 +324,13 @@ export const getFileInfoFromCommitDiffCodeView = (codeViewElement: HTMLElement):
 }
 
 export function getPRIDFromPathName(): number {
-    const prIDMatch = window.location.pathname.match(/pull-requests\/(\d*?)\/(diff|overview|commits)/)
+    const prIDMatch = (windowLocation__testingOnly.value ?? window.location).pathname.match(
+        /pull-requests\/(\d*?)\/(diff|overview|commits)/
+    )
     if (!prIDMatch) {
-        throw new Error(`Could not parse PR ID from pathname: ${window.location.pathname}`)
+        throw new Error(
+            `Could not parse PR ID from pathname: ${(windowLocation__testingOnly.value ?? window.location).pathname}`
+        )
     }
     return parseInt(prIDMatch[1], 10)
 }

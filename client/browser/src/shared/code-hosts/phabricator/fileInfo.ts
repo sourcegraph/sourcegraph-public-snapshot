@@ -13,9 +13,10 @@ import { getPhabricatorState } from './util'
 export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit = queryConduitHelper
+    queryConduit = queryConduitHelper,
+    windowLocation__testingOnly: Location | URL = window.location
 ): Observable<DiffInfo> =>
-    getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
+    getPhabricatorState(windowLocation__testingOnly, requestGraphQL, queryConduit).pipe(
         map((state): DiffInfo => {
             if (state.mode !== PhabricatorMode.Revision) {
                 throw new Error(
@@ -42,9 +43,10 @@ export const resolveRevisionFileInfo = (
 export const resolveDiffFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit = queryConduitHelper
+    queryConduit = queryConduitHelper,
+    windowLocation__testingOnly: Location | URL = window.location
 ): Observable<DiffInfo> =>
-    getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
+    getPhabricatorState(windowLocation__testingOnly, requestGraphQL, queryConduit).pipe(
         switchMap(state => {
             if (state.mode !== PhabricatorMode.Differential) {
                 throw new Error(`Unexpected PhabricatorState for resolveDiffFileInfo, PhabricatorMode: ${state.mode}`)
@@ -116,9 +118,10 @@ export const resolveDiffFileInfo = (
 export const resolveDiffusionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit = queryConduitHelper
+    queryConduit = queryConduitHelper,
+    windowLocation__testingOnly: Location | URL = window.location
 ): Observable<BlobInfo> =>
-    getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
+    getPhabricatorState(windowLocation__testingOnly, requestGraphQL, queryConduit).pipe(
         map((state): BlobInfo => {
             if (state.mode !== PhabricatorMode.Diffusion) {
                 throw new Error(

@@ -592,6 +592,37 @@ func TestScanDelimited(t *testing.T) {
 	_ = test(`a"`, '"')
 }
 
+func TestDelimited(t *testing.T) {
+	inputs := []string{
+		"test",
+		"test\nabc",
+		"test\r\nabc",
+		"test\a\fabc",
+		"test\t\tabc",
+		"'test'",
+		"\"test\"",
+		"\"/test/\"",
+		"/test/",
+		"/test\\/abc/",
+		"\\\\",
+		"\\",
+		"\\/",
+	}
+	delimiters := []rune{'/', '"', '\''}
+
+	for _, input := range inputs {
+		for _, delimiter := range delimiters {
+			delimited := Delimit(input, delimiter)
+			undelimited, _, err := ScanDelimited([]byte(delimited), false, delimiter)
+			if err != nil {
+				t.Fatal(err)
+			}
+			redelimited := Delimit(undelimited, delimiter)
+			require.Equal(t, delimited, redelimited)
+		}
+	}
+}
+
 func TestMergePatterns(t *testing.T) {
 	test := func(input string) string {
 		p := &parser{buf: []byte(input), heuristics: parensAsPatterns}

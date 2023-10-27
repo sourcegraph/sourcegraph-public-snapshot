@@ -24,7 +24,6 @@ ts_project(
         "esbuild/manifest.ts",
         "esbuild/manifestPlugin.ts",
         "esbuild/server.ts",
-        "mocks/mockEventLogger.ts",
         "server/development.server.ts",
         "server/production.server.ts",
         "utils/constants.ts",

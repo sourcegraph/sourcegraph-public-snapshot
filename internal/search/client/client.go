@@ -293,6 +293,8 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		logger.Warn("search feature flags are not available")
 	}
 
+	// When adding a new feature flag remember to add it to the list in
+	// client/web/src/featureFlags/featureFlags.ts to allow overriding.
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		UseZoektParser:          flagSet.GetBoolOr("search-new-keyword", false),

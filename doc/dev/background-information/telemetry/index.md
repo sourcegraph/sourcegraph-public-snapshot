@@ -15,8 +15,10 @@ All usages of old telemetry mechanisms should be migrated to the new framework.
 - [Why a new framework and APIs?](#why-a-new-framework-and-apis)
 - [Event lifecycle](#event-lifecycle)
 - [Recording events](#recording-events)
-  - [Backend services](#backend-services)
   - [Clients](#clients)
+    - [VS Code](#vs-code)
+    - [Sourcegraph web app](#sourcegraph-web-app)
+  - [Backend services](#backend-services)
 - [Exported events](#exported-events)
   - [Exported event schema](#exported-event-schema)
   - [Sensitive attributes](#sensitive-attributes)
@@ -50,6 +52,19 @@ See [telemetry export architecture](./architecture.md) for more details.
 Note that recording APIs are intentionally stricter and have a smaller surface area than [the full events we end up exporting](#exported-event-schema).
 This is to help prevent accidental export of sensitive data, and to make it clear what properties should be injected in a uniform manner instead of being constructed ad-hoc by callers - see [event lifecycle](#event-lifecycle) for details.
 
+### Clients
+
+Clients (web apps, extensions, etc) should use [`@sourcegraph/telemetry`](https://github.com/sourcegraph/telemetry), providing client-specific metadata and implementation for exporting to a Sourcegraph instance's `mutation { telemetry { recordEvent(...) }}` GraphQL mutation.
+[sourcegraph/cody#1192](https://github.com/sourcegraph/cody/pull/1192) is a pull request demonstrating how to integrate `@sourcegraph/telemetry` into a client by extending specific classes and providing backing implementations for various interfaces.
+
+#### VS Code
+
+Event-recording development documentation for the VS Code extension is available in [`sourcegraph/cody/vscode/CONTRIBUTING.md`'s "Telemetry events" section](https://github.com/sourcegraph/cody/blob/main/vscode/CONTRIBUTING.md#telemetry-events).
+
+#### Sourcegraph web app
+
+> WARNING: Not yet available, coming soon!
+
 ### Backend services
 
 In the backend, events are recorded using `EventRecorder` instances created from the `internal/telemetry/telemetryrecorder` package. For example:
@@ -77,12 +92,6 @@ func doMyThing(db database.DB) error {
 If you don't care about failures to record telemetry, you can use `telemetryrecorder.NewBestEffort(log.Logger, database.DB)` to automatically have errors logged and not returned.
 
 Note that not all attributes are exported - see [Sensitive attributes](#sensitive-attributes) for details.
-
-### Clients
-
-Clients should use [`@sourcegraph/telemetry`](https://github.com/sourcegraph/telemetry), providing client-specific metadata and implementation for exporting to a Sourcegraph instance's `mutation { telemetry { recordEvent(...) }}` GraphQL mutation.
-
-> NOTE: More guidance coming soon!
 
 ## Exported events
 
