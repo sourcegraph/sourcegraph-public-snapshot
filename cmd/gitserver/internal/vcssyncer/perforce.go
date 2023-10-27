@@ -111,6 +111,41 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 		return errors.Wrapf(err, "failed to run p4->git conversion: exit code %d", exitCode)
 	}
 
+	// Verify that p4-fusion generated a valid git repository.
+	tryWrite(s.logger, progressWriter, "Verifying integrity of converted repository\n")
+	fsck := exec.CommandContext(ctx, "git", "fsck", "--progress")
+	fsck.Dir = tmpPath
+	exitCode, err = executil.RunCommandWriteOutput(
+		ctx,
+		s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, fsck).WithRedactorFunc(redactor.Redact),
+		progressWriter,
+		redactor.Redact,
+	)
+	if err != nil {
+		return errors.Wrapf(err, "failed to run git fsck: exit code %d", exitCode)
+	}
+	tryWrite(s.logger, progressWriter, "Converted repository is valid!\n")
+
+	// Repack all the loose objects p4-fusion created.
+	tryWrite(s.logger, progressWriter, "Repacking loose git objects for efficiency\n")
+	// Overview of arguments:
+	// -d to remove the unpacked objects
+	// --local passes --local to git-pack-objects. Not needed today but doesn't cost a penny and should we ever start deduping objects, this will keep objects from the alternative stores unpacked
+	// --window-memory to constrain the memory usage of delta-compression, success is more important than disk space efficiency
+	// --cruft --cruft-expiration=2.weeks.ago move unused objects into a cruft pack to have some evidence of something going wrong, also don't expire them just yet
+	repack := exec.CommandContext(ctx, "git", "repack", "-d", "--local", "--cruft", "--cruft-expiration=2.weeks.ago", "--write-bitmap-index", "--window-memory=100m")
+	repack.Dir = tmpPath
+	exitCode, err = executil.RunCommandWriteOutput(
+		ctx,
+		s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, repack).WithRedactorFunc(redactor.Redact),
+		progressWriter,
+		redactor.Redact,
+	)
+	if err != nil {
+		return errors.Wrapf(err, "failed to run git repack: exit code %d", exitCode)
+	}
+	tryWrite(s.logger, progressWriter, "Repacked loose git objects!\n")
+
 	return nil
 }
 
