@@ -402,17 +402,6 @@ const CONTRIBUTORS_QUERY = gql`
             }
         }
         count
-        commits(first: 1) {
-            nodes {
-                oid
-                abbreviatedOID
-                url
-                subject
-                author {
-                    date
-                }
-            }
-        }
     }
 `
 
