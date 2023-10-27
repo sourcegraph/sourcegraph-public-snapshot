@@ -114,7 +114,7 @@ func NewTestClient(t testing.TB) TestClient {
 		logger:      logger,
 		httpClient:  http.DefaultClient,
 		HTTPLimiter: limiter.New(500),
-		scope:       "gitserver.test",
+		scope:       fmt.Sprintf("gitserver.test.%s", t.Name()),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
