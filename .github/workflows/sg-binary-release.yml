@@ -16,6 +16,7 @@ on:
       - 'dev/ci/images/**'               # sg ops
       - 'internal/database/migration/**' # sg migration
       - 'monitoring/**'                  # sg monitoring
+      - 'dev/managedservicesplatform/**' # sg msp
 
 env:
   GOFLAGS: -trimpath
