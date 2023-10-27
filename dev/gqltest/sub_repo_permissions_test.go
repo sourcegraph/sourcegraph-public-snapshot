@@ -289,6 +289,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 
 	for _, test := range commitAccessTests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Skip("Skipping until we have stable commit hashes")
 			_, err := userClient.GitGetCommitMessage(perforceRepoName, test.revision)
 			if err != nil {
 				if test.hasAccess {
@@ -314,6 +315,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	})
 
 	t.Run("code intel search", func(t *testing.T) {
+		t.Skip("Skipping until we have stable commit hashes")
 		result, err := userClient.SearchFiles("context:global \\bhack1337\\b type:file patternType:regexp count:500 case:yes file:\\.(go)$ repo:^perforce/test-perms$@2a30922ef9f214d44de60e719a64473e17321684")
 		if err != nil {
 			t.Fatal(err)
