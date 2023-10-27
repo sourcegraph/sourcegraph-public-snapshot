@@ -522,7 +522,6 @@ describe('Repository', () => {
                 `${driver.sourcegraphBaseUrl}/github.com/ggilmore/q-test/-/tree/Geoffrey's%20random%20queries.32r242442bf`
             )
             await driver.page.waitForSelector('.test-tree-file-link')
-            console.log(fileName)
             assert.strictEqual(
                 await driver.page.evaluate(
                     () =>
@@ -555,7 +554,7 @@ describe('Repository', () => {
                 const queryInput = await createEditorAPI(driver, '.test-query-input')
                 assert.strictEqual(
                     removeContextFromQuery((await queryInput.getValue()) ?? ''),
-                    "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql(No new line at end of file)"
+                    "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
                 )
             }
 
@@ -567,8 +566,12 @@ describe('Repository', () => {
                 "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
             )
 
-            const blobContent = await driver.page.evaluate(
-                () => document.querySelector('[data-testid="repo-blob"] .cm-content')?.textContent
+            const blobContent = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('[data-testid="repo-blob"] .cm-line')]
+                    .map(line => {
+                        return line.textContent
+                    })
+                    .join('\n')
             )
             // CodeMirror blob content has no newline characters
             const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replaceAll('\n', '')
