@@ -1,6 +1,9 @@
 package spec
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type EnvironmentSpec struct {
 	// ID is an all-lowercase alphanumeric identifier for the deployment
@@ -63,14 +66,24 @@ const (
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
 //
 // TODO: Implement ability to resolve latest concrete tag from a source
-func (d EnvironmentDeploySpec) ResolveTag() (string, error) {
+func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:
+		var tag string
 		if d.Manual == nil {
-			return "insiders", nil
+			tag = "insiders"
+		} else {
+			tag = d.Manual.Tag
 		}
-		return d.Manual.Tag, nil
-
+		updater, err := imageupdater.New()
+		if err != nil {
+			return "", errors.Wrapf(err, "create image updater")
+		}
+		tagAndDigest, err := updater.ResolveTagAndDigest(repo, tag)
+		if err != nil {
+			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
+		}
+		return tagAndDigest, nil
 	default:
 		return "", errors.New("unable to resolve tag")
 	}

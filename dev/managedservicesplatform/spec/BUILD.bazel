@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec",
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/managedservicesplatform/internal/imageupdater",
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
         "@io_k8s_sigs_yaml//:yaml",
