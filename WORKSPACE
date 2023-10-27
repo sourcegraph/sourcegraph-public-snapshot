@@ -23,9 +23,9 @@ http_archive(
 # rules_js defines an older rules_nodejs, so we override it here
 http_archive(
     name = "rules_nodejs",
-    sha256 = "5ad078287b5f3069735652e1fc933cb2e2189b15d2c9fc826c889dc466c32a07",
-    strip_prefix = "rules_nodejs-6.0.1",
-    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.1/rules_nodejs-v6.0.1.tar.gz",
+    sha256 = "162f4adfd719ba42b8a6f16030a20f434dc110c65dc608660ef7b3411c9873f9",
+    strip_prefix = "rules_nodejs-6.0.2",
+    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.2/rules_nodejs-v6.0.2.tar.gz",
 )
 
 http_archive(
@@ -147,7 +147,7 @@ load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
 nodejs_register_toolchains(
     name = "nodejs",
-    node_version = "18.17.1",
+    node_version = "20.8.0",
 )
 
 # rules_js npm setup ============================
