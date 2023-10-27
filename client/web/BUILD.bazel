@@ -2152,6 +2152,7 @@ esbuild_web_app(
         "src/enterprise/main.js",
         "src/enterprise/embed/embedMain.js",
     ],
+    sourcemap = "linked",
     visibility = ["//visibility:public"],
     deps = ESBUILD_CONFIG_DEPS,
 )
