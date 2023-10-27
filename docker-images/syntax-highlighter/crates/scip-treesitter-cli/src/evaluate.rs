@@ -3,6 +3,7 @@ use std::{
     path::PathBuf,
 };
 
+use anyhow::*;
 use colored::Colorize;
 use scip::types::Index;
 use scip_treesitter::types::PackedRange;
@@ -15,14 +16,14 @@ pub fn evaluate_command<'a>(
     options: ScipEvaluateOptions,
 ) {
     let evaluation_result = evaluate_files(candidate, ground_truth, options);
-    print_evaluation_summary(evaluation_result, options);
+    print_evaluation_summary(evaluation_result.unwrap(), options);
 }
 
 pub fn evaluate_files<'a>(
     candidate: PathBuf,
     ground_truth: PathBuf,
     options: ScipEvaluateOptions,
-) -> EvaluationResult {
+) -> Result<EvaluationResult> {
     evaluate_indexes(
         &read_index_from_file(candidate),
         &read_index_from_file(ground_truth),
@@ -30,11 +31,30 @@ pub fn evaluate_files<'a>(
     )
 }
 
+fn validate_index(idx: &Index) -> Result<()> {
+    let mut occs = 0;
+
+    for doc in &idx.documents {
+        occs += doc.occurrences.len();
+    }
+
+    if occs == 0 {
+        Err(anyhow!(
+            "Index contains no occurrences and cannot be used for evaluation"
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 pub fn evaluate_indexes<'a>(
     candidate: &Index,
     ground_truth: &Index,
     options: ScipEvaluateOptions,
-) -> EvaluationResult {
+) -> Result<EvaluationResult> {
+    validate_index(candidate)?;
+    validate_index(ground_truth)?;
+
     let bar = create_spinner();
     bar.set_message("Indexing candidate symbols by location");
     let candidate_occurrences: HashMap<LocationInFile, String> = index_occurrences(&candidate);
@@ -211,7 +231,7 @@ pub fn evaluate_indexes<'a>(
 
     bar.finish_and_clear();
 
-    EvaluationResult::new(classified_locations)
+    Ok(EvaluationResult::new(classified_locations))
 }
 
 #[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
@@ -274,7 +294,7 @@ pub struct ScipEvaluateOptions {
     pub print_false_negatives: bool,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 pub struct EvaluationSummary {
     pub precision_percent: f32,
     pub recall_percent: f32,
@@ -283,6 +303,7 @@ pub struct EvaluationSummary {
     pub false_negatives: f32,
 }
 
+#[derive(Debug)]
 pub struct EvaluationResult {
     pub summary: EvaluationSummary,
     pub true_positives: Vec<SymbolOccurrence>,

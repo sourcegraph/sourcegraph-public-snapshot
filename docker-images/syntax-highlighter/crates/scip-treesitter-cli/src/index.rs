@@ -164,7 +164,7 @@ pub fn index_command(
 
             let evaluation_result = evaluate_indexes(&index, &ground_truth, Default::default());
 
-            print_evaluation_summary(evaluation_result, Default::default());
+            print_evaluation_summary(evaluation_result.unwrap(), Default::default());
         }
         _ => {}
     }
