@@ -111,6 +111,8 @@ interface BlobPageProps
     repoID?: Scalars['ID']
     repoUrl?: string
     repoServiceType?: string
+    sidebarOpen: boolean
+    handleSidebarToggle: (value: boolean) => void
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
@@ -454,6 +456,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     revision={revision}
                     filePath={filePath}
                     enableOwnershipPanel={enableOwnershipPanel}
+                    sidebarOpen={props.sidebarOpen}
+                    handleSidebarToggle={props.handleSidebarToggle}
                 />
             )}
         </>

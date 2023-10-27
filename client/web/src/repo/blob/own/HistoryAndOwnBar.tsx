@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiAccount } from '@mdi/js'
+import { mdiAccount, mdiChevronDoubleRight, mdiPageLayoutSidebarLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -23,7 +23,9 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     revision?: string
     filePath: string
     enableOwnershipPanel: boolean
-}> = ({ repoID, revision, filePath, enableOwnershipPanel }) => {
+    sidebarOpen: boolean
+    handleSidebarToggle: (value: boolean) => void
+}> = ({ repoID, revision, filePath, enableOwnershipPanel, sidebarOpen, handleSidebarToggle }) => {
     const navigate = useNavigate()
 
     const openOwnershipPanel = useCallback(() => {
@@ -86,17 +88,31 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         <div className={styles.wrapper}>
             {history && (
                 <div className={styles.historyPanel}>
+                    {!sidebarOpen && (
+                        <Tooltip content="Show sidebar" placement="right">
+                            <Button
+                                aria-label="Show sidebar"
+                                variant="icon"
+                                className={classNames(styles.toggle, 'border mr-2 mb-1')}
+                                display="inline"
+                                onClick={() => handleSidebarToggle(true)}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
+                            </Button>
+                        </Tooltip>
+                    )}
+
                     <GitCommitNode
                         node={history}
                         extraCompact={true}
                         hideExpandCommitMessageBody={true}
-                        className={styles.history}
+                        className={classNames(sidebarOpen ? '' : 'mb-1', styles.history)}
                     />
                     <Button
                         variant="link"
                         size="sm"
                         display="inline"
-                        className="pt-0 pb-0 border-0"
+                        className={styles.history}
                         onClick={openHistoryPanel}
                     >
                         Show history

@@ -1,6 +1,6 @@
 import { type FC, useCallback, useState } from 'react'
 
-import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
+import { mdiChevronDoubleLeft, mdiPageLayoutSidebarRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -12,7 +12,6 @@ import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
     useLocalStorage,
-    useMatchMedia,
     Tab,
     TabList,
     TabPanel,
@@ -23,7 +22,6 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import type { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
@@ -41,27 +39,21 @@ interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCas
     className: string
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isVisible: boolean
+    handleSidebarToggle: (value: boolean) => void
 }
 
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
 const TABS_KEY = 'repo-revision-sidebar-last-tab'
-const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
 export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
-    const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
-        SIDEBAR_KEY,
-        settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
-    )
     const showOnboardingTour = useShowOnboardingTour({
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
     })
-
-    const isWideScreen = useMatchMedia('(min-width: 768px)', false)
-    const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
 
     const [initialFilePath, setInitialFilePath] = useState<string>(props.filePath)
     const [initialFilePathIsDir, setInitialFilePathIsDir] = useState<boolean>(props.isDir)
@@ -70,17 +62,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
         setInitialFilePathIsDir(true)
     }, [])
 
-    const handleSidebarToggle = useCallback(
-        (value: boolean) => {
-            props.telemetryService.log('FileTreeViewClicked', {
-                action: 'click',
-                label: 'expand / collapse file tree view',
-            })
-            setPersistedIsVisible(value)
-            setIsVisible(value)
-        },
-        [setPersistedIsVisible, props.telemetryService]
-    )
     const handleSymbolClick = useCallback(
         () => props.telemetryService.log('SymbolTreeViewClicked'),
         [props.telemetryService]
@@ -94,7 +75,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
 
     return (
         <>
-            {isVisible ? (
+            {props.isVisible && (
                 <Panel
                     defaultSize={256}
                     minSize={150}
@@ -125,7 +106,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                     <Tooltip content="Hide sidebar" placement="right">
                                         <Button
                                             aria-label="Hide sidebar"
-                                            onClick={() => handleSidebarToggle(false)}
+                                            onClick={() => props.handleSidebarToggle(false)}
                                             className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
                                         >
                                             <Icon
@@ -182,20 +163,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                         </Tabs>
                     </div>
                 </Panel>
-            ) : (
-                <Tooltip content="Show sidebar">
-                    <Button
-                        aria-label="Show sidebar"
-                        variant="icon"
-                        className={classNames(
-                            'position-absolute border-top border-bottom border-right mt-4',
-                            styles.toggle
-                        )}
-                        onClick={() => handleSidebarToggle(true)}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
-                    </Button>
-                </Tooltip>
             )}
 
             {enableBlobPageSwitchAreasShortcuts && (
@@ -206,7 +173,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             {...keybinding}
                             allowDefault={true}
                             onMatch={() => {
-                                handleSidebarToggle(true)
+                                props.handleSidebarToggle(true)
                                 setPersistedTabIndex(0)
                                 setFileTreeFocusKey(Date.now().toString())
                             }}
@@ -218,7 +185,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             {...keybinding}
                             allowDefault={true}
                             onMatch={() => {
-                                handleSidebarToggle(true)
+                                props.handleSidebarToggle(true)
                                 setPersistedTabIndex(1)
                                 setSymbolsFocusKey(Date.now().toString())
                             }}

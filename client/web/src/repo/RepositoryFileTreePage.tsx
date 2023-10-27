@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
@@ -6,8 +6,9 @@ import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useLocalStorage, useMatchMedia } from '@sourcegraph/wildcard'
 
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { SourcegraphContext } from '../jscontext'
 import type { NotebookProps } from '../notebooks'
@@ -58,6 +59,27 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
         return <Navigate to={url} replace={true} />
     }
 
+    const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
+
+    const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
+        SIDEBAR_KEY,
+        settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
+    )
+    const isWideScreen = useMatchMedia('(min-width: 768px)', false)
+    const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
+
+    const handleSidebarToggle = useCallback(
+        (value: boolean) => {
+            props.telemetryService.log('FileTreeViewClicked', {
+                action: 'click',
+                label: 'expand / collapse file tree view',
+            })
+            setPersistedIsVisible(value)
+            setIsVisible(value)
+        },
+        [setPersistedIsVisible, props.telemetryService]
+    )
+
     // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
     // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
     if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(location.hash)) {
@@ -86,6 +108,8 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                 repoName={repoName}
                 isDir={objectType === 'tree'}
                 defaultBranch={resolvedRevision?.defaultBranch || 'HEAD'}
+                isVisible={isVisible}
+                handleSidebarToggle={handleSidebarToggle}
             />
             {!hideRepoRevisionContent && (
                 <>
@@ -108,6 +132,8 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                     className={styles.pageContent}
                                     context={globalContext}
+                                    sidebarOpen={isVisible}
+                                    handleSidebarToggle={handleSidebarToggle}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (
