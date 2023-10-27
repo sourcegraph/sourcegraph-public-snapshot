@@ -356,7 +356,6 @@ export const getExternalService = (
     if (!data) {
         return undefined
     }
-    console.log('get external service');
     const node: ExternalServiceFieldsWithConfig = data
     node.parsedConfig = parse(node.config) as ExternalServiceFieldsWithConfig['parsedConfig']
     return node
