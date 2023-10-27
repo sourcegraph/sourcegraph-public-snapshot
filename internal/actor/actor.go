@@ -45,6 +45,10 @@ type Actor struct {
 	// cookie, logout would be ineffective.)
 	FromSessionCookie bool `json:"-"`
 
+	// FromAccessToken indicates whether the actor was authenticated via an access token.
+	// we store the ID of the token for audit logging purposes.
+	FromAccessToken int32 `json:"-"`
+
 	// user is populated lazily by (*Actor).User()
 	user     *types.User
 	userErr  error

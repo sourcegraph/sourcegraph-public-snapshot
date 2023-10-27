@@ -124,7 +124,7 @@ type AccessTokenStore interface {
 	//
 	// 🚨 SECURITY: This returns a user ID if and only if the token corresponds to a valid,
 	// non-deleted access token.
-	Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error)
+	Lookup(ctx context.Context, token, requiredScope string) (tokenID int32, subjectUserID int32, err error)
 
 	WithTransact(context.Context, func(AccessTokenStore) error) error
 	With(basestore.ShareableStore) AccessTokenStore
@@ -239,14 +239,14 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	return id, token, nil
 }
 
-func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error) {
+func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope string) (tokenID int32, subjectUserID int32, err error) {
 	if requiredScope == "" {
-		return 0, errors.New("no scope provided in access token lookup")
+		return 0, 0, errors.New("no scope provided in access token lookup")
 	}
 
 	tokenHash, err := tokenSHA256Hash(token)
 	if err != nil {
-		return 0, errors.Wrap(err, "AccessTokens.Lookup")
+		return 0, 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
 	if err := s.Handle().QueryRowContext(ctx,
@@ -260,16 +260,16 @@ WHERE t.id IN (
 	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
 	$2 = ANY (t2.scopes)
 )
-RETURNING t.subject_user_id
+RETURNING t.id, t.subject_user_id
 `,
 		tokenHash, requiredScope,
-	).Scan(&subjectUserID); err != nil {
+	).Scan(&tokenID, &subjectUserID); err != nil {
 		if err == sql.ErrNoRows {
-			return 0, ErrAccessTokenNotFound
+			return 0, 0, ErrAccessTokenNotFound
 		}
-		return 0, err
+		return 0, 0, err
 	}
-	return subjectUserID, nil
+	return tokenID, subjectUserID, nil
 }
 
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
