@@ -2,6 +2,7 @@ package vcssyncer
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -20,11 +22,12 @@ import (
 
 // gitRepoSyncer is a syncer for Git repositories.
 type gitRepoSyncer struct {
+	logger                  log.Logger
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
-func NewGitRepoSyncer(r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
-	return &gitRepoSyncer{recordingCommandFactory: r}
+func NewGitRepoSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
+	return &gitRepoSyncer{logger: logger.Scoped("GitRepoSyncer"), recordingCommandFactory: r}
 }
 
 func (s *gitRepoSyncer) Type() string {
@@ -50,7 +53,7 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, 
 
 	r := urlredactor.New(remoteURL)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), true, nil)
+	out, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), true)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -63,21 +66,46 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, 
 	return nil
 }
 
-// CloneCommand returns the command to be executed for cloning a Git repository.
-func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
+// Clone clones a Git repository into tmpPath, reporting redacted progress logs
+// via the progressWriter.
+// We "clone" a repository by first creating a bare repo and then fetching the
+// configured refs into it from the remote.
+func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
-		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
+		return errors.Wrapf(err, "clone failed to create tmp dir")
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "init", "--bare", ".")
+	// Next, initialize a bare repo in that tmp path.
+	tryWrite(s.logger, progressWriter, "Creating bare repo\n")
+	if err := git.MakeBareRepo(ctx, tmpPath); err != nil {
+		return &common.GitCommandError{Err: err}
+	}
+	tryWrite(s.logger, progressWriter, "Created bare repo at %s\n", tmpPath)
+
+	// Now we build our fetch command. We don't actually clone, instead we init
+	// a bare repository and fetch all refs from remote once into local refs.
+	cmd, _ := s.fetchCommand(ctx, remoteURL)
 	cmd.Dir = tmpPath
-	if err := cmd.Run(); err != nil {
-		return nil, errors.Wrapf(&common.GitCommandError{Err: err}, "clone setup failed")
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
+	// see issue #7322: skip LFS content in repositories with Git LFS configured.
+	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
+	executil.ConfigureRemoteGitCommand(cmd)
+
+	tryWrite(s.logger, progressWriter, "Fetching remote contents\n")
+	redactor := urlredactor.New(remoteURL)
+	wrCmd := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, cmd).WithRedactorFunc(redactor.Redact)
+	// Note: Using RunCommandWriteOutput here does NOT store the output of the
+	// command as the command output of the wrexec command, because the pipes are
+	// already used.
+	exitCode, err := executil.RunCommandWriteOutput(ctx, wrCmd, progressWriter, redactor.Redact)
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch: exit status %d", exitCode)
 	}
 
-	cmd, _ = s.fetchCommand(ctx, remoteURL)
-	cmd.Dir = tmpPath
-	return cmd, nil
+	return nil
 }
 
 // Fetch tries to fetch updates of a Git repository.
@@ -85,9 +113,9 @@ func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName 
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	r := urlredactor.New(remoteURL)
-	output, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), configRemoteOpts, nil)
+	output, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.Redact), configRemoteOpts)
 	if err != nil {
-		return nil, &common.GitCommandError{Err: err, Output: urlredactor.New(remoteURL).Redact(string(output))}
+		return nil, &common.GitCommandError{Err: err, Output: r.Redact(string(output))}
 	}
 	return output, nil
 }
