@@ -415,6 +415,10 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 },
 ) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can create their password.
+	if !actor.FromContext(ctx).FromSessionCookie {
+		return nil, errors.New("only allowed from user session")
+	}
+
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
