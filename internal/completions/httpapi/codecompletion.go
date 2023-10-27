@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,6 +20,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
 	return newCompletionsHandler(
 		logger,
+		telemetryrecorder.New(db),
 		types.CompletionsFeatureCode,
 		rl,
 		"code",

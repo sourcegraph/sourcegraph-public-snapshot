@@ -120,6 +120,18 @@ func (b CompletionsFeature) IsValid() bool {
 	return false
 }
 
+// ID returns a numeric ID representing the feature for analytics purposes.
+func (b CompletionsFeature) ID() int {
+	switch b {
+	case CompletionsFeatureChat:
+		return 1
+	case CompletionsFeatureCode:
+		return 2
+	default:
+		return -1
+	}
+}
+
 type CompletionsClient interface {
 	// Stream executions a completions request, streaming results to the callback.
 	// Callers should check for ErrStatusNotOK and handle the error appropriately.
