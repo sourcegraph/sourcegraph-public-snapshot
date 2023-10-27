@@ -253,8 +253,8 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOpti
 	// of time to collect results before ranking.
 	searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
 
-	// Only use document ranks if the jobs to calculate the ranks are enabled.
-	// This is to make sure we don't serve outdated ranks to Zoekt.
+	// Only use document ranks if the jobs to calculate the ranks are enabled. This
+	// is to make sure we don't use outdated ranks for scoring in Zoekt.
 	searchOpts.UseDocumentRanks = conf.CodeIntelRankingDocumentReferenceCountsEnabled()
 	searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 
