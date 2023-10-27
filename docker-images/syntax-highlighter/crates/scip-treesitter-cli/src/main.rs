@@ -81,7 +81,7 @@ pub fn main() {
             mode,
             fail_fast,
             project_root,
-            evaluate
+            evaluate,
         } => {
             let index_mode = {
                 match workspace {
@@ -184,11 +184,6 @@ mod tests {
 
             insta::assert_snapshot!(path.clone(), dumped);
         }
-    }
-
-    #[test]
-    fn evaluation_basic_tests() {
-        let empty_index = todo!();
     }
 
     fn prepare(temp: &PathBuf, files: &HashMap<PathBuf, String>) {

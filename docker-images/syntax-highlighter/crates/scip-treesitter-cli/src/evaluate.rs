@@ -462,3 +462,93 @@ fn index_occurrences(idx: &Index) -> HashMap<LocationInFile, String> {
 
     return mp;
 }
+
+#[cfg(test)]
+mod tests {
+    use scip::types::*;
+
+    use crate::evaluate::evaluate_indexes;
+
+    fn occurrence(n: i32, symbol: &str) -> Occurrence {
+        let mut occ = Occurrence::new();
+
+        occ.range = vec![n, 5, 10];
+        occ.symbol = symbol.to_string();
+
+        return occ;
+    }
+
+    fn document(path: &str, occs: Vec<Occurrence>) -> Document {
+        let mut doc = Document::new();
+
+        doc.relative_path = path.to_string();
+
+        doc.occurrences.extend(occs);
+
+        return doc;
+    }
+
+    fn index(documents: Vec<Document>) -> Index {
+        let mut idx = Index::new();
+
+        idx.documents.extend(documents);
+
+        return idx;
+    }
+
+    #[test]
+    fn evaluation_fundamentals() {
+        let doc1 = document(
+            "document1.java",
+            vec![occurrence(1, "sym1"), occurrence(2, "sym2")],
+        );
+
+        let doc2 = document(
+            "document2.java",
+            vec![occurrence(1, "sym1"), occurrence(2, "sym2")],
+        );
+
+        let ground_truth = index(vec![doc1, doc2]);
+
+        // Evaluating index against itself should yield 100% precision and 100% recall
+        let evaluate_with_self =
+            evaluate_indexes(&ground_truth, &ground_truth, Default::default()).unwrap();
+        assert_eq!(evaluate_with_self.summary.precision_percent, 100.0);
+        assert_eq!(evaluate_with_self.summary.recall_percent, 100.0);
+        assert_eq!(evaluate_with_self.summary.true_positives, 4.0);
+        assert_eq!(evaluate_with_self.summary.false_positives, 0.0);
+        assert_eq!(evaluate_with_self.summary.false_negatives, 0.0);
+
+        // This has no overlap at all with the ground truth
+        // Should yield 0% precision, 0% recall
+        let evaluate_disjoint = evaluate_indexes(
+            &index(vec![
+                document(
+                    "bla/document1.java",
+                    vec![occurrence(1, "sym1"), occurrence(2, "sym2")],
+                ),
+                document(
+                    "bla/document2.java",
+                    vec![occurrence(1, "sym1"), occurrence(2, "sym2")],
+                ),
+            ]),
+            &ground_truth,
+            Default::default(),
+        )
+        .unwrap();
+        assert_eq!(evaluate_disjoint.summary.precision_percent, 0.0);
+        assert_eq!(evaluate_disjoint.summary.recall_percent, 0.0);
+        assert_eq!(evaluate_disjoint.summary.true_positives, 0.0);
+        assert_eq!(evaluate_disjoint.summary.false_positives, 4.0);
+        assert_eq!(evaluate_disjoint.summary.false_negatives, 4.0);
+
+        let empty_index = index(vec![document("bla.java", vec![])]);
+
+        let evaluate_empty = evaluate_indexes(&empty_index, &ground_truth, Default::default());
+        assert!(evaluate_empty.is_err());
+
+        let evaluate_against_empty =
+            evaluate_indexes(&ground_truth, &empty_index, Default::default());
+        assert!(evaluate_against_empty.is_err());
+    }
+}
