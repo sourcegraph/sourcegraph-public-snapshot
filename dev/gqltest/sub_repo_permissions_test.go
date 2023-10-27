@@ -128,11 +128,10 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		t.Fatalf("Failed to create user and wait for repo: %v", err)
 	}
 
-	// TODO(pjlast): Waiting for repos to be indexed here seems to be very inconsistent
-	// err = client.WaitForReposToBeIndexed(perforceRepoName)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// TODO(pjlast): Removing all the dependencies on indexed searches until
 	// they can be run reliably
