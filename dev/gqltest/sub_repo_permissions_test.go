@@ -121,7 +121,7 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	cleanup := createPerforceExternalService(t, testPermsDepot, true)
 	t.Cleanup(cleanup)
 	userClient, _, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
