@@ -228,9 +228,9 @@ swc_register_toolchains(
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "2ea31bd97181a315e048be693ddc2815fddda0f3a12ca7b7cc6e91e80f31bac7",
-    strip_prefix = "rules_esbuild-0.14.4",
-    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.14.4/rules_esbuild-v0.14.4.tar.gz",
+    sha256 = "84419868e43c714c0d909dca73039e2f25427fc04f352d2f4f7343ca33f60deb",
+    strip_prefix = "rules_esbuild-0.15.3",
+    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.15.3/rules_esbuild-v0.15.3.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
@@ -238,11 +238,11 @@ load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependenc
 rules_esbuild_dependencies()
 
 # Register a toolchain containing esbuild npm package and native bindings
-load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_VERSION", "esbuild_register_toolchains")
+load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_ESBUILD_VERSION", "esbuild_register_toolchains")
 
 esbuild_register_toolchains(
     name = "esbuild",
-    esbuild_version = LATEST_VERSION,
+    esbuild_version = LATEST_ESBUILD_VERSION,
 )
 
 # Go toolchain setup
