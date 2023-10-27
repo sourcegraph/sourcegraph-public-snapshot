@@ -82,8 +82,7 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 		"",
 		"💡 Installing 1 commands...",
 		"--------------------------------------------------------------------------------",
-		"Failed to build test-cmd-1: 'bash -c echo 'booting up horsegraph' && exit 1' failed: booting up horsegraph",
-		": exit status 1:",
+		`Failed to build test-cmd-1: 'bash -c echo 'booting up horsegraph' && exit 1' failed with "exit status 1":`,
 		"booting up horsegraph",
 		"--------------------------------------------------------------------------------",
 	})
