@@ -394,7 +394,10 @@ esbuild(
         "src/branded.css",
         "src/shared/extensionHostWorker.js",
     ],
-    deps = ["//client/browser/config"],
+    deps = [
+        "//:postcss_config_js",  #keep
+        "//client/browser/config",
+    ],
 )
 
 # Mirror `client/browser/scripts/build-inline-extensions.js`
