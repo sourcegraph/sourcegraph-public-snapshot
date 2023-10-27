@@ -406,8 +406,7 @@ func TestErrorResilience(t *testing.T) {
 				// hardcode what go returns for DNS not found to avoid
 				// flakiness across machines. However, CI correctly respects
 				// this so we continue to run against a real DNS server on CI.
-				// TODO(burmudar): inverted for now while we get workflows to run
-				if os.Getenv("CI") != "" {
+				if os.Getenv("CI") == "" {
 					cli.Transport = notFoundTransport{}
 				}
 				return nil
