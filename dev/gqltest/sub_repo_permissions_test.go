@@ -142,46 +142,45 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		minMatchCount int64
 	}{
 		{
-			name:          "search, nonzero result",     // "indexed search, nonzero result",
-			query:         `This depot is used to test`, // `index:only This depot is used to test`,
+			name:          "indexed search, nonzero result",
+			query:         `index:only This depot is used to test`,
 			minMatchCount: 1,
 		},
-		// {
-		// 	name:          "unindexed multiline search, nonzero result",
-		// 	query:         `index:no This depot is used to test`,
-		// 	minMatchCount: 1,
-		// },
 		{
-			name:       "search of restricted content", // "indexed search of restricted content",
-			query:      `uploading your secrets`,       // `index:only uploading your secrets`,
+			name:          "unindexed multiline search, nonzero result",
+			query:         `index:no This depot is used to test`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "indexed search of restricted content",
+			query:      `index:only uploading your secrets`,
 			zeroResult: true,
 		},
-		// {
-		// 	name:       "unindexed search of restricted content",
-		// 	query:      `index:no uploading your secrets`,
-		// 	zeroResult: true,
-		// },
-		// TODO(pjlast): Removing all structural searches since they don't seem to work without indexing?
-		// {
-		// 	name:       "structural, indexed search of restricted content",
-		// 	query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
-		// 	zeroResult: true,
-		// },
-		// {
-		// 	name:       "structural, unindexed search of restricted content",
-		// 	query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
-		// 	zeroResult: true,
-		// },
-		// {
-		// 	name:          "structural, indexed search, nonzero result",
-		// 	query:         `println(...) index:only patterntype:structural`,
-		// 	minMatchCount: 1,
-		// },
-		// {
-		// 	name:          "structural, unindexed search, nonzero result",
-		// 	query:         `println(...) index:no patterntype:structural`,
-		// 	minMatchCount: 1,
-		// },
+		{
+			name:       "unindexed search of restricted content",
+			query:      `index:no uploading your secrets`,
+			zeroResult: true,
+		},
+		{
+			name:       "structural, indexed search of restricted content",
+			query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
+			zeroResult: true,
+		},
+		{
+			name:       "structural, unindexed search of restricted content",
+			query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
+			zeroResult: true,
+		},
+		{
+			name:          "structural, indexed search, nonzero result",
+			query:         `println(...) index:only patterntype:structural`,
+			minMatchCount: 1,
+		},
+		{
+			name:          "structural, unindexed search, nonzero result",
+			query:         `println(...) index:no patterntype:structural`,
+			minMatchCount: 1,
+		},
 		{
 			name:          "filename search, nonzero result",
 			query:         `repo:^perforce/test-perms$ type:path app`,
