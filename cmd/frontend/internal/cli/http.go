@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
-	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
@@ -43,7 +43,7 @@ func newExternalHTTPHandler(
 	db database.DB,
 	schema *graphql.Schema,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-	handlers *internalhttpapi.Handlers,
+	handlers *httpapi.Handlers,
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) (http.Handler, error) {
@@ -55,9 +55,9 @@ func newExternalHTTPHandler(
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler, err := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	apiHandler, err := httpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
 	if err != nil {
-		return nil, errors.Errorf("create internal HTTP API handler: %v", err)
+		return nil, errors.Errorf("create external HTTP API handler: %v", err)
 	}
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
@@ -69,7 +69,7 @@ func newExternalHTTPHandler(
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
-	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                // API accepts access tokens
+	apiHandler = httpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                        // API accepts access tokens
 	apiHandler = requestclient.ExternalHTTPMiddleware(apiHandler, envvar.SourcegraphDotComMode())
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
@@ -91,8 +91,8 @@ func newExternalHTTPHandler(
 	appHandler = actor.AnonymousUIDMiddleware(appHandler)
 	appHandler = authMiddlewares.App(appHandler) // 🚨 SECURITY: auth middleware
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
-	appHandler = session.CookieMiddleware(logger, db, appHandler)                  // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
+	appHandler = session.CookieMiddleware(logger, db, appHandler)          // app accepts cookies
+	appHandler = httpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
 	appHandler = requestclient.ExternalHTTPMiddleware(appHandler, envvar.SourcegraphDotComMode())
 	if envvar.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
@@ -151,7 +151,7 @@ func newInternalHTTPHandler(
 	logger := log.Scoped("internal")
 
 	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
-	internalhttpapi.RegisterInternalServices(
+	httpapi.RegisterInternalServices(
 		internalRouter,
 		grpcServer,
 		db,
