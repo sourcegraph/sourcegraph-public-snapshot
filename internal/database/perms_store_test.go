@@ -4030,9 +4030,9 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
-					// private repo but have access via user_permissions
+					// private repo but have access via user_permissions (still site admin)
 					RepoId: 2,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
 					// public repo
@@ -4221,19 +4221,19 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					UserID: 999,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 			},
 		},
@@ -4290,23 +4290,24 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			RepoID:                    4,
 			Args:                      nil,
 			NoAuthzProviders:          true,
-			UsePermissionsUserMapping: true,
+			UsePermissionsUserMapping: false,
 			// restricted access
 			WantResults: []*listRepoPermissionsResult{
 				{
-					// have access and site-admin
 					UserID: 999,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
-					// do not have access but site-admin
 					UserID: 777,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
-					// have access
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 			},
 		},
