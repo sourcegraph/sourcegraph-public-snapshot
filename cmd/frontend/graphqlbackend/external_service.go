@@ -208,6 +208,9 @@ func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, e
 
 	user, err := r.db.Users().GetByID(ctx, r.externalService.CreatorID)
 	if err != nil {
+		if database.IsUserNotFoundErr(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -221,6 +224,9 @@ func (r *externalServiceResolver) LastUpdater(ctx context.Context) (*UserResolve
 
 	user, err := r.db.Users().GetByID(ctx, r.externalService.LastUpdaterID)
 	if err != nil {
+		if database.IsUserNotFoundErr(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 

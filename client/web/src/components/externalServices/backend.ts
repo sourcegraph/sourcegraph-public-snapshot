@@ -69,6 +69,14 @@ export const externalServiceFragment = gql`
         createdAt
         webhookURL
         hasConnectionCheck
+        creator {
+            username
+            url
+        }
+        lastUpdater {
+            username
+            url
+        }
     }
 `
 
@@ -220,6 +228,14 @@ export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         createdAt
         webhookURL
         hasConnectionCheck
+        creator {
+            username
+            url
+        }
+        lastUpdater {
+            username
+            url
+        }
         syncJobs(first: 1) {
             ...ExternalServiceSyncJobConnectionFields
         }
@@ -340,6 +356,7 @@ export const getExternalService = (
     if (!data) {
         return undefined
     }
+    console.log('get external service');
     const node: ExternalServiceFieldsWithConfig = data
     node.parsedConfig = parse(node.config) as ExternalServiceFieldsWithConfig['parsedConfig']
     return node
