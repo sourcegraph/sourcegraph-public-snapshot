@@ -136,7 +136,7 @@ func TestFileOrDir(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			links, err := FileOrDir(context.Background(), db, gitserver.NewClient(), repo, rev, path, isDir)
+			links, err := FileOrDir(context.Background(), db, gitserver.NewTestClient(t), repo, rev, path, isDir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -189,7 +189,7 @@ func TestFileOrDir(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := FileOrDir(context.Background(), db, gitserver.NewClient(), &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Background(), db, gitserver.NewTestClient(t), &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -32,7 +32,7 @@ func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
 
 	return &gitService{
 		checker: checker,
-		client:  gitserver.NewClient(),
+		client:  gitserver.NewClient("codeintel.interence"),
 	}
 }
 

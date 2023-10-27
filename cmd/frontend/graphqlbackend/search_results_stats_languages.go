@@ -28,7 +28,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 	}
 
 	logger := srs.logger.Scoped("languages")
-	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient(), matches)
+	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient("graphql.searchresultlanguages"), matches)
 	if err != nil {
 		return nil, err
 	}

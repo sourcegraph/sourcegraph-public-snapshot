@@ -15,6 +15,7 @@ go_library(
         "//internal/compute",
         "//internal/compute/client",
         "//internal/database",
+        "//internal/gitserver",
         "//internal/httpcli",
         "//internal/search",
         "//internal/search/client",

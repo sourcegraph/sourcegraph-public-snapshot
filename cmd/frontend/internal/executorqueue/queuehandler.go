@@ -50,8 +50,6 @@ func newExecutorQueuesHandler(
 
 	multiHandler := handler.NewMultiHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler, batchesQueueHandler)
 
-	gitserverClient := gitserver.NewClient()
-
 	// Auth middleware
 	executorAuth := executorAuthMiddleware(logger, accessToken)
 
@@ -74,6 +72,7 @@ func newExecutorQueuesHandler(
 
 		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
 		gitRouter := base.PathPrefix("/git").Subrouter()
+		gitserverClient := gitserver.NewClient("http.executor.gitproxy")
 		gitRouter.Path("/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
 		gitRouter.Path("/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
 		// The git routes are treated as internal actor. Additionally, each job comes with a short-lived token that is

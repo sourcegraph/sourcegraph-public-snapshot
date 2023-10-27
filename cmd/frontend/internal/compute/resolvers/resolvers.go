@@ -185,7 +185,7 @@ func pathAndCommitFromResult(m result.Match) (string, string) {
 }
 
 func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db database.DB) ([]gql.ComputeResultResolver, error) {
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClient("graphql.compute")
 
 	type repoKey struct {
 		Name types.MinimalRepo
