@@ -16,6 +16,7 @@ import {
     type RenderModeSpec,
     type UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import type { TelemetryRecorderProvider } from '../telemetry/TelemetryRecorderProvider'
@@ -86,7 +87,15 @@ export function createPlatformContext(props: {
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         telemetryService: eventLogger,
-        telemetryRecorder: props.telemetryRecorderProvider.getRecorder(),
+        telemetryRecorder: props.telemetryRecorderProvider.getRecorder(
+            window.context.debug
+                ? [
+                      new CallbackTelemetryProcessor(event =>
+                          logger.info(`telemetry: ${event.feature}/${event.action}`, { event })
+                      ),
+                  ]
+                : undefined
+        ),
     }
 
     return context

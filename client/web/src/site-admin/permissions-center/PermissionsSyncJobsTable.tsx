@@ -192,9 +192,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         ([job]: PermissionsSyncJob[]) => {
             if (job.subject.__typename === 'Repository') {
                 telemetryRecorder.recordEvent('permissions-center.repository.sync', 'trigger', {
-                    privateMetadata: {
-                        repo: job.subject.id,
-                    },
+                    privateMetadata: { repo: job.subject.id },
                 })
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
@@ -207,9 +205,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 )
             } else {
                 telemetryRecorder.recordEvent('permissions-center.user.sync', 'trigger', {
-                    privateMetadata: {
-                        user: job.subject.id,
-                    },
+                    privateMetadata: { user: job.subject.id },
                 })
                 triggerUserSync({
                     variables: { user: job.subject.id },
@@ -235,16 +231,36 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 // noop here is used because an error is handled in `onError` option of `useMutation` above.
                 noop
             )
+
+            if (syncJob.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'cancel', {
+                    privateMetadata: { repo: syncJob.subject.id },
+                })
+            } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'cancel', {
+                    privateMetadata: { user: syncJob.subject.id },
+                })
+            }
         },
-        [cancelSyncJob, onError, toggleNotification]
+        [cancelSyncJob, onError, toggleNotification, telemetryRecorder]
     )
 
     const handleViewJobDetails = useCallback(
         ([syncJob]: PermissionsSyncJob[]) => {
             setShowModal(true)
             setSelectedJob(syncJob)
+
+            if (syncJob.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'view', {
+                    privateMetadata: { repo: syncJob.subject.id },
+                })
+            } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'view', {
+                    privateMetadata: { user: syncJob.subject.id },
+                })
+            }
         },
-        [setShowModal, setSelectedJob]
+        [setShowModal, setSelectedJob, telemetryRecorder]
     )
 
     if (minimal) {
