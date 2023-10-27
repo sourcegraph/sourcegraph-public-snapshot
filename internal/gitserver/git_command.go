@@ -172,6 +172,7 @@ type RemoteGitCommand struct {
 	exitStatus     int
 	execer         execer
 	execOp         *observation.Operation
+	scope          string
 }
 
 type execer interface {

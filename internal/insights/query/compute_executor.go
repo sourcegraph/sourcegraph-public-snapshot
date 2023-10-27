@@ -63,7 +63,7 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		repoIds[repository] = repo.ID
 	}
 
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClient("insights.computeexecutor")
 
 	groupedValues := make(map[string]int)
 	for _, repository := range repositories {

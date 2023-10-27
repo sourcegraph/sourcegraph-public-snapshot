@@ -126,7 +126,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store"))
 
-	git := gitserver.NewClient()
+	git := gitserver.NewClient("searcher")
 
 	sService := &search.Service{
 		Store: &search.Store{

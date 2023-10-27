@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -23,7 +24,7 @@ import (
 )
 
 func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64) (_ []*result.CommitMatch, err error) {
-	searchClient := client.New(logger, db)
+	searchClient := client.New(logger, db, gitserver.NewClient("monitors.search"))
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",
@@ -78,7 +79,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 		return nil, errors.New("Snapshot cannot be run in a transaction")
 	}
 
-	searchClient := client.New(logger, db)
+	searchClient := client.New(logger, db, gitserver.NewClient("monitors.search.snapshot"))
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",

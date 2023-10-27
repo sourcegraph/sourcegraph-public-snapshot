@@ -49,7 +49,7 @@ type SearchClient interface {
 }
 
 // New will create a search client with a zoekt and searcher backed by conf.
-func New(logger log.Logger, db database.DB) SearchClient {
+func New(logger log.Logger, db database.DB, gitserverClient gitserver.Client) SearchClient {
 	return &searchClient{
 		runtimeClients: job.RuntimeClients{
 			Logger:                      logger,
@@ -57,7 +57,7 @@ func New(logger log.Logger, db database.DB) SearchClient {
 			Zoekt:                       search.Indexed(),
 			SearcherURLs:                search.SearcherURLs(),
 			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
-			Gitserver:                   gitserver.NewClient(),
+			Gitserver:                   gitserverClient,
 		},
 		settingsService:       settings.NewService(db),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),

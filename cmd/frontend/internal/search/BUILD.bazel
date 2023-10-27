@@ -21,6 +21,7 @@ go_library(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/gitserver",
         "//internal/honey",
         "//internal/honey/search",
         "//internal/lazyregexp",

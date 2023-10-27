@@ -156,7 +156,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewTestClient(t), minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
@@ -171,7 +171,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewTestClient(t), minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 

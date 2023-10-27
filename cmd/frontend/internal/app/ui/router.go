@@ -269,7 +269,7 @@ func InitRouter(db database.DB) {
 		})))
 
 	// raw
-	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient())))
+	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient("http.raw"))))
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 
