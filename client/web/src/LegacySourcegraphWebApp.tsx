@@ -37,6 +37,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
@@ -54,6 +55,7 @@ import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheP
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
+import { TelemetryRecorderProvider } from './telemetry/TelemetryRecorderProvider'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
@@ -87,7 +89,11 @@ const WILDCARD_THEME: WildcardTheme = {
  */
 export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, LegacySourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
-    private readonly platformContext: PlatformContext = createPlatformContext()
+    private readonly platformContext: PlatformContext = createPlatformContext({
+        telemetryRecorderProvider: new NoOpTelemetryRecorderProvider({
+            errorOnRecord: true, // this will be replaced on render()
+        }),
+    })
     private readonly extensionsController: ExtensionsController | null = createNoopController(this.platformContext)
 
     constructor(props: StaticAppConfig) {
@@ -112,6 +118,15 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
 
         getWebGraphQLClient()
             .then(graphqlClient => {
+                // Create real telemetry recorder provider
+                const telemetryRecorderProvider = new TelemetryRecorderProvider(graphqlClient, {
+                    enableBuffering: false,
+                })
+                this.subscriptions.add(telemetryRecorderProvider)
+
+                // Override the no-op telemetryRecorder from initializatin
+                this.platformContext.telemetryRecorder = telemetryRecorderProvider.getRecorder()
+
                 this.setState({
                     graphqlClient,
                     temporarySettingsStorage: new TemporarySettingsStorage(

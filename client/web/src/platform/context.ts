@@ -18,12 +18,20 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
+import type { TelemetryRecorderProvider } from '../telemetry/TelemetryRecorderProvider'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
-export function createPlatformContext(): PlatformContext {
+export function createPlatformContext(props: {
+    /**
+     * The {@link TelemetryRecorderProvider} for the platform. Callers should
+     * make sure to configure desired buffering and add the teardown of the
+     * provider to a subscription or similar.
+     */
+    telemetryRecorderProvider: TelemetryRecorderProvider
+}): PlatformContext {
     const settingsQueryWatcherPromise = watchViewerSettingsQuery()
 
     const context: PlatformContext = {
@@ -78,6 +86,7 @@ export function createPlatformContext(): PlatformContext {
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         telemetryService: eventLogger,
+        telemetryRecorder: props.telemetryRecorderProvider.getRecorder(),
     }
 
     return context

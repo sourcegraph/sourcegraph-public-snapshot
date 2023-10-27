@@ -1,7 +1,7 @@
 import { type ApolloClient, gql } from '@apollo/client'
 import type { ExportTelemetryEventsResult } from 'src/graphql-operations'
 
-import { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
+import type { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 
 /**
  * ApolloTelemetryExporter exports events via the new Sourcegraph telemetry
