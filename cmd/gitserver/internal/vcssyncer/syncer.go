@@ -2,9 +2,12 @@ package vcssyncer
 
 import (
 	"context"
+	"io"
 	"os/exec"
 
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -34,8 +37,23 @@ type VCSSyncer interface {
 	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 	// error indicates there is a problem.
 	IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error
-	// CloneCommand returns the command to be executed for cloning from remote.
-	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
+	// Clone should clone the repo onto disk into the given tmpPath.
+	//
+	// For now, regardless of the VCSSyncer implementation, the result that ends
+	// up in tmpPath is expected to be a valid Git repository and should be initially
+	// optimized (repacked, commit-graph written, etc).
+	//
+	// targetDir is passed for reporting purposes, but should not be written to
+	// during this process.
+	//
+	// Progress can be reported by writing to the progressWriter.
+	// 🚨 SECURITY:
+	// Content written to this writer should NEVER contain sensitive information.
+	// The VCSSyncer implementation is responsible of redacting potentially
+	// sensitive data like secrets.
+	// Progress reported through the progressWriter will be streamed line-by-line
+	// with both LF and CR being valid line terminators.
+	Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) error
 	// Fetch tries to fetch updates from the remote to given directory.
 	// The revspec parameter is optional and specifies that the client is specifically
 	// interested in fetching the provided revspec (example "v2.3.4^0").
@@ -56,6 +74,7 @@ type NewVCSSyncerOpts struct {
 	ReposDir                string
 	CoursierCacheDir        string
 	RecordingCommandFactory *wrexec.RecordingCommandFactory
+	Logger                  log.Logger
 }
 
 func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error) {
@@ -101,7 +120,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 			return nil, err
 		}
 
-		return NewPerforceDepotSyncer(&c, p4Home), nil
+		return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, &c, p4Home), nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
 		if _, err := extractOptions(&c); err != nil {
@@ -161,7 +180,8 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		}
 		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	}
-	return NewGitRepoSyncer(opts.RecordingCommandFactory), nil
+
+	return NewGitRepoSyncer(opts.Logger, opts.RecordingCommandFactory), nil
 }
 
 type notFoundError struct{ error }

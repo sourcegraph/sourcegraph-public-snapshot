@@ -404,3 +404,10 @@
     - path: github.com/sourcegraph/sourcegraph/internal/telemetry
       interfaces:
         - EventsStore
+- filename: cmd/gitserver/internal/integration_tests/mocks.go
+  package: inttests
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
+      interfaces:
+        - RepositoryLocker
+        - RepositoryLock
