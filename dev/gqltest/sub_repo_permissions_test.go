@@ -361,13 +361,9 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 
 func syncUserPerms(t *testing.T, userID, userName string) {
 	t.Helper()
-	err := client.ScheduleUserPermissionsSync(userID)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// Wait up to 30 seconds for Perforce to be added as an authz provider
-	err = gqltestutil.Retry(30*time.Second, func() error {
+	err := gqltestutil.Retry(30*time.Second, func() error {
 		authzProviders, err := client.AuthzProviderTypes()
 		if err != nil {
 			t.Fatal("failed to fetch list of authz providers", err)
@@ -383,6 +379,11 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	})
 	if err != nil {
 		t.Fatal("Waiting for authz providers to be added:", err)
+	}
+
+	err = client.ScheduleUserPermissionsSync(userID)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Wait up to 30 seconds for the user to have permissions synced
