@@ -26,16 +26,16 @@ expression: dumped
    innerface interface {
 // ^^^^^^^^^ definition(Interface) scip-ctags multierror/Group#innerface#
     Another() bool
-//  ^^^^^^^ definition(Method) scip-ctags multierror/Group#innerface#Another().
+//  ^^^^^^^ definition(MethodSpecification) scip-ctags multierror/Group#innerface#Another().
    }
   }
 
   type SomeInterface interface {
 //     ^^^^^^^^^^^^^ definition(Interface) scip-ctags multierror/SomeInterface#
    Something() bool
-// ^^^^^^^^^ definition(Method) scip-ctags multierror/SomeInterface#Something().
+// ^^^^^^^^^ definition(MethodSpecification) scip-ctags multierror/SomeInterface#Something().
    Incredible() int
-// ^^^^^^^^^^ definition(Method) scip-ctags multierror/SomeInterface#Incredible().
+// ^^^^^^^^^^ definition(MethodSpecification) scip-ctags multierror/SomeInterface#Incredible().
   }
 
   type TypeDef uint8
