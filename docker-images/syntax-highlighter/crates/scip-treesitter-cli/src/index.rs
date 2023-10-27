@@ -41,7 +41,10 @@ impl AnalysisMode {
 }
 
 pub enum IndexMode {
+    /// Index only this list of files, without checking file extensions
     Files { list: Vec<String> },
+    /// Discover all files that can be handled by the chosen language
+    /// in the passed location (which has to be a directory)
     Workspace { location: PathBuf },
 }
 
@@ -54,18 +57,16 @@ pub fn index_command(
     options: IndexOptions,
 ) {
     let p = BundledParser::get_parser(&language).unwrap();
-    let canonical_project_root = {
+    let project_root = {
         match index_mode {
-            IndexMode::Files { .. } => project_root
-                .canonicalize()
-                .expect("Failed to canonicalize project root"),
-
-            IndexMode::Workspace { ref location } => location
-                .clone()
-                .canonicalize()
-                .expect("Failed to canonicalize project root"),
+            IndexMode::Files { .. } => project_root,
+            IndexMode::Workspace { ref location } => location.clone(),
         }
     };
+
+    let canonical_project_root = project_root
+        .canonicalize()
+        .expect("Failed to canonicalize project root");
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
