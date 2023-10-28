@@ -36,13 +36,13 @@ import type {
     DiffSinceResult,
     DiffSinceVariables,
     GitCommitFields,
-    RepositoryContributorNodeFields,
     Scalars,
     TreeCommitsResult,
     TreeCommitsVariables,
     TreePageOwnershipNodeFields,
     TreePageOwnershipResult,
     TreePageOwnershipVariables,
+    TreePageRepositoryContributorNodeFields,
     TreePageRepositoryContributorsResult,
     TreePageRepositoryContributorsVariables,
     TreePageRepositoryFields,
@@ -653,7 +653,7 @@ interface QuerySpec {
 }
 
 interface RepositoryContributorNodeProps extends QuerySpec {
-    node: RepositoryContributorNodeFields
+    node: TreePageRepositoryContributorNodeFields
     repoName: string
     sourceType: string
 }
