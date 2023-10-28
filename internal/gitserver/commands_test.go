@@ -204,7 +204,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient().Diff(ctx, DiffOptions{Base: input})
+				i, err := NewClient("test").Diff(ctx, DiffOptions{Base: input})
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -455,7 +455,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 
-	client := NewClient()
+	client := NewClient("test")
 	for label, test := range tests {
 		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
@@ -528,7 +528,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -560,7 +560,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -593,7 +593,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -625,7 +625,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -871,7 +871,7 @@ func TestListTags(t *testing.T) {
 		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
-	client := NewClient()
+	client := NewClient("test")
 	tags, err := client.ListTags(context.Background(), repo)
 	require.Nil(t, err)
 
@@ -932,7 +932,7 @@ func TestMerger_MergeBase(t *testing.T) {
 	defer ResetClientMocks()
 
 	ctx := context.Background()
-	client := NewClient()
+	client := NewClient("test")
 
 	// TODO(sqs): implement for hg
 	// TODO(sqs): make a more complex test case
@@ -1019,7 +1019,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
 
-	client := NewClient()
+	client := NewClient("test")
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1353,7 +1353,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	}
 
 	t.Run("basic", func(t *testing.T) {
-		client := NewClient()
+		client := NewClient("test")
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
 				gitCommands := make([]string, len(tc.commitDates))
@@ -1433,7 +1433,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			want: "2007-01-02T15:04:05Z",
 		},
 	}
-	client := NewClient()
+	client := NewClient("test")
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			gitCommands := make([]string, len(tc.commitDates))
@@ -1591,7 +1591,7 @@ func TestRepository_Commits(t *testing.T) {
 			wantTotal:   2,
 		},
 	}
-	client := NewClient()
+	client := NewClient("test")
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
@@ -2195,7 +2195,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	client := NewClient()
+	client := NewClient("test")
 	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
 	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
@@ -2249,7 +2249,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		client := NewClient()
+		client := NewClient("test")
 		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
@@ -2293,7 +2293,7 @@ func TestCommitDate(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		client := NewClient()
+		client := NewClient("test")
 		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
@@ -2493,7 +2493,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient()
+	client := NewClient("test")
 	readCloser, err := client.ArchiveReader(context.Background(), repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
@@ -2667,7 +2667,7 @@ func TestRead(t *testing.T) {
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
 	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewClient().NewFileReader(ctx, repo, commitID, file)
+	rc, err := NewClient("test").NewFileReader(ctx, repo, commitID, file)
 	if err != nil {
 		checkFn(t, err, nil)
 		return
@@ -2733,7 +2733,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	wantBranches := gitBranches
 	for branch, mergedInto := range wantBranches {
-		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
+		branches, err := NewClient("test").ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
 		require.Nil(t, err)
 		if diff := cmp.Diff(mergedInto, branches); diff != "" {
 			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
@@ -2764,7 +2764,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	commitToWantBranches := gitWantBranches
 	for commit, wantBranches := range commitToWantBranches {
-		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
+		branches, err := NewClient("test").ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
 		require.Nil(t, err)
 
 		sort.Sort(gitdomain.Branches(branches))
@@ -2846,7 +2846,7 @@ func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.
 	t.Helper()
 
 	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := NewClient().ListBranches(context.Background(), repo, options)
+	gotBranches, err := NewClient("test").ListBranches(context.Background(), repo, options)
 	require.Nil(t, err)
 
 	sort.Sort(gitdomain.Branches(wantBranches))
@@ -3276,7 +3276,7 @@ func Test_CommitLog(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, test.extraGitCommands...)
-			logResults, err := NewClient().CommitLog(context.Background(), repo, time.Time{})
+			logResults, err := NewClient("test").CommitLog(context.Background(), repo, time.Time{})
 			if err != nil {
 				require.ErrorContains(t, err, test.wantErr)
 			}

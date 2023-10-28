@@ -484,7 +484,7 @@ func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Fact
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, externalService, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(ctx, gitserver.NewClient(), externalService, cf)
+		return NewPerforceSource(ctx, gitserver.NewClient("batches.perforcesource"), externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}

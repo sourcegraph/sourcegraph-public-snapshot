@@ -354,7 +354,7 @@ type cloudRunServiceBuilder struct {
 
 func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables) (cloudrunv2service.CloudRunV2Service, error) {
 	// TODO Make this fancier, for now this is just a sketch of maybe CD?
-	serviceImageTag, err := vars.Environment.Deploy.ResolveTag()
+	serviceImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
 	if err != nil {
 		return nil, err
 	}

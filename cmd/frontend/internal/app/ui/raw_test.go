@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -93,7 +94,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 123}, nil)
 
-		err := serveRaw(logger, db, gitserver.NewClient())(w, req)
+		err := serveRaw(logger, db, gitserver.NewTestClient(t))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -116,7 +117,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{ID: 123})
 
-		err := serveRaw(logger, db, gitserver.NewClient())(w, req)
+		err := serveRaw(logger, db, gitserver.NewTestClient(t))(w, req)
 		if err == nil {
 			t.Fatal("Want error but got nil")
 		}
@@ -153,7 +154,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(logger, db, gitserver.NewClient())(w, req)
+		err := serveRaw(logger, db, gitserver.NewTestClient(t))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -193,7 +194,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(logger, db, gitserver.NewClient())(w, req)
+		err := serveRaw(logger, db, gitserver.NewTestClient(t))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}

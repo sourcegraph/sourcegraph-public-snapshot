@@ -9,7 +9,6 @@ import { parseUrlOverrideFeatureFlags } from './lib/parseUrlOverrideFeatureFlags
 
 /**
  * Overrides feature flag based on initial URL query parameters
- *
  * @description
  * Enable: "/?feat=my-feature"
  * Disable: "/?feat=-my-feature"
@@ -20,11 +19,11 @@ export const FeatureFlagsLocalOverrideAgent: FC<PropsWithChildren<{}>> = ({ chil
     useEffect(() => {
         try {
             const overrideFeatureFlags = parseUrlOverrideFeatureFlags(location.search)
-            for (const [flagName, value] of Object.entries(overrideFeatureFlags)) {
-                if (!value) {
-                    removeFeatureFlagOverride(flagName)
-                } else {
+            for (const [flagName, value] of overrideFeatureFlags) {
+                if (value !== null) {
                     setFeatureFlagOverride(flagName, value)
+                } else {
+                    removeFeatureFlagOverride(flagName)
                 }
             }
             // Update override counter to notify/update the developer settings

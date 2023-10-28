@@ -161,6 +161,8 @@ func Worker() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
 			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
 
+			shared.GitServer.NewClientGroup(containerName),
+
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 			shared.Batches.NewBatchSpecResolutionDBWorkerStoreGroup(containerName),
