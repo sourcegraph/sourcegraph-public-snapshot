@@ -114,7 +114,8 @@ function getMultipleRetryMutation(jobIds: string[]): string {
     return gql`
         ${CodeInsightsJobFragment}
         mutation RetryCodeInsightsJobs {
-         ${mutations}
+            __typename
+            ${mutations}
         }
     `
 }
@@ -139,7 +140,8 @@ function getMultipleMovetoFrontMutation(jobIds: string[]): string {
     return gql`
         ${CodeInsightsJobFragment}
         mutation MoveToFrontCodeInsightsJobs {
-         ${mutations}
+            __typename
+            ${mutations}
         }
     `
 }
@@ -164,7 +166,8 @@ function getMultipleMovetoBackMutation(jobIds: string[]): string {
     return gql`
         ${CodeInsightsJobFragment}
         mutation MoveToBackCodeInsighsJobs {
-         ${mutations}
+            __typename
+            ${mutations}
         }
     `
 }
