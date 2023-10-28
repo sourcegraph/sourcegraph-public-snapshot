@@ -301,6 +301,10 @@
     - ErrorHandler
     - Finalizer
     - Handler
+- filename: lib/background/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/lib/background
+  interfaces:
+    - Routine
 - filename: internal/oobmigration/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/oobmigration
   interfaces:
