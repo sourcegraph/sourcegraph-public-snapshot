@@ -24,7 +24,7 @@ tasks:
     test:
         bazel:
             # Generate and save the execution log to artifacts
-            bazel_debug_assistance: true
+            bazel_debug_assistance: false
         targets:
             - //...
             - //testing:grpc_backend_integration_test
