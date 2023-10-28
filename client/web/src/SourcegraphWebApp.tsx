@@ -44,7 +44,7 @@ import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import type { AppShellInit } from './storm/app-shell-init'
 import { Layout } from './storm/pages/LayoutPage/LayoutPage'
 import { loader } from './storm/pages/LayoutPage/LayoutPage.loader'
-import { TelemetryRecorderProvider } from './telemetry/TelemetryRecorderProvider'
+import { TelemetryRecorderProvider } from './telemetry'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 

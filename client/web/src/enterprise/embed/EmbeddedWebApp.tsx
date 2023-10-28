@@ -18,7 +18,7 @@ import {
 import '../../SourcegraphWebApp.scss'
 
 import { createPlatformContext } from '../../platform/context'
-import { TelemetryRecorderProvider } from '../../telemetry/TelemetryRecorderProvider'
+import { TelemetryRecorderProvider } from '../../telemetry'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 

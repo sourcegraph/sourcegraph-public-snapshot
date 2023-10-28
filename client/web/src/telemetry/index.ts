@@ -1,6 +1,4 @@
 import type { ApolloClient } from '@apollo/client'
-import { sessionTracker } from 'src/tracking/sessionTracker'
-import { userTracker } from 'src/tracking/userTracker'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
 import {
@@ -10,7 +8,10 @@ import {
     type TelemetryEventMarketingTrackingInput,
 } from '@sourcegraph/telemetry'
 
-import { ApolloTelemetryExporter } from './ApolloTelemetryExporter'
+import { sessionTracker } from '../tracking/sessionTracker'
+import { userTracker } from '../tracking/userTracker'
+
+import { ApolloTelemetryExporter } from './apolloTelemetryExporter'
 
 function getTelemetrySourceClient(): string {
     if (window.context?.codyAppMode) {
