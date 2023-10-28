@@ -38,6 +38,20 @@ func Test_parseCVSS(t *testing.T) {
 			wantSeverity: "",
 			wantErr:      true,
 		},
+		{
+			name:         "Valid CVSS v4.0",
+			cvssVector:   "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
+			wantScore:    "5.1",
+			wantSeverity: "MEDIUM",
+			wantErr:      false,
+		},
+		{
+			name:         "Invalid CVSS v4.0",
+			cvssVector:   "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:N/SC:N/SI:N/SA:N/E:A/E:X",
+			wantScore:    "",
+			wantSeverity: "",
+			wantErr:      true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	gocvss20 "github.com/pandatix/go-cvss/20"
 	gocvss30 "github.com/pandatix/go-cvss/30"
 	gocvss31 "github.com/pandatix/go-cvss/31"
+	gocvss40 "github.com/pandatix/go-cvss/40"
 )
 
 // OSV represents the Open Source Vulnerability format.
@@ -212,6 +213,13 @@ func parseCVSS(cvssVector string) (score string, severity string, err error) {
 			return "", "", err
 		}
 		baseScore = cvss.BaseScore()
+
+	case strings.HasPrefix(cvssVector, "CVSS:4.0"):
+		cvss, err := gocvss40.ParseVector(cleanCvssVector)
+		if err != nil {
+			return "", "", err
+		}
+		baseScore = cvss.Score()
 
 	// CVSS v2 does not have prefix, falls into this condition.
 	default:
