@@ -50,9 +50,6 @@ const SHARED_PLUGINS = [
     'typescript',
     'typescript-operations',
 ]
-
-const PRETTIER = path.join(path.dirname(require.resolve('prettier')), 'bin-prettier.js')
-
 interface Input {
     interfaceNameForOperations: string
     outputPath: string
@@ -105,10 +102,8 @@ export function createCodegenConfig(operations: Input[]): CodegenConfig {
 
     return {
         schema: SCHEMA_PATH,
-        hooks: {
-            afterOneFileWrite: `${PRETTIER} --write`,
-        },
         errorsOnly: true,
+        silent: true,
         config: {
             // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
             arrayInputCoercion: false,
