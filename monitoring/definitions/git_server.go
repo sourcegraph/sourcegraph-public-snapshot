@@ -522,6 +522,9 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+
+			shared.GitServer.NewClientGroup("*"),
+
 			shared.NewDiskMetricsGroup(
 				shared.DiskMetricsGroupOptions{
 					DiskTitle: "repos",

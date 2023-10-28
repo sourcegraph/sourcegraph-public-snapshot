@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -48,7 +49,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
 
 	dir := common.GitDir(t.TempDir())
-	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
+	err := s.Clone(ctx, "repo", remoteURL, common.GitDir(dir), string(dir), io.Discard)
 	require.NoError(t, err)
 
 	depsService.Add("foo@0.0.1")
@@ -375,9 +376,8 @@ func (s *vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bar
 		URL: url.URL{Path: examplePackageURL},
 	}
 	s.configDeps = dependencies
-	cmd, err := s.CloneCommand(context.Background(), &u, bareGitDirectory)
+	err := s.Clone(context.Background(), "repo", &u, common.GitDir(bareGitDirectory), string(bareGitDirectory), io.Discard)
 	assert.Nil(t, err)
-	assert.Nil(t, cmd.Run())
 }
 
 func (s *vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {

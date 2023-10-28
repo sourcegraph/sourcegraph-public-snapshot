@@ -1,6 +1,8 @@
 package client
 
 import (
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/awsbedrock"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai"
@@ -10,15 +12,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Get(endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {
+func Get(
+	logger log.Logger,
+	events *telemetry.EventRecorder,
+	endpoint string,
+	provider conftypes.CompletionsProviderName,
+	accessToken string,
+) (types.CompletionsClient, error) {
 	client, err := getBasic(endpoint, provider, accessToken)
 	if err != nil {
 		return nil, err
 	}
-	return newObservedClient(client), nil
+	return newObservedClient(logger, events, client), nil
 }
 
 func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {

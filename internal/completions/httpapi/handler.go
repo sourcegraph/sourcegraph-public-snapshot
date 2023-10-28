@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -25,6 +26,7 @@ const maxRequestDuration = time.Minute
 
 func newCompletionsHandler(
 	logger log.Logger,
+	events *telemetry.EventRecorder,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
@@ -72,6 +74,8 @@ func newCompletionsHandler(
 		defer done()
 
 		completionClient, err := client.Get(
+			logger,
+			events,
 			completionsConfig.Endpoint,
 			completionsConfig.Provider,
 			completionsConfig.AccessToken,

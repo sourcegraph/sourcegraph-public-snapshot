@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
-        "@org_golang_x_sync//errgroup",
+        "@com_github_sourcegraph_conc//pool",
     ],
 )
 

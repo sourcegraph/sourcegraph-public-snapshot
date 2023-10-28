@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -57,6 +59,7 @@ func TestGetVCSSyncer(t *testing.T) {
 		Repo:                 repo,
 		ReposDir:             tempReposDir,
 		CoursierCacheDir:     tempCoursierCacheDir,
+		Logger:               logtest.Scoped(t),
 	})
 	if err != nil {
 		t.Fatal(err)
