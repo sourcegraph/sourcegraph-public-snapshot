@@ -13,13 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 )
 
-func newObservedClient(inner types.CompletionsClient) *observedClient {
-	observationCtx := observation.NewContext(log.Scoped("completions", "completions client"))
+func newObservedClient(logger log.Logger, events *telemetry.EventRecorder, inner types.CompletionsClient) *observedClient {
+	observationCtx := observation.NewContext(logger.Scoped("completions", "completions client"))
 	ops := newOperations(observationCtx)
 	return &observedClient{
 		inner:  inner,
 		ops:    ops,
-		events: telemetry.NewBestEffortEventRecorder(logger.Scoped("events"), events),
+		events: telemetry.NewBestEffortEventRecorder(logger.Scoped("events", "telemetry events"), events),
 	}
 }
 
