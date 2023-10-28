@@ -24,7 +24,7 @@
     "@sourcegraph/codeintellify": "workspace:*",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
-    "@sourcegraph/telemetry": "^0.10.0",
+    "@sourcegraph/telemetry": "^0.11.0",
     "@sourcegraph/template-parser": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*"
   },

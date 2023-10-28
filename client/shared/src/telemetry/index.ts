@@ -16,27 +16,6 @@ export type TelemetryRecorderProvider = typeof noOptelemetryRecorderProvider
 export type TelemetryRecorder = typeof noOpTelemetryRecorder
 
 /**
- * Features indicate the functionality being tracked.
- *
- * All Cody features must start with `cody.`, for example `cody.myFeature`.
- */
-export type EventFeature =
-    // permissions-center features
-    'permissions-center.repository.sync' | 'permissions-center.user.sync'
-
-/**
- * Actions should denote a generic action within the scope of a feature. Where
- * possible, reuse an existing action.
- */
-export type EventAction = 'trigger' | 'view' | 'cancel'
-
-/**
- * MetadataKey is an allowlist of keys for the safe-for-export metadata parameter.
- * Where possible, reuse an existing key.
- */
-export type MetadataKey = 'durationMs'
-
-/**
  * Events accept billing metadata for ease of categorization in analytics
  * pipelines - this type enumerates known categories.
  */
@@ -64,13 +43,7 @@ export interface TelemetryV2Props {
     telemetryRecorder: TelemetryRecorder
 }
 
-export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
-    EventFeature,
-    EventAction,
-    MetadataKey,
-    BillingCategory,
-    BillingProduct
-> {
+export class NoOpTelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingCategory, BillingProduct> {
     constructor(opts?: { errorOnRecord?: boolean }) {
         const processors: TelemetryProcessor[] = []
         if (opts?.errorOnRecord) {

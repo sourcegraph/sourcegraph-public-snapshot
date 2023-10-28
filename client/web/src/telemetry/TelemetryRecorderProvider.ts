@@ -2,13 +2,7 @@ import type { ApolloClient } from '@apollo/client'
 import { sessionTracker } from 'src/tracking/sessionTracker'
 import { userTracker } from 'src/tracking/userTracker'
 
-import type {
-    BillingCategory,
-    BillingProduct,
-    EventAction,
-    EventFeature,
-    MetadataKey,
-} from '@sourcegraph/shared/src/telemetry'
+import type { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
 import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     MarketingTrackingTelemetryProcessor,
@@ -32,13 +26,7 @@ function getTelemetrySourceClient(): string {
  * TelemetryRecorderProvider is the default provider implementation for the
  * Sourcegraph web app.
  */
-export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
-    EventFeature,
-    EventAction,
-    MetadataKey,
-    BillingCategory,
-    BillingProduct
-> {
+export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<BillingCategory, BillingProduct> {
     constructor(
         apolloClient: ApolloClient<object>,
         options: {
