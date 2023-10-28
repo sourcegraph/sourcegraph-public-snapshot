@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client'
 
 import { Icon } from '@sourcegraph/wildcard/src'
 
-import { getSelectedToken } from './token-selection/token-selection'
+import { getSelectedToken } from './codeintel/token-selection'
 
 enum CharCode {
     /**

@@ -10,8 +10,8 @@ import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../componen
 import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../../CodeMirrorBlob'
 import { blobPropsFacet } from '../index'
 import { CodeMirrorContainer } from '../react-interop'
-import { TooltipViewOptions } from '../token-selection/api'
-import { pinnedLocation } from '../token-selection/pin'
+import { TooltipViewOptions } from '../codeintel/api'
+import { pinnedLocation } from '../codeintel/pin'
 import { zeroToOneBasedPosition } from '../utils'
 
 type Unwrap<T> = T extends Observable<infer U> ? U : never
