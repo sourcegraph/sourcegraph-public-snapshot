@@ -1,4 +1,4 @@
-import { Facet, StateEffect, StateField, Transaction } from '@codemirror/state'
+import { Facet, RangeSetBuilder, StateEffect, StateField, Transaction } from '@codemirror/state'
 import {
     Tooltip,
     showTooltip as showCodeMirrorTooltip,
@@ -6,10 +6,12 @@ import {
     PluginValue,
     ViewUpdate,
     ViewPlugin,
+    Decoration,
 } from '@codemirror/view'
 import { Observable, Subscription, isObservable } from 'rxjs'
 
 import { CodeIntelTooltipPosition } from './api'
+import { codeIntelDecorations } from './decorations'
 
 type TooltipWithEnd = Tooltip & { end: number }
 export type TooltipSource = TooltipWithEnd | Observable<TooltipWithEnd | null>
@@ -31,7 +33,7 @@ const tooltipTheme = EditorView.theme({
     },
 })
 
-export const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
+const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
     combine(values) {
         const seen = new Set<number>()
         const result = []
@@ -45,6 +47,17 @@ export const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd
     },
     enables: self => [
         tooltipTheme,
+        // Highlight tokens with tooltips
+        codeIntelDecorations.compute([self], state => {
+            let decorations = new RangeSetBuilder<Decoration>()
+            const tooltips = state.facet(self)
+            for (const { pos, end } of tooltips) {
+                decorations.add(pos, end, Decoration.mark({ class: `selection-highlight` }))
+            }
+
+            return decorations.finish()
+        }),
+
         // Show tooltips
         showCodeMirrorTooltip.computeN([self], state => state.facet(self)),
     ],
@@ -91,15 +104,15 @@ class CodeIntelState {
         }
 
         // Update tooltips
-        const newTooltips = state.tooltips.map(tooltip => tooltip.update(tr))
-        if (
-            newTooltips.length !== this.tooltips.length ||
-            newTooltips.some((tooltip, i) => tooltip !== this.tooltips[i])
-        ) {
-            state = new CodeIntelState(newTooltips)
-        }
+        state = new CodeIntelState(state.tooltips.map(tooltip => tooltip.update(tr)))
+        return this.eq(state) ? this : state
+    }
 
-        return state
+    eq(other: CodeIntelState): boolean {
+        return (
+            this.tooltips.length === other.tooltips.length &&
+            this.tooltips.every((tooltip, i) => tooltip === other.tooltips[i])
+        )
     }
 
     private addOrRemoveTooltips(newTooltips: readonly CodeIntelTooltip[]): CodeIntelState {

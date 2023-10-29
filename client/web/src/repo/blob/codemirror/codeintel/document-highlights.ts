@@ -1,8 +1,8 @@
-import { RangeSetBuilder, type Extension, StateField, StateEffect } from '@codemirror/state'
+import { StateField, StateEffect, Facet, Transaction } from '@codemirror/state'
 import { Decoration, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
 import { getCodeIntelAPI } from './api'
-import { getSelectedToken } from './token-selection'
+import { codeIntelDecorations } from './decorations'
 
 interface Range {
     from: number
@@ -11,22 +11,28 @@ interface Range {
 
 const DocumentHighlightLoader = ViewPlugin.fromClass(
     class implements PluginValue {
+        private loading = new Set<Range>()
         constructor(private view: EditorView) {}
 
         update(update: ViewUpdate) {
-            const focusedRange = getSelectedToken(update.state)
-            if (focusedRange !== getSelectedToken(update.startState)) {
-                this.fetchHighlights(focusedRange)
+            const highlights = update.state.field(documentHighlights)
+            if (highlights !== update.startState.field(documentHighlights)) {
+                for (const highlight of highlights) {
+                    if (highlight.loading) {
+                        this.fetchHighlights(highlight.range)
+                    }
+                }
             }
         }
 
-        private fetchHighlights(range: Range | null) {
-            if (range) {
+        private fetchHighlights(range: Range) {
+            if (!this.loading.has(range)) {
                 getCodeIntelAPI(this.view.state)
                     .getDocumentHighlights(this.view.state, range)
                     .then(
                         highlights => {
-                            this.view.dispatch({ effects: setDocumentHighlights.of({ target: range, highlights }) })
+                            this.view.dispatch({ effects: setDocumentHighlights.of({ range: range, highlights }) })
+                            this.loading.delete(range)
                         },
                         () => {}
                     )
@@ -36,45 +42,64 @@ const DocumentHighlightLoader = ViewPlugin.fromClass(
 )
 
 const documentHighlightDecoration = Decoration.mark({ class: 'sourcegraph-document-highlight' })
-const setDocumentHighlights = StateEffect.define<{ target: Range; highlights: Range[] }>()
+const setDocumentHighlights = StateEffect.define<{ range: Range; highlights: Range[] }>()
 
-const documentHighlights = StateField.define<{ target: Range | null; highlights: Range[] }>({
+class Highlights {
+    constructor(public range: Range, public highlights: Range[], public loading: boolean) {}
+
+    update(transaction: Transaction) {
+        for (const effect of transaction.effects) {
+            if (effect.is(setDocumentHighlights) && effect.value.range === this.range) {
+                return new Highlights(this.range, effect.value.highlights, false)
+            }
+        }
+        return this
+    }
+}
+
+const documentHighlights = StateField.define<Highlights[]>({
     create(state) {
-        return { target: getSelectedToken(state), highlights: [] }
+        return state.facet(showDocumentHighlights).map(range => new Highlights(range, [], true))
     },
 
     update(value, transaction) {
-        const selectedToken = getSelectedToken(transaction.state)
-        if (selectedToken !== getSelectedToken(transaction.startState)) {
-            // We have to clear the highlights in the same transaction the selected token
-            // changes. Otherwise the (new) selected token will loose focus when selection changes
-            // to a token that was previously highlighted, breaking keyboard navigation
-            return { target: selectedToken, highlights: [] }
+        let newValue = value
+        const newRanges = transaction.state.facet(showDocumentHighlights)
+        if (newRanges !== transaction.startState.facet(showDocumentHighlights)) {
+            newValue = newRanges.map(range => {
+                let seenAt = -1
+                for (let i = 0; i < value.length; i++) {
+                    if (range === value[i].range) {
+                        seenAt = i
+                    }
+                }
+                return seenAt > -1 ? value[seenAt] : new Highlights(range, [], true)
+            })
         }
 
-        for (const effect of transaction.effects) {
-            if (effect.is(setDocumentHighlights) && effect.value.target === value.target) {
-                return effect.value
-            }
-        }
-        return value
+        newValue = newValue.map(value => value.update(transaction))
+
+        return value.length === newValue.length && value.every((highlights, i) => highlights === newValue[i])
+            ? value
+            : newValue
     },
 
     provide(field) {
-        return EditorView.decorations.compute([field], state => {
-            const builder = new RangeSetBuilder<Decoration>()
-            const { target, highlights } = state.field(field) ?? { target: null, highlights: [] }
-            if (target) {
-                for (const highlight of highlights.sort((a, b) => a.from - b.from)) {
-                    if (highlight.from !== target.from || highlight.to !== target.to) {
-                        // Focused occurrence is already highlighted.
-                        builder.add(highlight.from, highlight.to, documentHighlightDecoration)
-                    }
-                }
-            }
-            return builder.finish()
-        })
+        return codeIntelDecorations.compute([field], state =>
+            Decoration.set(
+                state
+                    .field(field)
+                    .flatMap(entry =>
+                        entry.highlights.map(highlight =>
+                            documentHighlightDecoration.range(highlight.from, highlight.to)
+                        )
+                    ),
+                true
+            )
+        )
     },
 })
 
-export const documentHighlightsExtension: Extension = [DocumentHighlightLoader, documentHighlights]
+export const showDocumentHighlights: Facet<Range> = Facet.define<Range>({
+    enables: [documentHighlights, DocumentHighlightLoader],
+})

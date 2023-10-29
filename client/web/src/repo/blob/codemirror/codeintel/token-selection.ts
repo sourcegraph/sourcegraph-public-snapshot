@@ -7,6 +7,7 @@ import {
     StateField,
     Transaction,
     TransactionSpec,
+    Range,
 } from '@codemirror/state'
 import { Decoration, EditorView, keymap } from '@codemirror/view'
 import { concat, from, of } from 'rxjs'
@@ -15,9 +16,11 @@ import { timeoutWith } from 'rxjs/operators'
 import { syntaxHighlight } from '../highlight'
 import { positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
-import { positionToOffset, preciseOffsetAtCoords } from '../utils'
+import { positionToOffset } from '../utils'
 
 import { getCodeIntelAPI } from './api'
+import { ignoreDecorations } from './decorations'
+import { showDocumentHighlights } from './document-highlights'
 import { TooltipSource, showTooltip } from './tooltips'
 
 const tokenSelection = Annotation.define<boolean>()
@@ -55,9 +58,8 @@ function hideTooltip(view: EditorView): void {
     view.dispatch({ effects: setTooltipSource.of(null) })
 }
 
-export const selectedToken = StateField.define<{
-    from: number
-    to: number
+const selectedToken = StateField.define<{
+    range: { from: number; to: number }
     tooltipSource?: TooltipSource | null
 } | null>({
     create() {
@@ -65,12 +67,17 @@ export const selectedToken = StateField.define<{
     },
     update(value, transaction) {
         if (shouldUpdateSelectedToken(transaction)) {
-            const range = getCodeIntelAPI(transaction.state).findOccurrenceRangeAt(
-                transaction.newSelection.main.from,
-                transaction.state
-            )
-            if (range) {
-                value = range
+            const offset = transaction.newSelection.main.from
+            if (!value || offset < value.range.from || value.range.to < offset) {
+                const range = getCodeIntelAPI(transaction.state).findOccurrenceRangeAt(
+                    transaction.newSelection.main.from,
+                    transaction.state
+                )
+                if (range) {
+                    value = { range }
+                } else if (value) {
+                    value = { ...value, tooltipSource: null }
+                }
             }
         }
         if (value) {
@@ -88,8 +95,25 @@ export const selectedToken = StateField.define<{
          */
         showTooltip.computeN([self], state => {
             const field = state.field(self)
-            return field?.tooltipSource ? [{ range: field, key: 'selection', source: field.tooltipSource }] : []
+            return field?.tooltipSource ? [{ range: field.range, key: 'selection', source: field.tooltipSource }] : []
         }),
+
+        /**
+         * Show document highlights for selected token.
+         */
+        showDocumentHighlights.computeN([self], state => {
+            const field = state.field(self)
+            return field ? [field.range] : []
+        }),
+
+        /**
+         * We can't add/remove any decorations inside the selected token, because
+         * that causes the node to be recreated and loosing focus, which breaks
+         * token keyboard navigation.
+         * This facet should be used by all codeIntel extensions to ensure that any
+         * conflicting decoration is removed.
+         */
+        ignoreDecorations.from(self, value => value?.range ?? null),
 
         /**
          * This extension is responsible for keeping the focus inside the editor so
@@ -104,10 +128,10 @@ export const selectedToken = StateField.define<{
          *   - token is scrolled out of view -> editor content is selected
          */
         EditorView.updateListener.of(update => {
-            const range = update.state.field(self)
+            const range = update.state.field(self)?.range
             const view = update.view
             if (range) {
-                if (range !== update.startState.field(self)) {
+                if (range !== update.startState.field(self)?.range) {
                     view.contentDOM.querySelector<HTMLElement>('.interactive-occurrence')?.focus()
                 }
                 if (
@@ -125,15 +149,17 @@ export const selectedToken = StateField.define<{
         // ensuring that it's not broken up across multiple decorations (e.g. by search highlights)
         Prec.lowest(
             EditorView.decorations.compute([self, 'selection'], state => {
-                const selectedRange = state.field(self)
+                const selectedRange = state.field(self)?.range
                 if (!selectedRange) {
                     return Decoration.none
                 }
-                const decorations: Decoration[] = [interactiveTokenDecoration]
+                const decorations: Range<Decoration>[] = [
+                    interactiveTokenDecoration.range(selectedRange.from, selectedRange.to),
+                ]
                 if (shouldApplyFocusStyles(state, selectedRange)) {
-                    decorations.unshift(focusedTokenDecoration)
+                    decorations.unshift(focusedTokenDecoration.range(selectedRange.from, selectedRange.to))
                 }
-                return Decoration.set(decorations.map(d => d.range(selectedRange.from, selectedRange.to)))
+                return Decoration.set(decorations, true)
             })
         ),
 
@@ -166,11 +192,14 @@ export const selectedToken = StateField.define<{
                         return true
                     }
 
-                    const tooltip$ = from(getCodeIntelAPI(view.state).getHoverTooltip(view.state, selected))
+                    const tooltip$ = from(getCodeIntelAPI(view.state).getHoverTooltip(view.state, selected.range))
                     view.dispatch({
                         effects: setTooltipSource.of(
                             tooltip$.pipe(
-                                timeoutWith(50, concat(of(new LoadingTooltip(selected.from, selected.to)), tooltip$))
+                                timeoutWith(
+                                    50,
+                                    concat(of(new LoadingTooltip(selected.range.from, selected.range.to)), tooltip$)
+                                )
                             )
                         ),
                     })
@@ -229,7 +258,7 @@ export const selectedToken = StateField.define<{
             keydown: (event: KeyboardEvent, view: EditorView): boolean => {
                 switch (event.key) {
                     case 'ArrowLeft': {
-                        const from = view.state.field(self)?.from || view.viewport.from
+                        const from = view.state.field(self)?.range.from || view.viewport.from
                         const position = positionAtCmPosition(view.state.doc, from)
                         const table = view.state.facet(syntaxHighlight)
                         const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
@@ -243,7 +272,7 @@ export const selectedToken = StateField.define<{
                         return true
                     }
                     case 'ArrowRight': {
-                        const from = view.state.field(self)?.from || view.viewport.from
+                        const from = view.state.field(self)?.range.from || view.viewport.from
                         const position = positionAtCmPosition(view.state.doc, from)
                         const table = view.state.facet(syntaxHighlight)
                         const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
@@ -257,7 +286,7 @@ export const selectedToken = StateField.define<{
                         return true
                     }
                     case 'ArrowUp': {
-                        const from = view.state.field(self)?.from || view.viewport.from
+                        const from = view.state.field(self)?.range.from || view.viewport.from
                         const position = positionAtCmPosition(view.state.doc, from)
                         const table = view.state.facet(syntaxHighlight)
                         for (let line = position.line - 1; line >= 0; line--) {
@@ -271,7 +300,7 @@ export const selectedToken = StateField.define<{
                         return true
                     }
                     case 'ArrowDown': {
-                        const from = view.state.field(self)?.from || view.viewport.from
+                        const from = view.state.field(self)?.range.from || view.viewport.from
                         const position = positionAtCmPosition(view.state.doc, from)
                         const table = view.state.facet(syntaxHighlight)
                         for (let line = position.line + 1; line < table.lineIndex.length; line++) {
@@ -290,26 +319,12 @@ export const selectedToken = StateField.define<{
                     }
                 }
             },
-
-            /**
-             * This extension closes focus-related tooltips when selection moves elsewhere.
-             */
-            click(event, view) {
-                const offset = preciseOffsetAtCoords(view, event)
-                if (offset) {
-                    const range = getCodeIntelAPI(view.state).findOccurrenceRangeAt(offset, view.state)
-                    if (range && range?.from === view.state.field(self)?.from) {
-                        return
-                    }
-                }
-                hideTooltip(view)
-            },
         }),
     ],
 })
 
 export function getSelectedToken(state: EditorState): { from: number; to: number } | null {
-    return state.field(selectedToken)
+    return state.field(selectedToken)?.range ?? null
 }
 
 export function setSelection(anchor: number): TransactionSpec {
