@@ -5,6 +5,7 @@ load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
 load("//dev:eslint.bzl", "eslint_test_with_types", "get_client_package_path")
 load(":sass.bzl", _sass = "sass")
 load(":babel.bzl", _babel = "babel")
@@ -133,5 +134,16 @@ def jest_test(name, data = [], **kwargs):
         config = kwargs.pop("config", "//:jest_config"),
         snapshots = kwargs.pop("snapshots", True),
         data = data + native.glob(["**/__fixtures__/**/*"]),
+        **kwargs
+    )
+
+def ts_binary(name, entry_point, data = [], env = {}, **kwargs):
+    """A wrapper around js_binary that invokes a TypeScript entrypoint using ts-node."""
+    js_binary(
+        name = name,
+        entry_point = entry_point,
+        data = data + ["//:node_modules/ts-node"],
+        env = dict(env, **{"TS_NODE_TRANSPILE_ONLY": "1"}),
+        node_options = ["--require", "ts-node/register"],
         **kwargs
     )

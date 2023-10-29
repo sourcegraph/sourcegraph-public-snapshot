@@ -45,12 +45,6 @@ To install it, [see the instructions](../../setup/quickstart.md).
     pnpm generate
     ```
 
-    To regenerate on file change:
-
-    ```sh
-    pnpm watch-generate
-    ```
-
 ### Storybook
 
 Storybook is used to work on the components in isolation. The latest version is deployed at http://storybook.sgdev.org/.

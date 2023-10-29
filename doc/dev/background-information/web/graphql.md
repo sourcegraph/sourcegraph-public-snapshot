@@ -14,7 +14,7 @@ Each query must have a globally unique name as per the [GraphQL specification](h
 
 Using each unique query, we can generate specific types so you can receive autocompletion, syntax highlighting, hover tooltips and validation in your IDE.
 
-Once you have built your query, `graphql-codegen` will generate the correct request and response types. This process should happen automatically through local development, you can also manually trigger this by running `pnpm generate` or `pnpm watch-generate`. Since the generator is lazy and won't generate types for fields that aren't used, if you're adding a new field then you **must** write at least one query that actually uses the field before running the generator.
+Once you have built your query, `graphql-codegen` will generate the correct request and response types. This process should happen automatically through local development, you can also manually trigger this by running `pnpm generate`. Since the generator is lazy and won't generate types for fields that aren't used, if you're adding a new field then you **must** write at least one query that actually uses the field before running the generator.
 
 Using a `useQuery` hook, we can easily fire a request and handle the response correctly.
 

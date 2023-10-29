@@ -36,3 +36,17 @@ export async function build(): Promise<void> {
         await new Promise(() => {}) // wait forever
     }
 }
+
+if (require.main === module) {
+    async function main(args: string[]): Promise<void> {
+        if (args.length !== 0) {
+            throw new Error('Usage: (no options)')
+        }
+        await build()
+    }
+    // eslint-disable-next-line unicorn/prefer-top-level-await
+    main(process.argv.slice(2)).catch(error => {
+        console.error(error)
+        process.exit(1)
+    })
+}
