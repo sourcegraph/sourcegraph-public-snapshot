@@ -1,82 +1,74 @@
-import {
-    EditorState,
-    Extension,
-    Facet,
-    RangeSetBuilder,
-    StateEffect,
-    StateField,
-    Transaction,
-    TransactionSpec,
-} from '@codemirror/state'
+import { Facet, StateEffect, StateField, Transaction } from '@codemirror/state'
 import {
     Tooltip,
     showTooltip as showCodeMirrorTooltip,
     EditorView,
     PluginValue,
     ViewUpdate,
-    getTooltip,
-    TooltipView,
     ViewPlugin,
-    Decoration,
 } from '@codemirror/view'
+import { Observable, Subscription, isObservable } from 'rxjs'
 
-import { LoadingTooltip } from '../tooltips/LoadingTooltip'
+import { CodeIntelTooltipPosition } from './api'
 
-import { getCodeIntelAPI, CodeIntelTooltipPosition } from './api'
-import { selectedToken } from './token-selection'
+type TooltipWithEnd = Tooltip & { end: number }
+export type TooltipSource = TooltipWithEnd | Observable<TooltipWithEnd | null>
 
-const setTooltipRange = StateEffect.define<{ key: unknown; range: Range | null }>()
-const setTooltip = StateEffect.define<{ state: TooltipState; tooltip: Tooltip | null }>()
-const showTooltipFor = StateEffect.define<{ key: unknown; showLoadingTooltip?: boolean }>()
-const hideTooltipFor = StateEffect.define<{ range?: Range; key?: unknown }>()
-
-type Range = CodeIntelTooltipPosition['range']
+export interface CodeIntelTooltip {
+    range: CodeIntelTooltipPosition
+    source: TooltipSource
+    key: string
+}
 
 enum Status {
-    HIDDEN,
     PENDING,
-    VISIBLE,
+    DONE,
 }
 
-function isEqual(rangeA: Range, rangeB: Range) {
-    return rangeA.to === rangeB.to && rangeA.from === rangeB.from
-}
+const tooltipTheme = EditorView.theme({
+    '.cm-tooltip.sg-code-intel-hovercard': {
+        border: 'unset',
+    },
+})
 
-export class TooltipState {
+export const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
+    combine(values) {
+        const seen = new Set<number>()
+        const result = []
+        for (const value of values) {
+            if (value && !seen.has(value.pos)) {
+                seen.add(value.pos)
+                result.push(value)
+            }
+        }
+        return result.sort((a, b) => a.pos - b.end)
+    },
+    enables: self => [
+        tooltipTheme,
+        // Show tooltips
+        showCodeMirrorTooltip.computeN([self], state => state.facet(self)),
+    ],
+})
+
+const setTooltip = StateEffect.define<{ source: Observable<TooltipWithEnd>; tooltip: TooltipWithEnd | null }>()
+
+export class TooltipLoadingState {
     public visible: boolean
 
     constructor(
-        public position: CodeIntelTooltipPosition,
+        public codeIntelTooltip: CodeIntelTooltip,
         public status: Status,
-        public tooltip: Tooltip | null = null
+        public tooltip: TooltipWithEnd | null = null
     ) {
-        this.visible = !!tooltip && (status === Status.VISIBLE || status === Status.PENDING)
+        this.visible = !!tooltip
     }
 
-    update(tr: Transaction): TooltipState {
-        let state: TooltipState = this
+    update(tr: Transaction): TooltipLoadingState {
+        let state: TooltipLoadingState = this
 
         for (const effect of tr.effects) {
-            if (effect.is(setTooltip) && effect.value.state === this && state.status !== Status.HIDDEN) {
-                state = new TooltipState(
-                    state.position,
-                    effect.value.tooltip ? Status.VISIBLE : Status.HIDDEN,
-                    effect.value.tooltip ?? state.tooltip
-                )
-            } else if (effect.is(showTooltipFor) && !this.visible && state.position.key === effect.value.key) {
-                state = new TooltipState(
-                    state.position,
-                    state.tooltip ? Status.VISIBLE : Status.PENDING,
-                    state.tooltip ??
-                        (effect.value.showLoadingTooltip ? new LoadingTooltip(state.position.range.from) : null)
-                )
-            } else if (
-                effect.is(hideTooltipFor) &&
-                (effect.value.key === state.position.key ||
-                    (effect.value.range && isEqual(effect.value.range, state.position.range))) &&
-                state.status !== Status.HIDDEN
-            ) {
-                state = new TooltipState(state.position, Status.HIDDEN, state.tooltip)
+            if (effect.is(setTooltip) && effect.value.source === this.codeIntelTooltip.source) {
+                state = new TooltipLoadingState(state.codeIntelTooltip, Status.DONE, effect.value.tooltip)
             }
         }
 
@@ -85,16 +77,16 @@ export class TooltipState {
 }
 
 class CodeIntelState {
-    constructor(public tooltips: TooltipState[]) {}
+    constructor(public tooltips: TooltipLoadingState[]) {}
 
-    static create(positions: readonly CodeIntelTooltipPosition[]) {
-        return new CodeIntelState(positions.map(position => new TooltipState(position, Status.PENDING)))
+    static create(tooltips: readonly CodeIntelTooltip[]) {
+        return new CodeIntelState(tooltips.map(tooltip => new TooltipLoadingState(tooltip, Status.PENDING)))
     }
 
     update(tr: Transaction): CodeIntelState {
         let state: CodeIntelState = this
-        const newPositions = tr.state.facet(showTooltips)
-        if (newPositions !== tr.startState.facet(showTooltips)) {
+        const newPositions = tr.state.facet(showTooltip)
+        if (newPositions !== tr.startState.facet(showTooltip)) {
             state = state.addOrRemoveTooltips(newPositions)
         }
 
@@ -110,223 +102,94 @@ class CodeIntelState {
         return state
     }
 
-    private addOrRemoveTooltips(positions: readonly CodeIntelTooltipPosition[]): CodeIntelState {
-        let changed = false
-        let tooltips = this.tooltips.filter(tooltip => {
-            const keep = positions.some(position => position === tooltip.position)
-            changed = changed || !keep
-            return keep
-        })
-
-        for (const position of positions) {
-            if (!this.tooltips.some(tooltip => tooltip.position === position)) {
-                changed = true
-                tooltips.push(new TooltipState(position, Status.PENDING))
-            }
-        }
-
-        return changed ? new CodeIntelState(tooltips) : this
-    }
-
-    pendingTooltips() {
-        return this.tooltips.filter(tooltips => tooltips.status === Status.PENDING)
-    }
-
-    getTooltip(key: unknown): TooltipState | null {
-        return this.tooltips.find(tooltip => tooltip.position.key === key) ?? null
-    }
-}
-
-export function getTooltipState(state: EditorState, key: unknown): TooltipState | null {
-    return state.field(tooltipLoadingState).getTooltip(key) ?? null
-}
-
-function isOffsetRange(offset: number, range: { from: number; to: number }): boolean {
-    return range.from <= offset && offset <= range.to
-}
-
-export function hasTooltipAtOffset(state: EditorState, offset: number, key?: unknown) {
-    return state
-        .field(tooltipLoadingState)
-        .tooltips.some(
-            tooltip =>
-                (!key || (tooltip.position.key === key && tooltip.visible)) &&
-                isOffsetRange(offset, tooltip.position.range)
+    private addOrRemoveTooltips(newTooltips: readonly CodeIntelTooltip[]): CodeIntelState {
+        return new CodeIntelState(
+            newTooltips.map(tooltip => {
+                let seenAt = -1
+                for (let i = 0; i < this.tooltips.length; i++) {
+                    if (tooltip === this.tooltips[i].codeIntelTooltip) {
+                        seenAt = i
+                    }
+                }
+                return seenAt > -1
+                    ? this.tooltips[seenAt]
+                    : new TooltipLoadingState(
+                          tooltip,
+                          isObservable(tooltip.source) ? Status.PENDING : Status.DONE,
+                          isObservable(tooltip.source) ? null : tooltip.source
+                      )
+            })
         )
-}
+    }
 
-export function getTooltipViewFor(view: EditorView, key: unknown): TooltipView | null {
-    const tooltip = view.state
-        .field(tooltipLoadingState)
-        .tooltips.find(tooltip => tooltip.position.key === key)?.tooltip
-    return tooltip ? getTooltip(view, tooltip) : null
+    dynamicSources(): Observable<TooltipWithEnd>[] {
+        return this.tooltips
+            .filter(tooltip => isObservable(tooltip.codeIntelTooltip.source))
+            .map(tooltip => tooltip.codeIntelTooltip.source as Observable<TooltipWithEnd>)
+    }
 }
-
-export function showCodeIntelTooltipAtRange(
-    view: EditorView,
-    range: Range,
-    key?: unknown | boolean,
-    showLoadingTooltip?: boolean
-): void {
-    // TODO: preload data
-    view.dispatch({
-        effects: [
-            setTooltipRange.of({ range, key }),
-            showTooltipFor.of({ key, showLoadingTooltip: showLoadingTooltip }),
-        ],
-    })
-}
-
-export function hideTooltipForKey(key: unknown): TransactionSpec {
-    return { effects: [hideTooltipFor.of({ key })] }
-}
-
-const tooltipTheme = EditorView.theme({
-    '.cm-tooltip.sg-code-intel-hovercard': {
-        border: 'unset',
-    },
-})
 
 /**
  * {@link StateField} storing focused (selected), hovered and pinned {@link Occurrence}s and {@link Tooltip}s associate with them.
  */
 const tooltipLoadingState = StateField.define<CodeIntelState>({
     create(state) {
-        return CodeIntelState.create(state.facet(showTooltips))
+        return CodeIntelState.create(state.facet(showTooltip))
     },
     update(value, transaction) {
         return value.update(transaction)
     },
     provide(self) {
         return [
-            tooltipTheme,
-
             // View plugin responsible for fetching tooltip content
             ViewPlugin.fromClass(
                 class TooltipLoader implements PluginValue {
-                    private pendingTooltips = new Set<TooltipState>()
+                    private tooltips = new Map<Observable<Tooltip>, Subscription>()
 
                     constructor(private view: EditorView) {
-                        for (const tooltip of view.state.field(self).pendingTooltips()) {
-                            this.loadTooltip(tooltip)
+                        for (const source of view.state.field(self).dynamicSources()) {
+                            this.loadTooltip(source)
                         }
                     }
 
                     update(update: ViewUpdate) {
-                        const state = update.state.field(self)
-                        if (state.tooltips !== update.startState.field(self).tooltips) {
-                            for (const tooltip of state.pendingTooltips()) {
-                                if (!this.pendingTooltips.has(tooltip)) {
-                                    this.loadTooltip(tooltip)
+                        const loadingState = update.state.field(self)
+                        if (loadingState !== update.startState.field(self)) {
+                            const dynamicSources = loadingState.dynamicSources()
+                            for (const [source, subscription] of this.tooltips) {
+                                if (!dynamicSources.some(dynamicSource => dynamicSource === source)) {
+                                    subscription.unsubscribe()
+                                    this.tooltips.delete(source)
+                                }
+                            }
+
+                            for (const source of dynamicSources) {
+                                if (!this.tooltips.has(source)) {
+                                    this.loadTooltip(source)
                                 }
                             }
                         }
                     }
 
-                    private async loadTooltip(tooltipState: TooltipState): Promise<void> {
-                        this.pendingTooltips.add(tooltipState)
-                        const tooltip = await getCodeIntelAPI(this.view.state).getHoverTooltip(
-                            this.view.state,
-                            tooltipState.position
+                    private async loadTooltip(source: Observable<TooltipWithEnd>): Promise<void> {
+                        this.tooltips.set(
+                            source,
+                            source.subscribe(tooltip => {
+                                this.view.dispatch({ effects: setTooltip.of({ source, tooltip }) })
+                            })
                         )
-                        this.view.dispatch({ effects: setTooltip.of({ state: tooltipState, tooltip }) })
-                        this.pendingTooltips.delete(tooltipState)
                     }
                 }
             ),
+
+            uniqueTooltips.computeN([self], state => state.field(self).tooltips.map(tooltip => tooltip.tooltip)),
         ]
     },
-})
-
-const uniqueTooltips = Facet.define<TooltipState>({
-    combine(values) {
-        return [...values].sort((a, b) => a.position.range.from - b.position.range.from)
-    },
-    enables: self => [
-        // Highlight tokens with tooltips
-        EditorView.decorations.compute([self, selectedToken], state => {
-            let decorations = new RangeSetBuilder<Decoration>()
-            const tooltips = state.facet(self)
-            const selectedRange = state.field(selectedToken)
-            for (const {
-                position: { range, key },
-            } of tooltips) {
-                // We shouldn't add/remove any decorations inside the selected token, because
-                // that causes the node to be recreated and loosing focus, which breaks
-                // token keyboard navigation.
-                if (!selectedRange || !isEqual(range, selectedRange)) {
-                    decorations.add(
-                        range.from,
-                        range.to,
-                        Decoration.mark({ class: `selection-highlight selection-highlight-${key}` })
-                    )
-                }
-            }
-
-            return decorations.finish()
-        }),
-
-        // Show tooltips
-        showCodeMirrorTooltip.computeN([self], state => state.facet(self).map(({ tooltip }) => tooltip)),
-    ],
 })
 
 /**
  * Facet for registring where to show CodeIntel tooltips.
  */
-export const showTooltips = Facet.define<CodeIntelTooltipPosition>({
-    combine(values) {
-        const seen = new Set<unknown>()
-        return values.filter(value => {
-            if (seen.has(value.key)) {
-                return false
-            }
-            seen.add(value.key)
-            return true
-        })
-    },
+export const showTooltip: Facet<CodeIntelTooltip> = Facet.define<CodeIntelTooltip>({
+    enables: [tooltipLoadingState],
 })
-
-/**
- * Field for keeping track of dynamic tooltip positions (e.g. hover).
- */
-const dynamicTooltips = StateField.define<CodeIntelTooltipPosition[]>({
-    create() {
-        return []
-    },
-    update(tooltips, transaction) {
-        for (const effect of transaction.effects) {
-            if (effect.is(setTooltipRange)) {
-                const newTooltip = effect.value
-                if (tooltips.some(tooltip => tooltip.key === newTooltip.key)) {
-                    tooltips = tooltips.filter(tooltip => tooltip.key !== newTooltip.key)
-                }
-                if (newTooltip.range !== null) {
-                    tooltips = [...tooltips, newTooltip as CodeIntelTooltipPosition]
-                }
-            }
-        }
-        return tooltips
-    },
-    provide: self => showTooltips.computeN([self], state => state.field(self)),
-})
-
-export function tooltipsExtension(options: { tooltipPriority: unknown[] }): Extension {
-    const { tooltipPriority } = options
-    return [
-        tooltipLoadingState,
-        dynamicTooltips,
-        uniqueTooltips.computeN([tooltipLoadingState], state => {
-            const tooltips: Map<number, TooltipState> = new Map()
-            for (const tooltip of Array.from(state.field(tooltipLoadingState).tooltips).sort(
-                (a, b) => tooltipPriority.indexOf(a.position.key) - tooltipPriority.indexOf(b.position.key)
-            )) {
-                if (tooltip.visible && tooltip.tooltip && !tooltips.has(tooltip.position.range.from)) {
-                    tooltips.set(tooltip.position.range.from, tooltip)
-                }
-            }
-
-            return Array.from(tooltips.values())
-        }),
-    ]
-}

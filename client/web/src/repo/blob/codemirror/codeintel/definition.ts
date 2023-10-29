@@ -5,7 +5,6 @@ import { MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from '../utils'
 
 import { getCodeIntelAPI } from './api'
 import { isModifierKey } from './modifier-click'
-import { hideTooltipForKey } from './tooltips'
 
 const LONG_CLICK_DURATION = 500
 
@@ -56,7 +55,6 @@ function goToDefinitionOnMouseEvent(view: EditorView, event: MouseEvent, options
 
     // TODO: show loading toolip
     api.goToDefinitionAt(view, occurrence.from)
-    view.dispatch(hideTooltipForKey('hover'))
 }
 
 /**

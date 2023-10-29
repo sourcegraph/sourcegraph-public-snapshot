@@ -11,8 +11,6 @@ interface Range {
 
 const DocumentHighlightLoader = ViewPlugin.fromClass(
     class implements PluginValue {
-        private focusedRange: Range | null = null
-
         constructor(private view: EditorView) {}
 
         update(update: ViewUpdate) {
@@ -23,16 +21,12 @@ const DocumentHighlightLoader = ViewPlugin.fromClass(
         }
 
         private fetchHighlights(range: Range | null) {
-            this.focusedRange = range
-
             if (range) {
                 getCodeIntelAPI(this.view.state)
                     .getDocumentHighlights(this.view.state, range)
                     .then(
                         highlights => {
-                            if (this.focusedRange === range) {
-                                this.view.dispatch({ effects: setDocumentHighlights.of({ target: range, highlights }) })
-                            }
+                            this.view.dispatch({ effects: setDocumentHighlights.of({ target: range, highlights }) })
                         },
                         () => {}
                     )
@@ -45,25 +39,21 @@ const documentHighlightDecoration = Decoration.mark({ class: 'sourcegraph-docume
 const setDocumentHighlights = StateEffect.define<{ target: Range; highlights: Range[] }>()
 
 const documentHighlights = StateField.define<{ target: Range | null; highlights: Range[] }>({
-    create() {
-        return { target: null, highlights: [] }
+    create(state) {
+        return { target: getSelectedToken(state), highlights: [] }
     },
 
     update(value, transaction) {
         const selectedToken = getSelectedToken(transaction.state)
         if (selectedToken !== getSelectedToken(transaction.startState)) {
+            // We have to clear the highlights in the same transaction the selected token
+            // changes. Otherwise the (new) selected token will loose focus when selection changes
+            // to a token that was previously highlighted, breaking keyboard navigation
             return { target: selectedToken, highlights: [] }
         }
 
         for (const effect of transaction.effects) {
-            // We have to clear the highlights in the same transaction the selected token
-            // changes. Otherwise the (new) selected token will loose focus when selection changes
-            // to a token that was previously highlighted, breaking keyboard navigation
-            if (
-                effect.is(setDocumentHighlights) &&
-                effect.value.target.from === value.target?.from &&
-                effect.value.target.to === value.target.to
-            ) {
+            if (effect.is(setDocumentHighlights) && effect.value.target === value.target) {
                 return effect.value
             }
         }

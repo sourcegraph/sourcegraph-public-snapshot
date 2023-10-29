@@ -8,10 +8,10 @@ import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParamete
 
 import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
 import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../../CodeMirrorBlob'
-import { blobPropsFacet } from '../index'
-import { CodeMirrorContainer } from '../react-interop'
 import { TooltipViewOptions } from '../codeintel/api'
 import { pinnedLocation } from '../codeintel/pin'
+import { blobPropsFacet } from '../index'
+import { CodeMirrorContainer } from '../react-interop'
 import { zeroToOneBasedPosition } from '../utils'
 
 type Unwrap<T> = T extends Observable<infer U> ? U : never

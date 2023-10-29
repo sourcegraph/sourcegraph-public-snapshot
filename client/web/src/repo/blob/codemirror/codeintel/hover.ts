@@ -1,14 +1,22 @@
-import { type Extension } from '@codemirror/state'
-import { EditorView, type PluginValue, ViewPlugin } from '@codemirror/view'
-import { fromEvent, Subscription } from 'rxjs'
-import { debounceTime, filter, map, scan } from 'rxjs/operators'
+import { EditorState, type Extension } from '@codemirror/state'
+import { EditorView, type PluginValue, ViewPlugin, getTooltip, Tooltip } from '@codemirror/view'
+import { from, fromEvent, Subscription } from 'rxjs'
+import { debounceTime, filter, map, scan, tap } from 'rxjs/operators'
 
 import { type Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 import { preciseOffsetAtCoords } from '../utils'
 
 import { getCodeIntelAPI } from './api'
-import { getTooltipViewFor, hasTooltipAtOffset, hideTooltipForKey, showCodeIntelTooltipAtRange } from './tooltips'
+import { CodeIntelTooltip as self, showTooltip } from './tooltips'
+
+const [hoverTooltip, setHoverTooltip] = createUpdateableField<self | null>(null, self =>
+    showTooltip.computeN([self], state => {
+        const field = state.field(self)
+        return field ? [field] : []
+    })
+)
 
 function computeMouseDirection(
     rect: DOMRect,
@@ -45,6 +53,7 @@ const MOUSE_NO_BUTTON = 0
 const hoverManager = ViewPlugin.fromClass(
     class HoverManager implements PluginValue {
         private subscription: Subscription = new Subscription()
+        private tooltip: (Tooltip & { end: number }) | null = null
 
         constructor(private readonly view: EditorView) {
             this.subscription.add(
@@ -89,7 +98,7 @@ const hoverManager = ViewPlugin.fromClass(
 
                             // Process event if the current hover location is outside the current hover
                             // occurrence (if any)
-                            return !hasTooltipAtOffset(view.state, offset, 'hover')
+                            return !(this.tooltip && this.tooltip.pos <= offset && offset <= this.tooltip.end)
                         }),
 
                         // To make it easier to reach the tooltip with the mouse, we determine
@@ -106,7 +115,7 @@ const hoverManager = ViewPlugin.fromClass(
                                 },
                                 next
                             ) => {
-                                const tooltipView = getTooltipViewFor(view, 'hover')
+                                const tooltipView = this.tooltip && getTooltip(this.view, this.tooltip)
                                 if (!tooltipView) {
                                     return next
                                 }
@@ -151,9 +160,16 @@ const hoverManager = ViewPlugin.fromClass(
                     )
                     .subscribe(next => {
                         if (next === 'HIDE') {
-                            view.dispatch(hideTooltipForKey('hover'))
+                            this.tooltip = null
+                            setHoverTooltip(view, null)
                         } else if (next) {
-                            showCodeIntelTooltipAtRange(view, next, 'hover')
+                            setHoverTooltip(view, {
+                                range: next,
+                                key: 'hover',
+                                source: from(getCodeIntelAPI(view.state).getHoverTooltip(view.state, next)).pipe(
+                                    tap(tooltip => (this.tooltip = tooltip))
+                                ),
+                            })
                         }
                     })
             )
@@ -200,4 +216,8 @@ const tooltipStyles = EditorView.theme({
     },
 })
 
-export const hoverExtension: Extension = [hoverManager, tooltipStyles]
+export function getHoverRange(state: EditorState): { from: number; to: number } | null {
+    return state.field(hoverTooltip)?.range ?? null
+}
+
+export const hoverExtension: Extension = [hoverManager, hoverTooltip, tooltipStyles]

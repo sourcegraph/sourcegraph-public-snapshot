@@ -4,7 +4,7 @@ import { EditorView, type PluginValue, ViewPlugin, ViewUpdate } from '@codemirro
 import { isMacPlatform } from '@sourcegraph/common'
 
 import { getCodeIntelAPI } from './api'
-import { getTooltipState } from './tooltips'
+import { getHoverRange } from './hover'
 
 const setModifierHeld = StateEffect.define<boolean>()
 
@@ -59,15 +59,15 @@ const hasDefinition = StateField.define<{ range: { from: number; to: number } | 
     },
 
     update(value, transaction) {
-        const tooltip = getTooltipState(transaction.state, 'hover')
-        if (tooltip?.position.range !== getTooltipState(transaction.startState, 'hover')?.position.range) {
+        const hoverRange = getHoverRange(transaction.state)
+        if (hoverRange !== getHoverRange(transaction.startState)) {
             return { range: null, hasDefinition: false }
         }
         for (const effect of transaction.effects) {
             if (
                 effect.is(setHasDefinition) &&
-                effect.value.range.from === tooltip?.position.range.from &&
-                effect.value.range.to === tooltip.position.range.to
+                effect.value.range.from === hoverRange?.from &&
+                effect.value.range.to === hoverRange.to
             ) {
                 return effect.value
             }
@@ -82,13 +82,13 @@ const hasDefinition = StateField.define<{ range: { from: number; to: number } | 
                     constructor(private view: EditorView) {}
 
                     update(update: ViewUpdate): void {
-                        const tooltip = getTooltipState(update.state, 'hover')
-                        if (tooltip?.visible && tooltip !== getTooltipState(update.startState, 'hover')) {
+                        const hoverRange = getHoverRange(update.state)
+                        if (hoverRange && hoverRange !== getHoverRange(update.startState)) {
                             getCodeIntelAPI(update.state)
-                                .hasDefinitionAt(tooltip.position.range.from, update.state)
+                                .hasDefinitionAt(hoverRange.from, update.state)
                                 .then(hasDefinition => {
                                     this.view.dispatch({
-                                        effects: setHasDefinition.of({ range: tooltip.position.range, hasDefinition }),
+                                        effects: setHasDefinition.of({ range: hoverRange, hasDefinition }),
                                     })
                                 })
                         }

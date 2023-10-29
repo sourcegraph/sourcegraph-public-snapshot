@@ -34,8 +34,8 @@ export interface TooltipViewOptions {
 }
 
 export interface CodeIntelTooltipPosition {
-    range: { from: number; to: number }
-    key: unknown
+    from: number
+    to: number
 }
 
 export interface Location {
@@ -67,7 +67,7 @@ interface CodeIntelConfig {
 }
 
 export class CodeIntelAPIAdapter {
-    private hoverCache = new Map<Occurrence, Promise<Tooltip | null>>()
+    private hoverCache = new Map<Occurrence, Promise<(Tooltip & { end: number }) | null>>()
     private documentHighlightCache = new Map<Occurrence, Promise<{ from: number; to: number }[]>>()
     private definitionCache = new Map<Occurrence, Promise<Definition>>()
     private occurrenceCache = new Map<number, Occurrence | null>()
@@ -223,8 +223,11 @@ export class CodeIntelAPIAdapter {
         return promise
     }
 
-    getHoverTooltip(state: EditorState, position: CodeIntelTooltipPosition): Promise<Tooltip | null> {
-        const occurrence = this.findOccurrenceAt(position.range.from, state)
+    getHoverTooltip(
+        state: EditorState,
+        position: CodeIntelTooltipPosition
+    ): Promise<(Tooltip & { end: number }) | null> {
+        const occurrence = this.findOccurrenceAt(position.from, state)
         if (!occurrence) {
             return Promise.resolve(null)
         }
@@ -241,7 +244,7 @@ export class CodeIntelAPIAdapter {
                 position: occurrence.range.start,
                 textDocument: { uri: this.documentURI },
             })
-            .then((result): Tooltip | null => {
+            .then((result): (Tooltip & { end: number }) | null => {
                 let markdownContents: string =
                     result === null || result === undefined || result.contents.length === 0
                         ? ''
@@ -257,9 +260,9 @@ export class CodeIntelAPIAdapter {
                     markdownContents = 'No hover information available'
                 }
                 return markdownContents
-                    ? ({
-                          pos: position.range.from,
-                          end: position.range.to,
+                    ? {
+                          pos: position.from,
+                          end: position.to,
                           above: true,
                           create: view =>
                               this.config.createTooltipView({
@@ -281,7 +284,7 @@ export class CodeIntelAPIAdapter {
                                       }))
                                   ),
                               }),
-                      } as Tooltip)
+                      }
                     : null
             })
 

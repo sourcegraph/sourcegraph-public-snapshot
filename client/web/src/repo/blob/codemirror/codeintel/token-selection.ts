@@ -1,11 +1,26 @@
-import { Annotation, EditorState, Extension, Prec, StateField, Transaction, TransactionSpec } from '@codemirror/state'
-import { Decoration, EditorView } from '@codemirror/view'
+import {
+    Annotation,
+    EditorState,
+    Extension,
+    Prec,
+    StateEffect,
+    StateField,
+    Transaction,
+    TransactionSpec,
+} from '@codemirror/state'
+import { Decoration, EditorView, keymap } from '@codemirror/view'
+import { concat, from, of } from 'rxjs'
+import { timeoutWith } from 'rxjs/operators'
+
+import { syntaxHighlight } from '../highlight'
+import { positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
+import { LoadingTooltip } from '../tooltips/LoadingTooltip'
+import { positionToOffset, preciseOffsetAtCoords } from '../utils'
 
 import { getCodeIntelAPI } from './api'
+import { TooltipSource, showTooltip } from './tooltips'
 
 const tokenSelection = Annotation.define<boolean>()
-
-console.log('create token selection module')
 
 /**
  * Returns `true` if the editor selection is empty or is inside the occurrence range.
@@ -34,7 +49,17 @@ function shouldUpdateSelectedToken(transaction: Transaction): boolean {
     return transaction.isUserEvent('select.pointer') || !!transaction.annotation(tokenSelection)
 }
 
-export const selectedToken = StateField.define<{ from: number; to: number } | null>({
+const setTooltipSource = StateEffect.define<TooltipSource | null>()
+
+function hideTooltip(view: EditorView): void {
+    view.dispatch({ effects: setTooltipSource.of(null) })
+}
+
+export const selectedToken = StateField.define<{
+    from: number
+    to: number
+    tooltipSource?: TooltipSource | null
+} | null>({
     create() {
         return null
     },
@@ -45,12 +70,27 @@ export const selectedToken = StateField.define<{ from: number; to: number } | nu
                 transaction.state
             )
             if (range) {
-                return range
+                value = range
+            }
+        }
+        if (value) {
+            for (const effect of transaction.effects) {
+                if (effect.is(setTooltipSource) && effect.value !== value.tooltipSource) {
+                    value = { ...value, tooltipSource: effect.value }
+                }
             }
         }
         return value
     },
     provide: self => [
+        /**
+         * Register tooltip source when available.
+         */
+        showTooltip.computeN([self], state => {
+            const field = state.field(self)
+            return field?.tooltipSource ? [{ range: field, key: 'selection', source: field.tooltipSource }] : []
+        }),
+
         /**
          * This extension is responsible for keeping the focus inside the editor so
          * that keyboard navigation continues to work.
@@ -108,6 +148,163 @@ export const selectedToken = StateField.define<{ from: number; to: number } | nu
                 tabindex: state.field(self) ? '-1' : '0',
             }))
         ),
+
+        /**
+         * Keybindings for showing/hiding a code intel toolip at this position
+         */
+        keymap.of([
+            {
+                key: 'Space',
+                run(view) {
+                    const selected = view.state.field(self)
+                    if (!selected) {
+                        return true
+                    }
+
+                    if (selected.tooltipSource) {
+                        hideTooltip(view)
+                        return true
+                    }
+
+                    const tooltip$ = from(getCodeIntelAPI(view.state).getHoverTooltip(view.state, selected))
+                    view.dispatch({
+                        effects: setTooltipSource.of(
+                            tooltip$.pipe(
+                                timeoutWith(50, concat(of(new LoadingTooltip(selected.from, selected.to)), tooltip$))
+                            )
+                        ),
+                    })
+                    return true
+                },
+            },
+            {
+                key: 'Escape',
+                run(view) {
+                    view.dispatch({ effects: setTooltipSource.of(null) })
+                    return true
+                },
+            },
+
+            {
+                key: 'Enter',
+                run(view) {
+                    const selected = getSelectedToken(view.state)
+                    if (!selected) {
+                        return false
+                    }
+
+                    view.dispatch({ effects: setTooltipSource.of(new LoadingTooltip(selected.from, selected.to)) })
+                    getCodeIntelAPI(view.state)
+                        .goToDefinitionAt(view, selected.from)
+                        .finally(() => {
+                            hideTooltip(view)
+                        })
+                    return true
+                },
+            },
+            {
+                key: 'Mod-Enter',
+                run(view) {
+                    const selected = getSelectedToken(view.state)
+                    if (!selected) {
+                        return false
+                    }
+
+                    view.dispatch({ effects: setTooltipSource.of(new LoadingTooltip(selected.from, selected.to)) })
+                    getCodeIntelAPI(view.state)
+                        .goToDefinitionAt(view, selected.from, { newWindow: true })
+                        .finally(() => {
+                            hideTooltip(view)
+                        })
+                    return true
+                },
+            },
+        ]),
+
+        EditorView.domEventHandlers({
+            /**
+             * Keyboard event handlers defined via {@link keymap} facet do not work with the screen reader enabled while
+             * keypress handlers defined via {@link EditorView.domEventHandlers} still work.
+             */
+            keydown: (event: KeyboardEvent, view: EditorView): boolean => {
+                switch (event.key) {
+                    case 'ArrowLeft': {
+                        const from = view.state.field(self)?.from || view.viewport.from
+                        const position = positionAtCmPosition(view.state.doc, from)
+                        const table = view.state.facet(syntaxHighlight)
+                        const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
+                            occurrence.range.start.isSmaller(position)
+                        )
+                        const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+                        if (anchor !== null) {
+                            view.dispatch(setSelection(anchor))
+                        }
+
+                        return true
+                    }
+                    case 'ArrowRight': {
+                        const from = view.state.field(self)?.from || view.viewport.from
+                        const position = positionAtCmPosition(view.state.doc, from)
+                        const table = view.state.facet(syntaxHighlight)
+                        const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
+                            occurrence.range.start.isGreater(position)
+                        )
+                        const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+                        if (anchor !== null) {
+                            view.dispatch(setSelection(anchor))
+                        }
+
+                        return true
+                    }
+                    case 'ArrowUp': {
+                        const from = view.state.field(self)?.from || view.viewport.from
+                        const position = positionAtCmPosition(view.state.doc, from)
+                        const table = view.state.facet(syntaxHighlight)
+                        for (let line = position.line - 1; line >= 0; line--) {
+                            const occurrence = closestOccurrenceByCharacter(line, table, position)
+                            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+                            if (anchor !== null) {
+                                view.dispatch(setSelection(anchor))
+                                return true
+                            }
+                        }
+                        return true
+                    }
+                    case 'ArrowDown': {
+                        const from = view.state.field(self)?.from || view.viewport.from
+                        const position = positionAtCmPosition(view.state.doc, from)
+                        const table = view.state.facet(syntaxHighlight)
+                        for (let line = position.line + 1; line < table.lineIndex.length; line++) {
+                            const occurrence = closestOccurrenceByCharacter(line, table, position)
+                            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
+                            if (anchor !== null) {
+                                view.dispatch(setSelection(anchor))
+                                return true
+                            }
+                        }
+                        return true
+                    }
+
+                    default: {
+                        return false
+                    }
+                }
+            },
+
+            /**
+             * This extension closes focus-related tooltips when selection moves elsewhere.
+             */
+            click(event, view) {
+                const offset = preciseOffsetAtCoords(view, event)
+                if (offset) {
+                    const range = getCodeIntelAPI(view.state).findOccurrenceRangeAt(offset, view.state)
+                    if (range && range?.from === view.state.field(self)?.from) {
+                        return
+                    }
+                }
+                hideTooltip(view)
+            },
+        }),
     ],
 })
 

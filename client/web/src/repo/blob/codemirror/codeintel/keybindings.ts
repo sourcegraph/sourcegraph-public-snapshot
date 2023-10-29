@@ -15,71 +15,6 @@ import { type Extension, Prec } from '@codemirror/state'
 import { EditorView, type KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
 import { NavigateFunction } from 'react-router-dom'
 
-import { syntaxHighlight } from '../highlight'
-import { positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
-import { positionToOffset, preciseOffsetAtCoords } from '../utils'
-
-import { getCodeIntelAPI } from './api'
-import { getSelectedToken, setSelection } from './token-selection'
-import { getTooltipState, hideTooltipForKey, showCodeIntelTooltipAtRange } from './tooltips'
-
-const keybindings: KeyBinding[] = [
-    {
-        key: 'Space',
-        run(view) {
-            const selected = getSelectedToken(view.state)
-            if (!selected) {
-                return true
-            }
-
-            if (getTooltipState(view.state, 'focus')?.visible) {
-                view.dispatch(hideTooltipForKey('focus'))
-                return true
-            }
-
-            // show loading tooltip
-            showCodeIntelTooltipAtRange(view, selected, 'focus', true)
-            return true
-        },
-    },
-    {
-        key: 'Escape',
-        run(view) {
-            view.dispatch(hideTooltipForKey('focus'))
-            return true
-        },
-    },
-
-    {
-        key: 'Enter',
-        run(view) {
-            const selected = getSelectedToken(view.state)
-            if (!selected) {
-                return false
-            }
-
-            // TODO: show loading tooltip
-            // TODO ? : const startTime = Date.now()
-            getCodeIntelAPI(view.state).goToDefinitionAt(view, selected.from)
-            return true
-        },
-    },
-    {
-        key: 'Mod-Enter',
-        run(view) {
-            const selected = getSelectedToken(view.state)
-            if (!selected) {
-                return false
-            }
-
-            // TODO: show loading tooltip
-            // TODO ? : const startTime = Date.now()
-            getCodeIntelAPI(view.state).goToDefinitionAt(view, selected.from, { newWindow: true })
-            return true
-        },
-    },
-]
-
 function navigationKeybindings(navigate: NavigateFunction): KeyBinding[] {
     return [
         {
@@ -166,83 +101,6 @@ const textSelectionKeybindings: KeyBinding[] = [
     },
 ]
 
-function keyDownHandler(event: KeyboardEvent, view: EditorView): boolean {
-    switch (event.key) {
-        case 'ArrowLeft': {
-            const range = getSelectedToken(view.state)?.from || view.viewport.from
-            const position = positionAtCmPosition(view.state.doc, range)
-            const table = view.state.facet(syntaxHighlight)
-            const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
-                occurrence.range.start.isSmaller(position)
-            )
-            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-            if (anchor !== null) {
-                view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
-            }
-
-            return true
-        }
-        case 'ArrowRight': {
-            const range = getSelectedToken(view.state)?.from || view.viewport.from
-            const position = positionAtCmPosition(view.state.doc, range)
-            const table = view.state.facet(syntaxHighlight)
-            const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
-                occurrence.range.start.isGreater(position)
-            )
-            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-            if (anchor !== null) {
-                view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
-            }
-
-            return true
-        }
-        case 'ArrowUp': {
-            const range = getSelectedToken(view.state)?.from || view.viewport.from
-            const position = positionAtCmPosition(view.state.doc, range)
-            const table = view.state.facet(syntaxHighlight)
-            for (let line = position.line - 1; line >= 0; line--) {
-                const occurrence = closestOccurrenceByCharacter(line, table, position)
-                const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-                if (anchor !== null) {
-                    view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
-                    return true
-                }
-            }
-            return true
-        }
-        case 'ArrowDown': {
-            const range = getSelectedToken(view.state)?.from || view.viewport.from
-            const position = positionAtCmPosition(view.state.doc, range)
-            const table = view.state.facet(syntaxHighlight)
-            for (let line = position.line + 1; line < table.lineIndex.length; line++) {
-                const occurrence = closestOccurrenceByCharacter(line, table, position)
-                const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-                if (anchor !== null) {
-                    view.dispatch(setSelection(anchor), hideTooltipForKey('focus'))
-                    return true
-                }
-            }
-            return true
-        }
-
-        default: {
-            return false
-        }
-    }
-}
-
-/**
- * Keyboard event handlers defined via {@link keymap} facet do not work with the screen reader enabled while
- * keypress handlers defined via {@link EditorView.domEventHandlers} still work.
- */
-function occurrenceKeyboardNavigation(): Extension {
-    return [
-        EditorView.domEventHandlers({
-            keydown: keyDownHandler,
-        }),
-    ]
-}
-
 /**
  * For some reason, editor selection updates made by {@link textSelectionKeybindings} handlers are not synced with the
  * [browser selection](https://developer.mozilla.org/en-US/docs/Web/API/Selection). This function is a workaround to ensure
@@ -289,28 +147,6 @@ function textSelectionExtension(): Extension {
     return [keymap.of(textSelectionKeybindings), selectionLayer, theme]
 }
 
-/**
- * Not a keybinding but related to it. This extension closes
- * focus-related tooltips when selection moves elsewhere.
- */
-const closeTooltipOnClickOutside = EditorView.domEventHandlers({
-    click(event, view) {
-        const offset = preciseOffsetAtCoords(view, event)
-        if (offset) {
-            const range = getCodeIntelAPI(view.state).findOccurrenceRangeAt(offset, view.state)
-            if (range && range?.from === getTooltipState(view.state, 'focus')?.position.range.from) {
-                return
-            }
-        }
-        view.dispatch(hideTooltipForKey('focus'))
-    },
-})
-
 export function keyboardShortcutsExtension(navigate: NavigateFunction): Extension {
-    return [
-        textSelectionExtension(),
-        keymap.of([...keybindings, ...navigationKeybindings(navigate)]),
-        occurrenceKeyboardNavigation(),
-        closeTooltipOnClickOutside,
-    ]
+    return [textSelectionExtension(), keymap.of([...navigationKeybindings(navigate)])]
 }
