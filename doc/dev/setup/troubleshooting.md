@@ -110,8 +110,6 @@ On first install, the program will use quite a bit of bandwidth to concurrently 
 
 After the initial install/compile is complete, the Docker for Mac binary uses about 1.5GB of RAM. The numerous different Go binaries don't use that much RAM or CPU each, about 5MB of RAM each.
 
-If you notice heavy battery and CPU usage running `gulp --color watch`, please first [double check that Spotlight is not indexing your Sourcegraph repository](https://www.macobserver.com/tips/how-to/stop-spotlight-indexing/), as this can lead to additional, unnecessary, poll events.
-
 If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line Tools may be necessary as follows:
 
 1. Uninstall the Command Line Tools with `rm -rf /Library/Developer/CommandLineTools`

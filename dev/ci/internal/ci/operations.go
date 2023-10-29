@@ -189,7 +189,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 			withPnpmCache(),
 			bk.AutomaticRetry(3),
 			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
-			bk.Cmd("pnpm gulp generate"),
+			bk.Cmd("pnpm run generate"),
 			bk.Env("MINIFY", "1"),
 		}
 

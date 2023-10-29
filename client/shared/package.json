@@ -8,9 +8,10 @@
     "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss' --quiet",
     "test": "jest",
-    "schema": "gulp schema",
-    "graphql-operations": "gulp graphQlOperations",
-    "watch-schema": "gulp watchSchema"
+    "generate": "concurrently -r npm:generate:*",
+    "generate:graphql-operations": "ts-node -T dev/generateGraphQlOperations.ts",
+    "generate:schema": "ts-node -T dev/generateSchema.ts json-schema-draft-07 settings site batch_spec",
+    "generate:css-modules-types": "ts-node -T dev/generateCssModulesTypes.ts"
   },
   "devDependencies": {
     "@sourcegraph/testing": "workspace:*",

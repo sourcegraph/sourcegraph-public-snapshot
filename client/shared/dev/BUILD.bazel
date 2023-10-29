@@ -1,18 +1,17 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
-load("//dev:defs.bzl", "ts_project")
+load("//dev:defs.bzl", "ts_binary", "ts_project")
 
 # gazelle:ignore
 
 # dev/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
 
-js_binary(
+ts_binary(
     name = "generate_schema",
     data = [
         "//:node_modules/json-schema-to-typescript",
-        "//:node_modules/mz",
     ],
-    entry_point = "generateSchema.js",
+    entry_point = "generateSchema.ts",
     visibility = ["//client/shared:__pkg__"],
 )
 
@@ -37,7 +36,7 @@ js_binary(
     visibility = ["//client:__subpackages__"],
 )
 
-js_binary(
+ts_binary(
     name = "generate_graphql_operations",
     data = [
         ":extract_graphql_operation_codegen_plugin",
@@ -48,7 +47,7 @@ js_binary(
         "//:node_modules/prettier",
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ],
-    entry_point = "generateGraphQlOperations.js",
+    entry_point = "generateGraphQlOperations.ts",
     visibility = ["//client:__subpackages__"],
 )
 
