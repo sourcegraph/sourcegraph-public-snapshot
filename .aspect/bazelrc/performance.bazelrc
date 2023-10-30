@@ -35,4 +35,4 @@ build --nolegacy_external_runfiles
 # You'll have to look at an execution log to figure out what other action mnemonics you care about.
 # In some cases you may need to patch rulesets to add a mnemonic to actions that don't have one.
 # https://bazel.build/reference/command-line-reference#flag--modify_execution_info
-build --modify_execution_info=PackageTar=+no-remote
+# build --modify_execution_info=PackageTar=+no-remote
