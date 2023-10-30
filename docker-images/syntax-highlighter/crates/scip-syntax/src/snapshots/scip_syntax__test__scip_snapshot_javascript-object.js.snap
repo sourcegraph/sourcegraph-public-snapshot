@@ -5,12 +5,12 @@ expression: dumped
   var myObject = {
 //    ^^^^^^^^ definition scip-ctags myObject.
     myProperty: "value",
-//  ^^^^^^^^^^ definition scip-ctags myObject.myProperty.
+//  ^^^^^^^^^^ definition(Property) scip-ctags myObject.myProperty.
   
     myMethod: function() {},
-//  ^^^^^^^^ definition scip-ctags myObject.myMethod().
+//  ^^^^^^^^ definition(Function) scip-ctags myObject.myMethod().
     myArrow: () => {},
-//  ^^^^^^^ definition scip-ctags myObject.myArrow().
+//  ^^^^^^^ definition(Function) scip-ctags myObject.myArrow().
   };
   
 

@@ -43,6 +43,8 @@ pub fn captures_to_kind(kind: &Option<&String>) -> symbol_information::Kind {
         "kind.singletonmethod" => SingletonMethod,
         "kind.struct" => Struct,
         "kind.typealias" => TypeAlias,
+        "kind.trait" => Trait,
+        // "kind.implementation" => Implementation, TODO
         _ => UnspecifiedKind,
     })
 }
@@ -73,6 +75,8 @@ pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'st
         SingletonMethod => Some("singletonMethod"),
         Struct => Some("struct"),
         TypeAlias => Some("typeAlias"),
+        Trait => Some("trait"),
+        // Implementation => Some("implementation"), TODO
         _ => None,
     }
 }
