@@ -568,9 +568,7 @@ describe('Repository', () => {
 
             const blobContent = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('[data-testid="repo-blob"] .cm-line')]
-                    .map(line => {
-                        return line.textContent
-                    })
+                    .map(line => line.textContent)
                     .join('\n')
             )
             // CodeMirror blob content has no newline characters
