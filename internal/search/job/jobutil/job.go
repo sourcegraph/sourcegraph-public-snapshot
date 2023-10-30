@@ -52,10 +52,11 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 
 		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
 		if err != nil {
-
 			return nil, err
 		}
-		jobTree = newJobTree
+		if newJobTree != nil {
+			jobTree = newJobTree
+		}
 	}
 
 	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
