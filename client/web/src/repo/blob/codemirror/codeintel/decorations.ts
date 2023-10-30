@@ -4,8 +4,8 @@ import { DecorationSet, EditorView } from '@codemirror/view'
 /**
  * Facet to specify a range in which all decorations registered via
  * {@link codeIntelDecorations} should be ignored. This really is
- * only used by {@link selectedToken}. A separate facet is provided
- * to avoid breaking circular dependencies between modules.
+ * only used by {@link selectedToken}, but a separate facet is provided
+ * to avoid circular dependencies between modules.
  */
 export const ignoreDecorations = Facet.define<{ from: number; to: number } | null, { from: number; to: number } | null>(
     {

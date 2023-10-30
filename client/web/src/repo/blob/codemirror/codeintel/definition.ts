@@ -1,12 +1,80 @@
-import { type Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { type Extension, Facet, Range as CodeMirrorRange } from '@codemirror/state'
+import { Decoration, EditorView } from '@codemirror/view'
+import { from } from 'rxjs'
 
 import { MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from '../utils'
 
 import { getCodeIntelAPI } from './api'
-import { isModifierKey } from './modifier-click'
+import { codeIntelDecorations } from './decorations'
+import { UpdateableValue, createLoaderExtension, isModifierKey } from './utils'
+
+interface Range {
+    from: number
+    to: number
+}
 
 const LONG_CLICK_DURATION = 500
+
+// Ranges with definitions are underlined when the user holds the Mod key.
+// The styles are definied in modifier-click.
+const hasDefinitionDeco = Decoration.mark({ class: 'sg-definition-available' })
+
+/**
+ * HasDefinition keeps definition-availability state for a given range.
+ */
+class HasDefinition implements UpdateableValue<boolean, HasDefinition> {
+    /**
+     * Passing `null` to {@param hasDefinition} (default) indicates that
+     * definition information for this range needs to be fetched.
+     */
+    constructor(public range: Range, public hasDefinition: boolean | null = null) {}
+
+    update(hasDefinition: boolean): HasDefinition {
+        return new HasDefinition(this.range, hasDefinition)
+    }
+
+    get key() {
+        return this.range
+    }
+
+    get isPending() {
+        return this.hasDefinition === null
+    }
+}
+
+/**
+ * Position to check whether or not they have a definition associated with it.
+ * If yes they are marked with the .sg-definition-available class.
+ */
+export const showHasDefinition = Facet.define<Range>({
+    enables: self => [
+        createLoaderExtension({
+            input(state) {
+                return state.facet(self)
+            },
+            create(range) {
+                return new HasDefinition(range, null)
+            },
+            load(request, state) {
+                return from(getCodeIntelAPI(state).hasDefinitionAt(request.range.from, state))
+            },
+            provide: self => [
+                // Style ranges that have definitions available
+                codeIntelDecorations.compute([self], state => {
+                    const decorations: CodeMirrorRange<Decoration>[] = []
+
+                    for (const { range, hasDefinition } of state.field(self)) {
+                        if (hasDefinition) {
+                            decorations.push(hasDefinitionDeco.range(range.from, range.to))
+                        }
+                    }
+
+                    return Decoration.set(decorations, true)
+                }),
+            ],
+        }),
+    ],
+})
 
 // Heuristic to approximate a click event between two mouse events (for
 // example, mousedown and mouseup). The heuristic returns true based on the
@@ -60,7 +128,7 @@ function goToDefinitionOnMouseEvent(view: EditorView, event: MouseEvent, options
 /**
  * Extension which goes to a definition on long click or mod-click
  */
-function goToDefinitionOnClick(): Extension {
+export function goToDefinitionOnClick(): Extension {
     const events = new MouseEvents()
 
     return EditorView.domEventHandlers({
@@ -105,8 +173,4 @@ function goToDefinitionOnClick(): Extension {
             }, LONG_CLICK_DURATION)
         },
     })
-}
-
-export function goToDefinitionExtension() {
-    return [goToDefinitionOnClick()]
 }

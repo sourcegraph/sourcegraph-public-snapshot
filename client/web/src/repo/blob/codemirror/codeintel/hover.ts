@@ -9,14 +9,19 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 import { preciseOffsetAtCoords } from '../utils'
 
 import { getCodeIntelAPI } from './api'
-import { CodeIntelTooltip as self, showTooltip } from './tooltips'
+import { showHasDefinition } from './definition'
+import { CodeIntelTooltip, showTooltip } from './tooltips'
 
-const [hoverTooltip, setHoverTooltip] = createUpdateableField<self | null>(null, self =>
+const [hoverTooltip, setHoverTooltip] = createUpdateableField<CodeIntelTooltip | null>(null, self => [
     showTooltip.computeN([self], state => {
         const field = state.field(self)
         return field ? [field] : []
-    })
-)
+    }),
+    showHasDefinition.computeN([self], state => {
+        const range = state.field(self)?.range
+        return range ? [range] : []
+    }),
+])
 
 function computeMouseDirection(
     rect: DOMRect,

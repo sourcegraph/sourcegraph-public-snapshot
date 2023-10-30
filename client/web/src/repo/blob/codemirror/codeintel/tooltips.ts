@@ -1,17 +1,10 @@
-import { Facet, RangeSetBuilder, StateEffect, StateField, Transaction } from '@codemirror/state'
-import {
-    Tooltip,
-    showTooltip as showCodeMirrorTooltip,
-    EditorView,
-    PluginValue,
-    ViewUpdate,
-    ViewPlugin,
-    Decoration,
-} from '@codemirror/view'
-import { Observable, Subscription, isObservable } from 'rxjs'
+import { Facet, RangeSetBuilder } from '@codemirror/state'
+import { Tooltip, showTooltip as showCodeMirrorTooltip, EditorView, Decoration } from '@codemirror/view'
+import { Observable, isObservable } from 'rxjs'
 
 import { CodeIntelTooltipPosition } from './api'
 import { codeIntelDecorations } from './decorations'
+import { UpdateableValue, createLoaderExtension } from './utils'
 
 type TooltipWithEnd = Tooltip & { end: number }
 export type TooltipSource = TooltipWithEnd | Observable<TooltipWithEnd | null>
@@ -27,12 +20,6 @@ enum Status {
     DONE,
 }
 
-const tooltipTheme = EditorView.theme({
-    '.cm-tooltip.sg-code-intel-hovercard': {
-        border: 'unset',
-    },
-})
-
 const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
     combine(values) {
         const seen = new Set<number>()
@@ -46,7 +33,12 @@ const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
         return result.sort((a, b) => a.pos - b.end)
     },
     enables: self => [
-        tooltipTheme,
+        EditorView.theme({
+            '.cm-tooltip.sg-code-intel-hovercard': {
+                border: 'unset',
+            },
+        }),
+
         // Highlight tokens with tooltips
         codeIntelDecorations.compute([self], state => {
             let decorations = new RangeSetBuilder<Decoration>()
@@ -63,9 +55,7 @@ const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
     ],
 })
 
-const setTooltip = StateEffect.define<{ source: Observable<TooltipWithEnd>; tooltip: TooltipWithEnd | null }>()
-
-export class TooltipLoadingState {
+class TooltipLoadingState implements UpdateableValue<TooltipWithEnd | null, TooltipLoadingState> {
     public visible: boolean
 
     constructor(
@@ -76,133 +66,39 @@ export class TooltipLoadingState {
         this.visible = !!tooltip
     }
 
-    update(tr: Transaction): TooltipLoadingState {
-        let state: TooltipLoadingState = this
+    update(tooltip: TooltipWithEnd | null) {
+        return new TooltipLoadingState(this.codeIntelTooltip, Status.DONE, tooltip)
+    }
 
-        for (const effect of tr.effects) {
-            if (effect.is(setTooltip) && effect.value.source === this.codeIntelTooltip.source) {
-                state = new TooltipLoadingState(state.codeIntelTooltip, Status.DONE, effect.value.tooltip)
-            }
-        }
+    get key() {
+        return this.codeIntelTooltip.source
+    }
 
-        return state
+    get isPending() {
+        return this.status === Status.PENDING
     }
 }
-
-class CodeIntelState {
-    constructor(public tooltips: TooltipLoadingState[]) {}
-
-    static create(tooltips: readonly CodeIntelTooltip[]) {
-        return new CodeIntelState(tooltips.map(tooltip => new TooltipLoadingState(tooltip, Status.PENDING)))
-    }
-
-    update(tr: Transaction): CodeIntelState {
-        let state: CodeIntelState = this
-        const newPositions = tr.state.facet(showTooltip)
-        if (newPositions !== tr.startState.facet(showTooltip)) {
-            state = state.addOrRemoveTooltips(newPositions)
-        }
-
-        // Update tooltips
-        state = new CodeIntelState(state.tooltips.map(tooltip => tooltip.update(tr)))
-        return this.eq(state) ? this : state
-    }
-
-    eq(other: CodeIntelState): boolean {
-        return (
-            this.tooltips.length === other.tooltips.length &&
-            this.tooltips.every((tooltip, i) => tooltip === other.tooltips[i])
-        )
-    }
-
-    private addOrRemoveTooltips(newTooltips: readonly CodeIntelTooltip[]): CodeIntelState {
-        return new CodeIntelState(
-            newTooltips.map(tooltip => {
-                let seenAt = -1
-                for (let i = 0; i < this.tooltips.length; i++) {
-                    if (tooltip === this.tooltips[i].codeIntelTooltip) {
-                        seenAt = i
-                    }
-                }
-                return seenAt > -1
-                    ? this.tooltips[seenAt]
-                    : new TooltipLoadingState(
-                          tooltip,
-                          isObservable(tooltip.source) ? Status.PENDING : Status.DONE,
-                          isObservable(tooltip.source) ? null : tooltip.source
-                      )
-            })
-        )
-    }
-
-    dynamicSources(): Observable<TooltipWithEnd>[] {
-        return this.tooltips
-            .filter(tooltip => isObservable(tooltip.codeIntelTooltip.source))
-            .map(tooltip => tooltip.codeIntelTooltip.source as Observable<TooltipWithEnd>)
-    }
-}
-
-/**
- * {@link StateField} storing focused (selected), hovered and pinned {@link Occurrence}s and {@link Tooltip}s associate with them.
- */
-const tooltipLoadingState = StateField.define<CodeIntelState>({
-    create(state) {
-        return CodeIntelState.create(state.facet(showTooltip))
-    },
-    update(value, transaction) {
-        return value.update(transaction)
-    },
-    provide(self) {
-        return [
-            // View plugin responsible for fetching tooltip content
-            ViewPlugin.fromClass(
-                class TooltipLoader implements PluginValue {
-                    private tooltips = new Map<Observable<Tooltip>, Subscription>()
-
-                    constructor(private view: EditorView) {
-                        for (const source of view.state.field(self).dynamicSources()) {
-                            this.loadTooltip(source)
-                        }
-                    }
-
-                    update(update: ViewUpdate) {
-                        const loadingState = update.state.field(self)
-                        if (loadingState !== update.startState.field(self)) {
-                            const dynamicSources = loadingState.dynamicSources()
-                            for (const [source, subscription] of this.tooltips) {
-                                if (!dynamicSources.some(dynamicSource => dynamicSource === source)) {
-                                    subscription.unsubscribe()
-                                    this.tooltips.delete(source)
-                                }
-                            }
-
-                            for (const source of dynamicSources) {
-                                if (!this.tooltips.has(source)) {
-                                    this.loadTooltip(source)
-                                }
-                            }
-                        }
-                    }
-
-                    private async loadTooltip(source: Observable<TooltipWithEnd>): Promise<void> {
-                        this.tooltips.set(
-                            source,
-                            source.subscribe(tooltip => {
-                                this.view.dispatch({ effects: setTooltip.of({ source, tooltip }) })
-                            })
-                        )
-                    }
-                }
-            ),
-
-            uniqueTooltips.computeN([self], state => state.field(self).tooltips.map(tooltip => tooltip.tooltip)),
-        ]
-    },
-})
 
 /**
  * Facet for registring where to show CodeIntel tooltips.
  */
 export const showTooltip: Facet<CodeIntelTooltip> = Facet.define<CodeIntelTooltip>({
-    enables: [tooltipLoadingState],
+    enables: self => [
+        createLoaderExtension({
+            input(state) {
+                return state.facet(self)
+            },
+            create(tooltip) {
+                return isObservable(tooltip.source)
+                    ? new TooltipLoadingState(tooltip, Status.PENDING)
+                    : new TooltipLoadingState(tooltip, Status.DONE, tooltip.source)
+            },
+            load(value) {
+                return value.codeIntelTooltip.source as Observable<TooltipWithEnd | null>
+            },
+            provide: self => [
+                uniqueTooltips.computeN([self], state => state.field(self).map(tooltip => tooltip.tooltip)),
+            ],
+        }),
+    ],
 })

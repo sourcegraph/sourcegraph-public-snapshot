@@ -7,10 +7,10 @@ import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { uiPositionToOffset } from '../utils'
 
 import { CodeIntelAPIAdapter, codeIntelAPI, getCodeIntelAPI } from './api'
-import { goToDefinitionExtension } from './definition'
+import { goToDefinitionOnClick } from './definition'
 import { hoverExtension } from './hover'
 import { keyboardShortcutsExtension } from './keybindings'
-import { modifierClickExtension } from './modifier-click'
+import { isModifierKeyHeld } from './modifier-key'
 import { pinnedLocation } from './pin'
 import { selectedTokenExtension } from './token-selection'
 import { showTooltip } from './tooltips'
@@ -54,8 +54,8 @@ export function createCodeIntelExtension(config: CodeIntelExtensionConfig): Exte
         showPinnedTooltip,
         selectedTokenExtension,
         hoverExtension,
-        modifierClickExtension,
+        isModifierKeyHeld,
         keyboardShortcutsExtension(config.navigate),
-        goToDefinitionExtension(),
+        goToDefinitionOnClick(),
     ]
 }

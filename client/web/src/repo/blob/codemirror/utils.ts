@@ -5,7 +5,7 @@ import type { Position } from '@sourcegraph/extension-api-types'
 import { Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { BlobViewState, UIPositionSpec, UIRangeSpec, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import type { Location } from './token-selection/api'
+import type { Location } from './codeintel/api'
 
 /**
  * The MouseEvent uses numbers to indicate which button was pressed.
