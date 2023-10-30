@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -54,6 +55,7 @@ func (c *fireworksClient) Complete(
 	return &types.CompletionResponse{
 		Completion: response.Choices[0].Text,
 		StopReason: response.Choices[0].FinishReason,
+		Logprobs:   response.Choices[0].Logprobs,
 	}, nil
 }
 
@@ -63,6 +65,15 @@ func (c *fireworksClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
+	logprobsInclude := uint8(0)
+	requestParams.Logprobs = &logprobsInclude
+
+	// HACK: Cody Gateway expects model names in <provider>/<model> format, but if we're connecting directly to
+	// the Fireworks API, we need to strip the "fireworks" provider prefix
+	if components := strings.Split(requestParams.Model, "/"); components[0] == "fireworks" {
+		requestParams.Model = strings.Join(components[1:], "/")
+	}
+
 	resp, err := c.makeRequest(ctx, requestParams, true)
 	if err != nil {
 		return err
@@ -71,6 +82,7 @@ func (c *fireworksClient) Stream(
 
 	dec := NewDecoder(resp.Body)
 	var content string
+	var accumulatedLogprobs *types.Logprobs
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
 			return nil
@@ -89,9 +101,11 @@ func (c *fireworksClient) Stream(
 
 		if len(event.Choices) > 0 {
 			content += event.Choices[0].Text
+			accumulatedLogprobs = accumulatedLogprobs.Append(event.Choices[0].Logprobs)
 			ev := types.CompletionResponse{
 				Completion: content,
 				StopReason: event.Choices[0].FinishReason,
+				Logprobs:   accumulatedLogprobs,
 			}
 			err = sendEvent(ev)
 			if err != nil {
@@ -125,6 +139,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, requestParams types.C
 		Stop:        requestParams.StopSequences,
 		Echo:        false,
 		Prompt:      prompt,
+		Logprobs:    requestParams.Logprobs,
 	}
 
 	reqBody, err := json.Marshal(payload)
@@ -163,14 +178,16 @@ type fireworksRequest struct {
 	Stream      bool     `json:"stream,omitempty"`
 	Echo        bool     `json:"echo,omitempty"`
 	Stop        []string `json:"stop,omitempty"`
+	Logprobs    *uint8   `json:"logprobs,omitempty"`
 }
 
 // response for a non streaming request
 type fireworksResponse struct {
 	Choices []struct {
-		Text         string `json:"text"`
-		Index        int    `json:"index"`
-		FinishReason string `json:"finish_reason"`
+		Text         string          `json:"text"`
+		Index        int             `json:"index"`
+		FinishReason string          `json:"finish_reason"`
+		Logprobs     *types.Logprobs `json:logprobs"`
 	} `json:"choices"`
 	Usage struct {
 		PromptTokens     int `json:"prompt_tokens"`
