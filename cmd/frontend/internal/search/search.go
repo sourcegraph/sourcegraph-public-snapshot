@@ -119,7 +119,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 	if actor.FromContext(ctx).IsAuthenticated() {
 		// Used for development to quickly test different zoekt.SearchOptions without having
 		// to change the code.
-		inputs.Features.SearchOptionsOverride = args.SearchOptionsOverride
+		inputs.Features.ZoektSearchOptionsOverride = args.ZoektSearchOptionsOverride
 	}
 
 	// Display is the number of results we send down. If display is < 0 we
@@ -217,13 +217,13 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 }
 
 type args struct {
-	Query                 string
-	Version               string
-	PatternType           string
-	Display               int
-	EnableChunkMatches    bool
-	SearchMode            int
-	SearchOptionsOverride string
+	Query                      string
+	Version                    string
+	PatternType                string
+	Display                    int
+	EnableChunkMatches         bool
+	SearchMode                 int
+	ZoektSearchOptionsOverride string
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -236,10 +236,10 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:                 get("q", ""),
-		Version:               get("v", "V3"),
-		PatternType:           get("t", ""),
-		SearchOptionsOverride: get("search-opts", ""),
+		Query:                      get("q", ""),
+		Version:                    get("v", "V3"),
+		PatternType:                get("t", ""),
+		ZoektSearchOptionsOverride: get("zoekt-search-opts", ""),
 	}
 
 	if a.Query == "" {

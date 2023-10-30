@@ -203,10 +203,10 @@ type ZoektParameters struct {
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
 func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoekt.SearchOptions) {
-	if o.Features.SearchOptionsOverride != "" {
+	if o.Features.ZoektSearchOptionsOverride != "" {
 		defer func() {
 			old := *searchOpts
-			err := json.Unmarshal([]byte(o.Features.SearchOptionsOverride), searchOpts)
+			err := json.Unmarshal([]byte(o.Features.ZoektSearchOptionsOverride), searchOpts)
 			if err != nil {
 				searchOpts = &old
 			}
@@ -438,10 +438,10 @@ type Features struct {
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
 
-	// SearchOptionsOverride is a JSON string that overrides the Zoekt search
+	// ZoektSearchOptionsOverride is a JSON string that overrides the Zoekt search
 	// options. This should be used for quick interactive experiments only. An
 	// invalid JSON string or unknown fields will be ignored.
-	SearchOptionsOverride string
+	ZoektSearchOptionsOverride string
 }
 
 func (f *Features) String() string {
