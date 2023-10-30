@@ -44,21 +44,17 @@ func isAllowedCustomModel(model string) bool {
 	}
 
 	switch model {
-	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/starcoder-7b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/starcoder-3b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/starcoder-1b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/llama-v2-7b-code":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/llama-v2-13b-code":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/wizardcoder-15b":
+	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
+		"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
+		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",
+		"fireworks/accounts/fireworks/models/starcoder-1b-w8a16",
+		"fireworks/accounts/fireworks/models/llama-v2-7b-code",
+		"fireworks/accounts/fireworks/models/llama-v2-13b-code",
+		"fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct",
+		"fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct",
+		"fireworks/accounts/fireworks/models/mistral-7b-instruct-4k",
+		"fireworks/accounts/fireworks/models/wizardcoder-15b",
+		"anthropic/claude-instant-1.2-cyan":
 		return true
 	}
 
