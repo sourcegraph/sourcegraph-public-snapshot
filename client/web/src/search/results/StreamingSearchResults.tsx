@@ -65,6 +65,8 @@ export interface StreamingSearchResultsProps
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isRerankingEnabled: boolean
+    setRerankingEnabled: (enabled: boolean) => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -88,6 +90,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
     const [rankingEnabled] = useFeatureFlag('search-ranking')
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
+    const showRankingToggle = window.context?.experimentalFeatures?.flexibleKeywordSearch === 'enabled'
+    console.log('showRankingToggle: ' + showRankingToggle)
+    const [rankingToggleEnabled, setRankingToggleEnabled] = useState(false)
+    console.log('rankingToggleEnabled: ' + rankingToggleEnabled)
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
 
@@ -110,18 +116,34 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const featureOverrides = useFeatureFlagOverrides()
     const { addRecentSearch } = useRecentSearches()
 
-    const options: StreamSearchOptions = useMemo(
-        () => ({
+    const options: StreamSearchOptions = useMemo(() => {
+        var overrides = new Map(featureOverrides)
+        console.log('feature overrides before: ' + overrides)
+        for (const [key, value] of Object.entries(overrides)) {
+            console.log(key, value)
+        }
+        if (rankingToggleEnabled) {
+            overrides.set('search-llm-rerank', true)
+            console.log('feature overrides after: ' + overrides)
+            for (const [key, value] of Object.entries(overrides)) {
+                console.log(key, value)
+            }
+        }
+        return {
             version: LATEST_VERSION,
             patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
-            featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
+            featureOverrides: formatUrlOverrideFeatureFlags(overrides),
             searchMode,
             chunkMatches: true,
-        }),
-        [caseSensitive, patternType, searchMode, trace, featureOverrides]
-    )
+        }
+    }, [caseSensitive, patternType, searchMode, trace, featureOverrides, rankingToggleEnabled])
+
+    console.log(options.featureOverrides)
+    for (const key of options.featureOverrides) {
+        console.log(key)
+    }
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
 
@@ -439,6 +461,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
+                        showRankingToggle={showRankingToggle}
+                        isRerankingEnabled={rankingToggleEnabled}
+                        setRerankingEnabled={setRankingToggleEnabled}
                         stats={
                             <StreamingProgress
                                 query={`${submittedURLQuery} patterntype:${patternType}`}

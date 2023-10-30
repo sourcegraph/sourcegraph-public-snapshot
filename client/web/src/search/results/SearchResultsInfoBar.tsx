@@ -4,12 +4,13 @@ import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdi
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
+import { Button, Icon, Alert, useSessionStorage, Link, Text, Label } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
@@ -67,6 +68,10 @@ export interface SearchResultsInfoBarProps
     setSidebarCollapsed: (collapsed: boolean) => void
 
     isSourcegraphDotCom: boolean
+
+    showRankingToggle: boolean
+    isRerankingEnabled: boolean
+    setRerankingEnabled: (enabled: boolean) => void
 }
 
 /**
@@ -209,7 +214,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 {props.stats}
 
                 <div className={styles.expander} />
-
+                {props.showRankingToggle && (
+                    <Label className={styles.toggle}>
+                        LLM reranking{' '}
+                        <Toggle
+                            value={props.isRerankingEnabled}
+                            onToggle={() => props.setRerankingEnabled(!props.isRerankingEnabled)}
+                            title="Enable Reranking"
+                            className="mr-2"
+                        />
+                    </Label>
+                )}
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
                         authenticatedUser={props.authenticatedUser}

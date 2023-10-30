@@ -33,6 +33,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.standard,
     searchMode: SearchMode.SmartSearch,
+    llmRerank: false,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {

@@ -1,4 +1,5 @@
 export * from './CopyQueryButton'
 export * from './QueryInputToggle'
 export * from './SmartSearchToggle'
+export * from './FlexibleSearchToggle'
 export * from './Toggles'

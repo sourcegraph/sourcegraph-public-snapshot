@@ -31,15 +31,17 @@ var (
 // Note: it ignores the top-level fields RepoURLs and LineFragments since we
 // do not read those values in Sourcegraph.
 type collectSender struct {
-	aggregate *zoekt.SearchResult
-	overflow  []*zoekt.SearchResult
-	opts      *zoekt.SearchOptions
-	sizeBytes uint64
+	aggregate     *zoekt.SearchResult
+	overflow      []*zoekt.SearchResult
+	opts          *zoekt.SearchOptions
+	rerankPattern string
+	sizeBytes     uint64
 }
 
-func newCollectSender(opts *zoekt.SearchOptions) *collectSender {
+func newCollectSender(opts *zoekt.SearchOptions, rerankPattern string) *collectSender {
 	return &collectSender{
-		opts: opts,
+		opts:          opts,
+		rerankPattern: rerankPattern,
 	}
 }
 
@@ -88,6 +90,12 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, _ []*zoekt.SearchResult, 
 	c.overflow = nil
 	c.sizeBytes = 0
 
+	if c.rerankPattern != "" {
+		reranked, err := rerank(c.rerankPattern, agg)
+		if err == nil {
+			return reranked, overflow, true
+		}
+	}
 	return agg, overflow, true
 }
 
@@ -124,7 +132,7 @@ type flushCollectSender struct {
 //
 // If it has not heard back from every endpoint by a certain timeout, then it will
 // flush as a 'fallback plan' to avoid delaying the search too much.
-func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) FlushSender {
+func newFlushCollectSender(opts *zoekt.SearchOptions, rerankPattern string, endpoints []string, maxSizeBytes int, sender zoekt.Sender) FlushSender {
 	// Nil options are permitted by Zoekt's "Streamer" interface. There are a few
 	// callers within Sourcegraph that call search with nil options (tests,
 	// insights), so we have to handle this case.
@@ -137,7 +145,7 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 		firstResults[endpoint] = true
 	}
 
-	collectSender := newCollectSender(opts)
+	collectSender := newCollectSender(opts, rerankPattern)
 	timerCancel := make(chan struct{})
 
 	flushSender := &flushCollectSender{collectSender: collectSender,

@@ -53,6 +53,7 @@ export function useCachedSearchResults(
     const results = useObservable(
         useMemo(() => {
             // If query and options have not changed, return cached value
+            console.log('equal? ' + isEqual(options, cachedResults.current?.options))
             if (query === cachedResults.current?.query && isEqual(options, cachedResults.current?.options)) {
                 return of(cachedResults.current.results)
             }

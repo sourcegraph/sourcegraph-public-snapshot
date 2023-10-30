@@ -311,6 +311,9 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 	brs := repos.BranchRepos()
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
+	if zoektParams.RerankPattern != "" {
+		finalQuery = backend.ZoektQueryWithPattern{Q: finalQuery, Pattern: zoektParams.RerankPattern}
+	}
 	searchOpts := zoektParams.ToSearchOptions(ctx)
 
 	// Start event stream.
@@ -717,7 +720,10 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 
 	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
-	t.ZoektParams.Query = t.GlobalZoektQuery.Generate()
+	t.ZoektParams.Query = backend.ZoektQueryWithPattern{
+		Q:       t.GlobalZoektQuery.Generate(),
+		Pattern: t.ZoektParams.RerankPattern,
+	}
 
 	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektParams, t.GlobalZoektQueryRegexps, stream)
 }

@@ -198,6 +198,12 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "flexibleKeywordSearch": {
+          "description": "Enables flexible keyword search.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
           "type": "string",

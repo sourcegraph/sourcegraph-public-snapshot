@@ -52,9 +52,9 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 
 		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
 		if err != nil {
+
 			return nil, err
 		}
-
 		jobTree = newJobTree
 	}
 
@@ -812,6 +812,11 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
 	globalZoektQuery := zoekt.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
+	rerankPattern := ""
+	if b.features.RerankResults && b.patternType == query.SearchTypeKeyword {
+		rerankPattern = b.query.OriginalPattern
+	}
+
 	zoektParams := &search.ZoektParameters{
 		// TODO(rvantonder): the Query value is set when the global zoekt query is
 		// enriched with private repository data in the search job's Run method, and
@@ -823,7 +828,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		RerankPattern:  rerankPattern,
 	}
 
 	switch typ {
@@ -850,11 +855,15 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		return nil, err
 	}
 
+	rerankPattern := ""
+	if b.features.RerankResults && b.patternType == query.SearchTypeKeyword {
+		rerankPattern = b.query.OriginalPattern
+	}
 	zoektParams := &search.ZoektParameters{
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		RerankPattern:  rerankPattern,
 	}
 
 	switch typ {
