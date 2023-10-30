@@ -574,7 +574,7 @@ describe('Repository', () => {
                     .join('\n')
             )
             // CodeMirror blob content has no newline characters
-            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replaceAll('\n', '')
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`
             assert.strictEqual(blobContent, expectedBlobContent)
         })
 
