@@ -3981,7 +3981,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					// private repo but unrestricted
@@ -4003,7 +4003,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 				},
 				{
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 			},
 		},
@@ -4030,14 +4030,14 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
-					// private repo but have access via user_permissions
+					// private repo but have access via user_permissions (still site admin)
 					RepoId: 2,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					// private repo but unrestricted
@@ -4108,6 +4108,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(666, 'user666', FALSE)`),
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin, deleted_at) VALUES(888, 'user888', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(999, 'user999', TRUE)`), // Site admin user with explicit access to all repos
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'public_repo_2', FALSE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(3, 'unrestricted_repo_3', TRUE)`),
@@ -4126,10 +4127,12 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		}
 	}
 
-	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (666, 1, 'api'), (NULL, 3, 'api'), (666, 4, 'user_sync')`)
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (666, 1, 'api'), (NULL, 3, 'api'), (666, 4, 'user_sync'), (999, 1, 'user_sync')`)
 	if err := s.execute(ctx, q); err != nil {
 		t.Fatal(err)
 	}
+
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 999})
 
 	tests := []listRepoPermissionsTest{
 		{
@@ -4137,6 +4140,11 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			RepoID: 1,
 			Args:   nil,
 			WantResults: []*listRepoPermissionsResult{
+				{
+					// have access and site-admin
+					UserID: 999,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
 				{
 					// do not have access but site-admin
 					UserID: 777,
@@ -4161,6 +4169,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			NoAuthzProviders: true,
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
 				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
@@ -4208,16 +4220,20 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
 				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonPublic,
+				},
+				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 			},
 		},
@@ -4227,6 +4243,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Args:   nil,
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
 				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
@@ -4248,6 +4268,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
 				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
 				},
@@ -4266,18 +4290,24 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			RepoID:                    4,
 			Args:                      nil,
 			NoAuthzProviders:          true,
-			UsePermissionsUserMapping: true,
+			UsePermissionsUserMapping: false,
 			// restricted access
 			WantResults: []*listRepoPermissionsResult{
 				{
-					// do not have access but site-admin
-					UserID: 777,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
-					// have access
+					UserID: 777,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 			},
 		},
@@ -4287,6 +4317,11 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Args:                      nil,
 			AuthzEnforceForSiteAdmins: true,
 			WantResults: []*listRepoPermissionsResult{
+				{
+					// have access
+					UserID: 999,
+					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
 				{
 					// have access
 					UserID: 666,

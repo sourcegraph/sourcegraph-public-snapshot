@@ -158,7 +158,7 @@ func TestSettingsMutation(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient()).SettingsMutation(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SettingsMutation(
 					test.ctx,
 					&settingsMutationArgs{
 						Input: &settingsMutationGroupInput{

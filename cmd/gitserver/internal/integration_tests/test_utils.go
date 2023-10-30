@@ -81,7 +81,7 @@ func InitGitserver() {
 			return filepath.Join(root, "remotes", string(name)), nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logger, wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,

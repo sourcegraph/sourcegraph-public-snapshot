@@ -49,7 +49,7 @@ type SearchClient interface {
 }
 
 // New will create a search client with a zoekt and searcher backed by conf.
-func New(logger log.Logger, db database.DB) SearchClient {
+func New(logger log.Logger, db database.DB, gitserverClient gitserver.Client) SearchClient {
 	return &searchClient{
 		runtimeClients: job.RuntimeClients{
 			Logger:                      logger,
@@ -57,7 +57,7 @@ func New(logger log.Logger, db database.DB) SearchClient {
 			Zoekt:                       search.Indexed(),
 			SearcherURLs:                search.SearcherURLs(),
 			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
-			Gitserver:                   gitserver.NewClient(),
+			Gitserver:                   gitserverClient,
 		},
 		settingsService:       settings.NewService(db),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -293,6 +293,8 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		logger.Warn("search feature flags are not available")
 	}
 
+	// When adding a new feature flag remember to add it to the list in
+	// client/web/src/featureFlags/featureFlags.ts to allow overriding.
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		UseZoektParser:          flagSet.GetBoolOr("search-new-keyword", false),

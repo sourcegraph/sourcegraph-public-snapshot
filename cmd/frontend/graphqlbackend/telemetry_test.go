@@ -158,7 +158,7 @@ func TestTelemetryRecordEvents(t *testing.T) {
 			mockResolver := &mockTelemetryResolver{}
 			parsedSchema, err := NewSchema(
 				dbmocks.NewMockDB(),
-				gitserver.NewClient(),
+				gitserver.NewTestClient(t),
 				[]OptionalResolver{{
 					TelemetryRootResolver: &TelemetryRootResolver{Resolver: mockResolver},
 				}},

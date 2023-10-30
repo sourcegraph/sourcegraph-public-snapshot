@@ -31,7 +31,14 @@ import type { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getSelectorFor, isNewGitHubUI, getEmbeddedData } from './util'
+import {
+    getFileContainers,
+    parseURL,
+    getSelectorFor,
+    isNewGitHubUI,
+    getEmbeddedData,
+    windowLocation__testingOnly,
+} from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -286,7 +293,8 @@ export function checkIsGitHubEnterprise(): boolean {
 /**
  * Returns true if the current page is github.com.
  */
-export const checkIsGitHubDotCom = (url = window.location.href): boolean => /^https?:\/\/(www\.)?github\.com/.test(url)
+export const checkIsGitHubDotCom = (url = (windowLocation__testingOnly.value ?? window.location).href): boolean =>
+    /^https?:\/\/(www\.)?github\.com/.test(url)
 
 /**
  * Returns true if the current page is either github.com or GitHub Enterprise.
@@ -383,7 +391,7 @@ export const isPrivateRepository = async (
     fetchCache = background.fetchCache,
     fallbackSelector = '#repository-container-header span.Label'
 ): Promise<boolean> => {
-    if (window.location.hostname !== 'github.com') {
+    if ((windowLocation__testingOnly.value ?? window.location).hostname !== 'github.com') {
         return Promise.resolve(true)
     }
     try {
@@ -418,12 +426,15 @@ export interface GithubCodeHost extends CodeHost {
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
 
-const isSimpleSearchPage = (): boolean => window.location.pathname === '/search'
-const isAdvancedSearchPage = (): boolean => window.location.pathname === '/search/advanced'
-const isRepoSearchPage = (): boolean => !isSimpleSearchPage() && window.location.pathname.endsWith('/search')
+const isSimpleSearchPage = (): boolean => (windowLocation__testingOnly.value ?? window.location).pathname === '/search'
+const isAdvancedSearchPage = (): boolean =>
+    (windowLocation__testingOnly.value ?? window.location).pathname === '/search/advanced'
+const isRepoSearchPage = (): boolean =>
+    !isSimpleSearchPage() && (windowLocation__testingOnly.value ?? window.location).pathname.endsWith('/search')
 const isSearchResultsPage = (): boolean =>
     // TODO(#44327): Do not rely on window.location.search - it may be present not only on search pages (e.g., issues, pulls, etc.).
-    Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
+    Boolean(new URLSearchParams((windowLocation__testingOnly.value ?? window.location).search).get('q')) &&
+    !isAdvancedSearchPage()
 const isSearchPage = (): boolean =>
     isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
 
@@ -440,7 +451,9 @@ type GithubResultType =
     | 'users'
 
 const getGithubResultType = (): GithubResultType | '' => {
-    const githubResultType = new URLSearchParams(window.location.search).get('type')
+    const githubResultType = new URLSearchParams((windowLocation__testingOnly.value ?? window.location).search).get(
+        'type'
+    )
 
     return githubResultType ? (githubResultType.toLowerCase() as GithubResultType) : ''
 }
@@ -466,7 +479,8 @@ const getSourcegraphResultType = (): SourcegraphResultType | '' => {
     }
 }
 
-const getSourcegraphResultLanguage = (): string | null => new URLSearchParams(window.location.search).get('l')
+const getSourcegraphResultLanguage = (): string | null =>
+    new URLSearchParams((windowLocation__testingOnly.value ?? window.location).search).get('l')
 
 const buildSourcegraphQuery = (searchTerms: string[]): string => {
     const queryParameters = searchTerms.filter(Boolean).map(parameter => parameter.trim())
@@ -482,7 +496,7 @@ const buildSourcegraphQuery = (searchTerms: string[]): string => {
     }
 
     if (isRepoSearchPage()) {
-        const [user, repo] = window.location.pathname.split('/').filter(Boolean)
+        const [user, repo] = (windowLocation__testingOnly.value ?? window.location).pathname.split('/').filter(Boolean)
         queryParameters.push(`repo:${user}/${repo}$`)
     }
 
@@ -673,7 +687,7 @@ export const githubCodeHost: GithubCodeHost = {
     routeChange: mutations =>
         mutations.pipe(
             map(() => {
-                const { pathname } = window.location
+                const { pathname } = windowLocation__testingOnly.value ?? window.location
 
                 // repository file tree navigation
                 const pageType = pathname.slice(1).split('/')[2]
@@ -738,7 +752,9 @@ export const githubCodeHost: GithubCodeHost = {
         }
 
         // Make sure the location is also on this github instance, return an absolute URL otherwise.
-        const sameCodeHost = target.rawRepoName.startsWith(window.location.hostname)
+        const sameCodeHost = target.rawRepoName.startsWith(
+            (windowLocation__testingOnly.value ?? window.location).hostname
+        )
         if (!sameCodeHost) {
             return toAbsoluteBlobURL(sourcegraphURL, target)
         }
@@ -763,7 +779,7 @@ export const githubCodeHost: GithubCodeHost = {
                 const anchorPath = header.dataset.path
                 if (anchorPath === target.filePath) {
                     const anchorUrl = header.dataset.anchor
-                    const url = new URL(window.location.href)
+                    const url = new URL((windowLocation__testingOnly.value ?? window.location).href)
                     url.hash = anchorUrl
                     if (target.position) {
                         // GitHub uses L for the left side, R for both right side and the unchanged/white parts
@@ -787,7 +803,7 @@ export const githubCodeHost: GithubCodeHost = {
     },
     observeLineSelection: fromEvent(window, 'hashchange').pipe(
         startWith(undefined), // capture initial value
-        map(() => parseHash(window.location.hash))
+        map(() => parseHash((windowLocation__testingOnly.value ?? window.location).hash))
     ),
     codeViewsRequireTokenization: true,
 }

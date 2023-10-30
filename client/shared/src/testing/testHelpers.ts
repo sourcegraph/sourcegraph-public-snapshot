@@ -107,17 +107,6 @@ export async function integrationTestContext(
     }
 }
 
-/**
- * Returns a {@link Promise} and a function. The {@link Promise} blocks until the returned function is called.
- *
- * @internal
- */
-export function createBarrier(): { wait: Promise<void>; done: () => void } {
-    let done!: () => void
-    const wait = new Promise<void>(resolve => (done = resolve))
-    return { wait, done }
-}
-
 export function collectSubscribableValues<T>(subscribable: Subscribable<T>): T[] {
     const values: T[] = []
     subscribable.subscribe(value => values.push(value))

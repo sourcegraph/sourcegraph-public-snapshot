@@ -23,7 +23,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	if deploy.IsApp() {
-		gitserverClient := gitserver.NewClient()
+		gitserverClient := gitserver.NewClient("graphql.app")
 		enterpriseServices.OptionalResolver.AppResolver = resolvers.NewAppResolver(observationCtx.Logger, db, gitserverClient)
 	}
 	return nil

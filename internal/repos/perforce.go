@@ -36,7 +36,7 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService) (*Perfor
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newPerforceSource(gitserver.NewClient(), svc, &c)
+	return newPerforceSource(gitserver.NewClient("repos.perforcesource"), svc, &c)
 }
 
 func newPerforceSource(gitserverClient gitserver.Client, svc *types.ExternalService, c *schema.PerforceConnection) (*PerforceSource, error) {
@@ -51,7 +51,7 @@ func newPerforceSource(gitserverClient gitserver.Client, svc *types.ExternalServ
 // For Perforce, it uses the host (p4.port), username (p4.user) and password (p4.passwd)
 // from the code host configuration.
 func (s PerforceSource) CheckConnection(ctx context.Context) error {
-	gclient := gitserver.NewClient()
+	gclient := gitserver.NewClient("perforce.connectioncheck")
 	conn := protocol.PerforceConnectionDetails{
 		P4Port:   s.config.P4Port,
 		P4User:   s.config.P4User,

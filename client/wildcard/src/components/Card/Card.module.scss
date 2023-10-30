@@ -1,5 +1,5 @@
 // :where() is used to fix the CSS ordering issue with the Toast component
-// See https: //github.com/sourcegraph/sourcegraph/issues/42217
+// See https://github.com/sourcegraph/sourcegraph/issues/42217
 :where(.card) {
     --card-bg: var(--color-bg-1);
     --card-border-color: var(--border-color-2);

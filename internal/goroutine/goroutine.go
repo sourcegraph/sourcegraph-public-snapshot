@@ -1,9 +1,6 @@
 package goroutine
 
-import (
-	"log"
-	"runtime/debug"
-)
+import "github.com/sourcegraph/sourcegraph/lib/background"
 
 // Go runs the given function in a goroutine and catches and logs panics.
 //
@@ -12,15 +9,4 @@ import (
 // frontend service, where one location of code panicking could be catastrophic.
 //
 // More advanced use cases should copy this implementation and modify it.
-func Go(f func()) {
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				stack := debug.Stack()
-				log.Printf("goroutine panic: %v\n%s", err, stack)
-			}
-		}()
-
-		f()
-	}()
-}
+var Go = background.Go

@@ -122,8 +122,11 @@ export const encodeURIPathComponent = (component: string): string =>
 /**
  * Returns true if the given URL points outside the current site.
  */
-export const isExternalLink = (url: string): boolean =>
-    !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
+export const isExternalLink = (
+    url: string,
+    windowLocation__testingOnly: Pick<URL, 'origin' | 'href'> = window.location
+): boolean =>
+    !!tryCatch(() => new URL(url, windowLocation__testingOnly.href).origin !== windowLocation__testingOnly.origin)
 
 /**
  * Stringifies the provided search parameters, replaces encoded `/` and `:` characters,

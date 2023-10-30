@@ -44,7 +44,7 @@ func TestAddExternalService(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).AddExternalService(ctx, &addExternalServiceArgs{})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).AddExternalService(ctx, &addExternalServiceArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %q", want, err)
 		}
@@ -154,7 +154,7 @@ func TestUpdateExternalService(t *testing.T) {
 		t.Cleanup(func() { mockExternalServicesService = nil })
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -541,7 +541,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
@@ -602,7 +602,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			result, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -623,7 +623,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			_, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -641,13 +641,13 @@ func TestExternalServices(t *testing.T) {
 		{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 		{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 		{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
-		{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
+		{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit, Unrestricted: true},
 	}
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.AfterID > 0 || opt.RepoID == 42 {
 			return []*types.ExternalService{
 				{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
-				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
+				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit, Unrestricted: true},
 			}, nil
 		}
 
@@ -813,6 +813,7 @@ func TestExternalServices(t *testing.T) {
 				externalServices(repo: "%s") {
 					nodes {
 						id
+						unrestricted
 					}
 				}
 			}
@@ -821,8 +822,8 @@ func TestExternalServices(t *testing.T) {
 			{
 				"externalServices": {
 					"nodes": [
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=","unrestricted":false},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=","unrestricted":true}
                     ]
                 }
 			}

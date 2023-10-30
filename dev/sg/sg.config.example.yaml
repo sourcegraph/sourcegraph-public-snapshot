@@ -73,8 +73,10 @@ commands:
       SOURCEGRAPH_HTTPS_PORT: 3443
 
   web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
-    install: pnpm install
+    cmd: pnpm --filter @sourcegraph/web dev
+    install: |
+      pnpm install
+      pnpm run generate
     env:
       WEB_BUILDER_DEV_SERVER: 1
       NODE_ENV: development

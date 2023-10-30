@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/jsii-runtime-go"
+	"github.com/grafana/regexp"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2serviceiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
@@ -117,16 +120,46 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		ByteLength: 8,
 	})
 
+	id := resourceid.New("cloudrun")
+
+	var customRole projectiamcustomrole.ProjectIamCustomRole
+	if vars.Service.IAM != nil && len(vars.Service.IAM.Permissions) > 0 {
+		customRole = projectiamcustomrole.NewProjectIamCustomRole(stack, id.ResourceID("custom-role"), &projectiamcustomrole.ProjectIamCustomRoleConfig{
+			RoleId:      pointers.Ptr(fmt.Sprintf("%s_custom_role", id.DisplayName())),
+			Title:       pointers.Ptr(fmt.Sprintf("%s custom role", id.DisplayName())),
+			Project:     &vars.ProjectID,
+			Permissions: jsii.Strings(vars.Service.IAM.Permissions...),
+		})
+	}
+
 	// Set up configuration for the core Cloud Run service
 	cloudRun := &cloudRunServiceBuilder{
 		ServiceAccount: serviceaccount.New(stack,
-			resourceid.New("cloudrun"),
+			id,
 			serviceaccount.Config{
 				ProjectID: vars.ProjectID,
 				AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
 				DisplayName: fmt.Sprintf("%s Service Account",
 					pointers.Deref(vars.Service.Name, vars.Service.ID)),
-				Roles: serviceAccountRoles,
+				Roles: func() []serviceaccount.Role {
+					if vars.Service.IAM != nil && len(vars.Service.IAM.Roles) > 0 {
+						var rs []serviceaccount.Role
+						for _, r := range vars.Service.IAM.Roles {
+							rs = append(rs, serviceaccount.Role{
+								ID:   matchNonAlphaNumericRegex.ReplaceAllString(r, "_"),
+								Role: r,
+							})
+						}
+						serviceAccountRoles = append(rs, serviceAccountRoles...)
+					}
+					if customRole != nil {
+						serviceAccountRoles = append(serviceAccountRoles, serviceaccount.Role{
+							ID:   "role_cloudrun_custom_role",
+							Role: *customRole.Name(),
+						})
+					}
+					return serviceAccountRoles
+				}(),
 			}),
 
 		DiagnosticsSecret: diagnosticsSecret,
@@ -321,7 +354,7 @@ type cloudRunServiceBuilder struct {
 
 func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables) (cloudrunv2service.CloudRunV2Service, error) {
 	// TODO Make this fancier, for now this is just a sketch of maybe CD?
-	serviceImageTag, err := vars.Environment.Deploy.ResolveTag()
+	serviceImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
 	if err != nil {
 		return nil, err
 	}
@@ -332,6 +365,18 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 			Connector: c.PrivateNetwork.connector.SelfLink(),
 			Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
 		}
+	}
+
+	containerEnvVars, err := makeContainerEnvVars(
+		vars.Environment.Env,
+		vars.Environment.SecretEnv,
+		envVariablesData{
+			ProjectID:      vars.ProjectID,
+			ServiceDnsName: fmt.Sprintf("%s.%s", vars.Environment.Domain.Cloudflare.Subdomain, vars.Environment.Domain.Cloudflare.Zone),
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "make container env vars")
 	}
 
 	return cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
@@ -393,10 +438,7 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 				}},
 
 				Env: append(
-					makeContainerEnvVars(
-						vars.Environment.Env,
-						vars.Environment.SecretEnv,
-					),
+					containerEnvVars,
 					c.AdditionalEnv...),
 
 				// Do healthchecks with authorization based on MSP convention.
@@ -451,3 +493,7 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 			Volumes: c.AdditionalVolumes,
 		}}), nil
 }
+
+var (
+	matchNonAlphaNumericRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
+)

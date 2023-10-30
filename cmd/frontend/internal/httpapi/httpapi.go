@@ -187,8 +187,7 @@ func NewHandler(
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
 
-	gsClient := gitserver.NewClient()
-	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
+	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream"))))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
@@ -231,7 +230,7 @@ func RegisterInternalServices(
 	})
 
 	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient("http.zoektindexerserver")
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer"),

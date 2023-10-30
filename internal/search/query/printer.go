@@ -17,7 +17,7 @@ func stringHumanPattern(nodes []Node) string {
 				v = strconv.Quote(v)
 			}
 			if n.Annotation.Labels.IsSet(Regexp) {
-				v = fmt.Sprintf("/%s/", v)
+				v = Delimit(v, '/')
 			}
 			if _, _, ok := ScanBalancedPattern([]byte(v)); !ok && !n.Annotation.Labels.IsSet(IsAlias) && n.Annotation.Labels.IsSet(Literal) {
 				v = fmt.Sprintf(`content:%s`, strconv.Quote(v))
