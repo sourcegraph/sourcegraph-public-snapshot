@@ -104,6 +104,7 @@ describe('StreamingSearchResults', () => {
             trace: undefined,
             chunkMatches: true,
             featureOverrides: [],
+            zoektSearchOptions: '',
         })
     })
 

@@ -76,16 +76,8 @@ func NewAuthzProviders(
 		// conditions. As a result, we use a temporary hack by setting this on the provider for now.
 		p.enableGithubInternalRepoVisibility = enableGithubInternalRepoVisibility
 
-		// Permissions require a corresponding GitHub OAuth provider. Without one, repos
-		// with restricted permissions will not be visible to non-admins.
-		if authProvider, exists := githubAuthProviders[p.ServiceID()]; !exists {
-			initResults.Warnings = append(initResults.Warnings,
-				fmt.Sprintf("GitHub config for %[1]s has `authorization` enabled, "+
-					"but no authentication provider matching %[1]q was found. "+
-					"Check the [**site configuration**](/site-admin/configuration) to "+
-					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
-					p.ServiceID()))
-		} else if p.groupsCache != nil && !authProvider.AllowGroupsPermissionsSync {
+		authProvider, exists := githubAuthProviders[p.ServiceID()]
+		if exists && p.groupsCache != nil && !authProvider.AllowGroupsPermissionsSync {
 			// Groups permissions requires auth provider to request the correct scopes.
 			initResults.Warnings = append(initResults.Warnings,
 				fmt.Sprintf("GitHub config for %[1]s has `authorization.groupsCacheTTL` enabled, but "+
