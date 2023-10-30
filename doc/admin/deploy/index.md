@@ -22,7 +22,7 @@ Sourcegraph offers multiple deployment options to suit different needs. The appr
 
 Carefully consider your organization's needs and technical expertise when selecting a Sourcegraph deployment method. The method you choose cannot be changed for a running instance, so make an informed decision. The available methods have different capabilities, and the following sections provide recommendations to help you choose.
 
-### [Sourcegraph Cloud](https://about.sourcegraph.com/get-started?t=enterprise/)
+### [Sourcegraph Cloud](https://about.sourcegraph.com/get-started?t=enterprise)
 
 **For Enterprises looking for a Cloud solution.**
 

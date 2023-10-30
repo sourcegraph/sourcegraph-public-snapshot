@@ -23,7 +23,6 @@ const config = {
     '**/*.d.ts',
     'eslint-relative-formatter.js',
     'jest.config.js',
-    'gulpfile.js',
     'typedoc.js',
     'bundlesize.config.js',
   ],
@@ -320,14 +319,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     },
     {
-      files: [
-        '**/dev/**/*.ts',
-        '**/gulpfile.js',
-        '**/story/**.tsx',
-        '**/story/**.ts',
-        '*.story.tsx',
-        'client/build-config/**',
-      ],
+      files: ['**/dev/**/*.ts', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx', 'client/build-config/**'],
       rules: {
         'no-console': 'off',
         'no-sync': 'off',
