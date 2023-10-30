@@ -5,7 +5,7 @@ import (
 	"io"
 	"os/exec"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -111,7 +111,7 @@ type startedCmd struct {
 	stdoutBuf *prefixSuffixSaver
 	stderrBuf *prefixSuffixSaver
 
-	outEg *errgroup.Group
+	outEg *pool.ErrorPool
 }
 
 func (sc *startedCmd) Wait() error {

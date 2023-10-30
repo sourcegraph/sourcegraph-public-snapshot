@@ -39,7 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Experimental support for OpenAI powered autocomplete has been added. [#57872](https://github.com/sourcegraph/sourcegraph/pull/57872)
 
 ### Changed
 

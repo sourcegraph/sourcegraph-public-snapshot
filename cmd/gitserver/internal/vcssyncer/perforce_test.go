@@ -3,12 +3,18 @@ package vcssyncer
 import (
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
 func TestP4DepotSyncer_p4CommandEnv(t *testing.T) {
-	syncer := &PerforceDepotSyncer{
-		Client: "client",
-		P4Home: "p4home",
+	syncer := &perforceDepotSyncer{
+		logger:                  logtest.Scoped(t),
+		recordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		P4Client:                "client",
+		P4Home:                  "p4home",
 	}
 	vars := syncer.p4CommandEnv("host", "username", "password")
 	assertEnv := func(key, value string) {

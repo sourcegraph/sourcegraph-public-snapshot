@@ -22,7 +22,6 @@ var clientRootFiles = []string{
 	"tsconfig.json",
 	".percy.yml",
 	".eslintrc.js",
-	"gulpfile.js",
 }
 
 func isRootClientFile(p string) bool {

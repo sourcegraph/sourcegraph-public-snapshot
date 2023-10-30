@@ -6,7 +6,7 @@ echo "--- pnpm install in root"
 ./dev/ci/pnpm-install-with-retry.sh
 
 echo "--- generate"
-pnpm gulp generate
+pnpm run generate
 
 echo "--- test"
 

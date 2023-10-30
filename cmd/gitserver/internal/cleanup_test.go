@@ -16,22 +16,18 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -368,30 +364,6 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	getRemoteURL := func(ctx context.Context, name api.RepoName) (string, error) {
-		if name == "repo-boom" {
-			return "", errors.Errorf("boom")
-		}
-		return remote, nil
-	}
-
-	logger := logtest.Scoped(t)
-	s := &Server{
-		Logger:           logger,
-		ObservationCtx:   observation.TestContextTB(t),
-		ReposDir:         root,
-		GetRemoteURLFunc: getRemoteURL,
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
-		},
-		Hostname:                "test-gitserver",
-		DB:                      database.NewDB(logger, dbtest.NewDB(t)),
-		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
-		Locker:                  NewRepositoryLocker(),
-		RPSLimiter:              ratelimit.NewInstrumentedLimiter("test", rate.NewLimiter(100, 10)),
-	}
-	s.Handler() // Handler as a side-effect sets up Server
-
 	modTime := func(path string) time.Time {
 		t.Helper()
 		fi, err := os.Stat(filepath.Join(path, "HEAD"))
@@ -439,18 +411,20 @@ func TestCleanupExpired(t *testing.T) {
 	}
 
 	now := time.Now()
-	repoNewTime := modTime(repoNew)
-	repoOldTime := modTime(repoOld)
-	repoGCNewTime := modTime(repoGCNew)
-	repoGCOldTime := modTime(repoGCOld)
-	repoCorruptTime := modTime(repoBoom)
-	repoPerforceTime := modTime(repoPerforce)
-	repoPerforceGCOldTime := modTime(repoPerforceGCOld)
 	repoBoomTime := modTime(repoBoom)
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
 	if _, err := os.Stat(repoNonBare); err != nil {
 		t.Fatal(err)
+	}
+
+	calledClone := []api.RepoName{}
+	cloneRepo := func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
+		if repo == "repo-boom" {
+			return "", errors.New("boom")
+		}
+		calledClone = append(calledClone, repo)
+		return "done", nil
 	}
 
 	cleanupRepos(
@@ -460,34 +434,9 @@ func TestCleanupExpired(t *testing.T) {
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		root,
-		s.CloneRepo,
+		cloneRepo,
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 	)
-
-	// repos that shouldn't be re-cloned
-	if repoNewTime.Before(modTime(repoNew)) {
-		t.Error("expected repoNew to not be modified")
-	}
-	if repoGCNewTime.Before(modTime(repoGCNew)) {
-		t.Error("expected repoGCNew to not be modified")
-	}
-	if repoPerforceTime.Before(modTime(repoPerforce)) {
-		t.Error("expected repoPerforce to not be modified")
-	}
-	if repoPerforceGCOldTime.Before(modTime(repoPerforceGCOld)) {
-		t.Error("expected repoPerforceGCOld to not be modified")
-	}
-
-	// repos that should be recloned
-	if !repoOldTime.Before(modTime(repoOld)) {
-		t.Error("expected repoOld to be recloned during clean up")
-	}
-	if !repoGCOldTime.Before(modTime(repoGCOld)) {
-		t.Error("expected repoGCOld to be recloned during clean up")
-	}
-	if !repoCorruptTime.Before(modTime(repoCorrupt)) {
-		t.Error("expected repoCorrupt to be recloned during clean up")
-	}
 
 	// repos that fail to clone need to have recloneTime updated
 	if repoBoomTime.Before(modTime(repoBoom)) {
@@ -503,6 +452,8 @@ func TestCleanupExpired(t *testing.T) {
 	if _, err := os.Stat(repoNonBare); err == nil {
 		t.Fatal("non-bare repo was not removed")
 	}
+
+	require.Equal(t, []api.RepoName{"repo-corrupt", "repo-gc-old", "repo-old"}, calledClone)
 }
 
 func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
