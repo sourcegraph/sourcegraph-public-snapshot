@@ -1,6 +1,9 @@
+import { readFileSync } from 'fs'
 import path from 'path'
 
 import { CodegenConfig, generate } from '@graphql-codegen/cli'
+import { glob } from 'glob'
+import { GraphQLError } from 'graphql'
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 
@@ -50,9 +53,6 @@ const SHARED_PLUGINS = [
     'typescript',
     'typescript-operations',
 ]
-
-const PRETTIER = path.join(path.dirname(require.resolve('prettier')), 'bin-prettier.js')
-
 interface Input {
     interfaceNameForOperations: string
     outputPath: string
@@ -85,10 +85,23 @@ export const ALL_INPUTS: Input[] = [
     },
 ]
 
+/**
+ * Resolve the globs to files and filter to only files containing "gql`" (which indicates that they
+ * contain a GraphQL operation). The @graphql-codegen/typescript plugin does more advanced filtering
+ * using an AST parse tree, but this simple string check skips AST parsing and saves a lot of time.
+ */
+function resolveAndFilterGlobs(globs: string[]): string[] {
+    const files = globs.flatMap(p =>
+        p.startsWith('!') ? p : glob.sync(p).filter(file => readFileSync(file, 'utf-8').includes('gql`'))
+    )
+    return files
+}
+
 export function createCodegenConfig(operations: Input[]): CodegenConfig {
-    const generates = operations.reduce<CodegenConfig['generates']>((generates, operation) => {
+    const generates: CodegenConfig['generates'] = {}
+    for (const operation of operations) {
         generates[operation.outputPath] = {
-            documents: GLOBS[operation.interfaceNameForOperations],
+            documents: resolveAndFilterGlobs(GLOBS[operation.interfaceNameForOperations]),
             config: {
                 onlyOperationTypes: true,
                 noExport: false,
@@ -100,15 +113,12 @@ export function createCodegenConfig(operations: Input[]): CodegenConfig {
             },
             plugins: [...SHARED_PLUGINS, ...(EXTRA_PLUGINS[operation.interfaceNameForOperations] || [])],
         }
-        return generates
-    }, {})
+    }
 
     return {
         schema: SCHEMA_PATH,
-        hooks: {
-            afterOneFileWrite: `${PRETTIER} --write`,
-        },
         errorsOnly: true,
+        silent: true,
         config: {
             // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
             arrayInputCoercion: false,
@@ -154,6 +164,13 @@ if (require.main === module) {
     }
     main(process.argv.slice(2)).catch(error => {
         console.error(error)
+        if (error instanceof AggregateError) {
+            for (const e of error.errors) {
+                if (e instanceof GraphQLError) {
+                    console.error(e.source, e.locations)
+                }
+            }
+        }
         process.exit(1)
     })
 }
