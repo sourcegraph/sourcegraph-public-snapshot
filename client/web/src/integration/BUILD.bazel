@@ -116,9 +116,6 @@ mocha_test(
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
     },
     flaky = True,
-    i# Used to provide BUILDKITE_BRANCH and BUILDKITE_COMMIT to Percy via
-    # dev/bazel_buildkite_stamp_vars.sh. See the tool implementation for more details.
-    # NB: this is cache busting on CI sinces_percy_enabled = True,
     stamp = 1,
     stamp_env_vars_only = True,
     tags = [
