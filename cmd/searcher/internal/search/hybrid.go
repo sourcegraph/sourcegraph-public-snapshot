@@ -68,6 +68,11 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 			}
 		}
 
+		if err != nil {
+			rootLogger.Error("hybrid search failed", log.String("state", finalState), log.Error(err))
+		} else {
+			rootLogger.Debug("hybrid search done", log.String("state", finalState), log.Bool("ok", ok), log.Int("unsearched.len", len(unsearched)))
+		}
 		metricHybridFinalState.WithLabelValues(finalState).Inc()
 	}()
 
@@ -83,7 +88,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
 			recordHybridFinalState("zoekt-list-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to list indexed commits for %s", p.Repo)
 		}
 		if !ok {
 			logger.Debug("failed to find indexed commit")
@@ -98,7 +103,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
 		if err != nil {
 			recordHybridFinalState("git-diff-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
 		indexedIgnore, unindexedSearch, err := diff.ParseGitDiffNameStatus(out)
@@ -107,7 +112,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				log.Binary("out", out),
 				log.Error(err))
 			recordHybridFinalState("git-diff-parse-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to parse git diff output of changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
 		totalLenIndexedIgnore := totalStringsLen(indexedIgnore)
@@ -131,7 +136,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		retryReason, err := zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			recordHybridFinalState("zoekt-search-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to search indexed commit %s@%s", p.Repo, indexed)
 		} else if retryReason != "" {
 			metricHybridRetry.WithLabelValues(retryReason).Inc()
 			logger.Debug("retrying search since index changed while searching", log.String("retryReason", retryReason))
