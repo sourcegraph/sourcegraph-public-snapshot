@@ -42,8 +42,7 @@ const onClickCTAButton = (type: string): void =>
 const logEvent = (eventName: string, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })
 
-const logPageView = (pageTitle: string): void =>
-    eventLogger.logPageView(pageTitle)
+const logPageView = (pageTitle: string): void => eventLogger.logPageView(pageTitle)
 
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
     useEffect(() => {
