@@ -1050,6 +1050,7 @@ ts_project(
         "src/enterprise/searchContexts/hooks/useDefaultContext.ts",
         "src/enterprise/searchContexts/hooks/useToggleSearchContextStar.ts",
         "src/enterprise/searchContexts/repositoryRevisionsConfigParser.ts",
+        "src/enterprise/settings/permissons.ts",
         "src/enterprise/site-admin/SiteAdminAuthenticationProvidersPage.tsx",
         "src/enterprise/site-admin/SiteAdminExternalAccountsPage.tsx",
         "src/enterprise/site-admin/SiteAdminPreciseIndexPage.tsx",
