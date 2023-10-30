@@ -44,6 +44,8 @@ ts_binary(
         "//:node_modules/@graphql-codegen/typescript",
         "//:node_modules/@graphql-codegen/typescript-apollo-client-helpers",
         "//:node_modules/@graphql-codegen/typescript-operations",
+        "//:node_modules/glob",
+        "//:node_modules/graphql",
         "//:node_modules/prettier",
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ],
