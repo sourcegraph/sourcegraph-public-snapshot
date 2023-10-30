@@ -38,6 +38,9 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
+    tags = [
+        "exclusive"
+    ],
     port = "7080",
     runner_src = ":e2e_test.sh",
 )

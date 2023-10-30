@@ -1,6 +1,6 @@
-load("//dev:go_defs.bzl", "go_test")
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+lad("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "shared",
@@ -55,7 +55,6 @@ copy_file(
     name = "ln_test_data_embeddings_index",
     src = "@github_com_sourcegraph_sourcegraph_embeddingindex//file:downloaded",
     out = "testdata/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex",
-    allow_symlink = True,
 )
 
 # See //cmd/embeddings/shared:assets.bzl for the macro fetching those external dependencies.
@@ -93,4 +92,7 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
+    tags = [
+        "exclusive"
+    ]
 )
