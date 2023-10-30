@@ -2742,7 +2742,7 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "sourcegraph",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
         },
         "endpoint": {
           "type": "string",
