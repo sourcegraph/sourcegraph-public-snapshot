@@ -1,5 +1,6 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{hash_map::DefaultHasher, HashMap, HashSet},
+    hash::Hasher,
     path::PathBuf,
 };
 
@@ -178,15 +179,28 @@ pub fn evaluate_indexes<'a>(
         overlaps_vec.sort_by_key(|(symbol_pair, _)| symbol_pair.clone());
 
         for (pair, ov) in overlaps_vec {
+            let total = ov.total;
+            let common = ov.common;
+
+            let ground_truth_ambiguity = ground_truth_ambiguities
+                .get(&pair.ground_truth)
+                .unwrap_or(&1)
+                - 1;
+
+            let ambiguity = candidate_ambiguities.get(&pair.candidate).unwrap_or(&1) - 1;
+
+            let ground_truth = shorten_symbol(&pair.ground_truth).green();
+
+            let candidate = shorten_symbol(&pair.candidate).red();
+
+            let prefix = format!("[{common}/{total} occurrences] {:.2} -- ", ov.jaccard());
+
+            let prefix_len = prefix.chars().count();
+
+            let padding = " ".repeat(prefix_len);
+
             eprintln!(
-                "{} -- {}    {} (ambiguity: {})",
-                ov.jaccard().to_string().bold(),
-                pair.ground_truth.green(),
-                pair.candidate.red(),
-                lookup
-                    .get(&pair.ground_truth)
-                    .map(|s| s.len() - 1)
-                    .unwrap_or(0)
+                "{prefix}{ground_truth} (ambiguity: {ground_truth_ambiguity})\n{padding}{candidate} (ambiguity: {ambiguity})\n"
             )
         }
     }
@@ -258,6 +272,21 @@ pub fn evaluate_indexes<'a>(
     bar.finish_and_clear();
 
     Ok(EvaluationResult::new(classified_locations))
+}
+
+fn shorten_symbol(sym: &String) -> String {
+    let parts: Vec<&str> = sym.splitn(5, " ").collect();
+    if parts.len() == 5 {
+        let producer = parts[0];
+        let _tpe = parts[1];
+        let _package = parts[2];
+        let _version = parts[3];
+        let symbol = parts[4];
+
+        format!("{producer} . . . {symbol}").to_string()
+    } else {
+        sym.to_string()
+    }
 }
 
 #[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
@@ -457,6 +486,12 @@ pub fn print_evaluation_summary(eval: EvaluationResult, options: ScipEvaluateOpt
     }
 }
 
+fn calculate_hash<T: std::hash::Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
 fn index_occurrences(idx: &Index) -> HashMap<LocationInFile, String> {
     let mut mp: HashMap<LocationInFile, String> = HashMap::new();
 
@@ -472,8 +507,8 @@ fn index_occurrences(idx: &Index) -> HashMap<LocationInFile, String> {
 
             if occ.symbol.starts_with("local ") {
                 new_sym = format!(
-                    "local {}-{}",
-                    sanitised_relative_path,
+                    "local doc-{}-{}",
+                    calculate_hash(&sanitised_relative_path),
                     occ.symbol.strip_prefix("local ").unwrap()
                 )
             }
