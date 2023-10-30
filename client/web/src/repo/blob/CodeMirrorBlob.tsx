@@ -5,8 +5,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, type Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { Compartment, EditorState, Range, type Extension, Line } from '@codemirror/state'
+import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
 
@@ -113,6 +113,38 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     snapshotData?: { offset: number; data: string; additional: string[] | null }[] | null
 }
 
+class NoLineBreakWidget extends WidgetType {
+    constructor(private noLineBreakComment: string) {
+        super()
+    }
+
+    public eq(other: NoLineBreakWidget): boolean {
+        return this.noLineBreakComment === other.noLineBreakComment
+    }
+
+    public toDOM(): HTMLElement {
+        const div = document.createElement('div')
+        div.className = 'no-line-break-msg'
+        div.textContent = this.noLineBreakComment
+        return div
+    }
+}
+
+const replaceLastLineDeco = (lastLine: Line): Range<Decoration> => {
+    // Subtract 1 to exclude newline character at end of line
+    // when setting decoration range
+    const deco = Decoration.replace({}).range(lastLine.from - 1, lastLine.to)
+    return deco
+}
+
+const addEOFNoteDeco = (lastLine: Line): Range<Decoration> => {
+    const widget = new NoLineBreakWidget('(No new line at end of file)')
+    return Decoration.replace({
+        widget,
+        block: true,
+    }).range(lastLine.to)
+}
+
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
     EditorView.editable.of(false),
@@ -157,6 +189,21 @@ const staticExtensions: Extension = [
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.no-line-break-msg': {
+            color: 'var(--text-muted)',
+            fontStyle: 'italic',
+            marginTop: '.2rem',
+        },
+    }),
+    EditorView.decorations.compute(['doc'], state => {
+        const lastLine = state.doc.line(state.doc.lines)
+        const decoRemoveLastLine = replaceLastLineDeco(lastLine)
+        const decoAddEOFNote = addEOFNoteDeco(lastLine)
+
+        if (lastLine.length === 0) {
+            return Decoration.set(decoRemoveLastLine)
+        }
+        return Decoration.set(decoAddEOFNote)
     }),
 ]
 
