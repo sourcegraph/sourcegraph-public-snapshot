@@ -490,6 +490,7 @@ export interface StreamSearchOptions {
     displayLimit?: number
     chunkMatches?: boolean
     enableRepositoryMetadata?: boolean
+    zoektSearchOptions?: string
 }
 
 function initiateSearchStream(
@@ -499,6 +500,7 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        zoektSearchOptions,
         featureOverrides,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
@@ -523,6 +525,10 @@ function initiateSearchStream(
         }
         for (const value of featureOverrides || []) {
             parameters.push(['feat', value])
+        }
+
+        if (zoektSearchOptions) {
+            parameters.push(['zoekt-search-opts', zoektSearchOptions])
         }
         const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 

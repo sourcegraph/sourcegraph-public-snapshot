@@ -16,6 +16,7 @@ go_library(
         "//cmd/frontend/internal/search/httpapi",
         "//cmd/frontend/internal/search/logs",
         "//cmd/frontend/internal/search/resolvers",
+        "//internal/actor",
         "//internal/api",
         "//internal/codeintel",
         "//internal/conf",
