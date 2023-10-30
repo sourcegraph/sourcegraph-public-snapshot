@@ -1,6 +1,6 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-lad("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "shared",
@@ -79,6 +79,9 @@ go_test(
         ":ln_test_data_embeddings_index",
         ":ln_test_data_query_embeddings_gob",
     ],  # keep
+    tags = [
+        "exclusive",
+    ],
     deps = [
         "//cmd/embeddings/qa",
         "//internal/api",
@@ -92,7 +95,4 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
-    tags = [
-        "exclusive"
-    ]
 )

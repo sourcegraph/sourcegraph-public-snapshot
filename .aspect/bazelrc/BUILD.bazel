@@ -8,7 +8,7 @@ write_aspect_bazelrc_presets(
         "bazel6",
         "ci",
         "convenience",
-        "correctness", # temporary for sanity checking: DO NOT LAND!
+        "correctness",  # temporary for sanity checking: DO NOT LAND!
         "debug",
         "javascript",
         # "performance",
