@@ -30,7 +30,6 @@ go_library(
         "//cmd/frontend/internal/httpapi/webhookhandlers",
         "//cmd/frontend/internal/routevar",
         "//cmd/frontend/internal/search",
-        "//cmd/frontend/registry/api",
         "//cmd/frontend/webhooks",
         "//internal/actor",
         "//internal/api",
