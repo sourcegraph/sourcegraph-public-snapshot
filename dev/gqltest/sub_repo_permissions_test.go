@@ -398,8 +398,28 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		}
 		return gqltestutil.ErrContinueRetry
 	})
+	// Try a second time if the first attempt failed.
 	if err != nil {
-		t.Fatal("Waiting for user permissions to be synced:", err)
+		err = client.ScheduleUserPermissionsSync(userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Wait up to 30 seconds for the user to have permissions synced
+		// from the code host at least once.
+		err = gqltestutil.Retry(30*time.Second, func() error {
+			userPermsInfo, err := client.UserPermissionsInfo(userName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if userPermsInfo != nil && !userPermsInfo.UpdatedAt.IsZero() {
+				return nil
+			}
+			return gqltestutil.ErrContinueRetry
+		})
+		if err != nil {
+			t.Fatal("Waiting for user permissions to be synced:", err)
+		}
 	}
 }
 
