@@ -1858,6 +1858,7 @@ ts_project(
         "//:node_modules/uuid",
         "//:node_modules/yaml-ast-parser",
         "//:node_modules/zustand",
+        "//client/observability-client:observability-client_lib",
         "//client/web/src/rbac:constants",
         "//schema:schema-json",
     ],
