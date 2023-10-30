@@ -106,8 +106,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		assert.Empty(t, initResults.Problems)
 		assert.Empty(t, initResults.InvalidConnections)
 
-		require.Len(t, initResults.Warnings, 1, "expect exactly one warning")
-		assert.Contains(t, initResults.Warnings[0], "no authentication provider")
+		require.Len(t, initResults.Warnings, 0, "expect no warnings")
 	})
 
 	t.Run("matching auth provider found", func(t *testing.T) {
