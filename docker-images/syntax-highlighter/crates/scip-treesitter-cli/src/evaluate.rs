@@ -141,18 +141,10 @@ pub fn evaluate_indexes<'a>(
     }
     bar.tick();
 
-    // We have produced the final counts for all symbol pairs -
-    // it's time to produce final weights
-    let symbol_pair_weight: HashMap<SymbolPair, f32> = overlaps
-        .clone()
-        .into_iter()
-        .map(|(symbol_pair, overlap)| (symbol_pair, overlap.jaccard()))
-        .collect();
-
     let candidate_ambiguities: HashMap<&String, usize> = {
         let mut result: HashMap<&String, HashSet<&String>> = HashMap::new();
 
-        for (symbol_pair, _) in &symbol_pair_weight {
+        for (symbol_pair, _) in &overlaps {
             match result.get_mut(&symbol_pair.candidate) {
                 None => {
                     result.insert(
@@ -174,8 +166,27 @@ pub fn evaluate_indexes<'a>(
         .map(|(k, v)| (k, v.len()))
         .collect();
 
+    // We have produced the final counts for all symbol pairs -
+    // it's time to produce final weights
+    let symbol_pair_weight: HashMap<SymbolPair, f32> = overlaps
+        .clone()
+        .into_iter()
+        .map(|(symbol_pair, overlap)| {
+            let candidate_ambiguity = *candidate_ambiguities
+                .get(&symbol_pair.candidate)
+                .unwrap_or(&0)
+                .max(&2) as f32;
+
+            // let ground_truth_ambiguity = *ground_truth_ambiguities
+            //     .get(&symbol_pair.ground_truth)
+            //     .unwrap_or(&0)
+            //     .max(&2) as f32;
+            (symbol_pair, overlap.jaccard() / candidate_ambiguity.log2())
+        })
+        .collect();
+
     if options.print_mapping {
-        let mut overlaps_vec: Vec<(SymbolPair, Overlap)> = overlaps.into_iter().collect();
+        let mut overlaps_vec: Vec<(SymbolPair, Overlap)> = overlaps.clone().into_iter().collect();
         overlaps_vec.sort_by_key(|(symbol_pair, _)| symbol_pair.clone());
 
         for (pair, ov) in overlaps_vec {
@@ -193,7 +204,9 @@ pub fn evaluate_indexes<'a>(
 
             let candidate = shorten_symbol(&pair.candidate).red();
 
-            let prefix = format!("[{common}/{total} occurrences] {:.2} -- ", ov.jaccard());
+            let score = symbol_pair_weight.get(&pair).unwrap();
+
+            let prefix = format!("[{common}/{total} occurrences] {:.2} -- ", score);
 
             let prefix_len = prefix.chars().count();
 
