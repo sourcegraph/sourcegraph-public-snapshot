@@ -8,6 +8,9 @@ import { countOverrides } from '../devsettings/utils'
 interface DeveloperSettingsState {
     showDialog: boolean
     selectedTab: number
+    zoekt: {
+        searchOptions: string
+    }
     featureFlags: {
         view: string
         filter: string
@@ -23,6 +26,9 @@ export const useDeveloperSettings = create<DeveloperSettingsState>(
         () => ({
             showDialog: false,
             selectedTab: 0,
+            zoekt: {
+                searchOptions: '',
+            },
             featureFlags: {
                 view: 'All',
                 filter: '',
@@ -42,6 +48,15 @@ export function setDeveloperSettingsFeatureFlags(settings: Partial<DeveloperSett
     useDeveloperSettings.setState(state => ({
         featureFlags: {
             ...state.featureFlags,
+            ...settings,
+        },
+    }))
+}
+
+export function setDeveloperSettingsSearchOptions(settings: Partial<DeveloperSettingsState['zoekt']>): void {
+    useDeveloperSettings.setState(state => ({
+        zoekt: {
+            ...state.zoekt,
             ...settings,
         },
     }))
