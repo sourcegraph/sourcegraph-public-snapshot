@@ -72,7 +72,7 @@ pub fn evaluate_indexes<'a>(
     // is all the symbol pairs.
     // Each symbol from ground truth dataset can be mapped to any number of
     // symbols from the candidate set
-    let mut lookup: HashMap<String, HashSet<SymbolPair>> = HashMap::new();
+    let mut ground_truth_alternatives: HashMap<String, HashSet<SymbolPair>> = HashMap::new();
 
     bar.set_message("Analysing occurrences in candidate SCIP");
     for (candidate_loc, candidate_symbol) in candidate_occurrences.clone() {
@@ -89,11 +89,12 @@ pub fn evaluate_indexes<'a>(
                 };
 
                 // See if we already have a lookup entry for this ground truth symbol
-                match lookup.get_mut(ground_truth_symbol) {
+                match ground_truth_alternatives.get_mut(ground_truth_symbol) {
                     None => {
                         // If this is the first time we're seeing this symbol,
                         // create a lookup entry and put a single pair in there
-                        lookup.insert(ground_truth_symbol.clone(), HashSet::from([pair.clone()]));
+                        ground_truth_alternatives
+                            .insert(ground_truth_symbol.clone(), HashSet::from([pair.clone()]));
                     }
                     Some(s) => {
                         // Otherwise, add the symbol pair to the set (it might already be there)
@@ -128,7 +129,7 @@ pub fn evaluate_indexes<'a>(
         // now that we're iterating over all the ground truth occurrences,
         // we can update the `total` counter for each symbol pair
         // associated with that ground truth symbol
-        lookup
+        ground_truth_alternatives
             .get(ground_truth_symbol)
             .into_iter()
             .for_each(|pairs| {
@@ -145,6 +146,31 @@ pub fn evaluate_indexes<'a>(
         .clone()
         .into_iter()
         .map(|(symbol_pair, overlap)| (symbol_pair, overlap.jaccard()))
+        .collect();
+
+    let candidate_ambiguities: HashMap<&String, usize> = {
+        let mut result: HashMap<&String, HashSet<&String>> = HashMap::new();
+
+        for (symbol_pair, _) in &symbol_pair_weight {
+            match result.get_mut(&symbol_pair.candidate) {
+                None => {
+                    result.insert(
+                        &symbol_pair.candidate,
+                        HashSet::from([&symbol_pair.ground_truth]),
+                    );
+                }
+                Some(set) => {
+                    set.insert(&symbol_pair.ground_truth);
+                }
+            }
+        }
+
+        result.clone().iter().map(|(k, v)| (*k, v.len())).collect()
+    };
+
+    let ground_truth_ambiguities: HashMap<&String, usize> = ground_truth_alternatives
+        .iter()
+        .map(|(k, v)| (k, v.len()))
         .collect();
 
     if options.print_mapping {
