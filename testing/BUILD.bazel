@@ -251,6 +251,6 @@ server_integration_test(
     runner_src = ":codeintel_integration_test.sh",
     tags = [
         "manual",
-        "no-sanbdox",
+        "no-sandbox",
     ],
 )
