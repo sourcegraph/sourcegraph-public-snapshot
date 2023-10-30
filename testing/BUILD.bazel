@@ -91,6 +91,7 @@ server_integration_test(
     ],
     env = {
         "SG_FEATURE_FLAG_GRPC": "true",
+        "SRC_LOG_LEVEL": "dbug",
     },
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
