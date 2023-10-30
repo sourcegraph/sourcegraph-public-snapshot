@@ -1,4 +1,4 @@
-import { EditorState, type Extension } from '@codemirror/state'
+import { type Extension } from '@codemirror/state'
 import { EditorView, type PluginValue, ViewPlugin, getTooltip, Tooltip } from '@codemirror/view'
 import { from, fromEvent, Subscription } from 'rxjs'
 import { debounceTime, filter, map, scan, tap } from 'rxjs/operators'
@@ -8,10 +8,15 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 
 import { preciseOffsetAtCoords } from '../utils'
 
-import { getCodeIntelAPI } from './api'
+import { findOccurrenceRangeAt, getHoverTooltip } from './api'
 import { showHasDefinition } from './definition'
 import { CodeIntelTooltip, showTooltip } from './tooltips'
 
+/**
+ * This field stores various information about the currently hovered range, which
+ * is used to provide tooltips via {@link showTooltip} and definition highlighting
+ * via {@link showHasDefinition}.
+ */
 const [hoverTooltip, setHoverTooltip] = createUpdateableField<CodeIntelTooltip | null>(null, self => [
     showTooltip.computeN([self], state => {
         const field = state.field(self)
@@ -23,6 +28,10 @@ const [hoverTooltip, setHoverTooltip] = createUpdateableField<CodeIntelTooltip |
     }),
 ])
 
+/**
+ * This function computes whether the mouse moves towards or away
+ * from the rectable {@param rect}.
+ */
 function computeMouseDirection(
     rect: DOMRect,
     position1: { x: number; y: number },
@@ -53,11 +62,15 @@ const MOUSE_NO_BUTTON = 0
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
- * cursor is a valid {@link Occurrence}, fetches hover information as necessary and updates {@link codeIntelTooltipsState}.
+ * cursor is a valid {@link Occurrence}, fetches hover information as necessary and
+ * updates {@link hoverTooltip}.
  */
 const hoverManager = ViewPlugin.fromClass(
     class HoverManager implements PluginValue {
         private subscription: Subscription = new Subscription()
+        /**
+         * A reference to the currently shown tooltip.
+         */
         private tooltip: (Tooltip & { end: number }) | null = null
 
         constructor(private readonly view: EditorView) {
@@ -150,15 +163,16 @@ const hoverManager = ViewPlugin.fromClass(
                                 return 'HIDE' as const
                             }
 
+                            // Always show the tooltip when user hovers over new token
                             const offset = preciseOffsetAtCoords(this.view, position)
                             if (offset) {
-                                const range = getCodeIntelAPI(view.state).findOccurrenceRangeAt(offset, view.state)
+                                const range = findOccurrenceRangeAt(view.state, offset)
                                 if (range) {
                                     return range
                                 }
                             }
 
-                            // If there is no new occurrence and the mouse is moving away from an existin tooltip,
+                            // If there is no new occurrence and the mouse is moving away from an existing tooltip,
                             // we want the existing tooltip to hide
                             return position.direction !== 'towards' ? ('HIDE' as const) : null
                         })
@@ -170,8 +184,9 @@ const hoverManager = ViewPlugin.fromClass(
                         } else if (next) {
                             setHoverTooltip(view, {
                                 range: next,
-                                key: 'hover',
-                                source: from(getCodeIntelAPI(view.state).getHoverTooltip(view.state, next)).pipe(
+                                source: from(getHoverTooltip(view.state, next.from)).pipe(
+                                    // We need to retain a reference to the created tooltip so that
+                                    // we can compute whether the pointer moves away or towards it.
                                     tap(tooltip => (this.tooltip = tooltip))
                                 ),
                             })
@@ -186,43 +201,8 @@ const hoverManager = ViewPlugin.fromClass(
     }
 )
 
-/*
-                const { navigate, location } = update.state.facet(blobPropsFacet)
-                const params = new URLSearchParams(location.search)
-                params.delete('popover')
-                window.requestAnimationFrame(() =>
-                    // Use `navigate(to)` instead of `navigate(to, { replace: true })` in case
-                    // the user accidentally clicked somewhere without intending to
-                    // dismiss the popover.
-                    navigate({ search: formatSearchParameters(params) })
-                )
-                */
-
-const tooltipStyles = EditorView.theme({
-    // Tooltip styles is a combination of the default wildcard PopoverContent component (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/components/popover-content/PopoverContent.module.scss#L1-L10)
-    // and the floating tooltip-like storybook usage example (https://github.com/sourcegraph/sourcegraph/blob/5de30f6fa1c59d66341e4dfc0c374cab0ad17bff/client/wildcard/src/components/Popover/story/Popover.story.module.scss#L54-L62)
-    // ignoring the min/max width rules.
-    '.cm-tooltip.tmp-tooltip': {
-        fontSize: '0.875rem',
-        backgroundClip: 'padding-box',
-        backgroundColor: 'var(--dropdown-bg)',
-        border: '1px solid var(--dropdown-border-color)',
-        borderRadius: 'var(--popover-border-radius)',
-        color: 'var(--body-color)',
-        boxShadow: 'var(--dropdown-shadow)',
-        padding: '0.5rem',
-    },
-
-    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:before': {
-        borderTopColor: 'var(--dropdown-border-color)',
-    },
-    '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:after': {
-        borderTopColor: 'var(--dropdown-bg)',
-    },
-})
-
-export function getHoverRange(state: EditorState): { from: number; to: number } | null {
-    return state.field(hoverTooltip)?.range ?? null
-}
-
-export const hoverExtension: Extension = [hoverManager, hoverTooltip, tooltipStyles]
+/**
+ * This extension will track the token underneath the cursor and show
+ * code intel tooltips when available.
+ */
+export const hoverExtension: Extension = [hoverManager, hoverTooltip]

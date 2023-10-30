@@ -1,6 +1,7 @@
 import type { Line, SelectionRange, Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 
+import { LineOrPositionOrRange } from '@sourcegraph/common'
 import type { Position } from '@sourcegraph/extension-api-types'
 import { Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { BlobViewState, UIPositionSpec, UIRangeSpec, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -69,6 +70,37 @@ export function uiPositionToOffset(
     return offset <= line.to ? offset : null
 }
 
+/*
+ * Converts 1-based line/character positions to document ranges.
+ * Returns null if the position cannot be mapped to a valid offset within the
+ * document.
+ */
+export function lprToRange(textDocument: Text, position: LineOrPositionOrRange): { from: number; to: number } | null {
+    const { line, character, endLine, endCharacter } = position
+    if (!line || line > textDocument.lines) {
+        return null
+    }
+
+    const fromLine = textDocument.line(line)
+    let from = fromLine.from
+
+    if (character) {
+        from += character - 1
+    }
+
+    let to = from
+
+    if (endLine && endLine < textDocument.lines) {
+        to = textDocument.line(endLine).from
+    }
+
+    if (endCharacter) {
+        to += endCharacter - 1
+    }
+
+    return { from, to }
+}
+
 /**
  * Converts document offsets to 1-based line/character positions.
  */
@@ -101,13 +133,6 @@ export function offsetToUIPosition(
     }
 
     return startPosition
-}
-
-export function viewPortChanged(
-    previous: { from: number; to: number } | null,
-    next: { from: number; to: number }
-): boolean {
-    return previous?.from !== next.from || previous.to !== next.to
 }
 
 export function sortRangeValuesByStart<T extends { range: { start: Position } }>(values: T[]): T[] {

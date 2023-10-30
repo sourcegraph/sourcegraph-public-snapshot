@@ -46,10 +46,9 @@ import { blobPropsFacet } from './codemirror'
 import { blameData, showBlame } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { hideEmptyLastLine } from './codemirror/eof'
-import { CodeIntelAPIAdapter } from './codemirror/codeintel/api'
 import { createCodeIntelExtension } from './codemirror/codeintel/extension'
 import { pinnedLocation } from './codemirror/codeintel/pin'
-import { syncOccurrencesWithURL } from './codemirror/codeintel/selections'
+import { syncSelection } from './codemirror/codeintel/token-selection'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { linkify } from './codemirror/links'
@@ -237,6 +236,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // reconfigure the editor extensions
     const navigateRef = useMutableValue(navigate)
     const locationRef = useMutableValue(location)
+    const positionRef = useMutableValue(position)
 
     const navigateOnClick = useMemo(
         () =>
@@ -412,7 +412,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // Sync editor selection/focus with the URL so that triggering
             // `history.goBack/goForward()` works similar to the "Go back"
             // command in VS Code.
-            syncOccurrencesWithURL(locationRef.current, editor)
+            syncSelection(editor, positionRef.current)
+
             // Automatically focus the content DOM to enable keyboard
             // navigation. Without this automatic focus, users need to click
             // on the blob view with the mouse.
@@ -420,7 +421,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // when using macOS VoiceOver.
             editor.contentDOM.focus({ preventScroll: true })
         }
-    }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
+    }, [blobInfo, extensions, navigateToLineOnAnyClick, positionRef])
 
     // Update selected lines when URL changes
     useEffect(() => {
@@ -429,13 +430,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             selectLines(editor, position.line ? position : null)
         }
     }, [position])
-
-    // Listens to location changes and update editor selection accordingly.
-    useEffect(() => {
-        if (editorRef.current) {
-            syncOccurrencesWithURL(location, editorRef.current)
-        }
-    }, [location])
 
     useCodeMirror(
         editorRef,
@@ -447,6 +441,16 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         useMemo(() => extensions, [])
     )
+
+    // Sync editor selection/focus with the URL so that triggering
+    // `history.goBack/goForward()` works similar to the "Go back"
+    // command in VS Code.
+    useEffect(() => {
+        const view = editorRef.current
+        if (view) {
+            syncSelection(view, positionRef.current)
+        }
+    }, [position])
 
     // Sync editor store with global Zustand store API
     useEffect(() => setBlobEditView(editorRef.current ?? null), [])
@@ -541,7 +545,7 @@ function useCodeIntelExtension(
         () =>
             api
                 ? createCodeIntelExtension({
-                      api: new CodeIntelAPIAdapter({
+                      api: {
                           api,
                           documentInfo,
                           mode,
@@ -601,7 +605,33 @@ function useCodeIntelExtension(
                                   }
                               }
                           },
-                      }),
+                      },
+                      pin: {
+                          onPin(position) {
+                              const search = new URLSearchParams(location.search)
+                              search.set('popover', 'pinned')
+
+                              updateBrowserHistoryIfChanged(
+                                  navigate,
+                                  locationRef.current,
+                                  // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
+                                  addLineRangeQueryParameter(
+                                      search,
+                                      toPositionOrRangeQueryParameter({
+                                          position,
+                                          range: { start: position, end: position },
+                                      })
+                                  )
+                              )
+                              navigator.clipboard.writeText(window.location.href)
+                          },
+                          onUnpin() {
+                              const parameters = new URLSearchParams(locationRef.current.search)
+                              parameters.delete('popover')
+
+                              updateBrowserHistoryIfChanged(navigate, locationRef.current, parameters)
+                          },
+                      },
                       navigate,
                   })
                 : [],

@@ -2,14 +2,19 @@ import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate 
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
 import { combineLatest, Observable, Subject, type Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { distinctUntilChanged, startWith, map } from 'rxjs/operators'
 
-import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import {
+    LineOrPositionOrRange,
+    addLineRangeQueryParameter,
+    isErrorLike,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
 
 import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
 import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../../CodeMirrorBlob'
 import { TooltipViewOptions } from '../codeintel/api'
-import { pinnedLocation } from '../codeintel/pin'
+import { pinConfig, pinnedLocation } from '../codeintel/pin'
 import { blobPropsFacet } from '../index'
 import { CodeMirrorContainer } from '../react-interop'
 import { zeroToOneBasedPosition } from '../utils'
@@ -33,7 +38,7 @@ export class HovercardView implements TooltipView {
     private nextProps = new Subject<BlobPropsFacet>()
     private props: BlobPropsFacet | null = null
     public overlap = true
-    private nextPinned = new Subject<boolean>()
+    private nextPinned = new Subject<LineOrPositionOrRange | null>()
     private subscription: Subscription
 
     constructor(
@@ -43,14 +48,16 @@ export class HovercardView implements TooltipView {
     ) {
         this.dom = document.createElement('div')
         this.dom.className = 'sg-code-intel-hovercard'
-        const pin = view.state.facet(pinnedLocation)
-        const pinned = pin?.line === tokenRange.start.line && pin?.character === tokenRange.start.character
 
         this.subscription = combineLatest([
             this.nextContainer,
             hovercardData,
             this.nextProps.pipe(startWith(view.state.facet(blobPropsFacet))),
-            this.nextPinned.pipe(startWith(pinned)),
+            this.nextPinned.pipe(
+                startWith(view.state.facet(pinnedLocation)),
+                map(pin => pin?.line === tokenRange.start.line && pin?.character === tokenRange.start.character),
+                distinctUntilChanged()
+            ),
         ]).subscribe(([container, hovercardData, props, pinned]) => {
             if (!this.root) {
                 this.root = createRoot(container)
@@ -70,6 +77,7 @@ export class HovercardView implements TooltipView {
             this.props = props
             this.nextProps.next(props)
         }
+        this.nextPinned.next(update.state.facet(pinnedLocation))
     }
 
     public destroy(): void {
@@ -129,34 +137,12 @@ export class HovercardView implements TooltipView {
                         pinOptions={{
                             showCloseButton: pinned,
                             onCloseButtonClick: () => {
-                                const parameters = new URLSearchParams(props.location.search)
-                                parameters.delete('popover')
-
-                                updateBrowserHistoryIfChanged(props.navigate, props.location, parameters)
-                                this.nextPinned.next(false)
+                                const { line, character } = hoveredToken
+                                this.view.state.facet(pinConfig).onUnpin?.({ line, character })
                             },
                             onCopyLinkButtonClick: async () => {
                                 const { line, character } = hoveredToken
-                                const position = { line, character }
-
-                                const search = new URLSearchParams(location.search)
-                                search.set('popover', 'pinned')
-
-                                updateBrowserHistoryIfChanged(
-                                    props.navigate,
-                                    props.location,
-                                    // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
-                                    addLineRangeQueryParameter(
-                                        search,
-                                        toPositionOrRangeQueryParameter({
-                                            position,
-                                            range: { start: position, end: position },
-                                        })
-                                    )
-                                )
-                                await navigator.clipboard.writeText(window.location.href)
-
-                                this.nextPinned.next(true)
+                                this.view.state.facet(pinConfig).onPin?.({ line, character })
                             },
                         }}
                         hoverOverlayContainerClassName="position-relative"

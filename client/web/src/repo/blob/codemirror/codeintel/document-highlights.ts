@@ -2,7 +2,7 @@ import { Facet, RangeSetBuilder } from '@codemirror/state'
 import { Decoration } from '@codemirror/view'
 import { from } from 'rxjs'
 
-import { getCodeIntelAPI } from './api'
+import { getDocumentHighlights } from './api'
 import { codeIntelDecorations } from './decorations'
 import { UpdateableValue, createLoaderExtension } from './utils'
 
@@ -29,6 +29,9 @@ class Highlights implements UpdateableValue<Range[], Highlights> {
     }
 }
 
+/**
+ * Facet to register for which ranges to show document highlights.
+ */
 export const showDocumentHighlights: Facet<Range> = Facet.define<Range>({
     enables: self => [
         createLoaderExtension({
@@ -36,11 +39,10 @@ export const showDocumentHighlights: Facet<Range> = Facet.define<Range>({
                 return state.facet(self)
             },
             create(range) {
-                console.log('create', { range })
                 return new Highlights(range, null)
             },
             load(highlights, state) {
-                return from(getCodeIntelAPI(state).getDocumentHighlights(state, highlights.range))
+                return from(getDocumentHighlights(state, highlights.range.from))
             },
             provide: self => [
                 codeIntelDecorations.computeN([self], state =>

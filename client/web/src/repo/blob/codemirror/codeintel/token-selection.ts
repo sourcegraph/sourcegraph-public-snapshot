@@ -10,20 +10,36 @@ import {
     Range,
 } from '@codemirror/state'
 import { Decoration, EditorView, keymap } from '@codemirror/view'
+import { LineOrPositionOrRange } from 'node_modules/@sourcegraph/common/out/src'
 import { concat, from, of } from 'rxjs'
 import { timeoutWith } from 'rxjs/operators'
 
-import { syntaxHighlight } from '../highlight'
-import { positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
-import { positionToOffset } from '../utils'
+import { lprToRange } from '../utils'
 
-import { getCodeIntelAPI } from './api'
+import {
+    findOccurrenceRangeAt,
+    getHoverTooltip,
+    goToDefinitionAt,
+    nextOccurrencePosition,
+    prevOccurrencePosition,
+} from './api'
 import { ignoreDecorations } from './decorations'
 import { showDocumentHighlights } from './document-highlights'
 import { TooltipSource, showTooltip } from './tooltips'
 
 const tokenSelection = Annotation.define<boolean>()
+const setTooltipSource = StateEffect.define<TooltipSource | null>()
+
+const interactiveTokenDeco = Decoration.mark({
+    class: 'interactive-occurrence', // used as interactive occurrence selector
+    attributes: {
+        // Selected (focused) occurrence is the only focusable element in the editor.
+        // This helps to maintain the focus position when editor is blurred and then focused again.
+        tabindex: '0',
+    },
+})
+const focusedTokenDeco = Decoration.mark({ class: 'focus-visible' })
 
 /**
  * Returns `true` if the editor selection is empty or is inside the occurrence range.
@@ -38,41 +54,42 @@ function shouldApplyFocusStyles(state: EditorState, range: { from: number; to: n
     return isEditorSelectionInsideOccurrenceRange
 }
 
-const interactiveTokenDecoration = Decoration.mark({
-    class: 'interactive-occurrence', // used as interactive occurrence selector
-    attributes: {
-        // Selected (focused) occurrence is the only focusable element in the editor.
-        // This helps to maintain the focus position when editor is blurred and then focused again.
-        tabindex: '0',
-    },
-})
-const focusedTokenDecoration = Decoration.mark({ class: 'focus-visible' })
-
-function shouldUpdateSelectedToken(transaction: Transaction): boolean {
-    return transaction.isUserEvent('select.pointer') || !!transaction.annotation(tokenSelection)
-}
-
-const setTooltipSource = StateEffect.define<TooltipSource | null>()
-
+/**
+ * Helper function for hiding the tooltip at the selected token.
+ */
 function hideTooltip(view: EditorView): void {
     view.dispatch({ effects: setTooltipSource.of(null) })
 }
 
+/**
+ * Returns true if the transaction is a click or an explicit token navigation transaction.
+ */
+function shouldUpdateSelectedToken(transaction: Transaction): boolean {
+    return transaction.isUserEvent('select.pointer') || !!transaction.annotation(tokenSelection)
+}
+
+/**
+ * Field for keeping track of the currently selected token for token navigation. The
+ * field updates when the selection changes to a different token via clicks or explicit
+ * token navigation events.
+ * It also provides
+ *   - keyboard events for showing tooltips via {@link showTooltip}.
+ *   - document highlights for the selected token via {@link showDocumentHighlights}
+ */
 const selectedToken = StateField.define<{
     range: { from: number; to: number }
     tooltipSource?: TooltipSource | null
 } | null>({
-    create() {
-        return null
+    create(state) {
+        const offset = state.selection.main.from
+        const range = findOccurrenceRangeAt(state, offset)
+        return range ? { range } : null
     },
     update(value, transaction) {
         if (shouldUpdateSelectedToken(transaction)) {
             const offset = transaction.newSelection.main.from
             if (!value || offset < value.range.from || value.range.to < offset) {
-                const range = getCodeIntelAPI(transaction.state).findOccurrenceRangeAt(
-                    transaction.newSelection.main.from,
-                    transaction.state
-                )
+                const range = findOccurrenceRangeAt(transaction.state, offset)
                 if (range) {
                     value = { range }
                 } else if (value) {
@@ -95,7 +112,7 @@ const selectedToken = StateField.define<{
          */
         showTooltip.computeN([self], state => {
             const field = state.field(self)
-            return field?.tooltipSource ? [{ range: field.range, key: 'selection', source: field.tooltipSource }] : []
+            return field?.tooltipSource ? [{ range: field.range, source: field.tooltipSource }] : []
         }),
 
         /**
@@ -154,10 +171,10 @@ const selectedToken = StateField.define<{
                     return Decoration.none
                 }
                 const decorations: Range<Decoration>[] = [
-                    interactiveTokenDecoration.range(selectedRange.from, selectedRange.to),
+                    interactiveTokenDeco.range(selectedRange.from, selectedRange.to),
                 ]
                 if (shouldApplyFocusStyles(state, selectedRange)) {
-                    decorations.unshift(focusedTokenDecoration.range(selectedRange.from, selectedRange.to))
+                    decorations.unshift(focusedTokenDeco.range(selectedRange.from, selectedRange.to))
                 }
                 return Decoration.set(decorations, true)
             })
@@ -192,7 +209,7 @@ const selectedToken = StateField.define<{
                         return true
                     }
 
-                    const tooltip$ = from(getCodeIntelAPI(view.state).getHoverTooltip(view.state, selected.range))
+                    const tooltip$ = from(getHoverTooltip(view.state, selected.range.from))
                     view.dispatch({
                         effects: setTooltipSource.of(
                             tooltip$.pipe(
@@ -223,11 +240,9 @@ const selectedToken = StateField.define<{
                     }
 
                     view.dispatch({ effects: setTooltipSource.of(new LoadingTooltip(selected.from, selected.to)) })
-                    getCodeIntelAPI(view.state)
-                        .goToDefinitionAt(view, selected.from)
-                        .finally(() => {
-                            hideTooltip(view)
-                        })
+                    goToDefinitionAt(view, selected.from).finally(() => {
+                        hideTooltip(view)
+                    })
                     return true
                 },
             },
@@ -240,11 +255,9 @@ const selectedToken = StateField.define<{
                     }
 
                     view.dispatch({ effects: setTooltipSource.of(new LoadingTooltip(selected.from, selected.to)) })
-                    getCodeIntelAPI(view.state)
-                        .goToDefinitionAt(view, selected.from, { newWindow: true })
-                        .finally(() => {
-                            hideTooltip(view)
-                        })
+                    goToDefinitionAt(view, selected.from, { newWindow: true }).finally(() => {
+                        hideTooltip(view)
+                    })
                     return true
                 },
             },
@@ -256,79 +269,62 @@ const selectedToken = StateField.define<{
              * keypress handlers defined via {@link EditorView.domEventHandlers} still work.
              */
             keydown: (event: KeyboardEvent, view: EditorView): boolean => {
+                const from = view.state.field(self)?.range.from || view.viewport.from
+                let offset: number | null = null
+
                 switch (event.key) {
                     case 'ArrowLeft': {
-                        const from = view.state.field(self)?.range.from || view.viewport.from
-                        const position = positionAtCmPosition(view.state.doc, from)
-                        const table = view.state.facet(syntaxHighlight)
-                        const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
-                            occurrence.range.start.isSmaller(position)
-                        )
-                        const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-                        if (anchor !== null) {
-                            view.dispatch(setSelection(anchor))
-                        }
-
-                        return true
+                        offset = prevOccurrencePosition(view.state, from, 'character')
+                        break
                     }
                     case 'ArrowRight': {
-                        const from = view.state.field(self)?.range.from || view.viewport.from
-                        const position = positionAtCmPosition(view.state.doc, from)
-                        const table = view.state.facet(syntaxHighlight)
-                        const occurrence = closestOccurrenceByCharacter(position.line, table, position, occurrence =>
-                            occurrence.range.start.isGreater(position)
-                        )
-                        const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-                        if (anchor !== null) {
-                            view.dispatch(setSelection(anchor))
-                        }
-
-                        return true
+                        offset = nextOccurrencePosition(view.state, from, 'character')
+                        break
                     }
                     case 'ArrowUp': {
-                        const from = view.state.field(self)?.range.from || view.viewport.from
-                        const position = positionAtCmPosition(view.state.doc, from)
-                        const table = view.state.facet(syntaxHighlight)
-                        for (let line = position.line - 1; line >= 0; line--) {
-                            const occurrence = closestOccurrenceByCharacter(line, table, position)
-                            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-                            if (anchor !== null) {
-                                view.dispatch(setSelection(anchor))
-                                return true
-                            }
-                        }
-                        return true
+                        offset = prevOccurrencePosition(view.state, from, 'line')
+                        break
                     }
                     case 'ArrowDown': {
-                        const from = view.state.field(self)?.range.from || view.viewport.from
-                        const position = positionAtCmPosition(view.state.doc, from)
-                        const table = view.state.facet(syntaxHighlight)
-                        for (let line = position.line + 1; line < table.lineIndex.length; line++) {
-                            const occurrence = closestOccurrenceByCharacter(line, table, position)
-                            const anchor = occurrence ? positionToOffset(view.state.doc, occurrence.range.start) : null
-                            if (anchor !== null) {
-                                view.dispatch(setSelection(anchor))
-                                return true
-                            }
-                        }
-                        return true
+                        offset = nextOccurrencePosition(view.state, from, 'line')
+                        break
                     }
 
                     default: {
                         return false
                     }
                 }
+                if (offset !== null) {
+                    view.dispatch(setSelection(offset))
+                }
+                return true
             },
         }),
     ],
 })
 
+function setSelection(anchor: number): TransactionSpec {
+    return { selection: { anchor }, annotations: tokenSelection.of(true), scrollIntoView: true }
+}
+
+/**
+ * Returns the currently focused/selected token, if any.
+ */
 export function getSelectedToken(state: EditorState): { from: number; to: number } | null {
     return state.field(selectedToken)?.range ?? null
 }
 
-export function setSelection(anchor: number): TransactionSpec {
-    return { selection: { anchor }, annotations: tokenSelection.of(true), scrollIntoView: true }
+/**
+ * Helper function for moving token selection to the provided position.
+ */
+export function syncSelection(view: EditorView, position: LineOrPositionOrRange): void {
+    const { line, character, endCharacter, endLine } = position
+    if (line && character && endCharacter && (!endLine || line === endLine)) {
+        const range = lprToRange(view.state.doc, { line, character, endCharacter, endLine })
+        if (range) {
+            view.dispatch(setSelection(range.from))
+        }
+    }
 }
 
 export const selectedTokenExtension: Extension = selectedToken

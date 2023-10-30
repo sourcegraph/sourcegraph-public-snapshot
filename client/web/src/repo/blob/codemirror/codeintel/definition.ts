@@ -4,7 +4,7 @@ import { from } from 'rxjs'
 
 import { MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from '../utils'
 
-import { getCodeIntelAPI } from './api'
+import { findOccurrenceRangeAt, goToDefinitionAt, hasDefinitionAt } from './api'
 import { codeIntelDecorations } from './decorations'
 import { UpdateableValue, createLoaderExtension, isModifierKey } from './utils'
 
@@ -56,7 +56,7 @@ export const showHasDefinition = Facet.define<Range>({
                 return new HasDefinition(range, null)
             },
             load(request, state) {
-                return from(getCodeIntelAPI(state).hasDefinitionAt(request.range.from, state))
+                return from(hasDefinitionAt(state, request.range.from))
             },
             provide: self => [
                 // Style ranges that have definitions available
@@ -108,12 +108,11 @@ class MouseEvents {
 }
 
 function goToDefinitionOnMouseEvent(view: EditorView, event: MouseEvent, options?: { isLongClick?: boolean }): void {
-    const api = getCodeIntelAPI(view.state)
     const position = preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY })
     if (position === null) {
         return
     }
-    const occurrence = api.findOccurrenceRangeAt(position, view.state)
+    const occurrence = findOccurrenceRangeAt(view.state, position)
     if (!occurrence) {
         return
     }
@@ -122,7 +121,7 @@ function goToDefinitionOnMouseEvent(view: EditorView, event: MouseEvent, options
     }
 
     // TODO: show loading toolip
-    api.goToDefinitionAt(view, occurrence.from)
+    goToDefinitionAt(view, occurrence.from)
 }
 
 /**

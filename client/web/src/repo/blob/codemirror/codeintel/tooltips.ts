@@ -2,7 +2,6 @@ import { Facet, RangeSetBuilder } from '@codemirror/state'
 import { Tooltip, showTooltip as showCodeMirrorTooltip, EditorView, Decoration } from '@codemirror/view'
 import { Observable, isObservable } from 'rxjs'
 
-import { CodeIntelTooltipPosition } from './api'
 import { codeIntelDecorations } from './decorations'
 import { UpdateableValue, createLoaderExtension } from './utils'
 
@@ -10,9 +9,8 @@ type TooltipWithEnd = Tooltip & { end: number }
 export type TooltipSource = TooltipWithEnd | Observable<TooltipWithEnd | null>
 
 export interface CodeIntelTooltip {
-    range: CodeIntelTooltipPosition
+    range: { from: number; to: number }
     source: TooltipSource
-    key: string
 }
 
 enum Status {
@@ -20,6 +18,15 @@ enum Status {
     DONE,
 }
 
+/**
+ * This facet deduplicates tooltips shown at the same position. Only the first registered
+ * one for a given position will be shown. This is done here so that different sources
+ * that provide tooltips don't need to depend on each other and check whether or not to
+ * show a tooltip. The order is determined by the order of extensions that provide values
+ * for the {@link showTooltip} facet.
+ * This facet enables token styling via {@link codeIntelDecorations} and passes the final
+ * list of tooltips to CodeMirror's own `showTooltip` facet.
+ */
 const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
     combine(values) {
         const seen = new Set<number>()
@@ -31,6 +38,9 @@ const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
             }
         }
         return result.sort((a, b) => a.pos - b.end)
+    },
+    compare(a, b) {
+        return a.length === b.length && a.every((value, i) => value === b[i])
     },
     enables: self => [
         EditorView.theme({
@@ -55,6 +65,11 @@ const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
     ],
 })
 
+/**
+ * Class for keeping track of the currently shown tooltip at the specified position.
+ * The class is designed to allow showing multiple tooltips over time, which allows
+ * for features like a temporary loading tooltip.
+ */
 class TooltipLoadingState implements UpdateableValue<TooltipWithEnd | null, TooltipLoadingState> {
     public visible: boolean
 
@@ -80,7 +95,7 @@ class TooltipLoadingState implements UpdateableValue<TooltipWithEnd | null, Tool
 }
 
 /**
- * Facet for registring where to show CodeIntel tooltips.
+ * Facet for registring where to show tooltips.
  */
 export const showTooltip: Facet<CodeIntelTooltip> = Facet.define<CodeIntelTooltip>({
     enables: self => [
