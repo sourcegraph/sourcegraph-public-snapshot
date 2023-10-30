@@ -566,11 +566,13 @@ describe('Repository', () => {
                 "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
             )
 
-            const blobContent = await driver.page.evaluate(
-                () => document.querySelector('[data-testid="repo-blob"] .cm-content')?.textContent
+            const blobContent = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('[data-testid="repo-blob"] .cm-line')]
+                    .map(line => line.textContent)
+                    .join('\n')
             )
             // CodeMirror blob content has no newline characters
-            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replaceAll('\n', '')
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`
             assert.strictEqual(blobContent, expectedBlobContent)
         })
 
