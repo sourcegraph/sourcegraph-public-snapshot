@@ -3526,7 +3526,7 @@ Referenced by:
  id                    | integer                  |           | not null | nextval('repo_id_seq'::regclass)
  name                  | citext                   |           | not null | 
  description           | text                     |           |          | 
- fork                  | boolean                  |           |          | 
+ fork                  | boolean                  |           | not null | false
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           |          | 
  external_id           | text                     |           |          | 

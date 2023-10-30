@@ -201,10 +201,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 
 		wantRepoIDs := []extsvc.RepoID{
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
-			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 		}
+		slices.Sort(wantRepoIDs)
+		slices.Sort(repoIDs.Exacts)
 		if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 			t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 		}
