@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+
+go_library(
+    name = "upgradetest_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/testing/tools/upgradetest",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_sourcegraph_run//:run"],
+)
+
+go_binary(
+    name = "go_upgradetest",
+    args = ["-h"],
+    data = ["//cmd/migrator:image_tarball"],
+    embed = [":upgradetest_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "upgradetest-darwin-amd64",
+    platform = "@io_bazel_rules_go//go/toolchain:darwin_amd64",
+    target = ":go_upgradetest",
+    visibility = ["//testing:__pkg__"],
+)
+
+sh_binary(
+    name = "sh_upgradetest",
+    srcs = ["test.sh"],
+    args = [
+        "$(location :upgradetest-darwin-amd64)",
+        "$(location //cmd/migrator:image_tarball)",
+    ],
+    data = [
+        ":upgradetest-darwin-amd64",
+        "//cmd/migrator:image_tarball",
+    ],
+    # tags = ["requires-network", "no-sandbox"]
+)
