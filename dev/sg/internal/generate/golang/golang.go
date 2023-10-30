@@ -49,13 +49,6 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		reportOut = std.NewOutput(&sb, false)
 	)
 
-	// Run bazel run //dev:write_all_generated, but only in local
-	if os.Getenv("CI") != "true" {
-		if report := generate.RunScript("bazel run //dev:write_all_generated")(ctx, args); report.Err != nil {
-			return report
-		}
-	}
-
 	// Run go generate [./...]
 	if err := runGoGenerate(ctx, args, progressBar, verbosity, reportOut, &sb); err != nil {
 		return &generate.Report{Output: sb.String(), Err: err}
