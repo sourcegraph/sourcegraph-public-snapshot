@@ -58,7 +58,7 @@ mocha_test(
     name = "e2e",
     timeout = "moderate",
     env = {
-        "INCLUDE_ADMIN_ONBOARDING": "false"
+        "INCLUDE_ADMIN_ONBOARDING": "false",
         "GH_TOKEN": "$(GH_TOKEN)",
     },
     node_toolchain = select({
