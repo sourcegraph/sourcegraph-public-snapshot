@@ -24,7 +24,7 @@ func BazelOperations(buildOpts bk.BuildOptions, isMain bool) []operations.Operat
 		ops = append(ops, bazelTest("//...", "//client/web:test"))
 	}
 
-	ops = append(ops, triggerBackCompatTest(buildOpts))
+	ops = append(ops, triggerBackCompatTest(buildOpts), bazelGoModTidy())
 	return ops
 }
 
@@ -193,6 +193,18 @@ func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
 			bk.AllowDependencyFailure(),
 			bk.Build(buildOpts),
 		)
+	}
+}
+
+func bazelGoModTidy() func(*bk.Pipeline) {
+	cmds := []bk.StepOpt{
+		bk.Agent("queue", "bazel"),
+		bk.Key("bazel-go-mod"),
+		bk.Cmd("./dev/ci/bazel-gomodtidy.sh"),
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":bazel::broom: Go mod tidy", cmds...)
 	}
 }
 
