@@ -210,18 +210,14 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		}, {
 			name: "internal-repo-public",
 			schema: &schema.GitLabConnection{
-				Url: "https://gitlab.com",
-				Authorization: &schema.GitLabAuthorization{
-					MarkInternalReposAsPublic: true,
-				},
+				Url:                       "https://gitlab.com",
+				MarkInternalReposAsPublic: true,
 			},
 		}, {
 			name: "internal-repo-private",
 			schema: &schema.GitLabConnection{
-				Url: "https://gitlab.com",
-				Authorization: &schema.GitLabAuthorization{
-					MarkInternalReposAsPublic: false,
-				},
+				Url:                       "https://gitlab.com",
+				MarkInternalReposAsPublic: false,
 			},
 		},
 	}

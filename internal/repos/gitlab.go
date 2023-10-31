@@ -146,7 +146,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		provider:                  provider,
 		client:                    client,
 		logger:                    logger,
-		markInternalReposAsPublic: (c.Authorization != nil) && c.Authorization.MarkInternalReposAsPublic,
+		markInternalReposAsPublic: c.MarkInternalReposAsPublic,
 	}, nil
 }
 

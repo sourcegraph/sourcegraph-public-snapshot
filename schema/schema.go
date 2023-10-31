@@ -1248,8 +1248,6 @@ type GitLabAuthProvider struct {
 type GitLabAuthorization struct {
 	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 	IdentityProvider IdentityProvider `json:"identityProvider"`
-	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public, and user permission syncs will no longer check for public repositories. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
-	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
 }
 
 // GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
@@ -1272,6 +1270,8 @@ type GitLabConnection struct {
 	GitURLType string `json:"gitURLType,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitLab repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
+	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public, and user permission syncs will no longer check for public repositories. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
+	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
 	// NameTransformations description: An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after "repositoryPathPattern" is processed.
 	NameTransformations []*GitLabNameTransformation `json:"nameTransformations,omitempty"`
 	// ProjectQuery description: An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL path and query that targets a GitLab API endpoint returning a list of projects. If the string only contains a query, then "projects" is used as the path. Examples: "?membership=true&search=foo", "groups/mygroup/projects".
