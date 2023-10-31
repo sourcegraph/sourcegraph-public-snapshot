@@ -10702,7 +10702,7 @@
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (user_id = 0 AND anonymous_user_id \u003c\u003e ''::text OR user_id \u003c\u003e 0 AND anonymous_user_id = ''::text OR user_id \u003c\u003e 0 AND anonymous_user_id \u003c\u003e ''::text)"
+          "ConstraintDefinition": "CHECK (user_id = 0 AND anonymous_user_id \u003c\u003e ''::text OR user_id \u003c\u003e 0 AND anonymous_user_id \u003c\u003e ''::text)"
         },
         {
           "Name": "event_logs_check_name_not_empty",
