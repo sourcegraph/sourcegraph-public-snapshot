@@ -240,7 +240,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     settingsCascade={props.settingsCascade}
                     authenticatedUser={authenticatedUser}
                     platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
                 />
 
                 <Suspense fallback={<LoadingSpinner />}>
@@ -486,7 +485,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={1}
+                priority={10}
                 id="cody"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -531,8 +530,9 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
             {isBrainDotVisible && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={110}
+                    priority={6}
                     id="code-intelligence-status"
+                    renderInContextMenu={true}
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>

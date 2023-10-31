@@ -1,14 +1,16 @@
 import { useCallback } from 'react'
 
-import { mdiAccountDetails, mdiAccountDetailsOutline } from '@mdi/js'
+import { mdiGit } from '@mdi/js'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import type { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+
+import styles from './actions.module.scss'
 
 interface Props {
     source?: 'repoHeader' | 'actionItemsBar'
@@ -16,6 +18,7 @@ interface Props {
     renderMode?: RenderMode
     isPackage: boolean
 }
+
 export const ToggleBlameAction: React.FC<Props> = props => {
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility(props.isPackage)
 
@@ -37,9 +40,7 @@ export const ToggleBlameAction: React.FC<Props> = props => {
         }
     }, [isBlameVisible, setIsBlameVisible])
 
-    const icon = (
-        <Icon aria-hidden={true} svgPath={isBlameVisible && !disabled ? mdiAccountDetails : mdiAccountDetailsOutline} />
-    )
+    const icon = <Icon aria-hidden={true} svgPath={mdiGit} className={styles.repoActionIcon} />
 
     if (props.source === 'actionItemsBar') {
         return (
@@ -65,8 +66,13 @@ export const ToggleBlameAction: React.FC<Props> = props => {
 
     return (
         <Tooltip content={descriptiveText}>
-            <RepoHeaderActionAnchor onSelect={toggleBlameState} disabled={disabled}>
+            <RepoHeaderActionAnchor
+                onSelect={toggleBlameState}
+                disabled={disabled}
+                className="d-flex justify-content-center align-items-center"
+            >
                 {icon}
+                <Text className={styles.repoActionLabel}>Blame</Text>
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

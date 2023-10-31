@@ -2,6 +2,7 @@ import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiApplicationEditOutline } from '@mdi/js'
+import classNames from 'classnames'
 import { from } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
@@ -17,6 +18,7 @@ import {
     Position,
     Tooltip,
     useObservable,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../repo/components/RepoHeaderActions'
@@ -92,6 +94,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         [props.platformContext, userSettingsSubject]
     )
 
+    const shouldShowEditorText = editors?.length === 1
     return editors ? (
         <>
             {editors.map(
@@ -104,7 +107,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                                 <img
                                     src={`${assetsRoot}/img/editors/${editor.id}.svg`}
                                     alt={`Open file in ${editor?.name}`}
-                                    className={styles.icon}
+                                    className={classNames(styles.icon, styles.repoActionIcon)}
                                 />
                             }
                             onClick={() => {
@@ -118,6 +121,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                             }}
                             source={props.source}
                             actionType={props.actionType}
+                            shouldShowEditorText={shouldShowEditorText}
                         />
                     )
             )}
@@ -137,18 +141,23 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     isActive={popoverOpen}
                     icon={
                         props.source === 'repoHeader' ? (
-                            <Icon aria-hidden={true} className={styles.icon} svgPath={mdiApplicationEditOutline} />
+                            <Icon
+                                aria-hidden={true}
+                                className={classNames(styles.icon, styles.repoActionIcon)}
+                                svgPath={mdiApplicationEditOutline}
+                            />
                         ) : (
                             <img
                                 src={`${assetsRoot}/img/open-in-editor.svg`}
                                 alt="Set your preferred editor"
-                                className={styles.icon}
+                                className={classNames(styles.icon, styles.repoActionIcon)}
                             />
                         )
                     }
                     onClick={togglePopover}
                     source={props.source}
                     actionType={props.actionType}
+                    shouldShowEditorText={true}
                 />
             </PopoverTrigger>
             <PopoverContent position={Position.leftStart} className="pt-0 pb-0" aria-labelledby="repo-revision-popover">
@@ -188,7 +197,9 @@ interface EditorItemProps {
     isActive?: boolean
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
+    shouldShowEditorText?: boolean
 }
+
 function EditorItem(props: EditorItemProps): JSX.Element {
     if (props.source === 'actionItemsBar') {
         return (
@@ -211,6 +222,7 @@ function EditorItem(props: EditorItemProps): JSX.Element {
         <Tooltip content={props.tooltip}>
             <RepoHeaderActionAnchor onSelect={props.onClick} className={styles.item}>
                 {props.icon}
+                {props.shouldShowEditorText && <Text className={styles.repoActionLabel}>Editor</Text>}
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

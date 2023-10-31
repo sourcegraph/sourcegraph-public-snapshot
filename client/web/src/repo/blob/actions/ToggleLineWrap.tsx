@@ -1,15 +1,17 @@
 import * as React from 'react'
 
-import { mdiWrap, mdiWrapDisabled } from '@mdi/js'
+import { mdiWrap } from '@mdi/js'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Button } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
+import { RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../../RepoHeader'
+
+import styles from './ToggleLineWrap.module.scss'
 
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.
@@ -72,29 +74,16 @@ export class ToggleLineWrap extends React.PureComponent<
     }
 
     public render(): JSX.Element | null {
-        if (this.props.actionType === 'dropdown') {
-            return (
-                <RepoHeaderActionMenuItem file={true} onSelect={this.onClick}>
-                    <Icon
-                        as={this.state.value ? WrapDisabledIcon : undefined}
-                        svgPath={!this.state.value ? mdiWrap : undefined}
-                        aria-hidden={true}
-                    />
-                    <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
-                </RepoHeaderActionMenuItem>
-            )
-        }
-
         return (
-            <Tooltip content={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}>
-                <RepoHeaderActionButtonLink
-                    aria-label={this.state.value ? 'Disable' : 'Enable'}
-                    file={false}
-                    onSelect={this.onClick}
-                >
-                    <Icon svgPath={this.state.value ? mdiWrapDisabled : mdiWrap} aria-hidden={true} />
-                </RepoHeaderActionButtonLink>
-            </Tooltip>
+            <RepoHeaderActionMenuItem file={true} onSelect={this.onClick} as={Button}>
+                <Icon
+                    as={this.state.value ? WrapDisabledIcon : undefined}
+                    svgPath={!this.state.value ? mdiWrap : undefined}
+                    aria-hidden={true}
+                    className={styles.repoActionIcon}
+                />
+                <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines</span>
+            </RepoHeaderActionMenuItem>
         )
     }
 
