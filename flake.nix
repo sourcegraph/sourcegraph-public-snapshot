@@ -19,7 +19,7 @@
     flake-utils.lib.eachDefaultSystem
       (system:
         let
-          pkgs = import nixpkgs { inherit system; overlays = [self.overlays.nodejs-20_x]; };
+          pkgs = import nixpkgs { inherit system; overlays = [ self.overlays.nodejs-20_x ]; };
           pkgsBins = nixpkgs-stable.legacyPackages.${system};
           pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
           pkgsX = xcompileTargets.${system} or null;
