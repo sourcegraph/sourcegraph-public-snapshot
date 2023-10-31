@@ -13,7 +13,8 @@ runGoModTidy() {
 }
 
 # search for go.mod and run `go mod tidy` in the directory containing the go.mod
-find . -name go.mod -type f -exec dirname '{}' \; | while read -r dir; do runGoModTidy "${dir}"; done
+IGNORE="syntax-highlighter" # skipped because the go.mod in that directory is to let license_checker skip it
+find . -name go.mod -type f -exec dirname '{}' \; | grep -v -e "${IGNORE}" | while read -r dir; do runGoModTidy "${dir}"; done
 # check if go.mod got updated
 git ls-files --exclude-standard --others | grep go.mod | xargs git add --intent-to-add
 
