@@ -21,7 +21,6 @@ const (
 	ReleaseNightly    // release branch nightly healthcheck builds
 	BextNightly       // browser extension nightly build
 	BextManualNightly // browser extension nightly build, triggered with a branch pattern
-	VsceNightly       // vs code extension nightly build
 	AppRelease        // app release build
 	AppInsiders       // app insiders build
 	WolfiBaseRebuild  // wolfi base image build
@@ -31,7 +30,6 @@ const (
 	TaggedRelease     // semver-tagged release
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
-	VsceReleaseBranch // vs code extension release build
 
 	// Main branches
 
@@ -102,17 +100,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 	case BextManualNightly:
 		return &RunTypeMatcher{
 			Branch: "bext-nightly/",
-		}
-	case VsceNightly:
-		return &RunTypeMatcher{
-			EnvIncludes: map[string]string{
-				"VSCE_NIGHTLY": "true",
-			},
-		}
-	case VsceReleaseBranch:
-		return &RunTypeMatcher{
-			Branch:      "vsce/release",
-			BranchExact: true,
 		}
 	case WolfiBaseRebuild:
 		return &RunTypeMatcher{
@@ -204,8 +191,6 @@ func (t RunType) String() string {
 		return "Browser extension nightly release build"
 	case BextManualNightly:
 		return "Manually triggered browser extension nightly release build"
-	case VsceNightly:
-		return "VS Code extension nightly release build"
 	case WolfiBaseRebuild:
 		return "Wolfi base images rebuild"
 	case AppRelease:
@@ -218,8 +203,6 @@ func (t RunType) String() string {
 		return "Release branch"
 	case BextReleaseBranch:
 		return "Browser extension release build"
-	case VsceReleaseBranch:
-		return "VS Code extension release build"
 	case MainBranch:
 		return "Main branch"
 	case MainDryRun:
