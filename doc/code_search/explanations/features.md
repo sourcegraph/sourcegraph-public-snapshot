@@ -94,9 +94,13 @@ Use the "Searching everywhere" or "Searching in this repo" filter to determine w
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/Fuzzy%20Finder%20-%20Search%20Scope.png" alt="Fuzzy search">
 
-## Multi-branch indexing <span class="badge badge-primary">experimental</span>
+## Multi-branch indexing
 
-> NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
+<aside class="experimental">
+<p>
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Multi-branch indexing is in the experimental stage and must be enabled by a Sourcegraph site admin in site configuration.
+</p>
+</aside>
 
 The most common branch to search is your default branch. To speed up this common operation, Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches that are regularly searched. To speed up search for those branches, Sourcegraph can be configured to index up to 64 branches per repository.
 
