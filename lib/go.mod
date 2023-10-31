@@ -32,6 +32,7 @@ require (
 	github.com/urfave/cli/v2 v2.23.7
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
+	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.8.0
 	golang.org/x/term v0.6.0
 	google.golang.org/protobuf v1.29.1
