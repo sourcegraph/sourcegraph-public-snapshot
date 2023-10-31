@@ -151,15 +151,12 @@ To configure GitLab as an authentication provider (which will enable sign-in via
 
 ## Internal repositories
 
-GitLab also has internal repositories in addition to the usual public and private repositories. Depending on how your organization structure is configured, you may want to make these internal repositories available to everyone on your Sourcegraph instance without relying on permission syncs. To mark all internal repositories as public, add the following field to the `authorization` field:
+GitLab also has internal repositories in addition to the usual public and private repositories. Depending on how your organization structure is configured, you may want to make these internal repositories available to everyone on your Sourcegraph instance without relying on permission syncs. To mark all internal repositories as public, add the following field to the code host connection:
 
 ```json
 {
   // ...
-  "authorization": {
-    // ...
-    "markInternalReposAsPublic": true
-  }
+  "markInternalReposAsPublic": true
 }
 ```
 
