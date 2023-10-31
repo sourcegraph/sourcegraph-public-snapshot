@@ -110,8 +110,6 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 			foundMatchingSAML := saml != nil && saml.ConfigID == ext.AuthProviderID && ext.AuthProviderType == saml.Type
 			oidc := authProvider.Openidconnect
 			foundMatchingOIDC := oidc != nil && oidc.ConfigID == ext.AuthProviderID && ext.AuthProviderType == oidc.Type
-			sirp := authProvider.Gitlab.SyncInternalRepoPermissions
-			syncInternalRepoPermissions := sirp == nil || *sirp
 			if foundMatchingSAML || foundMatchingOIDC {
 				return NewSudoProvider(SudoProviderOp{
 					URN:     urn,
@@ -123,7 +121,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 					GitLabProvider:              ext.GitlabProvider,
 					SudoToken:                   token,
 					UseNativeUsername:           false,
-					SyncInternalRepoPermissions: syncInternalRepoPermissions,
+					SyncInternalRepoPermissions: !a.MarkInternalReposAsPublic,
 				}), nil
 			}
 		}
