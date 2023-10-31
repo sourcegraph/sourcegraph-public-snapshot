@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
+	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
@@ -109,7 +110,7 @@ func NewHandler(
 		WriteErrBody: env.InsecureDev,
 	})
 
-	m.PathPrefix("/registry").Methods("GET").Name(apirouter.Registry).Handler(trace.Route(jsonHandler(registry.HandleRegistry)))
+	m.PathPrefix("/registry").Methods("GET").Name(apirouter.Registry).Handler(trace.Route(jsonHandler(frontendregistry.HandleRegistry)))
 	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Name(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))
 	m.Path("/graphql").Methods("POST").Name(apirouter.GraphQL).Handler(trace.Route(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false))))
 
