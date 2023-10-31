@@ -1950,6 +1950,11 @@ extend type Query {
     Returns the max number of changesets are allowed for License that does not have the batch change feature.
     """
     maxUnlicensedChangesets: Int!
+
+    """
+    Get all changesets in the given batch change by ID.
+    """
+    getChangesetsByIDs(batchChange: ID!, changesets: [ID!]!): ChangesetConnection!
 }
 
 """
@@ -2888,6 +2893,10 @@ enum BulkOperationType {
     Bulk publish changesets.
     """
     PUBLISH
+    """
+    Export changesets.
+    """
+    EXPORT
 }
 
 """

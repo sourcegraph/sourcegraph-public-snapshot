@@ -18,6 +18,7 @@ import {
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
+import { ExportChangesetsModal } from './ExportChangesetsModal'
 import { MergeChangesetsModal } from './MergeChangesetsModal'
 import { PublishChangesetsModal } from './PublishChangesetsModal'
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
@@ -95,6 +96,23 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
                 telemetryService={eventLogger}
             />
         ),
+    },
+    [BulkOperationType.EXPORT]: {
+        type: 'export',
+        buttonLabel: 'Export Changeset(s)',
+        dropdownTitle: 'Export Changeset(s)',
+        dropdownDescription: 'Export selected changesets',
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_export:clicked')
+            return (
+                <ExportChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
     [BulkOperationType.MERGE]: {
         type: 'merge',

@@ -124,6 +124,8 @@ func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, err
 		return "REENQUEUE", nil
 	case btypes.ChangesetJobTypeMerge:
 		return "MERGE", nil
+	case btypes.ChangesetJobTypeExport:
+		return "EXPORT", nil
 	case btypes.ChangesetJobTypeClose:
 		return "CLOSE", nil
 	case btypes.ChangesetJobTypePublish:

@@ -2889,6 +2889,72 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 }
 `
 
+func TestGetChangesetsByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	bstore := store.New(db, &observation.TestContext, nil)
+
+	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
+	})
+
+	r := &Resolver{store: bstore}
+	s, err := newSchema(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]any{
+		"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
+		"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
+	}
+
+	var response struct {
+		GetChangesetsByIDs apitest.ChangesetConnection
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	apitest.MustExec(actorCtx, t, s, input, &response, queryGetChangesetsByIDs)
+
+	if len(response.GetChangesetsByIDs.Nodes) != 1 {
+		t.Fatalf("expected one changeset, got %d", len(response.GetChangesetsByIDs.Nodes))
+	}
+
+	firstChangeset := response.GetChangesetsByIDs.Nodes[0]
+	if firstChangeset.ID != string(bgql.MarshalChangesetID(changeset.ID)) {
+		t.Errorf("expected changeset ID %q, got %q", changeset.ID, firstChangeset.ID)
+	}
+}
+
+const queryGetChangesetsByIDs = `
+query($changesets: [ID!]!, $batchChange: ID!) {
+	getChangesetsByIDs(batchChange: $batchChange, changesets: $changesets) {
+		nodes {
+			... on ExternalChangeset {
+				id
+			}
+		}
+	}
+}
+`
+
 func assignBatchChangesWritePermissionToUser(ctx context.Context, t *testing.T, db database.DB, userID int32) (*types.Role, *types.Permission) {
 	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)

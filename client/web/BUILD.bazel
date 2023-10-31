@@ -530,6 +530,7 @@ ts_project(
         "src/enterprise/batches/detail/changesets/EmptyChangesetListElement.tsx",
         "src/enterprise/batches/detail/changesets/EmptyChangesetSearchElement.tsx",
         "src/enterprise/batches/detail/changesets/EmptyDraftChangesetListElement.tsx",
+        "src/enterprise/batches/detail/changesets/ExportChangesetsModal.tsx",
         "src/enterprise/batches/detail/changesets/ExternalChangesetInfoCell.tsx",
         "src/enterprise/batches/detail/changesets/ExternalChangesetNode.tsx",
         "src/enterprise/batches/detail/changesets/ExternalChangesetTitle.tsx",

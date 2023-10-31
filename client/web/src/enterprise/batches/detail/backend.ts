@@ -1,8 +1,8 @@
-import type { QueryResult } from '@apollo/client'
+import type { QueryResult, QueryTuple } from '@apollo/client'
 import { EMPTY, type Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -47,6 +47,8 @@ import type {
     AvailableBulkOperationsVariables,
     AvailableBulkOperationsResult,
     BulkOperationType,
+    GetChangesetsByIDsResult,
+    GetChangesetsByIDsVariables,
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
@@ -826,6 +828,38 @@ export async function publishChangesets(
     ).toPromise()
     dataOrThrowErrors(result)
 }
+
+// We pass in the batchChange because this Query is configured to only fetch changesets with the given ID that
+// belong to a specific batch change. This is because we only use this for exporting changesets in a particular
+// batch change and we check if the user has permission to view/administer the Batch Change on the backend.
+export const GET_CHANGESETS_BY_IDS_QUERY = gql`
+    query GetChangesetsByIDs($batchChange: ID!, $changesets: [ID!]!) {
+        getChangesetsByIDs(batchChange: $batchChange, changesets: $changesets) {
+            nodes {
+                ... on ExternalChangeset {
+                    id
+                    title
+                    state
+                    reviewState
+                    externalURL {
+                        url
+                    }
+                    repository {
+                        name
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const useGetChangesetsByIDs = (
+    batchChange: Scalars['ID'],
+    changesets: Scalars['ID'][]
+): QueryTuple<GetChangesetsByIDsResult, GetChangesetsByIDsVariables> =>
+    useLazyQuery(GET_CHANGESETS_BY_IDS_QUERY, {
+        variables: { batchChange, changesets },
+    })
 
 export const BULK_OPERATIONS = gql`
     query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {

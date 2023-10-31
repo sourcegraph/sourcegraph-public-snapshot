@@ -48,6 +48,7 @@ var (
 	ChangesetJobTypeMerge     ChangesetJobType = "merge"
 	ChangesetJobTypeClose     ChangesetJobType = "close"
 	ChangesetJobTypePublish   ChangesetJobType = "publish"
+	ChangesetJobTypeExport    ChangesetJobType = "export"
 )
 
 type ChangesetJobCommentPayload struct {
