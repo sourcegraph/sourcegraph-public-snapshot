@@ -54,8 +54,7 @@ func newExternalHTTPHandler(
 	authMiddlewares := auth.AuthMiddleware()
 
 	// HTTP API handler, the call order of middleware is LIFO.
-	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler, err := httpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	apiHandler, err := httpapi.NewHandler(db, schema, rateLimitWatcher, handlers)
 	if err != nil {
 		return nil, errors.Errorf("create external HTTP API handler: %v", err)
 	}
