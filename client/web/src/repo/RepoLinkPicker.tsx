@@ -85,13 +85,18 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
         loading,
     } = useQuery<RepositoriesSuggestionsResult, RepositoriesSuggestionsVariables>(REPOSITORIES_QUERY, {
         skip: !isSuggestionOpen,
-        variables: { query: debouncedSearchTerm },
+        variables: {
+            query: searchTerm.length === 0 ? getInitialSearchTerm(repositoryName) : debouncedSearchTerm,
+        },
         fetchPolicy: 'cache-and-network',
     })
 
     const handleSelect = (selectedValue: string): void => {
         navigate(`/${selectedValue}`)
         setSuggestionOpen(false)
+        // set search term back to an empty string, but replace
+        // new initial value for the gql request
+        setSearchTerm('')
     }
 
     const data = currentData ?? previousData
@@ -192,4 +197,9 @@ export const getCodeHostIconPath = (codeHostType?: ExternalServiceKind): string 
             return mdiSourceRepository
         }
     }
+}
+
+const getInitialSearchTerm = (repo: string) => {
+    const r = repo.split('/')
+    return r[r.length - 1]
 }
