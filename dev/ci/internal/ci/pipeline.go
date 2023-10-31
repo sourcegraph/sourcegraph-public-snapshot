@@ -168,13 +168,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionReleaseSteps)
 
-	case runtype.VsceReleaseBranch:
-		// If this is a vs code extension release branch, run the vscode-extension tests and release
-		ops = BazelOpsSet(buildOptions,
-			addVsceTests,
-			wait,
-			addVsceReleaseSteps)
-
 	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
@@ -182,9 +175,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			recordBrowserExtensionIntegrationTests,
 			wait,
 			addBrowserExtensionE2ESteps)
-
-	case runtype.VsceNightly:
-		ops = BazelOpsSet(buildOptions, addVsceTests)
 
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images

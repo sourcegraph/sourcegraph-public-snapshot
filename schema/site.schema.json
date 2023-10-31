@@ -3152,6 +3152,14 @@
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
           "default": 10,
           "type": "integer"
+        },
+        "syncInternalRepoPermissions": {
+          "description": "Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },

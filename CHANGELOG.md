@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The `has.topic` filter now supports filtering by Gitlab topics. [#57649](https://github.com/sourcegraph/sourcegraph/pull/57649)
+- Batch Changes now allows changesets to be exported in CSV and JSON format. [#56721](https://github.com/sourcegraph/sourcegraph/pull/56721)
 
 ### Changed
 
@@ -34,12 +35,17 @@ All notable changes to Sourcegraph are documented in this file.
 - The following experimental settings in site-configuration are now deprecated and will not be read anymore: `maxReorderQueueSize`, `maxQueueMatchCount`, `maxReorderDurationMS`. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
 - The feature-flag `search-ranking`, which allowed to disable the improved ranking introduced in 5.1, is now deprecated and will not be read anymore. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
 - The GitHub Proxy service is no longer required and has been removed from deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
+- The VSCode search extension "Sourcegraph for VS Code" has been sunset and removed from Sourcegraph
+  repository. [#58023](https://github.com/sourcegraph/sourcegraph/pull/58023)
 
 ## Unreleased 5.2.2
 
 ### Added
 
+- Added a new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Additionally, when configuring a GitLab auth provider, you can specify "syncInternalRepoPermissions": false, which will remove the need to sync permissions for these internal repositories. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
 - Experimental support for OpenAI powered autocomplete has been added. [#57872](https://github.com/sourcegraph/sourcegraph/pull/57872)
+- Added two new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic" and "syncInternalRepoPermissions". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Setting "syncInternalRepoPermissions" to true adds an additional step to user permission syncs that explicitly checks for internal repositories. However, this could lead to longer user permission sync times. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
+- Added a new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories, and removing the need to sync permissions for internal repositories. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
 
 ### Changed
 
