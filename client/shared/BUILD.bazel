@@ -126,10 +126,8 @@ ts_project(
     name = "shared_lib",
     srcs = [
         "src/actions/ActionItem.tsx",
-        "src/actions/ActionsContainer.tsx",
         "src/actions/ActionsNavItems.tsx",
         "src/actions/SimpleActionItem.tsx",
-        "src/actions/actions.ts",
         "src/api/client/api/api.ts",
         "src/api/client/api/common.ts",
         "src/api/client/connection.ts",
