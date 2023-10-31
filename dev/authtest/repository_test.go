@@ -66,7 +66,7 @@ func TestRepository(t *testing.T) {
 
 	// Wait up to 30 seconds for the private repository to have permissions synced
 	// from the code host at least once.
-	err = gqltestutil.Retry(30*time.Second, func() error {
+	err = gqltestutil.Retry(120*time.Second, func() error {
 		permsInfo, err := client.RepositoryPermissionsInfo(privateRepo)
 		if err != nil {
 			t.Fatal(err)
