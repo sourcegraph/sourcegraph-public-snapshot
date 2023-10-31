@@ -240,7 +240,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     settingsCascade={props.settingsCascade}
                     authenticatedUser={authenticatedUser}
                     platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
                 />
 
                 <Suspense fallback={<LoadingSpinner />}>

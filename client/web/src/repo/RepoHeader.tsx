@@ -6,7 +6,6 @@ import { useLocation } from 'react-router-dom'
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -114,7 +113,7 @@ export interface RepoHeaderContext {
     actionType: 'nav' | 'dropdown'
 }
 
-interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps {
+interface Props extends PlatformContextProps, BreadcrumbsProps {
     /** The repoName from the URL */
     repoName: string
 

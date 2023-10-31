@@ -3,7 +3,6 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
@@ -147,7 +146,6 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     authenticatedUser: mockUser,
     platformContext: {} as any,
-    telemetryService: NOOP_TELEMETRY_SERVICE,
     forceWrap,
 })
 
