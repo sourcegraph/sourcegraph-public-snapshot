@@ -2263,7 +2263,7 @@ CREATE TABLE event_logs (
     billing_product_category text,
     billing_event_id text,
     client text,
-    CONSTRAINT event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR ((user_id <> 0) AND (anonymous_user_id <> ''::text)))),
+    CONSTRAINT event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR (user_id <> 0))),
     CONSTRAINT event_logs_check_name_not_empty CHECK ((name <> ''::text)),
     CONSTRAINT event_logs_check_source_not_empty CHECK ((source <> ''::text)),
     CONSTRAINT event_logs_check_version_not_empty CHECK ((version <> ''::text))

@@ -1386,7 +1386,7 @@ Indexes:
     "event_logs_user_id_name" btree (user_id, name)
     "event_logs_user_id_timestamp" btree (user_id, "timestamp")
 Check constraints:
-    "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
+    "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0)
     "event_logs_check_name_not_empty" CHECK (name <> ''::text)
     "event_logs_check_source_not_empty" CHECK (source <> ''::text)
     "event_logs_check_version_not_empty" CHECK (version <> ''::text)
