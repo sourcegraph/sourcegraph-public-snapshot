@@ -2,7 +2,7 @@ load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
 # go_stringer provides an equivalent to `//go:generate stringer`.
 # Files can be updated and generated with `bazel run //dev:write_all_generated`.
-def go_stringer(src, typ, name, additional_args=[]):
+def go_stringer(src, typ, name, additional_args = []):
     output_file = "_out_" + typ.lower() + "_string.go_in"
     output_file_source = typ.lower() + "_string.go"
 
@@ -36,11 +36,11 @@ env \
 # across all envs, even if it's slighly inaccurate.
 sed -i'' -e 's=$@='`basename $@`'=' $@
 """.format(
-         typ = typ,
-         args = " ".join(additional_args),
+            typ = typ,
+            args = " ".join(additional_args),
         ),
         visibility = [":__pkg__", "//pkg/gen:__pkg__"],
-        exec_tools = [
+        tools = [
             "@go_sdk//:bin/go",
             "@go_sdk//:srcs",
             "@go_sdk//:tools",
@@ -57,4 +57,3 @@ sed -i'' -e 's=$@='`basename $@`'=' $@
         suggested_update_target = "//dev:write_all_generated",
         visibility = ["//visibility:public"],
     )
-
