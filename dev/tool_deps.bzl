@@ -1,7 +1,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 DOCSITE_VERSION = "1.9.4"
-SRC_CLI_VERSION = "5.1.0"
+SRC_CLI_VERSION = "5.2.0"
 CTAGS_VERSION = "6.0.0.2783f009"
 
 SRC_CLI_BUILDFILE = """
@@ -39,21 +39,21 @@ def tool_deps():
     http_archive(
         name = "src-cli-linux-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("linux-amd64"),
-        sha256 = "270ddad7748c1b76f082b637e336b5c7a58af76d207168469f4b7bef957953e3",
+        sha256 = "40fdb8179c4d6e4d150811dd66610f212b5f4fe6aee4c22ece53665c070b0ac3",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
     http_archive(
         name = "src-cli-darwin-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-amd64"),
-        sha256 = "f14414e3ff4759cd1fbed0107138214f87d9a69cdb55ed1c4522704069420d9b",
+        sha256 = "d65914b94af09400dfa41aa2a83f956f8a11ec2957fdf09fe845b6e3cdb777f8",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
     http_archive(
         name = "src-cli-darwin-arm64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-arm64"),
-        sha256 = "93dc6c8522792ea16e3c8c81c8cf655a908118e867fda43c048c9b51f4c70e88",
+        sha256 = "866758720a1bb077d21b96fe48841d32d9bf11511cd79d9b1e84ccab3dcdde64",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
     )
 
