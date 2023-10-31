@@ -344,7 +344,7 @@ The `token` parameter can be found on the **Settings > SAML SSO** page on GitLab
 
 ### Don't sync user permissions for internal repositories
 
-If your organization has a lot of internal repositories that should be accessible to everyone on GitLab, you may want to [mark internal repositories as public](../external_service/gitlab#internal-repositories), and then configure your auth provider to not sync user permissions for internal repositories:
+If your organization has a lot of internal repositories that should be accessible to everyone on GitLab, you may want to [mark internal repositories as public](../external_service/gitlab.md#internal-repositories), and then configure your auth provider to not sync user permissions for internal repositories:
 
   ```json
     {
