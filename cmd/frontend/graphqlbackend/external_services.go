@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -150,7 +149,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	update := &database.ExternalServiceUpdate{
 		DisplayName:   args.Input.DisplayName,
 		Config:        args.Input.Config,
-		LastUpdaterID: pointers.Ptr(userID),
+		LastUpdaterID: &userID,
 	}
 
 	// Update the external service in the database.
