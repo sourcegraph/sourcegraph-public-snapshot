@@ -962,14 +962,11 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		if update.LastUpdaterID == nil {
-			return errors.New("last_updater_id is required when updating the config")
-		}
 		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
 		updates = append(updates,
 			sqlf.Sprintf(
 				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s, last_updater_id = %s",
-				encryptedConfig, keyID, unrestricted, hasWebhooks, *update.LastUpdaterID,
+				encryptedConfig, keyID, unrestricted, hasWebhooks, update.LastUpdaterID,
 			))
 	}
 
