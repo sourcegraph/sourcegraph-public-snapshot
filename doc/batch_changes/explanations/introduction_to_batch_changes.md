@@ -49,6 +49,13 @@ A single batch change can span many repositories and many code hosts.
 
 To learn about the internals of Batch Changes, see [Batch Changes](../../../dev/background-information/batch_changes/index.md) in the developer documentation.
 
+## Ownership
+
+When a user is deleted, their Batch Changes become inaccessible in the UI but the data is not permanently deleted.
+This allows recovering the Batch Changes if the user is restored.
+
+However, if the user deletion is permanent, deleting both account and data, then the associated Batch Changes are also permanently deleted from the database. This frees storage space and removes dangling references.
+
 ## Known issues
 
 - Batch Changes currently support **GitHub**, **GitLab** and **Bitbucket Server and Bitbucket Data Center** repositories. If you're interested in using Batch Changes on other code hosts, [let us know](https://about.sourcegraph.com/contact).
