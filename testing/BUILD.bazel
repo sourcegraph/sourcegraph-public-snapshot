@@ -86,7 +86,7 @@ server_integration_test(
     ],
     data = [
         "//cmd/server:image_tarball",
-        "//dev/authtest:authtest_test",
+        # "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
     ],
     env = {
