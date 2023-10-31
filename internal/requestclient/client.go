@@ -20,6 +20,9 @@ type Client struct {
 	// UserAgent is value of the User-Agent header:
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
 	UserAgent string
+	// RequestID is a client-provided request identifier, similar to a trace ID
+	// but manually provided.
+	RequestID string
 }
 
 // FromContext retrieves the client IP, if available, from context.
@@ -44,5 +47,6 @@ func (c *Client) LogFields() []log.Field {
 		log.String("requestClient.ip", c.IP),
 		log.String("requestClient.forwardedFor", c.ForwardedFor),
 		log.String("requestClient.userAgent", c.UserAgent),
+		log.String("requestClient.requestID", c.RequestID),
 	}
 }

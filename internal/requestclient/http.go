@@ -8,6 +8,8 @@ import (
 const (
 	// Sourcegraph-specific client IP header key
 	headerKeyClientIP = "X-Sourcegraph-Client-IP"
+	// Sourcegraph-specific client-provided request identifier key
+	headerKeyRequestID = "X-Sourcegraph-Request-ID"
 	// De-facto standard for identifying original IP address of a client:
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 	headerKeyForwardedFor = "X-Forwarded-For"
@@ -35,6 +37,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if client != nil {
 		req.Header.Set(headerKeyClientIP, client.IP)
 		req.Header.Set(headerKeyForwardedFor, client.ForwardedFor)
+		req.Header.Set(headerKeyRequestID, client.RequestID)
 	}
 
 	return t.RoundTripper.RoundTrip(req)
@@ -81,6 +84,7 @@ func httpMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
 			IP:           strings.Split(req.RemoteAddr, ":")[0],
 			ForwardedFor: req.Header.Get(headerKeyForwardedFor),
 			UserAgent:    req.Header.Get(headerKeyUserAgent),
+			RequestID:    req.Header.Get(headerKeyRequestID),
 		})
 		next.ServeHTTP(rw, req.WithContext(ctxWithClient))
 	})

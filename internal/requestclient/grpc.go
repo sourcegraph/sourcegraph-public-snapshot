@@ -27,12 +27,12 @@ func (Propagator) FromContext(ctx context.Context) metadata.MD {
 		headerKeyClientIP, client.IP,
 		headerKeyForwardedFor, client.ForwardedFor,
 		headerKeyUserAgent, client.UserAgent,
+		headerKeyRequestID, client.RequestID,
 	)
 }
 
 func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
-	var ip string
-	var forwardedFor string
+	var ip, forwardedFor, requestID string
 
 	if vals := md.Get(headerKeyClientIP); len(vals) > 0 {
 		ip = vals[0]
@@ -40,6 +40,10 @@ func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Con
 
 	if vals := md.Get(headerKeyForwardedFor); len(vals) > 0 {
 		forwardedFor = vals[0]
+	}
+
+	if vals := md.Get(headerKeyRequestID); len(vals) > 0 {
+		requestID = vals[0]
 	}
 
 	if ip == "" {
@@ -52,6 +56,7 @@ func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Con
 	c := Client{
 		IP:           ip,
 		ForwardedFor: forwardedFor,
+		RequestID:    requestID,
 	}
 	return WithClient(ctx, &c)
 }
