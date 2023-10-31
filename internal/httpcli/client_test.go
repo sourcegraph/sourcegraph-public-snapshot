@@ -13,7 +13,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"sync/atomic"
