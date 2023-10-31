@@ -400,7 +400,7 @@ const findSymbol = async (
         return
     }
 
-    for (const symbol of payload.symbols) {
+    for (const symbol of payload.symbols ?? []) {
         if (isInRange(repositoryCommitPathPosition, symbol.def)) {
             return symbol
         }
@@ -455,7 +455,7 @@ const fetchLocalCodeIntelPayload = cache(
             return undefined
         }
 
-        for (const symbol of payload.symbols) {
+        for (const symbol of payload.symbols ?? []) {
             if (symbol.refs) {
                 symbol.refs = sortBy(symbol.refs, reference => reference.row)
             }
@@ -475,7 +475,7 @@ interface RepositoryCommitPath {
 type RepositoryCommitPathPosition = RepositoryCommitPath & Position
 
 type LocalCodeIntelPayload = {
-    symbols: LocalSymbol[]
+    symbols: LocalSymbol[] | null
 } | null
 
 interface LocalSymbol {
