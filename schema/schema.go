@@ -1235,6 +1235,8 @@ type GitLabAuthProvider struct {
 	Order         int     `json:"order,omitempty"`
 	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
 	SsoURL string `json:"ssoURL,omitempty"`
+	// SyncInternalRepoPermissions description: Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.
+	SyncInternalRepoPermissions *bool `json:"syncInternalRepoPermissions,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`

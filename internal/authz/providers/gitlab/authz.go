@@ -62,6 +62,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 	case idp.Oauth != nil:
 		// Check that there is a GitLab authn provider corresponding to this GitLab instance
 		foundAuthProvider := false
+		syncInternalRepoPermissions := true
 		for _, authnProvider := range ps {
 			if authnProvider.Gitlab == nil {
 				continue
@@ -77,6 +78,8 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 			}
 			if authProviderURL.Hostname() == glURL.Hostname() {
 				foundAuthProvider = true
+				sirp := authnProvider.Gitlab.SyncInternalRepoPermissions
+				syncInternalRepoPermissions = sirp == nil || *sirp
 				break
 			}
 		}
@@ -90,7 +93,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 			Token:                       token,
 			TokenType:                   tokenType,
 			DB:                          db,
-			SyncInternalRepoPermissions: !a.MarkInternalReposAsPublic,
+			SyncInternalRepoPermissions: syncInternalRepoPermissions,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
@@ -107,6 +110,8 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 			foundMatchingSAML := saml != nil && saml.ConfigID == ext.AuthProviderID && ext.AuthProviderType == saml.Type
 			oidc := authProvider.Openidconnect
 			foundMatchingOIDC := oidc != nil && oidc.ConfigID == ext.AuthProviderID && ext.AuthProviderType == oidc.Type
+			sirp := authProvider.Gitlab.SyncInternalRepoPermissions
+			syncInternalRepoPermissions := sirp == nil || *sirp
 			if foundMatchingSAML || foundMatchingOIDC {
 				return NewSudoProvider(SudoProviderOp{
 					URN:     urn,
@@ -118,7 +123,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 					GitLabProvider:              ext.GitlabProvider,
 					SudoToken:                   token,
 					UseNativeUsername:           false,
-					SyncInternalRepoPermissions: !a.MarkInternalReposAsPublic,
+					SyncInternalRepoPermissions: syncInternalRepoPermissions,
 				}), nil
 			}
 		}
