@@ -151,11 +151,6 @@ var sg = &cli.App{
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
-		// Add feedback flag to all commands and subcommands - we add this here, before
-		// we exit in bashCompletionsMode, so that '--feedback' is available via
-		// autocompletions.
-		addFeedbackFlags(cmd.App.Commands)
-
 		// All other setup pertains to running commands - to keep completions fast,
 		// we skip all other setup when in bashCompletions mode.
 		if bashCompletionsMode {
@@ -305,7 +300,6 @@ var sg = &cli.App{
 
 		// Util
 		helpCommand,
-		feedbackCommand,
 		versionCommand,
 		updateCommand,
 		installCommand,
