@@ -8,8 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -118,7 +116,6 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
-	userID := actor.FromContext(ctx).UID
 
 	secret := "secret"
 	esStore := db.ExternalServices()
@@ -132,7 +129,6 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 			Repos:         []string{"sourcegraph/sourcegraph"},
 			Webhooks:      []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 		})),
-		LastUpdaterID: userID,
 	}
 
 	err := esStore.Upsert(ctx, extSvc)
@@ -150,7 +146,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
     ]
 }
 `, secret)
-	require.NoError(t, esStore.Update(ctx, []schema.AuthProviders{}, 1, &database.ExternalServiceUpdate{Config: &externalServiceConfig, LastUpdaterID: pointers.Ptr(userID)}))
+	require.NoError(t, esStore.Update(ctx, []schema.AuthProviders{}, 1, &database.ExternalServiceUpdate{Config: &externalServiceConfig}))
 	if err != nil {
 		t.Fatal(err)
 	}

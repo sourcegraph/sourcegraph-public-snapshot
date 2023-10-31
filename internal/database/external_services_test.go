@@ -306,7 +306,11 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
-	userID := actor.FromContext(ctx).UID
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(user.ID)
 
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
@@ -322,9 +326,9 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		Kind:          extsvc.KindGitHub,
 		DisplayName:   "GITHUB #1",
 		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-		LastUpdaterID: userID,
+		LastUpdaterID: &user.ID,
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err = db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,9 +358,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update with authorization",
 			update: &ExternalServiceUpdate{
-				DisplayName:   pointers.Ptr("GITHUB (updated) #1"),
-				Config:        pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
-				LastUpdaterID: pointers.Ptr(es.LastUpdaterID),
+				DisplayName: pointers.Ptr("GITHUB (updated) #1"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
@@ -365,9 +368,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update without authorization",
 			update: &ExternalServiceUpdate{
-				DisplayName:   pointers.Ptr("GITHUB (updated) #2"),
-				Config:        pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
-				LastUpdaterID: pointers.Ptr(es.LastUpdaterID),
+				DisplayName: pointers.Ptr("GITHUB (updated) #2"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
@@ -384,7 +386,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	"token": "def",
 	// "authorization": {}
 }`),
-				LastUpdaterID: pointers.Ptr(es.LastUpdaterID),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
@@ -403,7 +404,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	"authorization": {},
 	"webhooks": [{"org": "org", "secret": "secret"}]
 }`),
-				LastUpdaterID: pointers.Ptr(es.LastUpdaterID),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: true,
@@ -415,7 +415,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				DisplayName:    pointers.Ptr("GITHUB (updated) #5"),
 				Config:         pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 				TokenExpiresAt: pointers.Ptr(time.Now()),
-				LastUpdaterID:  pointers.Ptr(es.LastUpdaterID),
 			},
 			wantCloudDefault:   true,
 			wantTokenExpiresAt: true,
@@ -437,10 +436,9 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update last_sync_at",
 			update: &ExternalServiceUpdate{
-				DisplayName:   pointers.Ptr("GITHUB (updated) #6"),
-				Config:        pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
-				LastSyncAt:    pointers.Ptr(now),
-				LastUpdaterID: pointers.Ptr(es.LastUpdaterID),
+				DisplayName: pointers.Ptr("GITHUB (updated) #6"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
 			},
 			wantCloudDefault:   true,
 			wantTokenExpiresAt: true,
@@ -449,25 +447,14 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update next_sync_at",
 			update: &ExternalServiceUpdate{
-				DisplayName:   pointers.Ptr("GITHUB (updated) #7"),
-				Config:        pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
-				LastSyncAt:    pointers.Ptr(now),
-				NextSyncAt:    pointers.Ptr(now),
-				LastUpdaterID: pointers.Ptr(es.LastUpdaterID),
-			},
-			wantCloudDefault:   true,
-			wantTokenExpiresAt: true,
-			wantNextSyncAt:     now,
-		},
-		{
-			name: "update without last updater id",
-			update: &ExternalServiceUpdate{
 				DisplayName: pointers.Ptr("GITHUB (updated) #7"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 				LastSyncAt:  pointers.Ptr(now),
 				NextSyncAt:  pointers.Ptr(now),
 			},
-			wantError: true,
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
+			wantNextSyncAt:     now,
 		},
 	}
 	for _, test := range tests {
