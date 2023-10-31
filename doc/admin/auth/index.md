@@ -342,13 +342,25 @@ GitLab groups can require SAML/SSO sign-in to have access to the group. The regu
 
 The `token` parameter can be found on the **Settings > SAML SSO** page on GitLab.
 
+### Don't sync user permissions for internal repositories
+
+If your organization has a lot of internal repositories that should be accessible to everyone on GitLab, you may want to [mark internal repositories as public](../external_service/gitlab#internal-repositories), and then configure your auth provider to not sync user permissions for internal repositories:
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "syncInternalRepoPermissions": false
+    }
+  ```
+
 ## Bitbucket Cloud
 
 [Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
 Sourcegraph instance:
 
 - Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
-- Permissions: 
+- Permissions:
   - `Account`: `Read`
   - `Repositories`: `Read` (more information in [repository permissions section](../permissions/index.md))
 
@@ -421,7 +433,7 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
       "type": "openidconnect",
       "issuer": "https://oidc.example.com",
       "clientID": "my-client-id",
-      "configID":"my-config-id", //An arbitrary value that will be used to reference to this auth provider within the site config 
+      "configID":"my-config-id", //An arbitrary value that will be used to reference to this auth provider within the site config
       "clientSecret": "my-client-secret",
       "requireEmailDomain": "example.com"
     }

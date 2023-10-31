@@ -163,6 +163,8 @@ GitLab also has internal repositories in addition to the usual public and privat
 }
 ```
 
+When adding this configuration option, you may also want to configure your GitLab auth provider so that it does [not sync user permissions for internal repositories](../auth#don-t-sync-user-permissions-for-internal-repositories).
+
 ## Rate limits
 
 Always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
