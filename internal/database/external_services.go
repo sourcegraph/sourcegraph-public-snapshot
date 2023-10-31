@@ -755,8 +755,8 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 			&svcs[i].CodeHostID,
-			&dbutil.NullInt32{N: &svcs[i].CreatorID},
-			&dbutil.NullInt32{N: &svcs[i].LastUpdaterID},
+			&svcs[i].CreatorID,
+			&svcs[i].LastUpdaterID,
 		)
 		if err != nil {
 			return err

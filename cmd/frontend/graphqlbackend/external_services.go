@@ -73,8 +73,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Kind:          args.Input.Kind,
 		DisplayName:   args.Input.DisplayName,
 		Config:        extsvc.NewUnencryptedConfig(args.Input.Config),
-		CreatorID:     userID,
-		LastUpdaterID: userID,
+		CreatorID:     &userID,
+		LastUpdaterID: &userID,
 	}
 
 	// Create the external service in the database.
