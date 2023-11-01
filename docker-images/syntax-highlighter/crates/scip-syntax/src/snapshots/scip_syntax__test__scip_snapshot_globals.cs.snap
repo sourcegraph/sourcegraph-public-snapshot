@@ -3,10 +3,10 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   using System.Collections.Generic;
-
+  
   public void SurprisinglyValid(string firstParam) { }
 //            ^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags SurprisinglyValid().
-
+  
   namespace Longer.Namespace
 //          ^^^^^^^^^^^^^^^^ definition(Namespace) scip-ctags `Longer.Namespace`/
   {
@@ -27,21 +27,21 @@ expression: dumped
           }
           private int _val;
 //                    ^^^^ definition(Field) scip-ctags `Longer.Namespace`/Class#_val.
-
+  
           protected virtual int ImplicitGetterSetter
 //                              ^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#ImplicitGetterSetter.
           {
               get;
               set;
           }
-
+  
           internal int ImplicitGetterPrivateSetter
 //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#ImplicitGetterPrivateSetter.
           {
               get;
               private set;
           }
-
+  
           public struct Coords
 //                      ^^^^^^ definition(Struct) scip-ctags `Longer.Namespace`/Class#Coords#
           {
@@ -51,30 +51,30 @@ expression: dumped
                   X = x;
                   Y = y;
               }
-
+  
               public double X { get; }
 //                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Coords#X.
               public double Y { get; }
 //                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Coords#Y.
-
+  
               public override string ToString() => $"({X}, {Y})";
 //                                   ^^^^^^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#Coords#ToString().
           }
-
+  
           delegate int MyDelegate();
 //                     ^^^^^^^^^^ definition(Delegate) scip-ctags `Longer.Namespace`/Class#MyDelegate().
-
+  
           public event ChangedEventHandler Changed;
 //                                         ^^^^^^^ definition(Event) scip-ctags `Longer.Namespace`/Class#Changed.
-
+  
           int _speed;
 //            ^^^^^^ definition(Field) scip-ctags `Longer.Namespace`/Class#_speed.
           public string PublicImplicitGetterSetter { get; set; }
 //                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#PublicImplicitGetterSetter.
-
+  
           public string LambdaFunction => PublicImplicitGetterSetter + " " + _speed + " speed";
 //                      ^^^^^^^^^^^^^^ definition(Property) scip-ctags `Longer.Namespace`/Class#LambdaFunction.
-
+  
           public enum Swag
 //                    ^^^^ definition(Enum) scip-ctags `Longer.Namespace`/Class#Swag#
           {
@@ -87,10 +87,10 @@ expression: dumped
               Pants
 //            ^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#Swag#Pants.
           }
-
+  
           public Swag SourcegraphSwag;
 //                    ^^^^^^^^^^^^^^^ definition(Field) scip-ctags `Longer.Namespace`/Class#SourcegraphSwag.
-
+  
           [Flags]
           public enum ZigFeatureSet
 //                    ^^^^^^^^^^^^^ definition(Enum) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#
@@ -108,12 +108,12 @@ expression: dumped
               FullPackage = Errors | Comptime | BuildSystem | CoolCommunity
 //            ^^^^^^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#FullPackage.
           }
-
+  
           public static void Syntax() {}
 //                           ^^^^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#Syntax().
       }
   }
-
+  
   namespace OneClass
 //          ^^^^^^^^ definition(Namespace) scip-ctags OneClass/
   {
@@ -126,3 +126,4 @@ expression: dumped
 //                      ^^^^ definition(Property) scip-ctags OneClass/TheClass#Text.
       }
   }
+

@@ -5,13 +5,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   package main
 //^^^^^^^ Keyword
 //        ^^^^ IdentifierNamespace
-
+  
   import (
 //^^^^^^ Keyword
    "fmt"
 // ^^^^^ StringLiteral
   )
-
+  
   func main() {
 //^^^^ Keyword
 //     ^^^^ IdentifierFunction
@@ -186,7 +186,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                          ^^^^^^ Identifier
 //                                                  ^^^^^^^ Identifier
 //                                                          ^^^^^^^ Identifier
-
+  
   }
   func foo() error {
 //^^^^ Keyword
@@ -233,7 +233,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^ Identifier
 //                 ^^^^^^^^^^^^^^^^^^^^^^^ Comment
   }
-
+  
   type Person struct {
 //^^^^ Keyword
 //     ^^^^^^ IdentifierType
@@ -265,7 +265,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 // ^^^^^^ IdentifierFunction
 //          ^^^ IdentifierBuiltinType
   }
-
+  
   func structExample() {
 //^^^^ Keyword
 //     ^^^^^^^^^^^^^ IdentifierFunction
@@ -309,7 +309,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^^^ Identifier
 //                    ^^^^^ Comment
   }
-
+  
   func Min[T Comparable](a, b T) T {
 //^^^^ Keyword
 //     ^^^ IdentifierFunction
@@ -332,7 +332,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 // ^^^^^^ Keyword
 //        ^ Identifier
   }
-
+  
   func generics() {
 //^^^^ Keyword
 //     ^^^^^^^^ IdentifierFunction
@@ -353,3 +353,4 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                              ^^^ StringLiteral
 //                                    ^^^^^^ Comment
   }
+
