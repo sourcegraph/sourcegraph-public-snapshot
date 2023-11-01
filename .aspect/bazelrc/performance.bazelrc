@@ -27,12 +27,3 @@ build --experimental_reuse_sandbox_directories
 # author.
 # Docs: https://bazel.build/reference/command-line-reference#flag--legacy_external_runfiles
 build --nolegacy_external_runfiles
-
-# Some actions are always IO-intensive but require little compute. It's wasteful to put the output
-# in the remote cache, it just saturates the network and fills the cache storage causing earlier
-# evictions. It's also not worth sending them for remote execution.
-# For actions like PackageTar it's usually faster to just re-run the work locally every time.
-# You'll have to look at an execution log to figure out what other action mnemonics you care about.
-# In some cases you may need to patch rulesets to add a mnemonic to actions that don't have one.
-# https://bazel.build/reference/command-line-reference#flag--modify_execution_info
-# build --modify_execution_info=PackageTar=+no-remote

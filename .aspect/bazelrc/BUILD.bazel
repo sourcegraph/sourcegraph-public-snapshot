@@ -11,6 +11,6 @@ write_aspect_bazelrc_presets(
         "correctness",
         "debug",
         "javascript",
-        # "performance",
+        "performance",
     ],
 )

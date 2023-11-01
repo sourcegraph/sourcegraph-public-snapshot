@@ -15,11 +15,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    # sha256 = "cbf473d630ab67b36461d83b38fdc44e56f45b78d03c405e4958280211124d79",
-    strip_prefix = "bazel-lib-97fa17098ef0588224d4c3047a93215265f48251",
-    urls = ["https://github.com/aspect-build/bazel-lib/archive/97fa17098ef0588224d4c3047a93215265f48251.zip"],
-    # strip_prefix = "bazel-lib-1.36.0",
-    # url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.36.0/bazel-lib-v1.36.0.tar.gz",
+    sha256 = "ce259cbac2e94a6dff01aff9455dcc844c8af141503b02a09c2642695b7b873e",
+    strip_prefix = "bazel-lib-1.37.0",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.37.0/bazel-lib-v1.37.0.tar.gz",
 )
 
 # rules_js defines an older rules_nodejs, so we override it here
