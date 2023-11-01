@@ -51,7 +51,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Updated the endpoint used by the AWS Bedrock Claude provider. [#58028](https://github.com/sourcegraph/sourcegraph/pull/58028)
 
 ### Removed
 
