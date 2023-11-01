@@ -1,9 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "router",
-    srcs = ["router.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router",
-    visibility = ["//cmd/frontend:__subpackages__"],
-    deps = ["@com_github_gorilla_mux//:mux"],
-)
