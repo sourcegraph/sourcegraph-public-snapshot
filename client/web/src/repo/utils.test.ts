@@ -1,12 +1,12 @@
 import { describe, expect, it } from '@jest/globals'
 
-import { getInitialRepoResults } from './utils'
+import { getInitialSearchTerm } from './utils'
 
 describe('getInitialSearchTerm', () => {
     const tests: {
         name: string
         repo: string
-        expected: String
+        expected: string
     }[] = [
         {
             name: 'works with a github repo url',
@@ -45,10 +45,9 @@ describe('getInitialSearchTerm', () => {
         },
     ]
 
-    for (let i = 0; i < tests.length; i++) {
-        let t = tests[i]
+    for (const t of tests) {
         it(t.name, () => {
-            expect(getInitialRepoResults(t.repo)).toBe(t.expected)
+            expect(getInitialSearchTerm(t.repo)).toBe(t.expected)
         })
     }
 })

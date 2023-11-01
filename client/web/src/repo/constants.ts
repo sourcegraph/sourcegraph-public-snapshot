@@ -3,7 +3,7 @@ export const LogsPageTabs = {
     SYNCLOGS: 1,
 } as const
 
-export enum CodeHostTypes {
+export enum CodeHostType {
     GITHUB = 'github',
     BITBUCKETCLOUD = 'bitbucketCloud',
     BITBUCKETSERVER = 'bitbucketServer',
@@ -11,4 +11,5 @@ export enum CodeHostTypes {
     GITOLITE = 'gitolite',
     AWSCODECOMMIT = 'awsCodeCommit',
     AZUREDEVOPS = 'azureDevOps',
+    OTHER = 'other',
 }
