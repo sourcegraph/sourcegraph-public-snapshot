@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 <!-- START CHANGELOG -->
 
 ## Unreleased 5.2.1
+
 ## Unreleased 5.3.0 (planned release date: February, 2024)
 
 ### Added
@@ -43,8 +44,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Added a new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Additionally, when configuring a GitLab auth provider, you can specify "syncInternalRepoPermissions": false, which will remove the need to sync permissions for these internal repositories. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
 - Experimental support for OpenAI powered autocomplete has been added. [#57872](https://github.com/sourcegraph/sourcegraph/pull/57872)
-- Added two new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic" and "syncInternalRepoPermissions". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Setting "syncInternalRepoPermissions" to true adds an additional step to user permission syncs that explicitly checks for internal repositories. However, this could lead to longer user permission sync times. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
-- Added a new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories, and removing the need to sync permissions for internal repositories. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
 
 ### Changed
 
