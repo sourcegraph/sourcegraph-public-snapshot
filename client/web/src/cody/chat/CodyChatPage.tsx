@@ -131,7 +131,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         const idFromUrl = transcriptIdFromUrl(pathname)
 
         if (transcriptId !== idFromUrl) {
-            navigate(`/cody/${btoa(transcriptId)}`, {
+            navigate(`/cody/chat/${btoa(transcriptId)}`, {
                 replace: true,
             })
         }
