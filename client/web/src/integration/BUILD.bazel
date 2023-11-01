@@ -116,8 +116,6 @@ mocha_test(
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
     },
     flaky = True,
-    stamp = 1,
-    stamp_env_vars_only = True,
     tags = [
         "no-sandbox",
         "requires-network",
