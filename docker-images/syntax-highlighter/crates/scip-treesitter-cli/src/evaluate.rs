@@ -47,6 +47,10 @@ fn validate_index(idx: &Index) -> Result<()> {
         Ok(())
     }
 }
+// These unfortunately don't help the typesafety and are only here to aid readability
+// TODO: newtype https://doc.rust-lang.org/book/ch19-03-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types
+type GroundTruthSymbol = String;
+type CandidateSymbol = String;
 
 pub fn evaluate_indexes<'a>(
     candidate: &Index,
@@ -58,11 +62,12 @@ pub fn evaluate_indexes<'a>(
 
     let bar = create_spinner();
     bar.set_message("Indexing candidate symbols by location");
-    let candidate_occurrences: HashMap<LocationInFile, String> = index_occurrences(&candidate);
+    let candidate_occurrences: HashMap<LocationInFile, CandidateSymbol> =
+        index_occurrences(&candidate);
     bar.tick();
 
     bar.set_message("Indexing ground truth symbols by location");
-    let ground_truth_occurrences: HashMap<LocationInFile, String> =
+    let ground_truth_occurrences: HashMap<LocationInFile, GroundTruthSymbol> =
         index_occurrences(&ground_truth);
     bar.tick();
 
@@ -73,11 +78,12 @@ pub fn evaluate_indexes<'a>(
     // is all the symbol pairs.
     // Each symbol from ground truth dataset can be mapped to any number of
     // symbols from the candidate set
-    let mut ground_truth_alternatives: HashMap<String, HashSet<SymbolPair>> = HashMap::new();
+    let mut ground_truth_alternatives: HashMap<GroundTruthSymbol, HashSet<SymbolPair>> =
+        HashMap::new();
 
     bar.set_message("Analysing occurrences in candidate SCIP");
     for (candidate_loc, candidate_symbol) in candidate_occurrences.clone() {
-        // At given location from the candidate dataset, see
+        // At given location from the candidate SCIP, see
         // if ground truth dataset contains any symbol at same location
         match ground_truth_occurrences.get(&candidate_loc) {
             // If ground truth dataset doesn't have any symbol at this location,
