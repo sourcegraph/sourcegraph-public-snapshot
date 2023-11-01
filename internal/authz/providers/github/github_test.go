@@ -42,7 +42,7 @@ func mockClientFunc(mockClient client) func() (client, error) {
 }
 
 func stableSortRepoID(v []extsvc.RepoID) {
-	slices.SortStableFunc(v, func(a, b extsvc.RepoID) int { return stdcmp.Compare(string(a), string(b)) })
+	slices.SortStableFunc(v, stdcmp.Less[extsvc.RepoID])
 }
 
 // newMockClientWithTokenMock is used to keep the behaviour of WithToken function mocking
