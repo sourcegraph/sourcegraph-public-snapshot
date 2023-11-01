@@ -30,7 +30,7 @@ NON_BUNDLED_DEPS = [
     "//:node_modules/axe-core",
 ]
 
-def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_enabled = False, stamp = 0, stamp_env_vars_only = False, **kwargs):
+def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_enabled = False, **kwargs):
     bundle_name = "%s_bundle" % name
 
     # Bundle the tests to remove the use of esm modules in tests
@@ -114,8 +114,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             srcs = data,
             out_dirs = ["out"],
             silent_on_success = True,
-            stamp = stamp,
-            stamp_env_vars_only = stamp_env_vars_only,
             # Executed mocha tests with Percy enabled via `percy exec -- mocha ...`
             # Prepends volatile env variables to the command to make Percy aware of the
             # current git branch and commit.
