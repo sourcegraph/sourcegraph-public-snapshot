@@ -168,7 +168,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <div className="d-flex">
                         <CodyCTAIcon className="flex-shrink-0" />
                         <div className="ml-3">
-                            <H3>Cody is more powerful in your IDE</H3>
+                            <H3>Cody is more powerful in your editor</H3>
                             <Text>
                                 Cody adds powerful AI assistant functionality like inline completions and assist, and
                                 powerful recipes to help you understand codebases and generate and fix code more
@@ -198,12 +198,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 }
                 description={
                     <>
-                        Cody answers code questions and writes code for you by leveraging your entire codebase and the
-                        code graph.
+                        Cody answers code questions and writes code for you using your entire codebase and the code
+                        graph.
                         {!isSourcegraphDotCom && !isCodyApp && isCTADismissed && (
                             <>
                                 {' '}
-                                <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
+                                <Link to="/help/cody#get-cody">Get Cody in your editor.</Link>
                             </>
                         )}
                     </>
