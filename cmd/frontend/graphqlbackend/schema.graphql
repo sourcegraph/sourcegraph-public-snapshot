@@ -5615,9 +5615,15 @@ type GitTree implements TreeEntry {
         """
         recursive: Boolean = false
         """
-        Recurse into sub-trees of single-child directories. If true, we return a flat list of
-        every directory that is a single child, and any directories or files that are
-        nested in a single child.
+        If recurseSingleChild is true, and the requested path only has a single child
+        that is a directory, recurse into that directory.
+        Only respected when recursive is false.
+        Example:
+        FS structure:
+        /folder/subfolder/file
+        Request for entries of /folder:
+        Instead of returning just /folder/subfolder, this API also travserse into subfolder
+        until it hits something with more than 1 child that's not a dir.
         """
         recursiveSingleChild: Boolean = false
         """
