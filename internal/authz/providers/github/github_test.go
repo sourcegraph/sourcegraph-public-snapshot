@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"golang.org/x/exp/slices"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gregjones/httpcache"
 
