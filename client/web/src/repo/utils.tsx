@@ -12,3 +12,8 @@ export const getCanonicalURL = (sourceType: RepositoryType | string, node: GitCo
     isPerforceChangelistMappingEnabled() && isPerforceDepotSource(sourceType) && node.perforceChangelist
         ? node.perforceChangelist.canonicalURL
         : node.canonicalURL
+
+export const getInitialSearchTerm = (repo: string) => {
+    const r = repo.split('/')
+    return r[r.length - 1]
+}

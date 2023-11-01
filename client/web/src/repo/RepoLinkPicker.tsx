@@ -38,6 +38,8 @@ import {
     type RepositoriesSuggestionsVariables,
 } from '../graphql-operations'
 
+import { getInitialSearchTerm } from './utils'
+
 import styles from './RepoLinkPicker.module.scss'
 
 const REPOSITORIES_QUERY = gql`
@@ -195,9 +197,4 @@ export const getCodeHostIconPath = (codeHostType?: ExternalServiceKind): string 
             return mdiSourceRepository
         }
     }
-}
-
-const getInitialSearchTerm = (repo: string) => {
-    const r = repo.split('/')
-    return r[r.length - 1]
 }
