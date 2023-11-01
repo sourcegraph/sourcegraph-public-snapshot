@@ -38,5 +38,15 @@
     "trackingIssues": false,
     "calendar": false,
     "slack": false
+  },
+  "in_progress": {
+    "captainGitHubUsername": "camdencheek",
+    "captainSlackUsername": "camden",
+    "releases": [
+      {
+        "version": "5.2.2",
+        "previous": "5.2.1"
+      }
+    ]
   }
 }
