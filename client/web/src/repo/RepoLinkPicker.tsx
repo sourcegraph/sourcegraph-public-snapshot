@@ -88,14 +88,12 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
         variables: {
             query: searchTerm.length === 0 ? getInitialSearchTerm(repositoryName) : debouncedSearchTerm,
         },
-        fetchPolicy: 'cache-and-network',
+        fetchPolicy: 'cache-first',
     })
 
     const handleSelect = (selectedValue: string): void => {
         navigate(`/${selectedValue}`)
         setSuggestionOpen(false)
-        // set search term back to an empty string, but replace
-        // new initial value for the gql request
         setSearchTerm('')
     }
 
