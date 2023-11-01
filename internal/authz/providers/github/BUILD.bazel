@@ -59,6 +59,5 @@ go_test(
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@org_golang_x_exp//slices",
     ],
 )
