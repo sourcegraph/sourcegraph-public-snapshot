@@ -8,7 +8,6 @@ import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 
 import { HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
-import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
@@ -120,22 +119,9 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
     const [selectedSearchContextSpec, _setSelectedSearchContextSpec] = useState<string | undefined>()
 
     // NOTE(2022-09-08) Inform the inlined code from
-    // sourcegraph/code-intel-extensions about the change of search context.
-    // The old extension code previously accessed this information from the
-    // 'sourcegraph' npm package, and updating the context like this was the
-    // simplest solution to mirror the old behavior while deprecating
-    // extensions on a tight deadline. It would be nice to properly pass
-    // around this via React state in the future.
-    const setWorkspaceSearchContext = useCallback((spec: string | null): void => {
-        setCodeIntelSearchContext(spec ?? undefined)
+    const setSelectedSearchContextSpecWithNoChecks = useCallback((spec: string): void => {
+        _setSelectedSearchContextSpec(spec)
     }, [])
-    const setSelectedSearchContextSpecWithNoChecks = useCallback(
-        (spec: string): void => {
-            _setSelectedSearchContextSpec(spec)
-            setWorkspaceSearchContext(spec)
-        },
-        [setWorkspaceSearchContext]
-    )
     const setSelectedSearchContextSpecToDefault = useCallback((): void => {
         if (!props.searchContextsEnabled) {
             return
@@ -232,8 +218,6 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
             // select the user's default search context.
             setSelectedSearchContextSpecToDefault()
         }
-
-        setWorkspaceSearchContext(selectedSearchContextSpec ?? null)
 
         return () => subscriptions.unsubscribe()
 

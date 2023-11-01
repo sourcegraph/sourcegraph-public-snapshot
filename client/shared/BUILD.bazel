@@ -210,7 +210,6 @@ ts_project(
         "src/codeintel/legacy-extensions/util/promise.ts",
         "src/codeintel/legacy-extensions/util/uri.ts",
         "src/codeintel/scip.ts",
-        "src/codeintel/searchContext.ts",
         "src/commands/commands.ts",
         "src/components/CodeMirrorEditor.tsx",
         "src/components/HighlightedMatches.tsx",
