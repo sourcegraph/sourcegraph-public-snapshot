@@ -23,6 +23,8 @@ replace (
 	// We publish 'monitoring' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+	github.com/sourcegraph/log => github.com/sourcegraph/log v0.0.0-20230918165208-4a174e4ec4cf
+	github.com/sourcegraph/mountinfo => github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 )
 
 // Temporary replace directives
