@@ -188,7 +188,7 @@ class BlameDecorationViewPlugin implements PluginValue {
             const endLine = view.state.doc.lineAt(to).number
             while (line.number <= endLine) {
                 const matchingHunk = lines[line.number]
-                if (matchingHunk && (matchingHunk.rev !== previousHunk?.rev)) {
+                if (matchingHunk && matchingHunk.rev !== previousHunk?.rev) {
                     if (line.number !== 1) {
                         builder.add(line.from, line.from, startOfHunkDecoration)
                     }
