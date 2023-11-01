@@ -51,5 +51,6 @@ func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss pr
 
 // SymbolInfo is a no-op in the non-cgo variant.
 func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
+	panic("Running without CGO!")
 	return &proto.SymbolInfoResponse{}, nil
 }

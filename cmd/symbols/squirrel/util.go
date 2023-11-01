@@ -236,7 +236,7 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 	return &ret
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+var UnrecognizedFileExtensionError = errors.New("unrecognized file extension")
 var UnsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
@@ -246,9 +246,13 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 	}
 
+	if strings.Contains(strings.ToLower(ext), "cpp") {
+		fmt.Printf("squirrel got file extension for lookup: %s\n", ext)
+	}
+
 	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, unrecognizedFileExtensionError
+		return nil, UnrecognizedFileExtensionError
 	}
 
 	langSpec, ok := langToLangSpec[langName]
@@ -409,7 +413,7 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		Commit: commit,
 		Path:   symbol.Path,
 	})
-	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, UnrecognizedFileExtensionError) {
 		return nil, nil
 	}
 	if err != nil {

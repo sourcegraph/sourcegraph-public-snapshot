@@ -56,7 +56,7 @@ func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r 
 			_ = json.NewEncoder(w).Encode(nil)
 
 			// Log the error if it's not an unrecognized file extension or unsupported language error.
-			if !errors.Is(err, unrecognizedFileExtensionError) && !errors.Is(err, UnsupportedLanguageError) {
+			if !errors.Is(err, UnrecognizedFileExtensionError) && !errors.Is(err, UnsupportedLanguageError) {
 				log15.Error("failed to generate local code intel payload", "err", err)
 			}
 
@@ -94,6 +94,7 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile readFil
 		// Find the symbol.
 		squirrel := New(readFile, symbolSearch)
 		defer squirrel.Close()
+		fmt.Println("Calling SymbolInfo from NewSymbolInfoHandler")
 		result, err := squirrel.SymbolInfo(r.Context(), args)
 		if os.Getenv("SQUIRREL_DEBUG") == "true" {
 			debugStringBuilder := &strings.Builder{}

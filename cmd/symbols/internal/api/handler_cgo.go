@@ -4,6 +4,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
@@ -78,8 +79,18 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 	args.RepoCommitPath = request.GetRepoCommitPath().ToInternal()
 	args.Point = request.GetPoint().ToInternal()
 
+	panic("GRPC panic!!!!")
+
+	fmt.Printf("grpc: Called squirrel.SymbolInfo(%v)\n", args.RepoCommitPath)
+
 	info, err := squirrelService.SymbolInfo(ctx, args)
 	if err != nil {
+		fmt.Printf("grpc: Got squirrel error, %v (UFEE=%v)\n", err.Error(),
+			errors.Is(err, squirrel.UnrecognizedFileExtensionError))
+		if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+
 		if errors.Is(err, squirrel.UnsupportedLanguageError) {
 			return nil, status.Error(codes.Unimplemented, err.Error())
 		}

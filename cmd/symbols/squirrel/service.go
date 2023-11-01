@@ -53,6 +53,7 @@ func (s *SquirrelService) Close() {
 
 // SymbolInfo finds the symbol at the given point in a file, or nil the definition can't be determined.
 func (s *SquirrelService) SymbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
+	fmt.Println("Called SymbolInfo")
 	// First, find the definition.
 	var def *types.RepoCommitPathMaybeRange
 	{

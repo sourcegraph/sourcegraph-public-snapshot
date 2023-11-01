@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -444,6 +445,7 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 		},
 	}
 
+	fmt.Println("Calling GitTreeEntryResolver.SymbolInfo")
 	result, err := symbols.DefaultClient.SymbolInfo(ctx, start)
 	if err != nil {
 		return nil, err
