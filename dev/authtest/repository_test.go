@@ -66,7 +66,8 @@ func TestRepository(t *testing.T) {
 
 	// Wait up to 30 seconds for the private repository to have permissions synced
 	// from the code host at least once.
-	err = gqltestutil.Retry(120*time.Second, func() error {
+	// TODO(burmudar): bumped timeout since on aspect-workflows it was consistently timing out
+	err = gqltestutil.Retry(35*time.Second, func() error {
 		permsInfo, err := client.RepositoryPermissionsInfo(privateRepo)
 		if err != nil {
 			t.Fatal(err)
