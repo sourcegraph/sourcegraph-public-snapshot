@@ -2,12 +2,13 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, Range, type Extension, Line } from '@codemirror/state'
+import { Compartment, EditorState, type Range, type Extension, type Line } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { isEqual } from 'lodash'
+import { createRoot } from 'react-dom/client'
 import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
@@ -35,8 +36,9 @@ import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import type { BlameHunkData } from '../blame/useBlameHunks'
 import type { HoverThresholdProps } from '../RepoContainer'
 
+import { BlameDecoration } from './BlameDecoration'
 import { blobPropsFacet } from './codemirror'
-import { blameData, enableBlame } from './codemirror/blame-decorations'
+import { blameData, showBlame } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
@@ -320,7 +322,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const editorRef = useRef<EditorView | null>(null)
 
-    const blameDecorations = useBlameDecoration(editorRef, {visible: !!isBlameVisible, blameHunks, navigate})
+    const blameDecorations = useBlameDecoration(editorRef, { visible: !!isBlameVisible, blameHunks })
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -386,7 +388,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     useEffect(() => {
         const editor = editorRef.current
         if (editor) {
-            console.log('recreate state')
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
@@ -537,21 +538,53 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 }
 
-
 /**
  * Create and update blame decorations.
  */
-function useBlameDecoration(editorRef: RefObject<EditorView>, {visible, blameHunks, navigate}: {visible: boolean, blameHunks?: BlameHunkData, navigate: NavigateFunction}): Extension {
+function useBlameDecoration(
+    editorRef: RefObject<EditorView>,
+    { visible, blameHunks }: { visible: boolean; blameHunks?: BlameHunkData }
+): Extension {
+    const navigate = useNavigate()
+
     // Blame support is split into two compartments because we only want to trigger
     // `lockFirstVisibleLine` when blame is enabled, not when data is received
     // (this can cause the editor to scroll to a different line)
     const enabled = useCompartment(
         editorRef,
-        useMemo(() => visible ? enableBlame(navigate): [], [visible, navigate]),
-        lockFirstVisibleLine,
+        useMemo(
+            () =>
+                visible
+                    ? showBlame({
+                          createBlameDecoration(container, { line, hunk, onSelect, onDeselect, externalURLs }) {
+                              const root = createRoot(container)
+                              root.render(
+                                  <BlameDecoration
+                                      navigate={navigate}
+                                      line={line ?? 0}
+                                      blameHunk={hunk}
+                                      onSelect={onSelect}
+                                      onDeselect={onDeselect}
+                                      externalURLs={externalURLs}
+                                  />
+                              )
+                              return {
+                                  destroy() {
+                                      root.unmount()
+                                  },
+                              }
+                          },
+                      })
+                    : [],
+            [visible, navigate]
+        ),
+        lockFirstVisibleLine
     )
 
-    const data = useCompartment(editorRef, useMemo(() => blameData(blameHunks), [blameHunks]))
+    const data = useCompartment(
+        editorRef,
+        useMemo(() => blameData(blameHunks), [blameHunks])
+    )
     return useMemo(() => [enabled, data], [enabled, data])
 }
 
