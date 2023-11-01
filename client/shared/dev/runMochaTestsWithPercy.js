@@ -13,11 +13,10 @@ const resolveBin = require('resolve-bin')
 /** @returns {Record<string, string>} env vars */
 function getEnvVars() {
   // JS_BINARY__EXECROOT – Set by Bazel `js_run_binary` rule.
-  // BAZEL_VOLATILE_STATUS_FILE – Set by Bazel when the `stamp` attribute on the `js_run_binary_rule` equals 1.
-  // https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary#stamp
-  const { JS_BINARY__EXECROOT, BAZEL_VOLATILE_STATUS_FILE } = process.env
+  // BAZEL_BINDIR – Set by Bazel `js_run_binary` rule.
+  const { JS_BINARY__EXECROOT, BAZEL_BINDIR } = process.env
 
-  if (!JS_BINARY__EXECROOT || !BAZEL_VOLATILE_STATUS_FILE) {
+  if (!JS_BINARY__EXECROOT || !BAZEL_BINDIR) {
     throw new Error('Missing required environment variables')
   }
 
@@ -26,7 +25,15 @@ function getEnvVars() {
   // build the correct visual diff report and auto-accept change on `main` if we're on it.
   // https://github.com/percy/cli/blob/059ec21653a07105e223aa5a3ec1f815a7123ad7/packages/env/src/environment.js#L138-L139
   // https://bazel.build/docs/user-manual#workspace-status
-  const statusFilePath = path.join(JS_BINARY__EXECROOT, BAZEL_VOLATILE_STATUS_FILE)
+  //
+  // NB: we derive the volatile-status.txt file path from the BAZEL_BINDIR since we are
+  // intentionally pulling volatile data without defining the volatile status as an input so we
+  // don't bust the cache with its contents of volatile-status.txt
+  // (https://github.com/bazelbuild/bazel/issues/16231). This can be improved in the future by using
+  // the new --experimental_remote_cache_key_ignore_stamping flag in Bazel to filter out the
+  // volatile-status.txt file from the action inputs
+  // (https://github.com/bazelbuild/bazel/pull/16240)
+  const statusFilePath = path.join(path.dirname(path.dirname(path.join(JS_BINARY__EXECROOT, BAZEL_BINDIR))), 'volatile-status.txt')
   const volatileEnvVariables = Object.fromEntries(
     readFileSync(statusFilePath, 'utf8')
       .split('\n')
