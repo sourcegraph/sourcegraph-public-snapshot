@@ -112,26 +112,6 @@ exports[`KeyboardShortcutsHelp > is triggered correctly 1`] = `
                 <li
                   class="list-group-item d-flex align-items-center justify-content-between"
                 >
-                  Copy full query
-                  <span>
-                    <span>
-                      <kbd>
-                        Ctrl
-                      </kbd>
-                      +
-                      <kbd>
-                        Shift
-                      </kbd>
-                      +
-                      <kbd>
-                        c
-                      </kbd>
-                    </span>
-                  </span>
-                </li>
-                <li
-                  class="list-group-item d-flex align-items-center justify-content-between"
-                >
                   Expand URL to its canonical form (on file or tree page)
                   <span>
                     <span>

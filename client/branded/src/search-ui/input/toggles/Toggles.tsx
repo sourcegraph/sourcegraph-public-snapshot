@@ -3,22 +3,18 @@ import React, { useCallback } from 'react'
 import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
-import { isMacPlatform } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     type SearchPatternTypeProps,
     type CaseSensitivityProps,
-    type SearchContextProps,
     type SearchPatternTypeMutationProps,
     type SubmitSearchProps,
     SearchMode,
     type SearchModeProps,
 } from '@sourcegraph/shared/src/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
-import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
 import { SmartSearchToggle } from './SmartSearchToggle'
 
@@ -30,11 +26,9 @@ export interface TogglesProps
         CaseSensitivityProps,
         SearchModeProps,
         SettingsCascadeProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
-    showCopyQueryButton?: boolean
     showSmartSearchButton?: boolean
     /**
      * If set to false makes all buttons non-actionable. The main use case for
@@ -44,18 +38,6 @@ export interface TogglesProps
     interactive?: boolean
     /** Comes from JSContext only set in the web app. */
     structuralSearchDisabled?: boolean
-}
-
-export const getFullQuery = (
-    query: string,
-    searchContextSpec: string,
-    caseSensitive: boolean,
-    patternType: SearchPatternType
-): string => {
-    const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
-        .filter(queryPart => !!queryPart)
-        .join(' ')
-    return appendContextFilter(finalQuery, searchContextSpec)
 }
 
 /**
@@ -71,9 +53,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         searchMode,
         setSearchMode,
         className,
-        selectedSearchContextSpec,
         submitSearch,
-        showCopyQueryButton = true,
         showSmartSearchButton = true,
         structuralSearchDisabled,
     } = props
@@ -127,8 +107,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         },
         [setSearchMode, submitOnToggle]
     )
-
-    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
         <div className={classNames(className, styles.toggleContainer)}>
@@ -191,20 +169,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         />
                     )}
                 </>
-                {(showSmartSearchButton || showCopyQueryButton) && <div className={styles.separator} />}
+                {showSmartSearchButton && <div className={styles.separator} />}
                 {showSmartSearchButton && (
                     <SmartSearchToggle
                         className="test-smart-search-toggle"
                         isActive={searchMode === SearchMode.SmartSearch}
                         onSelect={onSelectSmartSearch}
                         interactive={props.interactive}
-                    />
-                )}
-                {showCopyQueryButton && (
-                    <CopyQueryButton
-                        fullQuery={fullQuery}
-                        isMacPlatform={isMacPlatform()}
-                        className={classNames(styles.toggle, styles.copyQueryButton)}
                     />
                 )}
             </>
