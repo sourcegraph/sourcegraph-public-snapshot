@@ -70,6 +70,10 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		// traverse the entire git history to find a second commit that doesn't
 		// exist, which is useless information in the case that we only want
 		// the latest commit anyways.
+		//
+		// NOTE: in a world where we can view which fields were requested (our
+		// GraphQL library doesn't currently support this), we could make this
+		// conditional on whether `hasNextPage` was part of the request.
 		if n > 1 {
 			n += 1
 		}
@@ -150,6 +154,9 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	// In the special case that only one commit was requested, we want
 	// to always say there is a next page because we didn't request an
 	// extra to know whether there were more.
+	//
+	// NOTE: this means that `hasNextPage` can possibly incorrectly
+	// return true when only one result is requested.
 	gotSingleRequestedCommit := limit == 1 && totalCommits == limit
 
 	// If a limit is set, we attempt to fetch N+1 commits to know if there is a next page or not. If
