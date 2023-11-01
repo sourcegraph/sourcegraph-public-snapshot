@@ -315,17 +315,15 @@ interface SearchJobProps extends TelemetryProps {
 const SyntaxHighlightedSearchQueryCodeMirror: FC<{ query: string; patternType?: SearchPatternType }> = ({
     query,
     patternType,
-}) => {
-    return (
-        <BaseCodeMirrorQueryInput
-            value={query}
-            readOnly={true}
-            multiLine={true}
-            interpretComments={false}
-            patternType={patternType || SearchPatternType.standard}
-        />
-    )
-}
+}) => (
+    <BaseCodeMirrorQueryInput
+        value={query}
+        readOnly={true}
+        multiLine={true}
+        interpretComments={false}
+        patternType={patternType || SearchPatternType.standard}
+    />
+)
 
 const SearchJob: FC<SearchJobProps> = props => {
     const { job, withCreatorColumn, telemetryService, onRerun, onCancel, onDelete } = props
