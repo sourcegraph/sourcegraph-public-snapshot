@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals'
 
-import { getInitialSearchTerm } from './utils'
+import { getInitialRepoResults } from './utils'
 
 describe('getInitialSearchTerm', () => {
     const tests: {
@@ -48,7 +48,7 @@ describe('getInitialSearchTerm', () => {
     for (let i = 0; i < tests.length; i++) {
         let t = tests[i]
         it(t.name, () => {
-            expect(getInitialSearchTerm(t.repo)).toBe(t.expected)
+            expect(getInitialRepoResults(t.repo)).toBe(t.expected)
         })
     }
 })
