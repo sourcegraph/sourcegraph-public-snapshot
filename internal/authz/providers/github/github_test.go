@@ -1,7 +1,6 @@
 package github
 
 import (
-	stdcmp "cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -39,6 +38,10 @@ func mockClientFunc(mockClient client) func() (client, error) {
 	return func() (client, error) {
 		return mockClient, nil
 	}
+}
+
+func stableSortRepoID(v []extsvc.RepoID) {
+	slices.SortStableFunc(v, func(a, b extsvc.RepoID) bool { return strings.Compare(string(a), string(b)) <= 1 })
 }
 
 // newMockClientWithTokenMock is used to keep the behaviour of WithToken function mocking
@@ -207,8 +210,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 		}
 
-		slices.SortStableFunc(wantRepoIDs, stdcmp.Less[extsvc.RepoID])
-		slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+		stableSortRepoID(wantRepoIDs)
+		stableSortRepoID(repoIDs.Exacts)
 		if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 			t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 		}
@@ -257,8 +260,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 			}
-			slices.SortStableFunc(wantRepoIDs, stdcmp.Less[extsvc.RepoID])
-			slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+			stableSortRepoID(wantRepoIDs)
+			stableSortRepoID(repoIDs.Exacts)
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
@@ -293,8 +296,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 			}
-			slices.SortStableFunc(wantRepoIDs, stdcmp.Less[extsvc.RepoID])
-			slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+			stableSortRepoID(wantRepoIDs)
+			stableSortRepoID(repoIDs.Exacts)
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
@@ -366,8 +369,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				"MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2nsteam2=",
 			}
-			slices.SortStableFunc(wantRepoIDs, stdcmp.Less[extsvc.RepoID])
-			slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+			stableSortRepoID(wantRepoIDs)
+			stableSortRepoID(repoIDs.Exacts)
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
@@ -420,8 +423,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
 					"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
 				}
-				slices.SortStableFunc(wantRepoIDs, stdcmp.Less[extsvc.RepoID])
-				slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+				stableSortRepoID(wantRepoIDs)
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
@@ -475,7 +478,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				"MDEwOlJlcG9zaXRvcnkyNDI2nsteam1=",
 			}
 
-			slices.SortStableFunc(wantRepoIDs, stdcmp.Less[extsvc.RepoID])
+			stableSortRepoID(wantRepoIDs)
 			// first call
 			t.Run("first call", func(t *testing.T) {
 				repoIDs, err := p.FetchUserPerms(context.Background(),
@@ -489,7 +492,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
 						callsToListOrgRepos, callsToListTeamRepos)
 				}
-				slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
@@ -510,7 +513,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					t.Fatalf("expected repos not to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
 						callsToListOrgRepos, callsToListTeamRepos)
 				}
-				slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
@@ -531,7 +534,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
 						callsToListOrgRepos, callsToListTeamRepos)
 				}
-				slices.SortStableFunc(repoIDs.Exacts, stdcmp.Less[extsvc.RepoID])
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
