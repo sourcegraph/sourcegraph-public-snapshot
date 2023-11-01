@@ -1,5 +1,0 @@
-dist/
-*.vsix
-.vscode-test/
-
-code-intel-extensions
