@@ -6352,8 +6352,9 @@ def go_dependencies():
         name = "com_github_sourcegraph_log",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/log",
-        sum = "h1:tHKdC+bXxxGJ0cy/R06kg6Z0zqwVGOWMx8uWsIwsaoY=",
-        version = "v0.0.0-20231018134238-fbadff7458bb",
+        replace = "github.com/sourcegraph/log",
+        sum = "h1:eALn0yz3ljezZVueXObvk0hHBr3Qsox+L78//9qps+M=",
+        version = "v0.0.0-20230918165208-4a174e4ec4cf",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_cloudflare",
@@ -6382,8 +6383,9 @@ def go_dependencies():
         name = "com_github_sourcegraph_mountinfo",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/mountinfo",
-        sum = "h1:2lUb58rz1bq77wL3hb6OBT58uBVtlNs1o23Kahfj/kU=",
-        version = "v0.0.0-20231018142932-e00da332dac5",
+        replace = "github.com/sourcegraph/mountinfo",
+        sum = "h1:NSYSPQOE7yyyytLbKQHjxSkPnBagaGQblgVMQrQ1je0=",
+        version = "v0.0.0-20230106004439-7026e28cef67",
     )
     go_repository(
         name = "com_github_sourcegraph_run",
