@@ -71,7 +71,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_grafana_base",
-        digest = "sha256:963ec6435d899ec8312fd3555f96f117e5cd018218117bb6f89c9313e53ae6a2",
+        digest = "sha256:07a31e9c49300872deeb162910207611261475634bd7bc92e4dcf9a285c98f16",
         image = "us.gcr.io/sourcegraph-dev/wolfi-grafana",
     )
 
