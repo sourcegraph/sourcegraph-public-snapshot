@@ -16,6 +16,6 @@ pkgs.nodejs_20.overrideAttrs (oldAttrs: {
     # fetching typescript 5.2.2 from npm registry results in an archive with a missing package-lock.json, which nix
     # refuses to build without. We can generate this lock file with `npm install --package-lock-only` but at the time I didn't
     # want to vendor the file. Fortunately, nixpkgs-unstable has typescript at 5.2.2
-    typescript = pkgs.nodePackages.typescript; # 5.2.2
+    typescript = assert pkgs.nodePackages.typescript.version == "5.2.2"; pkgs.nodePackages.typescript;
   };
 })
