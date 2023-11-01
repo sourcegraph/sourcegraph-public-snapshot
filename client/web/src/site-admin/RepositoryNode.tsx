@@ -228,18 +228,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
-                                    Embeddings policies
-                                </MenuItem>
-                                <MenuItem
-                                    as={Button}
-                                    disabled={!repoClonedAndHealthy(node)}
-                                    onSelect={() =>
-                                        navigate(`/site-admin/embeddings?query=${encodeURIComponent(node.name)}`)
-                                    }
-                                    className="p-2"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
-                                    Embeddings jobs
+                                    Embeddings
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
