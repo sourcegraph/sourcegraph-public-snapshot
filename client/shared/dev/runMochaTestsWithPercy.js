@@ -33,7 +33,10 @@ function getEnvVars() {
   // the new --experimental_remote_cache_key_ignore_stamping flag in Bazel to filter out the
   // volatile-status.txt file from the action inputs
   // (https://github.com/bazelbuild/bazel/pull/16240)
-  const statusFilePath = path.join(path.dirname(path.dirname(path.join(JS_BINARY__EXECROOT, BAZEL_BINDIR))), 'volatile-status.txt')
+  const statusFilePath = path.join(
+    path.dirname(path.dirname(path.join(JS_BINARY__EXECROOT, BAZEL_BINDIR))),
+    'volatile-status.txt'
+  )
   const volatileEnvVariables = Object.fromEntries(
     readFileSync(statusFilePath, 'utf8')
       .split('\n')
