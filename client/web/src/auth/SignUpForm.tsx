@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
-import cookies from 'js-cookie'
 import { type Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -17,7 +16,7 @@ import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } 
 
 import { LoaderButton } from '../components/LoaderButton'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
+import { eventLogger } from '../tracking/eventLogger'
 import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
@@ -110,9 +109,9 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,
-                anonymousUserId: cookies.get(ANONYMOUS_USER_ID_KEY),
-                firstSourceUrl: cookies.get(FIRST_SOURCE_URL_KEY),
-                lastSourceUrl: cookies.get(LAST_SOURCE_URL_KEY),
+                anonymousUserId: eventLogger.user.anonymousUserID,
+                firstSourceUrl: eventLogger.session.getFirstSourceURL(),
+                lastSourceUrl: eventLogger.session.getLastSourceURL(),
             }).catch(error => {
                 setError(asError(error))
                 setLoading(false)
