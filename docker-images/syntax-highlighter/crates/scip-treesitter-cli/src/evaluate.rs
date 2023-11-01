@@ -147,80 +147,85 @@ pub fn evaluate_indexes<'a>(
     }
     bar.tick();
 
-    let candidate_ambiguities: HashMap<&String, usize> = {
-        let mut result: HashMap<&String, HashSet<&String>> = HashMap::new();
+    let candidate_mapping: HashMap<CandidateSymbol, HashMap<GroundTruthSymbol, Overlap>> = {
+        let mut result: HashMap<CandidateSymbol, HashMap<GroundTruthSymbol, Overlap>> =
+            HashMap::new();
 
-        for (symbol_pair, _) in &overlaps {
+        for (symbol_pair, overlap) in overlaps.clone() {
             match result.get_mut(&symbol_pair.candidate) {
                 None => {
                     result.insert(
-                        &symbol_pair.candidate,
-                        HashSet::from([&symbol_pair.ground_truth]),
+                        symbol_pair.candidate,
+                        HashMap::from([(symbol_pair.ground_truth, overlap)]),
                     );
                 }
-                Some(set) => {
-                    set.insert(&symbol_pair.ground_truth);
+                Some(map) => {
+                    map.insert(symbol_pair.ground_truth, overlap);
                 }
             }
         }
 
-        result.clone().iter().map(|(k, v)| (*k, v.len())).collect()
+        result
     };
-
-    let ground_truth_ambiguities: HashMap<&String, usize> = ground_truth_alternatives
-        .iter()
-        .map(|(k, v)| (k, v.len()))
-        .collect();
 
     // We have produced the final counts for all symbol pairs -
     // it's time to produce final weights
-    let symbol_pair_weight: HashMap<SymbolPair, f32> = overlaps
-        .clone()
-        .into_iter()
-        .map(|(symbol_pair, overlap)| {
-            let candidate_ambiguity = *candidate_ambiguities
-                .get(&symbol_pair.candidate)
-                .unwrap_or(&0)
-                .max(&2) as f32;
+    let symbol_pair_weight: HashMap<SymbolPair, f32> = {
+        let mut result: HashMap<SymbolPair, f32> = HashMap::new();
 
-            // let ground_truth_ambiguity = *ground_truth_ambiguities
-            //     .get(&symbol_pair.ground_truth)
-            //     .unwrap_or(&0)
-            //     .max(&2) as f32;
-            (symbol_pair, overlap.jaccard() / candidate_ambiguity.log2())
-        })
-        .collect();
+        for (candidate_symbol, alternatives) in &candidate_mapping {
+            let total_weight: f32 = alternatives.values().map(|i| i.jaccard()).sum();
+
+            for (ground_truth_symbol, overlap) in alternatives {
+                let weight = overlap.jaccard();
+
+                let adjusted_weight = weight / total_weight;
+
+                result.insert(
+                    SymbolPair {
+                        candidate: candidate_symbol.clone(),
+                        ground_truth: ground_truth_symbol.clone(),
+                    },
+                    adjusted_weight,
+                );
+            }
+        }
+
+        result
+    };
 
     if options.print_mapping {
-        let mut overlaps_vec: Vec<(SymbolPair, Overlap)> = overlaps.clone().into_iter().collect();
-        overlaps_vec.sort_by_key(|(symbol_pair, _)| symbol_pair.clone());
+        let mut candidate_mapping_vec: Vec<(CandidateSymbol, HashMap<GroundTruthSymbol, Overlap>)> =
+            candidate_mapping.into_iter().collect();
+        candidate_mapping_vec.sort_by_key(|(sym, _)| sym.clone());
 
-        for (pair, ov) in overlaps_vec {
-            let total = ov.total;
-            let common = ov.common;
+        for (candidate_symbol, alternatives) in candidate_mapping_vec {
+            let candidate = shorten_symbol(&candidate_symbol);
+            let mut alternatives_vec: Vec<(GroundTruthSymbol, Overlap)> =
+                alternatives.clone().into_iter().collect();
+            alternatives_vec.sort_by_key(|(sym, _)| sym.clone());
 
-            let ground_truth_ambiguity = ground_truth_ambiguities
-                .get(&pair.ground_truth)
-                .unwrap_or(&1)
-                - 1;
+            eprintln!("{}", candidate.red());
 
-            let ambiguity = candidate_ambiguities.get(&pair.candidate).unwrap_or(&1) - 1;
+            for (ground_truth_symbol, overlap) in &alternatives_vec {
+                let ground_truth = shorten_symbol(&ground_truth_symbol);
+                let adjusted_weight = symbol_pair_weight
+                    .get(&SymbolPair {
+                        candidate: candidate_symbol.clone(),
+                        ground_truth: ground_truth_symbol.clone(),
+                    })
+                    .unwrap();
 
-            let ground_truth = shorten_symbol(&pair.ground_truth).green();
+                eprintln!(
+                    "   {:.2} {} [{}/{} occurrences]",
+                    adjusted_weight,
+                    ground_truth.green(),
+                    overlap.common,
+                    overlap.total
+                );
+            }
 
-            let candidate = shorten_symbol(&pair.candidate).red();
-
-            let score = symbol_pair_weight.get(&pair).unwrap();
-
-            let prefix = format!("[{common}/{total} occurrences] {:.2} -- ", score);
-
-            let prefix_len = prefix.chars().count();
-
-            let padding = " ".repeat(prefix_len);
-
-            eprintln!(
-                "{prefix}{ground_truth} (ambiguity: {ground_truth_ambiguity})\n{padding}{candidate} (ambiguity: {ambiguity})\n"
-            )
+            eprintln!("");
         }
     }
 
@@ -310,8 +315,8 @@ fn shorten_symbol(sym: &String) -> String {
 
 #[derive(Eq, Hash, PartialEq, Clone, Debug, Ord, PartialOrd)]
 struct SymbolPair {
-    ground_truth: String,
-    candidate: String,
+    ground_truth: GroundTruthSymbol,
+    candidate: CandidateSymbol,
 }
 
 #[derive(Debug, PartialEq, Eq, Default, Hash, Clone, PartialOrd, Ord)]
