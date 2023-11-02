@@ -169,29 +169,30 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
  * Use `useMemo` to compute the extension from some input:
  *
  * const extension = useCompartment(
- *   editorRef,
- *   useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
+ * editorRef,
+ * useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
  * )
  * const editor = useCodeMirror(..., ..., extension)
- *
  * @param editorRef - Ref object to the editor instance
  * @param extension - the dynamic extension(s) to add to the editor
- *
  * @returns a compartmentalized extension
  */
-export function useCompartment(editorRef: RefObject<EditorView>, extension: Extension): Extension {
+export function useCompartment(
+    editorRef: RefObject<EditorView>,
+    extension: Extension,
+    extender?: (view: EditorView) => StateEffect<unknown>[]
+): Extension {
     const compartment = useMemo(() => new Compartment(), [])
     // We only want to trigger CodeMirror transactions when the component updates,
     // not on the first render.
     const shouldUpdate = useRef(false)
 
     useEffect(() => {
-        if (shouldUpdate.current) {
-            editorRef.current?.dispatch({ effects: compartment.reconfigure(extension) })
-        } else {
-            shouldUpdate.current = true
+        const view = editorRef.current
+        if (view && compartment.get(view.state) !== extension) {
+            view.dispatch({ effects: [compartment.reconfigure(extension), ...(extender?.(view) ?? [])] })
         }
-    }, [shouldUpdate, compartment, editorRef, extension])
+    }, [shouldUpdate, compartment, editorRef, extension, extender])
 
     // The compartment is initialized only in the first render.
     // In subsequent renders we dispatch effects to update the compartment (
