@@ -48,5 +48,5 @@ export const hideEmptyLastLine: Extension = [
             fontStyle: 'italic',
             marginTop: '.2rem',
         },
-    })
+    }),
 ]
