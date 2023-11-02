@@ -16,7 +16,7 @@ expression: dumped
   
   // Function declaration
   function functionDeclaration() {
-//         ^^^^^^^^^^^^^^^^^^^ definition scip-ctags functionDeclaration().
+//         ^^^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags functionDeclaration().
     return "Hello, I'm a function declaration";
   }
   
@@ -34,9 +34,9 @@ expression: dumped
   
   // ES6 class declaration
   class ClassDeclaration {
-//      ^^^^^^^^^^^^^^^^ definition scip-ctags ClassDeclaration#
+//      ^^^^^^^^^^^^^^^^ definition(Class) scip-ctags ClassDeclaration#
     constructor() {
-//  ^^^^^^^^^^^ definition scip-ctags ClassDeclaration#constructor().
+//  ^^^^^^^^^^^ definition(Constructor) scip-ctags ClassDeclaration#constructor().
       this.message = "Hello, I'm a class declaration";
     }
   }
@@ -45,12 +45,12 @@ expression: dumped
   var objectDeclaration = {
 //    ^^^^^^^^^^^^^^^^^ definition scip-ctags objectDeclaration.
     message: "Hello, I'm an object declaration"
-//  ^^^^^^^ definition scip-ctags objectDeclaration.message.
+//  ^^^^^^^ definition(Property) scip-ctags objectDeclaration.message.
   };
   
   // Object constructor declaration
   function ObjectConstructor() {
-//         ^^^^^^^^^^^^^^^^^ definition scip-ctags ObjectConstructor().
+//         ^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags ObjectConstructor().
     this.message = "Hello, I'm an object constructor";
   }
   var objectConstructed = new ObjectConstructor();
@@ -66,13 +66,13 @@ expression: dumped
   
   // ES6 Generator Function declaration
   function* generatorFunction(){
-//          ^^^^^^^^^^^^^^^^^ definition scip-ctags generatorFunction().
+//          ^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags generatorFunction().
     yield "Hello, I'm a generator function";
   }
   
   // ES6 Async Function declaration
   async function asyncFunction() {
-//               ^^^^^^^^^^^^^ definition scip-ctags asyncFunction().
+//               ^^^^^^^^^^^^^ definition(Function) scip-ctags asyncFunction().
     return "Hello, I'm an async function";
   }
   
@@ -86,77 +86,77 @@ expression: dumped
   
   // ES6 class declaration
   class ExampleClass {
-//      ^^^^^^^^^^^^ definition scip-ctags ExampleClass#
+//      ^^^^^^^^^^^^ definition(Class) scip-ctags ExampleClass#
   
     // Private field declaration (ES2020)
     #privateField = "Hello, I'm a private field";
   
     // Private method declaration (ES2020)
     #privateMethod() {
-//  ^^^^^^^^^^^^^^ definition scip-ctags ExampleClass#`#privateMethod`().
+//  ^^^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#`#privateMethod`().
       return "Hello, I'm a private method";
     }
   
     // Class Constructor
     constructor(publicField, publicMethodParameter) {
-//  ^^^^^^^^^^^ definition scip-ctags ExampleClass#constructor().
+//  ^^^^^^^^^^^ definition(Constructor) scip-ctags ExampleClass#constructor().
       this.publicField = publicField; // Public Field
       this.publicMethodParameter = publicMethodParameter;
     }
   
     // Instance method
     instanceMethod() {
-//  ^^^^^^^^^^^^^^ definition scip-ctags ExampleClass#instanceMethod().
+//  ^^^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#instanceMethod().
       return "Hello, I'm an instance method";
     }
   
     // Static method
     static staticMethod() {
-//         ^^^^^^^^^^^^ definition scip-ctags ExampleClass#staticMethod().
+//         ^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#staticMethod().
       return "Hello, I'm a static method";
     }
   
     // Getter method
     get retrievedField() {
-//      ^^^^^^^^^^^^^^ definition scip-ctags ExampleClass#retrievedField().
+//      ^^^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#retrievedField().
       return this.publicField;
     }
   
     // Setter method
     set updatedField(value) {
-//      ^^^^^^^^^^^^ definition scip-ctags ExampleClass#updatedField().
+//      ^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#updatedField().
       this.publicField = value;
     }
   
     // Public method using private field and private method
     publicMethod() {
-//  ^^^^^^^^^^^^ definition scip-ctags ExampleClass#publicMethod().
+//  ^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#publicMethod().
       return this.#privateMethod() + " " + this.#privateField;
     }
   
     // Method using arguments
     methodWithArgs(arg1, arg2) {
-//  ^^^^^^^^^^^^^^ definition scip-ctags ExampleClass#methodWithArgs().
+//  ^^^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#methodWithArgs().
       return "Hello, I received " + arg1 + " and " + arg2;
     }
   
     // Method using rest parameters
     methodWithRestArgs(...args) {
-//  ^^^^^^^^^^^^^^^^^^ definition scip-ctags ExampleClass#methodWithRestArgs().
+//  ^^^^^^^^^^^^^^^^^^ definition(Method) scip-ctags ExampleClass#methodWithRestArgs().
       return "Hello, I received " + args.join(", ");
     }
   }
   
   // Prototype methods
   function MyClass() {}
-//         ^^^^^^^ definition scip-ctags MyClass().
+//         ^^^^^^^ definition(Function) scip-ctags MyClass().
   MyClass.prototype.myMethod = function() {};
   
   // Generator function
   function* myGeneratorFunction() {}
-//          ^^^^^^^^^^^^^^^^^^^ definition scip-ctags myGeneratorFunction().
+//          ^^^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags myGeneratorFunction().
   
   // Async function
   async function myAsyncFunction() {}
-//               ^^^^^^^^^^^^^^^ definition scip-ctags myAsyncFunction().
+//               ^^^^^^^^^^^^^^^ definition(Function) scip-ctags myAsyncFunction().
 
