@@ -4,7 +4,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
@@ -88,8 +87,6 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 
 	args.RepoCommitPath = request.GetRepoCommitPath().ToInternal()
 	args.Point = request.GetPoint().ToInternal()
-
-	fmt.Println("gRPC calling Squirrel.SymbolInfo")
 
 	info, err := squirrelService.SymbolInfo(ctx, args)
 	if err != nil {

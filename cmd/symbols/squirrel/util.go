@@ -248,10 +248,6 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 	}
 
-	if strings.Contains(strings.ToLower(ext), "cpp") {
-		fmt.Printf("squirrel got file extension for lookup: %s\n", ext)
-	}
-
 	langName, ok := extToLang[ext]
 	if !ok {
 		return nil, UnrecognizedFileExtensionError

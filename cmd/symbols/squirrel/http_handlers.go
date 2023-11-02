@@ -94,7 +94,6 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile readFil
 		// Find the symbol.
 		squirrel := New(readFile, symbolSearch)
 		defer squirrel.Close()
-		fmt.Println("Calling SymbolInfo from NewSymbolInfoHandler")
 		result, err := squirrel.SymbolInfo(r.Context(), args)
 		if os.Getenv("SQUIRREL_DEBUG") == "true" {
 			debugStringBuilder := &strings.Builder{}
