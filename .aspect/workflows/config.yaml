@@ -3,8 +3,6 @@ queue: aspect-default
 bazel:
   rcfiles:
       - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
-  flags:
-    - --noexperimental_reuse_sandbox_directories
 env:
     CI: "true"
     PGUSER: postgres
