@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 )
 
 // NewChatCompletionsStreamHandler is an http handler which streams back completions results.
@@ -18,6 +19,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 
 	return newCompletionsHandler(
 		logger,
+		telemetryrecorder.New(db),
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",

@@ -126,9 +126,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -226,16 +227,18 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.com"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.com"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -301,9 +304,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							Type: "saml",
 							ID:   "okta",
 						},
-						GitLabProvider:    "my-external",
-						SudoToken:         "asdf",
-						UseNativeUsername: false,
+						GitLabProvider:              "my-external",
+						SudoToken:                   "asdf",
+						UseNativeUsername:           false,
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -328,10 +332,11 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
-						URN:               "extsvc:gitlab:0",
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						SudoToken:         "asdf",
-						UseNativeUsername: true,
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						SudoToken:                   "asdf",
+						UseNativeUsername:           true,
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -439,9 +444,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
