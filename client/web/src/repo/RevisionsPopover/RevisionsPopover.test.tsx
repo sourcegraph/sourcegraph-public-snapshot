@@ -40,10 +40,8 @@ describe('RevisionsPopover', () => {
         })
 
         it('renders correct number of results', () => {
-            expect(within(branchesTab).getAllByRole('link')).toHaveLength(50)
-            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent(
-                '100 branches total (showing first 50)'
-            )
+            expect(within(branchesTab).getAllByRole('link')).toHaveLength(10)
+            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent('20 branches total (showing first 10)')
             expect(within(branchesTab).getByText('Show more')).toBeVisible()
         })
 
@@ -57,8 +55,8 @@ describe('RevisionsPopover', () => {
 
         it('fetches remaining results correctly', async () => {
             await fetchMoreNodes(branchesTab)
-            expect(within(branchesTab).getAllByRole('link')).toHaveLength(100)
-            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent('100 branches total')
+            expect(within(branchesTab).getAllByRole('link')).toHaveLength(20)
+            expect(within(branchesTab).getByTestId('summary')).toHaveTextContent('20 branches total')
             expect(within(branchesTab).queryByText('Show more')).not.toBeInTheDocument()
         })
 
@@ -128,8 +126,8 @@ describe('RevisionsPopover', () => {
         })
 
         it('renders correct number of results', () => {
-            expect(within(tagsTab).getAllByRole('link')).toHaveLength(50)
-            expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('100 tags total (showing first 50)')
+            expect(within(tagsTab).getAllByRole('link')).toHaveLength(10)
+            expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('20 tags total (showing first 10)')
             expect(within(tagsTab).getByText('Show more')).toBeVisible()
         })
 
@@ -143,8 +141,8 @@ describe('RevisionsPopover', () => {
 
         it('fetches remaining results correctly', async () => {
             await fetchMoreNodes(tagsTab)
-            expect(within(tagsTab).getAllByRole('link')).toHaveLength(100)
-            expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('100 tags total')
+            expect(within(tagsTab).getAllByRole('link')).toHaveLength(20)
+            expect(within(tagsTab).getByTestId('summary')).toHaveTextContent('20 tags total')
             expect(within(tagsTab).queryByText('Show more')).not.toBeInTheDocument()
         })
 
@@ -173,7 +171,7 @@ describe('RevisionsPopover', () => {
         })
 
         it('renders correct number of results', () => {
-            expect(within(commitsTab).getAllByRole('link')).toHaveLength(15)
+            expect(within(commitsTab).getAllByRole('link')).toHaveLength(10)
             expect(within(commitsTab).getByText('Show more')).toBeVisible()
         })
 
@@ -186,7 +184,7 @@ describe('RevisionsPopover', () => {
 
         it('fetches remaining results correctly', async () => {
             await fetchMoreNodes(commitsTab)
-            expect(within(commitsTab).getAllByRole('link')).toHaveLength(30)
+            expect(within(commitsTab).getAllByRole('link')).toHaveLength(20)
             expect(within(commitsTab).queryByText('Show more')).not.toBeInTheDocument()
         })
 
