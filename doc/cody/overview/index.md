@@ -189,9 +189,10 @@ Cody's main features include:
 
 ## What data is collected and how it's used?
 
-Sourcegraph collects data to improve user experience in various deployments including self-hosted, cloud, Cody app, and Sourcegraph.com. This includes usage data and user feedback.
+Cody collects and uses data in the following ways:
 
-In the Cloud deployment, data is collected for providing the service, including user prompts and responses. In the Self-Hosted deployment, Sourcegraph doesn't access data unless shared through support channels. For Sourcegraph.com users, data is collected to enhance the user experience but not used to train models.
+- **Prompts and responses**:  When you use Cody, Sourcegraph collects your prompts and responses to provide the service. For individuals using Cody via Sourcegraph.com, Sourcegraph may use your prompts and responses to enhance the user experience, but Sourcegraph does not use any of your data to train models.
+- **Usage data and feedback**:  Sourcegraph also collects usage data and feedback to improve the user experience.
 
 <a target="_blank" href="https://about.sourcegraph.com/terms/cody-notice">Read more about Cody Usage and Privacy policy here →</a>
 
