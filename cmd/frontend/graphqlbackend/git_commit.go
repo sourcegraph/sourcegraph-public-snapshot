@@ -223,9 +223,11 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
 }
 
-func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
+type TreeArgs struct {
 	Path string
-}) (*GitTreeEntryResolver, error) {
+}
+
+func (r *GitCommitResolver) Tree(ctx context.Context, args *TreeArgs) (*GitTreeEntryResolver, error) {
 	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
 			return errors.Errorf("not a directory: %q", args.Path)

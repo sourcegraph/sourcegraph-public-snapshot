@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,61 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+func TestGitTree_History(t *testing.T) {
+	repoName := api.RepoName("testrepo")
+	// creating a repo with 1 committed file
+	root := gitserver.CreateRepoDirWithName(t, string(repoName))
+
+	for _, cmd := range []string{
+		// |- file1    (added)
+		// `- dir1     (added)
+		//    `- file2 (added)
+		"git init",
+		"echo -n infile1 > file1",
+		"touch --date=2006-01-02T15:04:05Z file1 || touch -t 200601021704.05 file1",
+		"mkdir dir1",
+		"echo -n infile2 > dir1/file2",
+		"touch --date=2006-01-02T15:04:05Z dir1/file2 || touch -t 200601021704.05 dir1/file2",
+		"git add file1 dir1/file2",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+
+		// |- file1     (modified)
+		// `- dir1      (modified)
+		//    |- file2  (unchanged)
+		//    `- file3  (added)
+		"echo -n infile3 > dir1/file3",
+		"touch --date=2006-01-02T15:04:05Z dir1/file3 || touch -t 200601021704.05 dir1/file3",
+		"git add dir1/file2 dir1/file3",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	} {
+		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
+		c.Dir = root
+		out, err := c.CombinedOutput()
+		if err != nil {
+			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
+		}
+	}
+
+	gitserver.ClientMocks.LocalGitserver = true
+	gitserver.ClientMocks.LocalGitCommandReposDir = root
+	ctx := context.Background()
+	gs := gitserver.NewTestClient(t)
+	db := dbmocks.NewMockDB()
+
+	oid, err := gs.ResolveRevision(ctx, repoName, "HEAD", gitserver.ResolveRevisionOptions{})
+	require.NoError(t, err)
+
+	rr := NewRepositoryResolver(db, gs, &types.Repo{Name: repoName})
+	gcr := NewGitCommitResolver(db, gs, rr, oid, nil)
+
+	tree, err := gcr.Tree(ctx, &TreeArgs{Path: ""})
+	require.NoError(t, err)
+
+	entries, err := tree.Entries(ctx, &gitTreeEntryConnectionArgs{})
+	require.NoError(t, err)
+	require.Len(t, entries, 2)
+}
 
 func TestGitTree_Entries(t *testing.T) {
 	db := dbmocks.NewMockDB()

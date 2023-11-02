@@ -35,7 +35,7 @@ import (
 )
 
 func TestClient_ArchiveReader(t *testing.T) {
-	root := gitserver.CreateRepoDir(t)
+	root := t.TempDir()
 
 	type test struct {
 		name string
