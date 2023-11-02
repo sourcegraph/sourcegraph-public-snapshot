@@ -5525,6 +5525,10 @@ interface TreeEntry {
     Whether this tree entry is a single child
     """
     isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): [TreeEntry!]!
 }
 
 """
