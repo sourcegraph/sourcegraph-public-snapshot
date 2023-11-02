@@ -135,15 +135,9 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
     const { height } = useWindowSize()
-    const [batchCount, setBatchCount] = useState(getBatchCount(height))
-
-    /*
-     * Set batch count based on current screen height
-     * to avoid jumping tabs in the UI.
-     * */
-    useMemo(() => {
-        setBatchCount(getBatchCount(height))
-    }, [height])
+    // Set batch count based on current screen height
+    // to avoid jumping tabs in the UI.
+    const batchCount = useMemo(() => getBatchCount(height), [height])
 
     const response = useShowMorePagination<
         RepositoryGitCommitResult,
