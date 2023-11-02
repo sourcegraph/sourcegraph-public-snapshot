@@ -51,9 +51,7 @@
     "h++",
     "hh",
     "h",
-    "hpp",
-    "pc",
-    "pcc"
+    "hpp"
   ],
   "csharp": [
     "cs",
