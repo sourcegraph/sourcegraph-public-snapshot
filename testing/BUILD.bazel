@@ -40,9 +40,6 @@ server_integration_test(
     ],
     port = "7080",
     runner_src = ":e2e_test.sh",
-    tags = [
-        "exclusive",
-    ],
 )
 
 server_integration_test(
