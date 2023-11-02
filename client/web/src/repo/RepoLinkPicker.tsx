@@ -32,11 +32,10 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import {
-    ExternalServiceKind,
-    type RepositoriesSuggestionsResult,
-    type RepositoriesSuggestionsVariables,
-} from '../graphql-operations'
+import { type RepositoriesSuggestionsResult, type RepositoriesSuggestionsVariables } from '../graphql-operations'
+
+import { CodeHostType } from './constants'
+import { getInitialSearchTerm, stringToCodeHostType } from './utils'
 
 import styles from './RepoLinkPicker.module.scss'
 
@@ -47,11 +46,11 @@ const REPOSITORIES_QUERY = gql`
                 id
                 name
                 url
-                externalServices(first: 1) {
-                    nodes {
-                        id
-                        kind
-                    }
+                # We use externalRepository over externalServices here
+                # because externalServices is accessible only to admins.
+                externalRepository {
+                    id
+                    serviceType
                 }
             }
             pageInfo {
@@ -85,8 +84,10 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
         loading,
     } = useQuery<RepositoriesSuggestionsResult, RepositoriesSuggestionsVariables>(REPOSITORIES_QUERY, {
         skip: !isSuggestionOpen,
-        variables: { query: debouncedSearchTerm },
-        fetchPolicy: 'cache-and-network',
+        variables: {
+            query: searchTerm.length === 0 ? getInitialSearchTerm(repositoryName) : debouncedSearchTerm,
+        },
+        fetchPolicy: 'cache-first',
     })
 
     const handleSelect = (selectedValue: string): void => {
@@ -146,7 +147,9 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
                                         className={styles.item}
                                     >
                                         <Icon
-                                            svgPath={getCodeHostIconPath(suggestion.externalServices.nodes[0]?.kind)}
+                                            svgPath={getCodeHostIconPath(
+                                                stringToCodeHostType(suggestion.externalRepository.serviceType)
+                                            )}
                                             height="1rem"
                                             width="1rem"
                                             inline={false}
@@ -165,27 +168,27 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
     )
 }
 
-export const getCodeHostIconPath = (codeHostType?: ExternalServiceKind): string => {
-    switch (codeHostType) {
-        case ExternalServiceKind.GITHUB: {
+export const getCodeHostIconPath = (codehost: CodeHostType): string => {
+    switch (codehost) {
+        case CodeHostType.GITHUB: {
             return mdiGithub
         }
-        case ExternalServiceKind.BITBUCKETCLOUD: {
+        case CodeHostType.BITBUCKETCLOUD: {
             return mdiBitbucket
         }
-        case ExternalServiceKind.BITBUCKETSERVER: {
+        case CodeHostType.BITBUCKETSERVER: {
             return mdiBitbucket
         }
-        case ExternalServiceKind.GITLAB: {
+        case CodeHostType.GITLAB: {
             return mdiGitlab
         }
-        case ExternalServiceKind.GITOLITE: {
+        case CodeHostType.GITOLITE: {
             return mdiGit
         }
-        case ExternalServiceKind.AWSCODECOMMIT: {
+        case CodeHostType.AWSCODECOMMIT: {
             return mdiAws
         }
-        case ExternalServiceKind.AZUREDEVOPS: {
+        case CodeHostType.AZUREDEVOPS: {
             return mdiMicrosoftAzure
         }
         default: {

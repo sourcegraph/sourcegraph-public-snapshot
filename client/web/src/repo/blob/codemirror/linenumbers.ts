@@ -30,7 +30,7 @@ import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 const selectedLinesTheme = EditorView.theme({
     /**
      * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-     * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
+     * returns absolutely positioned markers. Markers top position has extra 1px (5px in case blame decorations
      * are visible) more in its `top` value breaking alignment wih the line.
      * We compensate this spacing by setting negative margin-top.
      */
@@ -41,7 +41,7 @@ const selectedLinesTheme = EditorView.theme({
         minHeight: '1rem',
     },
     '.selected-lines-layer .selected-line.blame-visible': {
-        marginTop: '-6px',
+        marginTop: '-5px',
 
         // Ensure selection marker height matches the increased line height.
         minHeight: 'calc(1.5rem + 1px)',

@@ -1,7 +1,6 @@
 import { once } from 'lodash'
 import gql from 'tagged-template-noop'
 
-import { searchContext } from '../../searchContext'
 import type * as sourcegraph from '../api'
 import { cache } from '../util'
 
@@ -68,7 +67,6 @@ export class API {
     /**
      * Retrieves the name and fork/archive status of a repository. This method
      * throws an error if the repository is not known to the Sourcegraph instance.
-     *
      * @param name The repository's name.
      */
     public async resolveRepo(name: string): Promise<RepoMeta> {
@@ -298,7 +296,6 @@ export class API {
      * Get the content of a file. Throws an error if the repository is not known to
      * the Sourcegraph instance. Returns undefined if the input rev or the file is
      * not known to the Sourcegraph instance.
-     *
      * @param repo The repository in which the file exists.
      * @param revision The revision in which the target version of the file exists.
      * @param path The path of the file.
@@ -330,14 +327,10 @@ export class API {
 
     /**
      * Perform a search.
-     *
      * @param searchQuery The input to the search command.
      * @param fileLocal Set to false to not request this field, which is absent in older versions of Sourcegraph.
      */
-    public async search(searchQuery: string, fileLocal = true): Promise<SearchResult[]> {
-        const context = searchContext()
-        const query = context ? `context:${context} ${searchQuery}` : searchQuery
-
+    public async search(query: string, fileLocal = true): Promise<SearchResult[]> {
         interface Response {
             search: {
                 results: {
