@@ -8,7 +8,7 @@ import type { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-ope
 import { requestGraphQL } from './backend/graphql'
 
 /**
- * Always represents the latest state of the currently authenticated user.
+ * Always represents the latest state of the currently authenticated user. REMOVE ME 3
  *
  * Note that authenticatedUser is not designed to survive across changes in the currently authenticated user. Sign
  * in, sign out, and account changes all require a full-page reload in the browser to take effect.
