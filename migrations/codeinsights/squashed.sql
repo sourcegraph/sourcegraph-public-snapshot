@@ -724,3 +724,6 @@ ALTER TABLE ONLY series_points
 
 ALTER TABLE ONLY series_points
     ADD CONSTRAINT series_points_repo_name_id_fkey FOREIGN KEY (repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE;
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT ALL ON SCHEMA public TO PUBLIC;

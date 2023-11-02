@@ -640,7 +640,10 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
-	userID := actor.FromContext(ctx).UID
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -656,7 +659,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
-	err := externalServices.Create(ctx, confGet, es)
+	err = externalServices.Create(ctx, confGet, es)
 	require.NoError(t, err)
 
 	got, err := externalServices.GetByID(ctx, es.ID)
@@ -689,7 +692,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		es.ID,
 		&ExternalServiceUpdate{
 			Config:        &cfg,
-			LastUpdaterID: pointers.Ptr(userID),
+			LastUpdaterID: &user.ID,
 		},
 	)
 	require.NoError(t, err)
