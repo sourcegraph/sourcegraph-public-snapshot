@@ -91,7 +91,7 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 		t.Fatalf("Failed to create user and wait for repo: %v", err)
 	}
 
-	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	err = client.WaitForRepoToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,13 +128,12 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		t.Fatalf("Failed to create user and wait for repo: %v", err)
 	}
 
-	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	t.Log("Wait for repo to be indexed")
+	err = client.WaitForRepoToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// TODO(pjlast): Removing all the dependencies on indexed searches until
-	// they can be run reliably
 	tests := []struct {
 		name          string
 		query         string
@@ -350,6 +349,7 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 		t.Fatal(err)
 	}
 
+	t.Log("Wait for repo to be cloned")
 	err = userClient.WaitForReposToBeClonedWithin(120*time.Second, perforceRepoName)
 	if err != nil {
 		return nil, "", err
@@ -362,6 +362,7 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 func syncUserPerms(t *testing.T, userID, userName string) {
 	t.Helper()
 
+	t.Log("Wait for Perforce to be added as an authz provider")
 	// Wait up to 30 seconds for Perforce to be added as an authz provider
 	err := gqltestutil.Retry(30*time.Second, func() error {
 		authzProviders, err := client.AuthzProviderTypes()
@@ -381,11 +382,13 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		t.Fatal("Waiting for authz providers to be added:", err)
 	}
 
+	t.Log("Schedule permissions sync")
 	err = client.ScheduleUserPermissionsSync(userID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	t.Log("Wait for permissions to sync")
 	// Wait up to 30 seconds for the user to have permissions synced
 	// from the code host at least once.
 	err = gqltestutil.Retry(30*time.Second, func() error {
@@ -400,6 +403,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	})
 	// Try a second time if the first attempt failed.
 	if err != nil {
+		t.Log("First permissions sync failed. Trying a second time")
 		err = client.ScheduleUserPermissionsSync(userID)
 		if err != nil {
 			t.Fatal(err)
@@ -425,6 +429,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 
 func enableSubRepoPermissions(t *testing.T) {
 	t.Helper()
+	t.Log("Enabling sub-repo permissions")
 
 	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {

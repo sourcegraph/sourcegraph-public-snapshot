@@ -234,6 +234,7 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 		LookAhead int  `json:"lookAhead,omitempty"`
 	}
 
+	t.Log("Creating external service")
 	// Set up external service
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindPerforce,
@@ -269,6 +270,7 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 	}
 
 	return func() {
+		t.Log("Cleaning up external service")
 		if err := client.DeleteRepoFromDiskByName("perforce/" + depot); err != nil {
 			t.Fatalf("removing depot from disk: %v", err)
 		}
