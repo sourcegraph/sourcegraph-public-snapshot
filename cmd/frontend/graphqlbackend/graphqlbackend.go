@@ -116,9 +116,8 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	requestSource := sgtrace.RequestSource(ctx)
 
 	return ctx, func(err []*gqlerrors.QueryError) {
-		if finish != nil {
-			finish(err)
-		}
+		finish(err) // always non-nil
+
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
 			enc, _ := json.Marshal(variables)
@@ -180,12 +179,7 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 }
 
 func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
-	finish := t.tracer.TraceValidation(ctx)
-	return func(queryErrors []*gqlerrors.QueryError) {
-		if finish != nil {
-			finish(queryErrors)
-		}
-	}
+	return t.tracer.TraceValidation(ctx)
 }
 
 var allowedPrometheusFieldNames = map[[2]string]struct{}{
