@@ -206,7 +206,7 @@ On a free tier, you can use Cody chat with Code Search on ten public and one pri
 
 ## Join our community
 
-If you have any questions regarding Cody, you can always ask our community on [GitHub discussions](https://github.com/sourcegraph/cody/discussions), [Discord](https://discord.com/invite/s2qDtYGnAE), or [create a post on X](https://twitter.com/sourcegraph).
+If you have any questions regarding Cody, you can always ask our community on [GitHub discussions](https://github.com/sourcegraph/cody/discussions), [Discord](https://discord.com/invite/s2qDtYGnAE), or [create a post on X](https://twitter.com/sourcegraphcody).
 
 ## More resources
 
