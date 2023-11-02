@@ -97,7 +97,7 @@ function resolveAndFilterGlobs(globs: string[]): string[] {
     return files
 }
 
-export function createCodegenConfig(operations: Input[]): CodegenConfig {
+function createCodegenConfig(operations: Input[]): CodegenConfig {
     const generates: CodegenConfig['generates'] = {}
     for (const operation of operations) {
         generates[operation.outputPath] = {
