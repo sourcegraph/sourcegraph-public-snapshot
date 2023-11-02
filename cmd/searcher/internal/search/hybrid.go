@@ -108,7 +108,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 			return nil, false, nil
 		} else if err != nil {
 			recordHybridFinalState("git-diff-error")
-			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
+			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s. output: %s", p.Repo, indexed, p.Commit, string(out))
 		}
 
 		indexedIgnore, unindexedSearch, err := diff.ParseGitDiffNameStatus(out)
