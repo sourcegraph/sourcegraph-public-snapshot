@@ -164,15 +164,20 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
 /**
  * Helper hook for extensions that depend on on some input props.
  * With this hook the extension is isolated in a compartment so it can be
- * updated without reconfiguring the whole editor.
+ * updated without reconfiguring the whole editor. The return value is
+ * stable and should be included in the initial set of extensions.
+ * On rerender the hook will update the extension if it changed by
+ * dispatching an effect to editorRef.
  *
  * Use `useMemo` to compute the extension from some input:
  *
  * const extension = useCompartment(
- * editorRef,
- * useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
+ *   editorRef,
+ *   useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
  * )
  * const editor = useCodeMirror(..., ..., extension)
+ *
+ *
  * @param editorRef - Ref object to the editor instance
  * @param extension - the dynamic extension(s) to add to the editor
  * @returns a compartmentalized extension

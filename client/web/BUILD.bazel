@@ -1305,6 +1305,7 @@ ts_project(
         "src/repo/blob/codemirror/blame-decorations.tsx",
         "src/repo/blob/codemirror/code-folding.tsx",
         "src/repo/blob/codemirror/document-highlights.ts",
+        "src/repo/blob/codemirror/eof.ts",
         "src/repo/blob/codemirror/highlight.ts",
         "src/repo/blob/codemirror/hovercard.tsx",
         "src/repo/blob/codemirror/index.ts",
