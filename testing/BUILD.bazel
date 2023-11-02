@@ -114,7 +114,6 @@ server_integration_test(
     port = "7082",
     runner_src = ":backend_integration_test.sh",
     tags = [
-        "exclusive",
         "manual",
     ],
 )
