@@ -1,4 +1,6 @@
-import { Navigate, type RouteObject } from 'react-router-dom'
+import { useEffect } from 'react'
+
+import { Navigate, type RouteObject, useNavigate } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -114,6 +116,25 @@ export const enterpriseRoutes: RouteObject[] = [
     {
         path: EnterprisePageRoutes.CodySearch,
         element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
+    },
+    // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
+    {
+        path: '/cody/*',
+        element: (
+            <LegacyRoute
+                render={() => {
+                    const chatID = window.location.pathname.split('/').pop()
+                    const navigate = useNavigate()
+
+                    useEffect(() => {
+                        navigate(`/cody/chat/${chatID}`)
+                    }, [navigate, chatID])
+
+                    return <div />
+                }}
+                condition={() => !window.location.pathname.startsWith('/cody/chat')}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.Cody + '/*',

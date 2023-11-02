@@ -57,7 +57,6 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 		clientChecks := operations.NewNamedSet("Client checks",
 			clientChromaticTests(opts),
 			addJetBrainsUnitTests, // ~2.5m
-			addVsceTests,          // ~3.0m
 			addStylelint,
 		)
 		ops.Merge(clientChecks)
@@ -115,20 +114,6 @@ var browsers = []string{"chrome"}
 
 func getParallelTestCount(webParallelTestCount int) int {
 	return webParallelTestCount + len(browsers)
-}
-
-// Builds and tests the VS Code extensions.
-func addVsceTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode: Tests for VS Code extension",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
-		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
-		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
-		// bk.AutomaticRetry(1),
-	)
 }
 
 func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
@@ -250,16 +235,6 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:npm"))
-}
-
-// Release the VS Code extension.
-func addVsceReleaseSteps(pipeline *bk.Pipeline) {
-	// Publish extension to the VS Code Marketplace
-	pipeline.AddStep(":vscode: Extension release",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".

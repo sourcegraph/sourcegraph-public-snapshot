@@ -2028,36 +2028,6 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	return nil
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir common.GitDir) (didUpdate bool) {
-	if rev == "" || rev == "HEAD" {
-		return false
-	}
-	if conf.Get().DisableAutoGitUpdates {
-		// ensureRevision may kick off a git fetch operation which we don't want if we've
-		// configured DisableAutoGitUpdates.
-		return false
-	}
-
-	// rev-parse on an OID does not check if the commit actually exists, so it always
-	// works. So we append ^0 to force the check
-	if gitdomain.IsAbsoluteRevision(rev) {
-		rev = rev + "^0"
-	}
-	cmd := exec.Command("git", "rev-parse", rev, "--")
-	repoDir.Set(cmd)
-	// TODO: Check here that it's actually been a rev-parse error, and not something else.
-	if err := cmd.Run(); err == nil {
-		return false
-	}
-	// Revision not found, update before returning.
-	err := s.doRepoUpdate(ctx, repo, rev)
-	if err != nil {
-		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
-		// TODO: Shouldn't we return false here?
-	}
-	return true
-}
-
 // errorString returns the error string. If err is nil it returns the empty
 // string.
 func errorString(err error) string {

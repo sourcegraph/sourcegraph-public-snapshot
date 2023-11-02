@@ -326,7 +326,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     },
     {
-      files: ['client/vscode/**', 'client/browser/**', 'client/jetbrains/**'],
+      files: ['client/browser/**', 'client/jetbrains/**'],
       rules: {
         'no-console': 'off',
       },

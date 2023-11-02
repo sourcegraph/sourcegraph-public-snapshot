@@ -17,11 +17,9 @@ import (
 // defaultOTELHTTPOptions is a set of options shared between instrumetned HTTP middleware
 // and HTTP clients for consistent Sourcegraph-preferred behaviour.
 var defaultOTELHTTPOptions = []otelhttp.Option{
-	// Trace policy management
+	// Supplemental trace policy management - our core trace policy management
+	// is implemented in internal/tracer.
 	otelhttp.WithTracerProvider(&samplingRetainTracerProvider{}),
-	otelhttp.WithFilter(func(r *http.Request) bool {
-		return policy.ShouldTrace(r.Context())
-	}),
 	// Uniform span names
 	otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
 		// If incoming, just include the path since our own host is not

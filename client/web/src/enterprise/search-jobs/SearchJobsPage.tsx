@@ -6,10 +6,11 @@ import { timeFormat } from 'd3-time-format'
 import { upperFirst } from 'lodash'
 import LayersSearchOutlineIcon from 'mdi-react/LayersSearchOutlineIcon'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { BaseCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/input/BaseCodeMirrorQueryInput'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { SearchJobsOrderBy, SearchJobState } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchJobsOrderBy, SearchJobState, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { detectPatternType } from '@sourcegraph/shared/src/search/query/scanner'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -311,6 +312,19 @@ interface SearchJobProps extends TelemetryProps {
     onDelete: (job: SearchJobNode) => void
 }
 
+const SyntaxHighlightedSearchQueryCodeMirror: FC<{ query: string; patternType?: SearchPatternType }> = ({
+    query,
+    patternType,
+}) => (
+    <BaseCodeMirrorQueryInput
+        value={query}
+        readOnly={true}
+        multiLine={true}
+        interpretComments={false}
+        patternType={patternType || SearchPatternType.standard}
+    />
+)
+
 const SearchJob: FC<SearchJobProps> = props => {
     const { job, withCreatorColumn, telemetryService, onRerun, onCancel, onDelete } = props
     const { repoStats } = job
@@ -334,7 +348,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                     </Text>
                 )}
 
-                <SyntaxHighlightedSearchQuery query={job.query} />
+                <SyntaxHighlightedSearchQueryCodeMirror query={job.query} patternType={detectPatternType(job.query)} />
             </span>
 
             {withCreatorColumn && (

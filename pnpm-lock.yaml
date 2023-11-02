@@ -169,9 +169,6 @@ importers:
       '@visx/voronoi':
         specifier: ^2.10.0
         version: 2.10.0(react@18.1.0)
-      '@vscode/webview-ui-toolkit':
-        specifier: ^1.2.2
-        version: 1.2.2(react@18.1.0)
       agent-base:
         specifier: 6.0.2
         version: 6.0.2
@@ -448,9 +445,6 @@ importers:
       uuid:
         specifier: ^8.3.0
         version: 8.3.2
-      vscode-uri:
-        specifier: ^3.0.7
-        version: 3.0.7
       webext-domain-permission-toggle:
         specifier: ^1.0.1
         version: 1.0.1
@@ -824,24 +818,12 @@ importers:
       '@types/uuid':
         specifier: 8.0.1
         version: 8.0.1
-      '@types/vscode':
-        specifier: ^1.76.0
-        version: 1.76.0
-      '@types/vscode-webview':
-        specifier: ^1.57.1
-        version: 1.57.1
       '@types/yauzl':
         specifier: ^2.9.2
         version: 2.10.0
       '@vitejs/plugin-react':
         specifier: ^3.1.0
         version: 3.1.0(vite@4.4.7)
-      '@vscode/test-electron':
-        specifier: ^2.3.2
-        version: 2.3.2
-      '@vscode/vsce':
-        specifier: ^2.19.0
-        version: 2.19.0
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1350,6 +1332,9 @@ importers:
       '@sourcegraph/http-client':
         specifier: workspace:*
         version: link:../http-client
+      '@sourcegraph/telemetry':
+        specifier: ^0.11.0
+        version: 0.11.0
       '@sourcegraph/template-parser':
         specifier: workspace:*
         version: link:../template-parser
@@ -1393,40 +1378,6 @@ importers:
 
   client/testing: {}
 
-  client/vscode:
-    dependencies:
-      '@sourcegraph/branded':
-        specifier: workspace:*
-        version: link:../branded
-      '@sourcegraph/client-api':
-        specifier: workspace:*
-        version: link:../client-api
-      '@sourcegraph/codeintellify':
-        specifier: workspace:*
-        version: link:../codeintellify
-      '@sourcegraph/common':
-        specifier: workspace:*
-        version: link:../common
-      '@sourcegraph/http-client':
-        specifier: workspace:*
-        version: link:../http-client
-      '@sourcegraph/shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@sourcegraph/wildcard':
-        specifier: workspace:*
-        version: link:../wildcard
-    devDependencies:
-      '@sourcegraph/build-config':
-        specifier: workspace:*
-        version: link:../build-config
-      '@sourcegraph/extension-api-types':
-        specifier: workspace:*
-        version: link:../extension-api-types
-      vsce:
-        specifier: ^2.7.0
-        version: 2.7.0
-
   client/web:
     dependencies:
       '@sourcegraph/branded':
@@ -1459,6 +1410,9 @@ importers:
       '@sourcegraph/shared':
         specifier: workspace:*
         version: link:../shared
+      '@sourcegraph/telemetry':
+        specifier: ^0.11.0
+        version: 0.11.0
       '@sourcegraph/wildcard':
         specifier: workspace:*
         version: link:../wildcard
@@ -5197,35 +5151,6 @@ packages:
       svelte: 4.1.1
     dev: false
 
-  /@microsoft/fast-element@1.12.0:
-    resolution: {integrity: sha512-gQutuDHPKNxUEcQ4pypZT4Wmrbapus+P9s3bR/SEOLsMbNqNoXigGImITygI5zhb+aA5rzflM6O8YWkmRbGkPA==}
-    dev: false
-
-  /@microsoft/fast-foundation@2.49.0:
-    resolution: {integrity: sha512-Wk4e4QXFVtT5hPwhMfHyGY30kixM0td8aDs7bAD6NM2z2SCBNvpTTWp+FCjx0I0lpUMlMenb6wsw7pMWQreRkQ==}
-    dependencies:
-      '@microsoft/fast-element': 1.12.0
-      '@microsoft/fast-web-utilities': 5.4.1
-      tabbable: 5.3.3
-      tslib: 2.1.0
-    dev: false
-
-  /@microsoft/fast-react-wrapper@0.1.48(react@18.1.0):
-    resolution: {integrity: sha512-9NvEjru9Kn5ZKjomAMX6v+eF0DR+eDkxKDwDfi+Wb73kTbrNzcnmlwd4diN15ygH97kldgj2+lpvI4CKLQQWLg==}
-    peerDependencies:
-      react: '>=16.9.0'
-    dependencies:
-      '@microsoft/fast-element': 1.12.0
-      '@microsoft/fast-foundation': 2.49.0
-      react: 18.1.0
-    dev: false
-
-  /@microsoft/fast-web-utilities@5.4.1:
-    resolution: {integrity: sha512-ReWYncndjV3c8D8iq9tp7NcFNc1vbVHvcBFPME2nNFKNbS1XCesYZGlIlf3ot5EmuOXPlrzUHOWzQ2vFpIkqDg==}
-    dependencies:
-      exenv-es6: 1.1.1
-    dev: false
-
   /@microsoft/fast-web-utilities@6.0.0:
     resolution: {integrity: sha512-ckCA4Xn91ja1Qz+jhGGL1Q3ZeuRpA5VvYcRA7GzA1NP545sl14bwz3tbHCq8jIk+PL7mkSaIveGMYuJB2L4Izg==}
     dependencies:
@@ -8293,6 +8218,12 @@ packages:
       stylelint: 14.3.0
     dev: true
 
+  /@sourcegraph/telemetry@0.11.0:
+    resolution: {integrity: sha512-cOlkCwX3V5lVJO/F8w7VauhMZob3PrMbE4DApTKwasTMwm4+OxtT6+afC5wJTwZwNWc31V83sNjV2nBkEtFPZg==}
+    dependencies:
+      rxjs: 7.8.1
+    dev: false
+
   /@sourcegraph/tsconfig@4.0.1:
     resolution: {integrity: sha512-G/xsejsR84G5dj3kHJ7svKBo9E5tWl96rUHKP94Y2UDtA7BzUhAYbieM+b9ZUpIRt66h3+MlYbG5HK4UI2zDzw==}
     dev: true
@@ -11306,14 +11237,6 @@ packages:
     resolution: {integrity: sha512-2kE8rEFgJpbBAPw5JghccEevQb0XVU0tewF/8h7wPQTeCtoJ6h8qmBIwuzUVm2MutmzC/cpCkwxudixoNYDp1A==}
     dev: true
 
-  /@types/vscode-webview@1.57.1:
-    resolution: {integrity: sha512-ghW5SfuDmsGDS2A4xkvGsLwDRNc3Vj5rS6rPOyPm/IryZuf3wceZKxgYaUoW+k9f0f/CB7y2c1rRsdOWZWn0PQ==}
-    dev: true
-
-  /@types/vscode@1.76.0:
-    resolution: {integrity: sha512-CQcY3+Fe5hNewHnOEAVYj4dd1do/QHliXaknAEYSXx2KEHUzFibDZSKptCon+HPgK55xx20pR+PBJjf0MomnBA==}
-    dev: true
-
   /@types/ws@8.5.3:
     resolution: {integrity: sha512-6YOoWjruKj1uLf3INHH7D3qTXwFfEsg1kf3c0uDdSBJwfa/llkwIjrAGV7j7mVgGNbzTQ3HiHKKDXl6bJPD97w==}
     dependencies:
@@ -11917,58 +11840,6 @@ packages:
       loupe: 2.3.6
       pretty-format: 29.7.0
     dev: true
-
-  /@vscode/test-electron@2.3.2:
-    resolution: {integrity: sha512-CRfQIs5Wi5Ok5SUCC3PTvRRXa74LD43cSXHC8EuNlmHHEPaJa/AGrv76brcA1hVSxrdja9tiYwp95Lq8kwY0tw==}
-    engines: {node: '>=16'}
-    dependencies:
-      http-proxy-agent: 4.0.1
-      https-proxy-agent: 5.0.1
-      jszip: 3.10.1
-      semver: 7.5.4
-    transitivePeerDependencies:
-      - supports-color
-    dev: true
-
-  /@vscode/vsce@2.19.0:
-    resolution: {integrity: sha512-dAlILxC5ggOutcvJY24jxz913wimGiUrHaPkk16Gm9/PGFbz1YezWtrXsTKUtJws4fIlpX2UIlVlVESWq8lkfQ==}
-    engines: {node: '>= 14'}
-    hasBin: true
-    dependencies:
-      azure-devops-node-api: 11.2.0
-      chalk: 2.4.2
-      cheerio: 1.0.0-rc.12
-      commander: 6.2.1
-      glob: 7.2.3
-      hosted-git-info: 4.1.0
-      jsonc-parser: 3.2.0
-      leven: 3.1.0
-      markdown-it: 12.3.2
-      mime: 1.6.0
-      minimatch: 3.1.2
-      parse-semver: 1.1.1
-      read: 1.0.7
-      semver: 5.7.1
-      tmp: 0.2.1
-      typed-rest-client: 1.8.9
-      url-join: 4.0.1
-      xml2js: 0.5.0
-      yauzl: 2.10.0
-      yazl: 2.5.1
-    optionalDependencies:
-      keytar: 7.9.0
-    dev: true
-
-  /@vscode/webview-ui-toolkit@1.2.2(react@18.1.0):
-    resolution: {integrity: sha512-xIQoF4FC3Xh6d7KNKIoIezSiFWYFuf6gQMdDyKueKBFGeKwaHWEn+dY2g3makvvEsNMEDji/woEwvg9QSbuUsw==}
-    peerDependencies:
-      react: '>=16.9.0'
-    dependencies:
-      '@microsoft/fast-element': 1.12.0
-      '@microsoft/fast-foundation': 2.49.0
-      '@microsoft/fast-react-wrapper': 0.1.48(react@18.1.0)
-      react: 18.1.0
-    dev: false
 
   /@web3-storage/multipart-parser@1.0.0:
     resolution: {integrity: sha512-BEO6al7BYqcnfX15W2cnGR+Q566ACXAT9UQykORCWW80lmkpWsnEob6zJS1ZVBKsSJC8+7vJkHwlp+lXG1UCdw==}
@@ -13893,7 +13764,7 @@ packages:
       chalk: 4.1.2
       date-fns: 2.29.3
       lodash: 4.17.21
-      rxjs: 7.6.0
+      rxjs: 7.8.1
       shell-quote: 1.8.1
       spawn-command: 0.0.2-1
       supports-color: 8.1.1
@@ -17515,10 +17386,6 @@ packages:
     dependencies:
       queue: 6.0.2
 
-  /immediate@3.0.6:
-    resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
-    dev: true
-
   /immutable@3.7.6:
     resolution: {integrity: sha512-AizQPcaofEtO11RZhPPHBOJRdo/20MKQF9mBLnVkBoyHi1/zXK8fzVdnEpSV9gxqtnh6Qomfp3F0xT5qP/vThw==}
     engines: {node: '>=0.8.0'}
@@ -17607,7 +17474,7 @@ packages:
       mute-stream: 0.0.8
       ora: 5.4.1
       run-async: 2.4.1
-      rxjs: 7.6.0
+      rxjs: 7.8.1
       string-width: 4.2.3
       strip-ansi: 6.0.1
       through: 2.3.8
@@ -19090,15 +18957,6 @@ packages:
       array-includes: 3.1.6
       object.assign: 4.1.4
 
-  /jszip@3.10.1:
-    resolution: {integrity: sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==}
-    dependencies:
-      lie: 3.3.0
-      pako: 1.0.11
-      readable-stream: 2.3.8
-      setimmediate: 1.0.5
-    dev: true
-
   /junk@1.0.3:
     resolution: {integrity: sha512-3KF80UaaSSxo8jVnRYtMKNGFOoVPBdkkVPsw+Ad0y4oxKXPduS6G6iHkrf69yJVff/VAaYXkV42rtZ7daJxU3w==}
     engines: {node: '>=0.10.0'}
@@ -19245,12 +19103,6 @@ packages:
       - supports-color
     dev: true
 
-  /lie@3.3.0:
-    resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
-    dependencies:
-      immediate: 3.0.6
-    dev: true
-
   /lilconfig@2.0.6:
     resolution: {integrity: sha512-9JROoBW7pobfsx+Sq2JsASvCo6Pfo6WWoUW79HuB1BCoBXD4PLWJPqDF6fNj67pqBYTbAHkE57M1kS/+L1neOg==}
     engines: {node: '>=10'}
@@ -19286,7 +19138,7 @@ packages:
       log-update: 4.0.0
       p-map: 4.0.0
       rfdc: 1.3.0
-      rxjs: 7.6.0
+      rxjs: 7.8.1
       through: 2.3.8
       wrap-ansi: 7.0.0
     dev: true
@@ -23306,11 +23158,10 @@ packages:
     dependencies:
       tslib: 2.1.0
 
-  /rxjs@7.6.0:
-    resolution: {integrity: sha512-DDa7d8TFNUalGC9VqXvQ1euWNN7sc63TrUCuM9J998+ViviahMIjKSOU7rfcgFOF+FCD71BhDRv4hrFz+ImDLQ==}
+  /rxjs@7.8.1:
+    resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
       tslib: 2.1.0
-    dev: true
 
   /sade@1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
@@ -24642,10 +24493,6 @@ packages:
 
   /tabbable@4.0.0:
     resolution: {integrity: sha512-H1XoH1URcBOa/rZZWxLxHCtOdVUEev+9vo5YdYhC9tCY4wnybX+VQrCYuy9ubkg69fCBxCONJOSLGfw0DWMffQ==}
-    dev: false
-
-  /tabbable@5.3.3:
-    resolution: {integrity: sha512-QD9qKY3StfbZqWOPLp0++pOrAVb/HbUi5xCc8cUo4XjP19808oaMiDzn0leBY5mCespIBM0CIZePzZjgzR83kA==}
     dev: false
 
   /tabbable@6.2.0:
@@ -26411,14 +26258,6 @@ packages:
 
   /xml2js@0.4.23:
     resolution: {integrity: sha512-ySPiMjM0+pLDftHgXY4By0uswI3SPKLDw/i3UXbnO8M/p28zqexCUoPmQFrYD+/1BzhGJSs2i1ERWKJAtiLrug==}
-    engines: {node: '>=4.0.0'}
-    dependencies:
-      sax: 1.2.4
-      xmlbuilder: 11.0.1
-    dev: true
-
-  /xml2js@0.5.0:
-    resolution: {integrity: sha512-drPFnkQJik/O+uPKpqSgr22mpuFHqKdbS835iAQrUC73L2F5WkboIRd63ai/2Yg6I1jzifPFKH2NTK+cfglkIA==}
     engines: {node: '>=4.0.0'}
     dependencies:
       sax: 1.2.4
