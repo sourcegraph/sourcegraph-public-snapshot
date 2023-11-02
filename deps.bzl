@@ -6154,7 +6154,7 @@ def go_dependencies():
         importpath = "github.com/tj/assert",
         sum = "h1:NSWpaDaurcAJY7PkL8Xt0PhZE7qpvbZl5ljd8r6U0bI=",
         version = "v0.0.0-20190920132354-ee03d75cd160",
-    ) # keep
+    )  # keep
 
     go_repository(
         name = "com_github_tj_go_naturaldate",
