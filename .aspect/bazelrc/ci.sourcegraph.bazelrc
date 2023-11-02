@@ -47,5 +47,3 @@ build --test_env=DOCKER_HOST
 
 # Used by migration rules
 build --action_env=PGUSER=postgres
-
-test:go-verbose-test --test_env=GO_TEST_WRAP_TESTV=1
