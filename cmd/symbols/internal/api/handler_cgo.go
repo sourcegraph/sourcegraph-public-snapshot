@@ -27,6 +27,16 @@ func addHandlers(
 	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
 }
 
+func convertSquirrelErrorToGrpcError(err error) error {
+	if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	if errors.Is(err, squirrel.UnsupportedLanguageError) {
+		return status.Error(codes.Unimplemented, err.Error())
+	}
+	return nil
+}
+
 // LocalCodeIntel returns local code intelligence for the given file and commit
 func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss proto.SymbolsService_LocalCodeIntelServer) error {
 	squirrelService := squirrel.New(s.readFileFunc, nil)
@@ -37,12 +47,8 @@ func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss pr
 	ctx := ss.Context()
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
-		if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
-			return status.Error(codes.InvalidArgument, err.Error())
-		}
-
-		if errors.Is(err, squirrel.UnsupportedLanguageError) {
-			return status.Error(codes.Unimplemented, err.Error())
+		if grpcError := convertSquirrelErrorToGrpcError(err); grpcError != nil {
+			return grpcError
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -83,20 +89,12 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 	args.RepoCommitPath = request.GetRepoCommitPath().ToInternal()
 	args.Point = request.GetPoint().ToInternal()
 
-	panic("GRPC panic!!!!")
-
-	fmt.Printf("grpc: Called squirrel.SymbolInfo(%v)\n", args.RepoCommitPath)
+	fmt.Println("gRPC calling Squirrel.SymbolInfo")
 
 	info, err := squirrelService.SymbolInfo(ctx, args)
 	if err != nil {
-		fmt.Printf("grpc: Got squirrel error, %v (UFEE=%v)\n", err.Error(),
-			errors.Is(err, squirrel.UnrecognizedFileExtensionError))
-		if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-
-		if errors.Is(err, squirrel.UnsupportedLanguageError) {
-			return nil, status.Error(codes.Unimplemented, err.Error())
+		if grpcError := convertSquirrelErrorToGrpcError(err); grpcError != nil {
+			return nil, grpcError
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {
