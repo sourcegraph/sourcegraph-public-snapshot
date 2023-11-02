@@ -328,7 +328,6 @@ go_library(
         "//internal/syncx",
         "//internal/temporarysettings",
         "//internal/trace",
-        "//internal/trace/policy",
         "//internal/txemail",
         "//internal/txemail/txtypes",
         "//internal/types",

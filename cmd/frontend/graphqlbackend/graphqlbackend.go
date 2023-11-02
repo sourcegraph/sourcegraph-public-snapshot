@@ -31,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,12 +51,11 @@ type requestTracer struct {
 
 func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
 	start := time.Now()
-	var finish func([]*gqlerrors.QueryError)
-	if policy.ShouldTrace(ctx) {
-		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
-	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
+
+	var finish func([]*gqlerrors.QueryError)
+	ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -182,10 +180,7 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 }
 
 func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
-	var finish func([]*gqlerrors.QueryError)
-	if policy.ShouldTrace(ctx) {
-		finish = t.tracer.TraceValidation(ctx)
-	}
+	finish := t.tracer.TraceValidation(ctx)
 	return func(queryErrors []*gqlerrors.QueryError) {
 		if finish != nil {
 			finish(queryErrors)
