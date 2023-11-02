@@ -87,6 +87,7 @@ export interface TemporarySettingsSchema {
     'admin.hasDismissedCodeHostPrivacyWarning': boolean
     'admin.hasCompletedLicenseCheck': boolean
     'simple.search.toggle': boolean
+    'dev.developerMode.enabled': boolean
 }
 
 /**
@@ -150,6 +151,7 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'admin.hasDismissedCodeHostPrivacyWarning': null,
     'admin.hasCompletedLicenseCheck': null,
     'simple.search.toggle': null,
+    'dev.developerMode.enabled': null,
 }
 
 export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

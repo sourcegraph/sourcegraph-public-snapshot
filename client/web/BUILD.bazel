@@ -1450,6 +1450,7 @@ ts_project(
         "src/search/results/sidebar/search-aggregation-types.ts",
         "src/search/suggestion/DidYouMean.tsx",
         "src/search/suggestion/SmartSearch.tsx",
+        "src/search/useDeveloperMode.ts",
         "src/search/useV2QueryInput.ts",
         "src/settings/DynamicallyImportedMonacoSettingsEditor.tsx",
         "src/settings/EditorActionsGroup.tsx",

@@ -36,6 +36,7 @@ import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { useDeveloperMode } from '../search/useDeveloperMode'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
@@ -194,8 +195,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const isLightTheme = useIsLightTheme()
 
-    const isSourcegraphDev = (authenticatedUser: AuthenticatedUser): boolean =>
-        authenticatedUser.emails?.some(email => email.verified && email.email?.endsWith('@sourcegraph.com')) ?? false
+    const [developerMode] = useDeveloperMode()
 
     return (
         <>
@@ -298,10 +298,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
-                    {(process.env.NODE_ENV === 'development' ||
-                        (props.authenticatedUser && isSourcegraphDev(props.authenticatedUser))) && (
-                        <DeveloperSettingsGlobalNavItem />
-                    )}
+                    {developerMode && <DeveloperSettingsGlobalNavItem />}
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
