@@ -14,7 +14,7 @@ Cody chat can be accessed directly in the Sourcegraph web app. This is available
 
 The Cody app also provides a chat interface for Cody. Use this interface to request information from Cody or paste code snippets into the interface. You can also select repositories that you'd like Cody to fetch context from.
 
-[See more information about the app][cody-app].
+[See more information about the app](./../overview/app/index.md).
 
 ## Cody IDE extensions
 
@@ -61,5 +61,3 @@ Cody is accessible via the web interface for Sourcegraph Enterprise in 2 ways:
 
 - The "Cody" tab in the web app: Use the chat window to ask Cody questions or request Cody fix/analyze/write code snippets.
 - In the Sourcegraph blob view: Use the "Ask Cody" sidebar to ask Cody questions. Or, double-click on a symbol in the blob view to get a list of Cody commands including explaining code, translating code language, or providing code smells.
-
-[cody-app]: ../overview/app/index.md
