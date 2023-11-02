@@ -5,8 +5,8 @@
 import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, type Range, type Extension, type Line } from '@codemirror/state'
-import { Decoration, EditorView, WidgetType } from '@codemirror/view'
+import { EditorState, type Extension } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createRoot } from 'react-dom/client'
 import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
@@ -24,7 +24,6 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { type AbsoluteRepoFile, type ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -40,9 +39,10 @@ import { BlameDecoration } from './BlameDecoration'
 import { blobPropsFacet } from './codemirror'
 import { blameData, showBlame } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
+import { hideEmptyLastLine } from './codemirror/eof'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
-import { buildLinks } from './codemirror/links'
+import { linkify } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
@@ -115,39 +115,13 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     snapshotData?: { offset: number; data: string; additional: string[] | null }[] | null
 }
 
-class NoLineBreakWidget extends WidgetType {
-    constructor(private noLineBreakComment: string) {
-        super()
-    }
-
-    public eq(other: NoLineBreakWidget): boolean {
-        return this.noLineBreakComment === other.noLineBreakComment
-    }
-
-    public toDOM(): HTMLElement {
-        const div = document.createElement('div')
-        div.className = 'no-line-break-msg'
-        div.textContent = this.noLineBreakComment
-        return div
-    }
-}
-
-const replaceLastLineDeco = (lastLine: Line): Range<Decoration> => {
-    // Subtract 1 to exclude newline character at end of line
-    // when setting decoration range
-    const deco = Decoration.replace({}).range(lastLine.from - 1, lastLine.to)
-    return deco
-}
-
-const addEOFNoteDeco = (lastLine: Line): Range<Decoration> => {
-    const widget = new NoLineBreakWidget('(No new line at end of file)')
-    return Decoration.replace({
-        widget,
-        block: true,
-    }).range(lastLine.to)
-}
-
 const staticExtensions: Extension = [
+    // Log uncaught errors that happen in callbacks that we pass to
+    // CodeMirror. Without this exception sink, exceptions get silently
+    // ignored making it difficult to debug issues caused by uncaught
+    // exceptions.
+    // eslint-disable-next-line no-console
+    EditorView.exceptionSink.of(exception => console.log(exception)),
     EditorState.readOnly.of(true),
     EditorView.editable.of(false),
     EditorView.contentAttributes.of({
@@ -191,33 +165,10 @@ const staticExtensions: Extension = [
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
-        '.no-line-break-msg': {
-            color: 'var(--text-muted)',
-            fontStyle: 'italic',
-            marginTop: '.2rem',
-        },
     }),
-    EditorView.decorations.compute(['doc'], state => {
-        const lastLine = state.doc.line(state.doc.lines)
-        const decoRemoveLastLine = replaceLastLineDeco(lastLine)
-        const decoAddEOFNote = addEOFNoteDeco(lastLine)
-
-        if (lastLine.length === 0) {
-            return Decoration.set(decoRemoveLastLine)
-        }
-        return Decoration.set(decoAddEOFNote)
-    }),
+    hideEmptyLastLine,
+    linkify,
 ]
-
-// Compartments are used to reconfigure some parts of the editor without
-// affecting others.
-
-// Compartment to update various smaller settings
-const settingsCompartment = new Compartment()
-// Compartment for propagating component props
-const blobPropsCompartment = new Compartment()
-// Compartment for line wrapping.
-const wrapCodeCompartment = new Compartment()
 
 export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -260,20 +211,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         return parseQueryAndHash(location.search, location.hash)
     }, [props.activeURL, location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
-
-    const blobProps = useMemo(
-        () =>
-            blobPropsFacet.of({
-                ...props,
-                navigate,
-                location,
-            }),
-        [props, navigate, location]
-    )
-
-    const isLightTheme = useIsLightTheme()
-    const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
-    const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -323,14 +260,25 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const editorRef = useRef<EditorView | null>(null)
 
     const blameDecorations = useBlameDecoration(editorRef, { visible: !!isBlameVisible, blameHunks })
+    const blobProps = useCompartment(
+        editorRef,
+        useMemo(
+            () =>
+                blobPropsFacet.of({
+                    ...props,
+                    navigate,
+                    location,
+                }),
+            [props, navigate, location]
+        )
+    )
+    const wrapCodeSettings = useCompartment(
+        editorRef,
+        useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
+    )
+
     const extensions = useMemo(
         () => [
-            // Log uncaught errors that happen in callbacks that we pass to
-            // CodeMirror. Without this exception sink, exceptions get silently
-            // ignored making it difficult to debug issues caused by uncaught
-            // exceptions.
-            // eslint-disable-next-line no-console
-            EditorView.exceptionSink.of(exception => console.log(exception)),
             staticExtensions,
             selectableLineNumbers({
                 onSelection,
@@ -355,7 +303,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
-            buildLinks.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
@@ -364,10 +311,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                       extensionsController,
                   })
                 : [],
-            blobPropsCompartment.of(blobProps),
+            blobProps,
             blameDecorations,
-            settingsCompartment.of(themeSettings),
-            wrapCodeCompartment.of(wrapCodeSettings),
+            wrapCodeSettings,
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
@@ -376,12 +322,20 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
             }),
         ],
-        // A couple of values are not dependencies (blameDecorations, blobProps,
-        // hasPin, position and settings) because those are updated in effects
+        // A couple of values are not dependencies (hasPin and position) because those are updated in effects
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, isCodyEnabled, editorRef.current, blameDecorations]
+        [
+            onSelection,
+            blobInfo,
+            extensionsController,
+            isCodyEnabled,
+            editorRef.current,
+            blameDecorations,
+            wrapCodeSettings,
+            blobProps,
+        ]
     )
 
     // Reconfigure editor when blobInfo or core extensions changed
@@ -421,31 +375,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }
         }
     }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
-
-    // Propagate props changes to extensions
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            editor.dispatch({ effects: blobPropsCompartment.reconfigure(blobProps) })
-        }
-    }, [blobProps])
-
-    // Update theme
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            editor.dispatch({ effects: settingsCompartment.reconfigure(themeSettings) })
-        }
-    }, [themeSettings])
-
-    // Update line wrapping
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings), ...lockFirstVisibleLine(editor)]
-            editor.dispatch({ effects })
-        }
-    }, [wrapCodeSettings])
 
     // Update selected lines when URL changes
     useEffect(() => {
