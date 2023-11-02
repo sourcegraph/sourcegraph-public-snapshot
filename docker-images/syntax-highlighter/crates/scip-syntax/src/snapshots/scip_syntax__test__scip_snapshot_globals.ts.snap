@@ -38,9 +38,9 @@ expression: dumped
   }
   
   var global1 = 0;
-//    ^^^^^^^ definition scip-ctags global1.
+//    ^^^^^^^ definition(Variable) scip-ctags global1.
   var global2;
-//    ^^^^^^^ definition scip-ctags global2.
+//    ^^^^^^^ definition(Variable) scip-ctags global2.
   
   function func() {
 //         ^^^^ definition(Function) scip-ctags func().
@@ -54,7 +54,7 @@ expression: dumped
   }
   
   var myObject = {
-//    ^^^^^^^^ definition scip-ctags myObject.
+//    ^^^^^^^^ definition(Variable) scip-ctags myObject.
     myProperty: "value",
 //  ^^^^^^^^^^ definition(Property) scip-ctags myObject.myProperty.
   
