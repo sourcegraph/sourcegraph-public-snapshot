@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/fs"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,15 +22,13 @@ import (
 )
 
 func TestGitTree_History(t *testing.T) {
-	repoName := api.RepoName("testrepo")
-	// creating a repo with 1 committed file
-	root := gitserver.CreateRepoDirWithName(t, string(repoName))
+	gitserver.ClientMocks.LocalGitserver = true
+	defer gitserver.ResetClientMocks()
 
-	for _, cmd := range []string{
+	commands := []string{
 		// |- file1    (added)
 		// `- dir1     (added)
 		//    `- file2 (added)
-		"git init",
 		"echo -n infile1 > file1",
 		"touch --date=2006-01-02T15:04:05Z file1 || touch -t 200601021704.05 file1",
 		"mkdir dir1",
@@ -47,18 +44,10 @@ func TestGitTree_History(t *testing.T) {
 		"echo -n infile3 > dir1/file3",
 		"touch --date=2006-01-02T15:04:05Z dir1/file3 || touch -t 200601021704.05 dir1/file3",
 		"git add dir1/file2 dir1/file3",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	} {
-		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
-		c.Dir = root
-		out, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
-		}
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
+	repoName := gitserver.MakeGitRepository(t, commands...)
 
-	gitserver.ClientMocks.LocalGitserver = true
-	gitserver.ClientMocks.LocalGitCommandReposDir = root
 	ctx := context.Background()
 	gs := gitserver.NewTestClient(t)
 	db := dbmocks.NewMockDB()
@@ -75,6 +64,23 @@ func TestGitTree_History(t *testing.T) {
 	entries, err := tree.Entries(ctx, &gitTreeEntryConnectionArgs{})
 	require.NoError(t, err)
 	require.Len(t, entries, 2)
+
+	for _, entry := range entries {
+		historyNodes, err := entry.
+			History(ctx, HistoryArgs{}).
+			Nodes(ctx)
+		require.NoError(t, err)
+
+		switch entry.Path() {
+		case "file1":
+			require.Len(t, historyNodes, 1)
+		case "dir1":
+			require.Len(t, historyNodes, 2)
+		default:
+			panic("unknown")
+		}
+
+	}
 }
 
 func TestGitTree_Entries(t *testing.T) {
