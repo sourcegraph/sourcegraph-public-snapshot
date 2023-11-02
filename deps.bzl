@@ -6147,12 +6147,14 @@ def go_dependencies():
     )
 
     go_repository(
+        # This is no longer used but we keep it for backwards compatability
+        # tests while on 5.2.x.
         name = "com_github_tj_assert",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/tj/assert",
         sum = "h1:NSWpaDaurcAJY7PkL8Xt0PhZE7qpvbZl5ljd8r6U0bI=",
         version = "v0.0.0-20190920132354-ee03d75cd160",
-    )
+    ) # keep
 
     go_repository(
         name = "com_github_tj_go_naturaldate",
