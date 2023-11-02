@@ -194,6 +194,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const isLightTheme = useIsLightTheme()
 
+    const isSourcegraphDev = (authenticatedUser: AuthenticatedUser): boolean =>
+        authenticatedUser.emails?.some(email => email.verified && email.email?.endsWith('@sourcegraph.com')) ?? false
+
     return (
         <>
             <NavBar
@@ -295,7 +298,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
-                    {process.env.NODE_ENV === 'development' && <DeveloperSettingsGlobalNavItem />}
+                    {(process.env.NODE_ENV === 'development' ||
+                        (props.authenticatedUser && isSourcegraphDev(props.authenticatedUser))) && (
+                        <DeveloperSettingsGlobalNavItem />
+                    )}
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
