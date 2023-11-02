@@ -2,7 +2,7 @@ load(":defs.bzl", "server_integration_test")
 
 server_integration_test(
     name = "e2e_test",
-    timeout = "eternal",
+    timeout = "long",
     args = [
         "$(location //client/web/src/end-to-end:e2e)",
         "$(rootpath //:mocha_config)",
@@ -17,6 +17,7 @@ server_integration_test(
     env = {
         "SG_FEATURE_FLAG_GRPC": "false",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "SOURCEGRAPH_SUDO_USER": "admin",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "false",
@@ -76,7 +77,6 @@ server_integration_test(
     ],
     port = "7081",
     runner_src = ":backend_integration_test.sh",
-    tags = ["exclusive"],
 )
 
 server_integration_test(
@@ -114,6 +114,7 @@ server_integration_test(
     port = "7082",
     runner_src = ":backend_integration_test.sh",
     tags = [
+        "exclusive",
         "manual",
     ],
 )
