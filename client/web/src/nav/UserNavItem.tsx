@@ -204,7 +204,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             {(process.env.NODE_ENV === 'development' || isSourcegraphDev(authenticatedUser)) && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
-                                        <div className="mr-2">Developer Mode</div>
+                                        <div className="mr-2">Developer mode</div>
                                         <Toggle value={developerMode} onToggle={toggleDeveloperMode} />
                                     </div>
                                 </div>
