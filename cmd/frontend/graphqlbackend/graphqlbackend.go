@@ -13,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace/otel"
+	"github.com/graph-gophers/graphql-go/trace/tracer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -44,9 +45,20 @@ var graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 
 // Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
-	DB     database.DB
-	tracer *otel.Tracer
 	logger log.Logger
+	db     database.DB
+
+	tracer *otel.Tracer
+}
+
+func newRequestTracer(logger log.Logger, db database.DB) tracer.Tracer {
+	return &requestTracer{
+		db: db,
+		tracer: &otel.Tracer{
+			Tracer: oteltracer.Tracer("GraphQL"),
+		},
+		logger: logger,
+	}
 }
 
 func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
@@ -90,7 +102,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		// operator or not.
 		err = usagestats.LogEvent(
 			ctx,
-			t.DB,
+			t.db,
 			usagestats.Event{
 				EventName: eventName,
 				UserID:    a.UID,
@@ -618,15 +630,8 @@ func NewSchema(
 		}
 	}
 
-	logger := log.Scoped("GraphQL")
 	opts := []graphql.SchemaOpt{
-		graphql.Tracer(&requestTracer{
-			DB: db,
-			tracer: &otel.Tracer{
-				Tracer: oteltracer.Tracer("GraphQL"),
-			},
-			logger: logger,
-		}),
+		graphql.Tracer(newRequestTracer(log.Scoped("GraphQL"), db)),
 		graphql.UseStringDescriptions(),
 	}
 	opts = append(opts, graphqlOpts...)
