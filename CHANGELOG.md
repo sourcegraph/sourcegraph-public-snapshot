@@ -40,7 +40,9 @@ All notable changes to Sourcegraph are documented in this file.
 - The VSCode search extension "Sourcegraph for VS Code" has been sunset and removed from Sourcegraph
   repository. [#58023](https://github.com/sourcegraph/sourcegraph/pull/58023)
 
-## Unreleased 5.2.2
+## Unreleased 5.2.3
+
+## 5.2.2
 
 ### Added
 
