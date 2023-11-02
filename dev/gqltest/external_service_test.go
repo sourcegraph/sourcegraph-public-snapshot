@@ -162,7 +162,7 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 }
 
 func TestExternalService_Perforce(t *testing.T) {
-	t.Skip("TEMPORARY SKIP: aspect workflows")
+	//t.Skip("TEMPORARY SKIP: aspect workflows")
 	for _, tc := range []struct {
 		name       string
 		depot      string
