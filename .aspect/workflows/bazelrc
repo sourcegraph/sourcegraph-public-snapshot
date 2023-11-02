@@ -1,2 +1,7 @@
+# This flag is required because otherwise the integration tests fail with `fcmod` Operation not permitted
+# which is probably related to the launced containers writing to mapped in directories as root and then
+# when the container exits the files that are left over are root.
+# TODO(burmudar): launch containers with uid/guid mapped in
+common --noexperimental_reuse_sandbox_directories
 common --remote_download_minimal
 common --nobuild_runfile_links
