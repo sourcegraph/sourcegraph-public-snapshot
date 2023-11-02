@@ -1332,6 +1332,9 @@ importers:
       '@sourcegraph/http-client':
         specifier: workspace:*
         version: link:../http-client
+      '@sourcegraph/telemetry':
+        specifier: ^0.11.0
+        version: 0.11.0
       '@sourcegraph/template-parser':
         specifier: workspace:*
         version: link:../template-parser
@@ -1407,6 +1410,9 @@ importers:
       '@sourcegraph/shared':
         specifier: workspace:*
         version: link:../shared
+      '@sourcegraph/telemetry':
+        specifier: ^0.11.0
+        version: 0.11.0
       '@sourcegraph/wildcard':
         specifier: workspace:*
         version: link:../wildcard
@@ -8212,6 +8218,12 @@ packages:
       stylelint: 14.3.0
     dev: true
 
+  /@sourcegraph/telemetry@0.11.0:
+    resolution: {integrity: sha512-cOlkCwX3V5lVJO/F8w7VauhMZob3PrMbE4DApTKwasTMwm4+OxtT6+afC5wJTwZwNWc31V83sNjV2nBkEtFPZg==}
+    dependencies:
+      rxjs: 7.8.1
+    dev: false
+
   /@sourcegraph/tsconfig@4.0.1:
     resolution: {integrity: sha512-G/xsejsR84G5dj3kHJ7svKBo9E5tWl96rUHKP94Y2UDtA7BzUhAYbieM+b9ZUpIRt66h3+MlYbG5HK4UI2zDzw==}
     dev: true
@@ -13752,7 +13764,7 @@ packages:
       chalk: 4.1.2
       date-fns: 2.29.3
       lodash: 4.17.21
-      rxjs: 7.6.0
+      rxjs: 7.8.1
       shell-quote: 1.8.1
       spawn-command: 0.0.2-1
       supports-color: 8.1.1
@@ -17462,7 +17474,7 @@ packages:
       mute-stream: 0.0.8
       ora: 5.4.1
       run-async: 2.4.1
-      rxjs: 7.6.0
+      rxjs: 7.8.1
       string-width: 4.2.3
       strip-ansi: 6.0.1
       through: 2.3.8
@@ -19126,7 +19138,7 @@ packages:
       log-update: 4.0.0
       p-map: 4.0.0
       rfdc: 1.3.0
-      rxjs: 7.6.0
+      rxjs: 7.8.1
       through: 2.3.8
       wrap-ansi: 7.0.0
     dev: true
@@ -23146,11 +23158,10 @@ packages:
     dependencies:
       tslib: 2.1.0
 
-  /rxjs@7.6.0:
-    resolution: {integrity: sha512-DDa7d8TFNUalGC9VqXvQ1euWNN7sc63TrUCuM9J998+ViviahMIjKSOU7rfcgFOF+FCD71BhDRv4hrFz+ImDLQ==}
+  /rxjs@7.8.1:
+    resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
       tslib: 2.1.0
-    dev: true
 
   /sade@1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
