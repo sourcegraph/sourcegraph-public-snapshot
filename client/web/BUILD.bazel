@@ -1975,6 +1975,7 @@ ts_project(
         "src/repo/RepositoriesPopover/RepositoriesPopover.test.tsx",
         "src/repo/RevisionsPopover/RevisionsPopover.mocks.ts",
         "src/repo/RevisionsPopover/RevisionsPopover.test.tsx",
+        "src/repo/RevisionsPopover/utils.test.ts",
         "src/repo/blob/actions/ToggleRenderedFileMode.test.tsx",
         "src/repo/blob/codemirror/document-highlights.test.ts",
         "src/repo/blob/codemirror/utils.test.ts",
