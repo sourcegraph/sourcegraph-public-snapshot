@@ -5528,7 +5528,30 @@ interface TreeEntry {
     """
     The revision history for this file or directory.
     """
-    history(first: Int, after: String): [TreeEntry!]!
+    history(first: Int, after: String): TreeEntryConnection!
+    """
+    The Git commit containing this tree entry.
+    """
+    commit: GitCommit!
+}
+
+"""
+A list of TreeEntry
+"""
+type TreeEntryConnection {
+    """
+    A list of TreeEntry.
+    """
+    nodes: [TreeEntry!]!
+    """
+    The total count of TreeEntry in the connection. This total count may be larger
+    than the number of nodes in this object when the result is paginated.
+    """
+    totalCount: Int
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -5654,6 +5677,10 @@ type GitTree implements TreeEntry {
     Whether this tree entry is a single child
     """
     isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """
@@ -6065,6 +6092,10 @@ type GitBlob implements TreeEntry & File2 {
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
+    """
+    The revision history for this file
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """

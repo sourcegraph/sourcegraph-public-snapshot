@@ -16,8 +16,8 @@ type HistoryArgs struct {
 	// a way to get an updated filename for commits that traverse renames.
 }
 
-func (r *GitTreeEntryResolver) History(ctx context.Context, args HistoryArgs) *fileHistoryConnection {
-	return &fileHistoryConnection{
+func (r *GitTreeEntryResolver) History(ctx context.Context, args HistoryArgs) *treeEntryHistoryConnection {
+	return &treeEntryHistoryConnection{
 		stat: r.stat,
 		commits: r.commit.Ancestors(ctx, &AncestorsArgs{
 			ConnectionArgs: args.ConnectionArgs,
@@ -27,12 +27,12 @@ func (r *GitTreeEntryResolver) History(ctx context.Context, args HistoryArgs) *f
 	}
 }
 
-type fileHistoryConnection struct {
+type treeEntryHistoryConnection struct {
 	stat    fs.FileInfo
 	commits *gitCommitConnectionResolver
 }
 
-func (r *fileHistoryConnection) Nodes(ctx context.Context) ([]*GitTreeEntryResolver, error) {
+func (r *treeEntryHistoryConnection) Nodes(ctx context.Context) ([]*GitTreeEntryResolver, error) {
 	commits, err := r.commits.Nodes(ctx)
 	if err != nil {
 		return nil, err
@@ -48,10 +48,10 @@ func (r *fileHistoryConnection) Nodes(ctx context.Context) ([]*GitTreeEntryResol
 	return treeEntries, nil
 }
 
-func (r *fileHistoryConnection) TotalCount(ctx context.Context) (*int32, error) {
+func (r *treeEntryHistoryConnection) TotalCount(ctx context.Context) (*int32, error) {
 	return r.commits.TotalCount(ctx)
 }
 
-func (r *fileHistoryConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *treeEntryHistoryConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return r.commits.PageInfo(ctx)
 }
