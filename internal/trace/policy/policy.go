@@ -39,7 +39,7 @@ type key int
 const shouldTraceKey key = iota
 
 // ShouldTrace returns true if the shouldTraceKey context value is true. If the
-// value is not set at all, we check if we should the global policy is set to
+// value is not set at all, we check if the global policy is set to
 // TraceAll instead. It is generally used when propagating configured trace
 // policies.
 //
