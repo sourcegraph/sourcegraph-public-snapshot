@@ -1283,6 +1283,7 @@ ts_project(
         "src/repo/RevisionsPopover/components/ConnectionPopoverNodeLink/index.ts",
         "src/repo/RevisionsPopover/components/index.ts",
         "src/repo/RevisionsPopover/index.ts",
+        "src/repo/RevisionsPopover/utils.ts",
         "src/repo/actions/GoToCodeHostAction.tsx",
         "src/repo/actions/GoToPermalinkAction.tsx",
         "src/repo/actions/ToggleBlameAction.tsx",
