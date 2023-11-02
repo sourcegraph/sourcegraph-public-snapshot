@@ -6,6 +6,7 @@ import { isHTTPAuthError } from '@sourcegraph/http-client'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { createGraphQLHelpers } from '../backend/requestGraphQl'
@@ -128,6 +129,12 @@ export function createPlatformContext(
         sourcegraphURL,
         clientApplication: 'other',
         getStaticExtensions: () => getInlineExtensions(assetsURL),
+        /**
+         * @todo Not yet implemented!
+         */
+        telemetryRecorder: new NoOpTelemetryRecorderProvider({
+            errorOnRecord: true, // should not be used at all
+        }).getRecorder(),
     }
     return context
 }

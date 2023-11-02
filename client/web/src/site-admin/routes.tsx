@@ -252,7 +252,9 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/permissions-syncs',
-        render: props => <PermissionsSyncJobsTable {...props} />,
+        render: props => (
+            <PermissionsSyncJobsTable {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/gitservers',

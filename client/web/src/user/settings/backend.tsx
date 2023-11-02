@@ -159,6 +159,9 @@ batchedEvents
  *
  * When invoked on a non-Sourcegraph.com instance, this data is stored in the
  * instance's database, and not sent to Sourcegraph.com.
+ *
+ * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+ * src/telemetry instead.
  */
 export function logEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): void {
     batchedEvents.next(createEvent(event, eventProperties, publicArgument))
@@ -170,6 +173,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
  * used only when low event latency is necessary (e.g., on an external link).
  *
  * See logEvent for additional details.
+ *
+ * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+ * src/telemetry instead.
  */
 export function logEventSynchronously(
     event: string,

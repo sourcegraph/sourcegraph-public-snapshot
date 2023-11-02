@@ -9,8 +9,11 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 )
+
+var forceExportAll = env.MustGetBool("SRC_TELEMETRY_EVENTS_EXPORT_ALL", false, "Set to true to forcibly enable all events export.")
 
 // telemetryExportEnablementCutOffDate is Oct 4, 2023 UTC, and all licenses
 // created after this date will have telemetry export enabled by default.
@@ -27,6 +30,10 @@ var telemetryEventsExportMode = atomic.NewPointer((*evaluatedTelemetryEventsExpo
 // GetTelemetryEventsExportMode returns the degree of telemetry events export
 // enabled. See TelemetryEventsExportMode for more details.
 func GetTelemetryEventsExportMode(c conftypes.SiteConfigQuerier) TelemetryEventsExportMode {
+	if forceExportAll {
+		return TelemetryEventsExportAll
+	}
+
 	evaluatedMode := telemetryEventsExportMode.Load()
 
 	// Update if changed license key has changed

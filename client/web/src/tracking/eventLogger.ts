@@ -115,6 +115,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         domain: location.hostname,
     }
 
+    /**
+     * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+     * src/telemetry instead.
+     */
     constructor() {
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
@@ -147,6 +151,9 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      *
      * Log a pageview.
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     *
+     * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+     * src/telemetry instead.
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
         // call to refresh the session
@@ -162,6 +169,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     /**
      * Log a pageview, following the new event naming conventions
      *
+     * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+     * src/telemetry instead.
      * @param eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
@@ -179,8 +188,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      *
-     * @param eventLabel: the event name.
-     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+     * src/telemetry instead.
+     * @param eventLabel the event name.
+     * @param eventProperties event properties. These get logged to our database, but do not get
      * sent to our analytics systems. This may contain private info such as repository names or search queries.
      * @param publicArgument: event properties that include only public information. Do NOT
      * include any private information, such as full URLs that may contain private repo names or
@@ -457,6 +468,10 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 }
 
+/**
+ * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+ * src/telemetry instead.
+ */
 export const eventLogger = new EventLogger()
 
 /**
