@@ -47,10 +47,10 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<Bil
             [new MarketingTrackingTelemetryProcessor(new TrackingMetadataProvider())],
             {
                 /**
-                 * Use buffer time of 1000 to match some of the legacy events
-                 * buffering.
+                 * Use buffer time of 100ms - some existing buffering uses
+                 * 1000ms, but we use a more conservative value.
                  */
-                bufferTimeMs: options.enableBuffering ? 1000 : 0,
+                bufferTimeMs: options.enableBuffering ? 100 : 0,
                 bufferMaxSize: 10,
                 errorHandler: error => {
                     throw new Error(error)
