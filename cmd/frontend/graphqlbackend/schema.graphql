@@ -5530,7 +5530,8 @@ interface TreeEntry {
     """
     history(first: Int, after: String): TreeEntryConnection!
     """
-    The Git commit containing this tree entry.
+    The Git commit containing this tree entry was reached through.
+    Note that a tree entry can exist in multiple commits.
     """
     commit: GitCommit!
 }
