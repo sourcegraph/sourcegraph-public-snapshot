@@ -37,6 +37,10 @@ func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss pr
 	ctx := ss.Context()
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
+		if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
+			return status.Error(codes.InvalidArgument, err.Error())
+		}
+
 		if errors.Is(err, squirrel.UnsupportedLanguageError) {
 			return status.Error(codes.Unimplemented, err.Error())
 		}

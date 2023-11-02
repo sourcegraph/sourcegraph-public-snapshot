@@ -1,6 +1,8 @@
 import { once } from 'lodash'
 import gql from 'tagged-template-noop'
 
+import { isErrorLike } from '@sourcegraph/common'
+
 import type * as sourcegraph from '../api'
 import { cache } from '../util'
 
@@ -53,6 +55,14 @@ export interface RepoMeta {
     name: string
     isFork: boolean
     isArchived: boolean
+}
+
+function isKnownSquirrelErrorLike(value: unknown): boolean {
+    return (
+        isErrorLike(value) &&
+        'message' in value &&
+        (value.message.includes('unrecognized file extension') || value.message.includes('unsupported language'))
+    )
 }
 
 export class API {
@@ -225,7 +235,16 @@ export class API {
     public fetchLocalCodeIntelPayload = cache(
         async ({ repo, commit, path }: RepoCommitPath): Promise<LocalCodeIntelPayload | undefined> => {
             const vars = { repository: repo, commit, path }
-            const response = await queryGraphQL<LocalCodeIntelResponse>(localCodeIntelQuery, vars)
+            const response = await (async (): Promise<LocalCodeIntelResponse> => {
+                try {
+                    return await queryGraphQL<LocalCodeIntelResponse>(localCodeIntelQuery, vars)
+                } catch (error) {
+                    if (isKnownSquirrelErrorLike(error)) {
+                        return { repository: null }
+                    }
+                    throw error
+                }
+            })()
 
             const payloadString = response?.repository?.commit?.blob?.localCodeIntel
             if (!payloadString) {
@@ -283,7 +302,16 @@ export class API {
         const { repo, commit, path } = parseGitURI(new URL(document.uri))
 
         const vars = { repository: repo, commit, path, line: position.line, character: position.character }
-        const response = await queryGraphQL<SymbolInfoResponse>(query, vars)
+        const response = await (async (): Promise<SymbolInfoResponse> => {
+            try {
+                return await queryGraphQL<SymbolInfoResponse>(query, vars)
+            } catch (error) {
+                if (isKnownSquirrelErrorLike(error)) {
+                    return { repository: null }
+                }
+                throw error
+            }
+        })()
 
         const symbolInfoFlexible = response?.repository?.commit?.blob?.symbolInfo ?? undefined
         if (!symbolInfoFlexible) {

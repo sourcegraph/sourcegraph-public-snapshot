@@ -236,6 +236,8 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 	return &ret
 }
 
+// CAUTION: These error messages are checked by client-side code,
+// so make sure to update clients if changing them.
 var UnrecognizedFileExtensionError = errors.New("unrecognized file extension")
 var UnsupportedLanguageError = errors.New("unsupported language")
 
