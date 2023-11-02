@@ -1301,7 +1301,7 @@ ts_project(
         "src/repo/blob/actions/ToggleRenderedFileMode.tsx",
         "src/repo/blob/actions/utils.ts",
         "src/repo/blob/backend.ts",
-        "src/repo/blob/blameRecency.ts",
+        "src/repo/blob/blameRecency.tsx",
         "src/repo/blob/codemirror/blame-decorations.tsx",
         "src/repo/blob/codemirror/code-folding.tsx",
         "src/repo/blob/codemirror/document-highlights.ts",
