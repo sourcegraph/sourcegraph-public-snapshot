@@ -9,17 +9,61 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function generateGraphQLOperations(): Promise<Plugin> {
     const outputPath = './src/lib/graphql-operations.ts'
-    const interfaceNameForOperations = 'SvelteKitGraphQlOperations'
     const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
 
     // We have to dynamically import this module to not make it a dependency when using
     // Bazel
-    const operations = await import('@sourcegraph/shared/dev/generateGraphQlOperations')
     const codegen = (await import('vite-plugin-graphql-codegen')).default
 
     return codegen({
+        // Keep in sync with client/shared/dev/generateGraphQlOperations.ts
         config: {
-            ...operations.createCodegenConfig([{ interfaceNameForOperations, outputPath }]),
+            generates: {
+                [outputPath]: {
+                    documents: 'src/lib/**/*.{ts,graphql}',
+                    config: {
+                        onlyOperationTypes: true,
+                        noExport: false,
+                        enumValues: '@sourcegraph/shared/src/graphql-operations',
+                        interfaceNameForOperations: 'SvelteKitGraphQlOperations',
+                    },
+                    plugins: [
+                        '../shared/dev/extractGraphQlOperationCodegenPlugin.js',
+                        'typescript',
+                        'typescript-operations',
+                    ],
+                },
+            },
+            schema: '../../cmd/frontend/graphqlbackend/*.graphql',
+            errorsOnly: true,
+            silent: true,
+            config: {
+                // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
+                arrayInputCoercion: false,
+                preResolveTypes: true,
+                operationResultSuffix: 'Result',
+                omitOperationSuffix: true,
+                namingConvention: {
+                    typeNames: 'keep',
+                    enumValues: 'keep',
+                    transformUnderscore: true,
+                },
+                declarationKind: 'interface',
+                avoidOptionals: {
+                    field: true,
+                    inputValue: false,
+                    object: true,
+                },
+                scalars: {
+                    DateTime: 'string',
+                    JSON: 'object',
+                    JSONValue: 'unknown',
+                    GitObjectID: 'string',
+                    JSONCString: 'string',
+                    PublishedValue: "boolean | 'draft'",
+                    BigInt: 'string',
+                },
+            },
             // Top-level documents needs to be expliclity configured, otherwise vite-plugin-graphql-codgen
             // won't regenerate on change.
             documents,
