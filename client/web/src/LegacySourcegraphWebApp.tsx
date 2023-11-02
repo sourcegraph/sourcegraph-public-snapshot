@@ -36,6 +36,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
@@ -53,6 +54,7 @@ import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheP
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
+import { TelemetryRecorderProvider } from './telemetry'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
@@ -75,6 +77,8 @@ interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     viewerSubject: LegacyLayoutProps['viewerSubject']
 
     selectedSearchContextSpec?: string
+
+    platformContext: PlatformContext
 }
 
 const WILDCARD_THEME: WildcardTheme = {
@@ -86,12 +90,18 @@ const WILDCARD_THEME: WildcardTheme = {
  */
 export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, LegacySourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
-    private readonly platformContext: PlatformContext = createPlatformContext()
-    private readonly extensionsController: ExtensionsController | null = createNoopController(this.platformContext)
+    private readonly extensionsController: ExtensionsController | null
 
     constructor(props: StaticAppConfig) {
         super(props)
 
+        const basePlatformContext = createPlatformContext({
+            telemetryRecorderProvider: new NoOpTelemetryRecorderProvider({
+                errorOnRecord: true, // this will be replaced on render()
+            }),
+        })
+
+        this.extensionsController = createNoopController(basePlatformContext)
         if (this.extensionsController !== null) {
             this.subscriptions.add(this.extensionsController)
         }
@@ -100,6 +110,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             authenticatedUser: authenticatedUserValue,
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
+            platformContext: basePlatformContext,
         }
     }
 
@@ -111,12 +122,23 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
 
         getWebGraphQLClient()
             .then(graphqlClient => {
+                // Create real telemetry recorder provider
+                const telemetryRecorderProvider = new TelemetryRecorderProvider(graphqlClient, {
+                    enableBuffering: true,
+                })
+                this.subscriptions.add(telemetryRecorderProvider)
+
+                // Override the no-op telemetryRecorder from initialization
+                const { platformContext } = this.state
+                platformContext.telemetryRecorder = telemetryRecorderProvider.getRecorder()
+
                 this.setState({
                     graphqlClient,
                     temporarySettingsStorage: new TemporarySettingsStorage(
                         graphqlClient,
                         window.context.isAuthenticatedUser
                     ),
+                    platformContext,
                 })
             })
             .catch(error => {
@@ -125,7 +147,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
 
         this.subscriptions.add(
             combineLatest([
-                from(this.platformContext.settings),
+                from(this.state.platformContext.settings),
                 // Start with `undefined` while we don't know if the viewer is authenticated or not.
                 authenticatedUserSubject,
             ]).subscribe(([settingsCascade, authenticatedUser]) => {
@@ -195,7 +217,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             notebooksEnabled: this.props.notebooksEnabled,
             codeMonitoringEnabled: this.props.codeMonitoringEnabled,
             searchAggregationEnabled: this.props.searchAggregationEnabled,
-            platformContext: this.platformContext,
+            platformContext: this.state.platformContext,
             authenticatedUser,
             viewerSubject: this.state.viewerSubject,
             settingsCascade: this.state.settingsCascade,
@@ -278,7 +300,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
         this.subscriptions.add(
             isSearchContextSpecAvailable({
                 spec,
-                platformContext: this.platformContext,
+                platformContext: this.state.platformContext,
             }).subscribe(isAvailable => {
                 if (isAvailable) {
                     this.setSelectedSearchContextSpecWithNoChecks(spec)
@@ -299,7 +321,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
         }
 
         this.subscriptions.add(
-            getDefaultSearchContextSpec({ platformContext: this.platformContext }).subscribe(spec => {
+            getDefaultSearchContextSpec({ platformContext: this.state.platformContext }).subscribe(spec => {
                 // Fall back to global if no default is returned.
                 this.setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
             })
@@ -318,5 +340,5 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
         parameters: FetchFileParameters,
         force?: boolean | undefined
     ): Observable<string[][]> =>
-        fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
+        fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.state.platformContext }, force)
 }

@@ -43,6 +43,7 @@ import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import type { AppShellInit } from './storm/app-shell-init'
 import { Layout } from './storm/pages/LayoutPage/LayoutPage'
 import { loader } from './storm/pages/LayoutPage/LayoutPage.loader'
+import { TelemetryRecorderProvider } from './telemetry'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
@@ -96,7 +97,6 @@ const suspenseCache = new SuspenseCache()
  *
  * Most of the dynamic values in the `SourcegraphWebApp` depend on this observable.
  */
-const platformContext = createPlatformContext()
 
 interface SourcegraphWebAppProps extends StaticAppConfig, AppShellInit {}
 
@@ -104,6 +104,10 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
     const { graphqlClient, temporarySettingsStorage } = props
 
     const [subscriptions] = useState(() => new Subscription())
+
+    const telemetryRecorderProvider = new TelemetryRecorderProvider(graphqlClient, { enableBuffering: true })
+    subscriptions.add(telemetryRecorderProvider)
+    const platformContext = createPlatformContext({ telemetryRecorderProvider })
 
     const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(
         authenticatedUserValue
@@ -132,7 +136,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                 setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
             })
         )
-    }, [props.searchContextsEnabled, setSelectedSearchContextSpecWithNoChecks, subscriptions])
+    }, [props.searchContextsEnabled, setSelectedSearchContextSpecWithNoChecks, subscriptions, platformContext])
 
     const setSelectedSearchContextSpec = useCallback(
         (spec: string): void => {
@@ -169,6 +173,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
             setSelectedSearchContextSpecToDefault,
             setSelectedSearchContextSpecWithNoChecks,
             subscriptions,
+            platformContext,
         ]
     )
 
