@@ -50,8 +50,8 @@ go_test(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
-        "@com_github_tj_assert//:assert",
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk//trace/tracetest",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )
