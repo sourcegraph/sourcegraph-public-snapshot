@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
-func trivyScanImage(image *ImageInfo, trivyPath string) error {
-
+func trivyScanImage(image *ImageInfo, trivyPath string, wg *sync.WaitGroup) error {
+	defer wg.Done()
 	std.Out.Writef("starting scan for image %s:%s", image.Image, image.Digest)
 
 	output, err := exec.Command(trivyPath, "image", fmt.Sprintf("%s@%s", image.Image, image.Digest)).Output()
@@ -84,13 +84,12 @@ func ScanImages() error {
 
 			if currentImage != nil {
 				wg.Add(1)
-				go trivyScanImage(currentImage, trivyPath)
+				go trivyScanImage(currentImage, trivyPath, &wg)
 				currentImage = nil
 			}
 		}
+		wg.Wait()
 	}
-
-	wg.Wait()
 
 	return nil
 }
