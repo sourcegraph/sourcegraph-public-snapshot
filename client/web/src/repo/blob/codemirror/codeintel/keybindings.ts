@@ -13,7 +13,7 @@ import {
 } from '@codemirror/commands'
 import { type Extension, Prec } from '@codemirror/state'
 import { EditorView, type KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 
 function navigationKeybindings(navigate: NavigateFunction): KeyBinding[] {
     return [
@@ -107,7 +107,6 @@ const textSelectionKeybindings: KeyBinding[] = [
  * that the browser selection is updated when the editor selection is updated.
  *
  * This layer has explicitly set high precedence to be always shown above other layers (e.g. selected lines layer).
- *
  * @see https://codemirror.net/docs/ref/#view.drawSelection
  * @see https://sourcegraph.com/github.com/codemirror/view@84f483ae4097a71d04374cdb24c5edc09d211105/-/blob/src/draw-selection.ts?L92-102
  */

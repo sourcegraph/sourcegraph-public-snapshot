@@ -1,14 +1,14 @@
 import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate } from '@codemirror/view'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
-import { combineLatest, Observable, Subject, type Subscription } from 'rxjs'
+import { combineLatest, type Observable, Subject, type Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith, map } from 'rxjs/operators'
 
-import { LineOrPositionOrRange, isErrorLike } from '@sourcegraph/common'
+import { type LineOrPositionOrRange, isErrorLike } from '@sourcegraph/common'
 
 import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
-import { type BlobPropsFacet } from '../../CodeMirrorBlob'
-import { TooltipViewOptions } from '../codeintel/api'
+import type { BlobPropsFacet } from '../../CodeMirrorBlob'
+import type { TooltipViewOptions } from '../codeintel/api'
 import { pinConfig, pinnedLocation } from '../codeintel/pin'
 import { blobPropsFacet } from '../index'
 import { CodeMirrorContainer } from '../react-interop'
@@ -135,7 +135,7 @@ export class HovercardView implements TooltipView {
                                 const { line, character } = hoveredToken
                                 this.view.state.facet(pinConfig).onUnpin?.({ line, character })
                             },
-                            onCopyLinkButtonClick: async () => {
+                            onCopyLinkButtonClick: () => {
                                 const { line, character } = hoveredToken
                                 this.view.state.facet(pinConfig).onPin?.({ line, character })
                             },

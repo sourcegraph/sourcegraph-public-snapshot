@@ -1,23 +1,23 @@
 import { type EditorState, Facet } from '@codemirror/state'
-import { EditorView, Tooltip, TooltipView } from '@codemirror/view'
-import { Observable, from } from 'rxjs'
+import type { EditorView, Tooltip, TooltipView } from '@codemirror/view'
+import { type Observable, from } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
 
 import type { HoverMerged } from '@sourcegraph/client-api'
 import { isMacPlatform } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import type { Range } from '@sourcegraph/extension-api-types'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import {
-    CodeIntelAPI,
+    type CodeIntelAPI,
     findLanguageMatchingDocument,
     hasFindImplementationsSupport,
 } from '@sourcegraph/shared/src/codeintel/api'
-import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
+import type { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { parseRepoURI, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
+import type { WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
 import { syntaxHighlight } from '../highlight'
 import {
     contains,
@@ -120,7 +120,7 @@ export class CodeIntelAPIAdapter {
         if (occurrence && !isInteractiveOccurrence(occurrence)) {
             occurrence = null
         }
-        let range = occurrence ? rangeToCmSelection(state.doc, occurrence.range) : null
+        const range = occurrence ? rangeToCmSelection(state.doc, occurrence.range) : null
         for (let i = range?.from ?? offset, to = range?.to ?? offset; i <= to; i++) {
             this.occurrenceCache.set(offset, { occurrence, range })
         }
@@ -483,7 +483,7 @@ export async function goToDefinitionAt(
     const api = getCodeIntelAPI(view.state)
     const occurrence = api.findOccurrenceAt(offset, view.state).occurrence
     if (occurrence) {
-        api.goToDefinitionAtOccurrence(view, occurrence, options)
+        await api.goToDefinitionAtOccurrence(view, occurrence, options)
     }
 }
 
@@ -510,7 +510,7 @@ export function nextOccurrencePosition(
         const start = position.line + (next ? 1 : -1)
         const increment = next ? 1 : -1
 
-        for (let line = start; 0 <= line && line < table.lineIndex.length; line += increment) {
+        for (let line = start; line >= 0 && line < table.lineIndex.length; line += increment) {
             occurrence = closestOccurrenceByCharacter(line, table, position)
             if (occurrence) {
                 break

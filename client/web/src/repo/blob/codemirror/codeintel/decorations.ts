@@ -1,5 +1,5 @@
 import { Facet } from '@codemirror/state'
-import { DecorationSet, EditorView } from '@codemirror/view'
+import { type DecorationSet, EditorView } from '@codemirror/view'
 
 /**
  * Facet to specify a range in which all decorations registered via

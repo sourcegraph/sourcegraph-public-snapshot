@@ -1,16 +1,15 @@
-import { type Extension } from '@codemirror/state'
-import { EditorView, type PluginValue, ViewPlugin, getTooltip, Tooltip } from '@codemirror/view'
+import type { Extension } from '@codemirror/state'
+import { type EditorView, type PluginValue, ViewPlugin, getTooltip, type Tooltip } from '@codemirror/view'
 import { from, fromEvent, Subscription } from 'rxjs'
 import { debounceTime, filter, map, scan, tap } from 'rxjs/operators'
 
-import { type Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 import { preciseOffsetAtCoords } from '../utils'
 
 import { findOccurrenceRangeAt, getHoverTooltip } from './api'
 import { showHasDefinition } from './definition'
-import { TooltipSource, showTooltip } from './tooltips'
+import { type TooltipSource, showTooltip } from './tooltips'
 
 /**
  * This field stores various information about the currently hovered range, which

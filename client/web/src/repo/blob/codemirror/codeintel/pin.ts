@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view'
 import { concat, from, of } from 'rxjs'
 import { timeoutWith } from 'rxjs/operators'
 
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { offsetToUIPosition } from '../utils'

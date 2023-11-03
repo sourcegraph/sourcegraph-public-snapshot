@@ -1,5 +1,5 @@
-import { type Extension, Facet, Range as CodeMirrorRange } from '@codemirror/state'
-import { Decoration, EditorView, Tooltip } from '@codemirror/view'
+import { type Extension, Facet, type Range as CodeMirrorRange } from '@codemirror/state'
+import { Decoration, EditorView, type Tooltip } from '@codemirror/view'
 import { from } from 'rxjs'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
@@ -10,7 +10,7 @@ import { MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from '../utils'
 import { findOccurrenceRangeAt, goToDefinitionAt, hasDefinitionAt } from './api'
 import { codeIntelDecorations } from './decorations'
 import { showTooltip } from './tooltips'
-import { UpdateableValue, createLoaderExtension, isModifierKey } from './utils'
+import { type UpdateableValue, createLoaderExtension, isModifierKey } from './utils'
 
 interface Range {
     from: number
@@ -33,15 +33,15 @@ class HasDefinition implements UpdateableValue<boolean, HasDefinition> {
      */
     constructor(public range: Range, public hasDefinition: boolean | null = null) {}
 
-    update(hasDefinition: boolean): HasDefinition {
+    public update(hasDefinition: boolean): HasDefinition {
         return new HasDefinition(this.range, hasDefinition)
     }
 
-    get key() {
+    public get key(): Range {
         return this.range
     }
 
-    get isPending() {
+    public get isPending(): boolean {
         return this.hasDefinition === null
     }
 }
@@ -163,7 +163,7 @@ export function goToDefinitionOnClick(): Extension {
                     goToDefinitionOnMouseEvent(view, event)
                 }
             },
-            mousemove(event, view) {
+            mousemove(event) {
                 events.mousemove = event
             },
             mousedown(event, view) {

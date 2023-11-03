@@ -2,7 +2,7 @@
  * An implementation of the Blob view using CodeMirror
  */
 
-import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState, RefObject } from 'react'
+import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { EditorState, type Extension } from '@codemirror/state'
@@ -30,7 +30,7 @@ import {
     type ModeSpec,
     parseQueryAndHash,
     toPrettyBlobURL,
-    BlobViewState,
+    type BlobViewState,
 } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -46,10 +46,10 @@ import { BlameDecoration } from './BlameDecoration'
 import { blobPropsFacet } from './codemirror'
 import { blameData, showBlame } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
-import { hideEmptyLastLine } from './codemirror/eof'
 import { createCodeIntelExtension } from './codemirror/codeintel/extension'
 import { pinnedLocation } from './codemirror/codeintel/pin'
 import { syncSelection } from './codemirror/codeintel/token-selection'
+import { hideEmptyLastLine } from './codemirror/eof'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { linkify } from './codemirror/links'
@@ -188,7 +188,6 @@ const staticExtensions: Extension = [
     }),
     hideEmptyLastLine,
     linkify,
-    hoverCardConstructor.of(HovercardView),
 ]
 
 export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
@@ -236,7 +235,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
     // reconfigure the editor extensions
-    const navigateRef = useMutableValue(navigate)
     const locationRef = useMutableValue(location)
     const positionRef = useMutableValue(position)
 
@@ -285,10 +283,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                     })
                 )
             } else {
-                updateBrowserHistoryIfChanged(navigateRef.current, locationRef.current, newSearchParameters)
+                updateBrowserHistoryIfChanged(navigate, locationRef.current, newSearchParameters)
             }
         },
-        [customHistoryAction]
+        [customHistoryAction, locationRef, navigate]
     )
 
     // Added fallback to take care of ReferencesPanel/Simple storybook
@@ -296,7 +294,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const editorRef = useRef<EditorView | null>(null)
 
-<<<<<<< HEAD
     const blameDecorations = useBlameDecoration(editorRef, { visible: !!isBlameVisible, blameHunks })
     const blobProps = useCompartment(
         editorRef,
@@ -452,7 +449,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         if (view) {
             syncSelection(view, positionRef.current)
         }
-    }, [position])
+    }, [position, positionRef])
 
     // Sync editor store with global Zustand store API
     useEffect(() => setBlobEditView(editorRef.current ?? null), [])
@@ -519,7 +516,12 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
 function useCodeIntelExtension(
     context: PlatformContext,
-    documentInfo: { repoName: string; filePath: string; commitID: string },
+    {
+        repoName,
+        filePath,
+        commitID,
+        revision,
+    }: { repoName: string; filePath: string; commitID: string; revision?: string },
     mode: string
 ): Extension {
     const navigate = useNavigate()
@@ -533,7 +535,7 @@ function useCodeIntelExtension(
 
     useEffect(() => {
         let ignore = false
-        getOrCreateCodeIntelAPI(context).then(api => {
+        void getOrCreateCodeIntelAPI(context).then(api => {
             if (!ignore) {
                 setApi(api)
             }
@@ -550,7 +552,7 @@ function useCodeIntelExtension(
                 ? createCodeIntelExtension({
                       api: {
                           api,
-                          documentInfo,
+                          documentInfo: { repoName, filePath, commitID, revision },
                           mode,
                           createTooltipView: ({ view, token, hovercardData }) =>
                               new HovercardView(view, token, hovercardData),
@@ -573,6 +575,7 @@ function useCodeIntelExtension(
                               )
                           },
                           goToDefinition(view, definition, options) {
+                              const documentInfo = { repoName, filePath, commitID, revision }
                               const goto = options?.newWindow
                                   ? (url: string, _options?: unknown) => window.open(url, '_blank')
                                   : navigate
@@ -640,7 +643,7 @@ function useCodeIntelExtension(
                       },
                       pin: {
                           onPin(position) {
-                              const search = new URLSearchParams(location.search)
+                              const search = new URLSearchParams(locationRef.current.search)
                               search.set('popover', 'pinned')
 
                               updateBrowserHistoryIfChanged(
@@ -655,7 +658,7 @@ function useCodeIntelExtension(
                                       })
                                   )
                               )
-                              navigator.clipboard.writeText(window.location.href)
+                              void navigator.clipboard.writeText(window.location.href)
                           },
                           onUnpin() {
                               const parameters = new URLSearchParams(locationRef.current.search)
@@ -668,31 +671,8 @@ function useCodeIntelExtension(
                   })
                 : [],
         ],
-        [documentInfo.repoName, documentInfo.filePath, documentInfo.commitID, mode, api, navigate, locationRef]
+        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef]
     )
-}
-
-/**
- * Create and update blame decorations.
- */
-function useBlameDecoration(
-    editorRef: RefObject<EditorView>,
-    { visible, blameHunks, navigate }: { visible: boolean; blameHunks?: BlameHunkData; navigate: NavigateFunction }
-): Extension {
-    // Blame support is split into two compartments because we only want to trigger
-    // `lockFirstVisibleLine` when blame is enabled, not when data is received
-    // (this can cause the editor to scroll to a different line)
-    const enabled = useCompartment(
-        editorRef,
-        useMemo(() => (visible ? enableBlame(navigate) : []), [visible, navigate]),
-        lockFirstVisibleLine
-    )
-
-    const data = useCompartment(
-        editorRef,
-        useMemo(() => blameData(blameHunks), [blameHunks])
-    )
-    return useMemo(() => [enabled, data], [enabled, data])
 }
 
 /**

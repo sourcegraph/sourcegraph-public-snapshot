@@ -7,7 +7,7 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 

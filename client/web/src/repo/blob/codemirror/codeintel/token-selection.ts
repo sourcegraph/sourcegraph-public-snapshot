@@ -1,18 +1,19 @@
 import {
     Annotation,
-    EditorState,
-    Extension,
+    type EditorState,
+    type Extension,
     Prec,
     StateEffect,
     StateField,
-    Transaction,
-    TransactionSpec,
-    Range,
+    type Transaction,
+    type TransactionSpec,
+    type Range,
 } from '@codemirror/state'
 import { Decoration, EditorView, keymap } from '@codemirror/view'
-import { LineOrPositionOrRange } from 'node_modules/@sourcegraph/common/out/src'
 import { concat, from, of } from 'rxjs'
 import { timeoutWith } from 'rxjs/operators'
+
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { lprToRange } from '../utils'
@@ -26,7 +27,7 @@ import {
 } from './api'
 import { ignoreDecorations } from './decorations'
 import { showDocumentHighlights } from './document-highlights'
-import { TooltipSource, showTooltip } from './tooltips'
+import { type TooltipSource, showTooltip } from './tooltips'
 
 const tokenSelection = Annotation.define<boolean>()
 const setTooltipSource = StateEffect.define<TooltipSource | null>()
@@ -246,7 +247,7 @@ const selectedToken = StateField.define<{
                     }
 
                     showTokenTooltip(view, new LoadingTooltip(selected.from, selected.to))
-                    goToDefinitionAt(view, selected.from).finally(() => {
+                    void goToDefinitionAt(view, selected.from).finally(() => {
                         hideTokenTooltip(view)
                     })
                     return true
@@ -261,7 +262,7 @@ const selectedToken = StateField.define<{
                     }
 
                     showTokenTooltip(view, new LoadingTooltip(selected.from, selected.to))
-                    goToDefinitionAt(view, selected.from, { newWindow: true }).finally(() => {
+                    void goToDefinitionAt(view, selected.from, { newWindow: true }).finally(() => {
                         hideTokenTooltip(view)
                     })
                     return true

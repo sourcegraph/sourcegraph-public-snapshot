@@ -1,9 +1,9 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
-import { Tooltip, showTooltip as showCodeMirrorTooltip, Decoration } from '@codemirror/view'
-import { Observable, isObservable } from 'rxjs'
+import { type Tooltip, showTooltip as showCodeMirrorTooltip, Decoration } from '@codemirror/view'
+import { type Observable, isObservable } from 'rxjs'
 
 import { codeIntelDecorations } from './decorations'
-import { UpdateableValue, createLoaderExtension } from './utils'
+import { type UpdateableValue, createLoaderExtension } from './utils'
 
 export type TooltipSource = Observable<Tooltip | null> | Tooltip | null
 
@@ -39,11 +39,11 @@ const uniqueTooltips = Facet.define<Tooltip | null, Tooltip[]>({
     enables: self => [
         // Highlight tokens with tooltips
         codeIntelDecorations.compute([self], state => {
-            let decorations = new RangeSetBuilder<Decoration>()
+            const decorations = new RangeSetBuilder<Decoration>()
             const tooltips = state.facet(self)
             for (const { pos, end } of tooltips) {
                 if (end && pos !== end) {
-                    decorations.add(pos, end, Decoration.mark({ class: `selection-highlight` }))
+                    decorations.add(pos, end, Decoration.mark({ class: 'selection-highlight' }))
                 }
             }
 
@@ -67,15 +67,15 @@ class TooltipLoadingState implements UpdateableValue<Tooltip | null, TooltipLoad
         this.visible = !!tooltip
     }
 
-    update(tooltip: Tooltip | null) {
+    public update(tooltip: Tooltip | null): TooltipLoadingState {
         return new TooltipLoadingState(this.source, Status.DONE, tooltip)
     }
 
-    get key() {
+    public get key(): TooltipSource {
         return this.source
     }
 
-    get isPending() {
+    public get isPending(): boolean {
         return this.status === Status.PENDING
     }
 }

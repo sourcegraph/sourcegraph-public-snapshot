@@ -1,4 +1,4 @@
-import { EditorSelection, Text, type EditorState, type SelectionRange } from '@codemirror/state'
+import { EditorSelection, type Text, type EditorState, type SelectionRange } from '@codemirror/state'
 
 import type { Range } from '@sourcegraph/extension-api-types'
 import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'

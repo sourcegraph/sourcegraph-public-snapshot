@@ -1,10 +1,15 @@
 import type { Line, SelectionRange, Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 import type { Position } from '@sourcegraph/extension-api-types'
 import { Range } from '@sourcegraph/shared/src/codeintel/scip'
-import { BlobViewState, UIPositionSpec, UIRangeSpec, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import {
+    type BlobViewState,
+    type UIPositionSpec,
+    type UIRangeSpec,
+    toPrettyBlobURL,
+} from '@sourcegraph/shared/src/util/url'
 
 import type { Location } from './codeintel/api'
 

@@ -1,6 +1,6 @@
-import { EditorState, Extension, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { Observable, Subscription } from 'rxjs'
+import { type EditorState, type Extension, StateEffect, StateField } from '@codemirror/state'
+import { type EditorView, type PluginValue, ViewPlugin, type ViewUpdate } from '@codemirror/view'
+import type { Observable, Subscription } from 'rxjs'
 
 import { isMacPlatform } from '@sourcegraph/common'
 
@@ -64,7 +64,7 @@ export function createLoaderExtension<Response, Input, Value extends UpdateableV
                         }
                     }
 
-                    update(update: ViewUpdate): void {
+                    public update(update: ViewUpdate): void {
                         const values = update.state.field(field)
                         if (values !== update.startState.field(field)) {
                             const seen = new Set<unknown>()
@@ -128,7 +128,7 @@ export function syncValues<T, U>({
     update: (value: U) => U
 }): U[] {
     let updated = previousInput.length !== currentInput.length
-    let newValues: U[] = new Array(currentInput.length)
+    const newValues: U[] = new Array(currentInput.length)
 
     for (let i = 0; i < currentInput.length; i++) {
         const known = previousInput.indexOf(currentInput[i])

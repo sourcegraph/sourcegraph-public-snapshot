@@ -4,7 +4,7 @@ import { from } from 'rxjs'
 
 import { getDocumentHighlights } from './api'
 import { codeIntelDecorations } from './decorations'
-import { UpdateableValue, createLoaderExtension } from './utils'
+import { type UpdateableValue, createLoaderExtension } from './utils'
 
 interface Range {
     from: number
@@ -16,15 +16,15 @@ const documentHighlightDeco = Decoration.mark({ class: 'sourcegraph-document-hig
 class Highlights implements UpdateableValue<Range[], Highlights> {
     constructor(public range: Range, public highlights: Range[] | null) {}
 
-    update(highlights: Range[]) {
+    public update(highlights: Range[]): Highlights {
         return new Highlights(this.range, highlights)
     }
 
-    get isPending() {
+    public get isPending(): boolean {
         return this.highlights === null
     }
 
-    get key() {
+    public get key(): Range {
         return this.range
     }
 }

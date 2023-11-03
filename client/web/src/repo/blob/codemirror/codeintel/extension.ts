@@ -1,15 +1,15 @@
-import { type Extension } from '@codemirror/state'
+import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 
 import { uiPositionToOffset } from '../utils'
 
-import { CodeIntelAPIAdapter, CodeIntelAPIConfig, codeIntelAPI, findOccurrenceRangeAt } from './api'
+import { CodeIntelAPIAdapter, type CodeIntelAPIConfig, codeIntelAPI, findOccurrenceRangeAt } from './api'
 import { goToDefinitionOnClick } from './definition'
 import { hoverExtension } from './hover'
 import { keyboardShortcutsExtension } from './keybindings'
 import { isModifierKeyHeld } from './modifier-key'
-import { PinConfig, pinConfig, pinnedLocation, pinnedRange } from './pin'
+import { type PinConfig, pinConfig, pinnedLocation, pinnedRange } from './pin'
 import { selectedTokenExtension } from './token-selection'
 
 interface CodeIntelExtensionConfig {
@@ -19,9 +19,8 @@ interface CodeIntelExtensionConfig {
 }
 
 /**
- * Registers a tooltip for the pinned location, if any. This compouted here
- * and not when providing {@link pinnedLocation} because the code intel API
- * might not be ready at that moment.
+ * Conveerts the pinned location to a CodeMirror range, which eventually
+ * will show a tooltip at this position, if available.
  */
 const pinnedLocationToRange = pinnedRange.compute([pinnedLocation], state => {
     const pin = state.facet(pinnedLocation)
@@ -79,10 +78,14 @@ export function createCodeIntelExtension(config: CodeIntelExtensionConfig): Exte
     return [
         codeIntelAPI.of(new CodeIntelAPIAdapter(config.api)),
         pinConfig.of(config.pin),
+
+        // The order of these is important. They determine which tooltip to show if
+        // multiple sources provide tooltips at the same position.
         goToDefinitionOnClick(),
         pinnedLocationToRange,
         selectedTokenExtension,
         hoverExtension,
+
         isModifierKeyHeld,
         keyboardShortcutsExtension(config.navigate),
         tooltipStyles,
