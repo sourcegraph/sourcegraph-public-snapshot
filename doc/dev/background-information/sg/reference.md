@@ -1123,6 +1123,14 @@ $ Once built, the base image is loaded into Docker and can be run locally.
 $ It can also be used for local development by updating its path and hash in the 'dev/oci_deps.bzl' file.
 ```
 
+### sg wolfi scan-images
+
+Scan Wolfi base images for vulnerabilities.
+
+```sh
+$ Scans the Wolfi base images in the 'dev/oci_deps.bzl' file.
+```
+
 ### sg wolfi update-hashes
 
 Update Wolfi base images hashes to the latest versions.
