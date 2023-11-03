@@ -405,6 +405,7 @@ ts_project(
         "src/hooks/useUpdateEffect.ts",
         "src/hooks/useWildcardTheme.tsx",
         "src/hooks/useWindowSize.ts",
+        "src/hooks/useZoom.ts",
         "src/index.ts",
         "src/stories/BrandedStory.tsx",
         "src/stories/hooks/index.ts",
