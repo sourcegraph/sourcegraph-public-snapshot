@@ -305,6 +305,7 @@ go_test(
         "//internal/temporarysettings",
         "//internal/timeutil",
         "//internal/trace",
+        "//internal/trace/tracetest",
         "//internal/types",
         "//internal/types/typestest",
         "//internal/version",

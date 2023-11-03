@@ -9,14 +9,11 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
-
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -39,8 +36,7 @@ func TestNewEventWithDefaults(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), actor.FromMockUser(userID))
 
 		// Attach a trace
-		otel.SetTracerProvider(oteltracesdk.NewTracerProvider(
-			oteltracesdk.WithIDGenerator(staticTraceIDGenerator{})))
+		tracetest.ConfigureStaticTracerProvider(t)
 		_, ctx = trace.New(ctx, t.Name())
 
 		// NOTE: We can't test the feature flag part easily because
@@ -72,19 +68,4 @@ func TestNewEventWithDefaults(t *testing.T) {
   }
 }`).Equal(t, string(jsondata))
 	})
-}
-
-// staticTraceIDGenerator generates a stable trace and span ID for golden testing.
-type staticTraceIDGenerator struct{}
-
-// NewIDs returns a new trace and span ID.
-func (s staticTraceIDGenerator) NewIDs(ctx context.Context) (oteltrace.TraceID, oteltrace.SpanID) {
-	tid, _ := oteltrace.TraceIDFromHex("01020304050607080102040810203040")
-	return tid, s.NewSpanID(ctx, tid)
-}
-
-// NewSpanID returns a ID for a new span in the trace with traceID.
-func (staticTraceIDGenerator) NewSpanID(ctx context.Context, traceID oteltrace.TraceID) oteltrace.SpanID {
-	sid, _ := oteltrace.SpanIDFromHex("0102040810203040")
-	return sid
 }
