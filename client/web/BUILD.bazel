@@ -2120,7 +2120,7 @@ BUNDLE_DATA_DEPS = [
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
-    "//client/web/dev:esbuild-config-production",
+    "//client/web/dev:esbuild-config-production_bundle",
 ]
 
 esbuild(
@@ -2129,7 +2129,7 @@ esbuild(
         ":web_lib",
         "//:package_json",
     ],
-    config = "//client/web/dev:esbuild-config-production",
+    config = "//client/web/dev:esbuild-config-production_bundle",
     entry_points = [
         "src/enterprise/main.js",
         "src/enterprise/embed/embedMain.js",
@@ -2148,7 +2148,7 @@ esbuild_web_app(
         ":web_lib",
         "//:package_json",
     ],
-    config = "//client/web/dev:esbuild-config-production",
+    config = "//client/web/dev:esbuild-config-production_bundle",
     define = {
         "process.env.INTEGRATION_TESTS": "true",
     },
@@ -2156,6 +2156,7 @@ esbuild_web_app(
         "src/enterprise/main.js",
         "src/enterprise/embed/embedMain.js",
     ],
+    sourcemap = "linked",
     visibility = ["//visibility:public"],
     deps = ESBUILD_CONFIG_DEPS,
 )
