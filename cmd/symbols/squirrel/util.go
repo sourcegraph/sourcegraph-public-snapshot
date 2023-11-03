@@ -236,7 +236,9 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 	return &ret
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+// CAUTION: These error messages are checked by client-side code,
+// so make sure to update clients if changing them.
+var UnrecognizedFileExtensionError = errors.New("unrecognized file extension")
 var UnsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
@@ -246,9 +248,12 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 	}
 
-	langName, ok := extToLang[ext]
+	// It is not uncommon to have files with upper-case extensions
+	// like .C, .H, .CPP etc., especially for code developed on
+	// case-insensitive filesystems.
+	langName, ok := extToLang[strings.ToLower(ext)]
 	if !ok {
-		return nil, unrecognizedFileExtensionError
+		return nil, UnrecognizedFileExtensionError
 	}
 
 	langSpec, ok := langToLangSpec[langName]
@@ -409,7 +414,7 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		Commit: commit,
 		Path:   symbol.Path,
 	})
-	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, UnrecognizedFileExtensionError) {
 		return nil, nil
 	}
 	if err != nil {

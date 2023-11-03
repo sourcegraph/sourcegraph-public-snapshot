@@ -1,7 +1,8 @@
 import { once } from 'lodash'
 import gql from 'tagged-template-noop'
 
-import { searchContext } from '../../searchContext'
+import { isErrorLike } from '@sourcegraph/common'
+
 import type * as sourcegraph from '../api'
 import { cache } from '../util'
 
@@ -56,6 +57,14 @@ export interface RepoMeta {
     isArchived: boolean
 }
 
+function isKnownSquirrelErrorLike(value: unknown): boolean {
+    return (
+        isErrorLike(value) &&
+        'message' in value &&
+        (value.message.includes('unrecognized file extension') || value.message.includes('unsupported language'))
+    )
+}
+
 export class API {
     /**
      * Small never-evict map from repo names to a promise of their meta.
@@ -68,7 +77,6 @@ export class API {
     /**
      * Retrieves the name and fork/archive status of a repository. This method
      * throws an error if the repository is not known to the Sourcegraph instance.
-     *
      * @param name The repository's name.
      */
     public async resolveRepo(name: string): Promise<RepoMeta> {
@@ -227,7 +235,16 @@ export class API {
     public fetchLocalCodeIntelPayload = cache(
         async ({ repo, commit, path }: RepoCommitPath): Promise<LocalCodeIntelPayload | undefined> => {
             const vars = { repository: repo, commit, path }
-            const response = await queryGraphQL<LocalCodeIntelResponse>(localCodeIntelQuery, vars)
+            const response = await (async (): Promise<LocalCodeIntelResponse> => {
+                try {
+                    return await queryGraphQL<LocalCodeIntelResponse>(localCodeIntelQuery, vars)
+                } catch (error) {
+                    if (isKnownSquirrelErrorLike(error)) {
+                        return { repository: null }
+                    }
+                    throw error
+                }
+            })()
 
             const payloadString = response?.repository?.commit?.blob?.localCodeIntel
             if (!payloadString) {
@@ -285,7 +302,16 @@ export class API {
         const { repo, commit, path } = parseGitURI(new URL(document.uri))
 
         const vars = { repository: repo, commit, path, line: position.line, character: position.character }
-        const response = await queryGraphQL<SymbolInfoResponse>(query, vars)
+        const response = await (async (): Promise<SymbolInfoResponse> => {
+            try {
+                return await queryGraphQL<SymbolInfoResponse>(query, vars)
+            } catch (error) {
+                if (isKnownSquirrelErrorLike(error)) {
+                    return { repository: null }
+                }
+                throw error
+            }
+        })()
 
         const symbolInfoFlexible = response?.repository?.commit?.blob?.symbolInfo ?? undefined
         if (!symbolInfoFlexible) {
@@ -298,7 +324,6 @@ export class API {
      * Get the content of a file. Throws an error if the repository is not known to
      * the Sourcegraph instance. Returns undefined if the input rev or the file is
      * not known to the Sourcegraph instance.
-     *
      * @param repo The repository in which the file exists.
      * @param revision The revision in which the target version of the file exists.
      * @param path The path of the file.
@@ -330,14 +355,10 @@ export class API {
 
     /**
      * Perform a search.
-     *
      * @param searchQuery The input to the search command.
      * @param fileLocal Set to false to not request this field, which is absent in older versions of Sourcegraph.
      */
-    public async search(searchQuery: string, fileLocal = true): Promise<SearchResult[]> {
-        const context = searchContext()
-        const query = context ? `context:${context} ${searchQuery}` : searchQuery
-
+    public async search(query: string, fileLocal = true): Promise<SearchResult[]> {
         interface Response {
             search: {
                 results: {

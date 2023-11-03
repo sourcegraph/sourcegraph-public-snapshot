@@ -29,7 +29,7 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
-import { useDeveloperSettings } from './stores'
+import { isSourcegraphDev, useDeveloperSettings } from './stores'
 import { isAccessTokenCallbackPage } from './user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
@@ -82,7 +82,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
-    const showDeveloperDialog = useDeveloperSettings(state => state.showDialog)
+    const showDeveloperDialog =
+        useDeveloperSettings(state => state.showDialog) &&
+        (process.env.NODE_ENV === 'development' || isSourcegraphDev(props.authenticatedUser))
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings, or it's the Cody app
         fuzzyFinder: features.fuzzyFinder ?? !props.isCodyApp,

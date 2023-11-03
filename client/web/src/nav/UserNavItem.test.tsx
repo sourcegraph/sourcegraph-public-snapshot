@@ -47,6 +47,7 @@ describe('UserNavItem', () => {
                 },
             ],
         },
+        emails: [],
     }
 
     test('simple', () => {
