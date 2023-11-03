@@ -621,9 +621,32 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 // Upgrade user to cody pro plan
 func (u *userStore) UpgradeToCodyPro(ctx context.Context, id int32) (err error) {
 	// TODO: update usage limits as well
-	query := sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NOW() WHERE id=%d AND cody_pro_enabled_at IS NULL", id)
+	query := sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NOW() WHERE id=%d AND cody_pro_enabled_at IS NULL AND deleted_at IS NULL", id)
 
-	return u.Exec(ctx, query)
+	res, err := u.ExecResult(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if nrows == 0 {
+		user, err := u.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if user == nil {
+			return userNotFoundErr{args: []any{id}}
+		}
+
+		return errors.New("user is already on Cody Pro plan")
+	}
+
+	return nil
 }
 
 // Delete performs a soft-delete of the user and all resources associated with this user.

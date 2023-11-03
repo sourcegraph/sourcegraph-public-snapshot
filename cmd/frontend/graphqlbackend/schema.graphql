@@ -92,7 +92,7 @@ type Mutation {
     """
     Upgrades the user to Cody Pro.
 
-    Only the user and site admins may perform this mutation.
+    Only the user may perform this mutation.
     """
     upgradeToCodyPro(user: ID!): User!
     """

@@ -326,11 +326,11 @@ type upgradeToCodyProArgs struct {
 
 func (r *schemaResolver) UpgradeToCodyPro(ctx context.Context, args *upgradeToCodyProArgs) (*UserResolver, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.Errorf("this feature is only available on sourcegraph.com")
+		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	if !featureflag.FromContext(ctx).GetBoolOr("cody_pro_dec_ga", false) {
-		return nil, errors.Errorf("this feature is not enabled")
+		return nil, errors.New("this feature is not enabled")
 	}
 
 	userID, err := UnmarshalUserID(args.User)
@@ -343,17 +343,8 @@ func (r *schemaResolver) UpgradeToCodyPro(ctx context.Context, args *upgradeToCo
 		return nil, err
 	}
 
-	user, err := r.db.Users().GetByID(ctx, userID)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting user from the database")
-	}
-
-	if user.CodyProEnabledAt != nil {
-		return nil, errors.Errorf("user is already on Cody Pro plan")
-	}
-
 	if err := r.db.Users().UpgradeToCodyPro(ctx, userID); err != nil {
-		return nil, errors.Wrap(err, "upgrading user to Cody Pro plan")
+		return nil, err
 	}
 
 	return UserByIDInt32(ctx, r.db, userID)
