@@ -77,8 +77,6 @@
 
 <p class="subtitle">Learn how to use Cody and its features with the VS Code editor.</p>
 
-<p class="subtitle">Learn how to use Cody and its features with the JetBrains IntelliJ editor.</p>
-
 <aside class="beta">
 <p>
 <span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Cody support for VS Code is in the Beta stage.
