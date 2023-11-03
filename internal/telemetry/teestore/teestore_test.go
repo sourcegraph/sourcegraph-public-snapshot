@@ -275,6 +275,72 @@ func TestToEventLogs(t *testing.T) {
   }
 ]`),
 		},
+		{
+			name: "simple event with trace",
+			events: []*telemetrygatewayv1.Event{{
+				Id:        "1",
+				Timestamp: timestamppb.New(time.Date(2022, 11, 2, 1, 0, 0, 0, time.UTC)),
+				Feature:   "CodeSearch",
+				Action:    "Search",
+				Interaction: &telemetrygatewayv1.EventInteraction{
+					TraceId: pointers.Ptr("01020304050607080102040810203040"),
+				},
+				Source: &telemetrygatewayv1.EventSource{
+					Client: &telemetrygatewayv1.EventSource_Client{
+						Name:    "VSCODE",
+						Version: pointers.Ptr("1.2.3"),
+					},
+					Server: &telemetrygatewayv1.EventSource_Server{
+						Version: "dev",
+					},
+				},
+				Parameters: &telemetrygatewayv1.EventParameters{
+					Metadata: map[string]int64{"public": 2},
+					PrivateMetadata: &structpb.Struct{Fields: map[string]*structpb.Value{
+						"private": structpb.NewStringValue("sensitive-data"),
+					}},
+					BillingMetadata: &telemetrygatewayv1.EventBillingMetadata{
+						Product:  "product",
+						Category: "category",
+					},
+				},
+				User: &telemetrygatewayv1.EventUser{
+					UserId:          pointers.Ptr(int64(1234)),
+					AnonymousUserId: pointers.Ptr("anonymous"),
+				},
+			}},
+			expectEventLogs: autogold.Expect(`[
+  {
+    "ID": 0,
+    "Name": "CodeSearch.Search",
+    "URL": "",
+    "UserID": 1234,
+    "AnonymousUserID": "anonymous",
+    "Argument": {
+      "private": "sensitive-data",
+      "telemetry.privateMetadata.exportable": false
+    },
+    "PublicArgument": {
+      "interaction.traceID": "01020304050607080102040810203040",
+      "public": 2,
+      "telemetry.event.exportable": true
+    },
+    "Source": "VSCODE",
+    "Version": "dev",
+    "Timestamp": "2022-11-02T01:00:00Z",
+    "EvaluatedFlagSet": {},
+    "CohortID": null,
+    "FirstSourceURL": null,
+    "LastSourceURL": null,
+    "Referrer": null,
+    "DeviceID": null,
+    "InsertID": null,
+    "Client": "VSCODE:1.2.3",
+    "BillingProductCategory": "category",
+    "BillingEventID": null
+  }
+]`),
+		},
 	}
 
 	for _, tc := range testCases {
