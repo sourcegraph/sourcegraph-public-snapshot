@@ -337,4 +337,5 @@ exports_files([
     # Used for when copy_to_directory might reference an empty filegroup
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
+    ".swcrc",
 ])
