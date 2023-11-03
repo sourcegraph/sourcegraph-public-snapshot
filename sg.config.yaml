@@ -400,7 +400,7 @@ commands:
       pnpm run generate
     env:
       WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
