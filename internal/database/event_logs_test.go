@@ -24,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1445,6 +1447,12 @@ func TestEventLogs_ListAll(t *testing.T) {
 		},
 	}
 
+	// Run all the inserts under a mock trace so we can test trace data being
+	// attached
+	tracetest.ConfigureStaticTracerProvider(t)
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, t.Name())
+
 	for _, event := range events {
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
 			t.Fatal(err)
@@ -1478,6 +1486,18 @@ func TestEventLogs_ListAll(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, have, 1)
 		assert.Equal(t, uint32(3), have[0].UserID)
+	})
+
+	t.Run("all events have trace context", func(t *testing.T) {
+		got, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{})
+		require.NoError(t, err)
+		assert.Len(t, got, len(events))
+		for _, e := range got {
+			args := make(map[string]any)
+			require.NoError(t, json.Unmarshal(e.PublicArgument, &args))
+			assert.NotEmpty(t, args["interaction.trace_id"])
+			assert.Equal(t, tr.SpanContext().TraceID().String(), args["interaction.trace_id"])
+		}
 	})
 }
 
