@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
+import classNames from 'classnames'
 import { toLower, upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
@@ -14,13 +15,15 @@ import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionIt
 // TODO: Switch mdi icon
 import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
+import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable, Text } from '@sourcegraph/wildcard'
 
 import { type ExternalLinkFields, ExternalServiceKind, type RepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../RepoHeader'
+
+import styles from './actions.module.scss'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
@@ -171,8 +174,12 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     return (
         <Tooltip content={descriptiveText}>
-            <RepoHeaderActionAnchor {...commonProps}>
+            <RepoHeaderActionAnchor
+                {...commonProps}
+                className={classNames(commonProps.className, 'd-flex justify-content-center align-items-center')}
+            >
                 <Icon as={exportIcon} aria-hidden={true} />
+                <Text className={classNames(styles.repoActionLabel, 'text-muted')}>{displayName}</Text>
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

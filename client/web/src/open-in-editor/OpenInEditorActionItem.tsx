@@ -2,6 +2,7 @@ import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiApplicationEditOutline } from '@mdi/js'
+import classNames from 'classnames'
 import { from } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
@@ -17,6 +18,7 @@ import {
     Position,
     Tooltip,
     useObservable,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../repo/components/RepoHeaderActions'
@@ -92,6 +94,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
         [props.platformContext, userSettingsSubject]
     )
 
+    const shouldShowEditorText = editors?.length === 1
     return editors ? (
         <>
             {editors.map(
@@ -118,6 +121,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                             }}
                             source={props.source}
                             actionType={props.actionType}
+                            shouldShowEditorText={shouldShowEditorText}
                         />
                     )
             )}
@@ -188,7 +192,9 @@ interface EditorItemProps {
     isActive?: boolean
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
+    shouldShowEditorText?: boolean
 }
+
 function EditorItem(props: EditorItemProps): JSX.Element {
     if (props.source === 'actionItemsBar') {
         return (
@@ -211,6 +217,9 @@ function EditorItem(props: EditorItemProps): JSX.Element {
         <Tooltip content={props.tooltip}>
             <RepoHeaderActionAnchor onSelect={props.onClick} className={styles.item}>
                 {props.icon}
+                {props.shouldShowEditorText && (
+                    <Text className={classNames(styles.repoActionLabel, 'text-muted')}>Editor</Text>
+                )}
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

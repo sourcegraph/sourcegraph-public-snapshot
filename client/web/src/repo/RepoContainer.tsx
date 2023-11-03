@@ -37,7 +37,7 @@ import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/sett
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
@@ -503,7 +503,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={2}
+                priority={4}
                 id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -532,6 +532,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                     position="right"
                     priority={110}
                     id="code-intelligence-status"
+                    optionalOnLargeScreen={true}
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
@@ -546,6 +547,15 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                     }
                 </RepoHeaderContributionPortal>
             )}
+
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={2}
+                id="optional-actions"
+                {...repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => <Button>...</Button>}
+            </RepoHeaderContributionPortal>
 
             <Suspense fallback={<LoadingSpinner />}>
                 <Routes>

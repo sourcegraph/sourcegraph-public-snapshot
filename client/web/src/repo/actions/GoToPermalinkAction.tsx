@@ -1,17 +1,39 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiLink } from '@mdi/js'
+import { mdiLink, mdiChevronDown, mdiContentCopy, mdiCheckBold } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
+import classNames from 'classnames'
+import copy from 'copy-to-clipboard'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
-import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Position,
+    Icon,
+    Link,
+    Tooltip,
+    Button,
+    Text,
+    Menu,
+    ButtonGroup,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    screenReaderAnnounce,
+} from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
-import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import {
+    RepoHeaderActionButtonLink,
+    RepoHeaderActionMenuLink,
+    RepoHeaderActionDropdownToggle,
+} from '../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../RepoHeader'
+
+import styles from './actions.module.scss'
 
 interface GoToPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
     /**
@@ -22,7 +44,7 @@ interface GoToPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
     /**
      * The commit SHA for the revision in the current location (URL).
      */
-    commitID: string
+    commitID?: string
 }
 
 /**
@@ -35,7 +57,8 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
     const navigate = useNavigate()
     const location = useLocation()
     const fullURL = location.pathname + location.search + location.hash
-    const permalinkURL = useMemo(() => replaceRevisionInURL(fullURL, commitID), [fullURL, commitID])
+    const permalinkURL = useMemo(() => replaceRevisionInURL(fullURL, commitID || ''), [fullURL, commitID])
+    const [copied, setCopied] = useState<boolean>(false)
 
     useEffect(() => {
         // Trigger the user presses 'y'.
@@ -57,10 +80,6 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
         return () => subscription.unsubscribe()
     }, [navigate, permalinkURL])
 
-    if (revision === commitID) {
-        return null // already at the permalink destination
-    }
-
     const onClick = (): void => {
         telemetryService.log('PermalinkClicked', { repoName, commitID })
     }
@@ -74,11 +93,62 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
         )
     }
 
+    const copyPermalink = (event: React.MouseEvent<HTMLButtonElement>): void => {
+        event.preventDefault()
+        telemetryService.log('CopyFilePath')
+        copy(permalinkURL)
+        setCopied(true)
+        screenReaderAnnounce('Path copied to clipboard')
+
+        setTimeout(() => {
+            setCopied(false)
+        }, 1000)
+    }
+
+    const copyLinkLabel = copied ? 'Copied!' : 'Copy Link'
+    const copyLinkIcon = copied ? mdiCheckBold : mdiContentCopy
+    const isRevisionTheSameAsCommitID = revision === commitID
+    console.log({ revision, commitID })
+
     return (
         <Tooltip content="Permalink (with full Git commit SHA)">
-            <RepoHeaderActionButtonLink aria-label="Permalink" file={false} to={permalinkURL} onSelect={onClick}>
+            {/* <RepoHeaderActionDropdownToggle aria-label="Permalink"> */}
+            <Menu>
+                <ButtonGroup>
+                    <Button className={classNames('border', styles.permalinkBtn)} onClick={copyPermalink}>
+                        <Icon
+                            aria-hidden={true}
+                            svgPath={copyLinkIcon}
+                            class={classNames(styles.copyIcon, {
+                                [styles.checkIcon]: copied,
+                            })}
+                        />
+                        <Text className={classNames(styles.repoActionLabel, 'text-muted ml-0')}>{copyLinkLabel}</Text>
+                    </Button>
+                    {!isRevisionTheSameAsCommitID && (
+                        <MenuButton variant="secondary" className={styles.chevronBtn}>
+                            <Icon
+                                className={styles.chevronBtnIcon}
+                                svgPath={mdiChevronDown}
+                                inline={false}
+                                aria-hidden={true}
+                            />
+                            <VisuallyHidden>Actions</VisuallyHidden>
+                        </MenuButton>
+                    )}
+                    {!isRevisionTheSameAsCommitID && (
+                        <MenuList position={Position.bottomEnd}>
+                            <MenuItem onSelect={copyPermalink} className={styles.dropdownItem}>
+                                <Text>Copy permalink</Text>
+                            </MenuItem>
+                        </MenuList>
+                    )}
+                </ButtonGroup>
+            </Menu>
+            {/* </RepoHeaderActionDropdownToggle> */}
+            {/* <RepoHeaderActionButtonLink aria-label="Permalink" file={false} to={permalinkURL} onSelect={onClick}>
                 <Icon aria-hidden={true} svgPath={mdiLink} />
-            </RepoHeaderActionButtonLink>
+            </RepoHeaderActionButtonLink> */}
         </Tooltip>
     )
 }

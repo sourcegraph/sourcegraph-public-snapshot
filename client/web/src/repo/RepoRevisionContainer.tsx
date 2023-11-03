@@ -217,7 +217,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                         )
                 )}
             </Routes>
-            {resolvedRevision && !isPackage && (
+            {!isPackage && (
                 <RepoHeaderContributionPortal
                     id="go-to-permalink"
                     priority={3}
@@ -229,7 +229,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                             key="go-to-permalink"
                             telemetryService={props.telemetryService}
                             revision={props.revision}
-                            commitID={resolvedRevision.commitID}
+                            commitID={resolvedRevision?.commitID}
                             {...context}
                         />
                     )}

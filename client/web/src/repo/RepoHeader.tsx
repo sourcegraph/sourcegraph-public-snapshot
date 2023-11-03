@@ -80,6 +80,9 @@ export interface RepoHeaderContribution {
      * Use `actionType` to determine how to render the component.
      */
     children: (context: RepoHeaderContext) => JSX.Element | null
+
+    optionalOnLargeScreen?: boolean
+    excludeInSmallScreen?: boolean
 }
 
 /**
@@ -217,11 +220,13 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             >
                 {isLarge ? (
                     <ul className={classNames('navbar-nav', styles.actionList)}>
-                        {rightActions.map((a, index) => (
-                            <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
-                                {a.element}
-                            </li>
-                        ))}
+                        {rightActions.map((a, index) =>
+                            a.optionalOnLargeScreen ? null : (
+                                <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
+                                    {a.element}
+                                </li>
+                            )
+                        )}
                     </ul>
                 ) : (
                     <ul className="navbar-nav">
