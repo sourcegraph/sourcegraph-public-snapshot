@@ -103,9 +103,15 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 				for k, v := range md {
 					mdPayload[k] = v
 				}
+
 				// Attach a simple indicator to denote if this event will
-				// be exported.
+				// be exported, since it was recorded in the new telemetry sytem.
 				mdPayload["telemetry.event.exportable"] = true
+
+				// Attach interaction context, if there is any.
+				if interaction := e.GetInteraction(); interaction != nil {
+					mdPayload["interaction.traceID"] = interaction.GetTraceId()
+				}
 
 				data, err := json.Marshal(mdPayload)
 				if err != nil {
