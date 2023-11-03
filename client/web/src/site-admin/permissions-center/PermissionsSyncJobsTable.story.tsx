@@ -11,6 +11,7 @@ import {
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobState,
 } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -89,7 +90,10 @@ export const SixSyncJobsFound: Story = () => (
                     ])
                 }
             >
-                <PermissionsSyncJobsTable telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <PermissionsSyncJobsTable
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MockedTestProvider>
         )}
     </WebStory>

@@ -4,6 +4,7 @@ import { mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -49,14 +50,18 @@ import styles from './RepoSettingsPermissionsPage.module.scss'
 
 type IUser = INode['user']
 
-export interface RepoSettingsPermissionsPageProps extends TelemetryProps {
+export interface RepoSettingsPermissionsPageProps extends TelemetryProps, TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({ repo, telemetryService }) => {
+export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({
+    repo,
+    telemetryService,
+    telemetryRecorder,
+}) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
@@ -170,7 +175,12 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
-                <PermissionsSyncJobsTable telemetryService={telemetryService} minimal={true} repoID={repo.id} />
+                <PermissionsSyncJobsTable
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                    minimal={true}
+                    repoID={repo.id}
+                />
             </Container>
             <PageHeader
                 headingElement="h2"
