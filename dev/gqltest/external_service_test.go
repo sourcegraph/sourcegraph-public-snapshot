@@ -175,18 +175,18 @@ func TestExternalService_Perforce(t *testing.T) {
 		wantBlob   string
 	}{
 		{
-			name:       "git p4",
+			name:       "p4 fusion",
 			depot:      "test-perms",
-			useFusion:  false,
+			useFusion:  true,
 			blobPath:   "README.md",
 			headBranch: "master",
 			wantBlob: `This depot is used to test user and group permissions.
 `,
 		},
 		{
-			name:       "p4 fusion",
+			name:       "git p4",
 			depot:      "integration-test-depot",
-			useFusion:  true,
+			useFusion:  false,
 			blobPath:   "path.txt",
 			headBranch: "main",
 			wantBlob: `./
