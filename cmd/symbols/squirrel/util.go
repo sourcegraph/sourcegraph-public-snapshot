@@ -246,7 +246,10 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 	}
 
-	langName, ok := extToLang[ext]
+	// It is not uncommon to have files with upper-case extensions
+	// like .C, .H, .CPP etc., especially for code developed on
+	// case-insensitive filesystems.
+	langName, ok := extToLang[strings.ToLower(ext)]
 	if !ok {
 		return nil, unrecognizedFileExtensionError
 	}
