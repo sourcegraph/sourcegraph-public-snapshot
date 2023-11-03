@@ -82,6 +82,7 @@ go_library(
         "git_revision.go",
         "git_tree.go",
         "git_tree_entry.go",
+        "git_tree_history.go",
         "git_tree_submodule.go",
         "githubapps.go",
         "gitserver.go",
