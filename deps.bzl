@@ -9157,8 +9157,8 @@ def go_dependencies():
         name = "org_golang_google_grpc",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/grpc",
-        sum = "h1:kfzNeI/klCGD2YPMUlaGNT3pxvYfga7smW3Vth8Zsiw=",
-        version = "v1.57.0",
+        sum = "h1:upNTNqv0ES+2ZOOqACwVtS3Il8M12/+Hz41RCPzAjQg=",
+        version = "v1.57.1",
     )
 
     go_repository(
@@ -9173,8 +9173,8 @@ def go_dependencies():
         name = "org_golang_x_crypto",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/crypto",
-        sum = "h1:tFM/ta59kqch6LlvYnPa0yx5a83cL2nHflFhYKvv9Yk=",
-        version = "v0.12.0",
+        sum = "h1:wBqGXzWJW6m1XrIKlAH0Hs1JJ7+9KBwnIO8v66Q9cHc=",
+        version = "v0.14.0",
     )
     go_repository(
         name = "org_golang_x_exp",
@@ -9215,8 +9215,8 @@ def go_dependencies():
         name = "org_golang_x_net",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/net",
-        sum = "h1:BONx9s002vGdD9umnlX1Po8vOZmrgH34qlHcD1MfK14=",
-        version = "v0.14.0",
+        sum = "h1:ugBLEUaxABaB5AJqW9enI0ACdci2RUd4eP51NTBvuJ8=",
+        version = "v0.15.0",
     )
     go_repository(
         name = "org_golang_x_oauth2",
@@ -9244,8 +9244,8 @@ def go_dependencies():
         name = "org_golang_x_term",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/term",
-        sum = "h1:F9tnn/DA/Im8nCwm+fX+1/eBwi4qFjRT++MhtVC4ZX0=",
-        version = "v0.11.0",
+        sum = "h1:/ZfYdc3zq+q02Rv9vGqTeSItdzZTSNDmfTi0mBAuidU=",
+        version = "v0.12.0",
     )
     go_repository(
         name = "org_golang_x_text",
