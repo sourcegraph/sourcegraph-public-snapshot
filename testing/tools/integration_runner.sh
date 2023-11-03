@@ -88,11 +88,6 @@ function _run_server_image() {
   # shellcheck disable=SC2124
   docker_args="${@:6}"
 
-  local guid
-  local uid
-  uid="$(id -u)"
-  gid="$(id -g)"
-
   echo "--- Loading server image"
   echo "Loading $image_tarball in Docker"
   "$image_tarball" # this is a shell script
@@ -106,16 +101,12 @@ function _run_server_image() {
   echo "Allow single docker image code insights: $ALLOW_SINGLE_DOCKER_CODE_INSIGHTS"
   echo "GRPC Feature flag: $SG_FEATURE_FLAG_GRPC"
 
-  mkdir -p "$data/config"
-  mkdir -p "$data/data"
-
   # shellcheck disable=SC2086
   docker run $docker_args \
     -d \
     --name "$container_name" \
     --publish "$server_port":7080 \
     --platform linux/amd64 \
-    -u "$uid:$gid" \
     -e BAZEL_SKIP_OOB_INFER_VERSION=true \
     -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="$ALLOW_SINGLE_DOCKER_CODE_INSIGHTS" \
     -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
