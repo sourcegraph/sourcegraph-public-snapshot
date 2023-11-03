@@ -32,7 +32,9 @@ build --test_env=BUILDKITE
 # We have to use the `--define` flag here instead of `--test_env` because
 # the mocha tests target is the build target and it's tested with `build_test`.
 build --define=E2E_HEADLESS=false
-build --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
+# if we set this to localhost, chrome will refuse to conenct since local host is in its HTTP Strict Transport Security
+# by setting the loopback address we get passed that
+build --define=E2E_SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
 build --define=DISPLAY=:99
 
 # Provides git commit, branch information to build targets like Percy via status file.
