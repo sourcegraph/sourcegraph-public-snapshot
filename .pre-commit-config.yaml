@@ -1,4 +1,4 @@
-exclude: (^.*\.snap$)|(^internal/database/.*\.json)|(^migrations/[^/]+/squashed\.sql)
+exclude: (^.*\.snap$)|(^internal/database/.*\.json)|(^internal/database/.*\.md)|(^migrations/[^/]+/squashed\.sql)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
