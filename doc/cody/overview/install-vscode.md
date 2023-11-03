@@ -98,10 +98,11 @@ The Cody extension by Sourcegraph enhances your coding experience in VS Code by 
 Follow these steps to install the Cody AI extension for VS Code:
 
 - Open VS Code editor on your local machine
-- Click the "Extensions" icon in the Activity Bar on the side of VS Code, or use the keyboard shortcut `Cmd+Shift+X` (macOS) or `Ctrl+Shift+X` (Windows/Linux)
-- Type "Cody AI" in the search bar and press "Enter"
-- Click on the "Install" button next to the "Cody AI" by Sourcegraph
-- After installing the extension, you may be prompted to restart VS Code to activate the extension
+- Click the **Extensions** icon in the Activity Bar on the side of VS Code, or use the keyboard shortcut `Cmd+Shift+X` (macOS) or `Ctrl+Shift+X` (Windows/Linux)
+- Type **Cody AI** in the search bar and click the **Install** button
+- After installing, you may be prompted to reload VS Code to activate the extension
+
+![install-vscode-extension](https://storage.googleapis.com/sourcegraph-assets/Docs/install-cody-vscode.png)
 
 Alternatively, you can also [download and install the extension from the VS Code Marketplace][cody-vscode-marketplace] directly.
 
@@ -109,20 +110,33 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Clicking it prompts you to start with codehosts like GitHub, GitLab, and your Google login. This allows Cody to access your Sourcegraph.com account.
 
-![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-sign-in.png)
+![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-signin-vscode.png)
 
-You can also connect with your Sourcegraph Enterprise Instance.
+You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign in to Enterprise Instance** at the bottom of the Cody panel, and it connects to your enterprise environment.
 
 ## Verifying the installation
 
-Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected:
+Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected, let's create an autocomplete suggestion.
 
-- Open a file in a supported programming language like JavaScript, Python, Go, etc.
-- As you start typing, Cody should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
+Cody provides intelligent code suggestions and context-aware autocompletions for numerous programming languages like JavaScript, Python, TypeScript, Go, etc.
+
+- Create a new file in VS Code for example, `code.js`
+- Next, type the following algorithm function to sort an array of numbers
+
+```js
+function bubbleSort(array){
+```
+
+- As you start typing, Cody will automatically provide suggestions and context-aware completions based on your coding patterns and the code context
+- These autocomplete suggestions appears as grayed text. To accept the suggestion, press the `Tab` key
+
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-in-action.mp4" type="video/mp4">
+</video>
 
 ## Commands
 
-Cody also supports executing reusable prompts known as **Commands** from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). They allow you to run predefined actions with smart context-fetching anywhere in the editor, like:
+Cody offers quick, ready-to-use [Commands](./../capabilities.md#commands) for common actions to write, describe, fix, and smell code. These allow you to run predefined actions with smart context-fetching anywhere in the editor, like:
 
 - `/ask`: Asks a question
 - `/edit[instruction]`: Edits code
@@ -132,7 +146,15 @@ Cody also supports executing reusable prompts known as **Commands** from within 
 - `/smell`: Find code smells
 - `/reset`: Clears the Cody chat
 
-[Learn more about Commands here →](./../capabilities.md#commands)
+Let's understand how the `/doc` command generates code documentation for a function.
+
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/vscode-doc-command.mp4" type="video/mp4">
+</video>
+
+In addition, to support customization and advanced use cases, you can create Custom Commands tailored to your requirements. Custom Commands are currently supported by Cody for the VS Code extension version 0.8 and above.
+
+[Learn more about Custom Commands here →](./../custom-commands.md)
 
 ## Enable code graph context for context-aware answers (Optional)
 
@@ -146,10 +168,6 @@ Learn more about how to:
 ## Updating the extension
 
 VS Code will typically notify you when updates are available for installed extensions. Follow the prompts to update the Cody AI extension to the latest version.
-
-## More benefits
-
-Read more about [Cody Capabilities](./../capabilities.md) to learn about all the features it provides to boost your development productivity.
 
 ## More resources
 
