@@ -438,8 +438,18 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 	})
 	defer endObservation(1, observation.Args{})
 
+	// Ensure commits exist to provide a better error message
+	_, err = c.ResolveRevisions(ctx, repo, []protocol.RevisionSpecifier{{RevSpec: string(commitA)}, {RevSpec: string(commitB)}})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to lookup revisions for git diff on %s between %s and %s", repo, commitA, commitB)
+	}
+
 	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	return command.Output(ctx)
+	out, err := command.Output(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to run git diff on %s between %s and %s", repo, commitA, commitB)
+	}
+	return out, nil
 }
 
 // ReadDir reads the contents of the named directory at commit.
