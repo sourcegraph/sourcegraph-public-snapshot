@@ -1,5 +1,5 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_test")
 
 rust_binary(
     name = "scip-treesitter-cli",
@@ -49,5 +49,13 @@ rust_test(
         "//docker-images/syntax-highlighter/crates/scip-syntax",
         "//docker-images/syntax-highlighter/crates/scip-treesitter",
         "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+    ],
+)
+
+rust_clippy(
+    name = "scip-treesitter-cli_clippy",
+    testonly = True,
+    deps = [
+        ":scip-treesitter-cli",
     ],
 )

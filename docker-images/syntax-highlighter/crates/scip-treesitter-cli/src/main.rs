@@ -1,12 +1,12 @@
 use clap::{Parser, Subcommand, ValueEnum};
 use indicatif::{ProgressBar, ProgressStyle};
-use protobuf::{CodedInputStream, Message};
+use protobuf::Message;
 use scip::types::Document;
 use scip_syntax::{get_locals, get_symbols};
 use scip_treesitter_languages::parsers::BundledParser;
 
 use anyhow::Result;
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -28,10 +28,10 @@ enum AnalysisMode {
 
 impl AnalysisMode {
     fn locals(self) -> bool {
-        return self == AnalysisMode::Locals || self == AnalysisMode::Full;
+        self == AnalysisMode::Locals || self == AnalysisMode::Full
     }
     fn globals(self) -> bool {
-        return self == AnalysisMode::Globals || self == AnalysisMode::Full;
+        self == AnalysisMode::Globals || self == AnalysisMode::Full
     }
 }
 
@@ -159,7 +159,7 @@ fn index_command(
 
     bar.finish();
 
-    eprintln!("");
+    eprintln!();
 
     eprintln!(
         "Writing index for {} documents into {}",
@@ -193,13 +193,10 @@ fn index_content(contents: Vec<u8>, parser: BundledParser, options: &Options) ->
         }
     }
 
-    return Ok(document);
+    Ok(document)
 }
 
-fn write_message_to_file<P>(
-    path: P,
-    msg: impl protobuf::Message,
-) -> Result<(), Box<dyn std::error::Error>>
+fn write_message_to_file<P>(path: P, msg: impl Message) -> Result<(), Box<dyn std::error::Error>>
 where
     P: AsRef<std::path::Path>,
 {
@@ -213,43 +210,38 @@ where
     Ok(())
 }
 
-fn read_index_from_file(file: PathBuf) -> scip::types::Index {
-    let mut candidate_idx = scip::types::Index::new();
-    let candidate_f = File::open(file).unwrap();
-
-    let mut reader = BufReader::new(candidate_f);
-    let mut cis = CodedInputStream::from_buf_read(&mut reader);
-
-    candidate_idx.merge_from(&mut cis).unwrap();
-    return candidate_idx;
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::read_index_from_file;
     use assert_cmd::cargo::cargo_bin;
     use assert_cmd::prelude::*;
+    use protobuf::{CodedInputStream, Message};
     use std::collections::HashMap;
+    use std::fs::File;
+    use std::io::BufReader;
     use std::process::Command;
     use std::{env::temp_dir, path::PathBuf};
 
     lazy_static::lazy_static! {
         static ref BINARY_LOCATION: PathBuf = {
-            let mut c: PathBuf;
             match std::env::var("SCIP_CLI_LOCATION") {
-                Ok(va) => {
-                    c = {
-                        std::env::current_dir().unwrap().join(va)
-                    }
-                }
-                _ => c = cargo_bin("scip-treesitter-cli")
+                Ok(va) => std::env::current_dir().unwrap().join(va),
+                _ => cargo_bin("scip-treesitter-cli"),
             }
-
-            c
         };
     }
 
     use scip_treesitter::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
+
+    fn read_index_from_file(file: PathBuf) -> scip::types::Index {
+        let mut candidate_idx = scip::types::Index::new();
+        let candidate_f = File::open(file).unwrap();
+
+        let mut reader = BufReader::new(candidate_f);
+        let mut cis = CodedInputStream::from_buf_read(&mut reader);
+
+        candidate_idx.merge_from(&mut cis).unwrap();
+        candidate_idx
+    }
 
     fn snapshot_syntax_document(doc: &scip::types::Document, source: &str) -> String {
         dump_document_with_config(
