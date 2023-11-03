@@ -23,8 +23,10 @@ const config = {
        * Note: Temporary increase from 400kb.
        * Primary cause is due to multiple ongoing migrations that mean we are duplicating similar dependencies.
        * Issue to track: https://github.com/sourcegraph/sourcegraph/issues/37845
+       *
+       * Note: Increased again from 500kb to get backport in.
        */
-      maxSize: '500kb',
+      maxSize: '600kb',
       compression: 'none',
     },
     {
