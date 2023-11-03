@@ -26,12 +26,12 @@ func addHandlers(
 	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
 }
 
-func convertSquirrelErrorToGrpcError(err error) error {
+func convertSquirrelErrorToGrpcError(err error) *status.Status {
 	if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return status.New(codes.InvalidArgument, err.Error())
 	}
 	if errors.Is(err, squirrel.UnsupportedLanguageError) {
-		return status.Error(codes.Unimplemented, err.Error())
+		return status.New(codes.Unimplemented, err.Error())
 	}
 	return nil
 }
@@ -46,8 +46,8 @@ func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss pr
 	ctx := ss.Context()
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
-		if grpcError := convertSquirrelErrorToGrpcError(err); grpcError != nil {
-			return grpcError
+		if grpcStatus := convertSquirrelErrorToGrpcError(err); grpcStatus != nil {
+			return grpcStatus.Err()
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -90,8 +90,8 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 
 	info, err := squirrelService.SymbolInfo(ctx, args)
 	if err != nil {
-		if grpcError := convertSquirrelErrorToGrpcError(err); grpcError != nil {
-			return nil, grpcError
+		if grpcStatus := convertSquirrelErrorToGrpcError(err); grpcStatus != nil {
+			return nil, grpcStatus.Err()
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {
