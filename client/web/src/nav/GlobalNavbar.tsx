@@ -36,9 +36,8 @@ import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useDeveloperMode } from '../search/useDeveloperMode'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
-import { useNavbarQueryState } from '../stores'
+import { useDeveloperSettings, useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName, EventLocation } from '../util/constants'
 
@@ -76,7 +75,6 @@ export interface GlobalNavbarProps
 
 /**
  * Calculates NavLink variant based whether current content fits into container or not.
- *
  * @param containerReference a reference to navbar container
  */
 function useCalculatedNavLinkVariant(
@@ -195,7 +193,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const isLightTheme = useIsLightTheme()
 
-    const [developerMode] = useDeveloperMode()
+    const developerMode = useDeveloperSettings(settings => settings.enabled) || process.env.NODE_ENV === 'development'
 
     return (
         <>

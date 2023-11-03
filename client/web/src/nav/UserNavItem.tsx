@@ -27,8 +27,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
-import { useDeveloperMode } from '../search/useDeveloperMode'
 import { useV2QueryInput } from '../search/useV2QueryInput'
+import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
 
 import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
 
@@ -65,9 +65,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         telemetryService,
     } = props
 
-    const isSourcegraphDev = (authenticatedUser: MinimalAuthenticatedUser): boolean =>
-        authenticatedUser.emails?.some(email => email.verified && email.email?.endsWith('@sourcegraph.com')) ?? false
-
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
 
@@ -90,7 +87,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const organizations = authenticatedUser.organizations.nodes
     const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
     const [v2QueryInputEnabled, setV2QueryInputEnabled] = useV2QueryInput()
-    const [developerMode, toggleDeveloperMode] = useDeveloperMode()
+    const developerMode = useDeveloperSettings(settings => settings.enabled)
 
     const onV2QueryInputChange = useCallback(
         (enabled: boolean) => {
@@ -201,11 +198,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </div>
                             )}
 
-                            {(process.env.NODE_ENV === 'development' || isSourcegraphDev(authenticatedUser)) && (
+                            {process.env.NODE_ENV !== 'development' && isSourcegraphDev(authenticatedUser) && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">Developer mode</div>
-                                        <Toggle value={developerMode} onToggle={toggleDeveloperMode} />
+                                        <Toggle value={developerMode} onToggle={enableDevSettings} />
                                     </div>
                                 </div>
                             )}
