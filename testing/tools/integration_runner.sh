@@ -123,6 +123,17 @@ function _run_server_image() {
     -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
     "$image_name"
 
+  # This is a hack
+  # The process launching the container isn't root, so because the above container essentially runs as root the volumes that get mapped into contain
+  # files own by root. When the container eventually exits, $data contains root files which can't be cleaned up by the user who launched this container
+  # therefore leading to various errors.
+  #
+  # I have tried launch the contaienr with `-u $(id -u):$(id -g)` but that only changes the running user permissions. So when the running process tries
+  # writing to a directory like /run/postgresql, it can't since that is owned by root of the container and the current process doesn't run as that user.
+  #
+  # So for now we register this trap to clean up after this script exits
+  trap "rm -rf $data/*" EXIT
+
   echo "-- Listening at $url"
 }
 
