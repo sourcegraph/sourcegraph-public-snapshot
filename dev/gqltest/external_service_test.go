@@ -179,7 +179,7 @@ func TestExternalService_Perforce(t *testing.T) {
 			depot:      "test-perms",
 			useFusion:  true,
 			blobPath:   "README.md",
-			headBranch: "master",
+			headBranch: "main",
 			wantBlob: `This depot is used to test user and group permissions.
 `,
 		},
@@ -188,7 +188,7 @@ func TestExternalService_Perforce(t *testing.T) {
 			depot:      "integration-test-depot",
 			useFusion:  false,
 			blobPath:   "path.txt",
-			headBranch: "main",
+			headBranch: "master",
 			wantBlob: `./
 `,
 		},

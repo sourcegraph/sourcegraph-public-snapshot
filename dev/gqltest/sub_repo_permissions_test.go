@@ -34,7 +34,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 	// flaky test
 	t.Run("can read README.md", func(t *testing.T) {
-		blob, err := userClient.GitBlob(repoName, "master", "README.md")
+		blob, err := userClient.GitBlob(repoName, "main", "README.md")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -47,7 +47,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 	t.Run("cannot read hack.sh", func(t *testing.T) {
 		// Should not be able to read hack.sh
-		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
+		blob, err := userClient.GitBlob(repoName, "main", "Security/hack.sh")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -63,7 +63,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 	// flaky test
 	t.Run("file list excludes excluded files", func(t *testing.T) {
-		files, err := userClient.GitListFilenames(repoName, "master")
+		files, err := userClient.GitListFilenames(repoName, "main")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +102,7 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 		// is repeated 10 times and the test runs for ~50 seconds in total to increase
 		// the probability of symbols being indexed.
 		for i := 0; i < 10; i++ {
-			symbols, err := userClient.GitGetCommitSymbols(repoName, "master")
+			symbols, err := userClient.GitGetCommitSymbols(repoName, "main")
 			if err != nil {
 				t.Fatal(err)
 			}
