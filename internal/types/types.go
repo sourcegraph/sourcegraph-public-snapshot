@@ -855,6 +855,7 @@ type User struct {
 	TosAccepted           bool
 	CompletedPostSignup   bool
 	SCIMControlled        bool
+	CodyProEnabledAt      *time.Time
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
