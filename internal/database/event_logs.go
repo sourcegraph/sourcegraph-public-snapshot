@@ -261,10 +261,21 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 				true,
 				EventLogsSourcegraphOperatorKey,
 			)
-			publicArgument = json.RawMessage(result)
 			if err != nil {
 				return errors.Wrap(err, `edit "public_argument" for Sourcegraph operator`)
 			}
+			publicArgument = json.RawMessage(result)
+		}
+		if tr := trace.FromContext(ctx); tr.SpanContext().IsValid() {
+			result, err := jsonc.Edit(
+				string(publicArgument),
+				tr.SpanContext().TraceID().String(),
+				"interaction.trace_id",
+			)
+			if err != nil {
+				return errors.Wrap(err, `edit "interaction.trace_id" for trace context`)
+			}
+			publicArgument = json.RawMessage(result)
 		}
 
 		rowValues <- []any{
