@@ -35,9 +35,6 @@ function ensure_clean_slate() {
     echo "Found 0 images."
   fi
 
-  echo "Removing existing volumes, if any"
-  # docker volume prune -f
-
   echo "--- done"
 }
 
@@ -85,13 +82,11 @@ function _run_server_image() {
   url="$3"
   local server_port
   server_port="$4"
-  local data
-  data="$5"
   local container_name
-  container_name="$6"
+  container_name="$5"
   local docker_args
   # shellcheck disable=SC2124
-  docker_args="${@:7}"
+  docker_args="${@:6}"
 
   echo "--- Loading server image"
   echo "Loading $image_tarball in Docker"
@@ -99,7 +94,6 @@ function _run_server_image() {
 
   echo "-- Starting $image_name"
   echo "Listening at: $url"
-  echo "Data and config volume bounds: $data"
   echo "Database startup timeout: $DB_STARTUP_TIMEOUT"
   echo "License key generator present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"
   echo "License key present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"
@@ -118,8 +112,6 @@ function _run_server_image() {
     -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
     -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
     -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
-    --volume "$data/config:/etc/sourcegraph" \
-    --volume "$data/data:/var/opt/sourcegraph" \
     "$image_name"
 
   echo "-- Listening at $url"
@@ -168,15 +160,11 @@ function run_server_image() {
 
   local container_name
   container_name=$(generate_unique_container_name "server-integration")
-  local data
-  data="tmp_run_server_image_$container_name"
-  mkdir "$data"
-  data="$(pwd)/$data"
 
   # we want those to be expanded right now, on purpose.
   # shellcheck disable=SC2064
   trap "cleanup $image_name $container_name" EXIT
-  _run_server_image "$image_tarball" "$image_name" "$url" "$server_port" "$data" "$container_name"
+  _run_server_image "$image_tarball" "$image_name" "$url" "$server_port" "$container_name"
 
   wait_until_container_ready "$container_name" "$url" 60
 }

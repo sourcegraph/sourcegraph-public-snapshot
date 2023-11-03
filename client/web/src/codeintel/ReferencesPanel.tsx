@@ -281,6 +281,8 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
 const SHOW_SPINNER_DELAY_MS = 100
 
+const empty: any[] = []
+
 const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
@@ -350,10 +352,10 @@ const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = useMemo(() => data?.references.nodes ?? [], [data])
-    const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
-    const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
-    const prototypes = useMemo(() => data?.prototypes.nodes ?? [], [data])
+    const references = data?.references.nodes ?? empty
+    const definitions = data?.definitions.nodes ?? empty
+    const implementations = data?.implementations.nodes ?? empty
+    const prototypes = data?.prototypes.nodes ?? empty
 
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
@@ -922,7 +924,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         highlighted = group.path.split(filter)
     }
 
-    const { repo, commitID, file } = useMemo(() => group.locations[0], [group])
+    const { repo, commitID, file } = group.locations[0]
     const ranges = useMemo(
         () =>
             group.locations.map(location => ({

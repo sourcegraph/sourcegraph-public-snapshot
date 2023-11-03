@@ -25,7 +25,6 @@ ts_project(
         "utils/initEndToEndTest.ts",
     ],
     tsconfig = ":tsconfig",
-    use_preset_env = False,
     deps = [
         "//:node_modules/@types/mocha",
         "//:node_modules/@types/mockdate",
@@ -44,7 +43,6 @@ ts_project(
         "frontend-platform/theme-switcher.test.ts",
     ],
     tsconfig = ":tsconfig",
-    use_preset_env = False,
     deps = [
         ":end-to-end",
         "//:node_modules/@types/lodash",

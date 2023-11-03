@@ -28,7 +28,7 @@ import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
 import { NotepadContainer } from '../../../search/Notepad'
 import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
-import { useDeveloperSettings } from '../../../stores'
+import { isSourcegraphDev, useDeveloperSettings } from '../../../stores'
 
 import styles from './LayoutPage.module.scss'
 
@@ -87,7 +87,9 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
-    const showDeveloperDialog = useDeveloperSettings(state => state.showDialog)
+    const showDeveloperDialog =
+        useDeveloperSettings(state => state.showDialog) &&
+        (process.env.NODE_ENV === 'development' || isSourcegraphDev(props.authenticatedUser))
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
     const userHistory = useUserHistory(props.authenticatedUser?.id, isRepositoryRelatedPage)
 

@@ -53,7 +53,7 @@ import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
+import { setQueryStateFromSettings, useDeveloperSettings, useNavbarQueryState } from './stores'
 import { TelemetryRecorderProvider } from './telemetry'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
@@ -136,7 +136,8 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     graphqlClient,
                     temporarySettingsStorage: new TemporarySettingsStorage(
                         graphqlClient,
-                        window.context.isAuthenticatedUser
+                        window.context.isAuthenticatedUser,
+                        process.env.NODE_ENV === 'development' || useDeveloperSettings.getState().enabled
                     ),
                     platformContext,
                 })
