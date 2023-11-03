@@ -281,6 +281,8 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
 const SHOW_SPINNER_DELAY_MS = 100
 
+const empty: any[] = []
+
 const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
@@ -350,10 +352,10 @@ const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = data?.references.nodes ?? []
-    const definitions = data?.definitions.nodes ?? []
-    const implementations = data?.implementations.nodes ?? []
-    const prototypes = data?.prototypes.nodes ?? []
+    const references = data?.references.nodes ?? empty
+    const definitions = data?.definitions.nodes ?? empty
+    const implementations = data?.implementations.nodes ?? empty
+    const prototypes = data?.prototypes.nodes ?? empty
 
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
