@@ -63,8 +63,7 @@ syntect = { git = "https://github.com/sourcegraph/syntect", rev = "7e02c5b4085e6
 tree-sitter = "0.20.9"
 tree-sitter-highlight = "0.20.1"
 
-# Since there is no version tag, we pin the dependency to a specific revision
-scip = "0.3.1"
+scip = "0.3.2"
 protobuf = "3"
 
 
