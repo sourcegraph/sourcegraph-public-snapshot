@@ -95,6 +95,7 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
+	UpgradeToCodyPro(ctx context.Context, id int32) error
 	SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error
 	GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error
@@ -614,6 +615,15 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 		return userNotFoundErr{args: []any{id}}
 	}
 	return nil
+}
+
+// NOTE(naman): THIS IS TEMPORARY FOR DEC GA
+// Upgrade user to cody pro plan
+func (u *userStore) UpgradeToCodyPro(ctx context.Context, id int32) (err error) {
+	// TODO: update usage limits as well
+	query := sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NOW() WHERE id=%d AND cody_pro_enabled_at IS NULL", id)
+
+	return u.Exec(ctx, query)
 }
 
 // Delete performs a soft-delete of the user and all resources associated with this user.
@@ -1307,17 +1317,18 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
 	q := sqlf.Sprintf(`
 SELECT u.id,
-       u.username,
-       u.display_name,
-       u.avatar_url,
-       u.created_at,
-       u.updated_at,
-       u.site_admin,
-       u.passwd IS NOT NULL,
-       u.invalidated_sessions_at,
-       u.tos_accepted,
-       u.completed_post_signup,
-       EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
+	u.username,
+	u.display_name,
+	u.avatar_url,
+	u.created_at,
+	u.updated_at,
+	u.site_admin,
+	u.passwd IS NOT NULL,
+	u.invalidated_sessions_at,
+	u.tos_accepted,
+	u.completed_post_signup,
+	EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled,
+	u.cody_pro_enabled_at
 FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
@@ -1329,7 +1340,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.SCIMControlled, &u.CodyProEnabledAt)
 		if err != nil {
 			return nil, err
 		}
