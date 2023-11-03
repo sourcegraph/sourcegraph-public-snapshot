@@ -1,5 +1,5 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test")
 
 rust_library(
     name = "scip-treesitter-languages",
@@ -37,4 +37,12 @@ rust_test(
     deps = all_crate_deps(
         normal_dev = True,
     ),
+)
+
+rust_clippy(
+    name = "scip-treesitter-languages_clippy",
+    testonly = True,
+    deps = [
+        ":scip-treesitter-languages",
+    ],
 )
