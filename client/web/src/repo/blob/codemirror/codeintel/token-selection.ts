@@ -57,8 +57,15 @@ function shouldApplyFocusStyles(state: EditorState, range: { from: number; to: n
 /**
  * Helper function for hiding the tooltip at the selected token.
  */
-function hideTooltip(view: EditorView): void {
+function hideTokenTooltip(view: EditorView): void {
     view.dispatch({ effects: setTooltipSource.of(null) })
+}
+
+/**
+ * Helper function for showing a tooltip at the selected token.
+ */
+function showTokenTooltip(view: EditorView, source: TooltipSource): void {
+    view.dispatch({ effects: setTooltipSource.of(source) })
 }
 
 /**
@@ -112,7 +119,7 @@ const selectedToken = StateField.define<{
          */
         showTooltip.computeN([self], state => {
             const field = state.field(self)
-            return field?.tooltipSource ? [{ range: field.range, source: field.tooltipSource }] : []
+            return field?.tooltipSource ? [field.tooltipSource] : []
         }),
 
         /**
@@ -205,28 +212,27 @@ const selectedToken = StateField.define<{
                     }
 
                     if (selected.tooltipSource) {
-                        hideTooltip(view)
+                        hideTokenTooltip(view)
                         return true
                     }
 
                     const tooltip$ = from(getHoverTooltip(view.state, selected.range.from))
-                    view.dispatch({
-                        effects: setTooltipSource.of(
-                            tooltip$.pipe(
-                                timeoutWith(
-                                    50,
-                                    concat(of(new LoadingTooltip(selected.range.from, selected.range.to)), tooltip$)
-                                )
+                    showTokenTooltip(
+                        view,
+                        tooltip$.pipe(
+                            timeoutWith(
+                                50,
+                                concat(of(new LoadingTooltip(selected.range.from, selected.range.to)), tooltip$)
                             )
-                        ),
-                    })
+                        )
+                    )
                     return true
                 },
             },
             {
                 key: 'Escape',
                 run(view) {
-                    view.dispatch({ effects: setTooltipSource.of(null) })
+                    hideTokenTooltip(view)
                     return true
                 },
             },
@@ -239,9 +245,9 @@ const selectedToken = StateField.define<{
                         return false
                     }
 
-                    view.dispatch({ effects: setTooltipSource.of(new LoadingTooltip(selected.from, selected.to)) })
+                    showTokenTooltip(view, new LoadingTooltip(selected.from, selected.to))
                     goToDefinitionAt(view, selected.from).finally(() => {
-                        hideTooltip(view)
+                        hideTokenTooltip(view)
                     })
                     return true
                 },
@@ -254,9 +260,9 @@ const selectedToken = StateField.define<{
                         return false
                     }
 
-                    view.dispatch({ effects: setTooltipSource.of(new LoadingTooltip(selected.from, selected.to)) })
+                    showTokenTooltip(view, new LoadingTooltip(selected.from, selected.to))
                     goToDefinitionAt(view, selected.from, { newWindow: true }).finally(() => {
-                        hideTooltip(view)
+                        hideTokenTooltip(view)
                     })
                     return true
                 },

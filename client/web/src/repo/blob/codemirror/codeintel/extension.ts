@@ -61,6 +61,9 @@ const tooltipStyles = EditorView.theme({
     '.cm-tooltip.cm-tooltip-above.tmp-tooltip .cm-tooltip-arrow:after': {
         borderTopColor: 'var(--dropdown-bg)',
     },
+    '.cm-tooltip.sg-code-intel-hovercard': {
+        border: 'unset',
+    },
 })
 
 /**
@@ -76,12 +79,12 @@ export function createCodeIntelExtension(config: CodeIntelExtensionConfig): Exte
     return [
         codeIntelAPI.of(new CodeIntelAPIAdapter(config.api)),
         pinConfig.of(config.pin),
+        goToDefinitionOnClick(),
         pinnedLocationToRange,
         selectedTokenExtension,
         hoverExtension,
         isModifierKeyHeld,
         keyboardShortcutsExtension(config.navigate),
-        goToDefinitionOnClick(),
         tooltipStyles,
     ]
 }

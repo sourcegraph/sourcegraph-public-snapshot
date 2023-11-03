@@ -1,11 +1,15 @@
 import { type Extension, Facet, Range as CodeMirrorRange } from '@codemirror/state'
-import { Decoration, EditorView } from '@codemirror/view'
+import { Decoration, EditorView, Tooltip } from '@codemirror/view'
 import { from } from 'rxjs'
 
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+
+import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from '../utils'
 
 import { findOccurrenceRangeAt, goToDefinitionAt, hasDefinitionAt } from './api'
 import { codeIntelDecorations } from './decorations'
+import { showTooltip } from './tooltips'
 import { UpdateableValue, createLoaderExtension, isModifierKey } from './utils'
 
 interface Range {
@@ -76,6 +80,8 @@ export const showHasDefinition = Facet.define<Range>({
     ],
 })
 
+const [tooltip, setTooltip] = createUpdateableField<Tooltip | null>(null, field => showTooltip.from(field))
+
 // Heuristic to approximate a click event between two mouse events (for
 // example, mousedown and mouseup). The heuristic returns true based on the
 // distance between the coordinates (clientY/clientX) of the two events.
@@ -120,8 +126,10 @@ function goToDefinitionOnMouseEvent(view: EditorView, event: MouseEvent, options
         return
     }
 
-    // TODO: show loading toolip
-    goToDefinitionAt(view, occurrence.from)
+    setTooltip(view, new LoadingTooltip(occurrence.from, occurrence.to))
+    goToDefinitionAt(view, occurrence.from).finally(() => {
+        setTooltip(view, null)
+    })
 }
 
 /**
@@ -130,46 +138,49 @@ function goToDefinitionOnMouseEvent(view: EditorView, event: MouseEvent, options
 export function goToDefinitionOnClick(): Extension {
     const events = new MouseEvents()
 
-    return EditorView.domEventHandlers({
-        // Approximate `click` with `mouseup` because `click` does not get
-        // triggered in the scenario when the user holds down the meta-key,
-        // waits for the underline decoration to get updated in the dom and
-        // then clicks. We approximate the click handler by detecting
-        // mouseup events that fire close to the last mousedown event.
-        mouseup(event, view) {
-            if (event.button !== MOUSE_MAIN_BUTTON) {
-                return
-            }
-            if (events.longClickTimeout) {
-                // Cancel the scheduled long-click handler.
-                clearTimeout(events.longClickTimeout)
-            }
-            if (events.didLongClick) {
-                // Cancel this mouseup event because a long-click was triggered.
-                events.didLongClick = false
-                return
-            }
-            if (events.isMouseupClick(event)) {
-                goToDefinitionOnMouseEvent(view, event)
-            }
-        },
-        mousemove(event, view) {
-            events.mousemove = event
-        },
-        mousedown(event, view) {
-            if (event.button !== MOUSE_MAIN_BUTTON) {
-                return
-            }
-            events.mousedown = events.mousemove = event
-            events.longClickTimeout = setTimeout(() => {
-                if (!events.isLongClick()) {
-                    // Cancel this long-click because the mouse has moved
-                    // too far of a distance.
+    return [
+        tooltip,
+        EditorView.domEventHandlers({
+            // Approximate `click` with `mouseup` because `click` does not get
+            // triggered in the scenario when the user holds down the meta-key,
+            // waits for the underline decoration to get updated in the dom and
+            // then clicks. We approximate the click handler by detecting
+            // mouseup events that fire close to the last mousedown event.
+            mouseup(event, view) {
+                if (event.button !== MOUSE_MAIN_BUTTON) {
                     return
                 }
-                events.didLongClick = true // Cancel the next mouseup event.
-                goToDefinitionOnMouseEvent(view, event, { isLongClick: true })
-            }, LONG_CLICK_DURATION)
-        },
-    })
+                if (events.longClickTimeout) {
+                    // Cancel the scheduled long-click handler.
+                    clearTimeout(events.longClickTimeout)
+                }
+                if (events.didLongClick) {
+                    // Cancel this mouseup event because a long-click was triggered.
+                    events.didLongClick = false
+                    return
+                }
+                if (events.isMouseupClick(event)) {
+                    goToDefinitionOnMouseEvent(view, event)
+                }
+            },
+            mousemove(event, view) {
+                events.mousemove = event
+            },
+            mousedown(event, view) {
+                if (event.button !== MOUSE_MAIN_BUTTON) {
+                    return
+                }
+                events.mousedown = events.mousemove = event
+                events.longClickTimeout = setTimeout(() => {
+                    if (!events.isLongClick()) {
+                        // Cancel this long-click because the mouse has moved
+                        // too far of a distance.
+                        return
+                    }
+                    events.didLongClick = true // Cancel the next mouseup event.
+                    goToDefinitionOnMouseEvent(view, event, { isLongClick: true })
+                }, LONG_CLICK_DURATION)
+            },
+        }),
+    ]
 }

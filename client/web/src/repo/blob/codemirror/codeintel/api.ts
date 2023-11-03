@@ -14,7 +14,7 @@ import {
     hasFindImplementationsSupport,
 } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
-import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { parseRepoURI, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import { WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
@@ -48,26 +48,41 @@ export interface Location {
 }
 
 type Definition =
-    | { type: 'at-definition' | 'single' | 'multiple'; readonly destination: Location; readonly from: Location }
-    | { type: 'none' }
+    | {
+          type: 'at-definition' | 'single' | 'multiple'
+          readonly destination: Location
+          readonly from: Location
+          occurrence: Occurrence
+      }
+    | { type: 'none'; occurrence: Occurrence }
 
 interface GoToDefinitionOptions {
     newWindow: boolean
 }
 
+interface DocumentInfo {
+    repoName: string
+    filePath: string
+    commitID: string
+    revision?: string
+}
+
 export interface CodeIntelAPIConfig {
     api: CodeIntelAPI
-    documentInfo: {
-        repoName: string
-        filePath: string
-        commitID: string
-        revision?: string
-    }
+    documentInfo: DocumentInfo
     mode: string
     createTooltipView: (options: TooltipViewOptions) => TooltipView
     goToDefinition(view: EditorView, definition: Definition, options?: GoToDefinitionOptions): void
+    openReferences(view: EditorView, documentInfo: DocumentInfo, occurrence: Occurrence): void
+    openImplementations(view: EditorView, documentInfo: DocumentInfo, occurrence: Occurrence): void
 }
 
+/**
+ * Wrapper around the code intel API. It translates CodeMirror document positions to occurrences and adds
+ * a caching layer to speed up subsequent access.
+ * Extensions should access the methods of this class via the corresponding functions exported by this
+ * module, e.g. {@link hasDefinitionAt} or {@link getDocumentHighlights}.
+ */
 export class CodeIntelAPIAdapter {
     private hoverCache = new Map<Occurrence, Promise<(Tooltip & { end: number }) | null>>()
     private documentHighlightCache = new Map<Occurrence, Promise<{ from: number; to: number }[]>>()
@@ -114,7 +129,6 @@ export class CodeIntelAPIAdapter {
     }
 
     public getDefinition(state: EditorState, occurrence: Occurrence): Promise<Definition> {
-        // TODO: Remove syntaxHighlight dependency
         const occurrences = state.facet(syntaxHighlight).occurrences
         const fromCache = this.definitionCache.get(occurrence)
         if (fromCache) {
@@ -155,6 +169,7 @@ export class CodeIntelAPIAdapter {
                                 revision,
                                 range: location.range,
                             },
+                            occurrence,
                         }
                     }
                 }
@@ -162,7 +177,7 @@ export class CodeIntelAPIAdapter {
                     const location = locations[0]
                     const { repoName, filePath, revision } = parseRepoURI(location.uri)
                     if (!(filePath && location.range)) {
-                        return { type: 'none' }
+                        return { type: 'none', occurrence }
                     }
                     return {
                         type: 'single',
@@ -173,16 +188,19 @@ export class CodeIntelAPIAdapter {
                             revision,
                             range: location.range,
                         },
+                        occurrence,
                     }
                 }
-                return locations.length === 0 ? { type: 'none' } : { type: 'multiple', from, destination: from }
+                return locations.length === 0
+                    ? { type: 'none', occurrence }
+                    : { type: 'multiple', from, destination: from, occurrence }
             })
         this.definitionCache.set(occurrence, promise)
 
         return promise
     }
 
-    getDocumentHighlights(state: EditorState, offset: number): Promise<{ from: number; to: number }[]> {
+    public getDocumentHighlights(state: EditorState, offset: number): Promise<{ from: number; to: number }[]> {
         const occurrence = this.findOccurrenceAt(offset, state).occurrence
         if (!occurrence) {
             return Promise.resolve([])
@@ -208,7 +226,7 @@ export class CodeIntelAPIAdapter {
         return promise
     }
 
-    getHoverTooltip(state: EditorState, offset: number): Promise<(Tooltip & { end: number }) | null> {
+    public getHoverTooltip(state: EditorState, offset: number): Promise<(Tooltip & { end: number }) | null> {
         const { occurrence, range } = this.findOccurrenceAt(offset, state)
         if (!occurrence || !range) {
             return Promise.resolve(null)
@@ -250,7 +268,7 @@ export class CodeIntelAPIAdapter {
                               this.config.createTooltipView({
                                   view,
                                   token: occurrence.range.withIncrementedValues(),
-                                  hovercardData: this.getActions(view, occurrence, precise).pipe(
+                                  hovercardData: this.getHoverActions(view, occurrence, precise).pipe(
                                       map(actions => ({
                                           actionsOrError: actions,
                                           hoverOrError: {
@@ -274,7 +292,7 @@ export class CodeIntelAPIAdapter {
         return tooltip
     }
 
-    private getActions(
+    private getHoverActions(
         view: EditorView,
         occurrence: Occurrence,
         isPrecise: boolean
@@ -289,12 +307,6 @@ export class CodeIntelAPIAdapter {
             // it finishes loading.
             startWith({ type: 'initial' as const }),
             map(definition => {
-                const referencesURL = toPrettyBlobURL({
-                    ...this.config.documentInfo,
-                    range: occurrence.range.withIncrementedValues(),
-                    viewState: 'references',
-                })
-
                 const actions: ActionItemAction[] = []
                 if (definition.type === 'none' || definition.type === 'at-definition') {
                     actions.push({
@@ -351,24 +363,23 @@ export class CodeIntelAPIAdapter {
                     action: {
                         id: 'findReferences',
                         title: 'Find references',
-                        command: 'open',
-                        commandArguments: [referencesURL],
+                        command: 'invokeFunction-new',
+                        commandArguments: [
+                            () => this.config.openReferences(view, this.config.documentInfo, occurrence),
+                        ],
                     },
                 })
 
                 if (isPrecise && hasFindImplementationsSupport(this.config.mode)) {
-                    const implementationsURL = toPrettyBlobURL({
-                        ...this.config.documentInfo,
-                        range: occurrence.range.withIncrementedValues(),
-                        viewState: `implementations_${this.config.mode}` as BlobViewState,
-                    })
                     actions.push({
                         active: true,
                         action: {
                             id: 'findImplementations',
                             title: 'Find implementations',
-                            command: 'open',
-                            commandArguments: [implementationsURL],
+                            command: 'invokeFunction-new',
+                            commandArguments: [
+                                () => this.config.openImplementations(view, this.config.documentInfo, occurrence),
+                            ],
                         },
                     })
                 }
@@ -409,7 +420,7 @@ function isPrecise(hover: HoverMerged | null | undefined): boolean {
 /**
  * Facet for registering the code intel API.
  */
-export const codeIntelAPI = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapter>({
+export const codeIntelAPI = Facet.define<CodeIntelAPIAdapter, CodeIntelAPIAdapter | null>({
     combine(values) {
         return values[0] ?? null
     },

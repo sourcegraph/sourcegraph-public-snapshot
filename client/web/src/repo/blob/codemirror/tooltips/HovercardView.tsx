@@ -4,15 +4,10 @@ import { createRoot, type Root } from 'react-dom/client'
 import { combineLatest, Observable, Subject, type Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith, map } from 'rxjs/operators'
 
-import {
-    LineOrPositionOrRange,
-    addLineRangeQueryParameter,
-    isErrorLike,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { LineOrPositionOrRange, isErrorLike } from '@sourcegraph/common'
 
 import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
-import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../../CodeMirrorBlob'
+import { type BlobPropsFacet } from '../../CodeMirrorBlob'
 import { TooltipViewOptions } from '../codeintel/api'
 import { pinConfig, pinnedLocation } from '../codeintel/pin'
 import { blobPropsFacet } from '../index'
@@ -82,7 +77,7 @@ export class HovercardView implements TooltipView {
 
     public destroy(): void {
         this.subscription.unsubscribe()
-        this.root?.unmount()
+        window.requestAnimationFrame(() => this.root?.unmount())
     }
 
     private render(

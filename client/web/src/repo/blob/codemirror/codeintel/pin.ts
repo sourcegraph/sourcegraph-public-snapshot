@@ -39,14 +39,7 @@ export const pinnedRange = Facet.define<{ from: number; to: number } | null, { f
             const range = state.facet(self)
             if (range) {
                 const tooltip$ = from(getHoverTooltip(state, range.from))
-                return [
-                    {
-                        range,
-                        source: tooltip$.pipe(
-                            timeoutWith(50, concat(of(new LoadingTooltip(range.from, range.to)), tooltip$))
-                        ),
-                    },
-                ]
+                return [tooltip$.pipe(timeoutWith(50, concat(of(new LoadingTooltip(range.from, range.to)), tooltip$)))]
             }
             return []
         }),

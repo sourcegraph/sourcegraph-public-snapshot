@@ -1,17 +1,11 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
-import { Tooltip, showTooltip as showCodeMirrorTooltip, EditorView, Decoration } from '@codemirror/view'
+import { Tooltip, showTooltip as showCodeMirrorTooltip, Decoration } from '@codemirror/view'
 import { Observable, isObservable } from 'rxjs'
 
 import { codeIntelDecorations } from './decorations'
 import { UpdateableValue, createLoaderExtension } from './utils'
 
-type TooltipWithEnd = Tooltip & { end: number }
-export type TooltipSource = TooltipWithEnd | Observable<TooltipWithEnd | null>
-
-export interface CodeIntelTooltip {
-    range: { from: number; to: number }
-    source: TooltipSource
-}
+export type TooltipSource = Observable<Tooltip | null> | Tooltip | null
 
 enum Status {
     PENDING,
@@ -27,7 +21,7 @@ enum Status {
  * This facet enables token styling via {@link codeIntelDecorations} and passes the final
  * list of tooltips to CodeMirror's own `showTooltip` facet.
  */
-const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
+const uniqueTooltips = Facet.define<Tooltip | null, Tooltip[]>({
     combine(values) {
         const seen = new Set<number>()
         const result = []
@@ -37,24 +31,20 @@ const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
                 result.push(value)
             }
         }
-        return result.sort((a, b) => a.pos - b.end)
+        return result.sort((a, b) => a.pos - b.pos)
     },
     compare(a, b) {
         return a.length === b.length && a.every((value, i) => value === b[i])
     },
     enables: self => [
-        EditorView.theme({
-            '.cm-tooltip.sg-code-intel-hovercard': {
-                border: 'unset',
-            },
-        }),
-
         // Highlight tokens with tooltips
         codeIntelDecorations.compute([self], state => {
             let decorations = new RangeSetBuilder<Decoration>()
             const tooltips = state.facet(self)
             for (const { pos, end } of tooltips) {
-                decorations.add(pos, end, Decoration.mark({ class: `selection-highlight` }))
+                if (end && pos !== end) {
+                    decorations.add(pos, end, Decoration.mark({ class: `selection-highlight` }))
+                }
             }
 
             return decorations.finish()
@@ -70,23 +60,19 @@ const uniqueTooltips = Facet.define<TooltipWithEnd | null, TooltipWithEnd[]>({
  * The class is designed to allow showing multiple tooltips over time, which allows
  * for features like a temporary loading tooltip.
  */
-class TooltipLoadingState implements UpdateableValue<TooltipWithEnd | null, TooltipLoadingState> {
+class TooltipLoadingState implements UpdateableValue<Tooltip | null, TooltipLoadingState> {
     public visible: boolean
 
-    constructor(
-        public codeIntelTooltip: CodeIntelTooltip,
-        public status: Status,
-        public tooltip: TooltipWithEnd | null = null
-    ) {
+    constructor(public source: TooltipSource, public status: Status, public tooltip: Tooltip | null = null) {
         this.visible = !!tooltip
     }
 
-    update(tooltip: TooltipWithEnd | null) {
-        return new TooltipLoadingState(this.codeIntelTooltip, Status.DONE, tooltip)
+    update(tooltip: Tooltip | null) {
+        return new TooltipLoadingState(this.source, Status.DONE, tooltip)
     }
 
     get key() {
-        return this.codeIntelTooltip.source
+        return this.source
     }
 
     get isPending() {
@@ -97,19 +83,19 @@ class TooltipLoadingState implements UpdateableValue<TooltipWithEnd | null, Tool
 /**
  * Facet for registring where to show tooltips.
  */
-export const showTooltip: Facet<CodeIntelTooltip> = Facet.define<CodeIntelTooltip>({
+export const showTooltip: Facet<TooltipSource> = Facet.define<TooltipSource>({
     enables: self => [
         createLoaderExtension({
             input(state) {
                 return state.facet(self)
             },
-            create(tooltip) {
-                return isObservable(tooltip.source)
-                    ? new TooltipLoadingState(tooltip, Status.PENDING)
-                    : new TooltipLoadingState(tooltip, Status.DONE, tooltip.source)
+            create(source) {
+                return source && isObservable(source)
+                    ? new TooltipLoadingState(source, Status.PENDING)
+                    : new TooltipLoadingState(source, Status.DONE, source)
             },
             load(value) {
-                return value.codeIntelTooltip.source as Observable<TooltipWithEnd | null>
+                return value.source as Observable<Tooltip | null>
             },
             provide: self => [
                 uniqueTooltips.computeN([self], state => state.field(self).map(tooltip => tooltip.tooltip)),

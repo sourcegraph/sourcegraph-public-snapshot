@@ -10,17 +10,20 @@ import { preciseOffsetAtCoords } from '../utils'
 
 import { findOccurrenceRangeAt, getHoverTooltip } from './api'
 import { showHasDefinition } from './definition'
-import { CodeIntelTooltip, showTooltip } from './tooltips'
+import { TooltipSource, showTooltip } from './tooltips'
 
 /**
  * This field stores various information about the currently hovered range, which
  * is used to provide tooltips via {@link showTooltip} and definition highlighting
  * via {@link showHasDefinition}.
  */
-const [hoverTooltip, setHoverTooltip] = createUpdateableField<CodeIntelTooltip | null>(null, self => [
+const [hoverTooltip, setHoverTooltip] = createUpdateableField<{
+    range: { from: number; to: number }
+    source: TooltipSource
+} | null>(null, self => [
     showTooltip.computeN([self], state => {
         const field = state.field(self)
-        return field ? [field] : []
+        return field ? [field.source] : []
     }),
     showHasDefinition.computeN([self], state => {
         const range = state.field(self)?.range

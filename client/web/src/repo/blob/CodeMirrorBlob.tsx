@@ -30,6 +30,7 @@ import {
     type ModeSpec,
     parseQueryAndHash,
     toPrettyBlobURL,
+    BlobViewState,
 } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -59,7 +60,8 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
-import { locationToURL } from './codemirror/utils'
+import { showTemporaryTooltip, temporaryTooltip } from './codemirror/tooltips/TemporaryTooltip'
+import { locationToURL, positionToOffset } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
 /**
@@ -542,7 +544,8 @@ function useCodeIntelExtension(
     }, [context])
 
     return useMemo(
-        () =>
+        () => [
+            temporaryTooltip,
             api
                 ? createCodeIntelExtension({
                       api: {
@@ -551,16 +554,45 @@ function useCodeIntelExtension(
                           mode,
                           createTooltipView: ({ view, token, hovercardData }) =>
                               new HovercardView(view, token, hovercardData),
-                          goToDefinition(view, definition) {
+                          openImplementations(_view, documentInfo, occurrence) {
+                              navigate(
+                                  toPrettyBlobURL({
+                                      ...documentInfo,
+                                      range: occurrence.range.withIncrementedValues(),
+                                      viewState: `implementations_${mode}` as BlobViewState,
+                                  })
+                              )
+                          },
+                          openReferences(_view, documentInfo, occurrence) {
+                              navigate(
+                                  toPrettyBlobURL({
+                                      ...documentInfo,
+                                      range: occurrence.range.withIncrementedValues(),
+                                      viewState: 'references',
+                                  })
+                              )
+                          },
+                          goToDefinition(view, definition, options) {
+                              const goto = options?.newWindow
+                                  ? (url: string, _options?: unknown) => window.open(url, '_blank')
+                                  : navigate
+
                               switch (definition.type) {
-                                  case 'none':
+                                  case 'none': {
+                                      const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
+                                      if (offset) {
+                                          showTemporaryTooltip(view, 'No definition found', offset, 2000)
+                                      }
                                       break
+                                  }
                                   case 'at-definition': {
-                                      // TODO: show temporary tooltip
-                                      // showTemporaryTooltip(view, 'You are at the definition', position, 2000, { arrow: true })
+                                      const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
+                                      if (offset) {
+                                          showTemporaryTooltip(view, 'You are at the definition', offset, 2000)
+                                      }
 
                                       // Open reference panel
-                                      navigate(locationToURL(documentInfo, definition.from, 'references'), {
+                                      goto(locationToURL(documentInfo, definition.from, 'references'), {
                                           replace: true,
                                       })
                                       break
@@ -583,13 +615,13 @@ function useCodeIntelExtension(
                                       const shouldPushHistory = locationState?.previousURL !== hrefFrom
                                       // Add browser history entry for reference location. This allows users
                                       // to easily jump back to the location they triggered 'go to definition'
-                                      // from.
+                                      // from. Additionally this
                                       navigate(hrefFrom, {
                                           replace: !shouldPushHistory || createPath(locationRef.current) === hrefFrom,
                                       })
 
                                       setTimeout(() => {
-                                          navigate(locationToURL(documentInfo, definition.destination), {
+                                          goto(locationToURL(documentInfo, definition.destination), {
                                               replace: !shouldPushHistory,
                                               state: { previousURL: hrefFrom },
                                           })
@@ -600,7 +632,7 @@ function useCodeIntelExtension(
                                       // Linking to the reference panel is a temporary workaround until we
                                       // implement a component to resolve ambiguous results inside the blob
                                       // view similar to how VS Code "Peek definition" works like.
-                                      navigate(locationToURL(documentInfo, definition.destination, 'def'))
+                                      goto(locationToURL(documentInfo, definition.destination, 'def'))
                                       break
                                   }
                               }
@@ -635,6 +667,7 @@ function useCodeIntelExtension(
                       navigate,
                   })
                 : [],
+        ],
         [documentInfo.repoName, documentInfo.filePath, documentInfo.commitID, mode, api, navigate, locationRef]
     )
 }
