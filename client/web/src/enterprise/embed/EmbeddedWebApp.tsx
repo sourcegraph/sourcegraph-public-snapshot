@@ -66,7 +66,7 @@ export const EmbeddedWebApp: FC<Props> = ({ graphqlClient }) => {
         () => new TelemetryRecorderProvider(graphqlClient, { enableBuffering: true }),
         [graphqlClient]
     )
-    useEffect(() => telemetryRecorderProvider.unsubscribe, [telemetryRecorderProvider]) // unsubscribe on unmount
+    useEffect(() => () => telemetryRecorderProvider.unsubscribe(), [telemetryRecorderProvider]) // unsubscribe on unmount
 
     const platformContext = useMemo(
         () => createPlatformContext({ telemetryRecorderProvider }),
