@@ -120,7 +120,8 @@ func TestSearch(t *testing.T) {
 			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
 
 			sr := newSchemaResolver(db, gsClient)
-			gqlSchema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
+			gqlSchema, err := graphql.ParseSchema(mainSchema, sr,
+				graphql.Tracer(newRequestTracer(logtest.Scoped(t), db)))
 			if err != nil {
 				t.Fatal(err)
 			}
