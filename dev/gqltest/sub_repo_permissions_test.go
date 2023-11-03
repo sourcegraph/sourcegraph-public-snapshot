@@ -23,7 +23,7 @@ const (
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	cleanup := createPerforceExternalService(t, testPermsDepot, true)
 	t.Cleanup(cleanup)
 	userClient, repoName, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
@@ -84,7 +84,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 func TestSubRepoPermissionsSymbols(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	cleanup := createPerforceExternalService(t, testPermsDepot, true)
 	t.Cleanup(cleanup)
 	userClient, repoName, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
