@@ -106,6 +106,9 @@ function _run_server_image() {
   echo "Allow single docker image code insights: $ALLOW_SINGLE_DOCKER_CODE_INSIGHTS"
   echo "GRPC Feature flag: $SG_FEATURE_FLAG_GRPC"
 
+  mkdir -p "$data/config"
+  mkdir -p "$data/data"
+
   # shellcheck disable=SC2086
   docker run $docker_args \
     -d \
