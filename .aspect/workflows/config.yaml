@@ -29,6 +29,7 @@ tasks:
     test:
       include_eternal_tests: true
       targets:
+          - //client/web/...
           - //testing:e2e_test
           - //testing:grpc_backend_integration_test
           # This target should only really run when on main which we aren't handling. For the time being while we
