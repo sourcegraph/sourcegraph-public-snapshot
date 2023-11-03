@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 
 import type * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
 import type { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useDebounce, useWindowSize } from '@sourcegraph/wildcard'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../components/FilteredConnection/ui'
@@ -15,7 +15,6 @@ import { type GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference
 
 import { ConnectionPopoverGitReferenceNode } from './components'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
-import { getBatchCount } from './utils'
 
 interface GitReferencePopoverNodeProps extends Pick<GitReferenceNodeProps, 'node' | 'onClick'> {
     defaultBranch: string
@@ -125,6 +124,8 @@ interface RevisionsPopoverReferencesProps {
     tabLabel: string
 }
 
+const BATCH_COUNT = 50
+
 export const RevisionsPopoverReferences: React.FunctionComponent<
     React.PropsWithChildren<RevisionsPopoverReferencesProps>
 > = ({
@@ -144,16 +145,12 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
-    const { height } = useWindowSize()
-    // Set batch count based on current screen height
-    // to avoid jumping tabs in the UI.
-    const batchCount = useMemo(() => getBatchCount(height), [height])
 
     const response = useShowMorePagination<RepositoryGitRefsResult, RepositoryGitRefsVariables, GitRefFields>({
         query: REPOSITORY_GIT_REFS,
         variables: {
             query,
-            first: batchCount,
+            first: BATCH_COUNT,
             repo,
             type,
             withBehindAhead: false,
@@ -173,7 +170,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
         <ConnectionSummary
             emptyElement={showSpeculativeResults ? <></> : undefined}
             connection={response.connection}
-            first={batchCount}
+            first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}

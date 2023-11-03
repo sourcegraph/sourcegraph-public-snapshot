@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 
 import type * as H from 'history'
 import { useLocation } from 'react-router-dom'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Badge, useDebounce, useWindowSize } from '@sourcegraph/wildcard'
+import { Badge, useDebounce } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../components/FilteredConnection/ui'
@@ -17,7 +17,6 @@ import type {
 
 import { ConnectionPopoverNode, ConnectionPopoverNodeLink } from './components'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
-import { getBatchCount } from './utils'
 
 import styles from './RevisionsPopoverCommits.module.scss'
 
@@ -118,6 +117,8 @@ interface RevisionsPopoverCommitsProps {
     tabLabel: string
 }
 
+const BATCH_COUNT = 15
+
 export const RevisionsPopoverCommits: React.FunctionComponent<
     React.PropsWithChildren<RevisionsPopoverCommitsProps>
 > = ({
@@ -134,10 +135,6 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
-    const { height } = useWindowSize()
-    // Set batch count based on current screen height
-    // to avoid jumping tabs in the UI.
-    const batchCount = useMemo(() => getBatchCount(height), [height])
 
     const response = useShowMorePagination<
         RepositoryGitCommitResult,
@@ -147,7 +144,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
         query: REPOSITORY_GIT_COMMIT,
         variables: {
             query,
-            first: batchCount,
+            first: BATCH_COUNT,
             repo,
             revision: currentRev || defaultBranch,
         },
@@ -184,7 +181,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
     const summary = response.connection && (
         <ConnectionSummary
             connection={response.connection}
-            first={batchCount}
+            first={BATCH_COUNT}
             noun={noun}
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}

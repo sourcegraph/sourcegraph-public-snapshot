@@ -83,7 +83,7 @@ const branchesMock: MockedResponse<RepositoryGitRefsResult> = {
         query: getDocumentNode(REPOSITORY_GIT_REFS),
         variables: {
             query: '',
-            first: 10,
+            first: 50,
             repo: MOCK_PROPS.repoId,
             type: GitRefType.GIT_BRANCH,
             withBehindAhead: false,
@@ -95,8 +95,8 @@ const branchesMock: MockedResponse<RepositoryGitRefsResult> = {
                 __typename: 'Repository',
                 gitRefs: {
                     __typename: 'GitRefConnection',
-                    totalCount: 20,
-                    nodes: generateGitReferenceNodes(10, GitRefType.GIT_BRANCH),
+                    totalCount: 100,
+                    nodes: generateGitReferenceNodes(50, GitRefType.GIT_BRANCH),
                     pageInfo: {
                         hasNextPage: true,
                     },
@@ -111,7 +111,7 @@ const additionalBranchesMock: MockedResponse<RepositoryGitRefsResult> = {
         ...branchesMock.request,
         variables: {
             ...branchesMock.request.variables,
-            first: 20,
+            first: 100,
         },
     },
     result: {
@@ -120,8 +120,8 @@ const additionalBranchesMock: MockedResponse<RepositoryGitRefsResult> = {
                 __typename: 'Repository',
                 gitRefs: {
                     __typename: 'GitRefConnection',
-                    totalCount: 20,
-                    nodes: generateGitReferenceNodes(20, GitRefType.GIT_BRANCH),
+                    totalCount: 100,
+                    nodes: generateGitReferenceNodes(100, GitRefType.GIT_BRANCH),
                     pageInfo: {
                         hasNextPage: false,
                     },
@@ -186,7 +186,7 @@ const tagsMock: MockedResponse<RepositoryGitRefsResult> = {
         query: getDocumentNode(REPOSITORY_GIT_REFS),
         variables: {
             query: '',
-            first: 10,
+            first: 50,
             repo: MOCK_PROPS.repoId,
             type: GitRefType.GIT_TAG,
             withBehindAhead: false,
@@ -198,8 +198,8 @@ const tagsMock: MockedResponse<RepositoryGitRefsResult> = {
                 __typename: 'Repository',
                 gitRefs: {
                     __typename: 'GitRefConnection',
-                    totalCount: 20,
-                    nodes: generateGitReferenceNodes(10, GitRefType.GIT_TAG),
+                    totalCount: 100,
+                    nodes: generateGitReferenceNodes(50, GitRefType.GIT_TAG),
                     pageInfo: {
                         hasNextPage: true,
                     },
@@ -214,7 +214,7 @@ const additionalTagsMock: MockedResponse<RepositoryGitRefsResult> = {
         ...tagsMock.request,
         variables: {
             ...tagsMock.request.variables,
-            first: 20,
+            first: 100,
         },
     },
     result: {
@@ -223,8 +223,8 @@ const additionalTagsMock: MockedResponse<RepositoryGitRefsResult> = {
                 __typename: 'Repository',
                 gitRefs: {
                     __typename: 'GitRefConnection',
-                    totalCount: 20,
-                    nodes: generateGitReferenceNodes(20, GitRefType.GIT_TAG),
+                    totalCount: 100,
+                    nodes: generateGitReferenceNodes(100, GitRefType.GIT_TAG),
                     pageInfo: {
                         hasNextPage: false,
                     },
@@ -264,7 +264,7 @@ const commitsMock: MockedResponse<RepositoryGitCommitResult> = {
         query: getDocumentNode(REPOSITORY_GIT_COMMIT),
         variables: {
             query: '',
-            first: 10,
+            first: 15,
             repo: MOCK_PROPS.repoId,
             revision: MOCK_PROPS.currentRev,
         },
@@ -277,7 +277,7 @@ const commitsMock: MockedResponse<RepositoryGitCommitResult> = {
                     __typename: 'GitCommit',
                     ancestors: {
                         __typename: 'GitCommitConnection',
-                        nodes: generateGitCommitNodes(10),
+                        nodes: generateGitCommitNodes(15),
                         pageInfo: {
                             hasNextPage: true,
                         },
@@ -293,7 +293,7 @@ const additionalCommitsMock: MockedResponse<RepositoryGitCommitResult> = {
         ...commitsMock.request,
         variables: {
             ...commitsMock.request.variables,
-            first: 20,
+            first: 30,
         },
     },
     result: {
@@ -304,7 +304,7 @@ const additionalCommitsMock: MockedResponse<RepositoryGitCommitResult> = {
                     __typename: 'GitCommit',
                     ancestors: {
                         __typename: 'GitCommitConnection',
-                        nodes: generateGitCommitNodes(20),
+                        nodes: generateGitCommitNodes(30),
                         pageInfo: {
                             hasNextPage: false,
                         },
