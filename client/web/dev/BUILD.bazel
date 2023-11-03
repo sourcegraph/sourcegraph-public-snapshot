@@ -1,3 +1,4 @@
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
@@ -36,7 +37,6 @@ ts_project(
         "utils/should-compress-response.ts",
         "utils/success-banner.ts",
     ],
-    module = "commonjs",
     tsconfig = ":tsconfig",
     visibility = ["//client/web:__subpackages__"],
     deps = [
@@ -66,10 +66,41 @@ ts_project(
 js_library(
     name = "esbuild-config-production",
     srcs = ["esbuild/bazel/esbuild.bazel.production.js"],
-    visibility = ["//client:__subpackages__"],
     deps = [
         "//client/build-config:build-config_lib",
         "//client/web:node_modules/@sourcegraph/build-config",
         "//client/web/dev",
+    ],
+)
+
+esbuild(
+    name = "esbuild-config-production_bundle",
+    srcs = [
+        ":esbuild-config-production",
+    ],
+    entry_point = "esbuild/bazel/esbuild.bazel.production.js",
+    external = [
+        "fsevents",
+        "pnpapi",
+        "../../../../postcss.config",
+
+        # suppress esbuild require-resolve-not-external warnings
+        "esbuild",
+        "path-browserify",
+        "monaco-yaml/lib/esm/monaco.contribution",
+        "monaco-yaml/lib/esm/yaml.worker",
+        "rxjs/_esm5/internal/OuterSubscriber",
+        "rxjs/_esm5/internal/util/subscribeToResult",
+        "rxjs/_esm5/internal/util/subscribeToArray",
+        "rxjs/_esm5/internal/Observable",
+    ],
+    format = "cjs",
+    platform = "node",
+    sourcemap = False,
+    splitting = False,
+    target = "es2022",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:postcss_config_js",
     ],
 )

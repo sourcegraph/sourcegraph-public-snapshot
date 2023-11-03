@@ -17,6 +17,7 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
                 {...props}
                 routes={props.userSettingsAreaRoutes}
                 sideBarItems={props.userSettingsSideBarItems}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
             />
         ),
     },

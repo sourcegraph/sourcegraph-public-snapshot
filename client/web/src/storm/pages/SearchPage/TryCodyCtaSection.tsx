@@ -147,7 +147,7 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                         </Text>
                         <Text
                             as={Link}
-                            to="/cody"
+                            to="/cody/chat"
                             className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
                             onClick={onTryWebClick}
                         >
@@ -177,7 +177,7 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                         </Text>
                         <Text
                             as={Link}
-                            to="/cody"
+                            to="/cody/chat"
                             className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
                             onClick={onTryWebClick}
                         >

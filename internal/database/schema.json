@@ -28011,6 +28011,19 @@
           "Comment": ""
         },
         {
+          "Name": "cody_pro_enabled_at",
+          "Index": 23,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "completed_post_signup",
           "Index": 22,
           "TypeName": "boolean",

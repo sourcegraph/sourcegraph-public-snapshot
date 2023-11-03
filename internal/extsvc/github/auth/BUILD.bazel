@@ -26,7 +26,7 @@ go_test(
         "//internal/github_apps/store",
         "//internal/github_apps/types",
         "//schema",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@com_github_tj_assert//:assert",
     ],
 )

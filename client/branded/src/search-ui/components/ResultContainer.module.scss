@@ -41,11 +41,6 @@
 }
 
 .result {
-    // The LastSyncedIcon is absolutely-positions inside the search results.
-    // This causes it to show over the sticky header when scrolling unless
-    // we isolate the search result contents.
-    isolation: isolate;
-
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     margin-top: 0.25rem;

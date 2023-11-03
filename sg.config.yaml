@@ -133,6 +133,7 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
+  SRC_TELEMETRY_EVENTS_EXPORT_ALL: "true"
 
   # By default, allow temporary edits to external services.
   EXTSVC_CONFIG_ALLOW_EDITS: true
@@ -400,7 +401,7 @@ commands:
       pnpm run generate
     env:
       WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL

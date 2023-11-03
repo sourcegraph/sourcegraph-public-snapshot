@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/uuid"
+	"github.com/grafana/regexp"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 

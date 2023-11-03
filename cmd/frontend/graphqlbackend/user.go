@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -169,6 +170,26 @@ func (r *UserResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.user.CreatedAt}
 }
 
+func (r *UserResolver) CodyProEnabledAt(ctx context.Context) *gqlutil.DateTime {
+	if !envvar.SourcegraphDotComMode() {
+		return nil
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("cody_pro_dec_ga", false) {
+		return nil
+	}
+
+	if r.user.CodyProEnabledAt == nil {
+		return nil
+	}
+
+	return &gqlutil.DateTime{Time: *r.user.CodyProEnabledAt}
+}
+
+func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
+	return r.CodyProEnabledAt(ctx) != nil
+}
+
 func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.user.UpdatedAt}
 }
@@ -296,6 +317,36 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
+	return UserByIDInt32(ctx, r.db, userID)
+}
+
+type upgradeToCodyProArgs struct {
+	User graphql.ID
+}
+
+func (r *schemaResolver) UpgradeToCodyPro(ctx context.Context, args *upgradeToCodyProArgs) (*UserResolver, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("cody_pro_dec_ga", false) {
+		return nil, errors.New("this feature is not enabled")
+	}
+
+	userID, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the authenticated user can update their properties.
+	if err := auth.CheckSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	if err := r.db.Users().UpgradeToCodyPro(ctx, userID); err != nil {
+		return nil, err
+	}
+
 	return UserByIDInt32(ctx, r.db, userID)
 }
 

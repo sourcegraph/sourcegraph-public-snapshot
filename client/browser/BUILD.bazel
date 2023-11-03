@@ -381,7 +381,7 @@ esbuild(
         # STATIC ASSETS
         "//client/browser/assets",
     ],
-    config = "//client/browser/config:esbuild-config",
+    config = "//client/browser/config:esbuild-config_bundle",
     entry_points = [
         "src/browser-extension/scripts/backgroundPage.main.js",
         "src/browser-extension/scripts/contentPage.main.js",

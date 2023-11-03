@@ -105,6 +105,12 @@ func NewHandler(
 							"resolved_status_code":                           resolvedStatusCode,
 							codygateway.EmbeddingsTokenUsageMetadataField:    usedTokens,
 							"batch_size": len(body.Input),
+							"input_character_count": func() (characters int) {
+								for _, input := range body.Input {
+									characters += len(input)
+								}
+								return characters
+							}(),
 						},
 					},
 				)

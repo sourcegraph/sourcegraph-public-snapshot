@@ -6,7 +6,6 @@ ts_project(
     srcs = [
         "report-bundle-diff.ts",
     ],
-    module = "commonjs",
     tsconfig = "//client/web:tsconfig",
     deps = [
         "//:node_modules/@types/shelljs",

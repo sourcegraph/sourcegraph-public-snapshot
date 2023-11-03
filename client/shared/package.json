@@ -14,18 +14,19 @@
     "generate:css-modules-types": "ts-node -T dev/generateCssModulesTypes.ts"
   },
   "devDependencies": {
-    "@sourcegraph/testing": "workspace:*",
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/extension-api-types": "workspace:*",
+    "@sourcegraph/testing": "workspace:*",
     "sourcegraph": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/wildcard": "workspace:*",
-    "@sourcegraph/http-client": "workspace:*",
-    "@sourcegraph/common": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
+    "@sourcegraph/codeintellify": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/telemetry": "^0.11.0",
     "@sourcegraph/template-parser": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*"
+    "@sourcegraph/wildcard": "workspace:*"
   },
   "sideEffects": true
 }

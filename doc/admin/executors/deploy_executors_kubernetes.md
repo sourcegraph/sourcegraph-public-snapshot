@@ -8,7 +8,7 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-> NOTE: This feature is available in Sourcegraph 5.2.1 and later.
+> NOTE: This feature is available in Sourcegraph 5.2.2 and later.
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph-k8s) are provided to deploy Sourcegraph Executors on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
@@ -133,7 +133,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `5.2.1.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `5.2.2.254` (AWS / GCP Instance Metadata Service).
 
 ### Batch Changes
 

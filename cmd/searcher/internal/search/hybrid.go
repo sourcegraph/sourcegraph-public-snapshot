@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -101,7 +102,11 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		// indexed and p.Commit and avoid the need of running diff for each
 		// search.
 		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
-		if err != nil {
+		if errcode.IsNotFound(err) {
+			recordHybridFinalState("git-diff-not-found")
+			logger.Debug("not doing hybrid search due to likely missing indexed commit on gitserver", log.Error(err))
+			return nil, false, nil
+		} else if err != nil {
 			recordHybridFinalState("git-diff-error")
 			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}

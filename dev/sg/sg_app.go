@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -17,6 +16,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-github/v55/github"
+	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
