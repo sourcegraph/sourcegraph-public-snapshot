@@ -14,7 +14,6 @@ import (
 )
 
 func TestCreateDashboard(t *testing.T) {
-	t.Skip("for now")
 	t.Run("can create an insights dashboard", func(t *testing.T) {
 		title := "Dashboard Title 1"
 		result, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{
@@ -65,7 +64,6 @@ func TestCreateDashboard(t *testing.T) {
 }
 
 func TestGetDashboards(t *testing.T) {
-	t.Skip("for now")
 	titles := []string{"Title 1", "Title 2", "Title 3", "Title 4", "Title 5"}
 	ids := []string{}
 	for _, title := range titles {
@@ -124,7 +122,6 @@ func TestGetDashboards(t *testing.T) {
 }
 
 func TestUpdateDashboard(t *testing.T) {
-	t.Skip("for now")
 	dashboard, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{Title: "Title", GlobalGrant: true})
 	if err != nil {
 		t.Fatal(err)
@@ -161,7 +158,6 @@ func TestUpdateDashboard(t *testing.T) {
 }
 
 func TestDeleteDashboard(t *testing.T) {
-	t.Skip("for now")
 	t.Run("can delete an insights dashboard", func(t *testing.T) {
 		dashboard, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{Title: "Should be deleted", GlobalGrant: true})
 		if err != nil {

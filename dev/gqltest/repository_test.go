@@ -11,7 +11,6 @@ import (
 )
 
 func TestRepository(t *testing.T) {
-	t.Skip("for now")
 	if len(*githubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
@@ -70,7 +69,6 @@ func TestRepository(t *testing.T) {
 }
 
 func TestRepository_NameWithSpace(t *testing.T) {
-	t.Skip("for now")
 	if *azureDevOpsUsername == "" || *azureDevOpsToken == "" {
 		t.Skip("Environment variable AZURE_DEVOPS_USERNAME or AZURE_DEVOPS_TOKEN is not set")
 	}

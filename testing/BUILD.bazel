@@ -82,11 +82,11 @@ server_integration_test(
     timeout = "long",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
-        # "$(location //dev/authtest:authtest_test)",  # actual test
+        "$(location //dev/authtest:authtest_test)",  # actual test
     ],
     data = [
         "//cmd/server:image_tarball",
-        # "//dev/authtest:authtest_test",
+        "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
     ],
     env = {

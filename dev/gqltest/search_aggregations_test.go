@@ -9,7 +9,6 @@ import (
 )
 
 func TestModeAvailability(t *testing.T) {
-	t.Skip("for now")
 	t.Parallel()
 
 	t.Run("invalid query returns unavailable", func(t *testing.T) {
@@ -79,7 +78,6 @@ func TestModeAvailability(t *testing.T) {
 }
 
 func TestAggregations(t *testing.T) {
-	t.Skip("for now")
 	if len(*githubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}

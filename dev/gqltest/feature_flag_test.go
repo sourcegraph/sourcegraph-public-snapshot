@@ -7,7 +7,6 @@ import (
 )
 
 func TestFeatureFlags(t *testing.T) {
-	t.Skip("for now")
 	const featureFlagOverrideFragment = `fragment FeatureFlagOverrideData on FeatureFlagOverride {
 		id
 		namespace {

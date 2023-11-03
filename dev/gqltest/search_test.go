@@ -18,7 +18,6 @@ import (
 )
 
 func TestSearch(t *testing.T) {
-	t.Skip("for now")
 	if len(*githubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}

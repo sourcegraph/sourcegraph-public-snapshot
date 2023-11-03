@@ -10,7 +10,6 @@ import (
 )
 
 func TestSiteConfig(t *testing.T) {
-	t.Skip("for now")
 	t.Run("builtin auth provider: allowSignup", func(t *testing.T) {
 		// Sign up a new user is allowed by default.
 		const testUsername1 = "gqltest-auth-user-1"

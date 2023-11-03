@@ -8,7 +8,6 @@ import (
 )
 
 func TestAccessToken(t *testing.T) {
-	t.Skip("for now")
 	t.Run("create a token and test it", func(t *testing.T) {
 		token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all"})
 		if err != nil {

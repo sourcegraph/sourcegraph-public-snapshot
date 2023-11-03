@@ -12,7 +12,6 @@ import (
 )
 
 func TestOrganization(t *testing.T) {
-	t.Skip("for now")
 	const testOrgName = "gqltest-org"
 	orgID, err := client.CreateOrganization(testOrgName, testOrgName)
 	if err != nil {

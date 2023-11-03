@@ -13,7 +13,6 @@ import (
 )
 
 func TestExternalService(t *testing.T) {
-	t.Skip("for now")
 	if len(*githubToken) == 0 {
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
@@ -65,7 +64,6 @@ func TestExternalService(t *testing.T) {
 }
 
 func TestExternalService_AWSCodeCommit(t *testing.T) {
-	t.Skip("for now")
 	if len(*awsAccessKeyID) == 0 || len(*awsSecretAccessKey) == 0 ||
 		len(*awsCodeCommitUsername) == 0 || len(*awsCodeCommitPassword) == 0 {
 		t.Skip("Environment variable AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_CODE_COMMIT_USERNAME or AWS_CODE_COMMIT_PASSWORD is not set")
@@ -117,7 +115,6 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 }
 
 func TestExternalService_BitbucketServer(t *testing.T) {
-	t.Skip("for now")
 	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
@@ -165,7 +162,6 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 }
 
 func TestExternalService_Perforce(t *testing.T) {
-	t.Skip("for now")
 	for _, tc := range []struct {
 		name       string
 		depot      string
@@ -282,7 +278,6 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 }
 
 func TestExternalService_AsyncDeletion(t *testing.T) {
-	t.Skip("for now")
 	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
