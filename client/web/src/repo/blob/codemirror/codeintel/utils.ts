@@ -11,18 +11,55 @@ import { isMacPlatform } from '@sourcegraph/common'
  * It should be set to the class that implements this interface.
  */
 export interface UpdateableValue<T, U> {
+    /**
+     * Unique key that identifies this value. This value is used to
+     * associate data from the load function with the input value.
+     */
     key: unknown
-    update(value: T): U
+
+    /**
+     * If true the load function should be called for this value.
+     */
     isPending: boolean
+
+    /**
+     * Called with the data returned from the load function.
+     */
+    update(value: T): U
 }
 
 interface LoaderExtensionSpec<Response, Input, Value extends UpdateableValue<Response, Value>> {
+    /**
+     * How to get the input from the current editor state. This is also used to
+     * determine whether the input changed.
+     */
     input: (state: EditorState) => readonly Input[]
+    /**
+     * This function converts new Input values to another representation. This is useful
+     * when additional data needs to be associated with the input or when not every
+     * input value should be handled by the load function, as indicated by the value's
+     * `isPending` property.
+     */
     create: (input: Input) => Value
+    /**
+     * Called for each Value for which `load` hasn't been called before and whose
+     * `isPending` property is `true`. The value's `update` method will be called
+     * with the received Response.
+     */
     load(value: Value, state: EditorState): Observable<Response>
+
+    /**
+     * Returns other extensions that use these values as input.
+     */
     provide: (field: StateField<Value[]>) => Extension
 }
 
+/**
+ * This function/extension implements a common pattern among the other extensions:
+ * Receive input, load some data and provide some output (i.e. input to other extensions).
+ * What makes this tricky is that the input might change while data is being loaded, cause the
+ * outstanding data to be stale. The returned extension handles this case.
+ */
 export function createLoaderExtension<Response, Input, Value extends UpdateableValue<Response, Value>>(
     spec: LoaderExtensionSpec<Response, Input, Value>
 ): Extension {

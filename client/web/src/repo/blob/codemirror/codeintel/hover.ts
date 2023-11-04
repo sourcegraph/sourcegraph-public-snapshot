@@ -71,7 +71,8 @@ const hoverManager = ViewPlugin.fromClass(
     class HoverManager implements PluginValue {
         private subscription: Subscription = new Subscription()
         /**
-         * A reference to the currently shown tooltip.
+         * A reference to the currently shown tooltip. This is needed to be able to determine
+         * whether the mouse moves towards or away from the currently open tooltip.
          */
         private tooltip: (Tooltip & { end: number }) | null = null
 

@@ -22,7 +22,7 @@ export const isModifierKeyHeld = StateField.define<boolean>({
     },
     provide: self => [
         EditorView.contentAttributes.compute([self], state => ({
-            class: state.field(self) ? 'sg-token-selection-clickable' : '',
+            class: state.field(self) ? 'sg-modifier-held' : '',
         })),
 
         // View plugin that makes the cursor look like a pointer when holding down the
@@ -51,7 +51,7 @@ export const isModifierKeyHeld = StateField.define<boolean>({
         ),
 
         EditorView.theme({
-            '.sg-token-selection-clickable:hover': {
+            '.sg-modifier-held:hover': {
                 cursor: 'pointer',
                 // This class is set on eligible ranges in definition.ts
                 '& .sg-definition-available': {

@@ -127,7 +127,7 @@ function goToDefinitionOnMouseEvent(view: EditorView, event: MouseEvent, options
     }
 
     setTooltip(view, new LoadingTooltip(occurrence.from, occurrence.to))
-    goToDefinitionAt(view, occurrence.from).finally(() => {
+    void goToDefinitionAt(view, occurrence.from).finally(() => {
         setTooltip(view, null)
     })
 }

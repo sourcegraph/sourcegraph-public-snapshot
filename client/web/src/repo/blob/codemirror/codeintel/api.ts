@@ -68,12 +68,34 @@ interface DocumentInfo {
 }
 
 export interface CodeIntelAPIConfig {
+    /**
+     * Reference to the code intel API.
+     */
     api: CodeIntelAPI
+    /**
+     * Information about the current document.
+     */
     documentInfo: DocumentInfo
     mode: string
+
+    /**
+     * Called to create the code intel tooltip.
+     */
     createTooltipView: (options: TooltipViewOptions) => TooltipView
+
+    /**
+     * Called when any action triggers "go to definition".
+     */
     goToDefinition(view: EditorView, definition: Definition, options?: GoToDefinitionOptions): void
+
+    /**
+     * Called when any action wants to show references for the provided occurrence.
+     */
     openReferences(view: EditorView, documentInfo: DocumentInfo, occurrence: Occurrence): void
+
+    /**
+     * Called when any action wants to show implementations for the provided occurrence.
+     */
     openImplementations(view: EditorView, documentInfo: DocumentInfo, occurrence: Occurrence): void
 }
 
@@ -345,7 +367,7 @@ export class CodeIntelAPIAdapter {
                                         // events without modifier keys.
                                         // We treat these the same way as Cmd-Click on the token itself.
                                         event.preventDefault()
-                                        this.goToDefinitionAtOccurrence(view, occurrence)
+                                        void this.goToDefinitionAtOccurrence(view, occurrence)
                                         return true
                                     }
                                     // Don't override `onSelect` unless it's a regular event with modifier keys
@@ -408,6 +430,9 @@ export class CodeIntelAPIAdapter {
 
 const modifierClickDescription = isMacPlatform() ? 'cmd+click' : 'ctrl+click'
 
+/**
+ * Returns true if any of the code intel information is precise data.
+ */
 function isPrecise(hover: HoverMerged | null | undefined): boolean {
     for (const badge of hover?.aggregatedBadges || []) {
         if (badge.text === 'precise') {
@@ -487,6 +512,9 @@ export async function goToDefinitionAt(
     }
 }
 
+/**
+ * Finds the next/previous occurrence by line or character starting at the provided position.
+ */
 export function nextOccurrencePosition(
     state: EditorState,
     from: number,
@@ -520,6 +548,9 @@ export function nextOccurrencePosition(
     return occurrence ? positionToOffset(state.doc, occurrence.range.start) : null
 }
 
+/**
+ * Convenience function around {@link nextOccurrencePosition} for finding the previous occurrence.
+ */
 export function prevOccurrencePosition(state: EditorState, from: number, step: 'line' | 'character'): number | null {
     return nextOccurrencePosition(state, from, step, 'previous')
 }
