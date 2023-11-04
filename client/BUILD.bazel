@@ -5,7 +5,7 @@
 # gazelle:js_files globals.d.ts
 
 # Test files, snapshots etc:
-# gazelle:js_test_files **/*.{spec,test}.{ts,tsx}
+# gazelle:js_test_files **/*.test.{ts,tsx}
 # gazelle:js_test_files **/mock*.{ts,tsx}
 # gazelle:js_test_files **/*.{mock,mocks}.{ts,tsx}
 # gazelle:js_test_files **/mocks/**
