@@ -13,9 +13,9 @@ export default defineProjectWithDefaults(__dirname, {
 
         setupFiles: [
             'src/testSetup.test.ts',
-            '../shared/dev/reactCleanup.ts',
-            '../shared/dev/fetch.js',
-            '../shared/dev/mockUniqueId.ts',
+            '../testing/src/reactCleanup.ts',
+            '../testing/src/fetch.js',
+            '../testing/src/mockUniqueId.ts',
         ],
 
         // For some reason, watch mode fails with `Error: Failed to terminate worker` unless

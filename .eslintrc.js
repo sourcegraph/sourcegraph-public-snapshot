@@ -134,6 +134,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               '!@sourcegraph/*/src/stories',
               '!@sourcegraph/build-config/src/esbuild/*',
               '!@sourcegraph/build-config/src/*',
+              '!@sourcegraph/testing/src/jestDomMatchers',
             ],
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',

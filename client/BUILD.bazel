@@ -18,6 +18,9 @@
 # gazelle:exclude **/web-sveltekit/**/*.ts
 # gazelle:exclude **/vitest.config.ts
 
+# Otherwise it gets tripped up on the `declare module 'vitest'` directives to add custom matchers.
+# gazelle:js_resolve vitest //:node_modules/vitest
+
 # TODO(bazel): put fixtures + testutils + ? into own rules
 # js_{fixture}_files **/*.{fixture,fixtures}.{ts,tsx}
 # js_{fixture}_files **/testutils/**

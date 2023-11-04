@@ -1,15 +1,8 @@
 /* eslint-disable no-console */
 
-// Use @testing-library/jest-dom in vitest. See
-// https://github.com/testing-library/jest-dom/issues/439#issuecomment-1536524120.
-import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers'
-import * as matchers from '@testing-library/jest-dom/matchers'
-import { expect, vi } from 'vitest'
+import { vi } from 'vitest'
 
-declare module 'vitest' {
-    interface Assertion<T = any> extends jest.Matchers<void, T>, TestingLibraryMatchers<T, void> {}
-}
-expect.extend(matchers)
+import '@sourcegraph/testing/src/jestDomMatchers'
 
 vi.mock('zustand')
 

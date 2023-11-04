@@ -1201,6 +1201,9 @@ importers:
       '@sourcegraph/extension-api-types':
         specifier: workspace:*
         version: link:../extension-api-types
+      '@sourcegraph/testing':
+        specifier: workspace:*
+        version: link:../testing
 
   client/common:
     devDependencies:

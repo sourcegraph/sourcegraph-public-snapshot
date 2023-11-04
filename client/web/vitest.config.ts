@@ -12,11 +12,10 @@ export default defineProjectWithDefaults(__dirname, {
 
         setupFiles: [
             'src/testSetup.test.ts',
-            '../shared/dev/reactCleanup.ts',
-            '../shared/dev/fetch.js',
-            '../shared/dev/mockMatchMedia.ts',
-            '../shared/dev/mockUniqueId.ts',
-            '../shared/dev/mockDate.js',
+            '../testing/src/reactCleanup.ts',
+            '../testing/src/mockMatchMedia.ts',
+            '../testing/src/mockUniqueId.ts',
+            '../testing/src/mockDate.ts',
         ],
     },
 })

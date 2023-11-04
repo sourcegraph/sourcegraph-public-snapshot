@@ -5,9 +5,9 @@ export default defineProjectWithDefaults(__dirname, {
         environment: 'jsdom',
         setupFiles: [
             'src/testing/testSetup.test.ts',
-            '../shared/dev/reactCleanup.ts',
-            '../shared/dev/mockResizeObserver.ts',
-            '../shared/dev/mockUniqueId.ts',
+            '../testing/src/reactCleanup.ts',
+            '../testing/src/mockResizeObserver.ts',
+            '../testing/src/mockUniqueId.ts',
         ],
     },
 })

@@ -34,7 +34,7 @@ export const defaultProjectConfig: UserWorkspaceConfig = {
         ],
         css: { modules: { classNameStrategy: 'non-scoped' } },
         hideSkippedTests: true,
-        globalSetup: [path.join(__dirname, `client/shared/dev/globalTestSetup.${TS_EXT}`)],
+        globalSetup: [path.join(__dirname, `client/testing/src/globalTestSetup.${TS_EXT}`)],
     },
     plugins: BAZEL
         ? [

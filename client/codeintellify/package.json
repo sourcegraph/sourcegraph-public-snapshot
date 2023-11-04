@@ -11,7 +11,8 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@sourcegraph/extension-api-types": "workspace:*"
+    "@sourcegraph/extension-api-types": "workspace:*",
+    "@sourcegraph/testing": "workspace:*"
   },
   "dependencies": {
     "@sourcegraph/common": "workspace:*"

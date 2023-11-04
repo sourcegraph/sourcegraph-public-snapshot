@@ -96,7 +96,7 @@ js_library(
         "//:node_modules/identity-obj-proxy",
         "//:node_modules/message-port-polyfill",
         "//:node_modules/regenerator-runtime",
-        "//client/shared/dev:mock",
+        "//client/testing:testing_lib",
     ],
 )
 
@@ -108,9 +108,9 @@ js_library(
     ],
     deps = [
         "//:node_modules/abort-controller",
-        "//client/shared/dev:fetch-mock",
         "//client/shared/dev:mocha-reporter",
         "//client/shared/dev:suppress-polly-errors",
+        "//client/testing:fetch-mock",
     ],
 )
 
