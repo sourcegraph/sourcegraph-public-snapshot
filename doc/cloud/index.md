@@ -49,7 +49,7 @@ As part of this service you will receive a number of benefits from our team, inc
 
 ### Access to all Sourcegraph features
 
-All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, including but not limited to:
+All Sourcegraph features are available on Sourcegraph Cloud instances out-of-the-box, including but not limited to:
 
 - [Server-side Batch Changes](../batch_changes/explanations/server_side.md)
 - [Precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md)
