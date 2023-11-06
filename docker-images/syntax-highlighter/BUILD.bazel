@@ -1,5 +1,5 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
@@ -50,15 +50,6 @@ rust_binary(
         normal = True,
     ) + [
         "//docker-images/syntax-highlighter/crates/scip-syntax",
-    ],
-)
-
-rust_clippy(
-    name = "syntax-highlighter_clippy",
-    testonly = True,
-    deps = [
-        ":scip-ctags",
-        ":syntect_server",
     ],
 )
 
