@@ -24,7 +24,6 @@ export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
 run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
-export JS_BINARY__LOG_DEBUG=1
 echo "--- e2e test //client/web/src/end-to-end:e2e"
 "$e2e_test" --config "$mocha_config" --retries 4 "$files"
 
