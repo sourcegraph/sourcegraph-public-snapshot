@@ -784,7 +784,6 @@ func TestCreateInsight(t *testing.T) {
 		if intervalValue != int(insight.IntervalValue) {
 			t.Error("should have matching interval value")
 		}
-
 	})
 
 	t.Run("series level scopes override", func(t *testing.T) {
@@ -858,7 +857,5 @@ func TestCreateInsight(t *testing.T) {
 				t.Fatalf("couldn't disable insight series: %v", err)
 			}
 		}
-
 	})
-
 }

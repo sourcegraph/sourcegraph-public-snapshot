@@ -122,6 +122,35 @@ query Repositories {
 	return nil
 }
 
+// WaitForRepoToBeIndexed performs a regexp search for `.` with index:only,
+// repo:repoName, and type:file set until a result is returned.
+func (c *Client) WaitForRepoToBeIndexed(repoName string) error {
+	timeout := 180 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var results *SearchFileResults
+	var err error
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("wait for repo to be indexed timed out in %s", timeout)
+		default:
+		}
+
+		results, err = c.SearchFiles(fmt.Sprintf("repo:%s . type:file index:only patterntype:regexp", repoName))
+		if err != nil {
+			return err
+		}
+		if len(results.Results) > 0 {
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil
+}
+
 // waitForReposByQuery executes the GraphQL query and compares the repo list returned
 // with the list of repos passed in.
 //
