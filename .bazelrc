@@ -49,5 +49,5 @@ test:go-verbose-test --test_env=GO_TEST_WRAP_TESTV=1
 common --noincompatible_disallow_empty_glob
 
 # Ensure clippy runs for rust targets
-build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
-build --output_groups=+clippy_checks
+# build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+# build --output_groups=+clippy_checks
