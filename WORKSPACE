@@ -43,13 +43,6 @@ http_archive(
 )
 
 http_archive(
-    name = "aspect_rules_jest",
-    sha256 = "bf8f4a4d2a833e4f96f866c686c38bcee69d3bdae8a827b1c9d2fdf92212bc0b",
-    strip_prefix = "rules_jest-95d8f1961a9c6f3aee2929881b1b74461652e775",
-    url = "https://github.com/aspect-build/rules_jest/archive/95d8f1961a9c6f3aee2929881b1b74461652e775.tar.gz",
-)
-
-http_archive(
     name = "aspect_rules_swc",
     sha256 = "8eb9e42ed166f20cacedfdb22d8d5b31156352eac190fc3347db55603745a2d8",
     strip_prefix = "rules_swc-1.1.0",

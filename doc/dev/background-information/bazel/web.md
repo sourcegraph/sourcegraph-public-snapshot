@@ -7,13 +7,12 @@ See [Overview of the Bazel configuration for client](./web_overview.md) for in-d
 
 The sourcegraph client projects are setup to compile, bundle and test with Bazel. The tools used within Bazel include:
 * Esbuild for bundling
-* Jest, Mocha for testing
+* Vitest, Mocha for testing
 * Node tools such as graphql-codegen for generating graphql schema types
 
 The Bazel rulesets used to support these include:
 * [rules_js](https://github.com/aspect-build/rules_js)
 * [rules_ts](https://github.com/aspect-build/rules_ts)
-* [rules_jest](https://github.com/aspect-build/rules_jest)
 * [rules_esbuild](https://github.com/aspect-build/rules_esbuild)
 
 See [Aspect rules docs](https://docs.aspect.build/rules/) for more information on the Bazel rulesets used.
@@ -22,7 +21,7 @@ See [Aspect rules docs](https://docs.aspect.build/rules/) for more information o
 
 The primary Bazel targets have been configured roughly aligning with the pnpm workspace projects, while often composed of many sub-targets. The primary targets for `client/*` pnpm projects are generated using `bazel configure`. The primary targets include:
 * `:{name}_pkg` for the npm package representing the pnpm project
-* `:test` for the Jest unit tests of the project
+* `:test` for the Vitest unit tests of the project
 * `:{name}_lib` for compiling non-test `*.ts\[x\]` files
 * `:{name}_tests` for compiling unit test `*.ts\[x\]` files
 
@@ -34,7 +33,7 @@ Additional `BUILD.bazel` files may exist throughout subdirectories and is encour
 
 ## Testing
 
-All client tests (of all types such as jest and mocha) can be invoked by `bazel test //client/...` or individual tests can be specified such as `bazel test //client/common:test` or `bazel test //client/web/src/end-to-end:e2e`. Jest tests can be debugged using `bazel run --config=debug //client/common:test`.
+All client tests (of all types such as Vitest and mocha) can be invoked by `bazel test //client/...` or individual tests can be specified such as `bazel test //client/common:test` or `bazel test //client/web/src/end-to-end:e2e`. Vitest tests can be debugged using `bazel run --config=debug //client/common:test`.
 
 ## Bundling
 
