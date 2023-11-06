@@ -183,7 +183,7 @@ describe('isPrivateRepository', () => {
         })
 
         it('returns [private=true] on unsuccessful request', async () => {
-            fetch.mockRejectOnce(new Error('Error happened'))
+            fetch.mockRejectOnce(new Error('fake error happened for unsuccessful request'))
 
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)

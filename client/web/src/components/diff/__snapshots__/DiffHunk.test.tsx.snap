@@ -16,7 +16,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           data-diff-marker=" "
         >
           <code
-            class="code content"
+            class="code"
           >
             @@ -159,7 +159,7 @@ export async function register({
           </code>

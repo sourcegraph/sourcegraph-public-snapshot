@@ -40,7 +40,7 @@ PNPM,@babel/helper-validator-option,7.22.15,MIT,"",Approved
 PNPM,@babel/helper-wrap-function,7.22.5,MIT,"",Approved
 PNPM,@babel/helpers,7.23.1,MIT,"",Approved
 PNPM,@babel/highlight,7.22.20,MIT,"",Approved
-PNPM,@babel/parser,7.23.0,MIT,"",Approved
+PNPM,@babel/parser,7.10.5,MIT,"",Approved
 PNPM,@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression,7.22.5,MIT,"",Approved
 PNPM,@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining,7.22.5,MIT,"",Approved
 PNPM,@babel/plugin-proposal-async-generator-functions,7.20.7,MIT,"",Approved
@@ -144,7 +144,7 @@ PNPM,@babel/runtime,7.23.1,MIT,"",Approved
 PNPM,@babel/runtime-corejs3,7.10.3,MIT,"",Approved
 PNPM,@babel/template,7.22.15,MIT,"",Approved
 PNPM,@babel/traverse,7.10.5,MIT,"",Approved
-PNPM,@babel/types,7.23.0,MIT,"",Approved
+PNPM,@babel/types,7.10.5,MIT,"",Approved
 PNPM,@base2/pretty-print-object,1.0.1,Simplified BSD,"",Approved
 PNPM,@bcoe/v8-coverage,0.2.3,MIT,"",Approved
 PNPM,@codemirror/autocomplete,6.1.0,MIT,"",Approved
@@ -266,10 +266,7 @@ PNPM,@manypkg/find-root,1.1.0,MIT,"",Approved
 PNPM,@mdi/js,7.2.96,Apache 2.0,"",Approved
 PNPM,@mdx-js/react,2.3.0,MIT,"",Approved
 PNPM,@melt-ui/svelte,0.34.3,MIT,"",Approved
-PNPM,@microsoft/fast-element,1.12.0,MIT,"",Approved
-PNPM,@microsoft/fast-foundation,2.49.0,MIT,"",Approved
-PNPM,@microsoft/fast-react-wrapper,0.1.48,MIT,"",Approved
-PNPM,@microsoft/fast-web-utilities,5.4.1,MIT,"",Approved
+PNPM,@microsoft/fast-web-utilities,6.0.0,MIT,"",Approved
 PNPM,@microsoft/fetch-event-source,2.0.1,MIT,"",Approved
 PNPM,@mswjs/cookies,0.2.2,MIT,"",Approved
 PNPM,@mswjs/interceptors,0.17.9,MIT,"",Approved
@@ -466,6 +463,7 @@ PNPM,@sourcegraph/extension-api-types,2.1.0,Apache 2.0,"",Approved
 PNPM,@sourcegraph/prettierrc,3.0.3,Apache 2.0,"",Approved
 PNPM,@sourcegraph/stylelint-config,1.4.0,MIT,"",Approved
 PNPM,@sourcegraph/stylelint-plugin-sourcegraph,1.0.1,MIT,"",Approved
+PNPM,@sourcegraph/telemetry,0.11.0,Apache 2.0,"",Approved
 PNPM,@sourcegraph/tsconfig,4.0.1,MIT,"",Approved
 PNPM,@storybook/addon-a11y,7.4.6,MIT,"",Approved
 PNPM,@storybook/addon-actions,7.2.0,MIT,"",Approved
@@ -679,8 +677,6 @@ PNPM,@types/tough-cookie,2.3.5,MIT,"",Approved
 PNPM,@types/trusted-types,2.0.3,MIT,"",Approved
 PNPM,@types/unist,2.0.3,MIT,"",Approved
 PNPM,@types/uuid,8.0.1,MIT,"",Approved
-PNPM,@types/vscode,1.76.0,MIT,"",Approved
-PNPM,@types/vscode-webview,1.57.1,MIT,"",Approved
 PNPM,@types/ws,8.5.3,MIT,"",Approved
 PNPM,@types/yargs,15.0.3,MIT,"",Approved
 PNPM,@types/yargs-parser,21.0.0,MIT,"",Approved
@@ -716,9 +712,6 @@ PNPM,@vitest/runner,0.33.0,MIT,"",Approved
 PNPM,@vitest/snapshot,0.33.0,MIT,"",Approved
 PNPM,@vitest/spy,0.33.0,MIT,"",Approved
 PNPM,@vitest/utils,0.33.0,MIT,"",Approved
-PNPM,@vscode/test-electron,2.3.2,MIT,"",Approved
-PNPM,@vscode/vsce,2.19.0,MIT,"",Approved
-PNPM,@vscode/webview-ui-toolkit,1.2.2,MIT,"",Approved
 PNPM,@web3-storage/multipart-parser,1.0.0,(Apache-2.0 AND MIT),"",Approved
 PNPM,@webassemblyjs/ast,1.11.6,MIT,"",Approved
 PNPM,@webassemblyjs/floating-point-hex-parser,1.11.6,MIT,"",Approved
@@ -767,7 +760,7 @@ PNPM,ansi-colors,4.1.1,MIT,"",Approved
 PNPM,ansi-escapes,4.3.2,MIT,"",Approved
 PNPM,ansi-fragments,0.2.1,MIT,"",Approved
 PNPM,ansi-regex,5.0.1,MIT,"",Approved
-PNPM,ansi-styles,2.2.1,MIT,"",Approved
+PNPM,ansi-styles,3.2.1,MIT,"",Approved
 PNPM,any-promise,1.3.0,MIT,"",Approved
 PNPM,anymatch,3.1.3,ISC,"",Approved
 PNPM,apollo3-cache-persist,0.12.1,MIT,"",Approved
@@ -982,7 +975,7 @@ PNPM,cross-fetch,3.1.5,MIT,"",Approved
 PNPM,cross-spawn,7.0.3,MIT,"",Approved
 PNPM,crypto-random-string,2.0.0,MIT,"",Approved
 PNPM,css-modules-loader-core,1.1.0,ISC,"",Approved
-PNPM,css-select,4.3.0,Simplified BSD,"",Approved
+PNPM,css-select,5.1.0,Simplified BSD,"",Approved
 PNPM,css-selector-tokenizer,0.7.3,MIT,"",Approved
 PNPM,css-tree,2.3.1,MIT,"",Approved
 PNPM,css-what,6.1.0,Simplified BSD,"",Approved
@@ -1061,12 +1054,12 @@ PNPM,dir-glob,2.2.2,MIT,"",Approved
 PNPM,doctrine,2.1.0,Apache 2.0,"",Approved
 PNPM,dom-accessibility-api,0.5.13,MIT,"",Approved
 PNPM,dom-helpers,3.4.0,MIT,"",Approved
-PNPM,dom-serializer,1.4.1,MIT,"",Approved
+PNPM,dom-serializer,2.0.0,MIT,"",Approved
 PNPM,domelementtype,2.3.0,Simplified BSD,"",Approved
 PNPM,domexception,4.0.0,MIT,"",Approved
 PNPM,domhandler,3.3.0,Simplified BSD,"",Approved
 PNPM,dompurify,3.0.4,(MPL-2.0 OR Apache-2.0),"",Approved
-PNPM,domutils,2.8.0,Simplified BSD,"",Approved
+PNPM,domutils,3.1.0,Simplified BSD,"",Approved
 PNPM,dot-case,3.0.4,MIT,"",Approved
 PNPM,dotenv,16.3.1,Simplified BSD,"",Approved
 PNPM,dotenv-expand,10.0.0,Simplified BSD,"",Approved
@@ -1569,7 +1562,7 @@ Go,github.com/sourcegraph/run,v0.12.0,Apache 2.0,github.com/sourcegraph/run,Appr
 Go,github.com/sourcegraph/scip,v0.3.1-0.20230627154934-45df7f6d33fc,Apache 2.0,github.com/sourcegraph/scip,Approved
 Go,github.com/sourcegraph/tiktoken-go,v0.0.0-20230905173153-caab340cf008,MIT,github.com/sourcegraph/tiktoken-go,Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,github.com/sourcegraph/yaml,Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20231026112024-b5a5fdc86e83,Apache 2.0,github.com/sourcegraph/zoekt,Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20231031173451-503302fe8ad1,Apache 2.0,github.com/sourcegraph/zoekt,Approved
 Go,github.com/spf13/pflag,v1.0.5,New BSD,github.com/spf13/pflag,Approved
 Go,github.com/stretchr/testify,v1.8.4,MIT,github.com/stretchr/testify,Approved
 Go,github.com/throttled/throttled/v2,v2.12.0,New BSD,github.com/throttled/throttled,Approved
@@ -1660,14 +1653,14 @@ Go,go.uber.org/goleak,v1.2.1,MIT,go.uber.org/goleak,Approved
 Go,go.uber.org/multierr,v1.11.0,MIT,go.uber.org/multierr,Approved
 Go,go.uber.org/ratelimit,v0.2.0,MIT,go.uber.org/ratelimit,Approved
 Go,go.uber.org/zap,v1.26.0,MIT,go.uber.org/zap,Approved
-Go,golang.org/x/crypto,v0.13.0,New BSD,golang.org/x/crypto,Approved
+Go,golang.org/x/crypto,v0.14.0,New BSD,golang.org/x/crypto,Approved
 Go,golang.org/x/exp,v0.0.0-20230713183714-613f0c0eb8a1,New BSD,golang.org/x/exp,Approved
 Go,golang.org/x/mod,v0.12.0,New BSD,golang.org/x/mod,Approved
-Go,golang.org/x/net,v0.15.0,New BSD,golang.org/x/net,Approved
+Go,golang.org/x/net,v0.17.0,New BSD,golang.org/x/net,Approved
 Go,golang.org/x/oauth2,v0.10.0,New BSD,golang.org/x/oauth2,Approved
 Go,golang.org/x/sync,v0.3.0,New BSD,golang.org/x/sync,Approved
 Go,golang.org/x/sys,v0.13.0,New BSD,golang.org/x/sys,Approved
-Go,golang.org/x/term,v0.12.0,New BSD,golang.org/x/term,Approved
+Go,golang.org/x/term,v0.13.0,New BSD,golang.org/x/term,Approved
 Go,golang.org/x/text,v0.13.0,New BSD,golang.org/x/text,Approved
 Go,golang.org/x/time,v0.3.0,New BSD,golang.org/x/time,Approved
 Go,golang.org/x/xerrors,v0.0.0-20220907171357-04be3eba64a2,New BSD,golang.org/x/xerrors,Approved
@@ -1679,7 +1672,7 @@ Go,google.golang.org/appengine,v1.6.7,Apache 2.0,google.golang.org/appengine,App
 Go,google.golang.org/genproto,v0.0.0-20230920204549-e6e6cdab5c13,Apache 2.0,google.golang.org/genproto,Approved
 Go,google.golang.org/genproto/googleapis/api,v0.0.0-20230920204549-e6e6cdab5c13,Apache 2.0,google.golang.org/genproto/googleapis,Approved
 Go,google.golang.org/genproto/googleapis/rpc,v0.0.0-20230920183334-c177e329c48b,Apache 2.0,google.golang.org/genproto/googleapis,Approved
-Go,google.golang.org/grpc,v1.57.0,Apache 2.0,google.golang.org/grpc,Approved
+Go,google.golang.org/grpc,v1.57.1,Apache 2.0,google.golang.org/grpc,Approved
 Go,google.golang.org/protobuf,v1.31.0,New BSD,google.golang.org/protobuf,Approved
 PNPM,googleapis,47.0.0,Apache 2.0,"",Approved
 PNPM,googleapis-common,3.2.0,Apache 2.0,"",Approved
@@ -1733,7 +1726,7 @@ PNPM,highlight.js,10.7.3,New BSD,"",Approved
 PNPM,highlightjs-graphql,1.0.2,MIT,"",Approved
 PNPM,history,4.5.1,MIT,"",Approved
 PNPM,hoist-non-react-statics,3.3.2,New BSD,"",Approved
-PNPM,hosted-git-info,3.0.8,ISC,"",Approved
+PNPM,hosted-git-info,4.1.0,ISC,"",Approved
 PNPM,html-encoding-sniffer,3.0.0,MIT,"",Approved
 PNPM,html-escaper,2.0.0,MIT,"",Approved
 PNPM,html-tags,3.1.0,MIT,"",Approved
@@ -1759,7 +1752,6 @@ PNPM,ieee754,1.2.1,New BSD,"",Approved
 PNPM,ignore,4.0.6,MIT,"",Approved
 PNPM,ignore-by-default,1.0.1,ISC,"",Approved
 PNPM,image-size,1.0.2,MIT,"",Approved
-PNPM,immediate,3.0.6,MIT,"",Approved
 PNPM,immutable,3.7.6,New BSD,"",Approved
 PNPM,import-fresh,3.3.0,MIT,"",Approved
 PNPM,import-from,4.0.0,MIT,"",Approved
@@ -1769,7 +1761,7 @@ PNPM,import-meta-resolve,3.0.0,MIT,"",Approved
 PNPM,imurmurhash,0.1.4,MIT,"",Approved
 PNPM,indent-string,2.1.0,MIT,"",Approved
 PNPM,inflight,1.0.6,ISC,"",Approved
-PNPM,inherits,2.0.1,ISC,"",Approved
+PNPM,inherits,2.0.4,ISC,"",Approved
 PNPM,ini,1.3.8,ISC,"",Approved
 PNPM,inquirer,8.2.5,MIT,"",Approved
 PNPM,internal-slot,1.0.6,MIT,"",Approved
@@ -1921,7 +1913,6 @@ PNPM,jsonfile,4.0.0,MIT,"",Approved
 PNPM,jsonify,0.0.0,Public Domain,"",Approved
 PNPM,jsonwebtoken,8.5.1,MIT,"",Approved
 PNPM,jsx-ast-utils,3.3.0,MIT,"",Approved
-PNPM,jszip,3.10.1,(MIT OR GPL-3.0-or-later),"",Approved
 PNPM,junk,1.0.3,MIT,"",Approved
 PNPM,just-extend,4.0.2,MIT,"",Approved
 PNPM,jwa,1.4.1,MIT,"",Approved
@@ -1946,7 +1937,6 @@ PNPM,leven,3.1.0,MIT,"",Approved
 PNPM,levn,0.3.0,MIT,"",Approved
 PNPM,libhoney,3.1.1,Apache 2.0,"",Approved
 PNPM,license-checker,25.0.1,New BSD,"",Approved
-PNPM,lie,3.3.0,MIT,"",Approved
 PNPM,lilconfig,2.0.6,MIT,"",Approved
 PNPM,lines-and-columns,1.1.6,MIT,"",Approved
 PNPM,linguist-languages,7.14.0,MIT,"",Approved
@@ -2170,7 +2160,7 @@ PNPM,parse-filepath,1.0.2,MIT,"",Approved
 PNPM,parse-json,2.2.0,MIT,"",Approved
 PNPM,parse-package-name,0.1.0,MIT,"",Approved
 PNPM,parse-semver,1.1.1,MIT,"",Approved
-PNPM,parse5,6.0.1,MIT,"",Approved
+PNPM,parse5,7.1.2,MIT,"",Approved
 PNPM,parse5-htmlparser2-tree-adapter,7.0.0,MIT,"",Approved
 PNPM,parseurl,1.3.3,MIT,"",Approved
 PNPM,pascal-case,3.1.2,MIT,"",Approved
@@ -2193,7 +2183,7 @@ PNPM,peek-stream,1.1.3,MIT,"",Approved
 PNPM,pend,1.2.0,MIT,"",Approved
 PNPM,performance-now,2.1.0,MIT,"",Approved
 PNPM,periscopic,3.1.0,MIT,"",Approved
-PNPM,picocolors,0.2.1,ISC,"",Approved
+PNPM,picocolors,1.0.0,ISC,"",Approved
 PNPM,picomatch,2.3.1,MIT,"",Approved
 PNPM,pify,3.0.0,MIT,"",Approved
 PNPM,pinkie,2.0.4,MIT,"",Approved
@@ -2594,7 +2584,7 @@ PNPM,unbox-primitive,1.0.2,MIT,"",Approved
 PNPM,unbzip2-stream,1.4.3,MIT,"",Approved
 PNPM,unc-path-regex,0.1.2,MIT,"",Approved
 PNPM,undefsafe,2.0.5,MIT,"",Approved
-PNPM,underscore,1.13.6,MIT,"",Approved
+PNPM,underscore,1.13.1,MIT,"",Approved
 PNPM,undici,5.22.1,MIT,"",Approved
 PNPM,unicode-canonical-property-names-ecmascript,2.0.0,MIT,"",Approved
 PNPM,unicode-match-property-ecmascript,2.0.0,MIT,"",Approved
@@ -2704,7 +2694,7 @@ PNPM,xmlbuilder,11.0.1,MIT,"",Approved
 PNPM,xmlchars,2.2.0,MIT,"",Approved
 PNPM,xregexp,2.0.0,MIT,"",Approved
 PNPM,xtend,4.0.2,MIT,"",Approved
-PNPM,y18n,4.0.3,ISC,"",Approved
+PNPM,y18n,5.0.8,ISC,"",Approved
 PNPM,yallist,4.0.0,ISC,"",Approved
 PNPM,yaml,2.3.2,ISC,"",Approved
 PNPM,yaml-ast-parser,0.0.43,Apache 2.0,"",Approved

@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "base-image.go",
         "package.go",
+        "scan_images.go",
         "update_hashes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/wolfi",

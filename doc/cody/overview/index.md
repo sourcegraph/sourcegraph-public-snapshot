@@ -129,7 +129,7 @@ Cody is currently available in beta for all users.
 Cody is a free and open-source AI coding assistant that writes, fixes, and maintains your code. Cody understands your entire codebase by leveraging the power of [Code Graph](./../core-concepts/code-graph.md) to gather context, which assists you in writing accurate code.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-1.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-in-action.mp4" type="video/mp4">
 </video>
 
 Cody connects seamlessly with codehosts like <a target="blank" href="https://github.com/login?client_id=e917b2b7fa9040e1edd4&return_to=%2Flogin%2Foauth%2Fauthorize%3Fclient_id%3De917b2b7fa9040e1edd4%26response_type%3Dcode%26scope%3Duser%253Aemail%26state%3DeyJSZWRpcmVjdCI6Ii9nZXQtY29keSIsIlByb3ZpZGVySUQiOiJodHRwczovL2dpdGh1Yi5jb20vOjplOTE3YjJiN2ZhOTA0MGUxZWRkNCIsIkNTUkYiOiIyNlJzS1dFMG15LUJKeUNUTDRNT2QtYmhoNUt0ZklMUUZPZVYxRENZY2JJIiwiT3AiOiIifQ">GitHub</a>, <a target="blank" href="https://gitlab.com/users/sign_in">GitLab</a> and IDEs like <a target="blank" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">VS Code</a> and <a target="blank" href="https://plugins.jetbrains.com/plugin/9682-sourcegraph-cody--code-search">JetBrains</a>. Once connected, Cody acts as your personal AI coding assistant, equipped with a comprehensive understanding of the following three crucial elements:
