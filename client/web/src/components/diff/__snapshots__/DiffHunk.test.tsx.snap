@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
+exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
 <DocumentFragment>
   <table>
     <tbody>
@@ -332,8 +332,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           <div
             class="d-inline-block"
           >
-                            connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt;
-             {
+                            connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
           </div>
         </td>
       </tr>

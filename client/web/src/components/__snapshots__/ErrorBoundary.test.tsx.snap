@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ErrorBoundary > passes through if non-error 1`] = `
+exports[`ErrorBoundary passes through if non-error 1`] = `
 <DocumentFragment>
   <div
     class="heroPage defaultPadding"
@@ -42,7 +42,7 @@ exports[`ErrorBoundary > passes through if non-error 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ErrorBoundary > renders error page if error 1`] = `
+exports[`ErrorBoundary renders error page if error 1`] = `
 <DocumentFragment>
   <span>
     hello
@@ -50,7 +50,7 @@ exports[`ErrorBoundary > renders error page if error 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ErrorBoundary > renders reload page if dynamic import error 1`] = `
+exports[`ErrorBoundary renders reload page if dynamic import error 1`] = `
 <DocumentFragment>
   <div
     class="heroPage defaultPadding"

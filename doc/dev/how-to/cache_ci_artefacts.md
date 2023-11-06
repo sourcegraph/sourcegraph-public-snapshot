@@ -27,14 +27,15 @@ In the [CI pipeline generator](../background-information/ci/development.md), whe
 For example: we want to cache the `node_modules` folder to avoid dowloading again all dependencies for the front-end.
 
 ```go
-pipeline.AddStep("...",
+// Browser extension unit tests
+pipeline.AddStep(":jest::chrome: Test browser extension",
   bk.Cache(&buildkite.CacheOptions{
     ID:          "node_modules_pnpm",
     Key:         "cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}",
     RestoreKeys: []string{"cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}"},
     Paths:       []string{"node_modules", ".pnpm/cache"},
   }),
-  bk.Cmd("..."),
+  bk.Cmd("dev/ci/pnpm-test.sh client/browser"),
 ```
 
 The important part here are:

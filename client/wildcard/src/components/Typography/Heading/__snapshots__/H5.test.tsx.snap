@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`H5 > should render correctly 1`] = `
+exports[`H5 should render correctly 1`] = `
 <DocumentFragment>
   <h5
     class="h5 alignLeft singleLine"
@@ -10,7 +10,7 @@ exports[`H5 > should render correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`H5 > should render correctly with \`as\` 1`] = `
+exports[`H5 should render correctly with \`as\` 1`] = `
 <DocumentFragment>
   <p
     class="h5 alignLeft singleLine"

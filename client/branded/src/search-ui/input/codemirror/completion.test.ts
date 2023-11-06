@@ -1,5 +1,5 @@
 import type { Completion } from '@codemirror/autocomplete'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from '@jest/globals'
 
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { POPULAR_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'

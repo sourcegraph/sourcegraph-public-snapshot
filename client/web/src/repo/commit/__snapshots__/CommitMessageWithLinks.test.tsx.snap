@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CommitMessageWithLinks > works with a commit link 1`] = `
+exports[`CommitMessageWithLinks works with a commit link 1`] = `
 <DocumentFragment>
   <a
     class="anchorLink"
@@ -27,7 +27,7 @@ exports[`CommitMessageWithLinks > works with a commit link 1`] = `
 </DocumentFragment>
 `;
 
-exports[`CommitMessageWithLinks > works with a repo link 1`] = `
+exports[`CommitMessageWithLinks works with a repo link 1`] = `
 <DocumentFragment>
   <a
     class="anchorLink"

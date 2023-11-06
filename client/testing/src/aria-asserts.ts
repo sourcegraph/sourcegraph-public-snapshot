@@ -1,8 +1,8 @@
-import { expect } from 'vitest'
+import { expect } from '@jest/globals'
 
-// Since vitest doesn't provide native matcher to check aria state of the element
+// Since jest doesn't provide native matcher to check aria state of the element
 // see https://github.com/testing-library/jest-dom/issues/144 for more details.
-// We have to use our in-house assert utility for this. We can't use custom vitest
+// We have to use our in-house assert utility for this. We can't use custom jest
 // matcher `.toBeAriaDisabled` due to problems with TS global types problems,
 // see https://github.com/sourcegraph/sourcegraph/pull/44461
 

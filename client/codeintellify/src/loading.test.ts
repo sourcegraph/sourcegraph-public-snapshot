@@ -1,7 +1,7 @@
 import assert from 'assert'
 
+import { describe, it } from '@jest/globals'
 import { TestScheduler } from 'rxjs/testing'
-import { describe, it } from 'vitest'
 
 import { emitLoading, LOADING, type MaybeLoadingResult } from './loading'
 

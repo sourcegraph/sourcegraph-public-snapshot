@@ -1,8 +1,8 @@
+import { afterAll, beforeEach, describe, expect, test } from '@jest/globals'
 import { noop } from 'lodash'
 import { from, type Observable, of, Subject, Subscription, NEVER } from 'rxjs'
 import { bufferCount, map, switchMap, toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
-import { afterAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { createBarrier } from '@sourcegraph/testing'
 

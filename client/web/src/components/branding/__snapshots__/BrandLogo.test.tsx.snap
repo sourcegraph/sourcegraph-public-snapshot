@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`BrandLogo > renders dark custom branding logo 1`] = `
+exports[`BrandLogo renders dark custom branding logo 1`] = `
 <DocumentFragment>
   <img
     alt="Logo"
@@ -10,7 +10,7 @@ exports[`BrandLogo > renders dark custom branding logo 1`] = `
 </DocumentFragment>
 `;
 
-exports[`BrandLogo > renders dark custom branding symbol 1`] = `
+exports[`BrandLogo renders dark custom branding symbol 1`] = `
 <DocumentFragment>
   <img
     alt="Logo"
@@ -20,7 +20,7 @@ exports[`BrandLogo > renders dark custom branding symbol 1`] = `
 </DocumentFragment>
 `;
 
-exports[`BrandLogo > renders dark sourcegraph logo 1`] = `
+exports[`BrandLogo renders dark sourcegraph logo 1`] = `
 <DocumentFragment>
   <img
     alt="Sourcegraph logo"
@@ -30,7 +30,7 @@ exports[`BrandLogo > renders dark sourcegraph logo 1`] = `
 </DocumentFragment>
 `;
 
-exports[`BrandLogo > renders dark sourcegraph symbol 1`] = `
+exports[`BrandLogo renders dark sourcegraph symbol 1`] = `
 <DocumentFragment>
   <img
     alt="Sourcegraph logo"
@@ -40,7 +40,7 @@ exports[`BrandLogo > renders dark sourcegraph symbol 1`] = `
 </DocumentFragment>
 `;
 
-exports[`BrandLogo > renders light custom branding logo 1`] = `
+exports[`BrandLogo renders light custom branding logo 1`] = `
 <DocumentFragment>
   <img
     alt="Logo"
@@ -50,7 +50,7 @@ exports[`BrandLogo > renders light custom branding logo 1`] = `
 </DocumentFragment>
 `;
 
-exports[`BrandLogo > renders light custom branding symbol 1`] = `
+exports[`BrandLogo renders light custom branding symbol 1`] = `
 <DocumentFragment>
   <img
     alt="Logo"
@@ -60,7 +60,7 @@ exports[`BrandLogo > renders light custom branding symbol 1`] = `
 </DocumentFragment>
 `;
 
-exports[`BrandLogo > renders light sourcegraph logo 1`] = `
+exports[`BrandLogo renders light sourcegraph logo 1`] = `
 <DocumentFragment>
   <img
     alt="Sourcegraph logo"
@@ -70,7 +70,7 @@ exports[`BrandLogo > renders light sourcegraph logo 1`] = `
 </DocumentFragment>
 `;
 
-exports[`BrandLogo > renders light sourcegraph symbol 1`] = `
+exports[`BrandLogo renders light sourcegraph symbol 1`] = `
 <DocumentFragment>
   <img
     alt="Sourcegraph logo"

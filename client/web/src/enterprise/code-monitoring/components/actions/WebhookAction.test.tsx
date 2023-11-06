@@ -1,7 +1,7 @@
 import type { MockedResponse } from '@apollo/client/testing'
+import { describe, expect, test } from '@jest/globals'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
-import { describe, expect, test } from 'vitest'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'

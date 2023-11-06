@@ -1,6 +1,7 @@
 import { nextTick } from 'process'
 import { promisify } from 'util'
 
+import { afterEach, beforeAll, beforeEach, jest, describe, expect, it, test } from '@jest/globals'
 import type { RenderResult } from '@testing-library/react'
 import type { Remote } from 'comlink'
 import { uniqueId, noop, pick } from 'lodash'
@@ -9,7 +10,6 @@ import { take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import type * as sourcegraph from 'sourcegraph'
-import { afterEach, beforeAll, beforeEach, vi, describe, expect, it, test } from 'vitest'
 
 import { resetAllMemoizationCaches, subtypeOf } from '@sourcegraph/common'
 import type { SuccessGraphQLResult } from '@sourcegraph/http-client'
@@ -53,7 +53,7 @@ const createTestElement = (): HTMLElement => {
     return element
 }
 
-vi.mock('uuid', () => ({
+jest.mock('uuid', () => ({
     v4: () => 'uuid',
 }))
 

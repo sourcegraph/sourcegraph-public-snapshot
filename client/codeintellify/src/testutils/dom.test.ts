@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from '@jest/globals'
 
 import { DOM } from './dom'
 

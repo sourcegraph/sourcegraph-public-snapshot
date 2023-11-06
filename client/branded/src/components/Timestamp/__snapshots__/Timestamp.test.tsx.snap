@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Timestamp > absolute time with formatting 1`] = `
+exports[`Timestamp absolute time with formatting 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
@@ -10,42 +10,42 @@ exports[`Timestamp > absolute time with formatting 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Timestamp > mocked current time 1`] = `
+exports[`Timestamp mocked current time 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
   >
-    almost 18 years ago
+    about 22 hours ago
   </span>
 </DocumentFragment>
 `;
 
-exports[`Timestamp > noAbout 1`] = `
+exports[`Timestamp noAbout 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
   >
-    almost 18 years ago
+    22 hours ago
   </span>
 </DocumentFragment>
 `;
 
-exports[`Timestamp > noAgo 1`] = `
+exports[`Timestamp noAgo 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
   >
-    almost 18 years
+    about 22 hours
   </span>
 </DocumentFragment>
 `;
 
-exports[`Timestamp > with time time 1`] = `
+exports[`Timestamp with time time 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
   >
-    almost 18 years ago
+    about 21 hours ago
   </span>
 </DocumentFragment>
 `;

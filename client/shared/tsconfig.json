@@ -4,6 +4,10 @@
     "jsx": "react-jsx",
     "module": "commonjs",
     "sourceRoot": "src",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "*"],
+    },
     "rootDir": ".",
     "outDir": "./out",
   },

@@ -8,7 +8,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "echo no tests"
+    "test": "jest"
   },
   "devDependencies": {
     "@types/sass": "1.16.1"

@@ -1,11 +1,7 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "ts_project")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
-
-# Mock files here are part of this library, not the tests of this library.
-# gazelle:js_test_files !**/mock*.{ts,tsx}
 
 npm_link_all_packages(name = "node_modules")
 
@@ -24,25 +20,11 @@ ts_project(
     name = "testing_lib",
     srcs = [
         "src/aria-asserts.ts",
-        "src/globalTestSetup.ts",
         "src/index.ts",
-        "src/jestDomMatchers.ts",
-        "src/mockDate.ts",
-        "src/mockMatchMedia.ts",
-        "src/mockResizeObserver.ts",
-        "src/mockUniqueId.ts",
-        "src/reactCleanup.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
-        "//:node_modules/@testing-library/jest-dom",
-        "//:node_modules/@testing-library/react",
-        "//:node_modules/@types/lodash",
-        "//:node_modules/@types/mockdate",
-        "//:node_modules/lodash",
-        "//:node_modules/mockdate",
-        "//:node_modules/resize-observer-polyfill",
-        "//:node_modules/vitest",
+        "//:node_modules/@jest/globals",  #keep
     ],
 )
 
@@ -51,14 +33,5 @@ npm_package(
     srcs = [
         "package.json",
         ":testing_lib",
-    ],
-)
-
-js_library(
-    name = "fetch-mock",
-    srcs = ["src/fetch.js"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/node-fetch",
     ],
 )

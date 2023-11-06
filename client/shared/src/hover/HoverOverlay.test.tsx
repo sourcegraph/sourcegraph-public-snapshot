@@ -1,7 +1,7 @@
+import { describe, expect, test } from '@jest/globals'
 import { render } from '@testing-library/react'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
-import { describe, expect, test } from 'vitest'
 
 import { subtypeOf } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'

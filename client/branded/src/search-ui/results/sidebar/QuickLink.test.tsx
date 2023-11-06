@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from '@jest/globals'
 
 import type { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from '@jest/globals'
 
 import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeOrError } from '../../../../settings/settings'
 import type { CodeEditorWithPartialModel } from '../../../viewerTypes'

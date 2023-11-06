@@ -1,9 +1,9 @@
+import { afterEach, beforeEach, describe, expect, test } from '@jest/globals'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled } from '@sourcegraph/testing'

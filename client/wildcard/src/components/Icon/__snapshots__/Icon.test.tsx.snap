@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Icon > custom icons > renders a medium icon correctly 1`] = `
+exports[`Icon custom icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-label="Sourcegraph logo"
@@ -26,7 +26,7 @@ exports[`Icon > custom icons > renders a medium icon correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Icon > custom icons > renders a simple inline icon correctly 1`] = `
+exports[`Icon custom icons renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-hidden="true"
@@ -52,7 +52,7 @@ exports[`Icon > custom icons > renders a simple inline icon correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Icon > legacy mdi-react icons > renders a medium icon correctly 1`] = `
+exports[`Icon legacy mdi-react icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-label="Checkmark"
@@ -70,7 +70,7 @@ exports[`Icon > legacy mdi-react icons > renders a medium icon correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Icon > legacy mdi-react icons > renders a simple inline icon correctly 1`] = `
+exports[`Icon legacy mdi-react icons renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-hidden="true"
@@ -88,7 +88,7 @@ exports[`Icon > legacy mdi-react icons > renders a simple inline icon correctly 
 </DocumentFragment>
 `;
 
-exports[`Icon > new @mdi/js icons > renders a medium icon correctly 1`] = `
+exports[`Icon new @mdi/js icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-label="Checkmark"
@@ -106,7 +106,7 @@ exports[`Icon > new @mdi/js icons > renders a medium icon correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Icon > new @mdi/js icons > renders a simple inline icon correctly 1`] = `
+exports[`Icon new @mdi/js icons renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-hidden="true"
@@ -124,7 +124,7 @@ exports[`Icon > new @mdi/js icons > renders a simple inline icon correctly 1`] =
 </DocumentFragment>
 `;
 
-exports[`Icon > styled as icons > renders a simple span 1`] = `
+exports[`Icon styled as icons renders a simple span 1`] = `
 <DocumentFragment>
   <span
     aria-label="Smile"

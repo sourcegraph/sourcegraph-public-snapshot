@@ -1,7 +1,7 @@
 import type { MockedResponse } from '@apollo/client/testing'
+import { beforeAll, beforeEach, describe, expect, it } from '@jest/globals'
 import { fireEvent, render, type RenderResult, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

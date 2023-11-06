@@ -1,5 +1,5 @@
+import { describe, expect, it } from '@jest/globals'
 import { readFile } from 'mz/fs'
-import { describe, expect, it } from 'vitest'
 
 import { getFilePath, getFilePathFromURL } from './util'
 

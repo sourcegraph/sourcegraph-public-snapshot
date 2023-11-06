@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SyntaxHighlightedSearchQuery > should syntax highlight filter 1`] = `
+exports[`SyntaxHighlightedSearchQuery should syntax highlight filter 1`] = `
 <DocumentFragment>
   <span
     class="text-monospace search-query-link"
@@ -44,7 +44,7 @@ exports[`SyntaxHighlightedSearchQuery > should syntax highlight filter 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SyntaxHighlightedSearchQuery > should syntax highlight filter and operator 1`] = `
+exports[`SyntaxHighlightedSearchQuery should syntax highlight filter and operator 1`] = `
 <DocumentFragment>
   <span
     class="text-monospace search-query-link"
@@ -98,7 +98,7 @@ exports[`SyntaxHighlightedSearchQuery > should syntax highlight filter and opera
 </DocumentFragment>
 `;
 
-exports[`SyntaxHighlightedSearchQuery > should syntax highlight negated filter 1`] = `
+exports[`SyntaxHighlightedSearchQuery should syntax highlight negated filter 1`] = `
 <DocumentFragment>
   <span
     class="text-monospace search-query-link"
@@ -132,7 +132,7 @@ exports[`SyntaxHighlightedSearchQuery > should syntax highlight negated filter 1
 </DocumentFragment>
 `;
 
-exports[`SyntaxHighlightedSearchQuery > should syntax highlight operator 1`] = `
+exports[`SyntaxHighlightedSearchQuery should syntax highlight operator 1`] = `
 <DocumentFragment>
   <span
     class="text-monospace search-query-link"

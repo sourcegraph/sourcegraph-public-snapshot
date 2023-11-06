@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 
+import { afterAll, describe, expect, it } from '@jest/globals'
 import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import type * as H from 'history'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
-import { afterAll, describe, expect, it } from 'vitest'
 
 import { ConnectionNodes } from './ConnectionNodes'
 import { FilteredConnection } from './FilteredConnection'

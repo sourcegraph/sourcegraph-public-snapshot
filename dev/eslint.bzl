@@ -46,6 +46,7 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
         srcs = native.glob(["*.js"]),
         config = ":eslint_config",
         deps = [
+            "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
             "//:node_modules/@types/node",
         ] + root_js_deps,
     )

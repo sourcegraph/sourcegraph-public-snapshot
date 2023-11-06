@@ -1,5 +1,5 @@
+import { afterAll, describe, expect, it } from '@jest/globals'
 import { of } from 'rxjs'
-import { afterAll, describe, expect, it } from 'vitest'
 
 import { findPositionsFromEvents } from './positions'
 import { DOM } from './testutils/dom'
@@ -10,6 +10,9 @@ describe('positions', () => {
     const testcases = dom.createCodeViews()
 
     afterAll(dom.cleanup)
+
+    // Without this placeholder, jest throws an error saying there are no tests.
+    it('placeholder', () => {})
 
     for (const tokenize of [false, true]) {
         for (const codeView of testcases) {

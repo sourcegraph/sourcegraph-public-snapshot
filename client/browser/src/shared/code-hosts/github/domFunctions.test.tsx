@@ -1,6 +1,6 @@
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { startCase } from 'lodash'
 import type { Omit } from 'utility-types'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { type DOMFunctionsTest, getFixtureBody, testDOMFunctions } from '../shared/codeHostTestUtils'
 

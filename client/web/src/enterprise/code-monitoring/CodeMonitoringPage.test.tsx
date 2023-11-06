@@ -1,8 +1,8 @@
+import { describe, expect, test } from '@jest/globals'
 import { render, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
-import { describe, expect, test } from 'vitest'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 

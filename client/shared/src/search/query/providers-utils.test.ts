@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from '@jest/globals'
 
 import { getSuggestionQuery } from './providers-utils'
 import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
