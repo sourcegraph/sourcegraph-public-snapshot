@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { afterAll, beforeAll, describe, expect, test } from '@jest/globals'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

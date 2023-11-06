@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from '@jest/globals'
 
 import { encodeCaptureInsightURL, decodeCaptureInsightURL } from './capture-insight-url-parsers'
 

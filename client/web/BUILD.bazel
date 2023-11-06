@@ -4,7 +4,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
+load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("//dev:esbuild.bzl", "esbuild_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
@@ -12,6 +12,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
@@ -52,6 +53,7 @@ eslint_test_with_types(
     config = ":eslint_config",
     deps = [
         ":web_tests",
+        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )
@@ -1880,7 +1882,7 @@ ts_project(
     name = "web_tests",
     testonly = True,
     srcs = [
-        "__mocks__/zustand.ts",
+        "src/__mocks__/zustand.ts",
         "src/auth/PostSignUpPage.test.tsx",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
@@ -1998,7 +2000,7 @@ ts_project(
         "src/stores/navbarSearchQueryState.test.ts",
         "src/stores/notepad.test.ts",
         "src/team/area/testContext.mock.ts",
-        "src/testSetup.test.ts",
+        "src/testGlobals.d.ts",  #keep
         "src/tour/components/Tour/Tour.test.tsx",
         "src/tour/components/Tour/useTour.test.tsx",
         "src/tracking/userTracker.test.ts",
@@ -2031,6 +2033,7 @@ ts_project(
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/state",
         "//:node_modules/@codemirror/view",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@testing-library/dom",
         "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
@@ -2059,7 +2062,6 @@ ts_project(
         "//:node_modules/rxjs",
         "//:node_modules/semver",
         "//:node_modules/sinon",
-        "//:node_modules/vitest",
         "//:node_modules/wildcard-mock-link",
         "//:node_modules/zustand",
         "//client/shared:graphql_operations",
@@ -2077,18 +2079,18 @@ npm_package(
     ],
 )
 
-filegroup(
-    name = "snapshots",
-    srcs = glob(["src/**/__snapshots__/*"]),
-)
-
-vitest_test(
+jest_test(
     name = "test",
     size = "enormous",  # make sure bazel reserves enough RAM for this.
     timeout = "moderate",
     data = [
-        ":snapshots",
         ":web_tests",
+    ],
+    patch_node_fs = False,
+    shard_count = 8,  # empirical
+    tags = [
+        "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
+        "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )
 

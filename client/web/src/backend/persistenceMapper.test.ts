@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from '@jest/globals'
 
 import { persistenceMapper, ROOT_QUERY_KEY } from './persistenceMapper'
 

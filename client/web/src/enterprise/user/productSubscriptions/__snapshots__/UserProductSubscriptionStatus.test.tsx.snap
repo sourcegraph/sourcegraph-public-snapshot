@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`UserProductSubscriptionStatus > toggle > license key hidden 1`] = `
+exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
 <DocumentFragment>
   <div
     class="card"
@@ -76,7 +76,7 @@ exports[`UserProductSubscriptionStatus > toggle > license key hidden 1`] = `
 </DocumentFragment>
 `;
 
-exports[`UserProductSubscriptionStatus > toggle > license key revealed 1`] = `
+exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
 <DocumentFragment>
   <div
     class="card"

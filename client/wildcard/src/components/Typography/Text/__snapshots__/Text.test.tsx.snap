@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Text > should render correctly 1`] = `
+exports[`Text should render correctly 1`] = `
 <DocumentFragment>
   <p
     class="fontWeightMedium alignLeft singleLine"
@@ -10,7 +10,7 @@ exports[`Text > should render correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Text > should render correctly with \`as\` 1`] = `
+exports[`Text should render correctly with \`as\` 1`] = `
 <DocumentFragment>
   <div
     class=""

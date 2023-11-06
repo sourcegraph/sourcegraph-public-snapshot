@@ -2,11 +2,11 @@
 import type { ReactElement } from 'react'
 
 import type { MockedResponse } from '@apollo/client/testing'
+import { beforeAll, describe, expect, it, jest } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import sinon from 'sinon'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -18,12 +18,16 @@ import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
-vi.mock('react-router-dom', async () => ({
-    ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
-    useNavigate: () => ({
-        push: vi.fn(),
-    }),
-}))
+function mockRouterDom() {
+    return {
+        ...jest.requireActual<typeof import('react-router-dom')>('react-router-dom'),
+        useNavigate: () => ({
+            push: jest.fn(),
+        }),
+    }
+}
+
+jest.mock('react-router-dom', () => mockRouterDom())
 
 const mockTelemetryService = {
     log: sinon.spy(),
@@ -75,7 +79,7 @@ const mockedGQL: MockedResponse[] = [
                 },
             },
         },
-    } satisfies MockedResponse<InsightsDashboardsResult>,
+    } as MockedResponse<InsightsDashboardsResult>,
 ]
 
 const renderWithBrandedContext = (component: ReactElement, { route = '/', path = '*', api = {} } = {}) => ({

@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`KeyboardShortcutsHelp > is triggered correctly 1`] = `
+exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
 <body>
   <div
     aria-hidden="true"

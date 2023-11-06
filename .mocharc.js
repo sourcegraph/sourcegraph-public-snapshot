@@ -5,7 +5,7 @@ module.exports = {
   require: [
     ...(IS_BAZEL ? [] : ['ts-node/register/transpile-only']),
     'abort-controller/polyfill',
-    rootDir + '/client/testing/src/fetch',
+    rootDir + '/client/shared/dev/fetch',
     rootDir + '/client/shared/dev/suppressPollyErrors',
   ],
   reporter: rootDir + '/client/shared/dev/customMochaSpecReporter.js',

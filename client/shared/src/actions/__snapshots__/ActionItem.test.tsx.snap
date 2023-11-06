@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ActionItem > "open" command > renders as link 1`] = `
+exports[`ActionItem "open" command renders as link 1`] = `
 <DocumentFragment>
   <span>
     <a
@@ -27,7 +27,7 @@ exports[`ActionItem > "open" command > renders as link 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > "open" command > renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
+exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
 <DocumentFragment>
   <span>
     <a
@@ -43,7 +43,7 @@ exports[`ActionItem > "open" command > renders as link that opens in a new tab, 
 </DocumentFragment>
 `;
 
-exports[`ActionItem > "open" command > renders as link with icon and opens a new tab for a different origin 1`] = `
+exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
 <DocumentFragment>
   <span>
     <a
@@ -72,7 +72,7 @@ exports[`ActionItem > "open" command > renders as link with icon and opens a new
 </DocumentFragment>
 `;
 
-exports[`ActionItem > actionItem variant 1`] = `
+exports[`ActionItem actionItem variant 1`] = `
 <DocumentFragment>
   <button
     aria-label="d"
@@ -88,7 +88,7 @@ exports[`ActionItem > actionItem variant 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > non-actionItem variant 1`] = `
+exports[`ActionItem non-actionItem variant 1`] = `
 <DocumentFragment>
   <button
     aria-label="d"
@@ -104,7 +104,7 @@ exports[`ActionItem > non-actionItem variant 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > non-pressed actionItem 1`] = `
+exports[`ActionItem non-pressed actionItem 1`] = `
 <DocumentFragment>
   <button
     aria-pressed="false"
@@ -117,7 +117,7 @@ exports[`ActionItem > non-pressed actionItem 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > noop command 1`] = `
+exports[`ActionItem noop command 1`] = `
 <DocumentFragment>
   <span>
     <img
@@ -129,7 +129,7 @@ exports[`ActionItem > noop command 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > pressed toggle actionItem 1`] = `
+exports[`ActionItem pressed toggle actionItem 1`] = `
 <DocumentFragment>
   <button
     aria-pressed="true"
@@ -142,7 +142,7 @@ exports[`ActionItem > pressed toggle actionItem 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > run command 1`] = `
+exports[`ActionItem run command 1`] = `
 <DocumentFragment>
   <button
     aria-label="d"
@@ -158,7 +158,7 @@ exports[`ActionItem > run command 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > run command 2`] = `
+exports[`ActionItem run command 2`] = `
 <DocumentFragment>
   <button
     aria-label="d"
@@ -174,7 +174,7 @@ exports[`ActionItem > run command 2`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > run command with error 1`] = `
+exports[`ActionItem run command with error 1`] = `
 <DocumentFragment>
   <button
     aria-label="d"
@@ -190,7 +190,7 @@ exports[`ActionItem > run command with error 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > run command with showLoadingSpinnerDuringExecution 1`] = `
+exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
   <button
     aria-disabled="true"
@@ -219,7 +219,7 @@ exports[`ActionItem > run command with showLoadingSpinnerDuringExecution 1`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > run command with showLoadingSpinnerDuringExecution 2`] = `
+exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
   <button
     aria-label="d"
@@ -235,7 +235,7 @@ exports[`ActionItem > run command with showLoadingSpinnerDuringExecution 2`] = `
 </DocumentFragment>
 `;
 
-exports[`ActionItem > title element 1`] = `
+exports[`ActionItem title element 1`] = `
 <DocumentFragment>
   <button
     aria-label="d"

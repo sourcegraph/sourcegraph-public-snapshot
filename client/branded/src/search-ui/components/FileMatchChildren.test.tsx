@@ -1,8 +1,8 @@
+import { afterAll, describe, it } from '@jest/globals'
 import { cleanup } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
 import sinon from 'sinon'
-import { afterAll, describe, it } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {

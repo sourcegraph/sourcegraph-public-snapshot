@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from '@jest/globals'
 
 import { Lexer, OPERATOR_CHARS, OPERATORS, type OperatorTree, TemplateLexer, type Token, TokenType } from './lexer'
 

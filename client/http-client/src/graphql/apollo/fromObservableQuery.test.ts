@@ -1,8 +1,8 @@
 import { Observable as ZenObservable, type ObservableQuery } from '@apollo/client'
+import { describe, expect, it } from '@jest/globals'
 import delay from 'delay'
 import { isObservable } from 'rxjs'
 import sinon from 'sinon'
-import { describe, expect, it } from 'vitest'
 
 import { createBarrier } from '@sourcegraph/testing'
 

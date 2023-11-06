@@ -1,5 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
 import { subMonths, addDays } from 'date-fns'
-import { describe, expect, test } from 'vitest'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

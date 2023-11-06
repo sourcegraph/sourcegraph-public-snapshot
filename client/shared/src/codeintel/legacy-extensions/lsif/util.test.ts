@@ -1,5 +1,5 @@
+import { test } from '@jest/globals'
 import sinon from 'sinon'
-import { test } from 'vitest'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 

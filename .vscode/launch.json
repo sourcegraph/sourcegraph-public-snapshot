@@ -75,6 +75,28 @@
       }
     },
     {
+      "type": "node",
+      "name": "vscode-jest-tests",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": [
+        "--color",
+        "--runInBand"
+        // "path/to/test/file",
+        // "-t",
+        // "test name",
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "**/async_hooks.js",
+        "**/inspector_async_hook.js"
+        // "**/node_modules/rxjs",
+      ],
+      "smartStep": false
+    },
+    {
       "name": "Webapp Chrome",
       "type": "chrome",
       "request": "attach",

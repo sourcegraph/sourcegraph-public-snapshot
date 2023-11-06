@@ -1,7 +1,7 @@
+import { afterAll, beforeEach, describe, expect, test } from '@jest/globals'
 import { render, cleanup, type RenderResult, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
-import { afterAll, beforeEach, describe, expect, test } from 'vitest'
 
 import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'

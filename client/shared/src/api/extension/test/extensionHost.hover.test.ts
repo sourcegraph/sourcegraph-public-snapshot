@@ -1,7 +1,7 @@
+import { describe, expect, it } from '@jest/globals'
 import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
 import { type Observer, of } from 'rxjs'
 import type { Hover } from 'sourcegraph'
-import { describe, expect, it } from 'vitest'
 
 import type { HoverMerged } from '@sourcegraph/client-api'
 import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'

@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from '@jest/globals'
 
 import { getBundleSizeStats } from './getBundleSizeStats'
 

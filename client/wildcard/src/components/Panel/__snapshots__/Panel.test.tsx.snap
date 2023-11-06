@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Panel > renders correctly positioned at page bottom 1`] = `
+exports[`Panel renders correctly positioned at page bottom 1`] = `
 <DocumentFragment>
   <div
     aria-label="Test panel"

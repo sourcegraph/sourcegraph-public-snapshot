@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { beforeEach, describe, expect, test } from '@jest/globals'
 
 import * as dom from './highlightNode'
 

@@ -1,4 +1,4 @@
-import { describe } from 'vitest'
+import { describe } from '@jest/globals'
 
 import { testToolbarMountGetter } from '../shared/codeHostTestUtils'
 

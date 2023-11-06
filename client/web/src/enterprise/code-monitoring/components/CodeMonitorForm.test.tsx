@@ -1,6 +1,6 @@
+import { afterEach, beforeEach, describe, expect, test } from '@jest/globals'
 import { fireEvent, getByRole, screen } from '@testing-library/react'
 import { NEVER } from 'rxjs'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled } from '@sourcegraph/testing'

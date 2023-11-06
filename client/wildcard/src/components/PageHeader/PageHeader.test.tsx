@@ -1,6 +1,6 @@
+import { beforeEach, describe, expect, it } from '@jest/globals'
 import type { RenderResult } from '@testing-library/react'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import { beforeEach, describe, expect, it } from 'vitest'
 
 import { renderWithBrandedContext } from '../../testing'
 

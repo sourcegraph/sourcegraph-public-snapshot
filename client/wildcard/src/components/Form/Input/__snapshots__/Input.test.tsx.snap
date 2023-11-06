@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Input > Renders status 'error' correctly 1`] = `
+exports[`Input Renders status 'error' correctly 1`] = `
 <div
   class="container loader-input loaderInput"
 >
@@ -13,7 +13,7 @@ exports[`Input > Renders status 'error' correctly 1`] = `
 </div>
 `;
 
-exports[`Input > Renders status 'loading' correctly 1`] = `
+exports[`Input Renders status 'loading' correctly 1`] = `
 <div
   class="container loader-input loaderInput"
 >
@@ -32,7 +32,7 @@ exports[`Input > Renders status 'loading' correctly 1`] = `
 </div>
 `;
 
-exports[`Input > Renders status 'valid' correctly 1`] = `
+exports[`Input Renders status 'valid' correctly 1`] = `
 <div
   class="container loader-input loaderInput"
 >
@@ -44,7 +44,7 @@ exports[`Input > Renders status 'valid' correctly 1`] = `
 </div>
 `;
 
-exports[`Input > renders an input with label correctly 1`] = `
+exports[`Input renders an input with label correctly 1`] = `
 <label
   class="label label"
 >

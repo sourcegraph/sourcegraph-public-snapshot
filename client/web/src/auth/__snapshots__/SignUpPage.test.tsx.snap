@@ -1,8 +1,8 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SignUpPage > renders redirect when user is authenticated 1`] = `<DocumentFragment />`;
+exports[`SignUpPage renders redirect when user is authenticated 1`] = `<DocumentFragment />`;
 
-exports[`SignUpPage > renders sign up page (cloud) 1`] = `
+exports[`SignUpPage renders sign up page (cloud) 1`] = `
 <DocumentFragment>
   <div
     class="page"
@@ -192,7 +192,7 @@ exports[`SignUpPage > renders sign up page (cloud) 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SignUpPage > renders sign up page (server) 1`] = `
+exports[`SignUpPage renders sign up page (server) 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"

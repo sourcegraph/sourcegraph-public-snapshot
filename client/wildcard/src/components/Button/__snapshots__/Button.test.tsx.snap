@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Button > Renders size 'lg' correctly 1`] = `
+exports[`Button Renders size 'lg' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnLg"
@@ -11,7 +11,7 @@ exports[`Button > Renders size 'lg' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders size 'sm' correctly 1`] = `
+exports[`Button Renders size 'sm' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnSm"
@@ -22,7 +22,7 @@ exports[`Button > Renders size 'sm' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'danger' correctly 1`] = `
+exports[`Button Renders variant 'danger' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnDanger"
@@ -33,7 +33,7 @@ exports[`Button > Renders variant 'danger' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'icon' correctly 1`] = `
+exports[`Button Renders variant 'icon' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnIcon"
@@ -44,7 +44,7 @@ exports[`Button > Renders variant 'icon' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'info' correctly 1`] = `
+exports[`Button Renders variant 'info' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnInfo"
@@ -55,7 +55,7 @@ exports[`Button > Renders variant 'info' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'link' correctly 1`] = `
+exports[`Button Renders variant 'link' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnLink"
@@ -66,7 +66,7 @@ exports[`Button > Renders variant 'link' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'merged' correctly 1`] = `
+exports[`Button Renders variant 'merged' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnMerged"
@@ -77,7 +77,7 @@ exports[`Button > Renders variant 'merged' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'primary' correctly 1`] = `
+exports[`Button Renders variant 'primary' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnPrimary"
@@ -88,7 +88,7 @@ exports[`Button > Renders variant 'primary' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'secondary' correctly 1`] = `
+exports[`Button Renders variant 'secondary' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnSecondary"
@@ -99,7 +99,7 @@ exports[`Button > Renders variant 'secondary' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'success' correctly 1`] = `
+exports[`Button Renders variant 'success' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnSuccess"
@@ -110,7 +110,7 @@ exports[`Button > Renders variant 'success' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > Renders variant 'warning' correctly 1`] = `
+exports[`Button Renders variant 'warning' correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn btnWarning"
@@ -121,7 +121,7 @@ exports[`Button > Renders variant 'warning' correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > renders a simple button correctly 1`] = `
+exports[`Button renders a simple button correctly 1`] = `
 <DocumentFragment>
   <button
     class="btn"
@@ -132,7 +132,7 @@ exports[`Button > renders a simple button correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Button > supports rendering as different elements 1`] = `
+exports[`Button supports rendering as different elements 1`] = `
 <DocumentFragment>
   <div
     class="btn"

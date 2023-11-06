@@ -1,195 +1,195 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Split view > line number 733 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Split view line number 733 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "TR.line_holder.parallel:nth-child(3) > TD.line_content.parallel.right-side > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Split view > line number 733 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Split view line number 733 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "TR.line_holder.parallel:nth-child(3) > TD.line_content.parallel.right-side",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Split view > line number 735 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Split view line number 735 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "TD[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].line_content.parallel.left-side.old > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Split view > line number 735 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Split view line number 735 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "TR.line_holder.parallel:nth-child(5) > TD.line_content.parallel.left-side.old",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Split view > line number 740 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Split view line number 740 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "TD[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].line_content.parallel.right-side.new > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Split view > line number 740 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Split view line number 740 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "TR.line_holder.parallel:nth-child(10) > TD.line_content.parallel.right-side.new",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Unified view > line number 733 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Unified view line number 733 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733'].line_holder:nth-child(3) > TD.line_content > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Unified view > line number 733 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Unified view line number 733 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733'].line_holder:nth-child(3) > TD.line_content",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Unified view > line number 735 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Unified view line number 735 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].line_holder.old:nth-child(5) > TD.line_content.old > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Unified view > line number 735 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Unified view line number 735 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].line_holder.old:nth-child(5) > TD.line_content.old",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Unified view > line number 740 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Unified view line number 740 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].line_holder.new:nth-child(12) > TD.line_content.new > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Legacy Unified view > line number 740 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Legacy Unified view line number 740 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].line_holder.new:nth-child(12) > TD.line_content.new",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Split view > line number 733 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Split view line number 733 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "DIV.diff-grid-row.diff-tr.line_holder.parallel:nth-child(3) > DIV.diff-grid-right.right-side > DIV.diff-td.line_content.with-coverage.right-side.parallel > SPAN > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Split view > line number 733 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Split view line number 733 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "DIV.diff-grid-row.diff-tr.line_holder.parallel:nth-child(3) > DIV.diff-grid-right.right-side > DIV.diff-td.line_content.with-coverage.right-side.parallel > SPAN",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Split view > line number 735 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Split view line number 735 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].diff-td.line_content.with-coverage.left-side.old.parallel > SPAN > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Split view > line number 735 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Split view line number 735 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].diff-td.line_content.with-coverage.left-side.old.parallel > SPAN",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Split view > line number 740 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Split view line number 740 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].diff-td.line_content.with-coverage.right-side.new.parallel > SPAN > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Split view > line number 740 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Split view line number 740 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].diff-td.line_content.with-coverage.right-side.new.parallel > SPAN",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Unified view > line number 733 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 733 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733'].diff-td.line_content.with-coverage.left-side > SPAN > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Unified view > line number 733 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 733 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733'].diff-td.line_content.with-coverage.left-side > SPAN",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Unified view > line number 735 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 735 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].diff-td.line_content.with-coverage.left-side.old > SPAN > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Unified view > line number 735 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 735 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].diff-td.line_content.with-coverage.left-side.old > SPAN",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Unified view > line number 740 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 740 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].diff-td.line_content.with-coverage.left-side.new > SPAN > SPAN.line",
 }
 `;
 
-exports[`GitLab DOM functions > diffDOMFunctions > Unified view > line number 740 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 740 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].diff-td.line_content.with-coverage.left-side.new > SPAN",
 }
 `;
 
-exports[`GitLab DOM functions > singleFileDOMFunctions > line number 1 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions singleFileDOMFunctions line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "package shell",
   "selector": "SPAN.line:nth-child(1)",
 }
 `;
 
-exports[`GitLab DOM functions > singleFileDOMFunctions > line number 1 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions singleFileDOMFunctions line number 1 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "package shell",
   "selector": "SPAN.line:nth-child(1)",
 }
 `;
 
-exports[`GitLab DOM functions > singleFileDOMFunctions > line number 22 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`GitLab DOM functions singleFileDOMFunctions line number 22 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "type executor struct {",
   "selector": "SPAN.line:nth-child(22)",
 }
 `;
 
-exports[`GitLab DOM functions > singleFileDOMFunctions > line number 22 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`GitLab DOM functions singleFileDOMFunctions line number 22 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "type executor struct {",
   "selector": "SPAN.line:nth-child(22)",

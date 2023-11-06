@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { cleanup, fireEvent, waitFor } from '@testing-library/react'
 import { take } from 'rxjs/operators'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'

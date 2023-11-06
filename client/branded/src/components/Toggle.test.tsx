@@ -1,7 +1,7 @@
+import { describe, expect, test } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
-import { describe, expect, test } from 'vitest'
 
 import { Toggle } from './Toggle'
 
