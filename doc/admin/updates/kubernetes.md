@@ -16,13 +16,11 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 
 ## Unreleased
 
-- The GitHub proxy service has been removed in 5.2 and is now removed from kubernetes deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
+No applicable notes for unreleased versions.
 
 #### Notes for 5.2:
 
 - The GitHub proxy service has been removed and is no longer required. You can safely remove it. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
-
-No applicable notes for unreleased versions.
 
 <!-- Add changes changes to this section before release. -->
 ## v5.1.8 ➔ v5.1.9
