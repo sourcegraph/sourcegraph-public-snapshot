@@ -52,7 +52,7 @@ fn validate_index(idx: &Index) -> Result<()> {
 type GroundTruthSymbol = String;
 type CandidateSymbol = String;
 
-pub fn evaluate_indexes<'a>(
+pub fn evaluate_indexes(
     candidate: &Index,
     ground_truth: &Index,
     options: ScipEvaluateOptions,
@@ -147,6 +147,8 @@ pub fn evaluate_indexes<'a>(
     }
     bar.tick();
 
+    // For each candidate symbol we collect all possible ground truth symbols
+    // it can be mapped to
     let candidate_mapping: HashMap<CandidateSymbol, HashMap<GroundTruthSymbol, Overlap>> = {
         let mut result: HashMap<CandidateSymbol, HashMap<GroundTruthSymbol, Overlap>> =
             HashMap::new();
@@ -441,7 +443,6 @@ impl EvaluationResult {
 
 pub fn print_evaluation_summary(eval: EvaluationResult, options: ScipEvaluateOptions) {
     println!("{}", serde_json::to_string(&eval.summary).unwrap());
-    // println!("{{\"precision_percent\": {eval.summary.precision:.2}, \"recall_percent\": {recall:.2}, \"true_positives\": {tps:.0}, \"false_positives\": {fps:.0}, \"false_negatives\": {fns:.0} }}");
 
     if options.print_false_negatives {
         eprintln!("");
@@ -629,9 +630,11 @@ mod tests {
 
         let empty_index = index(vec![document("bla.java", vec![])]);
 
+        // Evaluating empty index is an error
         let evaluate_empty = evaluate_indexes(&empty_index, &ground_truth, Default::default());
         assert!(evaluate_empty.is_err());
 
+        // Evaluating against an empty index is an error
         let evaluate_against_empty =
             evaluate_indexes(&ground_truth, &empty_index, Default::default());
         assert!(evaluate_against_empty.is_err());
