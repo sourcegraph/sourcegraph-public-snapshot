@@ -10,7 +10,7 @@ expression: dumped
   use walkdir::WalkDir;
   
   static LANGUAGE: &str = "Rust";
-//       ^^^^^^^^ definition scip-ctags LANGUAGE.
+//       ^^^^^^^^ definition(Variable) scip-ctags LANGUAGE.
   const THRESHOLD: i32 = 10;
 //      ^^^^^^^^^ definition(Constant) scip-ctags THRESHOLD.
   
