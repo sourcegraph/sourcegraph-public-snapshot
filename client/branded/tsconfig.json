@@ -11,12 +11,6 @@
   "exclude": ["../../node_modules", "./node_modules", "./out"],
   "references": [
     {
-      "path": "../client-api",
-    },
-    {
-      "path": "../codeintellify",
-    },
-    {
       "path": "../common",
     },
     {

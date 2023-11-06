@@ -1073,12 +1073,6 @@ importers:
 
   client/branded:
     dependencies:
-      '@sourcegraph/client-api':
-        specifier: workspace:*
-        version: link:../client-api
-      '@sourcegraph/codeintellify':
-        specifier: workspace:*
-        version: link:../codeintellify
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common

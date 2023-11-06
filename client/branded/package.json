@@ -16,8 +16,6 @@
     "@sourcegraph/testing": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/client-api": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
