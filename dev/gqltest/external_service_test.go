@@ -171,20 +171,20 @@ func TestExternalService_Perforce(t *testing.T) {
 		wantBlob   string
 	}{
 		{
-			name:       "git p4",
+			name:       "p4 fusion",
 			depot:      "test-perms",
-			useFusion:  false,
+			useFusion:  true,
 			blobPath:   "README.md",
-			headBranch: "master",
+			headBranch: "main",
 			wantBlob: `This depot is used to test user and group permissions.
 `,
 		},
 		{
-			name:       "p4 fusion",
+			name:       "git p4",
 			depot:      "integration-test-depot",
-			useFusion:  true,
+			useFusion:  false,
 			blobPath:   "path.txt",
-			headBranch: "main",
+			headBranch: "master",
 			wantBlob: `./
 `,
 		},
@@ -230,6 +230,7 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 		LookAhead int  `json:"lookAhead,omitempty"`
 	}
 
+	t.Log("Creating external service")
 	// Set up external service
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindPerforce,
@@ -265,6 +266,7 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 	}
 
 	return func() {
+		t.Log("Cleaning up external service")
 		if err := client.DeleteRepoFromDiskByName("perforce/" + depot); err != nil {
 			t.Fatalf("removing depot from disk: %v", err)
 		}
