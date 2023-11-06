@@ -11,7 +11,12 @@ Since Cody Gateway cucrently depends on Sourcegraph.com, there's not much point 
 sg start dotcom
 ```
 
-Then, set up some feature flags:
+*However*, the locally running Cody Gateway is not used by default - `dev-private` credentials point towards a [shared development instance of Cody Gateway](https://handbook.sourcegraph.com/departments/engineering/teams/cody/cody-gateway/).
+To use the locally running Cody Gateway, follow the steps in [use a locally running Cody Gateway](#use-a-locally-running-cody-gateway)
+
+## Use a locally running Cody Gateway
+
+First, set up some feature flags on your local Sourcegraph instance:
 
 - `product-subscriptions-service-account`: set to `true` globally for convenience.
   In production, this flag is used to denote service accounts, but in development it doesn't matter.
