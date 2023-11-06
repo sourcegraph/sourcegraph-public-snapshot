@@ -36,7 +36,8 @@ import (
 type Output struct{}
 
 type Variables struct {
-	ProjectID string
+	ProjectID             string
+	CloudRunIdentityEmail string
 
 	Service     spec.ServiceSpec
 	Image       string
@@ -296,4 +297,22 @@ func makeContainerResourceLimits(r spec.EnvironmentInstancesResourcesSpec) map[s
 		"cpu":    pointers.Ptr(strconv.Itoa(r.CPU)),
 		"memory": pointers.Ptr(r.Memory),
 	}
+}
+
+func extractImageGoogleProject(image string) *string {
+	// Private images in our GCP projects have patterns like:
+	// - us-central1-docker.pkg.dev/control-plane-5e9ee072/docker/apiserver
+	// - us.gcr.io/sourcegraph-dev/abuse-banbot
+	// If the root matches particular patterns, the second component is the
+	// project ID.
+	imageRepoParts := strings.SplitN(image, "/", 3)
+	if len(imageRepoParts) != 3 {
+		return nil
+	}
+	repoRoot := imageRepoParts[0]
+	if strings.HasSuffix(repoRoot, ".gcr.io") ||
+		strings.HasSuffix(repoRoot, "-docker.pkg.dev") {
+		return &imageRepoParts[1]
+	}
+	return nil
 }

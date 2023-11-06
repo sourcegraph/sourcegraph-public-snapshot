@@ -8,6 +8,8 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/googleprojectserviceidentity"
+	google_beta "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/provider"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -60,6 +62,10 @@ var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
 type Output struct {
 	// Project is created with a generated project ID.
 	Project project.Project
+
+	// CloudRunIdentity is the robot account provisioned by GCP to manage
+	// Cloud Run services and jobs.
+	CloudRunIdentity googleprojectserviceidentity.GoogleProjectServiceIdentity
 }
 
 type Variables struct {
@@ -122,36 +128,34 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		Prefix:     vars.ProjectIDPrefix,
 	})
 
-	output := &Output{
-		Project: project.NewProject(stack,
-			id.ResourceID("project"),
-			&project.ProjectConfig{
-				Name:              pointers.Ptr(vars.DisplayName),
-				ProjectId:         &projectID.HexValue,
-				AutoCreateNetwork: false,
-				BillingAccount:    pointers.Ptr(BillingAccountID),
-				FolderId: func() *string {
-					folder, ok := EnvironmentCategoryFolders[pointers.Deref(vars.Category, spec.EnvironmentCategoryExternal)]
-					if ok {
-						return &folder
-					}
-					return pointers.Ptr(string(DefaultProjectFolderID))
-				}(),
-				Labels: func(input map[string]string) *map[string]*string {
-					labels := make(map[string]*string)
-					for k, v := range input {
-						labels[sanitizeName(k)] = pointers.Ptr(v)
-					}
-					return &labels
-				}(vars.Labels),
-			}),
-	}
+	project := project.NewProject(stack,
+		id.ResourceID("project"),
+		&project.ProjectConfig{
+			Name:              pointers.Ptr(vars.DisplayName),
+			ProjectId:         &projectID.HexValue,
+			AutoCreateNetwork: false,
+			BillingAccount:    pointers.Ptr(BillingAccountID),
+			FolderId: func() *string {
+				folder, ok := EnvironmentCategoryFolders[pointers.Deref(vars.Category, spec.EnvironmentCategoryExternal)]
+				if ok {
+					return &folder
+				}
+				return pointers.Ptr(string(DefaultProjectFolderID))
+			}(),
+			Labels: func(input map[string]string) *map[string]*string {
+				labels := make(map[string]*string)
+				for k, v := range input {
+					labels[sanitizeName(k)] = pointers.Ptr(v)
+				}
+				return &labels
+			}(vars.Labels),
+		})
 
 	for _, service := range append(gcpServices, vars.Services...) {
 		projectservice.NewProjectService(stack,
 			id.ResourceID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
 			&projectservice.ProjectServiceConfig{
-				Project:                  output.Project.ProjectId(),
+				Project:                  project.ProjectId(),
 				Service:                  pointers.Ptr(service),
 				DisableDependentServices: jsii.Bool(false),
 				// prevent accidental deletion of services
@@ -159,7 +163,21 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			})
 	}
 
-	return output, nil
+	return &Output{
+		Project: project,
+		CloudRunIdentity: googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
+			id.ResourceID("cloudrun-identity"),
+			&googleprojectserviceidentity.GoogleProjectServiceIdentityConfig{
+				Project: project.ProjectId(),
+				Service: pointers.Ptr("run.googleapis.com"),
+
+				// Only available via beta provider:
+				// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service_identity
+				Provider: google_beta.NewGoogleBetaProvider(stack, pointers.Ptr("google_beta"), &google_beta.GoogleBetaProviderConfig{
+					Project: project.ProjectId(),
+				}),
+			}),
+	}, nil
 }
 
 var regexpMatchNonLowerAlphaNumericUnderscoreDash = regexp.MustCompile(`[^a-z0-9_-]`)
