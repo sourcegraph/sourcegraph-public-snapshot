@@ -218,6 +218,7 @@ mod tests {
     use std::collections::HashMap;
     use std::fs::File;
     use std::io::BufReader;
+    use std::path::Path;
     use std::process::Command;
     use std::{env::temp_dir, path::PathBuf};
 
@@ -276,7 +277,7 @@ mod tests {
         }
     }
 
-    fn prepare(temp: &PathBuf, files: &HashMap<PathBuf, String>) {
+    fn prepare(temp: &Path, files: &HashMap<PathBuf, String>) {
         for (path, contents) in files.iter() {
             let file_path = temp.join(path);
             write_file(&file_path, contents);
