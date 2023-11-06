@@ -4,7 +4,7 @@ export default defineProjectWithDefaults(__dirname, {
     test: {
         environment: 'happy-dom',
         environmentMatchGlobs: [
-            ['src/enterprise/code-monitoring/ManageCodeMonitorPage.test.tsx', 'jsdom'], // needs window.confirm
+            ['src/enterprise/code-monitoring/ManageCodeMonitorPage.test.tsx', 'jsdom'], // needs window.confirm, Request
             ['src/enterprise/code-monitoring/CreateCodeMonitorPage.test.tsx', 'jsdom'], // 'Error: Should not already be working.'
             ['src/hooks/useScrollManager/useScrollManager.test.tsx', 'jsdom'], // for correct scroll counting
             ['src/components/KeyboardShortcutsHelp/KeyboardShortcutsHelp.test.tsx', 'jsdom'], // event.getModifierState
@@ -16,6 +16,7 @@ export default defineProjectWithDefaults(__dirname, {
             '../testing/src/mockMatchMedia.ts',
             '../testing/src/mockUniqueId.ts',
             '../testing/src/mockDate.ts',
+            '../testing/src/fetch.js',
         ],
     },
 })
