@@ -6029,9 +6029,9 @@ type GitBlob implements TreeEntry & File2 {
     """
     externalURLs: [ExternalLink!]!
     """
-    Blame the blob. If unset, ignoreWhitespace defaults to false.
+    Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean): [Hunk!]!
+    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """
