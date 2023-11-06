@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`RepoLink renders a fragment when "to" is null 1`] = `
+exports[`RepoLink > renders a fragment when "to" is null 1`] = `
 <DocumentFragment>
   <span
     class=""
@@ -15,7 +15,7 @@ exports[`RepoLink renders a fragment when "to" is null 1`] = `
 </DocumentFragment>
 `;
 
-exports[`RepoLink renders a link when "to" is set 1`] = `
+exports[`RepoLink > renders a link when "to" is set 1`] = `
 <DocumentFragment>
   <a
     class=""

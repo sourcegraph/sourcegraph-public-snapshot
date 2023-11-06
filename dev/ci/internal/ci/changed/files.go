@@ -15,8 +15,8 @@ func contains(s []string, str string) bool {
 var clientRootFiles = []string{
 	"package.json",
 	"pnpm-lock.yaml",
-	"jest.config.base.js",
-	"jest.config.js",
+	"vitest.workspace.ts",
+	"vitest.shared.ts",
 	"postcss.config.js",
 	"tsconfig.base.json",
 	"tsconfig.json",

@@ -1,4 +1,7 @@
-import { describe, expect, test } from '@jest/globals'
+// @vitest-environment node (see
+// https://github.com/vitest-dev/vitest/issues/4043#issuecomment-1713026327)
+
+import { describe, expect, test } from 'vitest'
 
 import { hashCode } from './hashCode'
 

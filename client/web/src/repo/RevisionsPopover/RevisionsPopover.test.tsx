@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { cleanup, within, fireEvent, act } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

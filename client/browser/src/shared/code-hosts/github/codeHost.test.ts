@@ -1,9 +1,9 @@
 import { existsSync, readdirSync } from 'fs'
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, test } from '@jest/globals'
-import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 
 import { disableFetchCache, enableFetchCache, fetchCache, type LineOrPositionOrRange } from '@sourcegraph/common'
 
@@ -19,6 +19,8 @@ import {
     parseHash,
 } from './codeHost'
 import { windowLocation__testingOnly } from './util'
+
+const fetch = createFetchMock(vi)
 
 const testCodeHost = (fixturePath: string): void => {
     if (existsSync(fixturePath)) {

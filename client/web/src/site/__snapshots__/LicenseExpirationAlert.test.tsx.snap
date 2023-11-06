@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`LicenseExpirationAlert expired 1`] = `
+exports[`LicenseExpirationAlert > expired 1`] = `
 <DocumentFragment>
   <div
     aria-live="assertive"
@@ -56,7 +56,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
 </DocumentFragment>
 `;
 
-exports[`LicenseExpirationAlert expiring soon 1`] = `
+exports[`LicenseExpirationAlert > expiring soon 1`] = `
 <DocumentFragment>
   <div
     aria-live="assertive"

@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Path 1 path component 1`] = `
+exports[`Path > 1 path component 1`] = `
 <DocumentFragment>
   <strong>
     a
@@ -8,7 +8,7 @@ exports[`Path 1 path component 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Path 2 path components 1`] = `
+exports[`Path > 2 path components 1`] = `
 <DocumentFragment>
   <span
     class="text-muted"
@@ -21,7 +21,7 @@ exports[`Path 2 path components 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Path 3 path components 1`] = `
+exports[`Path > 3 path components 1`] = `
 <DocumentFragment>
   <span
     class="text-muted"
@@ -34,4 +34,4 @@ exports[`Path 3 path components 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Path no path components 1`] = `<DocumentFragment />`;
+exports[`Path > no path components 1`] = `<DocumentFragment />`;
