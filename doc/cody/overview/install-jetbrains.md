@@ -122,26 +122,45 @@ The Cody extension by Sourcegraph enhances your coding experience in your IDE by
 
 ## Prerequisites
 
-- You have the latest version of <a href="https://www.jetbrains.com/idea/" target="_blank">JetBrains IntelliJ</a> installed
+- You have the latest version of <a href="https://www.jetbrains.com/idea/" target="_blank">JetBrains IDEs</a> installed
 - You have enabled an instance for [Cody from your Sourcegraph.com](cody-with-sourcegraph.md) account
+- Cody is compatible with the following JetBrains IDEs:
+  - [Android Studio](https://developer.android.com/studio)
+  - [AppCode](https://www.jetbrains.com/objc/)
+  - [CLion](https://www.jetbrains.com/clion/)
+  - [GoLand](https://www.jetbrains.com/go/)
+  - [IntelliJ IDEA](https://www.jetbrains.com/idea/) (Community and Ultimate editions)
+  - [PhpStorm](https://www.jetbrains.com/phpstorm/)
+  - [PyCharm](https://www.jetbrains.com/pycharm/) (Community and Professional editions)
+  - [Rider](https://www.jetbrains.com/rider/)
+  - [RubyMine](https://www.jetbrains.com/ruby/)
+  - [WebStorm](https://www.jetbrains.com/webstorm/)
 
 ## Install the JetBrains IntelliJ Cody extension
 
 Follow these steps to install the Cody extension for JetBrains IntelliJ:
 
 - Open JetBrains IntelliJ editor on your local machine
-- Open "Settings" (Mac: `⌘+,` Windows: `Ctrl+Alt+S`) and select "Plugins"
-- Type and search "Cody AI by Sourcegraph" extension and click "Install"
+- Open **Settings** (Mac: `⌘+,` Windows: `Ctrl+Alt+S`) and select **Plugins**
+- Type and search **Sourcegraph Cody + Code Search** extension and click **Install**
+
+![cody-for-intellij](https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-for-intellij.png)
 
 Alternatively, you can also [Download and install the extension from the Jetbrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
+After a successful installation, Cody's icon appears in the sidebar. Clicking it prompts you to start with codehosts like GitHub, GitLab, and your Google login. This allows Cody to access your Sourcegraph.com account.
 
-Cody fully understands your codebase context based on the project opened in your workspace. However, at any point, you can override the automatic “codebase detection” by clicking on the repo name below the Cody chat and then adding the Git URL.
+Alternatively, you can also click the **Sign in with and Enterprise Instance** to connect to your enterprise instance.
 
-![override-codebase-context](https://storage.googleapis.com/sourcegraph-assets/Docs/override-code-context.png)
+![cody-for-intellij-login](https://storage.googleapis.com/sourcegraph-assets/Docs/Media/sign-in-cody-jb.png)
+
+### Context Selection
+
+Cody automatically understands your codebase context based on the project opened in your workspace. However, at any point, you can override the automatic “codebase detection” by clicking on the repo name below the Cody chat and then adding the Git URL. This will allow Cody to start using the codebase context you’ve selected.
+
+
 
 ### For Sourcegraph enterprise users
 
