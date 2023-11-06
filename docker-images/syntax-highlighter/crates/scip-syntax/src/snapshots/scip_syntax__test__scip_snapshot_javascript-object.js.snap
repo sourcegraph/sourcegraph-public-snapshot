@@ -3,7 +3,7 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   var myObject = {
-//    ^^^^^^^^ definition scip-ctags myObject.
+//    ^^^^^^^^ definition(Variable) scip-ctags myObject.
     myProperty: "value",
 //  ^^^^^^^^^^ definition(Property) scip-ctags myObject.myProperty.
   
