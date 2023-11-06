@@ -4,9 +4,6 @@
     "jsx": "react-jsx",
     "module": "commonjs",
     "sourceRoot": "src",
-    "paths": {
-      "*": ["../observability-client/src/types/*"],
-    },
     "rootDir": ".",
     "outDir": "./out",
   },

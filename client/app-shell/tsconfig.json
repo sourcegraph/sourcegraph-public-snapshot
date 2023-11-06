@@ -2,10 +2,6 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "esnext",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
-    },
     "jsx": "react-jsx",
     "rootDir": "./src",
     "outDir": "out",

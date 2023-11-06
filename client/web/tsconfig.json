@@ -3,9 +3,6 @@
   "compilerOptions": {
     "module": "esnext",
     "baseUrl": ".",
-    "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
-    },
     "jsx": "react-jsx",
     "rootDir": ".",
     "outDir": "out",
