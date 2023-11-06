@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`RequestAccessPage > renders form if all conditions are met 1`] = `
+exports[`RequestAccessPage renders form if all conditions are met 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -26,16 +26,9 @@ exports[`RequestAccessPage > renders form if all conditions are met 1`] = `
         class="container"
       >
         <form
-          autocapitalize="off"
-          autocomplete="name"
-          class="form-control with-invalid-icon"
-          name="<input id=\\"name\\">"
-          placeholder="Your name"
-          required=""
-          type="text"
-          value=""
+          class="mb-0"
+          data-testid="request-access-form"
         >
-          " class="mb-0" data-testid="request-access-form"&gt;
           <label
             class="label label"
           >

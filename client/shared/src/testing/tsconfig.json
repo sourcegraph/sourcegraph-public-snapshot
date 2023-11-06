@@ -3,6 +3,9 @@
   "references": [{ "path": "../.." }],
   "compilerOptions": {
     "types": ["node"],
+    "paths": {
+      "*": ["../types/*", "*"],
+    },
   },
   "include": ["**/*"],
   "exclude": [],

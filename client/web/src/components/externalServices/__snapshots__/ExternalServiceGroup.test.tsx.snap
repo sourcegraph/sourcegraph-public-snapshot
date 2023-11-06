@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ExternalServiceGroup > should render correctly with disabled external services 1`] = `
+exports[`ExternalServiceGroup should render correctly with disabled external services 1`] = `
 <DocumentFragment>
   <div
     class="mb-3 px-2 border externalServiceGroupNode"
@@ -39,7 +39,7 @@ exports[`ExternalServiceGroup > should render correctly with disabled external s
 </DocumentFragment>
 `;
 
-exports[`ExternalServiceGroup > should render correctly with enabled external services 1`] = `
+exports[`ExternalServiceGroup should render correctly with enabled external services 1`] = `
 <DocumentFragment>
   <div
     class="mb-3 px-2 border externalServiceGroupNode externalServiceGroupEnabledNode"

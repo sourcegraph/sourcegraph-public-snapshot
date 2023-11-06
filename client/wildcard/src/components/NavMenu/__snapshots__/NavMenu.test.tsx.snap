@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`<NavMenu /> > Should render Menu Items Correctly 1`] = `
+exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
 <body>
   <div>
     <button

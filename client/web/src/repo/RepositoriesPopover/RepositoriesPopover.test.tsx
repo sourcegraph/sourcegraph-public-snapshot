@@ -1,5 +1,5 @@
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { cleanup, fireEvent, act } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'

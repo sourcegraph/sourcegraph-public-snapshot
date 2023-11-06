@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`UserSettingsPermissionsPage > empty state 1`] = `
+exports[`UserSettingsPermissionsPage empty state 1`] = `
 <DocumentFragment>
   <div
     class="w-100"
@@ -310,7 +310,7 @@ exports[`UserSettingsPermissionsPage > empty state 1`] = `
 </DocumentFragment>
 `;
 
-exports[`UserSettingsPermissionsPage > user alice with permissions 1`] = `
+exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
 <DocumentFragment>
   <div
     class="w-100"

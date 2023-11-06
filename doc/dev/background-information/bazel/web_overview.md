@@ -326,12 +326,12 @@ Based on `./client/common/BUILD.bazel`, one of the smallest client packages.
     similar to a traditional multi-repo setup. In non-Bazel setups, we use TypeScript project references and bundlers to directly
     link to the source code of a dependency package when it's needed by the current package.
 
-5. Defining the `vitest_test` target.
+5. Definiing the [jest_test](https://docs.aspect.build/rules/aspect_rules_jest/docs/jest_test/#jest_test) target.
 
     ```py
-    load("//dev:defs.bzl", "vitest_test")
+    load("//dev:defs.bzl", "jest_test")
 
-    vitest_test(
+    jest_test(
         name = "test",
         data = [
             ":common_tests",
@@ -339,7 +339,7 @@ Based on `./client/common/BUILD.bazel`, one of the smallest client packages.
     )
     ```
 
-    Allows to run Vitest tests inside of Bazel via `bazel test //client/common:test`.
+    Allows to run jest tests inside of Bazel via `bazel test //client/common:test`.
 
 ### How to create nested BUILD files to leverage caching
 

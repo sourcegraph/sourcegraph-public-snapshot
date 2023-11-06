@@ -1,8 +1,8 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Notices > no notices 1`] = `<DocumentFragment />`;
+exports[`Notices no notices 1`] = `<DocumentFragment />`;
 
-exports[`Notices > shows notices for location 1`] = `
+exports[`Notices shows notices for location 1`] = `
 <DocumentFragment>
   <div
     class="notices"

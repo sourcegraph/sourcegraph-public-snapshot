@@ -1,14 +1,14 @@
+import { describe, expect, test, jest } from '@jest/globals'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, test, vi } from 'vitest'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
-vi.mock('mdi-react/KeyIcon', () => () => 'KeyIcon')
-vi.mock('mdi-react/InformationIcon', () => () => 'InformationIcon')
-vi.mock('../../../components/CopyableText', () => ({ CopyableText: () => 'CopyableText' }))
+jest.mock('mdi-react/KeyIcon', () => () => 'KeyIcon')
+jest.mock('mdi-react/InformationIcon', () => () => 'InformationIcon')
+jest.mock('../../../components/CopyableText', () => ({ CopyableText: () => 'CopyableText' }))
 
 describe('UserProductSubscriptionStatus', () => {
     test('toggle', () => {

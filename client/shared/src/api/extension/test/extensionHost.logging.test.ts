@@ -1,6 +1,6 @@
+import { afterEach, beforeEach, describe, it } from '@jest/globals'
 import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
-import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { logger } from '@sourcegraph/common'
 

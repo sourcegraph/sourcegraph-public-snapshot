@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Label > should render correctly 1`] = `
+exports[`Label should render correctly 1`] = `
 <DocumentFragment>
   <label
     class="label labelUnderline labelUppercase small fontWeightMedium alignCenter"
@@ -10,7 +10,7 @@ exports[`Label > should render correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Label > should render correctly with \`as\` 1`] = `
+exports[`Label should render correctly with \`as\` 1`] = `
 <DocumentFragment>
   <span
     class="label"

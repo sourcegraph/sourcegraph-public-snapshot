@@ -1,7 +1,7 @@
+import { afterEach, beforeEach, describe, expect, it, test } from '@jest/globals'
 import { type Location, createPath } from 'react-router-dom'
 import { Subscription, Subject } from 'rxjs'
 import { tap, last } from 'rxjs/operators'
-import { afterEach, beforeEach, describe, expect, it, test } from 'vitest'
 
 import { logger, resetAllMemoizationCaches } from '@sourcegraph/common'
 import { SearchMode } from '@sourcegraph/shared/src/search'

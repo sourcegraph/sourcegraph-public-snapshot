@@ -1,111 +1,111 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Split view > line number 54 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 54 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "routes []*Route",
   "selector": "DIV.diff-editor.side-by-side-diff-editor-to > DIV.CodeMirror.cm-s-stash-default > DIV.CodeMirror-scroll > DIV.CodeMirror-sizer > DIV > DIV.CodeMirror-lines > DIV > DIV.CodeMirror-code > DIV.context.line:nth-child(54) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Split view > line number 54 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 54 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "This line has a comment.Add a comment on this line.54     routes []*Route",
   "selector": "DIV.diff-editor.side-by-side-diff-editor-to > DIV.CodeMirror.cm-s-stash-default > DIV.CodeMirror-scroll > DIV.CodeMirror-sizer > DIV > DIV.CodeMirror-lines > DIV > DIV.CodeMirror-code > DIV.context.line:nth-child(54)",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Split view > line number 60 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 60 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "namedRoutes2 map[string]*Route",
   "selector": "DIV.added.modified.line.last-focus:nth-child(60) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Split view > line number 60 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 60 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "This line has a comment.Add a comment on this line.60+    namedRoutes2 map[string]*Route",
   "selector": "DIV.added.modified.line.last-focus:nth-child(60)",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Split view > line number 102 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 102 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "c.regexp.path = copyRouteRegexp(r.regexp.path)",
   "selector": "DIV.removed.modified.line:nth-child(102) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Split view > line number 102 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 102 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "This line has a comment.Add a comment on this line.102-        c.regexp.path = copyRouteRegexp(r.regexp.path)",
   "selector": "DIV.removed.modified.line:nth-child(102)",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Unified view > line number 54 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 54 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "routes []*Route",
   "selector": "DIV.context.line:nth-child(6) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Unified view > line number 54 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 54 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "This line has a comment.Add a comment on this line.5454     routes []*Route",
   "selector": "DIV.context.line:nth-child(6)",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Unified view > line number 60 in head diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 60 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "namedRoutes2 map[string]*Route",
   "selector": "DIV.added.modified.line:nth-child(12) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Unified view > line number 60 in head diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 60 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "This line has a comment.Add a comment on this line. 60+    namedRoutes2 map[string]*Route",
   "selector": "DIV.added.modified.line:nth-child(12)",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Unified view > line number 102 in base diff part > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 102 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "c.regexp.path = copyRouteRegexp(r.regexp.path)",
   "selector": "DIV.removed.modified.line:nth-child(38) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > diffDOMFunctions > Unified view > line number 102 in base diff part > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 102 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "This line has a comment.Add a comment on this line.102 -        c.regexp.path = copyRouteRegexp(r.regexp.path)",
   "selector": "DIV.removed.modified.line:nth-child(38)",
 }
 `;
 
-exports[`Bitbucket DOM functions > singleFileDOMFunctions > line number 1 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions singleFileDOMFunctions line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
   "selector": "DIV.line:nth-child(1) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > singleFileDOMFunctions > line number 1 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions singleFileDOMFunctions line number 1 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "1// Copyright 2012 The Gorilla Authors. All rights reserved.",
   "selector": "DIV.line:nth-child(1)",
 }
 `;
 
-exports[`Bitbucket DOM functions > singleFileDOMFunctions > line number 18 > getCodeElementFromLineNumber() > should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions singleFileDOMFunctions line number 18 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "return setVars(r, val)",
   "selector": "DIV.line:nth-child(18) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
-exports[`Bitbucket DOM functions > singleFileDOMFunctions > line number 18 > getLineElementFromLineNumber() > should return the right line element given the line number 1`] = `
+exports[`Bitbucket DOM functions singleFileDOMFunctions line number 18 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "18    return setVars(r, val)",
   "selector": "DIV.line:nth-child(18)",

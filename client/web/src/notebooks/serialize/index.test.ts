@@ -1,5 +1,5 @@
+import { describe, expect, it } from '@jest/globals'
 import { of } from 'rxjs'
-import { describe, expect, it } from 'vitest'
 
 import { SymbolKind } from '../../graphql-operations'
 

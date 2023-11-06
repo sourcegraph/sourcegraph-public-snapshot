@@ -1,7 +1,7 @@
+import { beforeEach, describe, expect, it } from '@jest/globals'
 import { renderHook, act } from '@testing-library/react'
 import type { useNavigate } from 'react-router-dom'
 import sinon from 'sinon'
-import { beforeEach, describe, expect, it } from 'vitest'
 
 import { useURLSyncedState } from './useUrlSyncedState'
 

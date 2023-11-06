@@ -1,6 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
+load("//dev:defs.bzl", "npm_package", "ts_project")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
@@ -40,7 +40,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":template-parser_lib",
-        "//:node_modules/vitest",
+        "//:node_modules/@jest/globals",
     ],
 )
 
@@ -49,13 +49,5 @@ npm_package(
     srcs = [
         "package.json",
         ":template-parser_lib",
-    ],
-)
-
-vitest_test(
-    name = "test",
-    timeout = "short",
-    data = [
-        ":template-parser_tests",
     ],
 )

@@ -1,6 +1,6 @@
+import { describe, expect, it } from '@jest/globals'
 import { renderHook, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
 
 import { useURLSyncedString } from './useUrlSyncedString'
 

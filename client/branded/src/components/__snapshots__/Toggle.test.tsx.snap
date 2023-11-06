@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Toggle > aria 1`] = `
+exports[`Toggle aria 1`] = `
 <DocumentFragment>
   <button
     aria-describedby="test-id-1"
@@ -21,7 +21,7 @@ exports[`Toggle > aria 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Toggle > className 1`] = `
+exports[`Toggle className 1`] = `
 <DocumentFragment>
   <button
     class="toggle c inlineCenter"
@@ -39,7 +39,7 @@ exports[`Toggle > className 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Toggle > disabled 1`] = `
+exports[`Toggle disabled 1`] = `
 <DocumentFragment>
   <button
     class="toggle inlineCenter"
@@ -59,7 +59,7 @@ exports[`Toggle > disabled 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Toggle > value is false 1`] = `
+exports[`Toggle value is false 1`] = `
 <DocumentFragment>
   <button
     aria-checked="false"
@@ -78,7 +78,7 @@ exports[`Toggle > value is false 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Toggle > value is true 1`] = `
+exports[`Toggle value is true 1`] = `
 <DocumentFragment>
   <button
     aria-checked="true"

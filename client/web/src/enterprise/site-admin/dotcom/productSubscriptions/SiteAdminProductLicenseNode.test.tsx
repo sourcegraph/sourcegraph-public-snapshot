@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, jest } from '@jest/globals'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -6,7 +6,7 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 import { mockLicenseContext } from './testUtils'
 
-vi.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: () => 'AccountName' }))
+jest.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: () => 'AccountName' }))
 
 describe('SiteAdminProductLicenseNode', () => {
     const origContext = window.context

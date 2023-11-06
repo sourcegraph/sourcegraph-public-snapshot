@@ -1,7 +1,7 @@
 import { MockedProvider } from '@apollo/client/testing'
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals'
 import { render, type RenderResult } from '@testing-library/react'
 import { spy } from 'sinon'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 

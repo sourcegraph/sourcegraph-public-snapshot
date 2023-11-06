@@ -1,9 +1,9 @@
+import { beforeEach, describe, expect, it } from '@jest/globals'
 import { from, type Observable, of } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import type * as sourcegraph from 'sourcegraph'
-import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { type HoveredToken, LOADER_DELAY, type MaybeLoadingResult } from '@sourcegraph/codeintellify'

@@ -1,6 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "ts_project", "vitest_test")
+load("//dev:defs.bzl", "jest_test", "ts_project")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
@@ -53,12 +53,12 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":observability-server",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@types/node",
-        "//:node_modules/vitest",
     ],
 )
 
-vitest_test(
+jest_test(
     name = "test",
     data = [
         "src/webBundleSize/__mocks__/assets/scripts/main.js",

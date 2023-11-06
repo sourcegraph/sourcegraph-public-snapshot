@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`FeedbackBadge > Renders status 'beta' correctly 1`] = `
+exports[`FeedbackBadge Renders status 'beta' correctly 1`] = `
 <div
   class="feedbackBadge"
 >
@@ -27,7 +27,7 @@ exports[`FeedbackBadge > Renders status 'beta' correctly 1`] = `
 </div>
 `;
 
-exports[`FeedbackBadge > Renders status 'experimental' correctly 1`] = `
+exports[`FeedbackBadge Renders status 'experimental' correctly 1`] = `
 <div
   class="feedbackBadge"
 >
@@ -54,7 +54,7 @@ exports[`FeedbackBadge > Renders status 'experimental' correctly 1`] = `
 </div>
 `;
 
-exports[`FeedbackBadge > Renders status 'new' correctly 1`] = `
+exports[`FeedbackBadge Renders status 'new' correctly 1`] = `
 <div
   class="feedbackBadge"
 >
@@ -81,7 +81,7 @@ exports[`FeedbackBadge > Renders status 'new' correctly 1`] = `
 </div>
 `;
 
-exports[`FeedbackBadge > Renders status 'wip' correctly 1`] = `
+exports[`FeedbackBadge Renders status 'wip' correctly 1`] = `
 <div
   class="feedbackBadge"
 >
@@ -108,7 +108,7 @@ exports[`FeedbackBadge > Renders status 'wip' correctly 1`] = `
 </div>
 `;
 
-exports[`FeedbackBadge > renders a FeedbackBadge 1`] = `
+exports[`FeedbackBadge renders a FeedbackBadge 1`] = `
 <div
   class="feedbackBadge"
 >

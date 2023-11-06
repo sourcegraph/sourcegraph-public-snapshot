@@ -1,7 +1,7 @@
+import { afterEach, beforeEach, describe, expect, test } from '@jest/globals'
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 

@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from '@jest/globals'
 import * as sinon from 'sinon'
-import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 

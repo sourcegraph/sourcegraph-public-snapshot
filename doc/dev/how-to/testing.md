@@ -18,13 +18,15 @@ Also see [testing Go code](../background-information/languages/testing_go_code.m
 - First run `pnpm install` in the Sourcegraph root directory if it is a fresh clone.
 - To run all unit tests, run `pnpm test` from the root directory.
 - To run unit tests in development (only running the tests related to uncommitted code), run `pnpm test --watch`.
+  - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true`
+- To debug tests in VS Code, use [vscode-jest](https://github.com/jest-community/vscode-jest) and click the **Debug** code lens next to any `test('name ...', ...)` definition in your test file (be sure to set a breakpoint or break on uncaught exceptions by clicking in the left gutter).
 - You can also run `pnpm test` from any of the individual project dirs (`client/shared/`, `client/web/`, `client/browser/`).
 
-Usually while developing you will either have `pnpm test --watch` running in a terminal.
+Usually while developing you will either have `pnpm test --watch` running in a terminal or you will use vscode-jest.
 
 ### React component snapshot tests
 
-[React component snapshot tests](https://vitest.dev/guide/snapshot.html) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
+[React component snapshot tests](https://jestjs.io/docs/en/tutorial-react) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
 
 A typical snapshot test might look like this:
 
@@ -35,9 +37,9 @@ A typical snapshot test might look like this:
     })
 ```
 
-- See the [React component snapshot tests documentation](https://vitest.dev/guide/snapshot.html).
+- See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
 - See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
-- Use the Vitest watcher's <kbd>u</kbd> keyboard shortcut (or `pnpm run test -u`) to update all snapshot files. Be sure to review the diff!
+- Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `pnpm run test -u`) to update all snapshot files. Be sure to review the diff!
 
 ### Behavior tests
 
@@ -115,7 +117,7 @@ In iTerm (macOS) and on Buildkite, it is also displayed inline in the terminal l
 This may trigger a prompt "Allow Terminal-initiated download?" in iTerm.
 Tick "Remember my choice" and click "Yes" if you want the inline screenshots to show up.
 
-When a browser-based test fails ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/29935#1ee967cf-eb2e-4af0-8afc-0770d1779c1d)), CI displays a snapshot of the failure [inline](https://buildkite.com/docs/pipelines/links-and-images-in-log-output) in the Buildkite output and Vitest prints the :
+When a browser-based test fails ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/29935#1ee967cf-eb2e-4af0-8afc-0770d1779c1d)), CI displays a snapshot of the failure [inline](https://buildkite.com/docs/pipelines/links-and-images-in-log-output) in the Buildkite output and Jest prints the :
 
 For end-to-end tests that failed in CI, a video of the session is available in the **Artifacts** tab:
 

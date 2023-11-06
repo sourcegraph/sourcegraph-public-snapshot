@@ -60,6 +60,7 @@ ts_project(
     deps = [
         "//:node_modules/@apollo/client",
         "//:node_modules/@axe-core/puppeteer",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@percy/puppeteer",
         "//:node_modules/@pollyjs/adapter",
         "//:node_modules/@pollyjs/core",
@@ -84,6 +85,7 @@ ts_project(
         "//:node_modules/delay",
         "//:node_modules/expect",
         "//:node_modules/graphql",
+        "//:node_modules/jest",  #keep
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/mime-types",
@@ -101,7 +103,6 @@ ts_project(
         "//:node_modules/term-size",
         "//:node_modules/ts-key-enum",
         "//:node_modules/util",
-        "//:node_modules/vitest",
         "//client/shared:graphql_operations",
         "//client/shared:node_modules/@sourcegraph/build-config",
         "//client/shared:node_modules/@sourcegraph/client-api",

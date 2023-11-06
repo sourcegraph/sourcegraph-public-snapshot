@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`DiffStat > expandedCounts 1`] = `
+exports[`DiffStat expandedCounts 1`] = `
 <DocumentFragment>
   <div
     class=""
@@ -25,7 +25,7 @@ exports[`DiffStat > expandedCounts 1`] = `
 </DocumentFragment>
 `;
 
-exports[`DiffStat > standard 1`] = `
+exports[`DiffStat standard 1`] = `
 <DocumentFragment>
   <div
     class=""

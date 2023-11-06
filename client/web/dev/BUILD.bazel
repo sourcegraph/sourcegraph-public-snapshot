@@ -1,11 +1,11 @@
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
-load("//dev:defs.bzl", "ts_project", "vitest_test")
+load("//dev:defs.bzl", "ts_project")
 
 # dev/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
-# gazelle:exclude vitest.config.ts
+# gazelle:js_test_files there-are-no-tests
 
 ts_config(
     name = "tsconfig",
@@ -21,6 +21,7 @@ ts_project(
     srcs = [
         "esbuild/build.ts",
         "esbuild/config.ts",
+        "esbuild/manifest.test.ts",
         "esbuild/manifest.ts",
         "esbuild/manifestPlugin.ts",
         "esbuild/server.ts",
@@ -39,6 +40,7 @@ ts_project(
     tsconfig = ":tsconfig",
     visibility = ["//client/web:__subpackages__"],
     deps = [
+        "//:node_modules/@jest/globals",
         "//:node_modules/@sentry/esbuild-plugin",
         "//:node_modules/@types/compression",
         "//:node_modules/@types/connect-history-api-fallback",
@@ -100,23 +102,5 @@ esbuild(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:postcss_config_js",
-    ],
-)
-
-ts_project(
-    name = "dev_tests",
-    testonly = True,
-    srcs = ["esbuild/manifest.test.ts"],
-    tsconfig = ":tsconfig",
-    deps = [
-        ":dev",
-        "//:node_modules/vitest",
-    ],
-)
-
-vitest_test(
-    name = "test",
-    data = [
-        ":dev_tests",
     ],
 )

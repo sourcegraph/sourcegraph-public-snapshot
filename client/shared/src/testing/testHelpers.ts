@@ -1,7 +1,7 @@
+import { expect } from '@jest/globals'
 import type { Remote } from 'comlink'
 import { throwError, of, Subscription, type Unsubscribable, type Subscribable } from 'rxjs'
 import type * as sourcegraph from 'sourcegraph'
-import { expect } from 'vitest'
 
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import type { FlatExtensionHostAPI, MainThreadAPI } from '../api/contract'

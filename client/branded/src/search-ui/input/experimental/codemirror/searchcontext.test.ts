@@ -1,5 +1,5 @@
 import { EditorState } from '@codemirror/state'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from '@jest/globals'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 

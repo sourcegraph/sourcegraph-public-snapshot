@@ -1,5 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
 import { BehaviorSubject } from 'rxjs'
-import { describe, expect, test } from 'vitest'
 
 import type { SettingsCascade } from '../../../settings/settings'
 import type { ClientAPI } from '../../client/api/api'

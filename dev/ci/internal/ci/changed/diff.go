@@ -93,6 +93,9 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
 			diff |= Client
 		}
+		if strings.HasSuffix(p, "dev/ci/pnpm-test.sh") {
+			diff |= Client
+		}
 		// dev/release contains a nodejs script that doesn't have tests but needs to be
 		// linted with Client linters. We skip the release config file to reduce friction editing during releases.
 		if strings.HasPrefix(p, "dev/release/") && !strings.Contains(p, "release-config") {

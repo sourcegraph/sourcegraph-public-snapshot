@@ -24,7 +24,7 @@ Let's use as an example the following:
 --- a/dev/ci/internal/ci/operations.go
 +++ b/dev/ci/internal/ci/operations.go
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":vitest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
@@ -46,7 +46,7 @@ Now we want to add a custom notification as well:
 --- a/dev/ci/internal/ci/operations.go
 +++ b/dev/ci/internal/ci/operations.go
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":vitest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withPnpmCache(),
 +   bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 +     Message:              "JetBrains Unit tests failed, cc <@integrations-eng>",
@@ -73,7 +73,7 @@ And that's it!
 --- a/dev/ci/internal/ci/operations.go
 +++ b/dev/ci/internal/ci/operations.go
 unc addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":vitest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withPnpmCache(),
     bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
       Message:              "JetBrains Unit tests failed, cc <@integrations-eng>",

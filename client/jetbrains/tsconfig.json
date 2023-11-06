@@ -6,6 +6,10 @@
     "lib": ["esnext", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "sourceRoot": "src",
+    "baseUrl": "./src",
+    "paths": {
+      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"],
+    },
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,

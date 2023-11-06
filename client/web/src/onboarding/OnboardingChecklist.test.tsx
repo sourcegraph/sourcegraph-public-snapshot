@@ -1,5 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
 import { screen } from '@testing-library/react'
-import { describe, expect, test } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

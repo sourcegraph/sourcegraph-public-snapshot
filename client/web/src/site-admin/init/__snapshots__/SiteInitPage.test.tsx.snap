@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SiteInitPage > normal 1`] = `
+exports[`SiteInitPage normal 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -179,7 +179,7 @@ exports[`SiteInitPage > normal 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SiteInitPage > unexpected authed user 1`] = `
+exports[`SiteInitPage unexpected authed user 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
