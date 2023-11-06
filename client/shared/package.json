@@ -7,7 +7,7 @@
     "storybook": "STORIES_GLOB='client/shared/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss' --quiet",
-    "test": "jest",
+    "test": "vitest",
     "generate": "concurrently -r npm:generate:*",
     "generate:graphql-operations": "ts-node -T dev/generateGraphQlOperations.ts",
     "generate:schema": "ts-node -T dev/generateSchema.ts json-schema-draft-07 settings site batch_spec",

@@ -65,66 +65,6 @@ js_binary(
     visibility = ["//client:__subpackages__"],
 )
 
-ts_project(
-    name = "mock_ts",
-    srcs = [
-        "mockDomRect.ts",
-        "mockEventLogger.ts",
-        "mockMatchMedia.ts",
-        "mockResizeObserver.ts",
-        "mockSentryBrowser.ts",
-        "mockUniqueId.ts",
-        "reactCleanup.ts",
-    ],
-    extends = None,
-    module = "commonjs",
-    tsconfig = "//client/shared:tsconfig",
-    visibility = ["//visibility:private"],
-    deps = [
-        "//:node_modules/@jest/globals",
-        "//:node_modules/@sentry/browser",
-        "//:node_modules/@testing-library/react",
-        "//:node_modules/@types/lodash",
-        "//:node_modules/@types/node",
-        "//:node_modules/@types/react",
-        "//:node_modules/lodash",
-        "//:node_modules/react",
-        "//:node_modules/react-visibility-sensor",
-        "//:node_modules/resize-observer-polyfill",
-        "//:node_modules/use-resize-observer",
-        "//client/shared:node_modules/@sourcegraph/wildcard",
-    ],
-)
-
-js_library(
-    name = "mock",
-    srcs = [
-        "jest-environment.js",
-        "jestGlobalSetup.js",
-        "mockDate.js",
-    ],
-    data = [
-        ":fetch-mock",
-        ":mock_ts",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@peculiar/webcrypto",
-        "//:node_modules/jest-environment-jsdom",
-        "//:node_modules/mockdate",
-        "//:node_modules/react",
-    ],
-)
-
-js_library(
-    name = "fetch-mock",
-    srcs = ["fetch.js"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/node-fetch",
-    ],
-)
-
 js_library(
     name = "mocha-reporter",
     srcs = [

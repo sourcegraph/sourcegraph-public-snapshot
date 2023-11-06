@@ -20,7 +20,6 @@ ts_project(
     tsconfig = "//client/browser:tsconfig",
     visibility = ["//client:__subpackages__"],
     deps = [
-        "//:node_modules/@babel/runtime",  #keep
         "//:node_modules/@types/node",
         "//:node_modules/esbuild",
         # HACKS: bundle-time css import

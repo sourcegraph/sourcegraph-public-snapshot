@@ -1,6 +1,6 @@
-import { describe, expect, it } from '@jest/globals'
 import { renderHook, waitFor } from '@testing-library/react'
 import delay from 'delay'
+import { describe, expect, it } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
