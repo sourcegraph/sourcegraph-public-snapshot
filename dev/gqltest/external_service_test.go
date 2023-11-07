@@ -192,6 +192,7 @@ func TestExternalService_Perforce(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			// TODO(burmudar): disabled because on Aspect Workflows it times out
 			if tc.disabled {
 				t.Skip(tc.name + " test is disabled")
 			}
