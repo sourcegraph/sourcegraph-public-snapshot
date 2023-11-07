@@ -58,6 +58,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
@@ -106,6 +107,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
@@ -154,6 +156,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
@@ -191,6 +194,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             deleted line
@@ -228,6 +232,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             added line
@@ -276,6 +281,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
@@ -324,6 +330,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
@@ -373,6 +380,7 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
           class="content"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
