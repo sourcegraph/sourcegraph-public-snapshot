@@ -19,6 +19,7 @@ go_library(
         "//dev/managedservicesplatform/terraformcloud",
         "//lib/errors",
         "//lib/pointers",
+        "@com_github_aws_jsii_runtime_go//:jsii-runtime-go",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
         "@com_github_sourcegraph_conc//panics",
     ],

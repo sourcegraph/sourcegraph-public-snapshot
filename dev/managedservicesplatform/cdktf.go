@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	jsiiruntime "github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/conc/panics"
 
@@ -29,6 +30,10 @@ func (c CDKTF) OutputDir() string {
 // Synthesize all resources to the output directory that was originally
 // configured.
 func (c CDKTF) Synthesize() error {
+	// Forcibly shut down the JSII runtime post-Synth to make sure that we don't
+	// get bizarre side-effects from multiple apps being rendered.
+	defer jsiiruntime.Close()
+
 	// CDKTF is prone to panics for no good reason, so make a best-effort
 	// attempt to capture them.
 	var catcher panics.Catcher
