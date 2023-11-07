@@ -128,7 +128,7 @@ The delineation of API and non-API endpoints is very important because we can al
 
 ### Non-API endpoints are generally static, unprivileged content only
 
-Aside from the folloowing exclusions, non-API endpoints only serve static, unprivileged content only. However, the two exclusions to this are very notable:
+Aside from the following exclusions, non-API endpoints only serve static, unprivileged content only. However, the two exclusions to this are very notable:
 
 #### A note about window.context
 
