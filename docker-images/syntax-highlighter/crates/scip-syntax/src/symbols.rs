@@ -1,5 +1,4 @@
 use anyhow::Result;
-use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
 use scip_treesitter::types::PackedRange;

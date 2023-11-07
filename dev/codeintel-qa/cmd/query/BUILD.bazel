@@ -30,6 +30,7 @@ go_binary(
 go_cross_binary(
     name = "query-darwin-arm64",
     platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
+    tags = ["manual"],
     target = ":query",
     visibility = ["//testing:__pkg__"],
 )
