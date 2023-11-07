@@ -297,7 +297,7 @@ describe('codeHost', () => {
             ])
 
             // // Simulate codeView1 removal
-            mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
+            setTimeout(() => mutations.next([{ addedNodes: [], removedNodes: [codeView1] }]))
             // One editor should have been removed, model should still exist
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
 
@@ -311,7 +311,7 @@ describe('codeHost', () => {
                 },
             ])
             // // Simulate codeView2 removal
-            mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
+            setTimeout(() => mutations.next([{ addedNodes: [], removedNodes: [codeView2] }]))
             // // Second editor and model should have been removed
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
             expect(getEditors(extensionAPI)).toEqual([])
