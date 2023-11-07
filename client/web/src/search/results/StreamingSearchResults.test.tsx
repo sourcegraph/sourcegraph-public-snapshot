@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER, of } from 'rxjs'
 import { spy, assert } from 'sinon'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
@@ -104,6 +104,7 @@ describe('StreamingSearchResults', () => {
             trace: undefined,
             chunkMatches: true,
             featureOverrides: [],
+            zoektSearchOptions: '',
         })
     })
 
@@ -230,7 +231,7 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should start a new search with added params when onSearchAgain event is triggered', async () => {
-        const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
+        const submitSearchMock = vi.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
         const tests = [
             {
                 parsedSearchQuery: 'r:golang/oauth2 test f:travis',

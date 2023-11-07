@@ -75,7 +75,6 @@ func P4UserIsSuperUser(ctx context.Context, p4home, p4port, p4user, p4passwd str
 	}
 
 	return nil
-
 }
 
 var ErrIsNotSuperUser = errors.New("the user does not have super access")
@@ -105,31 +104,39 @@ func P4Trust(ctx context.Context, p4home, host string) error {
 }
 
 // P4Test uses `p4 login -s` to test the Perforce connection: port, user, passwd.
+// If the command times out after 10 seconds, it will be tried one more time.
 func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
+	runCommand := func() error {
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
 
-	// `p4 ping` requires extra-special access, so we want to avoid using it
-	//
-	// p4 login -s checks the connection and the credentials,
-	// so it seems like the perfect alternative to `p4 ping`.
-	cmd := exec.CommandContext(ctx, "p4", "login", "-s")
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+		// `p4 ping` requires extra-special access, so we want to avoid using it
+		//
+		// p4 login -s checks the connection and the credentials,
+		// so it seems like the perfect alternative to `p4 ping`.
+		cmd := exec.CommandContext(ctx, "p4", "login", "-s")
+		cmd.Env = append(os.Environ(),
+			"P4PORT="+p4port,
+			"P4USER="+p4user,
+			"P4PASSWD="+p4passwd,
+			"HOME="+p4home,
+		)
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
-	if err != nil {
-		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = errors.Wrap(ctxerr, "p4 login context error")
+		out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+		if err != nil {
+			if ctxerr := ctx.Err(); ctxerr != nil {
+				err = errors.Wrap(ctxerr, "p4 login context error")
+			}
+			if len(out) > 0 {
+				err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
+			}
+			return err
 		}
-		if len(out) > 0 {
-			err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
-		}
-		return err
+		return nil
 	}
-	return nil
+	err := runCommand()
+	if err != nil && errors.Is(err, context.DeadlineExceeded) {
+		err = runCommand()
+	}
+	return err
 }

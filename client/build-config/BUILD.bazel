@@ -32,7 +32,6 @@ ts_project(
         "src/paths.ts",
         "src/utils/environment-config.ts",
     ],
-    module = "commonjs",
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@types/sass",
@@ -44,9 +43,6 @@ ts_project(
         ":node_modules/postcss-modules",
         ":node_modules/process",  #keep
         ":node_modules/sass",
-
-        # TODO: figure out why is this needed for integration tests even though it's defined in babel_config
-        "//:node_modules/@babel/runtime",  #keep
         "//:node_modules/@types/node",
         "//:node_modules/monaco-editor",  #keep
         "//:node_modules/monaco-yaml",  #keep

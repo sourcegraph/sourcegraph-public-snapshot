@@ -19,7 +19,7 @@
     flake-utils.lib.eachDefaultSystem
       (system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs { inherit system; overlays = [ self.overlays.nodejs-20_x ]; };
           pkgsBins = nixpkgs-stable.legacyPackages.${system};
           pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
           pkgsX = xcompileTargets.${system} or null;
@@ -34,7 +34,7 @@
               p4-fusion = p.callPackage ./dev/nix/p4-fusion.nix { };
             }) // {
             # doesnt need the same stability as those above
-            nodejs-18_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
+            nodejs-20_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
           };
 
           # We use pkgs (not pkgs') intentionally to avoid doing extra work of
@@ -47,7 +47,7 @@
       overlays = {
         ctags = final: prev: { universal-ctags = self.packages.${prev.system}.ctags; };
         comby = final: prev: { comby = self.packages.${prev.system}.comby; };
-        nodejs-18_x = final: prev: { nodejs-16_x = self.packages.${prev.system}.nodejs-18_x; };
+        nodejs-20_x = final: prev: { nodejs-20_x = self.packages.${prev.system}.nodejs-20_x; };
         p4-fusion = final: prev: { p4-fusion = self.packages.${prev.system}.p4-fusion; };
       };
     };

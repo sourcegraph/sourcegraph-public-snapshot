@@ -261,6 +261,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                         setBreadcrumb={childBreadcrumbSetters.setBreadcrumb}
                                         useBreadcrumb={childBreadcrumbSetters.useBreadcrumb}
                                         telemetryService={props.telemetryService}
+                                        telemetryRecorder={props.platformContext.telemetryRecorder}
                                     />
                                 }
                             />

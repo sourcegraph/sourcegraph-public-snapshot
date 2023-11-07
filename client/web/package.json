@@ -5,7 +5,7 @@
   "description": "The Sourcegraph web app",
   "scripts": {
     "build-ts": "tsc --build tsconfig.json --emitDeclarationOnly",
-    "test": "jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression --testPathIgnorePatterns integration",
+    "test": "vitest",
     "task:mocha": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha",
     "test:regression": "pnpm run task:mocha './src/regression/**/*.test.ts' --exit",
     "test:regression:codeintel": "pnpm task:mocha ./src/regression/codeintel.test.ts",
@@ -18,11 +18,10 @@
     "storybook": "STORIES_GLOB='client/web/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "serve:dev": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/development.server.ts",
     "serve:prod": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/production.server.ts",
-    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
-    "dev": "pnpm task:gulp dev",
-    "unsafeDev": "pnpm task:gulp unsafeDev",
-    "build": "pnpm task:gulp build",
-    "watch": "WATCH=1 pnpm task:gulp watch",
+    "generate": "pnpm -w run generate",
+    "dev": "ts-node -T dev/esbuild/server.ts",
+    "build": "pnpm run generate && ts-node -T dev/esbuild/build.ts",
+    "watch": "WATCH=1 pnpm run --silent build",
     "lint": "pnpm lint:js && pnpm:lint:css",
     "lint:js": "NODE_OPTIONS=\"--max_old_space_size=16192\" eslint --cache '**/*.[tj]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss' --quiet",
@@ -46,6 +45,7 @@
     "@sourcegraph/observability-client": "workspace:*",
     "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/telemetry": "^0.11.0",
     "@sourcegraph/wildcard": "workspace:*"
   }
 }

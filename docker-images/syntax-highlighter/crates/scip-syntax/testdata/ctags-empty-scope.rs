@@ -5,11 +5,24 @@ use scip_syntax::locals::parse_tree;
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
+static LANGUAGE: &str = "Rust";
+const THRESHOLD: i32 = 10;
+
+trait Yay {}
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {
     /// Root directory to run local navigation over
     root_dir: String,
+}
+
+impl Arguments {
+    fn parse() {}
+}
+
+impl Yay for Arguments {
+    fn pog() {}
 }
 
 struct ParseTiming {

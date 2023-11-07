@@ -227,7 +227,14 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     writeSchema(buildDirectory)
 
     copyExtensionAssets(buildDirectory)
-    copyInlineExtensions(buildDirectory)
+
+    // TODO(@camdencheek): figure out whether we actually want to continue
+    // shipping the inline extensions with the browser extensions. For now,
+    // skip them for the firefox extension because they are being detected
+    // as non-human-readable assets, and will cause removal from the addon store.
+    if (browser !== 'firefox') {
+        copyInlineExtensions(buildDirectory)
+    }
 
     // Create a bundle by zipping the web extension directory.
     const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]

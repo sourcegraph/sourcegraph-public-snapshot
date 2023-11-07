@@ -1,11 +1,13 @@
 import assert from 'assert'
 
-import { beforeEach, describe, expect, it } from '@jest/globals'
 import { readFile } from 'mz/fs'
 import Simmer, { type Options as SimmerOptions } from 'simmerjs'
 import type { SetIntersection } from 'utility-types'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { DiffPart } from '@sourcegraph/codeintellify'
+
+import { windowLocation__testingOnly as windowLocation__testingOnly__github } from '../github/util'
 
 import type { CodeHost, MountGetter } from './codeHost'
 import type { CodeView, DOMFunctions } from './codeViews'
@@ -20,11 +22,13 @@ export function testCodeHostMountGetters<C extends CodeHost>(
     codeHost: C,
     containerHtmlFixturePaths: string | Record<SetIntersection<MountGetterKey, keyof C>, string>
 ): void {
+    let addedTest = false
     for (const mountGetterKey of mountGetterKeys) {
         const getMount = codeHost[mountGetterKey]
         if (!getMount) {
             continue
         }
+        addedTest = true
         describe(mountGetterKey, () => {
             const fixturePath =
                 typeof containerHtmlFixturePaths === 'string'
@@ -32,6 +36,9 @@ export function testCodeHostMountGetters<C extends CodeHost>(
                     : containerHtmlFixturePaths[mountGetterKey as keyof typeof containerHtmlFixturePaths]
             testMountGetter(fixturePath, getMount, true, true)
         })
+    }
+    if (!addedTest) {
+        it('no tests', () => {})
     }
 }
 
@@ -154,9 +161,12 @@ export function testDOMFunctions(
     let codeViewElement: HTMLElement
     beforeEach(async () => {
         if (url) {
-            jsdom.reconfigure({ url })
+            windowLocation__testingOnly__github.value = new URL(url)
         }
         codeViewElement = await getFixtureBody({ htmlFixturePath, isFullDocument: false })
+    })
+    afterEach(() => {
+        windowLocation__testingOnly__github.value = null
     })
     for (const { diffPart, lineNumber, firstCharacterIsDiffIndicator } of codeElements) {
         describe(

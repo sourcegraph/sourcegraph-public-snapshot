@@ -137,16 +137,15 @@ mod tests {
     use assert_cmd::prelude::*;
     use scip_treesitter_cli::io::read_index_from_file;
     use std::collections::HashMap;
+    use std::path::Path;
     use std::process::Command;
     use std::{env::temp_dir, path::PathBuf};
 
     lazy_static::lazy_static! {
         static ref BINARY_LOCATION: PathBuf = {
             match std::env::var("SCIP_CLI_LOCATION") {
-                Ok(va) => {
-                        std::env::current_dir().unwrap().join(va)
-                }
-                _ => cargo_bin("scip-treesitter-cli")
+                Ok(va) => std::env::current_dir().unwrap().join(va),
+                _ => cargo_bin("scip-treesitter-cli"),
             }
         };
     }
@@ -186,7 +185,7 @@ mod tests {
         }
     }
 
-    fn prepare(temp: &PathBuf, files: &HashMap<PathBuf, String>) {
+    fn prepare(temp: &Path, files: &HashMap<PathBuf, String>) {
         for (path, contents) in files.iter() {
             let file_path = temp.join(path);
             write_file(&file_path, contents);

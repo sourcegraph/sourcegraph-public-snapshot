@@ -1,6 +1,9 @@
 package spec
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type EnvironmentSpec struct {
 	// ID is an all-lowercase alphanumeric identifier for the deployment
@@ -22,13 +25,18 @@ type EnvironmentSpec struct {
 	// LivenessProbe is only provisioned if this field is set.
 	LivenessProbe *EnvironmentLivenessProbeSpec `json:"livenessProbe,omitempty"`
 
+	// Env is key-value pairs of environment variables to set on the service.
+	//
+	// Values can be subsituted with supported runtime values with gotemplate, e.g., "{{ .ProjectID }}"
+	// 	- ProjectID: The project ID of the service.
+	//	- ServiceDnsName: The DNS name of the service.
 	Env       map[string]string `json:"env,omitempty"`
 	SecretEnv map[string]string `json:"secretEnv,omitempty"`
 }
 
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
-	// TODO: Add validation
+	errs = append(errs, s.Deploy.Validate()...)
 	return errs
 }
 
@@ -45,34 +53,66 @@ const (
 )
 
 type EnvironmentDeploySpec struct {
-	Type   EnvironmentDeployType        `json:"type"`
-	Manual *EnvironmentDeployManualSpec `json:"manual,omitempty"`
+	Type         EnvironmentDeployType                  `json:"type"`
+	Manual       *EnvironmentDeployManualSpec           `json:"manual,omitempty"`
+	Subscription *EnvironmentDeployTypeSubscriptionSpec `json:"subscription,omitempty"`
+}
+
+func (s EnvironmentDeploySpec) Validate() []error {
+	var errs []error
+	if s.Type == EnvironmentDeployTypeSubscription {
+		if s.Subscription == nil {
+			errs = append(errs, errors.New("no subscription specified when deploy type is subscription"))
+		}
+		if s.Subscription.Tag == "" {
+			errs = append(errs, errors.New("no tag in image subscription specified"))
+		}
+	}
+	return errs
 }
 
 type EnvironmentDeployType string
 
 const (
-	EnvironmentDeployTypeManual = "manual"
+	EnvironmentDeployTypeManual       = "manual"
+	EnvironmentDeployTypeSubscription = "subscription"
 )
 
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
 //
 // TODO: Implement ability to resolve latest concrete tag from a source
-func (d EnvironmentDeploySpec) ResolveTag() (string, error) {
+func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:
 		if d.Manual == nil {
 			return "insiders", nil
 		}
 		return d.Manual.Tag, nil
-
+	case EnvironmentDeployTypeSubscription:
+		// we already validated in Validate(), hence it's fine to assume this won't panic
+		updater, err := imageupdater.New()
+		if err != nil {
+			return "", errors.Wrapf(err, "create image updater")
+		}
+		tagAndDigest, err := updater.ResolveTagAndDigest(repo, d.Subscription.Tag)
+		if err != nil {
+			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
+		}
+		return tagAndDigest, nil
 	default:
 		return "", errors.New("unable to resolve tag")
 	}
 }
 
 type EnvironmentDeployManualSpec struct {
+	// Tag is the tag to deploy. If empty, defaults to "insiders".
 	Tag string `json:"tag,omitempty"`
+}
+
+type EnvironmentDeployTypeSubscriptionSpec struct {
+	// Tag is the tag to subscribe to.
+	Tag string `json:"tag,omitempty"`
+	// TODO: In the future, we may support subscribing by semver constraints.
 }
 
 type EnvironmentDomainSpec struct {

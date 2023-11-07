@@ -1,5 +1,5 @@
-import { describe, expect, test } from '@jest/globals'
 import { startCase } from 'lodash'
+import { describe, expect, test } from 'vitest'
 
 import { getFixtureBody } from '../shared/codeHostTestUtils'
 

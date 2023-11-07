@@ -1,4 +1,4 @@
-import { describe, expect, test } from '@jest/globals'
+import { describe, expect, test } from 'vitest'
 
 import type { TextDocument } from '../../codeintel/legacy-extensions/api'
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'

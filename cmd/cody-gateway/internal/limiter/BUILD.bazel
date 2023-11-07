@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter",
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
+        "//internal/xcontext",
         "//lib/errors",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",

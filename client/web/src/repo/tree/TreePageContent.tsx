@@ -36,13 +36,13 @@ import type {
     DiffSinceResult,
     DiffSinceVariables,
     GitCommitFields,
-    RepositoryContributorNodeFields,
     Scalars,
     TreeCommitsResult,
     TreeCommitsVariables,
     TreePageOwnershipNodeFields,
     TreePageOwnershipResult,
     TreePageOwnershipVariables,
+    TreePageRepositoryContributorNodeFields,
     TreePageRepositoryContributorsResult,
     TreePageRepositoryContributorsVariables,
     TreePageRepositoryFields,
@@ -402,17 +402,6 @@ const CONTRIBUTORS_QUERY = gql`
             }
         }
         count
-        commits(first: 1) {
-            nodes {
-                oid
-                abbreviatedOID
-                url
-                subject
-                author {
-                    date
-                }
-            }
-        }
     }
 `
 
@@ -664,7 +653,7 @@ interface QuerySpec {
 }
 
 interface RepositoryContributorNodeProps extends QuerySpec {
-    node: RepositoryContributorNodeFields
+    node: TreePageRepositoryContributorNodeFields
     repoName: string
     sourceType: string
 }

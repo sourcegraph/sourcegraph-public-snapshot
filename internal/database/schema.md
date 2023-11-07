@@ -3521,12 +3521,12 @@ Referenced by:
 
 # Table "public.repo"
 ```
-        Column         |           Type           | Collation | Nullable |             Default              
------------------------+--------------------------+-----------+----------+----------------------------------
+        Column         |           Type           | Collation | Nullable |                                          Default                                           
+-----------------------+--------------------------+-----------+----------+--------------------------------------------------------------------------------------------
  id                    | integer                  |           | not null | nextval('repo_id_seq'::regclass)
  name                  | citext                   |           | not null | 
  description           | text                     |           |          | 
- fork                  | boolean                  |           |          | 
+ fork                  | boolean                  |           | not null | false
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           |          | 
  external_id           | text                     |           |          | 
@@ -3539,12 +3539,12 @@ Referenced by:
  private               | boolean                  |           | not null | false
  stars                 | integer                  |           | not null | 0
  blocked               | jsonb                    |           |          | 
+ topics                | text[]                   |           |          | generated always as (extract_topics_from_metadata(external_service_type, metadata)) stored
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
-    "idx_repo_github_topics" gin (((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text)) WHERE external_service_type = 'github'::text
-    "idx_repo_gitlab_topics" gin ((metadata -> 'topics'::text)) WHERE external_service_type = 'gitlab'::text
+    "idx_repo_topics" gin (topics)
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
@@ -4304,6 +4304,7 @@ Foreign-key constraints:
  completions_quota       | integer                  |           |          | 
  code_completions_quota  | integer                  |           |          | 
  completed_post_signup   | boolean                  |           | not null | false
+ cody_pro_enabled_at     | timestamp with time zone |           |          | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL

@@ -1,7 +1,7 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "sass", "ts_project")
+load("//dev:defs.bzl", "sass", "ts_project", "vitest_test")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:build_code_intel_extensions.bzl", "build_code_intel_extensions")
@@ -11,7 +11,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
-# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -40,7 +39,6 @@ eslint_test_with_types(
     config = ":eslint_config",
     deps = [
         ":node_modules/@sourcegraph/shared",  # required for import/extensions rule not to fail.
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )
@@ -248,7 +246,6 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@mdi/js",
         "//:node_modules/@reach/combobox",
         "//:node_modules/@sentry/browser",
@@ -265,7 +262,6 @@ ts_project(
         "//:node_modules/comlink",
         "//:node_modules/graphql",
         "//:node_modules/history",
-        "//:node_modules/jest",  #keep
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
@@ -276,8 +272,9 @@ ts_project(
         "//:node_modules/simmerjs",
         "//:node_modules/utility-types",
         "//:node_modules/uuid",
+        "//:node_modules/vitest",
         "//:node_modules/webext-domain-permission-toggle",
-        "//:node_modules/webextension-polyfill",
+        "//:node_modules/webextension-polyfill",  #keep
     ],
 )
 
@@ -304,7 +301,7 @@ ts_project(
         "src/shared/code-hosts/shared/codeViews.test.ts",
         "src/shared/code-hosts/shared/views.test.ts",
         "src/shared/code-hosts/sourcegraph/inject.test.tsx",
-        "src/testGlobals.d.ts",  #keep
+        "src/testSetup.test.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
@@ -313,9 +310,9 @@ ts_project(
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",  #keep
         ":node_modules/sourcegraph",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@types/lodash",
@@ -323,7 +320,6 @@ ts_project(
         "//:node_modules/@types/node",
         "//:node_modules/@types/sinon",
         "//:node_modules/comlink",
-        "//:node_modules/jest-fetch-mock",
         "//:node_modules/lodash",
         "//:node_modules/mz",
         "//:node_modules/process",
@@ -331,31 +327,23 @@ ts_project(
         "//:node_modules/sinon",
         "//:node_modules/util",
         "//:node_modules/utility-types",
+        "//:node_modules/vitest",
+        "//:node_modules/vitest-fetch-mock",
     ],
 )
 
-js_library(
-    name = "jest_config",
-    testonly = True,
-    srcs = [
-        "jest.config.js",
-    ],
-    data = [
-        "src/shared/jestSetupAfterEnv.js",
-    ],
-    deps = ["//:jest_config"],
+filegroup(
+    name = "snapshots",
+    srcs = glob(["src/**/__snapshots__/*"]),
 )
 
-jest_test(
+vitest_test(
     name = "test",
     timeout = "moderate",
-    config = ":jest_config",
     data = [
         ":browser_tests",
+        ":snapshots",
     ],
-    patch_node_fs = False,
-    shard_count = 6,
-    tags = ["no-sandbox"],
 )
 
 filegroup(
@@ -381,7 +369,7 @@ esbuild(
         # STATIC ASSETS
         "//client/browser/assets",
     ],
-    config = "//client/browser/config:esbuild-config",
+    config = "//client/browser/config:esbuild-config_bundle",
     entry_points = [
         "src/browser-extension/scripts/backgroundPage.main.js",
         "src/browser-extension/scripts/contentPage.main.js",
@@ -393,7 +381,10 @@ esbuild(
         "src/branded.css",
         "src/shared/extensionHostWorker.js",
     ],
-    deps = ["//client/browser/config"],
+    deps = [
+        "//:postcss_config_js",  #keep
+        "//client/browser/config",
+    ],
 )
 
 # Mirror `client/browser/scripts/build-inline-extensions.js`

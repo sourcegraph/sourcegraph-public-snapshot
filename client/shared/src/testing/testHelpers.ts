@@ -1,7 +1,7 @@
-import { expect } from '@jest/globals'
 import type { Remote } from 'comlink'
 import { throwError, of, Subscription, type Unsubscribable, type Subscribable } from 'rxjs'
 import type * as sourcegraph from 'sourcegraph'
+import { expect } from 'vitest'
 
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import type { FlatExtensionHostAPI, MainThreadAPI } from '../api/contract'
@@ -105,17 +105,6 @@ export async function integrationTestContext(
         mainThreadAPI,
         unsubscribe: () => extensionHost.unsubscribe(),
     }
-}
-
-/**
- * Returns a {@link Promise} and a function. The {@link Promise} blocks until the returned function is called.
- *
- * @internal
- */
-export function createBarrier(): { wait: Promise<void>; done: () => void } {
-    let done!: () => void
-    const wait = new Promise<void>(resolve => (done = resolve))
-    return { wait, done }
 }
 
 export function collectSubscribableValues<T>(subscribable: Subscribable<T>): T[] {

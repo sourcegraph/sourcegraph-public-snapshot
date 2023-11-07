@@ -149,6 +149,19 @@ because Sourcegraph usernames are mutable.
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
+## Internal repositories
+
+GitLab also has internal repositories in addition to the usual public and private repositories. Depending on how your organization structure is configured, you may want to make these internal repositories available to everyone on your Sourcegraph instance without relying on permission syncs. To mark all internal repositories as public, add the following field to the code host connection:
+
+```json
+{
+  // ...
+  "markInternalReposAsPublic": true
+}
+```
+
+When adding this configuration option, you may also want to configure your GitLab auth provider so that it does [not sync user permissions for internal repositories](../auth/index.md#dont-sync-user-permissions-for-internal-repositories).
+
 ## Rate limits
 
 Always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).

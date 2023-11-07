@@ -1,6 +1,6 @@
-import { describe, expect, test } from '@jest/globals'
 import { EMPTY, of, Subject } from 'rxjs'
 import sinon from 'sinon'
+import { describe, expect, test } from 'vitest'
 
 import { getGraphQLClient as getGraphQLClientBase, type SuccessGraphQLResult } from '@sourcegraph/http-client'
 
@@ -118,7 +118,10 @@ describe('MainThreadAPI', () => {
                 clientApplication: 'other',
             }
 
-            const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
+            const { api } = initMainThreadAPI(
+                pretendRemote<FlatExtensionHostAPI>({ syncSettingsData: () => {} }),
+                platformContext
+            )
 
             const edit: SettingsEdit = { path: ['a'], value: 'newVal' }
             await api.applySettingsEdit(edit)

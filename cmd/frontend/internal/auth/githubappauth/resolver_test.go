@@ -60,7 +60,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewTestClient(t), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
@@ -136,7 +136,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewTestClient(t), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
@@ -234,7 +234,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewTestClient(t), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
@@ -303,7 +303,7 @@ func TestResolver_GitHubAppByAppID(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewTestClient(t), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{

@@ -15,14 +15,13 @@ func contains(s []string, str string) bool {
 var clientRootFiles = []string{
 	"package.json",
 	"pnpm-lock.yaml",
-	"jest.config.base.js",
-	"jest.config.js",
+	"vitest.workspace.ts",
+	"vitest.shared.ts",
 	"postcss.config.js",
-	"tsconfig.all.json",
+	"tsconfig.base.json",
 	"tsconfig.json",
 	".percy.yml",
 	".eslintrc.js",
-	"gulpfile.js",
 }
 
 func isRootClientFile(p string) bool {

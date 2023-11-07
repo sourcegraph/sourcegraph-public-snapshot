@@ -1,4 +1,4 @@
-import { describe, expect, it, test } from '@jest/globals'
+import { describe, expect, it, test } from 'vitest'
 
 import { isExternalLink } from '@sourcegraph/common'
 
@@ -426,21 +426,20 @@ describe('buildSearchURLQuery', () => {
 
 describe('isExternalLink', () => {
     it('returns false for the same site', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-        expect(isExternalLink('https://github.com/there')).toBe(false)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink('https://github.com/there', windowLocation)).toBe(false)
     })
     it('returns false for relative links', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-        expect(isExternalLink('/there')).toBe(false)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink('/there', windowLocation)).toBe(false)
     })
     it('returns false for invalid URLs', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-
-        expect(isExternalLink(' ')).toBe(false)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink(' ', windowLocation)).toBe(false)
     })
     it('returns true for a different site', () => {
-        jsdom.reconfigure({ url: 'https://github.com/here' })
-        expect(isExternalLink('https://sourcegraph.com/here')).toBe(true)
+        const windowLocation = new URL('https://github.com/here')
+        expect(isExternalLink('https://sourcegraph.com/here', windowLocation)).toBe(true)
     })
 })
 

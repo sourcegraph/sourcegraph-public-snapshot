@@ -7,7 +7,7 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
-  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: "true"
+  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
   INSECURE_DEV: true
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
@@ -25,11 +25,11 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  GO111MODULE: "on"
+  GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ":3082"
+  SRC_HTTP_ADDR: ':3082'
 
   # I don't think we even need to set these?
   SEARCHER_URL: http://127.0.0.1:3181
@@ -43,9 +43,9 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
-  SRC_GRPC_ENABLE_CONF: "true"
-  SRC_DEVELOPMENT: "true"
-  SRC_PROF_HTTP: ""
+  SRC_GRPC_ENABLE_CONF: 'true'
+  SRC_DEVELOPMENT: 'true'
+  SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
     [
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
@@ -84,7 +84,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: "--max_old_space_size=8192"
+  NODE_OPTIONS: '--max_old_space_size=8192'
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -121,18 +121,19 @@ env:
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
   # Enable gRPC Web UI for debugging
-  GRPC_WEB_UI_ENABLED: "true"
+  GRPC_WEB_UI_ENABLED: 'true'
 
   # Enable full protobuf message logging when an internal error occurred
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: 'true'
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
   ## zoekt-specific message logging
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: 'true'
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
 
-  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:10080'
+  SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
 
   # By default, allow temporary edits to external services.
   EXTSVC_CONFIG_ALLOW_EDITS: true
@@ -143,9 +144,9 @@ commands:
     cmd: ./dev/run-server-image.sh
     env:
       TAG: insiders
-      CLEAN: "true"
-      DATA: "/tmp/sourcegraph-data"
-      URL: "http://localhost:7080"
+      CLEAN: 'true'
+      DATA: '/tmp/sourcegraph-data'
+      URL: 'http://localhost:7080'
 
   frontend:
     description: Frontend
@@ -165,8 +166,8 @@ commands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEB_BUILDER_DEV_SERVER: 1
     watch:
@@ -240,7 +241,7 @@ commands:
       CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: "false"
+      USE_ROCKSKIP: 'false'
     watch:
       - lib
       - internal
@@ -302,13 +303,13 @@ commands:
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
       # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
-      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ''
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: info
       # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: "127.0.0.1:6098"
+      SRC_PROF_HTTP: '127.0.0.1:6098'
     watch:
       - lib
       - internal
@@ -326,12 +327,12 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/telemetry-gateway github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway
     checkBinary: .bin/telemetry-gateway
     env:
-      PORT: "10080"
+      PORT: '10080'
       DIAGNOSTICS_SECRET: sekret
       TELEMETRY_GATEWAY_EVENTS_PUBSUB_ENABLED: false
       SRC_LOG_LEVEL: info
       # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: "127.0.0.1:6080"
+      SRC_PROF_HTTP: '127.0.0.1:6080'
       GRPC_WEB_UI_ENABLED: true
     watch:
       - lib
@@ -356,7 +357,7 @@ commands:
       PINGS_PUBSUB_TOPIC_ID: 'server-update-checks-test'
       HUBSPOT_ACCESS_TOKEN: ''
       # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: "127.0.0.1:7011"
+      SRC_PROF_HTTP: '127.0.0.1:7011'
     watch:
       - lib
       - internal
@@ -385,8 +386,10 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: ./node_modules/.bin/gulp --color dev
-    install: pnpm install
+    cmd: pnpm --filter @sourcegraph/web dev
+    install: |
+      pnpm install
+      pnpm run generate
     env:
       ENABLE_OPEN_TELEMETRY: true
 
@@ -395,10 +398,10 @@ commands:
     cmd: pnpm --filter @sourcegraph/web serve:dev --color
     install: |
       pnpm install
-      pnpm generate
+      pnpm run generate
     env:
       WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
@@ -657,8 +660,8 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: ""
-      EXECUTOR_QUEUE_NAMES: "codeintel,batches"
+      EXECUTOR_QUEUE_NAME: ''
+      EXECUTOR_QUEUE_NAMES: 'codeintel,batches'
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
   blobstore:
@@ -749,8 +752,8 @@ commands:
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
       CACHE: false
 
   prometheus:
@@ -806,11 +809,11 @@ commands:
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ""
-      DOCKER_NET: ""
+      DOCKER_USER: ''
+      DOCKER_NET: ''
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ""
+      ADD_HOST_FLAG: ''
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
@@ -859,8 +862,8 @@ commands:
       IMAGE: postgres-exporter:candidate
       CONTAINER: postgres_exporter
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
 
   monitoring-generator:
     cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
@@ -879,7 +882,7 @@ commands:
       docker pull index.docker.io/grafana/loki:$LOKI_VERSION
     env:
       LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: "2.3.0"
+      LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
@@ -914,7 +917,7 @@ commands:
       IMAGE: opentelemetry-collector:candidate
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
-      CONFIGURATION_FILE: "configs/jaeger.yaml"
+      CONFIGURATION_FILE: 'configs/jaeger.yaml'
       # HONEYCOMB_API_KEY: ''
       # HONEYCOMB_DATASET: ''
 
@@ -950,8 +953,8 @@ commands:
       go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       WEB_BUILDER_DEV_SERVER: 1
     watch:
       - cmd
@@ -984,13 +987,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: "1"
-      ROCKET_ENV: "production"
-      ROCKET_LIMITS: "{json=10485760}"
-      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
-      ROCKET_KEEP_ALIVE: "0"
-      ROCKET_PORT: "9238"
-      QUIET: "true"
+      WORKERS: '1'
+      ROCKET_ENV: 'production'
+      ROCKET_LIMITS: '{json=10485760}'
+      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
+      ROCKET_KEEP_ALIVE: '0'
+      ROCKET_PORT: '9238'
+      QUIET: 'true'
   frontend:
     description: Enterprise frontend
     target: //cmd/frontend
@@ -1001,8 +1004,8 @@ bazelCommands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEB_BUILDER_DEV_SERVER: 1
   worker:
@@ -1020,7 +1023,7 @@ bazelCommands:
       CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: "false"
+      USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
     env: &gitserverenv
@@ -1133,7 +1136,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ""
+      EXTSVC_CONFIG_FILE: ''
 
   dotcom:
     # This is 95% the enterprise runset, with the addition of Cody Gateway.
@@ -1594,9 +1597,9 @@ tests:
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: "http://localhost:3080"
-      EMAIL: "joe@sourcegraph.com"
-      PASSWORD: "12345"
+      BASE_URL: 'http://localhost:3080'
+      EMAIL: 'joe@sourcegraph.com'
+      PASSWORD: '12345'
 
   bext:
     cmd: pnpm --filter @sourcegraph/browser test
@@ -1613,7 +1616,7 @@ tests:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
   client:
-    cmd: pnpm jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression --testPathIgnorePatterns integration --testPathIgnorePatterns storybook
+    cmd: pnpm run test
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
@@ -1634,8 +1637,8 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        project: "sourcegraph-ci"
-        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
+        project: 'sourcegraph-ci'
+        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
   web-regression:
     preamble: |

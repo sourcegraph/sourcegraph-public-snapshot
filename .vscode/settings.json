@@ -37,8 +37,6 @@
     "build.allowImplicitNetworkAccess": true,
     "local": "github.com/sourcegraph/sourcegraph"
   },
-  "jest.jestCommandLine": "pnpm run test",
-  "gulp.autoDetect": "off",
   "npm.packageManager": "pnpm",
   "npm.runSilent": true,
   "typescript.preferences.quoteStyle": "single",

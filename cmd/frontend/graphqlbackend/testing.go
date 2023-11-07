@@ -20,7 +20,7 @@ import (
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
-	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient())
+	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient("graphql.test"))
 }
 
 func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {

@@ -23,9 +23,9 @@ http_archive(
 # rules_js defines an older rules_nodejs, so we override it here
 http_archive(
     name = "rules_nodejs",
-    sha256 = "5ad078287b5f3069735652e1fc933cb2e2189b15d2c9fc826c889dc466c32a07",
-    strip_prefix = "rules_nodejs-6.0.1",
-    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.1/rules_nodejs-v6.0.1.tar.gz",
+    sha256 = "162f4adfd719ba42b8a6f16030a20f434dc110c65dc608660ef7b3411c9873f9",
+    strip_prefix = "rules_nodejs-6.0.2",
+    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.2/rules_nodejs-v6.0.2.tar.gz",
 )
 
 http_archive(
@@ -43,10 +43,10 @@ http_archive(
 )
 
 http_archive(
-    name = "aspect_rules_jest",
-    sha256 = "bf8f4a4d2a833e4f96f866c686c38bcee69d3bdae8a827b1c9d2fdf92212bc0b",
-    strip_prefix = "rules_jest-95d8f1961a9c6f3aee2929881b1b74461652e775",
-    url = "https://github.com/aspect-build/rules_jest/archive/95d8f1961a9c6f3aee2929881b1b74461652e775.tar.gz",
+    name = "aspect_rules_swc",
+    sha256 = "8eb9e42ed166f20cacedfdb22d8d5b31156352eac190fc3347db55603745a2d8",
+    strip_prefix = "rules_swc-1.1.0",
+    url = "https://github.com/aspect-build/rules_swc/releases/download/v1.1.0/rules_swc-v1.1.0.tar.gz",
 )
 
 http_archive(
@@ -85,8 +85,8 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "814680e1ab535f799fd10e8739ddca901351ceb4d2d86dd8126c22d36e9fcbd9",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.29.0/rules_rust-v0.29.0.tar.gz"],
+    sha256 = "6357de5982dd32526e02278221bb8d6aa45717ba9bbacf43686b130aa2c72e1e",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.30.0/rules_rust-v0.30.0.tar.gz"],
 )
 
 # Container rules
@@ -114,7 +114,7 @@ http_archive(
 )
 
 # hermetic_cc_toolchain setup ================================
-HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.2"
 
 # Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
@@ -130,7 +130,7 @@ http_archive(
     patches = [
         "//third_party/hermetic_cc:disable_ubsan.patch",
     ],
-    sha256 = "57f03a6c29793e8add7bd64186fc8066d23b5ffd06fe9cc6b0b8c499914d3a65",
+    sha256 = "28fc71b9b3191c312ee83faa1dc65b38eb70c3a57740368f7e7c7a49bedf3106",
     urls = [
         "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
         "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
@@ -147,7 +147,7 @@ load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
 nodejs_register_toolchains(
     name = "nodejs",
-    node_version = "18.17.1",
+    node_version = "20.8.0",
 )
 
 # rules_js npm setup ============================
@@ -190,28 +190,24 @@ load("@aspect_rules_ts//ts:repositories.bzl", "rules_ts_dependencies")
 
 rules_ts_dependencies(ts_version = "4.9.5")
 
-# rules_jest setup ==============================
-load("@aspect_rules_jest//jest:dependencies.bzl", "rules_jest_dependencies")
+# rules_swc setup ==============================
+load("@aspect_rules_swc//swc:dependencies.bzl", "rules_swc_dependencies")
 
-rules_jest_dependencies()
+rules_swc_dependencies()
 
-load("@aspect_rules_jest//jest:repositories.bzl", "jest_repositories")
+load("@aspect_rules_swc//swc:repositories.bzl", "LATEST_SWC_VERSION", "swc_register_toolchains")
 
-jest_repositories(
-    name = "jest",
-    jest_version = "v28.1.0",
+swc_register_toolchains(
+    name = "swc",
+    swc_version = LATEST_SWC_VERSION,
 )
-
-load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
-
-jest_npm_repositories()
 
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "2ea31bd97181a315e048be693ddc2815fddda0f3a12ca7b7cc6e91e80f31bac7",
-    strip_prefix = "rules_esbuild-0.14.4",
-    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.14.4/rules_esbuild-v0.14.4.tar.gz",
+    sha256 = "84419868e43c714c0d909dca73039e2f25427fc04f352d2f4f7343ca33f60deb",
+    strip_prefix = "rules_esbuild-0.15.3",
+    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.15.3/rules_esbuild-v0.15.3.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
@@ -219,11 +215,11 @@ load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependenc
 rules_esbuild_dependencies()
 
 # Register a toolchain containing esbuild npm package and native bindings
-load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_VERSION", "esbuild_register_toolchains")
+load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_ESBUILD_VERSION", "esbuild_register_toolchains")
 
 esbuild_register_toolchains(
     name = "esbuild",
-    esbuild_version = LATEST_VERSION,
+    esbuild_version = LATEST_ESBUILD_VERSION,
 )
 
 # Go toolchain setup

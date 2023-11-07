@@ -36,7 +36,7 @@ export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbu
         logLevel: 'error',
         jsx: 'automatic',
         jsxDev: ENVIRONMENT_CONFIG.NODE_ENV === 'development',
-        splitting: true,
+        splitting: !ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_NO_SPLITTING,
         chunkNames: 'chunks/chunk-[name]-[hash]',
         entryNames: '[name]-[hash]',
         outdir: STATIC_ASSETS_PATH,

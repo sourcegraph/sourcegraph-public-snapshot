@@ -110,8 +110,18 @@ It can also be used for local development by updating its path and hash in the '
 					return nil
 
 				},
-			},
-			{
+			}, {
+				Name:      "scan-images",
+				ArgsUsage: "<base-image-name>",
+				Usage:     "Scan Wolfi base images for vulnerabilities",
+				UsageText: `
+Scans the Wolfi base images in the 'dev/oci_deps.bzl' file.`,
+				Action: func(ctx *cli.Context) error {
+					wolfi.ScanImages()
+
+					return nil
+				},
+			}, {
 				Name:      "update-hashes",
 				ArgsUsage: "<base-image-name>",
 				Usage:     "Update Wolfi base images hashes to the latest versions",
@@ -132,6 +142,7 @@ Hash references are updated by fetching the ':latest' tag for each base image fr
 
 					return nil
 				},
-			}},
+			},
+		},
 	}
 )

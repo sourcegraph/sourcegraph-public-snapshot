@@ -55,7 +55,7 @@ func (gitServer) NewClientGroup(containerName string) monitoring.Group {
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "gitserver_client",
 				MetricDescriptionRoot: "graphql",
-				By:                    []string{"op"},
+				By:                    []string{"op", "scope"},
 			},
 		},
 

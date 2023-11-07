@@ -3,7 +3,6 @@ package httpapi
 import (
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 	"github.com/throttled/throttled/v2/store/memstore"
 
@@ -11,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -30,7 +28,6 @@ func newTest(t *testing.T) *httptestutil.Client {
 	db := dbmocks.NewMockDB()
 
 	handler, err := NewHandler(db,
-		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,
 		&Handlers{

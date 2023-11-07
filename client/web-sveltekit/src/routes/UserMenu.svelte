@@ -44,7 +44,7 @@
     {/if}
     <MenuSeparator />
     {#if authenticatedUser.siteAdmin}
-        <MenuLink href="/site-admin">Site admin</MenuLink>
+        <MenuLink href="/site-admin" data-sveltekit-reload>Site admin</MenuLink>
     {/if}
     <MenuLink href="/help" target="_blank" rel="noopener">
         Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} inline />

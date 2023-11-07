@@ -19,9 +19,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -43,7 +45,7 @@ func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.New(logger, db),
+		searchClient:        client.New(logger, db, gitserver.NewClient("http.search.stream")),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -113,6 +115,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		} else {
 			return err
 		}
+	}
+
+	if actor.FromContext(ctx).IsAuthenticated() {
+		// Used for development to quickly test different zoekt.SearchOptions without having
+		// to change the code.
+		inputs.Features.ZoektSearchOptionsOverride = args.ZoektSearchOptionsOverride
 	}
 
 	// Display is the number of results we send down. If display is < 0 we
@@ -210,12 +218,13 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 }
 
 type args struct {
-	Query              string
-	Version            string
-	PatternType        string
-	Display            int
-	EnableChunkMatches bool
-	SearchMode         int
+	Query                      string
+	Version                    string
+	PatternType                string
+	Display                    int
+	EnableChunkMatches         bool
+	SearchMode                 int
+	ZoektSearchOptionsOverride string
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -228,9 +237,10 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:       get("q", ""),
-		Version:     get("v", "V3"),
-		PatternType: get("t", ""),
+		Query:                      get("q", ""),
+		Version:                    get("v", "V3"),
+		PatternType:                get("t", ""),
+		ZoektSearchOptionsOverride: get("zoekt-search-opts", ""),
 	}
 
 	if a.Query == "" {

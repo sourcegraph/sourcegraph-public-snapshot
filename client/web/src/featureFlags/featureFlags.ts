@@ -30,6 +30,9 @@ export const FEATURE_FLAGS = [
     'end-user-onboarding',
     'admin-onboarding',
     'enable-sveltekit',
+    'search-content-based-lang-detection',
+    'search-new-keyword',
+    'search-debug',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
