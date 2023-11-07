@@ -741,6 +741,26 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "anthropic.claude-instant-v1"
 		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameGCPVertex) {
+		// If no endpoint is configured, no default available.
+		if completionsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "code-bison"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "code-bison"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "code-bison"
+		}
 	}
 
 	// Make sure models are always treated case-insensitive.

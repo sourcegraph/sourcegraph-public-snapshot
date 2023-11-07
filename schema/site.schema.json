@@ -14,7 +14,9 @@
         "pointer": true
       },
       "group": "Search",
-      "examples": [true]
+      "examples": [
+        true
+      ]
     },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
@@ -23,13 +25,23 @@
         "type": "string"
       },
       "group": "Search",
-      "examples": [["go.sum", "package-lock.json", "**/*.thrift"]]
+      "examples": [
+        [
+          "go.sum",
+          "package-lock.json",
+          "**/*.thrift"
+        ]
+      ]
     },
     "debug.search.symbolsParallelism": {
       "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["20"]]
+      "examples": [
+        [
+          "20"
+        ]
+      ]
     },
     "cloneProgress.log": {
       "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
@@ -144,7 +156,10 @@
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "enabled"
         },
         "passwordPolicy": {
@@ -195,62 +210,92 @@
         "structuralSearch": {
           "description": "Enables structural search.",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "enabled"
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "enabled",
           "deprecationMessage": "Deprecated, Perforce is always enabled, setting is no longer used."
         },
         "perforceChangelistMapping": {
           "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "goPackages": {
           "description": "Allow adding Go package host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "jvmPackages": {
           "description": "Allow adding JVM package host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "npmPackages": {
           "description": "Allow adding npm package code host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "pythonPackages": {
           "description": "Allow adding Python package code host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "rustPackages": {
           "description": "Allow adding Rust package code host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "rubyPackages": {
           "description": "Allow adding Ruby package host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
           "type": "string",
-          "enum": ["enabled", "disabled"],
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
           "default": "disabled"
         },
         "subRepoPermissions": {
@@ -292,7 +337,9 @@
               "items": {
                 "type": "string",
                 "pattern": "^-----BEGIN CERTIFICATE-----\n",
-                "examples": ["-----BEGIN CERTIFICATE-----\n..."]
+                "examples": [
+                  "-----BEGIN CERTIFICATE-----\n..."
+                ]
               }
             }
           }
@@ -305,7 +352,10 @@
             "description": "Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.",
             "type": "object",
             "additionalProperties": false,
-            "required": ["domainPath", "fetch"],
+            "required": [
+              "domainPath",
+              "fetch"
+            ],
             "properties": {
               "domainPath": {
                 "description": "Git clone URL domain/path",
@@ -338,10 +388,14 @@
             "type": "object",
             "title": "SearchIndexRevisionsRule",
             "additionalProperties": false,
-            "required": ["revisions"],
+            "required": [
+              "revisions"
+            ],
             "anyOf": [
               {
-                "required": ["name"]
+                "required": [
+                  "name"
+                ]
               }
             ],
             "properties": {
@@ -364,7 +418,11 @@
             [
               {
                 "name": "^github.com/org/.*",
-                "revisions": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"]
+                "revisions": [
+                  "3.17",
+                  "f6ca985c27486c2df5231ea3526caa4a4108ffb6",
+                  "v3.17.1"
+                ]
               }
             ]
           ]
@@ -381,8 +439,14 @@
           },
           "examples": [
             {
-              "github.com/sourcegraph/sourcegraph": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"],
-              "name/of/repo": ["develop"]
+              "github.com/sourcegraph/sourcegraph": [
+                "3.17",
+                "f6ca985c27486c2df5231ea3526caa4a4108ffb6",
+                "v3.17.1"
+              ],
+              "name/of/repo": [
+                "develop"
+              ]
             }
           ]
         },
@@ -557,7 +621,9 @@
         },
         {
           "tls.external": {
-            "certificates": ["-----BEGIN CERTIFICATE-----\n..."],
+            "certificates": [
+              "-----BEGIN CERTIFICATE-----\n..."
+            ],
             "insecureSkipVerify": true
           }
         }
@@ -604,7 +670,9 @@
       "items": {
         "title": "BatchChangeRolloutWindow",
         "type": "object",
-        "required": ["rate"],
+        "required": [
+          "rate"
+        ],
         "additionalProperties": false,
         "properties": {
           "rate": {
@@ -641,13 +709,18 @@
           }
         },
         "dependencies": {
-          "start": ["end"]
+          "start": [
+            "end"
+          ]
         }
       },
       "examples": [
         {
           "rate": "10/hour",
-          "days": ["saturday", "sunday"],
+          "days": [
+            "saturday",
+            "sunday"
+          ],
           "start": "06:00",
           "end": "20:00"
         }
@@ -663,7 +736,11 @@
       "description": "How long changesets will be retained after they have been detached from a batch change.",
       "type": "string",
       "group": "BatchChanges",
-      "examples": ["336h", "48h", "5h30m40s"]
+      "examples": [
+        "336h",
+        "48h",
+        "5h30m40s"
+      ]
     },
     "codeIntelAutoIndexing.enabled": {
       "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
@@ -729,13 +806,17 @@
       "description": "An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).",
       "type": "string",
       "group": "Code intelligence",
-      "examples": ["dev"]
+      "examples": [
+        "dev"
+      ]
     },
     "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix": {
       "description": "An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).",
       "type": "string",
       "group": "Code intelligence",
-      "examples": [""]
+      "examples": [
+        ""
+      ]
     },
     "codeIntelRanking.staleResultsAge": {
       "description": "The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.",
@@ -746,7 +827,9 @@
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
-      "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com https://my-gitlab.example.com"],
+      "examples": [
+        "https://my-phabricator.example.com https://my-bitbucket.example.com https://my-gitlab.example.com"
+      ],
       "pattern": "^((https?:\\/\\/[\\w-\\.]+)( https?:\\/\\/[\\w-\\.]+)*)|\\*$",
       "group": "Security"
     },
@@ -786,7 +869,10 @@
       "items": {
         "title": "UpdateIntervalRule",
         "type": "object",
-        "required": ["pattern", "interval"],
+        "required": [
+          "pattern",
+          "interval"
+        ],
         "additionalProperties": false,
         "properties": {
           "pattern": {
@@ -819,7 +905,9 @@
       "description": "DEPRECATED! Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",
       "group": "External services",
-      "examples": [true],
+      "examples": [
+        true
+      ],
       "deprecationMessage": "Deprecated because it's no longer supported and hasn't been working for a while."
     },
     "git.cloneURLToRepositoryName": {
@@ -830,7 +918,10 @@
         "description": "Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is \"^../(?P<name>\\w+)$\" and `to` is \"github.com/user/{name}\", the clone URL \"../myRepository\" would be mapped to the repository name \"github.com/user/myRepository\".",
         "type": "object",
         "additionalProperties": false,
-        "required": ["from", "to"],
+        "required": [
+          "from",
+          "to"
+        ],
         "properties": {
           "from": {
             "description": "A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use \"^...$\" if whole-string matching is desired.",
@@ -877,24 +968,37 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages"],
+      "required": [
+        "engine",
+        "languages"
+      ],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
           "type": "object",
-          "required": ["default"],
+          "required": [
+            "default"
+          ],
           "properties": {
             "default": {
               "description": "The default syntax highlighting engine to use",
               "type": "string",
-              "enum": ["tree-sitter", "syntect", "scip-syntax"]
+              "enum": [
+                "tree-sitter",
+                "syntect",
+                "scip-syntax"
+              ]
             },
             "overrides": {
               "description": "Manually specify overrides for syntax highlighting engine per language",
               "type": "object",
               "additionalProperties": {
                 "type": "string",
-                "enum": ["tree-sitter", "syntect", "scip-syntax"]
+                "enum": [
+                  "tree-sitter",
+                  "syntect",
+                  "scip-syntax"
+                ]
               }
             }
           }
@@ -902,7 +1006,10 @@
         "languages": {
           "title": "SyntaxHighlightingLanguage",
           "type": "object",
-          "required": ["extensions", "patterns"],
+          "required": [
+            "extensions",
+            "patterns"
+          ],
           "properties": {
             "extensions": {
               "description": "Map of extension to language",
@@ -917,7 +1024,10 @@
               "items": {
                 "title": "SyntaxHighlightingLanguagePatterns",
                 "type": "object",
-                "required": ["pattern", "language"],
+                "required": [
+                  "pattern",
+                  "language"
+                ],
                 "properties": {
                   "pattern": {
                     "description": "Regular expression which matches the filepath",
@@ -937,14 +1047,20 @@
           "title": "SymbolConfiguration",
           "description": "Configure symbol generation",
           "type": "object",
-          "required": ["engine"],
+          "required": [
+            "engine"
+          ],
           "properties": {
             "engine": {
               "description": "Manually specify overrides for symbol generation engine per language",
               "type": "object",
               "additionalProperties": {
                 "type": "string",
-                "enum": ["universal-ctags", "scip-ctags", "off"]
+                "enum": [
+                  "universal-ctags",
+                  "scip-ctags",
+                  "off"
+                ]
               }
             }
           }
@@ -1017,7 +1133,10 @@
     },
     "scim.identityProvider": {
       "type": "string",
-      "enum": ["STANDARD", "Azure AD"],
+      "enum": [
+        "STANDARD",
+        "Azure AD"
+      ],
       "description": "Identity provider used for SCIM support.  \"STANDARD\" should be used unless a more specific value is available",
       "default": "STANDARD",
       "group": "External services"
@@ -1092,7 +1211,11 @@
         "allow": {
           "description": "Allow or restrict the use of access tokens. The default is \"all-users-create\", which enables all users to create access tokens. Use \"none\" to disable access tokens entirely. Use \"site-admin-create\" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).",
           "type": "string",
-          "enum": ["all-users-create", "site-admin-create", "none"],
+          "enum": [
+            "all-users-create",
+            "site-admin-create",
+            "none"
+          ],
           "default": "all-users-create"
         }
       },
@@ -1132,7 +1255,10 @@
         "bindID": {
           "description": "The type of identifier to identify a user. The default is \"email\", which uses the email address to identify a user. Use \"username\" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.",
           "type": "string",
-          "enum": ["email", "username"],
+          "enum": [
+            "email",
+            "username"
+          ],
           "default": "email"
         }
       },
@@ -1248,7 +1374,11 @@
       "description": "The SMTP server used to send transactional emails.\nPlease see https://docs.sourcegraph.com/admin/config/email",
       "type": "object",
       "additionalProperties": false,
-      "required": ["host", "port", "authentication"],
+      "required": [
+        "host",
+        "port",
+        "authentication"
+      ],
       "properties": {
         "host": {
           "description": "The SMTP server host.",
@@ -1269,7 +1399,11 @@
         "authentication": {
           "description": "The type of authentication to use for the SMTP server.",
           "type": "string",
-          "enum": ["none", "PLAIN", "CRAM-MD5"]
+          "enum": [
+            "none",
+            "PLAIN",
+            "CRAM-MD5"
+          ]
         },
         "domain": {
           "description": "The HELO domain to provide to the SMTP server (if needed).",
@@ -1285,7 +1419,10 @@
           "items": {
             "title": "Header",
             "type": "object",
-            "required": ["key", "value"],
+            "required": [
+              "key",
+              "value"
+            ],
             "additionalProperties": false,
             "properties": {
               "key": {
@@ -1324,14 +1461,19 @@
       "type": "string",
       "format": "email",
       "group": "Email",
-      "examples": ["noreply@sourcegraph.example.com"]
+      "examples": [
+        "noreply@sourcegraph.example.com"
+      ]
     },
     "email.senderName": {
       "description": "The name to use in the \"from\" address for emails sent by this server.",
       "type": "string",
       "group": "Email",
       "default": "Sourcegraph",
-      "examples": ["Our Company Sourcegraph", "Example Inc Sourcegraph"]
+      "examples": [
+        "Our Company Sourcegraph",
+        "Example Inc Sourcegraph"
+      ]
     },
     "email.templates": {
       "description": "Configurable templates for some email types sent by Sourcegraph.",
@@ -1363,7 +1505,9 @@
     "executors.frontendURL": {
       "description": "The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.",
       "type": "string",
-      "examples": ["https://sourcegraph.example.com"]
+      "examples": [
+        "https://sourcegraph.example.com"
+      ]
     },
     "executors.srcCLIImage": {
       "description": "The image to use for src-cli in executors. Use this value to pull from a custom image registry.",
@@ -1373,12 +1517,16 @@
     "executors.srcCLIImageTag": {
       "description": "The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
       "type": "string",
-      "examples": ["4.1.0"]
+      "examples": [
+        "4.1.0"
+      ]
     },
     "executors.lsifGoImage": {
       "description": "The tag to use for the lsif-go image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
       "type": "string",
-      "examples": ["sourcegraph/lsif-go"]
+      "examples": [
+        "sourcegraph/lsif-go"
+      ]
     },
     "executors.batcheshelperImage": {
       "description": "The image to use for batch changes in executors. Use this value to pull from a custom image registry.",
@@ -1388,13 +1536,17 @@
     "executors.batcheshelperImageTag": {
       "description": "The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
       "type": "string",
-      "examples": ["4.1.0"]
+      "examples": [
+        "4.1.0"
+      ]
     },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors. The value must contain at least 20 characters.",
       "type": "string",
       "pattern": "^(.{20,}|REDACTED)$",
-      "examples": ["my-super-secret-access-token"]
+      "examples": [
+        "my-super-secret-access-token"
+      ]
     },
     "executors.multiqueue": {
       "description": "The configuration for multiqueue executors.",
@@ -1407,7 +1559,10 @@
             "batches": {
               "description": "The configuration for the batches queue.",
               "type": "object",
-              "required": ["limit", "weight"],
+              "required": [
+                "limit",
+                "weight"
+              ],
               "properties": {
                 "limit": {
                   "description": "The maximum number of dequeues allowed within the expiration window.",
@@ -1424,7 +1579,10 @@
             "codeintel": {
               "description": "The configuration for the codeintel queue.",
               "type": "object",
-              "required": ["limit", "weight"],
+              "required": [
+                "limit",
+                "weight"
+              ],
               "properties": {
                 "limit": {
                   "description": "The maximum number of dequeues allowed within the expiration window.",
@@ -1453,7 +1611,9 @@
       },
       "examples": [
         {
-          "*": ["myorg1"]
+          "*": [
+            "myorg1"
+          ]
         }
       ],
       "hide": true
@@ -1518,10 +1678,19 @@
               "deprecationMessage": "No effect, audit logs are always set to SRC_LOG_LEVEL",
               "description": "DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL",
               "type": "string",
-              "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
+              "enum": [
+                "DEBUG",
+                "INFO",
+                "WARN",
+                "ERROR"
+              ]
             }
           },
-          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
+          "required": [
+            "internalTraffic",
+            "graphQL",
+            "gitserverAccess"
+          ],
           "examples": [
             {
               "internalTraffic": false,
@@ -1538,7 +1707,12 @@
             "location": {
               "description": "Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format",
               "type": "string",
-              "enum": ["none", "auditlog", "database", "all"],
+              "enum": [
+                "none",
+                "auditlog",
+                "database",
+                "all"
+              ],
               "default": "auditlog"
             }
           },
@@ -1553,7 +1727,9 @@
     "externalURL": {
       "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.",
       "type": "string",
-      "examples": ["https://sourcegraph.example.com"]
+      "examples": [
+        "https://sourcegraph.example.com"
+      ]
     },
     "observability.client": {
       "description": "EXPERIMENTAL: Configuration for client observability",
@@ -1567,7 +1743,10 @@
             "endpoint": {
               "description": "OpenTelemetry tracing collector endpoint. By default, Sourcegraph's \"/-/debug/otlp\" endpoint forwards data to the configured collector backend.",
               "type": "string",
-              "examples": ["/-/debug/otlp", "https://COLLECTOR_ENDPOINT"],
+              "examples": [
+                "/-/debug/otlp",
+                "https://COLLECTOR_ENDPOINT"
+              ],
               "default": "/-/debug/otlp"
             }
           }
@@ -1593,13 +1772,20 @@
         "sampling": {
           "description": "Determines the conditions under which distributed traces are recorded. \"none\" turns off tracing entirely. \"selective\" (default) sends traces whenever `?trace=1` is present in the URL (though background jobs may still emit traces). \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. To learn more about additional sampling and traace export configuration with the default tracing type \"opentelemetry\", refer to https://docs.sourcegraph.com/admin/observability/opentelemetry#tracing ",
           "type": "string",
-          "enum": ["selective", "all", "none"],
+          "enum": [
+            "selective",
+            "all",
+            "none"
+          ],
           "default": "selective"
         },
         "type": {
           "description": "Determines what tracing provider to enable. For \"opentelemetry\", the required backend is an OpenTelemetry collector instance (deployed by default with Sourcegraph). For \"jaeger\", a Jaeger instance is required to be configured via Jaeger client environment variables: https://github.com/jaegertracing/jaeger-client-go#environment-variables",
           "type": "string",
-          "enum": ["opentelemetry", "jaeger"],
+          "enum": [
+            "opentelemetry",
+            "jaeger"
+          ],
           "default": "opentelemetry"
         },
         "debug": {
@@ -1638,19 +1824,31 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["level", "notifier"],
+        "required": [
+          "level",
+          "notifier"
+        ],
         "properties": {
           "level": {
             "description": "Sourcegraph alert level to subscribe to notifications for.",
             "type": "string",
-            "enum": ["warning", "critical"]
+            "enum": [
+              "warning",
+              "critical"
+            ]
           },
           "notifier": {
             "type": "object",
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["slack", "pagerduty", "webhook", "email", "opsgenie"]
+                "enum": [
+                  "slack",
+                  "pagerduty",
+                  "webhook",
+                  "email",
+                  "opsgenie"
+                ]
               }
             },
             "oneOf": [
@@ -1707,7 +1905,9 @@
           "level": "warning",
           "notifier": {
             "type": "email",
-            "addresses": ["alerts@example.com"]
+            "addresses": [
+              "alerts@example.com"
+            ]
           }
         }
       ]
@@ -1718,25 +1918,39 @@
       "items": {
         "type": "string"
       },
-      "examples": [["warning_gitserver_disk_space_remaining"], ["critical_frontend_down", "warning_high_load"]]
+      "examples": [
+        [
+          "warning_gitserver_disk_space_remaining"
+        ],
+        [
+          "critical_frontend_down",
+          "warning_high_load"
+        ]
+      ]
     },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [10000]
+      "examples": [
+        10000
+      ]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [10000]
+      "examples": [
+        10000
+      ]
     },
     "observability.captureSlowGraphQLRequestsLimit": {
       "description": "(debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.",
       "type": "integer",
       "group": "Debug",
-      "examples": [2000]
+      "examples": [
+        2000
+      ]
     },
     "insights.backfill.interruptAfter": {
       "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
@@ -1763,14 +1977,19 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 1,
-      "examples": [10]
+      "examples": [
+        10
+      ]
     },
     "insights.query.worker.rateLimit": {
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [10.0, 0.5],
+      "examples": [
+        10.0,
+        0.5
+      ],
       "!go": {
         "pointer": true
       }
@@ -1780,14 +1999,20 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [10, 20]
+      "examples": [
+        10,
+        20
+      ]
     },
     "insights.historical.worker.rateLimit": {
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [50.0, 0.5],
+      "examples": [
+        50.0,
+        0.5
+      ],
       "!go": {
         "pointer": true
       }
@@ -1797,7 +2022,10 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [10, 20]
+      "examples": [
+        10,
+        20
+      ]
     },
     "insights.aggregations.bufferSize": {
       "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
@@ -1817,7 +2045,11 @@
       "group": "CodeInsights",
       "default": 30,
       "maximum": 90,
-      "examples": [12, 24, 50]
+      "examples": [
+        12,
+        24,
+        50
+      ]
     },
     "own.bestEffortTeamMatching": {
       "description": "The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.",
@@ -1930,14 +2162,29 @@
           "items": {
             "type": "string"
           },
-          "default": ["show", "rev-parse", "log", "diff", "ls-tree"]
+          "default": [
+            "show",
+            "rev-parse",
+            "log",
+            "diff",
+            "ls-tree"
+          ]
         }
       },
       "examples": [
         {
           "size": 1000,
-          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"],
-          "ignoredGitCommands": ["show", "rev-parse", "log", "diff", "ls-tree"]
+          "repos": [
+            "github.com/sourcegraph/sourcegraph",
+            "github.com/gorilla/mux"
+          ],
+          "ignoredGitCommands": [
+            "show",
+            "rev-parse",
+            "log",
+            "diff",
+            "ls-tree"
+          ]
         }
       ]
     },
@@ -1963,7 +2210,10 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["key", "message"],
+            "required": [
+              "key",
+              "message"
+            ],
             "properties": {
               "key": {
                 "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
@@ -2001,7 +2251,10 @@
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
-          "required": ["enabled", "github"],
+          "required": [
+            "enabled",
+            "github"
+          ],
           "group": "Sourcegraph.com",
           "properties": {
             "enabled": {
@@ -2012,7 +2265,10 @@
             "github": {
               "description": "GitHub configuration, both for queries and receiving release webhooks.",
               "type": "object",
-              "required": ["token", "webhookSecret"],
+              "required": [
+                "token",
+                "webhookSecret"
+              ],
               "properties": {
                 "repository": {
                   "description": "The repository to get the latest version of.",
@@ -2097,7 +2353,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["key", "message"],
+        "required": [
+          "key",
+          "message"
+        ],
         "properties": {
           "key": {
             "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
@@ -2122,7 +2381,9 @@
       "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
       "type": "array",
       "items": {
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "properties": {
           "type": {
             "type": "string",
@@ -2190,7 +2451,9 @@
       "type": "string",
       "description": "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For deployments using `sourcegraph/server`: `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del`\n* For cluster deployments: \n  ```\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ```\n",
       "default": "2160h",
-      "examples": ["168h"],
+      "examples": [
+        "168h"
+      ],
       "group": "Authentication"
     },
     "auth.enableUsernameChanges": {
@@ -2285,10 +2548,17 @@
     },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
-      "type": ["string"],
-      "enum": ["release", "none"],
+      "type": [
+        "string"
+      ],
+      "enum": [
+        "release",
+        "none"
+      ],
       "default": "release",
-      "examples": ["none"],
+      "examples": [
+        "none"
+      ],
       "group": "Misc."
     },
     "productResearchPage.enabled": {
@@ -2391,12 +2661,16 @@
       "!go": {
         "pointer": true
       },
-      "examples": [true]
+      "examples": [
+        true
+      ]
     },
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
       "type": "object",
-      "required": ["signingKey"],
+      "required": [
+        "signingKey"
+      ],
       "properties": {
         "expiryTime": {
           "description": "Time before the invitation expires, in hours (experimental, not enforced at the moment).",
@@ -2461,7 +2735,11 @@
         "provider": {
           "type": "string",
           "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
-          "enum": ["openai", "azure-openai", "sourcegraph"]
+          "enum": [
+            "openai",
+            "azure-openai",
+            "sourcegraph"
+          ]
         },
         "endpoint": {
           "type": "string",
@@ -2503,7 +2781,13 @@
               "items": {
                 "type": "string"
               },
-              "examples": ["*.go", "*.ts", "*.md", "src/", "cmd/"]
+              "examples": [
+                "*.go",
+                "*.ts",
+                "*.md",
+                "src/",
+                "cmd/"
+              ]
             },
             "maxFileSizeBytes": {
               "description": "The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).",
@@ -2690,7 +2974,11 @@
           "model": "text-embedding-ada-002",
           "accessToken": "your-access-token",
           "url": "https://api.openai.com/v1/embeddings",
-          "excludedFilePathPatterns": ["*.svg", "**/__mocks__/**", "**/test/**"]
+          "excludedFilePathPatterns": [
+            "*.svg",
+            "**/__mocks__/**",
+            "**/test/**"
+          ]
         }
       ]
     },
@@ -2742,7 +3030,15 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "sourcegraph",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
+          "enum": [
+            "anthropic",
+            "openai",
+            "sourcegraph",
+            "azure-openai",
+            "aws-bedrock",
+            "fireworks",
+            "gcp-vertex"
+          ]
         },
         "endpoint": {
           "type": "string",
@@ -2791,7 +3087,9 @@
       "description": "Configures the builtin username-password authentication provider.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -2808,7 +3106,12 @@
       "description": "Configures the OpenID Connect authentication provider for SSO.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "issuer", "clientID", "clientSecret"],
+      "required": [
+        "type",
+        "issuer",
+        "clientID",
+        "clientSecret"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -2867,11 +3170,20 @@
       "description": "Configures the SAML authentication provider for SSO.\n\nNote: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "dependencies": {
-        "serviceProviderCertificate": ["serviceProviderPrivateKey"],
-        "serviceProviderPrivateKey": ["serviceProviderCertificate"],
-        "signRequests": ["serviceProviderCertificate", "serviceProviderPrivateKey"]
+        "serviceProviderCertificate": [
+          "serviceProviderPrivateKey"
+        ],
+        "serviceProviderPrivateKey": [
+          "serviceProviderCertificate"
+        ],
+        "signRequests": [
+          "serviceProviderCertificate",
+          "serviceProviderPrivateKey"
+        ]
       },
       "properties": {
         "type": {
@@ -2982,7 +3294,10 @@
       "description": "Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "usernameHeader"],
+      "required": [
+        "type",
+        "usernameHeader"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -2991,17 +3306,23 @@
         "usernameHeader": {
           "description": "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
           "type": "string",
-          "examples": ["X-Forwarded-User"]
+          "examples": [
+            "X-Forwarded-User"
+          ]
         },
         "stripUsernameHeaderPrefix": {
           "description": "The prefix that precedes the username portion of the HTTP header specified in `usernameHeader`. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to `accounts.google.com:`.",
           "type": "string",
-          "examples": ["accounts.google.com:"]
+          "examples": [
+            "accounts.google.com:"
+          ]
         },
         "emailHeader": {
           "description": "The name (case-insensitive) of an HTTP header whose value is taken to be the email of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
           "type": "string",
-          "examples": ["X-App-Email"]
+          "examples": [
+            "X-App-Email"
+          ]
         }
       }
     },
@@ -3009,7 +3330,11 @@
       "description": "Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "clientID", "clientSecret"],
+      "required": [
+        "type",
+        "clientID",
+        "clientSecret"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3069,8 +3394,13 @@
           },
           "examples": [
             {
-              "orgName": ["team1"],
-              "anotherOrgName": ["team2", "team3"]
+              "orgName": [
+                "team1"
+              ],
+              "anotherOrgName": [
+                "team2",
+                "team3"
+              ]
             }
           ]
         },
@@ -3085,7 +3415,11 @@
       "description": "Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/gitlab/callback\".",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "clientID", "clientSecret"],
+      "required": [
+        "type",
+        "clientID",
+        "clientSecret"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3128,7 +3462,10 @@
           "type": "string",
           "description": "The OAuth API scope that should be used",
           "default": "api",
-          "enum": ["api", "read_api"]
+          "enum": [
+            "api",
+            "read_api"
+          ]
         },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
@@ -3146,7 +3483,13 @@
             "type": "string",
             "minLength": 1
           },
-          "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
+          "examples": [
+            [
+              "group",
+              "group/subgroup",
+              "group/subgroup/subgroup"
+            ]
+          ]
         },
         "tokenRefreshWindowMinutes": {
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
@@ -3167,7 +3510,11 @@
       "description": "Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketcloud/callback\".",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "clientKey", "clientSecret"],
+      "required": [
+        "type",
+        "clientKey",
+        "clientSecret"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3205,7 +3552,11 @@
           "type": "string",
           "description": "The OAuth API scope that should be used",
           "default": "account,email,repository",
-          "enum": ["account", "email", "repository"]
+          "enum": [
+            "account",
+            "email",
+            "repository"
+          ]
         },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
@@ -3218,7 +3569,10 @@
       "description": "Gerrit auth provider",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "url"],
+      "required": [
+        "type",
+        "url"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3250,7 +3604,11 @@
       "description": "Azure auth provider for dev.azure.com",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "clientID", "clientSecret"],
+      "required": [
+        "type",
+        "clientID",
+        "clientSecret"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3335,7 +3693,9 @@
     "NotifierSlack": {
       "description": "Slack notifier",
       "type": "object",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3366,7 +3726,10 @@
     "NotifierPagerduty": {
       "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "integrationKey"],
+      "required": [
+        "type",
+        "integrationKey"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3388,7 +3751,10 @@
     "NotifierWebhook": {
       "description": "Webhook notifier",
       "type": "object",
-      "required": ["type", "url"],
+      "required": [
+        "type",
+        "url"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3411,7 +3777,10 @@
     "NotifierEmail": {
       "description": "Email notifier",
       "type": "object",
-      "required": ["type", "address"],
+      "required": [
+        "type",
+        "address"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3426,7 +3795,9 @@
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3454,7 +3825,12 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["team", "user", "escalation", "schedule"]
+                "enum": [
+                  "team",
+                  "user",
+                  "escalation",
+                  "schedule"
+                ]
               },
               "id": {
                 "type": "string"
@@ -3468,13 +3844,22 @@
             },
             "oneOf": [
               {
-                "required": ["type", "id"]
+                "required": [
+                  "type",
+                  "id"
+                ]
               },
               {
-                "required": ["type", "name"]
+                "required": [
+                  "type",
+                  "name"
+                ]
               },
               {
-                "required": ["type", "username"]
+                "required": [
+                  "type",
+                  "username"
+                ]
               }
             ]
           }
@@ -3484,11 +3869,18 @@
     "EncryptionKey": {
       "description": "Config for a key",
       "type": "object",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "awskms", "mounted", "noop"]
+          "enum": [
+            "cloudkms",
+            "awskms",
+            "mounted",
+            "noop"
+          ]
         }
       },
       "oneOf": [
@@ -3512,7 +3904,10 @@
     "CloudKMSEncryptionKey": {
       "description": "Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments",
       "type": "object",
-      "required": ["type", "keyname"],
+      "required": [
+        "type",
+        "keyname"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3529,7 +3924,10 @@
     "AWSKMSEncryptionKey": {
       "description": "AWS KMS Encryption Key, used to encrypt data in AWS environments",
       "type": "object",
-      "required": ["type", "keyId"],
+      "required": [
+        "type",
+        "keyId"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3549,7 +3947,10 @@
     "MountedEncryptionKey": {
       "description": "This encryption key is mounted from a given file path or an environment variable.",
       "type": "object",
-      "required": ["type", "keyname"],
+      "required": [
+        "type",
+        "keyname"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3572,7 +3973,9 @@
     "NoOpEncryptionKey": {
       "description": "This encryption key is a no op, leaving your data in plaintext (not recommended).",
       "type": "object",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -3582,7 +3985,10 @@
     },
     "EmailTemplate": {
       "type": "object",
-      "required": ["subject", "html"],
+      "required": [
+        "subject",
+        "html"
+      ],
       "properties": {
         "subject": {
           "description": "Template for email subject header",

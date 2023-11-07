@@ -28,6 +28,7 @@ const (
 	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
 	CompletionsProviderNameFireworks   CompletionsProviderName = "fireworks"
 	CompletionsProviderNameAWSBedrock  CompletionsProviderName = "aws-bedrock"
+	CompletionsProviderNameGCPVertex   CompletionsProviderName = "gcp-vertex"
 )
 
 type EmbeddingsConfig struct {
