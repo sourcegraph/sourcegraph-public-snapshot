@@ -138,7 +138,7 @@ The Cody extension by Sourcegraph enhances your coding experience in your IDE by
 
 ## Install the JetBrains IntelliJ Cody extension
 
-Follow these steps to install the Cody extension for JetBrains IntelliJ:
+Follow these steps to install the Cody plugin:
 
 - Open JetBrains IntelliJ editor on your local machine
 - Open **Settings** (Mac: `⌘+,` Windows: `Ctrl+Alt+S`) and select **Plugins**
