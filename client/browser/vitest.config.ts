@@ -15,12 +15,7 @@ export default defineProjectWithDefaults(__dirname, {
 
         experimentalVmThreads: false,
 
-        setupFiles: [
-            'src/testSetup.test.ts',
-            '../testing/src/reactCleanup.ts',
-            '../testing/src/fetch.js',
-            '../testing/src/mockUniqueId.ts',
-        ],
+        setupFiles: ['src/testSetup.test.ts', '../testing/src/reactCleanup.ts', '../testing/src/fetch.js'],
     },
 
     plugins: BAZEL
