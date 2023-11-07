@@ -48,6 +48,8 @@ func isAllowedCustomModel(model string) bool {
 		"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
 		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",
 		"fireworks/accounts/fireworks/models/starcoder-1b-w8a16",
+		"fireworks/accounts/sourcegraph/models/starcoder-7b",
+		"fireworks/accounts/sourcegraph/models/starcoder-16b",
 		"fireworks/accounts/fireworks/models/llama-v2-7b-code",
 		"fireworks/accounts/fireworks/models/llama-v2-13b-code",
 		"fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct",
