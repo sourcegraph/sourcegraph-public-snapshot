@@ -45,6 +45,11 @@
     }
 }
 
+.diff-type-description {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 .num {
     background-color: var(--code-bg);
     min-width: 2.5rem;
