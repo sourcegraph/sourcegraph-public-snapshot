@@ -60,7 +60,8 @@ pub fn captures_to_kind(kind: &Option<&String>) -> symbol_information::Kind {
 // Universal-ctags uses inconsistent kind names for the same concept (for example typealias for
 // Kotlin vs. talias for Go). For simplicity, we don't try to match the universal-ctags output, we
 // just pass through the SCIP kinds and rely on clients like Zoekt to handle the different naming
-// conventions.
+// conventions. When adding a new entry here, be sure to check if Zoekt search ranking needs to be
+// updated to recognize the new kind.
 pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'static str> {
     use symbol_information::Kind::*;
 
