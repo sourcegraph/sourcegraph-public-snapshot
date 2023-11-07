@@ -1,5 +1,3 @@
-import path from 'path'
-
 import { BAZEL, defineProjectWithDefaults } from '../../vitest.shared'
 
 export default defineProjectWithDefaults(__dirname, {

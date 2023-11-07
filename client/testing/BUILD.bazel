@@ -35,7 +35,7 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
-        ":fetch-mock",
+        ":fetch-mock",  #keep
         "//:node_modules/@testing-library/jest-dom",
         "//:node_modules/@testing-library/react",
         "//:node_modules/@types/lodash",
