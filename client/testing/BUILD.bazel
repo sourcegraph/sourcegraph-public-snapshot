@@ -58,6 +58,7 @@ npm_package(
 js_library(
     name = "fetch-mock",
     srcs = ["src/fetch.js"],
+    declarations = ["src/fetch.js"],
     visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/node-fetch",
