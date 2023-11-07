@@ -48,6 +48,7 @@ export const hideEmptyLastLine: Extension = [
             fontStyle: 'italic',
             marginTop: '.2rem',
             userSelect: 'none',
+            '-webkit-user-select': 'none',
         },
     }),
 ]
