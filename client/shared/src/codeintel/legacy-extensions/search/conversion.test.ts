@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 
-import { describe, it } from '@jest/globals'
+import { describe, it } from 'vitest'
 
 import * as scip from '../../scip'
 

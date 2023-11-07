@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, test } from '@jest/globals'
 import { readFile } from 'mz/fs'
 import { type Observable, throwError, of } from 'rxjs'
+import { beforeEach, describe, expect, test } from 'vitest'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'

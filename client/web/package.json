@@ -5,7 +5,7 @@
   "description": "The Sourcegraph web app",
   "scripts": {
     "build-ts": "tsc --build tsconfig.json --emitDeclarationOnly",
-    "test": "jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression --testPathIgnorePatterns integration",
+    "test": "vitest",
     "task:mocha": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha",
     "test:regression": "pnpm run task:mocha './src/regression/**/*.test.ts' --exit",
     "test:regression:codeintel": "pnpm task:mocha ./src/regression/codeintel.test.ts",

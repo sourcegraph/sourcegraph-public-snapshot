@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, it, test, jest } from '@jest/globals'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
+import { afterEach, describe, expect, it, test, vi } from 'vitest'
 
 import { assertAriaEnabled, createBarrier } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -11,7 +11,7 @@ import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { ActionItem, windowLocation__testingOnly } from './ActionItem'
 
-jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
+vi.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
 describe('ActionItem', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }

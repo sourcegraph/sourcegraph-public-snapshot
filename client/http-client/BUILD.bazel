@@ -1,6 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
@@ -60,11 +60,11 @@ ts_project(
         ":http-client_lib",
         ":node_modules/@sourcegraph/testing",
         "//:node_modules/@apollo/client",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@types/sinon",
         "//:node_modules/delay",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
+        "//:node_modules/vitest",
     ],
 )
 
@@ -76,7 +76,7 @@ npm_package(
     ],
 )
 
-jest_test(
+vitest_test(
     name = "test",
     data = [
         ":http-client_tests",

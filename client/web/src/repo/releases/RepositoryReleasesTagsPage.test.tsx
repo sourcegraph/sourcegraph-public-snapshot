@@ -1,7 +1,7 @@
-import { describe, expect, test } from '@jest/globals'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
 import type { RepositoryFields } from '../../graphql-operations'
 

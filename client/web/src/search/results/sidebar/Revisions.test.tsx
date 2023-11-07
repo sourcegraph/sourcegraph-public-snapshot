@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from '@jest/globals'
 import { cleanup, within, fireEvent } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import type { RevisionsProps } from '@sourcegraph/branded'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'

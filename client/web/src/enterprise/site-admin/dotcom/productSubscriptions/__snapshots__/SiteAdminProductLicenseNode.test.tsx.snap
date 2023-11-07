@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SiteAdminProductLicenseNode active 1`] = `
+exports[`SiteAdminProductLicenseNode > active 1`] = `
 <DocumentFragment>
   <li
     class="list-group-item p-3 mb-3 border"
@@ -213,7 +213,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SiteAdminProductLicenseNode inactive 1`] = `
+exports[`SiteAdminProductLicenseNode > inactive 1`] = `
 <DocumentFragment>
   <li
     class="list-group-item p-3 mb-3 border"

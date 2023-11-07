@@ -4,5 +4,5 @@
     "module": "commonjs",
   },
   "include": ["esbuild", "server", "utils", "../src/jscontext.ts", "../src/graphql-operations.ts"],
-  "exclude": [],
+  "exclude": ["vitest.config.ts"],
 }
