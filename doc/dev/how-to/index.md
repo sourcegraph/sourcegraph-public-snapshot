@@ -79,4 +79,4 @@
 
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).
 Sourcegraph currently relies on Unix specifics in several places, which makes it currently not possible to run Sourcegraph directly inside Windows without WSL.
-We are happy to accept contributions here! :)
+We are happy to accept contributions here!
