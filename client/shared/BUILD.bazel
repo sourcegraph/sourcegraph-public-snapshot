@@ -316,6 +316,7 @@ ts_project(
         "src/symbols/SymbolKind.tsx",
         "src/symbols/SymbolTag.tsx",
         "src/symbols/symbolIcons.ts",
+        "src/telemetry/apolloTelemetryExporter.ts",
         "src/telemetry/index.ts",
         "src/telemetry/telemetryService.ts",
         "src/theme.ts",

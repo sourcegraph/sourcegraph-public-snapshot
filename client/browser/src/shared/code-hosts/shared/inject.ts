@@ -1,6 +1,7 @@
 import { type Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { createGraphQLHelpers } from '../../backend/requestGraphQl'
 import type { SourcegraphIntegrationURLs } from '../../platform/context'
 import { type MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
 
@@ -36,6 +37,9 @@ export async function injectCodeIntelligence(
 
         let previousSubscription: Subscription
 
+        const graphql = createGraphQLHelpers(urls.sourcegraphURL, isExtension)
+        const graphqlClient = await graphql.getBrowserGraphQLClient()
+
         subscriptions.add(
             codeHost.routeChange
                 ? codeHost.routeChange(mutations).subscribe(() => {
@@ -43,9 +47,16 @@ export async function injectCodeIntelligence(
                           previousSubscription.unsubscribe()
                       }
 
-                      previousSubscription = injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension)
+                      previousSubscription = injectCodeIntelligenceToCodeHost(
+                          graphql,
+                          graphqlClient,
+                          mutations,
+                          codeHost,
+                          urls,
+                          isExtension
+                      )
                   })
-                : injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension)
+                : injectCodeIntelligenceToCodeHost(graphql, graphqlClient, mutations, codeHost, urls, isExtension)
         )
     }
     return subscriptions

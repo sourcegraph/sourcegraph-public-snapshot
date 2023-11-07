@@ -24,8 +24,14 @@ interface RequestGraphQLOptions<V> {
     mightContainPrivateInfo: boolean
 }
 
-interface GraphQLHelpers {
+/**
+ * GraphQLHelpers should be initialized using createGraphQLHelpers.
+ */
+export interface GraphQLHelpers {
     getBrowserGraphQLClient: PlatformContext['getGraphQLClient']
+    /**
+     * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
+     */
     requestGraphQL: <T, V = object>(options: RequestGraphQLOptions<V>) => Observable<GraphQLResult<T>>
 }
 
@@ -53,14 +59,20 @@ function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
             )
         }
 
-        const graphqlClient: Pick<GraphQLClient, 'watchQuery'> = {
+        const graphqlClient: Pick<GraphQLClient, 'watchQuery' | 'mutate'> = {
             watchQuery: ({ variables, query }) =>
                 // Temporary implementation till Apollo-Client is configured in the background script.
-
                 requestGraphQLInBackground({
                     request: print(query),
                     variables,
                     mightContainPrivateInfo: false,
+                }) as any,
+            mutate: ({ variables, mutation }) =>
+                // Temporary implementation till Apollo-Client is configured in the background script.
+                requestGraphQLInBackground({
+                    request: print(mutation),
+                    variables,
+                    mightContainPrivateInfo: true,
                 }) as any,
         }
 

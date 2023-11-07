@@ -8,6 +8,7 @@ import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 import {
     toPrettyBlobURL,
     type RepoFile,
@@ -19,7 +20,6 @@ import {
 import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
-import type { TelemetryRecorderProvider } from '../telemetry'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**

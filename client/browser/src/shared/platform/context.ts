@@ -6,10 +6,10 @@ import { isHTTPAuthError } from '@sourcegraph/http-client'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
-import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { createGraphQLHelpers } from '../backend/requestGraphQl'
+import type { GraphQLHelpers } from '../backend/requestGraphQl'
 import type { CodeHost } from '../code-hosts/shared/codeHost'
 
 import { createExtensionHost } from './extensionHost'
@@ -46,15 +46,20 @@ export interface BrowserPlatformContext extends PlatformContext {
  * Creates the {@link PlatformContext} for the browser (for browser extensions and native integrations)
  */
 export function createPlatformContext(
+    { requestGraphQL, getBrowserGraphQLClient }: GraphQLHelpers,
     { urlToFile }: Pick<CodeHost, 'urlToFile'>,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
-    isExtension: boolean
+    /**
+     * The {@link TelemetryRecorderProvider} for the platform. Callers should
+     * make sure to configure desired buffering and add the teardown of the
+     * provider to a subscription or similar.
+     */
+    telemetryRecorderProvider: TelemetryRecorderProvider
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<{
         final: string
         subjects: SettingsSubject[]
     }>(1)
-    const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
 
     const context: BrowserPlatformContext = {
         /**
@@ -129,12 +134,7 @@ export function createPlatformContext(
         sourcegraphURL,
         clientApplication: 'other',
         getStaticExtensions: () => getInlineExtensions(assetsURL),
-        /**
-         * @todo Not yet implemented!
-         */
-        telemetryRecorder: new NoOpTelemetryRecorderProvider({
-            errorOnRecord: true, // should not be used at all
-        }).getRecorder(),
+        telemetryRecorder: telemetryRecorderProvider.getRecorder(),
     }
     return context
 }

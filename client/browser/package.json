@@ -37,12 +37,13 @@
     "sourcegraph": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/shared": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*",
     "@sourcegraph/branded": "workspace:*",
-    "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*"
+    "@sourcegraph/codeintellify": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*",
+    "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/telemetry": "^0.11.0",
+    "@sourcegraph/wildcard": "workspace:*"
   }
 }

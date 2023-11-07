@@ -1668,7 +1668,6 @@ ts_project(
         "src/team/new/NewTeamPage.tsx",
         "src/team/new/team-select/ParentTeamSelect.tsx",
         "src/team/new/team-select/backend.ts",
-        "src/telemetry/apolloTelemetryExporter.ts",
         "src/telemetry/index.ts",
         "src/tour/GettingStartedTour.tsx",
         "src/tour/GettingStartedTourSetup.tsx",

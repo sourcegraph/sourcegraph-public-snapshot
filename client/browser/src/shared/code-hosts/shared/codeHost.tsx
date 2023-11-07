@@ -58,7 +58,7 @@ import {
     lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
 import type { WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
+import { gql, GraphQLClient, isHTTPAuthError } from '@sourcegraph/http-client'
 import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import type { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
@@ -91,12 +91,14 @@ import { observeStorageKey } from '../../../browser-extension/web-extension-api/
 import type { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import type { UserSettingsURLResult } from '../../../graphql-operations'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
+import { GraphQLHelpers } from '../../backend/requestGraphQl'
 import { CodeViewToolbar, type CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
 import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
 import type { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
+import { TelemetryRecorderProvider } from '../../telemetry'
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { type MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
@@ -1317,23 +1319,28 @@ function initializeGithubSearchInputEnhancement(
 }
 
 export function injectCodeIntelligenceToCodeHost(
+    graphqlHelpers: GraphQLHelpers,
+    graphQLClient: Pick<GraphQLClient, 'watchQuery' | 'mutate'>,
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): Subscription {
     const subscriptions = new Subscription()
+
+    const telemetryRecorderProvider = new TelemetryRecorderProvider(graphQLClient, { enableBuffering: false })
     const { platformContext, extensionsController } = initializeExtensions(
+        graphqlHelpers,
         codeHost,
         { sourcegraphURL, assetsURL },
-        isExtension
+        telemetryRecorderProvider
     )
-    const { requestGraphQL } = platformContext
 
     if (extensionsController !== null) {
         subscriptions.add(extensionsController)
     }
 
+    const { requestGraphQL } = platformContext
     const codeHostReady = codeHost.prepareCodeHost ? from(codeHost.prepareCodeHost(requestGraphQL)) : of(true)
 
     const isTelemetryEnabled = combineLatest([

@@ -9,7 +9,7 @@ import type { ExportTelemetryEventsResult } from '../graphql-operations'
  * framework: https://docs.sourcegraph.com/dev/background-information/telemetry
  */
 export class ApolloTelemetryExporter implements TelemetryExporter {
-    constructor(private client: ApolloClient<object>) {}
+    constructor(private client: Pick<ApolloClient<object>, 'mutate'>) {}
 
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
         await this.client.mutate<ExportTelemetryEventsResult>({

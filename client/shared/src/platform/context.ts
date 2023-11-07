@@ -95,11 +95,11 @@ export interface PlatformContext {
 
     /**
      * Returns promise that resolves into Apollo Client instance after cache restoration.
-     * Only `watchQuery` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
+     * Only `watchQuery` and `mutate` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
      *
      * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
      */
-    getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery'>>
+    getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery' | 'mutate'>>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.

@@ -7,8 +7,10 @@ import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'
+import { createGraphQLHelpers } from '../backend/requestGraphQl'
 import { createSuggestionFetcher } from '../backend/search'
 import { createPlatformContext } from '../platform/context'
+import { TelemetryRecorderProvider } from '../telemetry'
 import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../util/context'
 
 const isURL = /^https?:\/\//
@@ -114,10 +116,17 @@ export class SearchCommand {
                 clearTimeout(this.settingsTimeoutHandler)
                 this.settingsTimeoutHandler = 0
 
+                const graphql = createGraphQLHelpers(sourcegraphURL, IS_EXTENSION)
+                const telemetryRecorderProvider = new TelemetryRecorderProvider(
+                    await graphql.getBrowserGraphQLClient(),
+                    { enableBuffering: false }
+                )
+
                 const platformContext = createPlatformContext(
+                    graphql,
                     { urlToFile: undefined },
                     { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
-                    IS_EXTENSION
+                    telemetryRecorderProvider
                 )
 
                 await platformContext.refreshSettings()

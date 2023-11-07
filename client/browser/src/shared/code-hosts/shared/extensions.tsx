@@ -1,6 +1,8 @@
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
+import type { TelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 
+import type { GraphQLHelpers } from '../../backend/requestGraphQl'
 import {
     createPlatformContext,
     type SourcegraphIntegrationURLs,
@@ -14,11 +16,14 @@ import type { CodeHost } from './codeHost'
  *
  */
 export function initializeExtensions(
+    graphql: GraphQLHelpers,
     { urlToFile }: Pick<CodeHost, 'urlToFile'>,
     urls: SourcegraphIntegrationURLs,
-    isExtension: boolean
-): { platformContext: BrowserPlatformContext } & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile }, urls, isExtension)
+    telemetryRecorderProvider: TelemetryRecorderProvider
+): {
+    platformContext: BrowserPlatformContext
+} & ExtensionsControllerProps {
+    const platformContext = createPlatformContext(graphql, { urlToFile }, urls, telemetryRecorderProvider)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }
