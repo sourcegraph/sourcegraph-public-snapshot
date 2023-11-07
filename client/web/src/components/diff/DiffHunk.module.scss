@@ -30,10 +30,6 @@
     white-space: pre-wrap;
     font-size: 0.75rem;
     background-color: var(--code-bg);
-    &::before {
-        padding-right: 0.5rem;
-        content: attr(data-diff-marker);
-    }
     &--empty {
         background-color: var(--body-bg);
 
@@ -41,6 +37,10 @@
         opacity: 0.5;
     }
     div {
+        &::before {
+            padding-right: 0.5rem;
+            content: attr(data-diff-marker);
+        }
         display: inline;
     }
 }
