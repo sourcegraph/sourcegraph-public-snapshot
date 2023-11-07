@@ -189,7 +189,15 @@ func init() {
 			Name:        "generate",
 			ArgsUsage:   "<service ID> <environment ID>",
 			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
-			Before:      msprepo.UseManagedServicesRepo,
+			UsageText: `
+# generate single env for a single service
+sg msp generate <service> <env>
+# generate all envs across all services
+sg msp generate -all
+# generate all envs for a single service
+sg msp generate -all <service>
+			`,
+			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "all",
