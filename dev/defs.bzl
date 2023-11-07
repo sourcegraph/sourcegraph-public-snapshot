@@ -3,11 +3,12 @@
 load("@aspect_rules_swc//swc:defs.bzl", "swc")
 load("@bazel_skylib//lib:partial.bzl", "partial")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
-load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
 load("@aspect_rules_js//js:defs.bzl", "js_binary")
 load("//dev:eslint.bzl", "eslint_test_with_types", "get_client_package_path")
+load("@npm//:vitest/package_json.bzl", vitest_bin = "bin")
 load(":sass.bzl", _sass = "sass")
 
 sass = _sass
@@ -46,9 +47,8 @@ def ts_project(name, srcs = [], deps = [], module = "es6", **kwargs):
     testonly = kwargs.get("testonly", False)
     if testonly:
         deps = deps + [d for d in [
-            "//:node_modules/@jest/globals",
             "//:node_modules/@types/mocha",
-            "//:node_modules/@jest/expect",
+            "//:node_modules/vitest",
         ] if not d in deps]
 
     transpiler = partial.make(
@@ -127,12 +127,35 @@ def npm_package(name, srcs = [], **kwargs):
         **kwargs
     )
 
-def jest_test(name, data = [], **kwargs):
-    _jest_test(
+def vitest_test(name, data = [], **kwargs):
+    vitest_config = "%s_vitest_config" % name
+
+    js_library(
+        name = vitest_config,
+        testonly = True,
+        srcs = ["vitest.config.ts"],
+        deps = ["//:vitest_config", "//:node_modules/vitest"],
+        data = data,
+    )
+
+    vitest_bin.vitest_test(
         name = name,
-        config = kwargs.pop("config", "//:jest_config"),
-        snapshots = kwargs.pop("snapshots", True),
-        data = data + native.glob(["**/__fixtures__/**/*"]),
+        args = [
+            "run",
+            "--reporter=default",
+            "--color",
+            "--update=false",
+            "--config=$(location :%s)" % vitest_config,
+        ],
+        data = data + native.glob(["**/__fixtures__/**/*"]) + [
+            ":%s" % vitest_config,
+            "//:node_modules/happy-dom",
+            "//:node_modules/jsdom",
+        ],
+        env = {"BAZEL": "1", "CI": "1"},
+        patch_node_fs = False,
+        tags = kwargs.pop("tags", []) + ["no-sandbox"],
+        timeout = kwargs.pop("timeout", "short"),
         **kwargs
     )
 

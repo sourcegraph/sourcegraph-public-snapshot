@@ -1,7 +1,6 @@
 import { nextTick } from 'process'
 import { promisify } from 'util'
 
-import { afterEach, beforeAll, beforeEach, jest, describe, expect, it, test } from '@jest/globals'
 import type { RenderResult } from '@testing-library/react'
 import type { Remote } from 'comlink'
 import { uniqueId, noop, pick } from 'lodash'
@@ -10,6 +9,7 @@ import { take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import type * as sourcegraph from 'sourcegraph'
+import { afterEach, beforeAll, beforeEach, vi, describe, expect, it, test } from 'vitest'
 
 import { resetAllMemoizationCaches, subtypeOf } from '@sourcegraph/common'
 import type { SuccessGraphQLResult } from '@sourcegraph/http-client'
@@ -53,7 +53,7 @@ const createTestElement = (): HTMLElement => {
     return element
 }
 
-jest.mock('uuid', () => ({
+vi.mock('uuid', () => ({
     v4: () => 'uuid',
 }))
 
@@ -297,7 +297,7 @@ describe('codeHost', () => {
             ])
 
             // // Simulate codeView1 removal
-            mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
+            setTimeout(() => mutations.next([{ addedNodes: [], removedNodes: [codeView1] }]))
             // One editor should have been removed, model should still exist
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
 
@@ -311,7 +311,7 @@ describe('codeHost', () => {
                 },
             ])
             // // Simulate codeView2 removal
-            mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
+            setTimeout(() => mutations.next([{ addedNodes: [], removedNodes: [codeView2] }]))
             // // Second editor and model should have been removed
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
             expect(getEditors(extensionAPI)).toEqual([])

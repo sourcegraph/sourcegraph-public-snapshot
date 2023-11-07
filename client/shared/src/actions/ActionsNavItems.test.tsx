@@ -1,7 +1,7 @@
-import { describe, expect, test, jest } from '@jest/globals'
 import { render, act, type RenderResult } from '@testing-library/react'
 import * as H from 'history'
 import { of, NEVER } from 'rxjs'
+import { describe, expect, test, vi } from 'vitest'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 
@@ -12,7 +12,7 @@ import { extensionsController } from '../testing/searchTestHelpers'
 
 import { ActionsNavItems } from './ActionsNavItems'
 
-jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
+vi.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
 describe('ActionItem', () => {
     const NOOP_PLATFORM_CONTEXT = { settings: NEVER }

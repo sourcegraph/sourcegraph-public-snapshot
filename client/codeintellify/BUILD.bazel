@@ -1,6 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
@@ -51,12 +51,12 @@ ts_project(
         "src/loading.test.ts",
         "src/overlayPosition.test.ts",
         "src/positions.test.ts",
+        "src/testSetup.test.ts",
         "src/testutils/dom.test.ts",
         "src/testutils/dom.ts",
         "src/testutils/fixtures.ts",
         "src/testutils/generate.ts",
         "src/testutils/github/generate.ts",
-        "src/testutils/globals.d.ts",
         "src/testutils/mouse.ts",
         "src/testutils/revision.ts",
         "src/testutils/sourcegraph/generate.ts",
@@ -72,12 +72,13 @@ ts_project(
         ":codeintellify_lib",
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",
-        "//:node_modules/@jest/globals",
+        ":node_modules/@sourcegraph/testing",
         "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/lodash",
         "//:node_modules/rxjs",
+        "//:node_modules/vitest",
     ],
 )
 
@@ -89,7 +90,7 @@ npm_package(
     ],
 )
 
-jest_test(
+vitest_test(
     name = "test",
     data = [
         ":codeintellify_tests",
