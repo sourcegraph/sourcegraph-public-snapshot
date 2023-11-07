@@ -228,7 +228,8 @@ const ExtraInfoSection: React.FC<{
                         tooltip={
                             <>
                                 Repository metadata allows you to search, filter and navigate between repositories.
-                                Administrators can add repository metadata via the web, cli or API. Learn more about{' '}
+                                Users with the Repository metadata write role can add repository metadata via the web,
+                                cli or API. Learn more about{' '}
                                 <Link to="/help/admin/repo/metadata" className={styles.linkDark}>
                                     Repository Metadata
                                 </Link>
