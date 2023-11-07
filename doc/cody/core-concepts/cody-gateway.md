@@ -1,6 +1,6 @@
 # Sourcegraph Cody Gateway
 
-<p class="subtitle">Learn how to use Cody Gateway powers the default Sourcegraph provider to facilitate Enterprise instances.</p>
+<p class="subtitle">Learn how to Cody Gateway powers the default Sourcegraph provider to facilitate Enterprise instances.</p>
 
 <aside class="badge">
 <p> <span style="margin-right:0.25rem;" class="badge badge-note">Sourcegraph 5.1+</span> Cody Gateway is supported for Sourcegraph Enterprise customers on version 5.1 or more. </p>
