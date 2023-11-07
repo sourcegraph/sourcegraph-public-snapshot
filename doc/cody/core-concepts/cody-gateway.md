@@ -1,6 +1,6 @@
 # Sourcegraph Cody Gateway
 
-<p class="subtitle">Learn how to Cody Gateway powers the default Sourcegraph provider to facilitate Enterprise instances.</p>
+<p class="subtitle">Learn how Cody Gateway powers the default Sourcegraph provider to facilitate Enterprise instances.</p>
 
 <aside class="badge">
 <p> <span style="margin-right:0.25rem;" class="badge badge-note">Sourcegraph 5.1+</span> Cody Gateway is supported for Sourcegraph Enterprise customers on version 5.1 or more. </p>
@@ -30,7 +30,7 @@ For more details about configuring Cody, read the following resources:
 
 Cody Gateway is hosted at `cody-gateway.sourcegraph.com`. To use Cody Gateway, your Sourcegraph instance must be connected to the service in this domain.
 
-> WARNING: Sourcegraph Cody Gateway access must be included in your Sourcegraph Enterprise subscription plan. You can verify it by checking it with your Sourcegraph administrator. If you are a [Sourcegraph Cloud](../../cloud/index.md) user, Cody is enabled by default on your instance starting with Sourcegraph 5.1.
+> WARNING: Sourcegraph Cody Gateway access must be included in your Sourcegraph Enterprise subscription plan. You can verify it by checking it with your account manager. If you are a [Sourcegraph Cloud](../../cloud/index.md) user, Cody is enabled by default on your instance starting with Sourcegraph 5.1.
 
 ## Configuring custom models
 
@@ -72,4 +72,4 @@ Sourcegraph Cody Gateway does not retain sensitive data (prompt test and source 
 
 The code that powers Cody Gateway is also [source-available](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph$+f:cmd/cody-gateway+lang:go&patternType=lucky&sm=1&groupBy=path) for audit.
 
-For more details about Cody Gateway security practices, please reach out to your site administrator. You can also refer to the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice) for more privacy details about Cody in general.
+For more details about Cody Gateway security practices, please reach out to your account manager. You can also refer to the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice) for more privacy details about Cody in general.
