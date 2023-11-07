@@ -316,8 +316,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const navbarReference = useRef<HTMLDivElement | null>(null)
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference)
 
-    console.log({ navLinkVariant })
-
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
