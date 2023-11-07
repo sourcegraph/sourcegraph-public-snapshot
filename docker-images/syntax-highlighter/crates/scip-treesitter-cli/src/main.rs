@@ -103,7 +103,7 @@ pub fn main() {
                 index_mode,
                 PathBuf::from(out),
                 PathBuf::from(project_root),
-                evaluate.map(|p| PathBuf::from(p)),
+                evaluate.map(PathBuf::from),
                 IndexOptions {
                     analysis_mode: mode,
                     fail_fast,

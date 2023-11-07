@@ -33,10 +33,10 @@ pub enum AnalysisMode {
 
 impl AnalysisMode {
     fn locals(self) -> bool {
-        return self == AnalysisMode::Locals || self == AnalysisMode::Full;
+        self == AnalysisMode::Locals || self == AnalysisMode::Full
     }
     fn globals(self) -> bool {
-        return self == AnalysisMode::Globals || self == AnalysisMode::Full;
+        self == AnalysisMode::Globals || self == AnalysisMode::Full
     }
 }
 
@@ -149,7 +149,7 @@ pub fn index_command(
         }
     }
 
-    eprintln!("");
+    eprintln!();
 
     eprintln!(
         "Writing index for {} documents into {}",
@@ -157,17 +157,14 @@ pub fn index_command(
         out.display()
     );
 
-    match evaluate_against {
-        Some(file) => {
-            eprintln!("Evaluating built index against {}", file.display());
+    if let Some(file) = evaluate_against {
+        eprintln!("Evaluating built index against {}", file.display());
 
-            let ground_truth = read_index_from_file(file);
+        let ground_truth = read_index_from_file(file);
 
-            let evaluation_result = evaluate_indexes(&index, &ground_truth, Default::default());
+        let evaluation_result = evaluate_indexes(&index, &ground_truth, Default::default());
 
-            print_evaluation_summary(evaluation_result.unwrap(), Default::default());
-        }
-        _ => {}
+        print_evaluation_summary(evaluation_result.unwrap(), Default::default());
     }
 
     write_message_to_file(out, index).expect("to write the file");
@@ -201,5 +198,5 @@ fn index_content(
         }
     }
 
-    return Ok(document);
+    Ok(document)
 }

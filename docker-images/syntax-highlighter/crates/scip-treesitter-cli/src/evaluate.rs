@@ -11,16 +11,12 @@ use scip_treesitter::types::PackedRange;
 
 use crate::{io::read_index_from_file, progress::*};
 
-pub fn evaluate_command<'a>(
-    candidate: PathBuf,
-    ground_truth: PathBuf,
-    options: ScipEvaluateOptions,
-) {
+pub fn evaluate_command(candidate: PathBuf, ground_truth: PathBuf, options: ScipEvaluateOptions) {
     let evaluation_result = evaluate_files(candidate, ground_truth, options);
     print_evaluation_summary(evaluation_result.unwrap(), options);
 }
 
-pub fn evaluate_files<'a>(
+pub fn evaluate_files(
     candidate: PathBuf,
     ground_truth: PathBuf,
     options: ScipEvaluateOptions,
@@ -63,12 +59,12 @@ pub fn evaluate_indexes(
     let bar = create_spinner();
     bar.set_message("Indexing candidate symbols by location");
     let candidate_occurrences: HashMap<LocationInFile, CandidateSymbol> =
-        index_occurrences(&candidate);
+        index_occurrences(candidate);
     bar.tick();
 
     bar.set_message("Indexing ground truth symbols by location");
     let ground_truth_occurrences: HashMap<LocationInFile, GroundTruthSymbol> =
-        index_occurrences(&ground_truth);
+        index_occurrences(ground_truth);
     bar.tick();
 
     // For each symbol pair we maintain an Overlap instance
@@ -132,7 +128,7 @@ pub fn evaluate_indexes(
     bar.tick();
 
     bar.set_message("Computing overlap with ground truth SCIP occurrences");
-    for (_, ground_truth_symbol) in &ground_truth_occurrences {
+    for ground_truth_symbol in ground_truth_occurrences.values() {
         // now that we're iterating over all the ground truth occurrences,
         // we can update the `total` counter for each symbol pair
         // associated with that ground truth symbol
@@ -141,7 +137,9 @@ pub fn evaluate_indexes(
             .into_iter()
             .for_each(|pairs| {
                 for pair in pairs {
-                    overlaps.get_mut(&pair).map(|x| x.total += 1);
+                    if let Some(overlap) = overlaps.get_mut(pair) {
+                        overlap.total += 1
+                    }
                 }
             });
     }
@@ -199,6 +197,7 @@ pub fn evaluate_indexes(
     if options.print_mapping {
         let mut candidate_mapping_vec: Vec<(CandidateSymbol, HashMap<GroundTruthSymbol, Overlap>)> =
             candidate_mapping.into_iter().collect();
+
         candidate_mapping_vec.sort_by_key(|(sym, _)| sym.clone());
 
         for (candidate_symbol, alternatives) in candidate_mapping_vec {
@@ -210,7 +209,7 @@ pub fn evaluate_indexes(
             eprintln!("{}", candidate.red());
 
             for (ground_truth_symbol, overlap) in &alternatives_vec {
-                let ground_truth = shorten_symbol(&ground_truth_symbol);
+                let ground_truth = shorten_symbol(ground_truth_symbol);
                 let adjusted_weight = symbol_pair_weight
                     .get(&SymbolPair {
                         candidate: candidate_symbol.clone(),
@@ -227,7 +226,7 @@ pub fn evaluate_indexes(
                 );
             }
 
-            eprintln!("");
+            eprintln!();
         }
     }
 
@@ -301,7 +300,7 @@ pub fn evaluate_indexes(
 }
 
 fn shorten_symbol(sym: &String) -> String {
-    let parts: Vec<&str> = sym.splitn(5, " ").collect();
+    let parts: Vec<&str> = sym.splitn(5, ' ').collect();
     if parts.len() == 5 {
         let producer = parts[0];
         let _tpe = parts[1];
@@ -309,7 +308,7 @@ fn shorten_symbol(sym: &String) -> String {
         let _version = parts[3];
         let symbol = parts[4];
 
-        format!("{producer} . . . {symbol}").to_string()
+        format!("{producer} . . . {symbol}")
     } else {
         sym.to_string()
     }
@@ -445,7 +444,7 @@ pub fn print_evaluation_summary(eval: EvaluationResult, options: ScipEvaluateOpt
     println!("{}", serde_json::to_string(&eval.summary).unwrap());
 
     if options.print_false_negatives {
-        eprintln!("");
+        eprintln!();
 
         eprintln!(
             "{}: {}",
@@ -469,7 +468,7 @@ pub fn print_evaluation_summary(eval: EvaluationResult, options: ScipEvaluateOpt
     }
 
     if options.print_false_positives {
-        eprintln!("");
+        eprintln!();
         eprintln!(
             "{}: {}",
             "False positives".red(),
@@ -492,21 +491,19 @@ pub fn print_evaluation_summary(eval: EvaluationResult, options: ScipEvaluateOpt
     }
 
     if options.print_true_positives {
-        if true {
-            eprintln!("");
-            eprintln!(
-                "{}: {}",
-                "True positives".green(),
-                eval.true_positives.len().to_string().bold()
-            );
+        eprintln!();
+        eprintln!(
+            "{}: {}",
+            "True positives".green(),
+            eval.true_positives.len().to_string().bold()
+        );
 
-            for symbol_occurrence in &eval.true_positives {
-                let file = &symbol_occurrence.location.file;
-                let rng = symbol_occurrence.range();
-                let header = format!("{file}: L{} C{} -- ", rng.start_line, rng.start_col);
+        for symbol_occurrence in &eval.true_positives {
+            let file = &symbol_occurrence.location.file;
+            let rng = symbol_occurrence.range();
+            let header = format!("{file}: L{} C{} -- ", rng.start_line, rng.start_col);
 
-                eprintln!("{} {}", header.yellow(), symbol_occurrence.symbol);
-            }
+            eprintln!("{} {}", header.yellow(), symbol_occurrence.symbol);
         }
     }
 }
@@ -546,7 +543,7 @@ fn index_occurrences(idx: &Index) -> HashMap<LocationInFile, String> {
         }
     }
 
-    return mp;
+    mp
 }
 
 #[cfg(test)]
@@ -561,7 +558,7 @@ mod tests {
         occ.range = vec![n, 5, 10];
         occ.symbol = symbol.to_string();
 
-        return occ;
+        occ
     }
 
     fn document(path: &str, occs: Vec<Occurrence>) -> Document {

@@ -195,7 +195,7 @@ impl<'a> Scope<'a> {
                 }
                 ReassignmentBehavior::OldestIsDefinition => {
                     if let Some(above) = declarations_above
-                        .into_iter()
+                        .iter_mut()
                         .rev()
                         .find(|x| x.contains_key(lvalue.identifier))
                     {

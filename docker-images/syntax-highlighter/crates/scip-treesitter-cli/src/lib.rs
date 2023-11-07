@@ -20,7 +20,7 @@ pub mod progress {
                 ]),
         );
 
-        return bar;
+        bar
     }
 
     pub fn create_progress_bar(len: u64) -> ProgressBar {
@@ -34,7 +34,7 @@ pub mod progress {
             .progress_chars("##-"),
         );
 
-        return bar;
+        bar
     }
 }
 
@@ -52,6 +52,7 @@ pub mod io {
         let mut cis = CodedInputStream::from_buf_read(&mut reader);
 
         candidate_idx.merge_from(&mut cis).unwrap();
-        return candidate_idx;
+
+        candidate_idx
     }
 }
