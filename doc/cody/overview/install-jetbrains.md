@@ -128,6 +128,7 @@ The Cody extension by Sourcegraph enhances your coding experience in your IDE by
   - [Android Studio](https://developer.android.com/studio)
   - [AppCode](https://www.jetbrains.com/objc/)
   - [CLion](https://www.jetbrains.com/clion/)
+  - [DataGrip](https://www.jetbrains.com/datagrip/)
   - [GoLand](https://www.jetbrains.com/go/)
   - [IntelliJ IDEA](https://www.jetbrains.com/idea/) (Community and Ultimate editions)
   - [PhpStorm](https://www.jetbrains.com/phpstorm/)
