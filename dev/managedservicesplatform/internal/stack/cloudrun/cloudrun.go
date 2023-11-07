@@ -35,15 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type CrossStackOutput struct {
-	// CloudRunServiceAccountEmail is the email associated with the Cloud Run
-	// service's workload service account. If access to additional resources are
-	// needed, this account can be granted access to allow the new service to
-	// access additional resources.
-	CloudRunServiceAccountEmail string
-	// ResolvedImageTag is the final image tag that was configured for deployment.
-	ResolvedImageTag string
-}
+type CrossStackOutput struct{}
 
 type Variables struct {
 	ProjectID             string
@@ -296,10 +288,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	// Collect outputs
 	outputs.Add("cloud_run_service_account", cloudRunBuildVars.ServiceAccount.Email)
 	outputs.Add("resolved_image_tag", resolvedImageTag)
-	return &CrossStackOutput{
-		CloudRunServiceAccountEmail: cloudRunBuildVars.ServiceAccount.Email,
-		ResolvedImageTag:            resolvedImageTag,
-	}, nil
+	return &CrossStackOutput{}, nil
 }
 
 var matchNonAlphaNumericRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
