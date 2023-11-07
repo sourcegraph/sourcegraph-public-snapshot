@@ -44,7 +44,7 @@
 <!-- [Test a Phabricator and Gitolite instance](test_phabricator.md) -->
 
 
-## Maintenance 
+## Maintenance
 
 - [How to update pnpm to a newer version](update_pnpm.md)
 
@@ -69,7 +69,7 @@
 
 ## Cody Gateway
 
-- [How to set up Cody Gateway locally](cody_gateway.md)
+- [How to set up Cody Gateway locally](cody-gateway.md)
 
 ## Telemetry Gateway
 
@@ -80,4 +80,3 @@
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).
 Sourcegraph currently relies on Unix specifics in several places, which makes it currently not possible to run Sourcegraph directly inside Windows without WSL.
 We are happy to accept contributions here! :)
-
