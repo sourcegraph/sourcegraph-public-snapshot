@@ -80,7 +80,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			userCount:   pointers.Ptr(50),
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "openai/gpt-3.5-turbo", "openai/gpt-4-1106-preview"},
+				AllowedModels:   []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "openai/gpt-3.5-turbo"},
 				Limit:           50000,
 				IntervalSeconds: 60 * 60 * 24,
 			},
