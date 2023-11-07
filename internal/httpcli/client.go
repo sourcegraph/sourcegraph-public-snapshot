@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
@@ -386,6 +387,11 @@ func ExternalTransportOpt(cli *http.Client) error {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
+	hostList := env.Get("EXTERNAL_DENY_LIST", "", "Deny list for outgoing requests")
+	allowList := hostmatcher.ParseHostMatchList("", hostList)
+	allowList.AppendBuiltin("loopback")
+	allowList.AppendPattern("169.254.169.254")
+	tr.DialContext = hostmatcher.NewDialContext("", allowList, nil)
 	cli.Transport = &externalTransport{base: tr}
 	return nil
 }
