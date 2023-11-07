@@ -1121,7 +1121,7 @@ func openaiDefaultMaxPromptTokens(model string) int {
 		return 8_000
 	case "gpt-4-32k":
 		return 32_000
-	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct":
+	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":
 		return 4_000
 	case "gpt-3.5-turbo-16k":
 		return 16_000
