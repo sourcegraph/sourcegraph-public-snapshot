@@ -1,5 +1,6 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_proc_macro", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_proc_macro")
+load("//dev:rust_defs.bzl", "rust_test")
 
 rust_proc_macro(
     name = "scip-macros",
