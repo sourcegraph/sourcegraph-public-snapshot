@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals'
 import { renderHook } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'

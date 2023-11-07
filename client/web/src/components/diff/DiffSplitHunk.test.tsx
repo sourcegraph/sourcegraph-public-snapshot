@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { cleanup, fireEvent, render, type RenderResult } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { DiffHunkLineType, type FileDiffHunkFields } from '../../graphql-operations'
 

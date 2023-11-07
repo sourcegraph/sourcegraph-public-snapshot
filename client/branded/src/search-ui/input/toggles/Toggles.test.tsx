@@ -1,5 +1,5 @@
-import { describe, expect, test } from '@jest/globals'
 import { screen } from '@testing-library/react'
+import { describe, expect, test } from 'vitest'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'

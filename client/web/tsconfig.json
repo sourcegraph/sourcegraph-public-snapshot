@@ -3,9 +3,6 @@
   "compilerOptions": {
     "module": "esnext",
     "baseUrl": ".",
-    "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
-    },
     "jsx": "react-jsx",
     "rootDir": ".",
     "outDir": "out",
@@ -51,8 +48,9 @@
       "path": "../wildcard",
     },
   ],
-  "include": ["src", "scripts", "./src/**/*.json"],
+  "include": ["src", "scripts", "__mocks__", "./src/**/*.json"],
   "exclude": [
+    "vitest.config.ts",
     "dev",
     "../../node_modules",
     "./node_modules",
