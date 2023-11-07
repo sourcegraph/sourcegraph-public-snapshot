@@ -3,6 +3,7 @@ package stack
 import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -46,8 +47,23 @@ func NewSet(renderDir string, opts ...NewStackOption) *Set {
 	}
 }
 
+// ExplicitStackOutputs adds an explicit output to the Terraform stack for human
+// reference. This is separate from outputs returned explicitly from Stack
+// constructors, which are intended for programatic access.
+type ExplicitStackOutputs struct{ s cdktf.TerraformStack }
+
+// Add renders a non-sensitive key-value pair as part of the workspace outputs.
+func (o *ExplicitStackOutputs) Add(name string, value any) {
+	_ = cdktf.NewTerraformOutput(o.s,
+		resourceid.New("output").ResourceID(name),
+		&cdktf.TerraformOutputConfig{
+			Value:     value,
+			Sensitive: pointers.Ptr(false),
+		})
+}
+
 // New creates a new stack belonging to this set.
-func (s *Set) New(name string, opts ...NewStackOption) cdktf.TerraformStack {
+func (s *Set) New(name string, opts ...NewStackOption) (cdktf.TerraformStack, ExplicitStackOutputs) {
 	stack := Stack{
 		Name:     name,
 		Stack:    cdktf.NewTerraformStack(s.app, &name),
@@ -57,7 +73,7 @@ func (s *Set) New(name string, opts ...NewStackOption) cdktf.TerraformStack {
 		opt(stack)
 	}
 	s.stacks = append(s.stacks, stack)
-	return stack.Stack
+	return stack.Stack, ExplicitStackOutputs{stack.Stack}
 }
 
 // ExtractApp returns the underlying CDKTF application of this stack.Set for

@@ -70,11 +70,6 @@ func (b *jobBuilder) AddSecretVolume(name, mountPath string, secret builder.Secr
 }
 
 func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (builder.Resource, error) {
-	serviceImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
-	if err != nil {
-		return nil, err
-	}
-
 	var vpcAccess *cloudrunv2job.CloudRunV2JobTemplateTemplateVpcAccess
 	if vars.PrivateNetwork != nil {
 		vpcAccess = &cloudrunv2job.CloudRunV2JobTemplateTemplateVpcAccess{
@@ -120,7 +115,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 				// Configuration for the single service container.
 				Containers: []*cloudrunv2job.CloudRunV2JobTemplateTemplateContainers{{
 					Name:  pointers.Ptr(vars.Service.ID),
-					Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, serviceImageTag)),
+					Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ResolvedImageTag)),
 
 					Resources: &cloudrunv2job.CloudRunV2JobTemplateTemplateContainersResources{
 						Limits: &vars.ResourceLimits,
