@@ -25,7 +25,8 @@ type Config struct {
 }
 
 type Output struct {
-	Email string
+	Email  string
+	Member string
 }
 
 // New provisions a service account, including roles for it to inherit.
@@ -49,6 +50,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			})
 	}
 	return &Output{
-		Email: *serviceAccount.Email(),
+		Email:  *serviceAccount.Email(),
+		Member: *serviceAccount.Member(),
 	}
 }

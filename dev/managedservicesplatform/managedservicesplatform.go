@@ -95,7 +95,9 @@ func (r *Renderer) RenderEnvironment(
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
 	if _, err := cloudrun.NewStack(stacks, cloudrun.Variables{
-		ProjectID:   *projectOutput.Project.ProjectId(),
+		ProjectID:             *projectOutput.Project.ProjectId(),
+		CloudRunIdentityEmail: *projectOutput.CloudRunIdentity.Email(),
+
 		Service:     svc,
 		Image:       build.Image,
 		Environment: env,
