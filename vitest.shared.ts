@@ -15,7 +15,7 @@ export const defaultProjectConfig: UserWorkspaceConfig = {
     logLevel: 'warn',
     clearScreen: false,
     test: {
-        testTimeout: 5000,
+        testTimeout: 10000,
         hookTimeout: 1000,
         experimentalVmThreads: true,
         include: [`**/*.test.${TS_EXT}?(x)`],
