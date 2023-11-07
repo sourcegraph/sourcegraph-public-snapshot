@@ -11,6 +11,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 
@@ -23,6 +25,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const costEstimationMetricActorTypeLabel = "actor_type"
+
+var (
+	costHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_cost_distribution",
+		Help:    "The maximum cost seen from a GraphQL query",
+		Buckets: prometheus.ExponentialBucketsRange(1, 500_000, 8),
+	}, []string{costEstimationMetricActorTypeLabel})
+)
+
+func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) string {
+	if isInternal {
+		return "internal"
+	}
+	if anonymous {
+		return "anonymous"
+	}
+	return string(requestSource)
+}
 
 func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
@@ -90,6 +112,8 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			}
 			traceData.costError = costErr
 			traceData.cost = cost
+			// Track the cost distribution of requests in a histogram.
+			costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
 
 			if rl, enabled := rlw.Get(); enabled && cost != nil {
 				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
