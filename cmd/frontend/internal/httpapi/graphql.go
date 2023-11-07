@@ -91,6 +91,14 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			traceData.costError = costErr
 			traceData.cost = cost
 
+			if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
+				return errors.New("query exceeds maximum alias count")
+			}
+
+			if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
+				return errors.New("query exceeds maximum query cost")
+			}
+
 			if rl, enabled := rlw.Get(); enabled && cost != nil {
 				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
 					IsIP:          isIP,
