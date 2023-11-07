@@ -252,6 +252,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		// Sourcegraph-wide convention.
 		cloudRunBuilder.AddEnv("REDIS_ENDPOINT", redisInstance.Endpoint)
 
+		// Mount the custom cert and add it to SSL_CERT_DIR
 		caCertVolumeName := "redis-ca-cert"
 		cloudRunBuilder.AddSecretVolume(
 			caCertVolumeName,
@@ -263,6 +264,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			292, // 0444 read-only
 		)
 		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/custom-certs")
+		cloudRunBuilder.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs:/etc/ssl/custom-certs")
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
