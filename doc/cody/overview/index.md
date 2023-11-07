@@ -162,12 +162,6 @@ You can start using Cody with one of the following clients:
     </a>
   </li>
   <li>
-     <a class="card text-left" target="_blank" href="https://sourcegraph.com/get-cody">
-      <h3><img alt="Cody App" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/cody-logomark-default.svg"/>Cody for Desktop</h3>
-      <p>Free desktop app to try Cody with your local codebase.</p>
-      </a>
-  </li>
-  <li>
     <a class="card text-left" target="_blank" href="https://about.sourcegraph.com/cody/pricing">
       <h3><img alt="Cody Enterprise" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody Enterprise</h3>
       <p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p>
