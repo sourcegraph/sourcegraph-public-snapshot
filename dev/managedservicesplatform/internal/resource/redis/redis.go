@@ -42,7 +42,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			AuthEnabled:           true,
 			TransitEncryptionMode: pointers.Ptr("SERVER_AUTHENTICATION"),
 			PersistenceConfig: &redisinstance.RedisInstancePersistenceConfig{
-				PersistenceMode: pointers.Ptr("RDB"),
+				PersistenceMode:   pointers.Ptr("RDB"),
+				RdbSnapshotPeriod: pointers.Ptr("TWENTY_FOUR_HOURS"),
 			},
 
 			AuthorizedNetwork: config.Network.SelfLink(),
