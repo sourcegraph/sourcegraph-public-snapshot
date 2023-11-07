@@ -29,7 +29,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 				return requestParams.Model, nil
 			}
 			if requestParams.Model != "" {
-				return "", errors.New("Unsupported custom model")
+				return "", errors.New("Unsupported chat model")
 			}
 			return c.CompletionModel, nil
 		},
