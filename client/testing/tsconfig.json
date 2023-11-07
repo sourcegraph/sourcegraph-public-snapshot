@@ -7,7 +7,7 @@
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "declarations": true
+    "declaration": true
   },
   "include": ["src"],
 }
