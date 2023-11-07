@@ -155,8 +155,7 @@ const blameDecorationTheme = EditorView.theme({
         zIndex: 201,
     },
     '.no-line-break-msg': {
-        marginLeft: 'calc(var(--blame-decoration-width))',
-        zIndex: 201,
+        marginLeft: 'var(--blame-decoration-width)',
     },
 })
 
