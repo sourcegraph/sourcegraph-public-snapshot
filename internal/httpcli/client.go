@@ -374,9 +374,9 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 	}
 }
 
-//
 // Common Opts
-//
+var hostList = env.Get("EXTERNAL_DENY_LIST", "", "Deny list for outgoing requests")
+var denyList = hostmatcher.ParseHostMatchList("", hostList)
 
 // ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
 // can contact non-Sourcegraph services. For example Admins can configure
@@ -387,11 +387,11 @@ func ExternalTransportOpt(cli *http.Client) error {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
-	hostList := env.Get("EXTERNAL_DENY_LIST", "", "Deny list for outgoing requests")
-	allowList := hostmatcher.ParseHostMatchList("", hostList)
-	allowList.AppendBuiltin("loopback")
-	allowList.AppendPattern("169.254.169.254")
-	tr.DialContext = hostmatcher.NewDialContext("", allowList, nil)
+	// default addresses to block
+	denyList.AppendBuiltin("loopback")
+	denyList.AppendPattern("169.254.169.254")
+
+	tr.DialContext = hostmatcher.NewDialContext("", nil, denyList)
 	cli.Transport = &externalTransport{base: tr}
 	return nil
 }
