@@ -25,6 +25,7 @@ import { useHandleSubmitFeedback } from './hooks'
 import type { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { NewGlobalNavigationBar } from './nav/new-global-navigation/NewGlobalNavigationBar'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
@@ -114,6 +115,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isGetCodyPage = location.pathname === PageRoutes.GetCody
     const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
 
+    const newSearchNavigation = useExperimentalFeatures<boolean>(features => features.newSearchNavigationUI ?? false)
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
     const { theme } = useTheme()
@@ -256,22 +258,51 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 !disableFeedbackSurvey &&
                 !props.isCodyApp && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
-                <GlobalNavbar
-                    {...props}
-                    showSearchBox={
-                        isSearchRelatedPage &&
-                        !isSearchHomepage &&
-                        !isCommunitySearchContextPage &&
-                        !isSearchConsolePage &&
-                        !isSearchNotebooksPage &&
-                        !isCodySearchPage &&
-                        !isSearchJobsPage
-                    }
-                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
-                    showFeedbackModal={showFeedbackModal}
-                />
+                <>
+                    {newSearchNavigation ? (
+                        <NewGlobalNavigationBar
+                            showSearchBox={
+                                isSearchRelatedPage &&
+                                !isSearchHomepage &&
+                                !isCommunitySearchContextPage &&
+                                !isSearchConsolePage &&
+                                !isSearchNotebooksPage &&
+                                !isCodySearchPage &&
+                                !isSearchJobsPage
+                            }
+                            authenticatedUser={props.authenticatedUser}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            ownEnabled={props.ownEnabled}
+                            notebooksEnabled={props.notebooksEnabled}
+                            searchContextsEnabled={props.searchContextsEnabled}
+                            codeMonitoringEnabled={props.codeMonitoringEnabled}
+                            batchChangesEnabled={props.batchChangesEnabled}
+                            codeInsightsEnabled={props.codeInsightsEnabled ?? false}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            fetchSearchContexts={props.fetchSearchContexts}
+                            getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
+                            telemetryService={props.telemetryService}
+                            platformContext={props.platformContext}
+                        />
+                    ) : (
+                        <GlobalNavbar
+                            {...props}
+                            showSearchBox={
+                                isSearchRelatedPage &&
+                                !isSearchHomepage &&
+                                !isCommunitySearchContextPage &&
+                                !isSearchConsolePage &&
+                                !isSearchNotebooksPage &&
+                                !isCodySearchPage &&
+                                !isSearchJobsPage
+                            }
+                            setFuzzyFinderIsVisible={setFuzzyFinderVisible}
+                            isRepositoryRelatedPage={isRepositoryRelatedPage}
+                            showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                            showFeedbackModal={showFeedbackModal}
+                        />
+                    )}
+                </>
             )}
             {props.isCodyApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
