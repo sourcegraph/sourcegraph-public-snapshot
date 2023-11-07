@@ -154,6 +154,9 @@ const blameDecorationTheme = EditorView.theme({
         // override default .cm-gutters z-index 200
         zIndex: 201,
     },
+    '.no-line-break-msg': {
+        marginLeft: 'var(--blame-decoration-width)',
+    },
 })
 
 class BlameDecorationViewPlugin implements PluginValue {
