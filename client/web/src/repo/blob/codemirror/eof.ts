@@ -22,7 +22,7 @@ class NoLineBreakWidget extends WidgetType {
 // causes the last line to be hidden.
 const removeLastLineDeco = Decoration.replace({})
 const eofNoteDeco = Decoration.replace({
-    widget: new NoLineBreakWidget('(No new line at end of file)'),
+    widget: new NoLineBreakWidget('(No newline at end of file)'),
     block: true,
 })
 
@@ -47,6 +47,7 @@ export const hideEmptyLastLine: Extension = [
             color: 'var(--text-muted)',
             fontStyle: 'italic',
             marginTop: '.2rem',
+            userSelect: 'none',
         },
     }),
 ]
