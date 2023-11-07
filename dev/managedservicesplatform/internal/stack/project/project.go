@@ -59,7 +59,7 @@ var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
 	spec.EnvironmentCategory(""):     DefaultProjectFolderID,
 }
 
-type Output struct {
+type CrossStackOutput struct {
 	// Project is created with a generated project ID.
 	Project project.Project
 
@@ -104,8 +104,8 @@ const (
 )
 
 // NewStack creates a stack that provisions a GCP project.
-func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
-	stack := stacks.New(StackName,
+func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
+	stack, outputs := stacks.New(StackName,
 		randomprovider.With(),
 		// ID is not known ahead of time, we can omit it
 		googleprovider.With(""))
@@ -163,7 +163,9 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			})
 	}
 
-	return &Output{
+	// Collect outputs
+	outputs.Add("project_id", project.ProjectId())
+	return &CrossStackOutput{
 		Project: project,
 		CloudRunIdentity: googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
 			id.ResourceID("cloudrun-identity"),

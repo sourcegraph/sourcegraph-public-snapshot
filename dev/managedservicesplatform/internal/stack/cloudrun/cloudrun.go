@@ -35,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type Output struct{}
+type CrossStackOutput struct{}
 
 type Variables struct {
 	ProjectID             string
@@ -92,8 +92,8 @@ func makeServiceEnvVarPrefix(serviceID string) string {
 // NewStack instantiates the MSP cloudrun stack, which is currently a pretty
 // monolithic stack that encompasses all the core components of an MSP service,
 // including networking and dependencies like Redis.
-func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
-	stack := stacks.New(StackName,
+func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
+	stack, outputs := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
 		cloudflareprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretCloudflareAPIToken,
@@ -183,12 +183,17 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	}
 
 	// Set up build configuration.
+	resolvedImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
+	if err != nil {
+		return nil, errors.Wrap(err, "ResolveTag")
+	}
 	cloudRunBuildVars := builder.Variables{
-		Service:      vars.Service,
-		Image:        vars.Image,
-		Environment:  vars.Environment,
-		GCPProjectID: vars.ProjectID,
-		GCPRegion:    gcpRegion,
+		Service:          vars.Service,
+		Image:            vars.Image,
+		ResolvedImageTag: resolvedImageTag,
+		Environment:      vars.Environment,
+		GCPProjectID:     vars.ProjectID,
+		GCPRegion:        gcpRegion,
 		ServiceAccount: serviceaccount.New(stack,
 			id,
 			serviceaccount.Config{
@@ -276,12 +281,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	}
 
 	// Finalize output of builder
-	_, err := cloudRunBuilder.Build(stack, cloudRunBuildVars)
-	if err != nil {
+	if _, err := cloudRunBuilder.Build(stack, cloudRunBuildVars); err != nil {
 		return nil, err
 	}
 
-	return &Output{}, nil
+	// Collect outputs
+	outputs.Add("cloud_run_service_account", cloudRunBuildVars.ServiceAccount.Email)
+	outputs.Add("resolved_image_tag", resolvedImageTag)
+	return &CrossStackOutput{}, nil
 }
 
 var matchNonAlphaNumericRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
