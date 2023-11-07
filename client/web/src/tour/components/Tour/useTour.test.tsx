@@ -1,3 +1,4 @@
+import { afterAll, beforeEach, describe, expect, test } from '@jest/globals'
 import { renderHook, cleanup, act } from '@testing-library/react'
 import type { WrapperComponent } from '@testing-library/react-hooks'
 
@@ -13,7 +14,6 @@ const getFieldsAsObject = (value: object): object =>
     Object.entries(Object.getOwnPropertyDescriptors(value))
         // eslint-disable-next-line no-prototype-builtins
         .filter(([, desc]) => desc.hasOwnProperty('value') && typeof desc.value !== 'function')
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         .reduce((result, [key]) => ({ ...result, [key]: (value as any)[key] }), {})
 
 const TourId = 'MockTour'
@@ -35,13 +35,13 @@ describe('useTour.ts', () => {
     test('returns initial state from temporary settings', () => {
         const initialState: TourState = { completedStepIds: [], status: 'closed' }
         const { result } = setup({ [TourId]: initialState })
-        expect(getFieldsAsObject(result.current)).toMatchObject(initialState)
+        expect(getFieldsAsObject(result.current)).toMatchObject(initialState as unknown as Record<string, unknown>)
     })
 
     test('clears state when restart called', () => {
         const initialState: TourState = { completedStepIds: [], status: 'closed' }
         const { result } = setup({ [TourId]: initialState })
-        expect(getFieldsAsObject(result.current)).toMatchObject(initialState)
+        expect(getFieldsAsObject(result.current)).toMatchObject(initialState as unknown as Record<string, unknown>)
         act(() => result.current.restart())
         expect(getFieldsAsObject(result.current)).toMatchObject({})
     })

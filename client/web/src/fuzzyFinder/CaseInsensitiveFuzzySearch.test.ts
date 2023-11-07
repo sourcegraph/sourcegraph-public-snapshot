@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { CaseInsensitiveFuzzySearch } from './CaseInsensitiveFuzzySearch'
 
 function fuzzyMatches(query: string, values: string[]): string[] {

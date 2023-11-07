@@ -98,6 +98,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				ReposDir:                config.ReposDir,
 				CoursierCacheDir:        config.CoursierCacheDir,
 				RecordingCommandFactory: recordingCommandFactory,
+				Logger:                  logger,
 			})
 		},
 		Hostname:                config.ExternalAddress,

@@ -12,6 +12,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -20,9 +22,22 @@ func TestNewEventWithDefaults(t *testing.T) {
 	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
-	t.Run("extract actor and flags", func(t *testing.T) {
+	t.Run("empty context", func(t *testing.T) {
+		ctx := context.Background()
+		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
+		assert.Nil(t, got.User)
+		assert.Nil(t, got.Interaction)
+		assert.Nil(t, got.FeatureFlags)
+	})
+
+	t.Run("extract actor and trace", func(t *testing.T) {
+		// Atach a user
 		var userID int32 = 123
 		ctx := actor.WithActor(context.Background(), actor.FromMockUser(userID))
+
+		// Attach a trace
+		tracetest.ConfigureStaticTracerProvider(t)
+		_, ctx = trace.New(ctx, t.Name())
 
 		// NOTE: We can't test the feature flag part easily because
 		// featureflag.GetEvaluatedFlagSet depends on Redis, and the package
@@ -44,6 +59,9 @@ func TestNewEventWithDefaults(t *testing.T) {
 		require.NoError(t, err)
 		autogold.Expect(`{
   "id": "id",
+  "interaction": {
+    "traceId": "01020304050607080102040810203040"
+  },
   "timestamp": "2023-02-24T14:48:30Z",
   "user": {
     "userId": "123"

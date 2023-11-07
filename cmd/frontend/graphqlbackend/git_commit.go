@@ -223,10 +223,11 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
 }
 
-func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
-	Path      string
-	Recursive bool
-}) (*GitTreeEntryResolver, error) {
+type TreeArgs struct {
+	Path string
+}
+
+func (r *GitCommitResolver) Tree(ctx context.Context, args *TreeArgs) (*GitTreeEntryResolver, error) {
 	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
 			return errors.Errorf("not a directory: %q", args.Path)
@@ -238,10 +239,6 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Note: args.Recursive is deprecated
-	if treeEntry != nil {
-		treeEntry.isRecursive = args.Recursive
-	}
 	return treeEntry, nil
 }
 
@@ -365,7 +362,7 @@ type AncestorsArgs struct {
 	Before      *string
 }
 
-func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) (*gitCommitConnectionResolver, error) {
+func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.gitserverClient,
@@ -378,7 +375,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) 
 		afterCursor:     args.AfterCursor,
 		before:          args.Before,
 		repo:            r.repoResolver,
-	}, nil
+	}
 }
 
 func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {

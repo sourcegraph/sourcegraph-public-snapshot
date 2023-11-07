@@ -209,7 +209,7 @@ interface PropertyIteratorEntry<T = unknown> {
  * @returns The old value at the path.
  */
 function replaceValueAtPath(value: any, path: Path, newValue: unknown): unknown {
-    const lastProperty = path[path.length - 1]
+    const lastProperty = path.at(-1)!
     for (const property of path.slice(0, -1)) {
         value = value[property]
     }

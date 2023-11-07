@@ -23,6 +23,7 @@ base64 = "0.13.0"
 sg-syntax = { path = "./crates/sg-syntax" }
 scip-treesitter = { path = "./crates/scip-treesitter" }
 scip-treesitter-languages = { path = "./crates/scip-treesitter-languages" }
+scip-treesitter-cli = { path = "./crates/scip-treesitter-cli" }
 scip-syntax = { path = "./crates/scip-syntax" }
 # March 20, 2023 - Pinned explicitly with features that match the features
 # required by rocket. Once bazel rules correctly roll up all the features,
@@ -45,11 +46,13 @@ members = [
     "crates/scip-syntax",
     "crates/scip-treesitter",
     "crates/scip-treesitter-languages",
+    "crates/scip-treesitter-cli",
 ]
 
 [workspace.dependencies]
 anyhow = "1"
-clap = { version = "4.1.11", features = [ "derive" ] }
+# "cargo" feature is enabled for using the `crate_version` macro
+clap = { version = "4.1.11", features = [ "derive", "cargo"] }
 itertools = "0.10.5"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 # See https://stackoverflow.com/questions/76905691/bazel-unable-to-build-external-rust-dependency-with-feature-serde1
@@ -60,8 +63,7 @@ syntect = { git = "https://github.com/sourcegraph/syntect", rev = "7e02c5b4085e6
 tree-sitter = "0.20.9"
 tree-sitter-highlight = "0.20.1"
 
-# Since there is no version tag, we pin the dependency to a specific revision
-scip = { git = "https://github.com/sourcegraph/scip", rev="1bf111e1cf175569970e95566b379fb2a548d70a" }
+scip = "0.3.2"
 protobuf = "3"
 
 

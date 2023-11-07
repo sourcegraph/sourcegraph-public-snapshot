@@ -1,3 +1,5 @@
+import { describe, expect, it, test } from '@jest/globals'
+
 import { lprToSelectionsZeroIndexed, encodeURIPathComponent, appendLineRangeQueryParameter } from './url'
 
 /**

@@ -3,7 +3,6 @@ package ci
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -57,9 +56,7 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
 			clientChromaticTests(opts),
-			addWebAppEnterpriseBuild(opts),
 			addJetBrainsUnitTests, // ~2.5m
-			addVsceTests,          // ~3.0m
 			addStylelint,
 		)
 		ops.Merge(clientChecks)
@@ -107,84 +104,16 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	}
 }
 
-// Adds the terraform scanner step.  This executes very quickly ~6s
-// func addTerraformScan(pipeline *bk.Pipeline) {
-//	pipeline.AddStep(":lock: Checkov Terraform scanning",
-//		bk.Cmd("dev/ci/ci-checkov.sh"),
-//		bk.SoftFail(222))
-// }
-
-// Adds Typescript check.
-func addTypescriptCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":typescript: Build TS",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh build-ts"))
-}
-
 func addStylelint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
-func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Webapp tests
-		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
-			withPnpmCache(),
-			bk.AnnotatedCmd("dev/ci/pnpm-test.sh client/web", bk.AnnotatedCmdOpts{
-				TestReports: &bk.TestReportOpts{
-					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-				},
-			}),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-	}
-}
-
-// Webapp enterprise build
-func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		commit := os.Getenv("BUILDKITE_COMMIT")
-
-		cmds := []bk.StepOpt{
-			withPnpmCache(),
-			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("CHECK_BUNDLESIZE", "1"),
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS", "true"),
-		}
-
-		if opts.CacheBundleSize {
-			cmds = append(cmds, withBundleSizeCache(commit))
-		}
-
-		if opts.CreateBundleSizeDiff {
-			cmds = append(cmds, bk.Cmd("pnpm --filter @sourcegraph/web run report-bundle-diff"))
-		}
-
-		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
-	}
-}
-
 var browsers = []string{"chrome"}
 
 func getParallelTestCount(webParallelTestCount int) int {
 	return webParallelTestCount + len(browsers)
-}
-
-// Builds and tests the VS Code extensions.
-func addVsceTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode: Tests for VS Code extension",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
-		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
-		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
-		// bk.AutomaticRetry(1),
-	)
 }
 
 func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
@@ -203,9 +132,7 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
 				bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 				bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
-				bk.Cmd("pnpm run cover-browser-integration"),
-				bk.Cmd("pnpm nyc report -r json"),
-				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.Cmd("pnpm run test-browser-integration"),
 				bk.ArtifactPaths("./puppeteer/*.png"),
 			)
 		}
@@ -232,17 +159,6 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 	}
 }
 
-func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::chrome: Test (client/browser)",
-		withPnpmCache(),
-		bk.AnnotatedCmd("dev/ci/pnpm-test.sh client/browser", bk.AnnotatedCmdOpts{
-			TestReports: &bk.TestReportOpts{
-				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-}
-
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":java: Build (client/jetbrains)",
 		withPnpmCache(),
@@ -252,55 +168,13 @@ func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	)
 }
 
-func clientIntegrationTests(pipeline *bk.Pipeline) {
-	chunkSize := 2
-	prepStepKey := "puppeteer:prep"
-	// TODO check with Valery about this. Because we're running stateless agents,
-	// this runs on a fresh instance and the hooks are not present at all, which
-	// breaks the step.
-	// skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
-
-	// Build web application used for integration tests to share it between multiple parallel steps.
-	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
-		withPnpmCache(),
-		bk.Key(prepStepKey),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("INTEGRATION_TESTS", "true"),
-		bk.Env("COVERAGE_INSTRUMENT", "true"),
-		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
-		bk.Cmd("dev/ci/create-client-artifact.sh"))
-
-	// Chunk web integration tests to save time via parallel execution.
-	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
-	chunkCount := len(chunkedTestFiles)
-	parallelTestCount := getParallelTestCount(chunkCount)
-
-	addBrowserExtensionIntegrationTests(chunkCount)(pipeline)
-
-	// Add pipeline step for each chunk of web integrations files.
-	for i, chunkTestFiles := range chunkedTestFiles {
-		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
-
-		pipeline.AddStep(stepLabel,
-			withPnpmCache(),
-			bk.DependsOn(prepStepKey),
-			bk.DisableManualRetry("The Percy build is not finalized if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
-			bk.Env("PERCY_ON", "true"),
-			// If PERCY_PARALLEL_TOTAL is set, the API will wait for that many finalized builds to finalize the Percy build.
-			// https://docs.percy.io/docs/parallel-test-suites#how-it-works
-			bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(parallelTestCount)),
-			bk.Cmd(fmt.Sprintf(`dev/ci/pnpm-web-integration.sh "%s"`, chunkTestFiles)),
-			bk.ArtifactPaths("./puppeteer/*.png"))
-	}
-}
-
 func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
 			withPnpmCache(),
 			bk.AutomaticRetry(3),
 			bk.Cmd("./dev/ci/pnpm-install-with-retry.sh"),
-			bk.Cmd("pnpm gulp generate"),
+			bk.Cmd("pnpm run generate"),
 			bk.Env("MINIFY", "1"),
 		}
 
@@ -318,19 +192,6 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
 			append(stepOpts, bk.Cmd(chromaticCommand))...)
 	}
-}
-
-// Adds the frontend tests (without the web app and browser extension tests).
-func frontendTests(pipeline *bk.Pipeline) {
-	// Shared tests
-	pipeline.AddStep(":jest: Test (all)",
-		withPnpmCache(),
-		bk.AnnotatedCmd("dev/ci/pnpm-test.sh --testPathIgnorePatterns client/web client/browser", bk.AnnotatedCmdOpts{
-			TestReports: &bk.TestReportOpts{
-				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -376,30 +237,9 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/browser release:npm"))
 }
 
-// Release the VS Code extension.
-func addVsceReleaseSteps(pipeline *bk.Pipeline) {
-	// Publish extension to the VS Code Marketplace
-	pipeline.AddStep(":vscode: Extension release",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
-}
-
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
-}
-
-// Trigger the async pipeline to run. See pipeline.async.yaml.
-func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":snail: Trigger async", "sourcegraph-async",
-			bk.Key("trigger:async"),
-			bk.Async(true),
-			bk.Build(buildOptions),
-		)
-	}
 }
 
 func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {
@@ -477,153 +317,10 @@ func executorsE2E(candidateTag string) operations.Operation {
 	}
 }
 
-func serverQA(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::chromium: Sourcegraph QA",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("DISPLAY", ":99"),
-			bk.Env("LOG_STATUS_MESSAGES", "true"),
-			bk.Env("NO_CLEANUP", "false"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.AnnotatedCmd("dev/ci/integration/qa/run.sh", bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-			}),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
-	}
-}
-
-func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
-			// Run tests against the candidate server image
-			bk.DependsOn("bazel-push-images-candidate"),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-			bk.Env("DISPLAY", ":99"),
-			bk.Env("LOG_STATUS_MESSAGES", "true"),
-			bk.Env("NO_CLEANUP", "false"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/upgrade/run.sh"),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
-	}
-}
-
-func clusterQA(candidateTag string) operations.Operation {
-	var dependencies []bk.StepOpt
-	for _, image := range images.DeploySourcegraphDockerImages {
-		dependencies = append(dependencies, bk.DependsOn(candidateImageStepKey(image)))
-	}
-	return func(p *bk.Pipeline) {
-		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA", append(dependencies,
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
-			bk.Env("NO_CLEANUP", "false"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
-		)...)
-	}
-}
-
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.
 func candidateImageStepKey(app string) string {
 	return strings.ReplaceAll(app, ".", "-") + ":candidate"
-}
-
-// Build a candidate docker image that will re-tagged with the final
-// tags once the e2e tests pass.
-//
-// Version is the actual version of the code, and
-func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		image := strings.ReplaceAll(app, "/", "-")
-		localImage := "sourcegraph/" + image + ":" + version
-
-		cmds := []bk.StepOpt{
-			bk.Key(candidateImageStepKey(app)),
-			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
-			bk.Env("DOCKER_BUILDKIT", "1"),
-			bk.Env("IMAGE", localImage),
-			bk.Env("VERSION", version),
-		}
-
-		// Add Sentry environment variables if we are building off main branch
-		// to enable building the webapp with source maps enabled
-		if uploadSourcemaps {
-			cmds = append(cmds,
-				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-				bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
-			)
-		}
-
-		// Allow all build scripts to emit info annotations
-		buildAnnotationOptions := bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{
-				Type:         bk.AnnotationTypeInfo,
-				IncludeNames: true,
-			},
-		}
-
-		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
-			// Building Docker image located under $REPO_ROOT/docker-images/
-			cmds = append(cmds,
-				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
-				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
-		} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
-			// Building Docker image located under $REPO_ROOT/client/
-			cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
-		} else {
-			// Building Docker images located under $REPO_ROOT/cmd/
-			cmdDir := func() string {
-				folder := app
-				if app == "blobstore2" {
-					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
-					// under the same name.
-					// https://github.com/sourcegraph/sourcegraph/issues/45594
-					// TODO(blobstore): remove this when making Go blobstore the default
-					folder = "blobstore"
-				}
-
-				return "cmd/" + folder
-			}()
-			preBuildScript := cmdDir + "/pre-build.sh"
-			if _, err := os.Stat(preBuildScript); err == nil {
-				// Allow all
-				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
-			}
-			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
-		}
-
-		devImage := images.DevRegistryImage(app, tag)
-		cmds = append(cmds,
-			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
-			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
-			// Retry in case of flakes when pushing
-			bk.AutomaticRetryStatus(3, 10),
-			// Retry in case of flakes when pushing
-			bk.AutomaticRetryStatus(3, 222),
-		)
-		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
-	}
 }
 
 // Run a Sonarcloud scanning step in Buildkite

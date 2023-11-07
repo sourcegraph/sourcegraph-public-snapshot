@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from '@jest/globals'
+
 import { asyncGeneratorFromPromise, concat, observableFromAsyncIterator } from './ix'
 
 describe('observableFromAsyncIterator', () => {

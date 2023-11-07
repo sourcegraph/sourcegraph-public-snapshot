@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ExternalServiceKind } from '../../graphql-operations'

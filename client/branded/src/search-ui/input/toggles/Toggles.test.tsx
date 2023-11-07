@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { screen } from '@testing-library/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'

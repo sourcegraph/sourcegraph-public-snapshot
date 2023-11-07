@@ -18,8 +18,8 @@ NON_BUNDLED = [
     # UMD modules
     "jsonc-parser",
 
-    # Dependencies with bundling issues
-    "@sourcegraph/build-config",
+    # Used by require.resolve
+    "axe-core",
 ]
 
 # ... some of which are needed at runtime
@@ -28,7 +28,6 @@ NON_BUNDLED_DEPS = [
     "//:node_modules/puppeteer",
     "//:node_modules/@axe-core/puppeteer",
     "//:node_modules/axe-core",
-    "//client/web:node_modules/@sourcegraph/build-config",
 ]
 
 def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_enabled = False, **kwargs):
@@ -91,7 +90,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         "INTEGRATION_TESTS": "true",
 
         # Puppeteer config
-        "DISPLAY": ":99",
+        "DISPLAY": "$(DISPLAY)",
     })
 
     if is_percy_enabled:

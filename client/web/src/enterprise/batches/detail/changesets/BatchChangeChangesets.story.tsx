@@ -52,11 +52,12 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
     switch (externalChangeset) {
         case 'somechangesetCLOSED':
         case 'somechangesetMERGED':
-        case 'somechangesetDELETED':
+        case 'somechangesetDELETED': {
             return of({
                 diff: null,
             })
-        default:
+        }
+        default: {
             return of({
                 diff: {
                     __typename: 'PreviewRepositoryComparison',
@@ -70,6 +71,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
                     },
                 },
             })
+        }
     }
 }
 

@@ -18,12 +18,10 @@ var clientRootFiles = []string{
 	"jest.config.base.js",
 	"jest.config.js",
 	"postcss.config.js",
-	"tsconfig.all.json",
+	"tsconfig.base.json",
 	"tsconfig.json",
-	"babel.config.js",
 	".percy.yml",
 	".eslintrc.js",
-	"gulpfile.js",
 }
 
 func isRootClientFile(p string) bool {

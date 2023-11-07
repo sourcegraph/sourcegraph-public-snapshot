@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 )
 
 var (
@@ -32,6 +34,12 @@ var (
 		Feature:   "Feature",
 		Action:    "Action",
 		Timestamp: timestamppb.New(must(time.Parse(time.RFC3339, "2023-02-24T14:48:30Z"))),
+		Interaction: &telemetrygatewayv1.EventInteraction{
+			TraceId: func() *string {
+				tid, _ := (tracetest.StaticTraceIDGenerator{}).NewIDs(context.Background())
+				return pointers.Ptr(tid.String())
+			}(),
+		},
 		Source: &telemetrygatewayv1.EventSource{
 			Server: &telemetrygatewayv1.EventSource_Server{
 				Version: "dev",

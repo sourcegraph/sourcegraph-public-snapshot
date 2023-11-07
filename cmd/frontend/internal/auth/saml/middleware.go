@@ -181,7 +181,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 
 			// Add a ?signup= or ?signin= parameter to the redirect URL.
-			redirectURL := auth.AddPostAuthRedirectParametersToString(relayState.ReturnToURL, newUserCreated)
+			redirectURL := auth.AddPostAuthRedirectParametersToString(relayState.ReturnToURL, newUserCreated, "SAML")
 
 			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.
 			http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)

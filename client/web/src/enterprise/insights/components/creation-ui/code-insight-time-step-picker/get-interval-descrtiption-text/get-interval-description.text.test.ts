@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals'
+
 import { formatDuration } from './get-interval-description-text'
 
 describe('formatDuration should work properly ', () => {

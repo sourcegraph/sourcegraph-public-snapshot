@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it } from '@jest/globals'
 import { cleanup, within, fireEvent } from '@testing-library/react'
 
 import type { RevisionsProps } from '@sourcegraph/branded'

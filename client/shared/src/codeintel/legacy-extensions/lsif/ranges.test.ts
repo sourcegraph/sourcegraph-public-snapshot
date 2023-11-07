@@ -1,5 +1,6 @@
 import * as assert from 'assert'
 
+import { describe, it } from '@jest/globals'
 import * as sinon from 'sinon'
 
 import * as scip from '../../scip'

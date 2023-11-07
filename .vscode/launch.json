@@ -97,19 +97,6 @@
       "smartStep": false
     },
     {
-      "type": "node",
-      "request": "launch",
-      "name": "Gulp",
-      "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
-      "args": ["webpack"],
-      "env": {
-        // prettier-ignore
-        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
-      },
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
       "name": "Webapp Chrome",
       "type": "chrome",
       "request": "attach",

@@ -17,21 +17,6 @@
     user-select: none;
 }
 
-.recency {
-    // We need to overlap the border-top
-    top: -1px;
-    position: relative;
-    // Using 1px for a hairline border
-    // stylelint-disable-next-line declaration-property-unit-allowed-list
-    height: calc(100% + 1px);
-    flex: 0 0 var(--blame-recency-width);
-}
-
-.recency-first-in-hunk {
-    height: calc(100%) !important;
-    top: 0 !important;
-}
-
 .popover {
     &-trigger {
         display: inline-flex;

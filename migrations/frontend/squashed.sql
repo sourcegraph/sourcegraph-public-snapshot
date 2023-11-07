@@ -176,6 +176,24 @@ CREATE FUNCTION delete_user_repo_permissions_on_user_soft_delete() RETURNS trigg
   END
 $$;
 
+CREATE FUNCTION extract_topics_from_metadata(external_service_type text, metadata jsonb) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN CASE external_service_type
+    WHEN 'github' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))
+    WHEN 'gitlab' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata->'topics'))
+    ELSE
+        '{}'::text[]
+    END;
+EXCEPTION WHEN others THEN
+    -- Catch exceptions in the case that metadata is not shaped like we expect
+    RETURN '{}'::text[];
+END;
+$_$;
+
 CREATE FUNCTION func_configuration_policies_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1294,7 +1312,7 @@ CREATE TABLE repo (
     id integer NOT NULL,
     name citext NOT NULL,
     description text,
-    fork boolean,
+    fork boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone,
     external_id text,
@@ -1307,6 +1325,7 @@ CREATE TABLE repo (
     private boolean DEFAULT false NOT NULL,
     stars integer DEFAULT 0 NOT NULL,
     blocked jsonb,
+    topics text[] GENERATED ALWAYS AS (extract_topics_from_metadata(external_service_type, metadata)) STORED,
     CONSTRAINT check_name_nonempty CHECK ((name OPERATOR(<>) ''::citext)),
     CONSTRAINT repo_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
 );
@@ -4200,6 +4219,7 @@ CREATE TABLE users (
     completions_quota integer,
     code_completions_quota integer,
     completed_post_signup boolean DEFAULT false NOT NULL,
+    cody_pro_enabled_at timestamp with time zone,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
@@ -6074,13 +6094,7 @@ CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING 
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 
-CREATE INDEX idx_repo_github_topics ON repo USING gin ((((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text))) WHERE (external_service_type = 'github'::text);
-
-COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos by topic. Intended to be used when TopicFilters are added to the RepoListOptions';
-
-CREATE INDEX idx_repo_gitlab_topics ON repo USING gin (((metadata -> 'topics'::text))) WHERE (external_service_type = 'gitlab'::text);
-
-COMMENT ON INDEX idx_repo_gitlab_topics IS 'An index to speed up listing repos by gitlab topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+CREATE INDEX idx_repo_topics ON repo USING gin (topics);
 
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 

@@ -141,6 +141,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Security policy](https://about.sourcegraph.com/security/)
 - [How to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
 - [CSRF security model](security/csrf_security_model.md)
+- [Sourcegraph secret formats](security/secret_formats.md)
 
 ### Testing
 

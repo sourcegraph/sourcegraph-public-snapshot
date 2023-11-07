@@ -35,16 +35,21 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
         const searchProps: SimpleSearchProps = { ...props, onSubmit: onSubmitWithTelemetry }
 
         switch (showState) {
-            case 'default':
+            case 'default': {
                 return <SearchPicker setShowState={changeState} />
-            case 'code':
+            }
+            case 'code': {
                 return <CodeSearchSimpleSearch {...searchProps} />
-            case 'repo':
+            }
+            case 'repo': {
                 return <RepoSearchSimpleSearch {...searchProps} />
-            case 'changes':
+            }
+            case 'changes': {
                 return <FindChangesSimpleSearch {...searchProps} />
-            default:
+            }
+            default: {
                 return <SearchPicker setShowState={changeState} />
+            }
         }
     }
 

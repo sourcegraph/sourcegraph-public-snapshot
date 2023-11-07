@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 )
 
 func main() {

@@ -1,5 +1,5 @@
 import { AGGREGATE_ERROR_NAME } from './constants'
-import type { AggregateError, ErrorLike } from './types'
+import type { ErrorLike } from './types'
 import { isErrorLike } from './utils'
 
 /**
@@ -16,12 +16,6 @@ export const asError = (value: unknown): Error => {
     }
     return new Error(String(value))
 }
-
-/**
- * A type guard checking whether the given value is an {@link AggregateError}
- */
-export const isAggregateError = (value: unknown): value is AggregateError =>
-    isErrorLike(value) && value.name === AGGREGATE_ERROR_NAME
 
 /**
  * DEPRECATED: use dataOrThrowErrors instead

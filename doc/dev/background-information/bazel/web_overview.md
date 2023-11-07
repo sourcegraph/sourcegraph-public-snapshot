@@ -38,7 +38,7 @@ enabling smooth resolution of dependencies.
 
 Basically, any bazel rule-sets (in our example `rules_js`) serve as entry points/targets for bazel build, in order
 to create an internal build-graph and by this to establish a right cache and output generation. You can think about 
-this as entry points in bundlers world like webpack or esbuild (but of course rules in bazel can be more complex 
+this as entry points in bundlers world like esbuild (but of course rules in bazel can be more complex
 rather just entry points, it could be macros, custom rules with some additional effect, etc).
 
 This approach comes with several benefits, like solving TypeScript's `rootDirs` issue. However, it does require 
@@ -366,7 +366,7 @@ mocha_test(
     timeout = "moderate",
     data = ["//client/web:app"],
     env = {
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle)",
     },
     is_percy_enabled = True,
     tags = [

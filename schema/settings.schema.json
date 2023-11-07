@@ -194,7 +194,7 @@
           "description": "Specify which version of the search query input to use",
           "type": "string",
           "default": "v1",
-          "enum": ["v1", "experimental"],
+          "enum": ["v1", "v2"],
           "!go": {
             "pointer": true
           }

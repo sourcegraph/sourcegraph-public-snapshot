@@ -356,11 +356,11 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
         }
     }
     let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
-    if (typeof line === 'undefined' || (typeof endLine !== 'undefined' && typeof character !== typeof endCharacter)) {
+    if (line === undefined || (endLine !== undefined && typeof character !== typeof endCharacter)) {
         lpr = {}
-    } else if (typeof character === 'undefined') {
-        lpr = typeof endLine === 'undefined' ? { line } : { line, endLine }
-    } else if (typeof endLine === 'undefined' || typeof endCharacter === 'undefined') {
+    } else if (character === undefined) {
+        lpr = endLine === undefined ? { line } : { line, endLine }
+    } else if (endLine === undefined || endCharacter === undefined) {
         lpr = { line, character }
     } else {
         lpr = { line, character, endLine, endCharacter }
@@ -406,7 +406,7 @@ function parseLineOrPosition(
     }
     line = typeof line === 'number' && isNaN(line) ? undefined : line
     character = typeof character === 'number' && isNaN(character) ? undefined : character
-    if (typeof line === 'undefined') {
+    if (line === undefined) {
         return { line: undefined, character: undefined }
     }
     return { line, character }
@@ -556,11 +556,12 @@ export function buildSearchURLQuery(
 
     searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
-    return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
+    return searchParameters.toString().replaceAll('%2F', '/').replaceAll('%3A', ':')
 }
 
 /**
  * Takes an input URL and adds Cody App specific query parameters to it. This includes the UTM parameters and app_os.
+ *
  * @param url Original URL
  * @param campaign Optional utm_campaign value to add to the query params.
  * @returns URL string with appended query parameters

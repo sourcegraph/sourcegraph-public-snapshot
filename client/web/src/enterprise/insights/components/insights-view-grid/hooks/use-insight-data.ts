@@ -29,7 +29,6 @@ export function useInsightData<D>(
 
     useEffect(() => {
         if (hasIntersected) {
-            // eslint-disable-next-line @typescript-eslint/unbound-method
             const { unsubscribe } = query(request)
 
             return unsubscribe

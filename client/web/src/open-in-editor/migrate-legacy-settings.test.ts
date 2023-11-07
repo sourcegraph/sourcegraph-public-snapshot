@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals'
+
 import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import type { EditorSettings } from './editor-settings'

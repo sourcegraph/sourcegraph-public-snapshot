@@ -46,7 +46,7 @@ const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     iconClassName: 'aui-icon',
 }
 
-export const BitbucketStyles: Story = (props = {}) => (
+export const BitbucketStyles: StoryFn = (props = {}) => (
     <BrowserRouter>
         <HoverOverlay
             {...commonProps()}

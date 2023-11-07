@@ -479,7 +479,7 @@ function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string |
     }
     let currentElement: ParentNode | null = element
     const selectorsExceptLast = selectors.slice(0, -1)
-    const lastSelector = selectors[selectors.length - 1]
+    const lastSelector = selectors.at(-1)!
     for (const selector of selectorsExceptLast) {
         if (!currentElement) {
             return null

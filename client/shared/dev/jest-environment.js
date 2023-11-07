@@ -13,13 +13,13 @@ module.exports = class TestEnvironmentGlobal extends TestEnvironment {
     // This does not implement href and target, which is impossible without mofifying JSDOM.
     global.SVGAElement = class SVGAElement extends global.SVGGraphicsElement {}
 
-    if (typeof this.global.TextEncoder === 'undefined') {
+    if (this.global.TextEncoder === undefined) {
       // Polyfill is required until the issue below is resolved:
       // https://github.com/facebook/jest/issues/9983
       this.global.TextEncoder = TextEncoder
     }
 
-    if (typeof this.global.crypto === 'undefined') {
+    if (this.global.crypto === undefined) {
       // A separate polyfill is required until `crypto` is included into `jsdom`:
       // https://github.com/jsdom/jsdom/issues/1612
       this.global.crypto = new Crypto()
@@ -27,7 +27,7 @@ module.exports = class TestEnvironmentGlobal extends TestEnvironment {
 
     // jsdom doesn't support document.queryCommandSupported(), needed for monaco-editor.
     // https://github.com/testing-library/react-testing-library/issues/546
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+
     this.dom.window.document.queryCommandSupported = () => false
 
     this.global.jsdom = this.dom

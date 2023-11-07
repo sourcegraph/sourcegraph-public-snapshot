@@ -107,7 +107,8 @@ func init() {
 								Disabled: pointers.Ptr(true),
 							},
 							Env: map[string]string{
-								"SRC_LOG_LEVEL": "info",
+								"SRC_LOG_LEVEL":  "info",
+								"SRC_LOG_FORMAT": "json_gcp",
 							},
 						},
 					},

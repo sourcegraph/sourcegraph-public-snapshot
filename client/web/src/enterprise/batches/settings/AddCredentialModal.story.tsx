@@ -26,7 +26,7 @@ const config: Meta = {
 
 export default config
 
-export const RequiresSSHstep1: Story = args => (
+export const RequiresSSHstep1: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -78,7 +78,7 @@ RequiresSSHstep1.args = {
 
 RequiresSSHstep1.storyName = 'Requires SSH - step 1'
 
-export const RequiresSSHstep2: Story = args => (
+export const RequiresSSHstep2: StoryFn = args => (
     <WebStory>
         {props => (
             <AddCredentialModal

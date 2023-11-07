@@ -1,4 +1,5 @@
 import type { Completion } from '@codemirror/autocomplete'
+import { describe, expect, test } from '@jest/globals'
 
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { POPULAR_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
@@ -333,7 +334,7 @@ describe('codmirror completions', () => {
     test('inserts file: prefix for global suggestions', async () => {
         const query = 'repo:x local'
         const tokens = getTokens(query)
-        const lastToken = tokens[tokens.length - 1]
+        const lastToken = tokens.at(-1)!
         expect(
             (
                 await getCompletionItems(

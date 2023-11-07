@@ -64,13 +64,6 @@
         @media (--md-breakpoint-down) {
             padding: 3rem;
         }
-
-        &:hover {
-            animation: fadeIn 1s ease-in-out;
-            background: #612590;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 0.5rem;
-        }
     }
 }
 

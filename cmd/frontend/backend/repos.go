@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -38,7 +37,6 @@ type ReposService interface {
 	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
 	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
 	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
 }
 
 // NewRepos uses the provided `database.DB` to initialize a new RepoService.
@@ -339,19 +337,6 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	defer done()
 
 	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
-}
-
-func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
-	ctx, done := startTrace(ctx, "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
-	defer done()
-
-	s.logger.Debug("GetCommit", log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))
-
-	if !gitdomain.IsAbsoluteRevision(string(commitID)) {
-		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
-	}
-
-	return s.gitserverClient.GetCommit(ctx, repo.Name, commitID, gitserver.ResolveRevisionOptions{})
 }
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph

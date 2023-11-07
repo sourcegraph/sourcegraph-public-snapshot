@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { isErrorLike } from '../errors'
 
 import { modify, parseJSONCOrError } from './jsonc'

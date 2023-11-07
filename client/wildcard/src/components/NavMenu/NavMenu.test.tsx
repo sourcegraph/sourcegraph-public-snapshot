@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 

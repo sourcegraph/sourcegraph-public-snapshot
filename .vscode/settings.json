@@ -6,7 +6,6 @@
     "ui/assets/": true,
     "ui/assets/*.go": false,
     "client/browser/build": true,
-    "**/coverage": true,
     "**/out": true,
     "**/__fixtures__/**": true,
     "**/.cache": true,
@@ -39,8 +38,6 @@
     "local": "github.com/sourcegraph/sourcegraph"
   },
   "jest.jestCommandLine": "pnpm run test",
-  "jest.showCoverageOnLoad": false,
-  "gulp.autoDetect": "off",
   "npm.packageManager": "pnpm",
   "npm.runSilent": true,
   "typescript.preferences.quoteStyle": "single",

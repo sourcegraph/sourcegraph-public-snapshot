@@ -2,6 +2,7 @@
 import type { ReactElement } from 'react'
 
 import type { MockedResponse } from '@apollo/client/testing'
+import { beforeAll, describe, expect, it, jest } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
@@ -19,7 +20,7 @@ import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRoo
 
 function mockRouterDom() {
     return {
-        ...jest.requireActual('react-router-dom'),
+        ...jest.requireActual<typeof import('react-router-dom')>('react-router-dom'),
         useNavigate: () => ({
             push: jest.fn(),
         }),

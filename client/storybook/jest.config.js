@@ -6,7 +6,6 @@ const exportedConfig = {
   ...config,
   displayName: 'storybooks',
   rootDir: __dirname,
-  collectCoverage: false, // Collected through Puppeteer
   roots: ['<rootDir>'],
   verbose: true,
 }

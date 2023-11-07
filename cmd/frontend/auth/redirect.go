@@ -25,21 +25,21 @@ func SafeRedirectURL(urlStr string) string {
 }
 
 // Add a ?signup= or ?signin= parameter to a redirect URL.
-func AddPostAuthRedirectParametersToURL(u *url.URL, newUserCreated bool) {
+func AddPostAuthRedirectParametersToURL(u *url.URL, newUserCreated bool, serviceType string) {
 	q := u.Query()
 	if newUserCreated {
-		q.Add("signup", "")
+		q.Add("signup", serviceType)
 	} else {
-		q.Add("signin", "")
+		q.Add("signin", serviceType)
 	}
 	u.RawQuery = q.Encode()
 }
 
-func AddPostAuthRedirectParametersToString(urlStr string, newUserCreated bool) string {
+func AddPostAuthRedirectParametersToString(urlStr string, newUserCreated bool, serviceType string) string {
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return urlStr
 	}
-	AddPostAuthRedirectParametersToURL(u, newUserCreated)
+	AddPostAuthRedirectParametersToURL(u, newUserCreated, serviceType)
 	return u.String()
 }

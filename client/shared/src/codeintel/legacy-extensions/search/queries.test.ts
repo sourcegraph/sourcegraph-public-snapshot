@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from '@jest/globals'
+
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 
 import type * as sourcegraph from '../api'

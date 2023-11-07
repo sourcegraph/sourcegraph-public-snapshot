@@ -469,9 +469,10 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		require.NoError(t, err)
 
 		provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
-			BaseURL: uri,
-			DB:      testDB,
-			CLI:     doer,
+			BaseURL:                     uri,
+			DB:                          testDB,
+			CLI:                         doer,
+			SyncInternalRepoPermissions: true,
 		})
 
 		authz.SetProviders(false, []authz.Provider{provider})

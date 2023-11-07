@@ -155,7 +155,7 @@ export function collapseOpenFilterValues(tokens: Token[], input: string): Token[
             // For simplicity but this should never occure
             return filter
         }
-        const end = values[values.length - 1]?.range.end ?? filter.value.range.end
+        const end = values.at(-1)?.range.end ?? filter.value.range.end
         return {
             ...filter,
             range: {
@@ -176,7 +176,7 @@ export function collapseOpenFilterValues(tokens: Token[], input: string): Token[
 
     for (const token of tokens) {
         switch (token.type) {
-            case 'filter':
+            case 'filter': {
                 {
                     if (token.value?.value.startsWith('"') && !token.value.quoted) {
                         openFilter = token
@@ -190,21 +190,24 @@ export function collapseOpenFilterValues(tokens: Token[], input: string): Token[
                     }
                 }
                 break
+            }
             case 'pattern':
-            case 'whitespace':
+            case 'whitespace': {
                 if (openFilter) {
                     hold.push(token)
                 } else {
                     result.push(token)
                 }
                 break
-            default:
+            }
+            default: {
                 if (openFilter?.value) {
                     result.push(mergeFilter(openFilter, hold))
                     openFilter = null
                     hold = []
                 }
                 result.push(token)
+            }
         }
     }
 

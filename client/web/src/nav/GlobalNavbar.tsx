@@ -37,7 +37,7 @@ import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
-import { useNavbarQueryState } from '../stores'
+import { useDeveloperSettings, useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName, EventLocation } from '../util/constants'
 
@@ -75,7 +75,6 @@ export interface GlobalNavbarProps
 
 /**
  * Calculates NavLink variant based whether current content fits into container or not.
- *
  * @param containerReference a reference to navbar container
  */
 function useCalculatedNavLinkVariant(
@@ -122,7 +121,7 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<GlobalNavbarProps>> = ({
     showSearchBox,
-    branding,
+    branding = window.context?.branding,
     isSourcegraphDotCom,
     isCodyApp,
     isRepositoryRelatedPage,
@@ -134,9 +133,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showFeedbackModal,
     ...props
 }) => {
-    // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
-    branding = branding ?? window.context?.branding
-
     const location = useLocation()
 
     const routeMatch = useRoutesMatch(props.routes)
@@ -196,6 +192,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
     const isLightTheme = useIsLightTheme()
+
+    const developerMode = useDeveloperSettings(settings => settings.enabled) || process.env.NODE_ENV === 'development'
 
     return (
         <>
@@ -298,7 +296,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
-                    {process.env.NODE_ENV === 'development' && <DeveloperSettingsGlobalNavItem />}
+                    {developerMode && <DeveloperSettingsGlobalNavItem />}
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (

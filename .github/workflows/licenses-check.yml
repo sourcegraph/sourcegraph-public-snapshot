@@ -5,11 +5,17 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # set up correct version of node
+      - name: Setup Node
+        id: node-setup
+        run: echo "NODE_VERSION=20.8.1" >> ${GITHUB_OUTPUT}
+      - uses: actions/setup-node@v2
+        with: { node-version: "${{ steps.node-setup.outputs.NODE_VERSION }}" }
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
         id: pnpm-install
         with:
-          version: 8.3.0
+          version: 8.9.2
           run_install: false
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -25,16 +31,10 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.1.3" # Not needed with a .ruby-version file   - uses: actions/setup-ruby@v1
+          ruby-version: "3.2.2" # Not needed with a .ruby-version file   - uses: actions/setup-ruby@v1
       - uses: actions/setup-go@v2
-        with: { go-version: "1.19" }
+        with: { go-version: "1.20" }
 
-      # set up correct version of node
-      - name: Setup Node
-        id: node-setup
-        run: echo "NODE_VERSION=18.17.1" >> ${GITHUB_OUTPUT}
-      - uses: actions/setup-node@v2
-        with: { node-version: "${{ steps.node-setup.outputs.NODE_VERSION }}" }
 
       - name: Install license_finder
         run: gem install license_finder:7.1.0 # sync with licenses-update.yml

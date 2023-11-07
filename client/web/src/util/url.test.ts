@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 
 import { parseBrowserRepoURL, toTreeURL } from './url'

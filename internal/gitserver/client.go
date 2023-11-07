@@ -88,10 +88,12 @@ type ClientSource interface {
 }
 
 // NewClient returns a new gitserver.Client.
-func NewClient() Client {
+// See Client.Scoped() for info on scoped clients.
+func NewClient(scope string) Client {
 	logger := sglog.Scoped("GitserverClient")
 	return &clientImplementor{
 		logger:      logger,
+		scope:       scope,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -112,6 +114,7 @@ func NewTestClient(t testing.TB) TestClient {
 		logger:      logger,
 		httpClient:  http.DefaultClient,
 		HTTPLimiter: limiter.New(500),
+		scope:       fmt.Sprintf("gitserver.test.%s", t.Name()),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -224,6 +227,9 @@ type clientImplementor struct {
 	// the telemetry in gitserver.
 	userAgent string
 
+	// the current scope of the client.
+	scope string
+
 	// HTTP client to use
 	httpClient httpcli.Doer
 
@@ -239,6 +245,25 @@ type clientImplementor struct {
 	// subRepoPermsChecker is sub-repository permissions checker. This will
 	// usually be authz.DefaultSubRepoPermsChecker, at least until that global is removed.
 	subRepoPermsChecker authz.SubRepoPermissionChecker
+}
+
+func (c *clientImplementor) Scoped(scope string) Client {
+	return &clientImplementor{
+		logger:       c.logger,
+		scope:        appendScope(c.scope, scope),
+		httpClient:   c.httpClient,
+		HTTPLimiter:  c.HTTPLimiter,
+		userAgent:    c.userAgent,
+		operations:   c.operations,
+		clientSource: c.clientSource,
+	}
+}
+
+func appendScope(existing, new string) string {
+	if existing == "" {
+		return new
+	}
+	return existing + "." + new
 }
 
 type RawBatchLogResult struct {
@@ -261,6 +286,18 @@ type CommitLog struct {
 }
 
 type Client interface {
+	// Scoped adds a usage scope to the client and returns a new client with that scope.
+	// Usage scopes should be descriptive and be lowercase plaintext, eg. batches.reconciler.
+	// Scopes should get more specific as they get nested, eg:
+	// batches.reconciler
+	// batches.reconciler.processor
+	// The Scoped method adds a single scope, so for gitserver.NewClient("batches").Scoped("reconciler")
+	// the scope name will be batches.reconciler.
+	// You may also use gitserver.NewClient("batches.reconciler") directly, where
+	// useful.
+	// We use scopes to add context to logs and metrics.
+	Scoped(scope string) Client
+
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(ctx context.Context, repoName api.RepoName) string
 
@@ -494,7 +531,12 @@ type Client interface {
 	PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (*perforce.Changelist, error)
 }
 
-func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error) {
+func (c *clientImplementor) SystemsInfo(ctx context.Context) (_ []protocol.SystemInfo, err error) {
+	ctx, _, endObservation := c.operations.systemsInfo.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+	})
+	defer endObservation(1, observation.Args{})
+
 	addresses := c.clientSource.Addresses()
 
 	wg := pool.NewWithResults[protocol.SystemInfo]().WithErrors().WithContext(ctx)
@@ -518,7 +560,15 @@ func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]protocol.SystemI
 	return wg.Wait()
 }
 
-func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (protocol.SystemInfo, error) {
+func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (_ protocol.SystemInfo, err error) {
+	ctx, _, endObservation := c.operations.systemInfo.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("addr", addr),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	ac := c.clientSource.GetAddressWithClient(addr)
 	if ac == nil {
 		return protocol.SystemInfo{}, errors.Newf("no client for address: %s", addr)
@@ -701,10 +751,13 @@ func (e badRequestError) BadRequest() bool { return true }
 
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
-	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		c.repo.Attr(),
-		attribute.StringSlice("args", c.args[1:]),
-	}})
+	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			c.repo.Attr(),
+			attribute.StringSlice("args", c.args[1:]),
+		},
+	})
 	done := func() {
 		cancel()
 		endObservation(1, observation.Args{})
@@ -872,12 +925,15 @@ func isRevisionNotFound(err string) bool {
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		args.Repo.Attr(),
-		attribute.Stringer("query", args.Query),
-		attribute.Bool("diff", args.IncludeDiff),
-		attribute.Int("limit", args.Limit),
-	}})
+	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			args.Repo.Attr(),
+			attribute.Stringer("query", args.Query),
+			attribute.Bool("diff", args.IncludeDiff),
+			attribute.Int("limit", args.Limit),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	repoName := protocol.NormalizeRepo(args.Repo)
@@ -994,7 +1050,7 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 // to abort processing further results.
 func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
+	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs(), MetricLabelValues: []string{c.scope}})
 	defer endObservation(1, observation.Args{})
 
 	type clientAndError struct {
@@ -1010,6 +1066,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
 		ctx, logger, endObservation := c.operations.batchLogSingle.With(ctx, &err, observation.Args{
+			MetricLabelValues: []string{c.scope},
 			Attrs: []attribute.KeyValue{
 				attribute.String("addr", addr),
 				attribute.Int("numRepos", len(repoNames)),
@@ -1179,10 +1236,20 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 		execer: c,
 		args:   append([]string{git}, arg...),
 		execOp: c.operations.exec,
+		scope:  c.scope,
 	}
 }
 
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (_ *protocol.RepoUpdateResponse, err error) {
+	ctx, _, endObservation := c.operations.requestRepoUpdate.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.Stringer("since", since),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	req := &protocol.RepoUpdateRequest{
 		Repo:  repo,
 		Since: since,
@@ -1225,7 +1292,15 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 }
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
-func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (_ *protocol.RepoCloneResponse, err error) {
+	ctx, _, endObservation := c.operations.requestRepoClone.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
@@ -1272,7 +1347,15 @@ func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoN
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
 var MockIsRepoCloneable func(api.RepoName) error
 
-func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
+func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoName) (err error) {
+	ctx, _, endObservation := c.operations.isRepoCloneable.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if MockIsRepoCloneable != nil {
 		return MockIsRepoCloneable(repo)
 	}
@@ -1352,7 +1435,15 @@ func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("%s (name=%q notfound=%v) because %s", msg, e.repo, e.notFound, e.reason)
 }
 
-func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (_ *protocol.RepoCloneProgressResponse, err error) {
+	ctx, _, endObservation := c.operations.repoCloneProgress.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.Int("repos", len(repos)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	numPossibleShards := len(c.Addrs())
 
 	if conf.IsGRPCEnabled(ctx) {
@@ -1473,7 +1564,15 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	}
 }
 
-func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
+func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err error) {
+	ctx, _, endObservation := c.operations.remove.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance
 	undeletedName := api.UndeletedRepoName(repo)
@@ -1518,7 +1617,12 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 	return nil
 }
 
-func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) error {
+func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) (err error) {
+	ctx, _, endObservation := c.operations.isPerforcePathCloneable.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// depotPath is not actually a repo name, but it will spread the load of isPerforcePathCloneable
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1571,7 +1675,12 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn pr
 	return nil
 }
 
-func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn protocol.PerforceConnectionDetails) error {
+func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn protocol.PerforceConnectionDetails) (err error) {
+	ctx, _, endObservation := c.operations.checkPerforceCredentials.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1622,7 +1731,12 @@ func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn p
 	return nil
 }
 
-func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.PerforceConnectionDetails) ([]*perforce.User, error) {
+func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.PerforceConnectionDetails) (_ []*perforce.User, err error) {
+	ctx, _, endObservation := c.operations.perforceUsers.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1686,7 +1800,15 @@ func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.Per
 	return users, nil
 }
 
-func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn protocol.PerforceConnectionDetails, username string) ([]*perforce.Protect, error) {
+func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn protocol.PerforceConnectionDetails, username string) (_ []*perforce.Protect, err error) {
+	ctx, _, endObservation := c.operations.perforceProtectsForUser.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("username", username),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1756,7 +1878,15 @@ func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn pr
 	return protects, nil
 }
 
-func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn protocol.PerforceConnectionDetails, depot string) ([]*perforce.Protect, error) {
+func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn protocol.PerforceConnectionDetails, depot string) (_ []*perforce.Protect, err error) {
+	ctx, _, endObservation := c.operations.perforceProtectsForDepot.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("depot", depot),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1826,7 +1956,15 @@ func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn p
 	return protects, nil
 }
 
-func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error) {
+func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) (_ []string, err error) {
+	ctx, _, endObservation := c.operations.perforceGroupMembers.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("group", group),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1880,7 +2018,12 @@ func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn proto
 	return payload.Usernames, nil
 }
 
-func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) error {
+func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protocol.PerforceConnectionDetails) (err error) {
+	ctx, _, endObservation := c.operations.isPerforceSuperUser.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -1923,7 +2066,15 @@ func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protoc
 	return nil
 }
 
-func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (*perforce.Changelist, error) {
+func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (_ *perforce.Changelist, err error) {
+	ctx, _, endObservation := c.operations.perforceGetChangelist.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("changelist", changelist),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		// p4port is not actually a repo name, but it will spread the load of CheckPerforceCredentials
 		// a bit over the different gitserver instances. It's really just used as a consistent hashing
@@ -2011,11 +2162,14 @@ func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName,
 		return nil, errors.Wrap(err, "do")
 	}
 
-	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repoForTracing.Attr(),
-		attribute.String("method", method),
-		attribute.String("path", parsedURL.Path),
-	}})
+	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repoForTracing.Attr(),
+			attribute.String("method", method),
+			attribute.String("path", parsedURL.Path),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	req, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewReader(payload))
@@ -2037,7 +2191,15 @@ func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName,
 	return c.httpClient.Do(req)
 }
 
-func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
+func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (_ *protocol.CreateCommitFromPatchResponse, err error) {
+	ctx, _, endObservation := c.operations.createCommitFromPatch.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			req.Repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, req.Repo)
 		if err != nil {
@@ -2135,7 +2297,16 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	return &res, nil
 }
 
-func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
+	ctx, _, endObservation := c.operations.getObject.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("name", objectName),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if ClientMocks.GetObject != nil {
 		return ClientMocks.GetObject(repo, objectName)
 	}
@@ -2192,7 +2363,16 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
 
-func (c *clientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
+func (c *clientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) (_ []string, err error) {
+	ctx, _, endObservation := c.operations.resolveRevisions.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.Int("revs", len(revs)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
 
 	cmd := c.gitCommand(repo, args...)

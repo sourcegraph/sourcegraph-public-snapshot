@@ -28,6 +28,7 @@ import {
     Button,
     Code,
     H3,
+    H4,
     Icon,
     Input,
     Label,
@@ -42,11 +43,12 @@ import {
     Text,
     Tooltip,
     Badge,
+    Container,
 } from '@sourcegraph/wildcard'
 
 import { FEATURE_FLAGS, type FeatureFlagName } from '../featureFlags/featureFlags'
 import {
-    getFeatureFlagOverrideValue,
+    getFeatureFlagOverride,
     removeFeatureFlagOverride,
     setFeatureFlagOverride,
 } from '../featureFlags/lib/feature-flag-local-overrides'
@@ -54,12 +56,14 @@ import type { DeveloperSettingsEvaluatedFeatureFlagsResult } from '../graphql-op
 import {
     setDeveloperSettingsFeatureFlags,
     setDeveloperSettingsTemporarySettings,
+    setDeveloperSettingsSearchOptions,
     toggleDevSettingsDialog,
     updateOverrideCounter,
     useDeveloperSettings,
     useOverrideCounter,
 } from '../stores'
 
+import { ReloadButton } from './DeveloperSettingsGlobalNavItem'
 import { EventLoggingDebugToggle } from './settings/eventLoggingDebug'
 
 import styles from './DeveloperDialog.module.scss'
@@ -101,6 +105,7 @@ export const DeveloperDialog: FC<{}> = () => {
                         </Badge>
                     </Tab>
                     <Tab>Misc</Tab>
+                    <Tab>Zoekt</Tab>
                 </TabList>
                 <TabPanels className="overflow-hidden flex-1 min-w-0 d-flex">
                     <TabPanel className={styles.content}>
@@ -115,6 +120,9 @@ export const DeveloperDialog: FC<{}> = () => {
                                 <EventLoggingDebugToggle />
                             </li>
                         </ul>
+                    </TabPanel>
+                    <TabPanel className={styles.content}>
+                        <ZoektSettings />
                     </TabPanel>
                 </TabPanels>
             </Tabs>
@@ -161,8 +169,9 @@ const FeatureFlags: FC<{}> = () => {
     return (
         <>
             <Alert variant="info" className="my-2">
-                Click on the respective "Override value" entry to cycle through enabled, disabled and not set. You might
-                have to reload the page after changing the value.
+                Click on the respective "Override value" entry to cycle through enabled, disabled and not set. If the
+                feature flag is used on the server, reload the page via the reload button to apply them to the intial
+                page load as well.
             </Alert>
             <div className="d-flex align-items-center my-2">
                 <Label className="mb-0" htmlFor="feature-flag-view">
@@ -189,6 +198,9 @@ const FeatureFlags: FC<{}> = () => {
                     onChange={value => setDeveloperSettingsFeatureFlags({ filter: value })}
                     placeholder="Filter feature flags..."
                 />
+                <ReloadButton className="ml-3 flex-1" variant="primary">
+                    Reload
+                </ReloadButton>
             </div>
             <div className="flex-1 overflow-auto min-h-0 mt-2">
                 <table>
@@ -217,26 +229,28 @@ const FeatureFlags: FC<{}> = () => {
 
 const FeatureFlagOverride: FC<{ featureFlag: FeatureFlagName; filter: string; serverValue?: boolean }> = memo(
     ({ featureFlag, filter, serverValue }) => {
-        const [overrideValue, setOverrideValue] = useState(getFeatureFlagOverrideValue(featureFlag))
+        const [overrideValue, setOverrideValue] = useState(getFeatureFlagOverride(featureFlag))
 
         const enabled = overrideValue === true || (overrideValue === null && serverValue)
         const overridden = overrideValue !== null
 
         function onClick(): void {
             switch (overrideValue) {
-                case null:
+                case null: {
                     setFeatureFlagOverride(featureFlag, true)
-                    updateOverrideCounter()
                     break
-                case true:
+                }
+                case true: {
                     setFeatureFlagOverride(featureFlag, false)
                     break
-                case false:
+                }
+                case false: {
                     removeFeatureFlagOverride(featureFlag)
-                    updateOverrideCounter()
                     break
+                }
             }
-            setOverrideValue(getFeatureFlagOverrideValue(featureFlag))
+            updateOverrideCounter()
+            setOverrideValue(getFeatureFlagOverride(featureFlag))
         }
 
         if ((filter === 'Enabled' && !enabled) || (filter === 'Overridden' && !overridden)) {
@@ -400,6 +414,45 @@ const TemporarySettingOverride: FC<{ setting: keyof TemporarySettings; filter: s
         )
     }
 )
+
+const ZoektSettings: FC<{}> = () => {
+    const { searchOptions } = useDeveloperSettings(settings => settings.zoekt)
+
+    const [inputValue, setInputValue] = useState<string>(searchOptions)
+
+    const handleClick = (): void => {
+        setDeveloperSettingsSearchOptions({ searchOptions: inputValue })
+    }
+
+    const isLightTheme = useIsLightTheme()
+    const extensions = useMemo(
+        () => [
+            EditorView.darkTheme.of(!isLightTheme),
+            json(),
+            defaultEditorTheme,
+            jsonHighlighting,
+            EditorView.updateListener.of(update => {
+                if (update.docChanged) {
+                    setInputValue(update.state.sliceDoc())
+                }
+            }),
+        ],
+        [isLightTheme]
+    )
+
+    return (
+        <div className="mt-2 d-flex flex-column">
+            <H4>Search Options</H4>
+            <Text>Enter a valid JSON below. Missing values are replaced with defaults.</Text>
+            <Container className="p-1">
+                <CodeMirrorEditor value={inputValue} extensions={extensions} />
+            </Container>
+            <Button variant="primary" className="mt-2 align-self-end" onClick={handleClick}>
+                Apply
+            </Button>
+        </div>
+    )
+}
 
 const JSONView: FC<{ value: unknown }> = ({ value }) => {
     const isLightTheme = useIsLightTheme()

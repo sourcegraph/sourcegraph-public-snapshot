@@ -270,7 +270,7 @@ func TestMiddleware(t *testing.T) {
 		}
 		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		wantRedirect := fmt.Sprintf(`%s?signin=`, state.Redirect)
+		wantRedirect := fmt.Sprintf(`%s?signin=OpenIDConnect`, state.Redirect)
 		assert.Equal(t, wantRedirect, resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
 	})

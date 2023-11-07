@@ -1,4 +1,4 @@
-import { listen, Event } from '@tauri-apps/api/event'
+import { listen, type Event } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
 
 import { logger } from '@sourcegraph/common'
@@ -8,7 +8,7 @@ import { logger } from '@sourcegraph/common'
 // * app-shell.tsx: before the Go backend has started, this is served. If the Go backend crashes,
 //   then the Tauri Rust application can bring the user back here to present debugging/error handling
 //   options.
-// * app-main.tsx: served by the Go backend, renders the Sourcegraph web UI that you see everywhere else.
+// * app/main.tsx: served by the Go backend, renders the Sourcegraph web UI that you see everywhere else.
 
 function addRedirectParamToSignInUrl(url: string, returnTo: string): string {
     const urlObject = new URL(url)
@@ -39,6 +39,7 @@ const appShellReady = (payload: AppShellReadyPayload): void => {
     }
     logger.log('app-shell-ready', payload)
     launchWithSignInUrl(payload.sign_in_url).catch(error =>
+        // eslint-disable-next-line no-console
         console.error(`failed to launch with sign-in URL: ${error}`)
     )
 }

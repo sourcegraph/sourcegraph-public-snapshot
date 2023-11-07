@@ -22,19 +22,26 @@ import {
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
 import type { AuthenticatedUser } from '../../auth'
 import type { CodeMonitoringProps } from '../../codeMonitoring'
 import { PageTitle } from '../../components/PageTitle'
+import { formatUrlOverrideFeatureFlags } from '../../featureFlags/lib/parseUrlOverrideFeatureFlags'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { useFeatureFlagOverrides } from '../../featureFlags/useFeatureFlagOverrides'
 import type { CodeInsightsProps } from '../../insights/types'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
-import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
+import {
+    buildSearchURLQueryFromQueryState,
+    setSearchMode,
+    useDeveloperSettings,
+    useNavbarQueryState,
+    useNotepad,
+} from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../tour/hooks'
 import { submitSearch } from '../helpers'
@@ -106,10 +113,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     // Derived state
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
-    const featureOverrides = useDeepMemo(
-        // Nested use memo here is used for avoiding extra object calculation step on each render
-        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
-    )
+    const { searchOptions } = useDeveloperSettings(settings => settings.zoekt)
+    const featureOverrides = useFeatureFlagOverrides()
     const { addRecentSearch } = useRecentSearches()
 
     const options: StreamSearchOptions = useMemo(
@@ -118,11 +123,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
-            featureOverrides,
+            featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
             searchMode,
             chunkMatches: true,
+            zoektSearchOptions: searchOptions,
         }),
-        [caseSensitive, patternType, searchMode, trace, featureOverrides]
+        [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
@@ -553,8 +559,9 @@ const applyAdditionalFilters = (query: string, additionalFilters: string[]): str
 function isSmartSearchAlert(kind: AlertKind): kind is SmartSearchAlertKind {
     switch (kind) {
         case 'smart-search-additional-results':
-        case 'smart-search-pure-results':
+        case 'smart-search-pure-results': {
             return true
+        }
     }
     return false
 }

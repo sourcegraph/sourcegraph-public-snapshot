@@ -28,21 +28,17 @@ ts_project(
         "src/esbuild/stylePlugin.ts",
         "src/esbuild/workerPlugin.ts",
         "src/index.ts",
+        "src/monaco-editor.ts",
         "src/paths.ts",
         "src/utils/environment-config.ts",
-        "src/webpack/babel-loader.ts",
-        "src/webpack/css-loader.ts",
-        "src/webpack/getCacheConfig.ts",
-        "src/webpack/monaco-editor.ts",
-        "src/webpack/plugins.ts",
     ],
-    module = "commonjs",
+    data = [
+        "//:postcss_config_js",  #keep
+    ],
     tsconfig = ":tsconfig",
     deps = [
-        ":node_modules/@statoscope/webpack-plugin",
         ":node_modules/@types/sass",
         ":node_modules/buffer",  #keep
-        ":node_modules/css-loader",  #keep
         ":node_modules/enhanced-resolve",
         ":node_modules/esbuild",
         ":node_modules/monaco-editor-webpack-plugin",
@@ -50,9 +46,6 @@ ts_project(
         ":node_modules/postcss-modules",
         ":node_modules/process",  #keep
         ":node_modules/sass",
-        ":node_modules/style-loader",  #keep
-        ":node_modules/terser-webpack-plugin",
-        ":node_modules/webpack",
 
         # TODO: figure out why is this needed for integration tests even though it's defined in babel_config
         "//:node_modules/@babel/runtime",  #keep

@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { jest } from '@jest/globals'
 import type _VisibilitySensor from 'react-visibility-sensor'
 
 type VisibilitySensorPropsType = React.ComponentProps<typeof _VisibilitySensor>

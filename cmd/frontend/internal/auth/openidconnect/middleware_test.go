@@ -293,7 +293,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/redirect?signin="; got != want {
+		if got, want := resp.Header.Get("Location"), "/redirect?signin=OpenIDConnect"; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		}
 	})

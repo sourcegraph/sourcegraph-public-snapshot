@@ -6,17 +6,14 @@ See [Overview of the Bazel configuration for client](./web_overview.md) for in-d
 ## Tools
 
 The sourcegraph client projects are setup to compile, bundle and test with Bazel. The tools used within Bazel include:
-* Babel for ts\[x\] transpilation
-* Webpack for bundling
+* Esbuild for bundling
 * Jest, Mocha for testing
-* esbuild for experimental bundling as well as internal tooling
 * Node tools such as graphql-codegen for generating graphql schema types
 
 The Bazel rulesets used to support these include:
 * [rules_js](https://github.com/aspect-build/rules_js)
 * [rules_ts](https://github.com/aspect-build/rules_ts)
 * [rules_jest](https://github.com/aspect-build/rules_jest)
-* [rules_webpack](https://github.com/aspect-build/rules_webpack)
 * [rules_esbuild](https://github.com/aspect-build/rules_esbuild)
 
 See [Aspect rules docs](https://docs.aspect.build/rules/) for more information on the Bazel rulesets used.
@@ -41,10 +38,7 @@ All client tests (of all types such as jest and mocha) can be invoked by `bazel 
 
 ## Bundling
 
-The primary `client/web` bundle targets are:
-* `//client/web:bundle`
-* `//client/web:bundle-dev`
-See `client/web/BUILD`.
+The primary `client/web` bundle target is `//client/web:bundle`. See `client/web/BUILD.bazel`.
 
 ## Rule configuration
 

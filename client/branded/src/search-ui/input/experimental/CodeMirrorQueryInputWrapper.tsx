@@ -307,11 +307,11 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         return (
             <div
                 ref={inputContainerRef}
-                className={classNames(styles.container, className, 'test-experimental-search-input', 'test-editor', {
+                className={classNames(styles.container, className, 'test-v2-query-input', 'test-editor', {
                     [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
                 })}
                 role="search"
-                data-editor="experimental-search-input"
+                data-editor="v2"
             >
                 <div className={styles.focusContainer}>
                     <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />

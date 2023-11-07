@@ -9,6 +9,7 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_resolve ../graphql-operations //client/shared:graphql_operations
@@ -125,10 +126,8 @@ ts_project(
     name = "shared_lib",
     srcs = [
         "src/actions/ActionItem.tsx",
-        "src/actions/ActionsContainer.tsx",
         "src/actions/ActionsNavItems.tsx",
         "src/actions/SimpleActionItem.tsx",
-        "src/actions/actions.ts",
         "src/api/client/api/api.ts",
         "src/api/client/api/common.ts",
         "src/api/client/connection.ts",
@@ -211,7 +210,6 @@ ts_project(
         "src/codeintel/legacy-extensions/util/promise.ts",
         "src/codeintel/legacy-extensions/util/uri.ts",
         "src/codeintel/scip.ts",
-        "src/codeintel/searchContext.ts",
         "src/commands/commands.ts",
         "src/components/CodeMirrorEditor.tsx",
         "src/components/HighlightedMatches.tsx",
@@ -318,6 +316,7 @@ ts_project(
         "src/symbols/SymbolKind.tsx",
         "src/symbols/SymbolTag.tsx",
         "src/symbols/symbolIcons.ts",
+        "src/telemetry/index.ts",
         "src/telemetry/telemetryService.ts",
         "src/theme.ts",
         "src/tracking/event-log-creators.ts",
@@ -341,6 +340,7 @@ ts_project(
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/http-client",
+        ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/template-parser",
         ":node_modules/@sourcegraph/wildcard",
         ":node_modules/sourcegraph",
@@ -463,6 +463,7 @@ ts_project(
         "src/search/query/validate.test.ts",
         "src/settings/settings.test.ts",
         "src/settings/temporary/useTemporarySetting.test.tsx",
+        "src/testGlobals.d.ts",  #keep
         "src/tracking/utm.test.ts",
         "src/util/dom.test.ts",
         "src/util/url.test.ts",
@@ -482,8 +483,10 @@ ts_project(
         ":node_modules/sourcegraph",
         ":shared_lib",
         "//:node_modules/@apollo/client",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@sourcegraph/extension-api-stubs",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",

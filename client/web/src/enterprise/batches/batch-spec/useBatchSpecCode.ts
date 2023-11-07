@@ -28,7 +28,7 @@ const formatError = (error: { instancePath: string; message?: string }): string 
 
     // The error's instance path will have the format "/property1/property2", so we
     // convert each "/" to a "." and drop the first one.
-    const dottedPath = error.instancePath.replace(/^\//, '').replace(/\//g, '.')
+    const dottedPath = error.instancePath.replace(/^\//, '').replaceAll('/', '.')
     return `${dottedPath} ${error.message}`
 }
 

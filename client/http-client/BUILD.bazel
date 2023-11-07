@@ -12,6 +12,7 @@ ts_config(
     deps = [
         "//:tsconfig",
         "//client/common:tsconfig",
+        "//client/testing:tsconfig",
     ],
 )
 
@@ -57,7 +58,9 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":http-client_lib",
+        ":node_modules/@sourcegraph/testing",
         "//:node_modules/@apollo/client",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@types/sinon",
         "//:node_modules/delay",
         "//:node_modules/rxjs",

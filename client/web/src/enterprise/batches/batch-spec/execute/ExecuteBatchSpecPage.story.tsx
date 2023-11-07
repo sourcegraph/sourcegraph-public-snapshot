@@ -104,7 +104,6 @@ const buildMocks = (batchSpec: BatchSpecExecutionFields): MockedResponses => [
 
 const buildWorkspacesQuery =
     (workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>): typeof _queryWorkspacesList =>
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     () =>
         of(mockWorkspaces(50, workspaceFields).node.workspaceResolution!.workspaces)
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useState, FC, useMemo, useEffect } from 'react'
+import React, { useCallback, useState, type FC, useMemo, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,9 +6,8 @@ import { useNavigate } from 'react-router-dom'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import type { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Skipped, Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Collapse,

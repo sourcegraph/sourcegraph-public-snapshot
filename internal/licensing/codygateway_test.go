@@ -22,7 +22,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			userCount:   pointers.Ptr(50),
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo"},
+				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "openai/gpt-4", "openai/gpt-3.5-turbo"},
 				Limit:           2500,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -80,7 +80,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			userCount:   pointers.Ptr(50),
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"openai/gpt-3.5-turbo"},
+				AllowedModels:   []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "openai/gpt-3.5-turbo"},
 				Limit:           50000,
 				IntervalSeconds: 60 * 60 * 24,
 			},

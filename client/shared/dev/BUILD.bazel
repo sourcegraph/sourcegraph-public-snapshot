@@ -1,18 +1,17 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
-load("//dev:defs.bzl", "ts_project")
+load("//dev:defs.bzl", "ts_binary", "ts_project")
 
 # gazelle:ignore
 
 # dev/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
 
-js_binary(
+ts_binary(
     name = "generate_schema",
     data = [
         "//:node_modules/json-schema-to-typescript",
-        "//:node_modules/mz",
     ],
-    entry_point = "generateSchema.js",
+    entry_point = "generateSchema.ts",
     visibility = ["//client/shared:__pkg__"],
 )
 
@@ -37,7 +36,7 @@ js_binary(
     visibility = ["//client:__subpackages__"],
 )
 
-js_binary(
+ts_binary(
     name = "generate_graphql_operations",
     data = [
         ":extract_graphql_operation_codegen_plugin",
@@ -45,10 +44,12 @@ js_binary(
         "//:node_modules/@graphql-codegen/typescript",
         "//:node_modules/@graphql-codegen/typescript-apollo-client-helpers",
         "//:node_modules/@graphql-codegen/typescript-operations",
+        "//:node_modules/glob",
+        "//:node_modules/graphql",
         "//:node_modules/prettier",
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ],
-    entry_point = "generateGraphQlOperations.js",
+    entry_point = "generateGraphQlOperations.ts",
     visibility = ["//client:__subpackages__"],
 )
 
@@ -68,6 +69,7 @@ ts_project(
     name = "mock_ts",
     srcs = [
         "mockDomRect.ts",
+        "mockEventLogger.ts",
         "mockMatchMedia.ts",
         "mockResizeObserver.ts",
         "mockSentryBrowser.ts",
@@ -79,11 +81,13 @@ ts_project(
     tsconfig = "//client/shared:tsconfig",
     visibility = ["//visibility:private"],
     deps = [
+        "//:node_modules/@jest/globals",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@testing-library/react",
-        "//:node_modules/@types/jest",
+        "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
+        "//:node_modules/lodash",
         "//:node_modules/react",
         "//:node_modules/react-visibility-sensor",
         "//:node_modules/resize-observer-polyfill",

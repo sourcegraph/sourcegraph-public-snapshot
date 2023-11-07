@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import type { SettingsEdit } from '../api/client/services/settings'
 
 import { convertUpdateConfigurationCommandArguments } from './commands'

@@ -137,7 +137,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 switch (result.type) {
                     case 'content':
                     case 'symbol':
-                    case 'path':
+                    case 'path': {
                         return (
                             <PrefetchableFile
                                 isPrefetchEnabled={prefetchFileEnabled}
@@ -193,7 +193,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 )}
                             </PrefetchableFile>
                         )
-                    case 'commit':
+                    }
+                    case 'commit': {
                         return (
                             <CommitSearchResult
                                 index={index}
@@ -205,7 +206,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                             />
                         )
-                    case 'repo':
+                    }
+                    case 'repo': {
                         return (
                             <RepoSearchResult
                                 index={index}
@@ -218,8 +220,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                             />
                         )
+                    }
                     case 'person':
-                    case 'team':
+                    case 'team': {
                         return (
                             <OwnerSearchResult
                                 index={index}
@@ -232,6 +235,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />
                         )
+                    }
                 }
             }
 

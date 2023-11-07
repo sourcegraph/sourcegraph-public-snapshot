@@ -71,7 +71,7 @@ export async function fetchTreeEntries(args: TreeEntriesVariables): Promise<GitC
             ...args,
             first: args.first ?? MAX_FILE_TREE_ENTRIES,
         }
-        //mightContainPrivateInfo: true,
+        // mightContainPrivateInfo: true,
     )
     if (data.node?.__typename !== 'Repository' || !data.node.commit) {
         throw new Error('Unable to fetch repository information')
@@ -112,14 +112,12 @@ export async function fetchSidebarFileTree({
     return { root, values }
 }
 
-export interface FileTreeLoader {
-    (args: {
-        repoID: Scalars['ID']
-        commitID: string
-        filePath: string
-        parent?: FileTreeProvider
-    }): Promise<FileTreeProvider>
-}
+export type FileTreeLoader = (args: {
+    repoID: Scalars['ID']
+    commitID: string
+    filePath: string
+    parent?: FileTreeProvider
+}) => Promise<FileTreeProvider>
 
 interface FileTreeProviderArgs {
     root: NonNullable<GitCommitFieldsWithTree['tree']>

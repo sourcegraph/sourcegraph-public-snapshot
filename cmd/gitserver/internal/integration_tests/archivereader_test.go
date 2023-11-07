@@ -106,7 +106,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					return "", errors.Errorf("no remote for %s", test.name)
 				},
 				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-					return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+					return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  server.NewRepositoryLocker(),

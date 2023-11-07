@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, test } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -46,6 +47,7 @@ describe('UserNavItem', () => {
                 },
             ],
         },
+        emails: [],
     }
 
     test('simple', () => {

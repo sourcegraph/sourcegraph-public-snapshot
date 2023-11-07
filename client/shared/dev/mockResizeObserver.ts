@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals'
 import ResizeObserver from 'resize-observer-polyfill'
 
 if ('ResizeObserver' in window === false) {
@@ -6,6 +7,6 @@ if ('ResizeObserver' in window === false) {
 
 jest.mock('use-resize-observer', () => ({
     __esModule: true,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     default: jest.requireActual('use-resize-observer/polyfilled'),
 }))

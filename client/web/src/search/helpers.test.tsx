@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import * as H from 'history'
 
 import { SearchPatternType } from '../graphql-operations'

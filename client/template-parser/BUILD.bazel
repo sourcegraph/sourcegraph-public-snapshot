@@ -38,7 +38,10 @@ ts_project(
         "src/expr/parser.test.ts",
     ],
     tsconfig = ":tsconfig",
-    deps = [":template-parser_lib"],
+    deps = [
+        ":template-parser_lib",
+        "//:node_modules/@jest/globals",
+    ],
 )
 
 npm_package(

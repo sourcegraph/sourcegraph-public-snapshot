@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { describe, expect, test, jest } from '@jest/globals'
+
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
@@ -10,8 +12,8 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
-jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
-jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
+jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: () => 'SearchNavbarItem' }))
+jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: () => 'BrandLogo' }))
 
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,

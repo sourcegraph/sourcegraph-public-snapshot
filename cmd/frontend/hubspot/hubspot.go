@@ -100,7 +100,7 @@ func (c *Client) postJSON(methodName string, baseURL *url.URL, reqPayload, respP
 		return wrapError(methodName, err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		buf := new(bytes.Buffer)
 		_, _ = buf.ReadFrom(resp.Body)
 		return wrapError(methodName, errors.Errorf("Code %v: %s", resp.StatusCode, buf.String()))

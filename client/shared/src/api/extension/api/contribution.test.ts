@@ -1,3 +1,5 @@
+import { describe, expect, it, test } from '@jest/globals'
+
 import { ContributableMenu, type Contributions, type Evaluated } from '@sourcegraph/client-api'
 import { type Context, parse, parseTemplate } from '@sourcegraph/template-parser'
 

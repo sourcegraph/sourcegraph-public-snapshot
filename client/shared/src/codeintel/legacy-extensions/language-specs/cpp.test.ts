@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from '@jest/globals'
+
 import { cppSpec } from './cpp'
 import { nilFilterContext, nilResult } from './spec.test'
 

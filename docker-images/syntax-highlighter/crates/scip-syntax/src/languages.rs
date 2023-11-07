@@ -42,7 +42,7 @@ impl TagConfiguration {
                 let included_lang = included_lang.trim();
 
                 let parser = BundledParser::get_parser(included_lang).expect("valid language");
-                let configuration = get_tag_configuration(&parser).expect("valid config");
+                let configuration = get_tag_configuration(parser).expect("valid config");
 
                 format!("{}\n{}", configuration.query_text, tag_query)
             }
@@ -241,7 +241,7 @@ mod tags {
     create_tags_configuration!(go, BundledParser::Go, "go", "go");
     create_tags_configuration!(zig, BundledParser::Zig, "zig");
 
-    pub fn get_tag_configuration(parser: &BundledParser) -> Option<&'static TagConfiguration> {
+    pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static TagConfiguration> {
         match parser {
             BundledParser::C => Some(c()),
             BundledParser::Javascript => Some(javascript()),
@@ -285,12 +285,14 @@ mod locals {
     create_locals_configuration!(go, BundledParser::Go, "go");
     create_locals_configuration!(perl, BundledParser::Perl, "perl");
     create_locals_configuration!(matlab, BundledParser::Matlab, "matlab");
+    create_locals_configuration!(java, BundledParser::Java, "java");
 
     pub fn get_local_configuration(parser: BundledParser) -> Option<&'static LocalConfiguration> {
         match parser {
             BundledParser::Go => Some(go()),
             BundledParser::Perl => Some(perl()),
             BundledParser::Matlab => Some(matlab()),
+            BundledParser::Java => Some(java()),
             _ => None,
         }
     }

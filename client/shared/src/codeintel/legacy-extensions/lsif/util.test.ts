@@ -1,3 +1,4 @@
+import { test } from '@jest/globals'
 import sinon from 'sinon'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'

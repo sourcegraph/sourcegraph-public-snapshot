@@ -56,8 +56,8 @@ ts_config(
 )
 
 ts_config(
-    name = "tsconfig-eslint",
-    src = "tsconfig.eslint.json",
+    name = "tsconfig-all",
+    src = "tsconfig.json",
     visibility = ["//visibility:public"],
     deps = [
         ":tsconfig",
@@ -67,18 +67,13 @@ ts_config(
 js_library(
     name = "postcss_config_js",
     srcs = ["postcss.config.js"],
+    visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/autoprefixer",
         "//:node_modules/postcss-custom-media",
         "//:node_modules/postcss-focus-visible",
         "//:node_modules/postcss-inset",
     ],
-)
-
-copy_to_bin(
-    name = "browserslist",
-    srcs = [".browserslistrc"],
-    visibility = ["//visibility:public"],
 )
 
 copy_to_bin(
@@ -134,14 +129,10 @@ js_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//:node_modules/@babel/plugin-transform-runtime",
-        "//:node_modules/@babel/plugin-transform-typescript",
         "//:node_modules/@babel/preset-env",
         "//:node_modules/@babel/preset-react",
         "//:node_modules/@babel/preset-typescript",
         "//:node_modules/@babel/runtime",
-        "//:node_modules/babel-plugin-lodash",
-        "//:node_modules/babel-plugin-webpack-chunkname",
         "//:node_modules/semver",
         "//:node_modules/signale",
     ],
@@ -189,7 +180,6 @@ js_library(
         ".eslintrc.js",
     ],
     data = [
-        ".eslintignore",
         "package.json",
         ":eslint-relative-formatter",
     ],
@@ -214,7 +204,7 @@ js_library(
         ":node_modules/eslint-plugin-unicorn",
         ":node_modules/eslint-plugin-unused-imports",
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
-        ":tsconfig-eslint",
+        ":tsconfig-all",
         "//:node_modules/tslib",
     ],
 )
@@ -347,4 +337,5 @@ exports_files([
     # Used for when copy_to_directory might reference an empty filegroup
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
+    ".swcrc",
 ])

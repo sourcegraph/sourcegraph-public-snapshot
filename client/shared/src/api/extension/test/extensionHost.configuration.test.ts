@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals'
 import { BehaviorSubject } from 'rxjs'
 
 import type { SettingsCascade } from '../../../settings/settings'
@@ -109,7 +110,7 @@ describe('ExtensionHost: Configuration', () => {
             )
             const config = extensionAPI.configuration.get<{ a: string }>()
             await config.update('a', 'aha!')
-            expect(requestedEdits).toEqual<SettingsEdit[]>([{ path: ['a'], value: 'aha!' }])
+            expect(requestedEdits).toEqual([{ path: ['a'], value: 'aha!' }] as SettingsEdit[])
             expect(config.get('a')).toBe('b') // no optimistic updates
         })
     })

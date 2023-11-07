@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { createSVGIcon, isInputElement } from './dom'
 
 describe('isInputElement', () => {

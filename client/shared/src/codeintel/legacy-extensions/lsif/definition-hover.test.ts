@@ -1,6 +1,6 @@
-/* eslint-disable etc/no-deprecated */
 import * as assert from 'assert'
 
+import { describe, it } from '@jest/globals'
 import * as sinon from 'sinon'
 
 import * as sourcegraph from '../api'

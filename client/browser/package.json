@@ -23,7 +23,7 @@
     "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
-    "test": "jest --testPathIgnorePatterns end-to-end integration",
+    "test": "jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns integration",
     "test-e2e": "TS_NODE_PROJECT=src/end-to-end/tsconfig.json mocha './src/end-to-end/**/*.test.ts'",
     "run-integration": "TS_NODE_PROJECT=src/integration/tsconfig.json SOURCEGRAPH_BASE_URL=https://sourcegraph.com mocha --parallel=${CI:-\"false\"} --retries=2 ./src/integration/**/*.test.ts",
     "test-integration": "node scripts/test-integration",
@@ -33,6 +33,7 @@
   "devDependencies": {
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/extension-api-types": "workspace:*",
+    "@sourcegraph/testing": "workspace:*",
     "sourcegraph": "workspace:*"
   },
   "dependencies": {

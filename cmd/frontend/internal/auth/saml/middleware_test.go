@@ -374,7 +374,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want1, want2 := resp.Header.Get("Location"), "http://example.com/?signin=", "/?signin="; got != want1 && got != want2 {
+		if got, want1, want2 := resp.Header.Get("Location"), "http://example.com/?signin=SAML", "/?signin=SAML"; got != want1 && got != want2 {
 			t.Errorf("got redirect location %v, want %v or %v", got, want1, want2)
 		}
 

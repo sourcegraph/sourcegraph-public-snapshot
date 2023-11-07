@@ -97,9 +97,9 @@ mkShell {
     shellcheck
 
     # Web tools.
-    nodejs-18_x
-    nodejs-18_x.pkgs.pnpm
-    nodejs-18_x.pkgs.typescript
+    nodejs-20_x
+    nodejs-20_x.pkgs.pnpm
+    nodejs-20_x.pkgs.typescript
 
     # Rust utils for syntax-highlighter service, currently not pinned to the same versions.
     cargo
@@ -130,8 +130,6 @@ mkShell {
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-
-  DEV_WEB_BUILDER = "esbuild";
 
   # Some of the bazel actions require some tools assumed to be in the PATH defined by the "strict action env" that we enable
   # through --incompatible_strict_action_env. We can poke a custom PATH through with --action_env=PATH=$BAZEL_ACTION_PATH.

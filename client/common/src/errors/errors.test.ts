@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { asError } from './errors'
 import { isErrorLike } from './utils'
 

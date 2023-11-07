@@ -42,6 +42,7 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/node-fetch",
         "//:node_modules/signale",
+        "//client/observability-client:observability-client_lib",
     ],
 )
 
@@ -52,6 +53,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":observability-server",
+        "//:node_modules/@jest/globals",
         "//:node_modules/@types/node",
     ],
 )
@@ -59,17 +61,12 @@ ts_project(
 jest_test(
     name = "test",
     data = [
-        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js",
-        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js.br",
-        "src/webBundleSize/__mocks__/assets/scripts/app.bundle.js.gz",
-        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js",
-        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.br",
-        "src/webBundleSize/__mocks__/assets/scripts/sg_home.js.gz",
-        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css",
-        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css.br",
-        "src/webBundleSize/__mocks__/assets/styles/app.123.bundle.css.gz",
+        "src/webBundleSize/__mocks__/assets/scripts/main.js",
+        "src/webBundleSize/__mocks__/assets/styles/main.css",
+        "src/webBundleSize/__mocks__/bundlesize.config.js",
+        "src/webBundleSize/__mocks__/web.manifest.json",
         ":observability-server_tests",
     ],
-    # TODO(bazel): requires webpack setup for testing
+    # TODO(bazel): requires dev server setup for testing
     tags = ["manual"],
 )

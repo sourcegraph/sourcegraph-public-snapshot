@@ -8,15 +8,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var ImagePattern = regexp.MustCompile(`image\s=\s"(.*?)"`)
+var DigestPattern = regexp.MustCompile(`digest\s=\s"(.*?)"`)
+var NamePattern = regexp.MustCompile(`name\s=\s"(.*?)"`)
 
 type TokenResponse struct {
 	Token     string `json:"token"`
@@ -118,10 +122,6 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 	}
 	defer file.Close()
 
-	imagePattern := regexp.MustCompile(`image\s=\s"(.*?)"`)
-	digestPattern := regexp.MustCompile(`digest\s=\s"(.*?)"`)
-	namePattern := regexp.MustCompile(`name\s=\s"(.*?)"`)
-
 	scanner := bufio.NewScanner(file)
 	lines := []string{}
 	for scanner.Scan() {
@@ -139,8 +139,8 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 	var currentImage *ImageInfo
 	for i, line := range lines {
 		switch {
-		case namePattern.MatchString(line):
-			match := namePattern.FindStringSubmatch(line)
+		case NamePattern.MatchString(line):
+			match := NamePattern.FindStringSubmatch(line)
 			if len(match) > 1 {
 				imageName := strings.Trim(match[1], `"`)
 
@@ -150,13 +150,13 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 					currentImage = &ImageInfo{Name: imageName}
 				}
 			}
-		case digestPattern.MatchString(line):
-			match := digestPattern.FindStringSubmatch(line)
+		case DigestPattern.MatchString(line):
+			match := DigestPattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Digest = strings.Trim(match[1], `"`)
 			}
-		case imagePattern.MatchString(line):
-			match := imagePattern.FindStringSubmatch(line)
+		case ImagePattern.MatchString(line):
+			match := ImagePattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Image = strings.Trim(match[1], `"`)
 
@@ -171,7 +171,7 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 					if currentImage.Digest != newDigest {
 						updated = true
 						// replace old digest with new digest in the previous line
-						lines[i-1] = digestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
+						lines[i-1] = DigestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
 						std.Out.WriteSuccessf("Found new digest for %s", currentImage.Image)
 					}
 				}

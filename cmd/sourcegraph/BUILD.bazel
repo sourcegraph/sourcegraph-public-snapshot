@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/sourcegraph",
     visibility = ["//visibility:private"],
     deps = [
+        "//client/web/dist",
         "//cmd/blobstore/shared",
         "//cmd/embeddings/shared",
         "//cmd/executor/singlebinary",
@@ -22,7 +23,6 @@ go_library(
         "//internal/service/localcodehost",
         "//internal/service/servegit",
         "//ui/assets",
-        "//ui/assets/enterprise",
     ],
 )
 

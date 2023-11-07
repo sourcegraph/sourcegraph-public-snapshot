@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { AbortError } from '@sourcegraph/common'
 import { HTTPStatusError } from '@sourcegraph/http-client'
 
@@ -18,11 +20,8 @@ describe('shouldErrorBeReported', () => {
         expect(shouldErrorBeReported(new AbortError())).toBe(false)
     })
 
-    test('should not capture ChunkLoadError', () => {
-        const ChunkError = new Error('Loading chunk 123 failed.')
-        ChunkError.name = 'ChunkLoadError'
-
-        expect(shouldErrorBeReported(ChunkError)).toBe(false)
+    test('should not capture dynamic import Error', () => {
+        expect(shouldErrorBeReported(new TypeError('Failed to fetch dynamically imported module'))).toBe(false)
     })
 
     test('should not capture not authenticated error', () => {

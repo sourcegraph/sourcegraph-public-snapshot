@@ -21,7 +21,6 @@ This markdown is used to generate an annotation at the top of every build, displ
     <li><strong>nogo</strong> is a tool within the Bazel ecosystem that serves as a linter and static analyzer for Go code, checking for programming errors, bugs, stylistic errors, and suspicious constructs.</li>
     <li><strong>Packages</strong> are a simple way of managing dependencies in our container images.</li>
     <li><strong>pnpm</strong> is a fast, disk space efficient package manager for JavaScript and Node.js that works in a similar manner to npm and Yarn, but uses a different approach to storing and linking packages.</li>
-    <li><strong>Webpack</strong> is a static module bundler for modern JavaScript applications, transforming a multitude of file types into a single output file.</li>
     <li><strong>Wolfi</strong> is a minimal, hardened Linux distro that's designed for containers.</li>
     <li><strong>Wolfi Base Images</strong> are minimal container images that contain all the dependencies needed for our final images.</li>
   </ul>

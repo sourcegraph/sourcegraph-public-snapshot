@@ -91,10 +91,12 @@ const createNode = (node: Node): ParseSuccess => ({ type: 'success', node })
 const createSequence = (nodes: Node[]): ParseSuccess => {
     switch (nodes.length) {
         case 0:
-        case 1:
+        case 1: {
             return createNode(nodes[0])
-        default:
+        }
+        default: {
             return createNode({ type: 'sequence', nodes, range: rangeFromNodes(nodes) })
+        }
     }
 }
 
@@ -120,9 +122,10 @@ const createOperator = (
 
 const tokenToLeafNode = (token: Token): ParseResult => {
     switch (token.type) {
-        case 'pattern':
+        case 'pattern': {
             return createNode({ type: 'pattern', kind: token.kind, value: token.value, range: token.range })
-        case 'filter':
+        }
+        case 'filter': {
             return createNode({
                 type: 'parameter',
                 field: token.field.value,
@@ -131,6 +134,7 @@ const tokenToLeafNode = (token: Token): ParseResult => {
                 negated: token.negated,
                 range: token.range,
             })
+        }
     }
     return { type: 'error', expected: 'a convertable token to tree node' }
 }

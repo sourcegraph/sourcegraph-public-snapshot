@@ -1,5 +1,6 @@
 import * as assert from 'assert'
 
+import { beforeEach, describe, it } from '@jest/globals'
 import type { Observable } from 'rxjs'
 import * as sinon from 'sinon'
 

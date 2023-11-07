@@ -1,3 +1,4 @@
+import { describe, it } from '@jest/globals'
 import mock from 'mock-require'
 
 // Stub Sourcegraph API

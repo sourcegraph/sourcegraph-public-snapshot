@@ -1,4 +1,4 @@
-import expect from 'expect'
+import { describe, expect, it } from '@jest/globals'
 
 import { getListWindow } from './get-list-window'
 

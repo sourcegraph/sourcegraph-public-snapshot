@@ -15,12 +15,15 @@ type Renderable = React.ReactElement | string | null
 
 function getActionName(action: Action): string {
     switch (action.type) {
-        case 'completion':
+        case 'completion': {
             return action.name ?? 'Add'
-        case 'goto':
+        }
+        case 'goto': {
             return action.name ?? 'Go to'
-        case 'command':
+        }
+        case 'command': {
             return action.name ?? 'Run'
+        }
     }
 }
 
@@ -177,27 +180,30 @@ const ActionInfo: React.FunctionComponent<{ action: Action; shortcut: string }> 
     let info: Renderable = action.info ? renderStringOrRenderer(action.info, action) : null
     if (!info) {
         switch (action.type) {
-            case 'completion':
+            case 'completion': {
                 info = (
                     <>
                         <strong>add</strong> to your query
                     </>
                 )
                 break
-            case 'goto':
+            }
+            case 'goto': {
                 info = (
                     <>
                         <strong>go to</strong> the suggestion
                     </>
                 )
                 break
-            case 'command':
+            }
+            case 'command': {
                 info = (
                     <>
                         <strong>execute</strong> the command
                     </>
                 )
                 break
+            }
         }
     }
 

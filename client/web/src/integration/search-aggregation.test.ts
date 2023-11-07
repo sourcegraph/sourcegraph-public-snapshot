@@ -1,6 +1,6 @@
 import delay from 'delay'
 import expect from 'expect'
-import { test } from 'mocha'
+import { afterEach, beforeEach, describe, test } from 'mocha'
 
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'

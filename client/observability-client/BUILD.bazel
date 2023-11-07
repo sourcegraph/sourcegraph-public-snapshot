@@ -58,7 +58,9 @@ ts_project(
         ":node_modules/@sourcegraph/common",
         "//:node_modules/@opentelemetry/api",
         "//:node_modules/@opentelemetry/core",
+        "//:node_modules/@opentelemetry/exporter-trace-otlp-http",
         "//:node_modules/@opentelemetry/instrumentation",
+        "//:node_modules/@opentelemetry/resources",
         "//:node_modules/@opentelemetry/sdk-trace-base",
         "//:node_modules/@opentelemetry/sdk-trace-web",
         "//:node_modules/@opentelemetry/semantic-conventions",
@@ -83,7 +85,10 @@ ts_project(
     testonly = True,
     srcs = ["src/sdk/__tests__/getTracingUrl.test.ts"],
     tsconfig = ":tsconfig",
-    deps = [":observability-client_lib"],
+    deps = [
+        ":observability-client_lib",
+        "//:node_modules/@jest/globals",
+    ],
 )
 
 jest_test(

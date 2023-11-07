@@ -34,11 +34,11 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 		Commit: fm.Commit(),
 		Stat:   CreateFileInfo(fm.Path, false),
 	}
-	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient(), opts)
+	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient("graphql.filematch.tree"), opts)
 }
 
 func (fm *FileMatchResolver) Commit() *GitCommitResolver {
-	commit := NewGitCommitResolver(fm.db, gitserver.NewClient(), fm.RepoResolver, fm.CommitID, nil)
+	commit := NewGitCommitResolver(fm.db, gitserver.NewClient("graphql.filematch.commit"), fm.RepoResolver, fm.CommitID, nil)
 	commit.inputRev = fm.InputRev
 	return commit
 }

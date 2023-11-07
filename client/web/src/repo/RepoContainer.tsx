@@ -1,7 +1,19 @@
-import React, { type FC, Suspense, useEffect, useMemo, useState } from 'react'
+import React, {
+    createContext,
+    type FC,
+    type PropsWithChildren,
+    type RefObject,
+    Suspense,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
+import { createPortal } from 'react-dom'
 import { type Location, useLocation, Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -41,14 +53,14 @@ import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, type SearchStreamingProps } from '../search'
-import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
 import type { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, Repo } from './backend'
+import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, type Repo } from './backend'
 import { AskCodyButton } from './cody/AskCodyButton'
 import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, type RepoHeaderActionButton, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -219,60 +231,91 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     const repoNameAndRevision = `${repoName}${typeof rawRevision === 'string' ? `@${rawRevision}` : ''}`
 
     return (
-        <>
-            <div className={classNames('w-100 d-flex flex-row')}>
-                <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
-                    <RepoHeader
-                        actionButtons={props.repoHeaderActionButtons}
-                        breadcrumbs={props.breadcrumbs}
-                        repoName={repoName}
-                        revision={revision}
-                        onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                        settingsCascade={props.settingsCascade}
-                        authenticatedUser={authenticatedUser}
-                        platformContext={props.platformContext}
-                        telemetryService={props.telemetryService}
-                    />
+        <RepoContainerRoot>
+            <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
+                <RepoHeader
+                    actionButtons={props.repoHeaderActionButtons}
+                    breadcrumbs={props.breadcrumbs}
+                    repoName={repoName}
+                    revision={revision}
+                    onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
+                    settingsCascade={props.settingsCascade}
+                    authenticatedUser={authenticatedUser}
+                    platformContext={props.platformContext}
+                    telemetryService={props.telemetryService}
+                />
 
-                    <Suspense fallback={<LoadingSpinner />}>
-                        <Routes>
-                            {props.authenticatedUser?.siteAdmin && (
-                                <Route
-                                    path={repoNameAndRevision + repoSettingsAreaPath}
-                                    errorElement={<RouteError />}
-                                    // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
-                                    element={
-                                        <RepoSettingsArea
-                                            repoName={repoName}
-                                            authenticatedUser={props.authenticatedUser}
-                                            repoSettingsAreaRoutes={props.repoSettingsAreaRoutes}
-                                            repoSettingsSidebarGroups={props.repoSettingsSidebarGroups}
-                                            setBreadcrumb={childBreadcrumbSetters.setBreadcrumb}
-                                            useBreadcrumb={childBreadcrumbSetters.useBreadcrumb}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    }
-                                />
-                            )}
+                <Suspense fallback={<LoadingSpinner />}>
+                    <Routes>
+                        {props.authenticatedUser?.siteAdmin && (
                             <Route
-                                path="*"
+                                path={repoNameAndRevision + repoSettingsAreaPath}
                                 errorElement={<RouteError />}
+                                // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
                                 element={
-                                    <RepoUserContainer
-                                        {...props}
-                                        childBreadcrumbSetters={childBreadcrumbSetters}
-                                        repoOrError={repoOrError}
-                                        resolvedRevisionOrError={resolvedRevisionOrError}
-                                        repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
+                                    <RepoSettingsArea
+                                        repoName={repoName}
+                                        authenticatedUser={props.authenticatedUser}
+                                        repoSettingsAreaRoutes={props.repoSettingsAreaRoutes}
+                                        repoSettingsSidebarGroups={props.repoSettingsSidebarGroups}
+                                        setBreadcrumb={childBreadcrumbSetters.setBreadcrumb}
+                                        useBreadcrumb={childBreadcrumbSetters.useBreadcrumb}
+                                        telemetryService={props.telemetryService}
+                                        telemetryRecorder={props.platformContext.telemetryRecorder}
                                     />
                                 }
                             />
-                        </Routes>
-                    </Suspense>
-                </div>
+                        )}
+                        <Route
+                            path="*"
+                            errorElement={<RouteError />}
+                            element={
+                                <RepoUserContainer
+                                    {...props}
+                                    childBreadcrumbSetters={childBreadcrumbSetters}
+                                    repoOrError={repoOrError}
+                                    resolvedRevisionOrError={resolvedRevisionOrError}
+                                    repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
+                                />
+                            }
+                        />
+                    </Routes>
+                </Suspense>
             </div>
-        </>
+        </RepoContainerRoot>
     )
+}
+
+interface RepoContainerRootContextData {
+    rootElement: RefObject<HTMLElement>
+}
+
+const RepoContainerRootContext = createContext<RepoContainerRootContextData>({
+    rootElement: { current: null },
+})
+
+const RepoContainerRoot: FC<PropsWithChildren<{}>> = props => {
+    const { children } = props
+    const rootElementRef = useRef<HTMLDivElement>(null)
+
+    return (
+        <div ref={rootElementRef} className={classNames('w-100 d-flex flex-row')}>
+            <RepoContainerRootContext.Provider value={{ rootElement: rootElementRef }}>
+                {children}
+            </RepoContainerRootContext.Provider>
+        </div>
+    )
+}
+
+const RepoContainerRootPortal: FC<PropsWithChildren<{}>> = props => {
+    const { children } = props
+    const { rootElement } = useContext(RepoContainerRootContext)
+
+    if (!rootElement.current) {
+        return null
+    }
+
+    return createPortal(children, rootElement.current)
 }
 
 interface RepoUserContainerProps extends RepoContainerProps {
@@ -360,11 +403,10 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const [enableExperimentalQueryInput] = useExperimentalQueryInput()
+    const [enableV2QueryInput] = useV2QueryInput()
     const queryPrefix = useMemo(
-        () =>
-            enableExperimentalQueryInput && selectedSearchContextSpec ? `context:${selectedSearchContextSpec} ` : '',
-        [enableExperimentalQueryInput, selectedSearchContextSpec]
+        () => (enableV2QueryInput && selectedSearchContextSpec ? `context:${selectedSearchContextSpec} ` : ''),
+        [enableV2QueryInput, selectedSearchContextSpec]
     )
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
@@ -549,21 +591,23 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
             </Suspense>
 
             {isCodySidebarOpen && (
-                <Panel
-                    className="cody-sidebar-panel"
-                    position="right"
-                    ariaLabel="Cody sidebar"
-                    maxSize={CODY_SIDEBAR_SIZES.max}
-                    minSize={CODY_SIDEBAR_SIZES.min}
-                    defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
-                    storageKey="size-cache-cody-sidebar"
-                    onResize={setCodySidebarSize}
-                >
-                    <CodySidebar
-                        onClose={() => setIsCodySidebarOpen(false)}
-                        authenticatedUser={props.authenticatedUser}
-                    />
-                </Panel>
+                <RepoContainerRootPortal>
+                    <Panel
+                        className="cody-sidebar-panel"
+                        position="right"
+                        ariaLabel="Cody sidebar"
+                        maxSize={CODY_SIDEBAR_SIZES.max}
+                        minSize={CODY_SIDEBAR_SIZES.min}
+                        defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
+                        storageKey="size-cache-cody-sidebar"
+                        onResize={setCodySidebarSize}
+                    >
+                        <CodySidebar
+                            onClose={() => setIsCodySidebarOpen(false)}
+                            authenticatedUser={props.authenticatedUser}
+                        />
+                    </Panel>
+                </RepoContainerRootPortal>
             )}
         </>
     )

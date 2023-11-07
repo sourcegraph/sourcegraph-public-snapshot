@@ -4,14 +4,13 @@
     "jsx": "react-jsx",
     "module": "commonjs",
     "sourceRoot": "src",
-    "baseUrl": ".",
     "paths": {
-      "*": ["../observability-client/src/types/*", "src/types/*", "*"],
+      "*": ["../observability-client/src/types/*"],
     },
     "rootDir": ".",
     "outDir": "./out",
   },
-  "include": ["**/*", ".*", "./src/**/*.json"],
+  "include": ["src", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
   "references": [
     {

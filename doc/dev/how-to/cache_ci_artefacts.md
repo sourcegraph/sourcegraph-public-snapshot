@@ -36,7 +36,6 @@ pipeline.AddStep(":jest::chrome: Test browser extension",
     Paths:       []string{"node_modules", ".pnpm/cache"},
   }),
   bk.Cmd("dev/ci/pnpm-test.sh client/browser"),
-  bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 ```
 
 The important part here are:

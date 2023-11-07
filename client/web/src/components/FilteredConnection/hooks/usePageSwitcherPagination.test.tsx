@@ -1,4 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
+import { describe, expect, it } from '@jest/globals'
 import { fireEvent } from '@testing-library/react'
 
 import { dataOrThrowErrors, getDocumentNode } from '@sourcegraph/http-client'
@@ -188,7 +189,7 @@ const generateMockCursorResponsesForEveryPage = (
                 nodes: nodesOnPage,
                 totalCount: nodes.length,
                 startCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[0].id) : null,
-                endCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[nodesOnPage.length - 1].id) : null,
+                endCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage.at(-1).id) : null,
                 hasNextPage: pageIndex < totalPages - 1,
                 hasPreviousPage: pageIndex > 0,
             }),
@@ -206,7 +207,7 @@ const generateMockCursorResponsesForEveryPage = (
                 nodes: nodesOnPage,
                 totalCount: reverseNodes.length,
                 startCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[0].id) : null,
-                endCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[nodesOnPage.length - 1].id) : null,
+                endCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage.at(-1).id) : null,
                 hasNextPage: pageIndex > 0,
                 hasPreviousPage: pageIndex < totalPages - 1,
             }),

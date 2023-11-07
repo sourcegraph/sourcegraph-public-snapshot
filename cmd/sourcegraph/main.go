@@ -20,8 +20,8 @@ import (
 	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 
+	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 	"github.com/sourcegraph/sourcegraph/ui/assets"
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
 // services is a list of services to run.

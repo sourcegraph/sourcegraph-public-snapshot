@@ -1,12 +1,11 @@
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
 
 # dev/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
 # gazelle:js_test_files there-are-no-tests
-
-# TODO(bazel): wip - currently broken
-# gazelle:exclude **/server/development.server.ts
 
 ts_config(
     name = "tsconfig",
@@ -20,8 +19,13 @@ ts_config(
 ts_project(
     name = "dev",
     srcs = [
-        "mocks/mockEventLogger.ts",
-        "server/bazel.server.ts",
+        "esbuild/build.ts",
+        "esbuild/config.ts",
+        "esbuild/manifest.test.ts",
+        "esbuild/manifest.ts",
+        "esbuild/manifestPlugin.ts",
+        "esbuild/server.ts",
+        "server/development.server.ts",
         "server/production.server.ts",
         "utils/constants.ts",
         "utils/create-js-context.ts",
@@ -33,29 +37,70 @@ ts_project(
         "utils/should-compress-response.ts",
         "utils/success-banner.ts",
     ],
-    module = "commonjs",
     tsconfig = ":tsconfig",
     visibility = ["//client/web:__subpackages__"],
     deps = [
+        "//:node_modules/@jest/globals",
+        "//:node_modules/@sentry/esbuild-plugin",
         "//:node_modules/@types/compression",
         "//:node_modules/@types/connect-history-api-fallback",
         "//:node_modules/@types/express",
-        "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/signale",
         "//:node_modules/chalk",
         "//:node_modules/compression",
         "//:node_modules/connect-history-api-fallback",
+        "//:node_modules/esbuild",
         "//:node_modules/express",
         "//:node_modules/express-static-gzip",
         "//:node_modules/http-proxy-middleware",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/signale",
-        "//:node_modules/webpack",
-        "//:node_modules/webpack-dev-server",
         "//client/web:node_modules/@sourcegraph/build-config",
         "//client/web:web_lib",
+    ],
+)
+
+js_library(
+    name = "esbuild-config-production",
+    srcs = ["esbuild/bazel/esbuild.bazel.production.js"],
+    deps = [
+        "//client/build-config:build-config_lib",
+        "//client/web:node_modules/@sourcegraph/build-config",
+        "//client/web/dev",
+    ],
+)
+
+esbuild(
+    name = "esbuild-config-production_bundle",
+    srcs = [
+        ":esbuild-config-production",
+    ],
+    entry_point = "esbuild/bazel/esbuild.bazel.production.js",
+    external = [
+        "fsevents",
+        "pnpapi",
+        "../../../../postcss.config",
+
+        # suppress esbuild require-resolve-not-external warnings
+        "esbuild",
+        "path-browserify",
+        "monaco-yaml/lib/esm/monaco.contribution",
+        "monaco-yaml/lib/esm/yaml.worker",
+        "rxjs/_esm5/internal/OuterSubscriber",
+        "rxjs/_esm5/internal/util/subscribeToResult",
+        "rxjs/_esm5/internal/util/subscribeToArray",
+        "rxjs/_esm5/internal/Observable",
+    ],
+    format = "cjs",
+    platform = "node",
+    sourcemap = False,
+    splitting = False,
+    target = "es2022",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:postcss_config_js",
     ],
 )

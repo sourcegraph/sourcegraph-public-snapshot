@@ -1,3 +1,5 @@
+import { describe, expect, test } from '@jest/globals'
+
 import { selectorCompletion } from './selectFilter'
 import { type Literal, createLiteral } from './token'
 

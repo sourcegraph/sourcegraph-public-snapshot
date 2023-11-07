@@ -137,7 +137,7 @@ function createSvelteKitHistory(): History {
                 // I noticed that at least on Notebook pages this won't scroll the target into view.
                 if (!state && prevState) {
                     switch (prevState.type) {
-                        case 'popstate':
+                        case 'popstate': {
                             action = Action.Pop
                             if (prevState.to) {
                                 listener({
@@ -147,7 +147,8 @@ function createSvelteKitHistory(): History {
                                 })
                             }
                             break
-                        case 'link':
+                        }
+                        case 'link': {
                             // This is a special case for SvelteKit. In a normal browser context it seems that `listen`
                             // should only handle popstate events. Listening to the SvelteKit 'link' event seems
                             // necessary to properly handle SvelteKit links which point to paths handled by this React
@@ -161,6 +162,7 @@ function createSvelteKitHistory(): History {
                                 listener({ action, location: createLocation(prevState.to.url), delta: 1 })
                             }
                             break
+                        }
                     }
                 }
                 prevState = state

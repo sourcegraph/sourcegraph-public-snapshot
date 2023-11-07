@@ -133,6 +133,7 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
+  SRC_TELEMETRY_EVENTS_EXPORT_ALL: "true"
 
   # By default, allow temporary edits to external services.
   EXTSVC_CONFIG_ALLOW_EDITS: true
@@ -385,8 +386,10 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: ./node_modules/.bin/gulp --color dev
-    install: pnpm install
+    cmd: pnpm --filter @sourcegraph/web dev
+    install: |
+      pnpm install
+      pnpm run generate
     env:
       ENABLE_OPEN_TELEMETRY: true
 
@@ -395,10 +398,10 @@ commands:
     cmd: pnpm --filter @sourcegraph/web serve:dev --color
     install: |
       pnpm install
-      pnpm generate
+      pnpm run generate
     env:
       WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
@@ -1091,7 +1094,7 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      - docsite
+      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1115,7 +1118,7 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      - docsite
+      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1576,12 +1579,18 @@ tests:
       export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
 
-      if [ "$(uname)" == "Darwin" ]; then
-        bazel test //testing:e2e_test --config darwin-docker --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --define=GH_TOKEN=$GH_TOKEN
+      if [[ $(uname) == "Darwin" ]]; then
+        BAZEL_FLAGS="--config darwin-docker"
       else
-        bazel test //testing:e2e_test --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --define=GH_TOKEN=$GH_TOKEN
+        BAZEL_FLAGS=""
       fi
+      bazel test //testing:e2e_test $BAZEL_FLAGS --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY
 
+  bazel-web-integration:
+    cmd: |
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
+      bazel test //client/web/src/integration:integration-tests --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY --define=PERCY_TOKEN=$PERCY_TOKEN
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
@@ -1607,7 +1616,7 @@ tests:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
   client:
-    cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
+    cmd: pnpm jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression --testPathIgnorePatterns integration --testPathIgnorePatterns storybook
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

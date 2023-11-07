@@ -46,12 +46,15 @@ const FUNCS: { [name: string]: (...args: any[]) => any } = {
 function exec<C>(node: ExpressionNode, context: Context<C>): any {
     if ('Literal' in node) {
         switch (node.Literal.type) {
-            case TokenType.String:
+            case TokenType.String: {
                 return node.Literal.value
-            case TokenType.Number:
+            }
+            case TokenType.Number: {
                 return parseFloat(node.Literal.value)
-            default:
+            }
+            default: {
                 throw new SyntaxError(`Unrecognized literal of type ${TokenType[node.Literal.type]}`)
+            }
         }
     }
 
@@ -67,72 +70,97 @@ function exec<C>(node: ExpressionNode, context: Context<C>): any {
         const left = exec(node.Binary.left, context)
         const right = (): any => exec(node.Binary.right, context) // lazy evaluation
         switch (node.Binary.operator) {
-            case '&&':
+            case '&&': {
                 return left && right()
-            case '||':
+            }
+            case '||': {
                 return left || right()
-            case '==':
+            }
+            case '==': {
                 // eslint-disable-next-line eqeqeq
                 return left == right()
-            case '!=':
+            }
+            case '!=': {
                 // eslint-disable-next-line eqeqeq
                 return left != right()
-            case '===':
+            }
+            case '===': {
                 return left === right()
-            case '!==':
+            }
+            case '!==': {
                 return left !== right()
-            case '<':
+            }
+            case '<': {
                 return left < right()
-            case '>':
+            }
+            case '>': {
                 return left > right()
-            case '<=':
+            }
+            case '<=': {
                 return left <= right()
-            case '>=':
+            }
+            case '>=': {
                 return left >= right()
-            case '+':
-                // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+            }
+            case '+': {
                 return left + right()
-            case '-':
+            }
+            case '-': {
                 return left - right()
-            case '*':
+            }
+            case '*': {
                 return left * right()
-            case '/':
+            }
+            case '/': {
                 return left / right()
-            case '^':
+            }
+            case '^': {
                 return left ^ right()
-            case '%':
+            }
+            case '%': {
                 return left % right()
-            default:
+            }
+            default: {
                 throw new SyntaxError(`Invalid operator: ${node.Binary.operator}`)
+            }
         }
     }
 
     if ('Unary' in node) {
         const expression = exec(node.Unary.expression, context)
         switch (node.Unary.operator) {
-            case '!':
+            case '!': {
                 return !expression
-            case '+':
+            }
+            case '+': {
                 return expression
-            case '-':
+            }
+            case '-': {
                 return -expression
-            default:
+            }
+            default: {
                 throw new SyntaxError(`Invalid operator: ${node.Unary.operator}`)
+            }
         }
     }
 
     if ('Identifier' in node) {
         switch (node.Identifier) {
-            case 'true':
+            case 'true': {
                 return true
-            case 'false':
+            }
+            case 'false': {
                 return false
-            case 'undefined':
+            }
+            case 'undefined': {
                 return undefined
-            case 'null':
+            }
+            case 'null': {
                 return null
-            case 'context':
+            }
+            case 'context': {
                 return context
+            }
         }
         return context[node.Identifier]
     }

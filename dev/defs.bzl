@@ -1,18 +1,19 @@
 "Bazel rules"
 
+load("@aspect_rules_swc//swc:defs.bzl", "swc")
 load("@bazel_skylib//lib:partial.bzl", "partial")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
 load("//dev:eslint.bzl", "eslint_test_with_types", "get_client_package_path")
 load(":sass.bzl", _sass = "sass")
-load(":babel.bzl", _babel = "babel")
 
 sass = _sass
 
 # TODO move this to `ts_project.bzl`
-def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
+def ts_project(name, srcs = [], deps = [], module = "es6", **kwargs):
     """A wrapper around ts_project
 
     Args:
@@ -22,7 +23,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
 
         deps: A list of dependencies
 
-        use_preset_env: Controls if we transpile TS sources with babel-preset-env
+        module: The module type to use for the project (es6 or commonjs)
 
         **kwargs: Additional arguments to pass to ts_project
     """
@@ -42,18 +43,27 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
     visibility = kwargs.pop("visibility", ["//visibility:public"])
 
     # Add standard test libraries for the repo test frameworks
-    if kwargs.get("testonly", False):
+    testonly = kwargs.get("testonly", False)
+    if testonly:
         deps = deps + [d for d in [
-            "//:node_modules/@types/jest",
+            "//:node_modules/@jest/globals",
             "//:node_modules/@types/mocha",
-            "//:node_modules/@types/testing-library__jest-dom",
+            "//:node_modules/@jest/expect",
         ] if not d in deps]
+
+    transpiler = partial.make(
+        swc,
+        swcrc = kwargs.pop("swcrc", "//:.swcrc"),
+        # Test code using jest.mock needs to be transpiled to CommonJS.
+        args = ["--config-json", '{"module": {"type": "commonjs"}}'] if module == "commonjs" else [],
+    )
 
     # Default arguments for ts_project.
     _ts_project(
         name = name,
         srcs = srcs,
         deps = deps,
+        transpiler = transpiler,
 
         # tsconfig options, default to the root
         tsconfig = kwargs.pop("tsconfig", "//:tsconfig"),
@@ -64,16 +74,6 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
         source_map = kwargs.pop("source_map", True),
         preserve_jsx = kwargs.pop("preserve_jsx", None),
         visibility = visibility,
-
-        # use babel as the transpiler
-        transpiler = partial.make(
-            _babel,
-            use_preset_env = use_preset_env,
-            module = kwargs.pop("module", None),
-            tags = kwargs.get("tags", []),
-            visibility = visibility,
-            testonly = kwargs.get("testonly", None),
-        ),
         supports_workers = 0,
 
         # Allow any other args
@@ -130,8 +130,19 @@ def npm_package(name, srcs = [], **kwargs):
 def jest_test(name, data = [], **kwargs):
     _jest_test(
         name = name,
-        config = "//:jest_config",
+        config = kwargs.pop("config", "//:jest_config"),
         snapshots = kwargs.pop("snapshots", True),
         data = data + native.glob(["**/__fixtures__/**/*"]),
+        **kwargs
+    )
+
+def ts_binary(name, entry_point, data = [], env = {}, **kwargs):
+    """A wrapper around js_binary that invokes a TypeScript entrypoint using ts-node."""
+    js_binary(
+        name = name,
+        entry_point = entry_point,
+        data = data + ["//:node_modules/ts-node"],
+        env = dict(env, **{"TS_NODE_TRANSPILE_ONLY": "1"}),
+        node_options = ["--require", "ts-node/register"],
         **kwargs
     )

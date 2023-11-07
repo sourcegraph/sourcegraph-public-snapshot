@@ -312,8 +312,9 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                                     const { languageId } = getTextDocument(activeEditor.resource)
                                     return Object.assign(activeEditor, { model: { languageId } })
                                 }
-                                case 'DirectoryViewer':
+                                case 'DirectoryViewer': {
                                     return activeEditor
+                                }
                             }
                         })
                     ),

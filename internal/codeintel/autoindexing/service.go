@@ -34,7 +34,6 @@ func newService(
 	observationCtx *observation.Context,
 	store store.Store,
 	inferenceSvc InferenceService,
-	repoUpdater RepoUpdaterClient,
 	repoStore database.RepoStore,
 	gitserverClient gitserver.Client,
 ) *Service {
@@ -56,7 +55,6 @@ func newService(
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(
 		observationCtx,
 		store,
-		repoUpdater,
 		repoStore,
 		gitserverClient,
 		jobSelector,
@@ -130,8 +128,8 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
-func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) error {
-	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, assumeSynced)
+func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo) error {
+	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg)
 }
 
 func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (*shared.InferenceResult, error) {

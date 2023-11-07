@@ -54,7 +54,7 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
 
                 if (proposedQueryResultCountGroup) {
                     for (const result of proposedQueryResultCountGroup) {
-                        proposedQueryResultCount += parseInt(result.value.replace(/\D/g, ''), 10)
+                        proposedQueryResultCount += parseInt(result.value.replaceAll(/\D/g, ''), 10)
                     }
                 }
                 acc += proposedQueryResultCount
