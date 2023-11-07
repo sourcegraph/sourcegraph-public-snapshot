@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -26,6 +27,30 @@ func UseManagedServicesRepo(c *cli.Context) error {
 		return os.Chdir(repoRoot)
 	}
 	return nil
+}
+
+func ListServices() ([]string, error) {
+	var services []string
+	return services, filepath.Walk("services", func(path string, info fs.FileInfo, err error) error {
+		if info.Name() == "services" {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			return nil
+		}
+		if _, err := os.Stat(ServiceYAMLPath(info.Name())); err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+
+		services = append(services, info.Name())
+		return nil
+	})
 }
 
 func ServiceYAMLPath(serviceID string) string {

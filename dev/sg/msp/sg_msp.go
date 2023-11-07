@@ -191,11 +191,10 @@ func init() {
 			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
 			Before:      msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "output",
-					Aliases: []string{"o"},
-					Usage:   "Output directory for generated Terraform assets, relative to service spec",
-					Value:   "terraform",
+				&cli.BoolFlag{
+					Name:  "all",
+					Usage: "Generate infrastructure stacks for all services, or all envs for a service if service ID is provided",
+					Value: false,
 				},
 				&cli.BoolFlag{
 					Name:  "tfc",
@@ -204,61 +203,41 @@ func init() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				if c.Args().Len() != 2 {
-					return errors.New("exactly 2 arguments required: service ID and environment ID")
-				}
+				var (
+					generateAll = c.Bool("all")
+					useTFC      = c.Bool("tfc")
+				)
 
-				// Load specification
-				serviceSpecPath := msprepo.ServiceYAMLPath(c.Args().First())
-
-				serviceSpecData, err := os.ReadFile(serviceSpecPath)
-				if err != nil {
-					return err
-				}
-				service, err := spec.Parse(serviceSpecData)
-				if err != nil {
-					return err
-				}
-				deployEnv := service.GetEnvironment(c.Args().Get(1))
-				if deployEnv == nil {
-					return errors.Newf("environment %q not found in service spec", c.Args().Get(1))
-				}
-
-				renderer := managedservicesplatform.Renderer{
-					OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), c.String("output"), deployEnv.ID),
-					GCP:       managedservicesplatform.GCPOptions{},
-					TFC: managedservicesplatform.TerraformCloudOptions{
-						Enabled: c.Bool("tfc"),
-					},
-				}
-
-				// CDKTF needs the output dir to exist ahead of time, even for
-				// rendering. If it doesn't exist yet, create it
-				if f, err := os.Lstat(renderer.OutputDir); err != nil {
-					if !os.IsNotExist(err) {
-						return errors.Wrap(err, "check output directory")
+				// Generate specific service
+				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
+					return errors.New("first argument service ID is required without the '-all' flag")
+				} else if serviceID != "" {
+					targetEnv := c.Args().Get(1)
+					if targetEnv == "" && !generateAll {
+						return errors.New("second argument environment ID is required without the '-all' flag")
 					}
-					if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
-						return errors.Wrap(err, "prepare output directory")
-					}
-				} else if !f.IsDir() {
-					return errors.Newf("output directory %q is not a directory", renderer.OutputDir)
+
+					return generateTerraform(serviceID, generateTerraformOptions{
+						targetEnv: targetEnv,
+						useTFC:    useTFC,
+					})
 				}
 
-				// Render environment
-				cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, *deployEnv)
+				// Generate all services
+				serviceIDs, err := msprepo.ListServices()
 				if err != nil {
-					return err
+					return errors.Wrap(err, "list services")
 				}
-
-				pending := std.Out.Pending(output.Styledf(output.StylePending,
-					"Generating Terraform assets in %q...", renderer.OutputDir))
-				if err := cdktf.Synthesize(); err != nil {
-					pending.Destroy()
-					return err
+				if len(serviceIDs) == 0 {
+					return errors.New("no services found")
 				}
-				pending.Complete(
-					output.Styledf(output.StyleSuccess, "Terraform assets generated in %q!", renderer.OutputDir))
+				for _, serviceID := range serviceIDs {
+					if err := generateTerraform(serviceID, generateTerraformOptions{
+						useTFC: useTFC,
+					}); err != nil {
+						return errors.Wrap(err, serviceID)
+					}
+				}
 				return nil
 			},
 		},
@@ -436,5 +415,78 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 		summary.WriteString("\n")
 	}
 	std.Out.WriteMarkdown(summary.String())
+	return nil
+}
+
+type generateTerraformOptions struct {
+	// targetEnv generates the specified env only, otherwise generates all
+	targetEnv string
+	// useTFC enables Terraform Cloud integration
+	useTFC bool
+}
+
+func generateTerraform(serviceID string, opts generateTerraformOptions) error {
+	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+
+	serviceSpecData, err := os.ReadFile(serviceSpecPath)
+	if err != nil {
+		return err
+	}
+	service, err := spec.Parse(serviceSpecData)
+	if err != nil {
+		return err
+	}
+
+	var envs []spec.EnvironmentSpec
+	if opts.targetEnv != "" {
+		deployEnv := service.GetEnvironment(opts.targetEnv)
+		if deployEnv == nil {
+			return errors.Newf("environment %q not found in service spec", opts.targetEnv)
+		}
+		envs = append(envs, *deployEnv)
+	} else {
+		envs = service.Environments
+	}
+
+	for _, env := range envs {
+		pending := std.Out.Pending(output.Styledf(output.StylePending,
+			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
+		renderer := managedservicesplatform.Renderer{
+			OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), "terraform", env.ID),
+			GCP:       managedservicesplatform.GCPOptions{},
+			TFC: managedservicesplatform.TerraformCloudOptions{
+				Enabled: opts.useTFC,
+			},
+		}
+
+		// CDKTF needs the output dir to exist ahead of time, even for
+		// rendering. If it doesn't exist yet, create it
+		if f, err := os.Lstat(renderer.OutputDir); err != nil {
+			if !os.IsNotExist(err) {
+				return errors.Wrap(err, "check output directory")
+			}
+			if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
+				return errors.Wrap(err, "prepare output directory")
+			}
+		} else if !f.IsDir() {
+			return errors.Newf("output directory %q is not a directory", renderer.OutputDir)
+		}
+
+		// Render environment
+		cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, env)
+		if err != nil {
+			return err
+		}
+
+		pending.Updatef("[%s] Generating Terraform assets in %q for environment %q...",
+			serviceID, renderer.OutputDir, env.ID)
+		if err := cdktf.Synthesize(); err != nil {
+			pending.Destroy()
+			return err
+		}
+		pending.Complete(output.Styledf(output.StyleSuccess,
+			"[%s] Terraform assets generated in %q!", serviceID, renderer.OutputDir))
+	}
+
 	return nil
 }
