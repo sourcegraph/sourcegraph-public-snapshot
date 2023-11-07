@@ -41,6 +41,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     session: { canSignOut: true },
     settingsURL: '#',
     siteAdmin: true,
+    emails: [],
     organizations: {
         nodes: [
             {

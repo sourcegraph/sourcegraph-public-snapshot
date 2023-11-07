@@ -29,6 +29,13 @@ export default config
 export const NewGlobalNavigationBarDemo: StoryFn = () => (
     <NewGlobalNavigationBar
         isSourcegraphDotCom={true}
+        ownEnabled={true}
+        notebooksEnabled={true}
+        searchContextsEnabled={true}
+        codeMonitoringEnabled={true}
+        showSearchBox={true}
+        codeInsightsEnabled={true}
+        batchChangesEnabled={true}
         authenticatedUser={
             {
                 username: 'alice',
@@ -47,7 +54,6 @@ export const NewGlobalNavigationBarDemo: StoryFn = () => (
                 siteAdmin: true,
             } as AuthenticatedUser
         }
-        // authenticatedUser={null}
         selectedSearchContextSpec=""
         fetchSearchContexts={mockFetchSearchContexts}
         getUserSearchContextNamespaces={mockGetUserSearchContextNamespaces}

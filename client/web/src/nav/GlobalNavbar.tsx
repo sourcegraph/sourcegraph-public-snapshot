@@ -195,7 +195,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 />
 
                 <NavActions>
-                    {process.env.NODE_ENV === 'development' && (
+                    {developerMode && (
                         <NavAction>
                             <DeveloperSettingsGlobalNavItem />
                         </NavAction>

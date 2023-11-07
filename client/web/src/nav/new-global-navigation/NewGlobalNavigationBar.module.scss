@@ -59,6 +59,7 @@
     position: relative;
     z-index: 2;
     min-width: 0;
+
     --search-box-border: none;
 
     :global(.theme-dark) & {
@@ -108,7 +109,7 @@
     left: 0;
     display: flex;
     flex-direction: column;
-    width: 300px;
+    width: 18.75rem;
     height: 100%;
     transform: unset;
     border: none;
@@ -130,7 +131,7 @@
     }
 
     &-logo {
-        width: 140px;
+        width: 8.75rem;
     }
 
     &-nav {

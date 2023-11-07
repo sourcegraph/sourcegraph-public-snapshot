@@ -1159,6 +1159,7 @@ ts_project(
         "src/nav/StatusMessagesNavItemQueries.ts",
         "src/nav/UserNavItem.tsx",
         "src/nav/index.ts",
+        "src/nav/new-global-navigation/NewGlobalNavigationBar.tsx",
         "src/notebooks/GlobalNotebooksArea.tsx",
         "src/notebooks/backend.ts",
         "src/notebooks/blocks/NotebookBlock.tsx",
