@@ -248,12 +248,20 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 	}
 
-	// It is not uncommon to have files with upper-case extensions
-	// like .C, .H, .CPP etc., especially for code developed on
-	// case-insensitive filesystems.
-	langName, ok := extToLang[strings.ToLower(ext)]
+	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, UnrecognizedFileExtensionError
+		// It is not uncommon to have files with upper-case extensions
+		// like .C, .H, .CPP etc., especially for code developed on
+		// case-insensitive filesystems. So check if lower-casing helps.
+		//
+		// It might be tempting to refactor this code to store all the
+		// extensions in lower-case and do one lookup instead of two,
+		// but that would be incorrect as we want to distinguish files
+		// named 'build' (a common name for shell scripts) vs BUILD
+		//// (file extension for Bazel).
+		if langName, ok = extToLang[strings.ToLower(ext)]; !ok {
+			return nil, UnrecognizedFileExtensionError
+		}
 	}
 
 	langSpec, ok := langToLangSpec[langName]
