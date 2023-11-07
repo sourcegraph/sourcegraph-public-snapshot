@@ -59,7 +59,7 @@ js_library(
     name = "fetch-mock",
     srcs = ["src/fetch.js"],
     visibility = ["//visibility:public"],
-    declarations = ["src/fetch.js" ]
+    declarations = ["src/fetch.js" ],
     deps = [
         "//:node_modules/node-fetch",
     ],
