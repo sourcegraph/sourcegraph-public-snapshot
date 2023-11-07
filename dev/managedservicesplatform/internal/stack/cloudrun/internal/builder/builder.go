@@ -11,9 +11,12 @@ import (
 
 type Variables struct {
 	Service     spec.ServiceSpec
-	Image       string
 	Environment spec.EnvironmentSpec
 
+	// Image and ResolvedImageTag are used to declare the full image reference
+	// to deploy.
+	Image            string
+	ResolvedImageTag string
 	// GCPProjectID for all resources.
 	GCPProjectID string
 	// GCPRegion for all resources.
