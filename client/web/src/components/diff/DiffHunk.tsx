@@ -73,7 +73,7 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                             line.kind === DiffHunkLineType.ADDED && styles.lineAddition,
                             ((line.kind !== DiffHunkLineType.ADDED && location.hash === '#' + oldAnchor) ||
                                 (line.kind !== DiffHunkLineType.DELETED && location.hash === '#' + newAnchor)) &&
-                            styles.lineActive
+                                styles.lineActive
                         )}
                     >
                         {lineNumbers && (
