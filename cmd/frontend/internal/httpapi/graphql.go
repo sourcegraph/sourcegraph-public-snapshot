@@ -113,42 +113,42 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			if costErr != nil {
 				logger.Debug("failed to estimate GraphQL cost",
 					log.Error(costErr))
-			}
-			traceData.costError = costErr
-			traceData.cost = cost
-			// Track the cost distribution of requests in a histogram.
-			if cost != nil {
+				traceData.costError = costErr
+			} else if cost != nil {
+				traceData.cost = cost
+
+				// Track the cost distribution of requests in a histogram.
 				costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
-			}
 
-			if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
-				return errors.New("query exceeds maximum alias count")
-			}
-
-			if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
-				if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
-					logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
+				if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
+					return errors.New("query exceeds maximum alias count")
 				}
-				return errors.New("query exceeds maximum query cost")
-			}
 
-			if rl, enabled := rlw.Get(); enabled && cost != nil {
-				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
-					IsIP:          isIP,
-					Anonymous:     anonymous,
-					RequestName:   requestName,
-					RequestSource: requestSource,
-				})
-				if err != nil {
-					logger.Error("checking GraphQL rate limit", log.Error(err))
-					traceData.limitError = err
-				} else {
-					traceData.limited = limited
-					traceData.limitResult = result
-					if limited {
-						w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
-						w.WriteHeader(http.StatusTooManyRequests)
-						return nil
+				if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
+					if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
+						logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
+					}
+					return errors.New("query exceeds maximum query cost")
+				}
+
+				if rl, enabled := rlw.Get(); enabled {
+					limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
+						IsIP:          isIP,
+						Anonymous:     anonymous,
+						RequestName:   requestName,
+						RequestSource: requestSource,
+					})
+					if err != nil {
+						logger.Error("checking GraphQL rate limit", log.Error(err))
+						traceData.limitError = err
+					} else {
+						traceData.limited = limited
+						traceData.limitResult = result
+						if limited {
+							w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
+							w.WriteHeader(http.StatusTooManyRequests)
+							return nil
+						}
 					}
 				}
 			}
