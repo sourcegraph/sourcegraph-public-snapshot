@@ -21,7 +21,7 @@ export const getInitialSearchTerm = (repo: string): string => {
     const r = repo.split('/')
     // This is what the linter required instead of r[r.length - 1].
     // *shrugs*
-    return at(r, r.length - 1)[0]
+    return at(r, r.length - 1)[0].trim()
 }
 
 export const stringToCodeHostType = (codeHostType: string): CodeHostType => {
