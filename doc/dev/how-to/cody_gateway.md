@@ -11,13 +11,18 @@ Since Cody Gateway cucrently depends on Sourcegraph.com, there's not much point 
 sg start dotcom
 ```
 
-Then, set up some feature flags:
+*However*, the locally running Cody Gateway is not used by default - `dev-private` credentials point towards a [shared development instance of Cody Gateway](https://handbook.sourcegraph.com/departments/engineering/teams/cody/cody-gateway/).
+To use the locally running Cody Gateway, follow the steps in [use a locally running Cody Gateway](#use-a-locally-running-cody-gateway)
+
+## Use a locally running Cody Gateway
+
+First, set up some feature flags on your local Sourcegraph instance:
 
 - `product-subscriptions-service-account`: set to `true` globally for convenience.
   In production, this flag is used to denote service accounts, but in development it doesn't matter.
   - You can also create an additional user and set this flag to `true` only for that user for more robust testing.
 
-Configure Cody features to talk to your local Cody Gateway:
+To use this locally running Cody Gateway from your local Sourcegraph instance, configure Cody features to talk to your local Cody Gateway in site configuration, similar to what [customers do to enable Cody Enterprise](../../cody/overview/enable-cody-enterprise.md):
 
 ```json
 {
@@ -37,17 +42,24 @@ Configure Cody features to talk to your local Cody Gateway:
 }
 ```
 
+Similar values can be [configured for embeddings](https://docs.sourcegraph.com/cody/core-concepts/embeddings) to use embeddings through your local Cody Gateway isntead.
+
+Now, we need to make sure your local Cody Gateway instance can access upstream LLM services.
 Add the following to your `sg.config.overwrite.yaml`:
 
 ```yaml
 commands:
   cody-gateway:
     env:
-      # Get from dev-private access token
+      # Access token for accessing Anthropic:
+      # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&h=my.1password.com&i=athw572l6xqqvtnbbgadevgbqi&v=dnrhbauihkhjs5ag6vszsme45a
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: "..."
       # Create a personal access token on https://sourcegraph.test:3443/user/settings/tokens
-      # or on your `product-subscriptions-service-account` user.
+      # or on your `product-subscriptions-service-account` user. This allows your
+      # local Cody Gateway to access user information in the Sourcegraph instance.
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: "..."
+      # Other values, such as CODY_GATEWAY_OPENAI_ACCESS_TOKEN and
+      # CODY_GATEWAY_OPENAI_ORG_ID, can be set to access OpenAI services as well.
 ```
 
 For more configuration options, refer to the [configuration source code](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/cody-gateway/shared/config.go#L60).

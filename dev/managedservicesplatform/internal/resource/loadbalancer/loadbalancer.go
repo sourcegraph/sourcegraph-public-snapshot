@@ -26,6 +26,7 @@ type Config struct {
 	ProjectID string
 	Region    string
 
+	// TargetService should be the Cloud Run Service to point to.
 	TargetService cloudrunv2service.CloudRunV2Service
 
 	// SSLCertificate must be either computesslcertificate.ComputeSslCertificate

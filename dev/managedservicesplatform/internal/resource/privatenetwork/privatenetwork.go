@@ -1,4 +1,4 @@
-package cloudrun
+package privatenetwork
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
@@ -9,22 +9,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type cloudRunPrivateNetworkConfig struct {
+type Config struct {
 	ProjectID string
 	ServiceID string
 	Region    string
 }
 
-type cloudRunPrivateNetworkOutput struct {
-	network    computenetwork.ComputeNetwork
-	subnetwork computesubnetwork.ComputeSubnetwork
-	connector  vpcaccessconnector.VpcAccessConnector
+type Output struct {
+	Network    computenetwork.ComputeNetwork
+	Subnetwork computesubnetwork.ComputeSubnetwork
+	Connector  vpcaccessconnector.VpcAccessConnector
 }
 
-// newCloudRunPrivateNetwork sets up a network for the Cloud Run service to interface
+// New sets up a network for the Cloud Run service to interface
 // with other GCP services. We create it directly in this stack package becasue
 // it is very specific to the Cloud Run service.
-func newCloudRunPrivateNetwork(scope constructs.Construct, config cloudRunPrivateNetworkConfig) *cloudRunPrivateNetworkOutput {
+func New(scope constructs.Construct, config Config) *Output {
 	network := computenetwork.NewComputeNetwork(
 		scope,
 		pointers.Ptr("cloudrun-network"),
@@ -77,9 +77,9 @@ func newCloudRunPrivateNetwork(scope constructs.Construct, config cloudRunPrivat
 		},
 	)
 
-	return &cloudRunPrivateNetworkOutput{
-		network:    network,
-		subnetwork: subnetwork,
-		connector:  connector,
+	return &Output{
+		Network:    network,
+		Subnetwork: subnetwork,
+		Connector:  connector,
 	}
 }

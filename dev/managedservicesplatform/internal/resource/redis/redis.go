@@ -28,7 +28,6 @@ type Config struct {
 	Spec spec.EnvironmentResourceRedisSpec
 }
 
-// TODO: Add validation
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
 	redis := redisinstance.NewRedisInstance(scope,
 		id.ResourceID("instance"),
@@ -43,7 +42,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			AuthEnabled:           true,
 			TransitEncryptionMode: pointers.Ptr("SERVER_AUTHENTICATION"),
 			PersistenceConfig: &redisinstance.RedisInstancePersistenceConfig{
-				PersistenceMode: pointers.Ptr("RDB"),
+				PersistenceMode:   pointers.Ptr("RDB"),
+				RdbSnapshotPeriod: pointers.Ptr("TWENTY_FOUR_HOURS"),
 			},
 
 			AuthorizedNetwork: config.Network.SelfLink(),
@@ -59,8 +59,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	return &Output{
 		// Note double-s "rediss" for TLS
 		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/redis_instance#server_ca_certs
-		Endpoint: fmt.Sprintf("rediss://:%s@%s:%d",
-			*redis.AuthString(), *redis.Host(), int(*redis.Port())),
+		// Also note that redis.Port() is a Terraform reference, and _must_ be
+		// interpolated using '%v' to preserve the reference
+		Endpoint: fmt.Sprintf("rediss://:%s@%s:%v",
+			*redis.AuthString(), *redis.Host(), *redis.Port()),
 		Certificate: *redisCACert,
 	}, nil
 }

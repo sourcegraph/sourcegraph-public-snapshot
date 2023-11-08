@@ -1,44 +1,47 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cloudrun",
-    srcs = [
-        "adapters.go",
-        "cloudrun.go",
-        "network.go",
-    ],
+    srcs = ["cloudrun.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun",
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/internal/resource/bigquery",
-        "//dev/managedservicesplatform/internal/resource/cloudflare",
-        "//dev/managedservicesplatform/internal/resource/cloudflareorigincert",
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
-        "//dev/managedservicesplatform/internal/resource/loadbalancer",
-        "//dev/managedservicesplatform/internal/resource/managedcert",
+        "//dev/managedservicesplatform/internal/resource/privatenetwork",
         "//dev/managedservicesplatform/internal/resource/random",
         "//dev/managedservicesplatform/internal/resource/redis",
         "//dev/managedservicesplatform/internal/resource/serviceaccount",
         "//dev/managedservicesplatform/internal/resourceid",
         "//dev/managedservicesplatform/internal/stack",
+        "//dev/managedservicesplatform/internal/stack/cloudrun/internal/builder",
+        "//dev/managedservicesplatform/internal/stack/cloudrun/internal/builder/job",
+        "//dev/managedservicesplatform/internal/stack/cloudrun/internal/builder/service",
         "//dev/managedservicesplatform/internal/stack/options/cloudflareprovider",
         "//dev/managedservicesplatform/internal/stack/options/googleprovider",
         "//dev/managedservicesplatform/internal/stack/options/randomprovider",
         "//dev/managedservicesplatform/spec",
         "//lib/errors",
         "//lib/pointers",
-        "@com_github_aws_constructs_go_constructs_v10//:constructs",
         "@com_github_aws_jsii_runtime_go//:jsii-runtime-go",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2service",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2serviceiammember",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computenetwork",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesubnetwork",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectiamcustomrole",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//vpcaccessconnector",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectiammember",
         "@org_golang_x_exp//maps",
         "@org_golang_x_exp//slices",
+    ],
+)
+
+go_test(
+    name = "cloudrun_test",
+    srcs = ["cloudrun_test.go"],
+    embed = [":cloudrun"],
+    deps = [
+        "//lib/pointers",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

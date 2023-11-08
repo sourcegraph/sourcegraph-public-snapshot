@@ -56,15 +56,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         </td>
         <td
           class="content"
-          data-diff-marker=" "
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker=" "
           >
                     const subscriptions = new Subscription()
           </div>
@@ -104,15 +105,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         </td>
         <td
           class="content"
-          data-diff-marker=" "
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker=" "
           >
                     const foo = sourcegraph.app.foo()
           </div>
@@ -152,15 +154,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         </td>
         <td
           class="content"
-          data-diff-marker=" "
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker=" "
           >
                     const connection = await createConnection()
           </div>
@@ -189,15 +192,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         />
         <td
           class="content"
-          data-diff-marker="-"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             deleted line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker="-"
           >
                     logger.log(\`WebSocket connection to TypeScript backend opened\`)
           </div>
@@ -226,15 +230,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         </td>
         <td
           class="content"
-          data-diff-marker="+"
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             added line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker="+"
           >
                     logger.log(\`WebSocket connection to language server opened\`)
           </div>
@@ -274,15 +279,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         </td>
         <td
           class="content"
-          data-diff-marker=" "
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker=" "
           >
                     subscriptions.add(
           </div>
@@ -322,15 +328,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         </td>
         <td
           class="content"
-          data-diff-marker=" "
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker=" "
           >
                             connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt;
              {
@@ -371,15 +378,16 @@ exports[`DiffHunk > renders a unified diff view for the given diff hunk 1`] = `
         </td>
         <td
           class="content"
-          data-diff-marker=" "
         >
           <span
+            class="diffTypeDescription"
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
             unchanged line
           </span>
           <div
             class="d-inline-block"
+            data-diff-marker=" "
           >
                                 const method = LSP_TO_LOG_LEVEL[type]
           </div>

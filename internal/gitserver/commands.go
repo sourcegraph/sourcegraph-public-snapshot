@@ -791,10 +791,10 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 
 // BlameOptions configures a blame.
 type BlameOptions struct {
-	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
-
-	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
-	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
+	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
+	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
 }
 
 func (o *BlameOptions) Attrs() []attribute.KeyValue {
@@ -802,6 +802,7 @@ func (o *BlameOptions) Attrs() []attribute.KeyValue {
 		attribute.String("newestCommit", string(o.NewestCommit)),
 		attribute.Int("startLine", o.StartLine),
 		attribute.Int("endLine", o.EndLine),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
 	}
 }
 
@@ -859,7 +860,10 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain", "--incremental"}
+	args := []string{"blame", "--porcelain", "--incremental"}
+	if opt.IgnoreWhitespace {
+		args = append(args, "-w")
+	}
 	if opt.StartLine != 0 || opt.EndLine != 0 {
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
@@ -899,7 +903,10 @@ func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, c
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain"}
+	args := []string{"blame", "--porcelain"}
+	if opt.IgnoreWhitespace {
+		args = append(args, "-w")
+	}
 	if opt.StartLine != 0 || opt.EndLine != 0 {
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
