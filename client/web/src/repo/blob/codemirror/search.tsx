@@ -219,11 +219,9 @@ class SearchPanel implements Panel {
                         className="cm-search-toggle test-blob-view-search-case-sensitive"
                     />
 
-                    {
-                        /* commenting regex filter out since it is breaking everything
-                         * TODO: fix it
-                         */
-                    }
+                    {/* commenting regex filter out since it is breaking everything
+                     * TODO: fix it
+                     */}
                     <QueryInputToggle
                         isActive={searchQuery.regexp}
                         onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
@@ -242,6 +240,7 @@ class SearchPanel implements Panel {
                             variant="secondary"
                             onClick={this.findPrevious}
                             data-testid="blob-view-search-previous"
+                            aria-label="previous result"
                         >
                             <Icon svgPath={mdiChevronUp} aria-hidden={true} />
                         </Button>
@@ -254,6 +253,7 @@ class SearchPanel implements Panel {
                             variant="secondary"
                             onClick={this.findNext}
                             data-testid="blob-view-search-next"
+                            aria-label="next result"
                         >
                             <Icon svgPath={mdiChevronDown} aria-hidden={true} />
                         </Button>
@@ -465,7 +465,7 @@ const theme = EditorView.theme({
     },
     '.cm-search-toggle': {
         color: 'var(--gray-06)',
-    }
+    },
 })
 
 interface SearchConfig {
@@ -483,20 +483,20 @@ export function search(config: SearchConfig): Extension {
             return searchKeymap.map(binding =>
                 binding.key === 'Mod-f'
                     ? {
-                        ...binding,
-                        run: view => {
-                            // By default pressing Mod+f when the search input is already focused won't select
-                            // the input value, unlike browser's built-in search feature.
-                            // We are overwriting the keybinding here to ensure that the input value is always
-                            // selected.
-                            const result = binding.run?.(view)
-                            if (result) {
-                                view.dispatch({ effects: focusSearchInput.of(true) })
-                                return true
-                            }
-                            return false
-                        },
-                    }
+                          ...binding,
+                          run: view => {
+                              // By default pressing Mod+f when the search input is already focused won't select
+                              // the input value, unlike browser's built-in search feature.
+                              // We are overwriting the keybinding here to ensure that the input value is always
+                              // selected.
+                              const result = binding.run?.(view)
+                              if (result) {
+                                  view.dispatch({ effects: focusSearchInput.of(true) })
+                                  return true
+                              }
+                              return false
+                          },
+                      }
                     : binding
             )
         }
