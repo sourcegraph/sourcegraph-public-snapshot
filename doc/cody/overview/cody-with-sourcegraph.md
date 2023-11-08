@@ -126,6 +126,8 @@ To view how Cody works with Sourcegraph Search, let's run a global search query 
 
 You can view the default **Ask Cody** chat interface on the right sidebar. Once connected, Cody automatically gains context to your connected codebase to help you provide contextually-aware and accurate answers to your questions. There are also example questions that you can use to get started.
 
+With a free Sourcegraph instance, you can use Cody chat with Code Search on ten public and one private repository. For Sourcegraph Enterprise instance, Cody Chat extends to repositories indexed by your site administrator.
+
 Let's **Ask Cody** to explain the tech stack of a repository.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
