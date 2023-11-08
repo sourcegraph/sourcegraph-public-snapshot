@@ -198,7 +198,7 @@ class SearchPanel implements Panel {
                     this.input?.select()
                 }}
             >
-                <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-2">
+                <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-1">
                     <Input
                         ref={element => (this.input = element)}
                         type="search"
@@ -216,45 +216,54 @@ class SearchPanel implements Panel {
                         onToggle={() => this.commit({ caseSensitive: !searchQuery.caseSensitive })}
                         iconSvgPath={mdiFormatLetterCase}
                         title="Case sensitivity"
-                        className="test-blob-view-search-case-sensitive"
+                        className="cm-search-toggle test-blob-view-search-case-sensitive"
                     />
-                    <QueryInputToggle
-                        isActive={searchQuery.regexp}
-                        onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
-                        iconSvgPath={mdiRegex}
-                        title="Regular expression"
-                        className="test-blob-view-search-regexp"
-                    />
-                </div>
-                <Button
-                    className="mr-2"
-                    type="button"
-                    size="sm"
-                    outline={true}
-                    variant="secondary"
-                    onClick={this.findPrevious}
-                    data-testid="blob-view-search-previous"
-                >
-                    <Icon svgPath={mdiChevronUp} aria-hidden={true} />
-                    Previous
-                </Button>
 
-                <Button
-                    className="mr-3"
-                    type="button"
-                    size="sm"
-                    outline={true}
-                    variant="secondary"
-                    onClick={this.findNext}
-                    data-testid="blob-view-search-next"
-                >
-                    <Icon svgPath={mdiChevronDown} aria-hidden={true} />
-                    Next
-                </Button>
+                    {
+                        /* commenting regex filter out since it is breaking everything
+                         * TODO: fix it
+                         *
+                         * <QueryInputToggle
+                        //     isActive={searchQuery.regexp}
+                        //     onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
+                        //     iconSvgPath={mdiRegex}
+                        //     title="Regular expression"
+                        //     className="cm-search-toggle test-blob-view-search-regexp"
+                        />*/
+                    }
+                </div>
+                {totalMatches > 1 && (
+                    <>
+
+                        <Button
+                            className="mr-2"
+                            type="button"
+                            size="sm"
+                            outline={true}
+                            variant="secondary"
+                            onClick={this.findPrevious}
+                            data-testid="blob-view-search-previous"
+                        >
+                            <Icon svgPath={mdiChevronUp} aria-hidden={true} />
+                        </Button>
+
+                        <Button
+                            className="mr-3"
+                            type="button"
+                            size="sm"
+                            outline={true}
+                            variant="secondary"
+                            onClick={this.findNext}
+                            data-testid="blob-view-search-next"
+                        >
+                            <Icon svgPath={mdiChevronDown} aria-hidden={true} />
+                        </Button>
+                    </>
+                )}
 
                 {searchQuery.search ? (
                     <div>
-                        <Text className="m-0">
+                        <Text className="cm-search-results m-0 small">
                             {currentMatchIndex !== null && `${currentMatchIndex} / `}
                             {totalMatches} {pluralize('result', totalMatches)}
                         </Text>
@@ -268,7 +277,7 @@ class SearchPanel implements Panel {
                             value={overrideBrowserSearch}
                             onToggle={this.setOverrideBrowserSearch}
                         />
-                        {searchKeybinding} searches file
+                        {searchKeybinding}
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
@@ -421,13 +430,13 @@ const theme = EditorView.theme({
     '.cm-sg-search-container': {
         backgroundColor: 'var(--code-bg)',
         padding: '0.375rem 1rem',
+        border: 'none',
     },
     '.cm-sg-search-input': {
         borderRadius: 'var(--border-radius)',
         border: '1px solid var(--input-border-color)',
 
         '&:focus-within': {
-            borderColor: 'var(--inpt-focus-border-color)',
             boxShadow: 'var(--input-focus-box-shadow)',
         },
 
@@ -448,8 +457,15 @@ const theme = EditorView.theme({
         backgroundColor: 'var(--oc-orange-3)',
     },
     '.cm-sg-search-info': {
-        color: 'var(--gray-06)',
+        color: 'var(--body-color)',
     },
+    '.cm-search-results': {
+        color: 'var(--body-color)',
+        fontFamily: 'var(--font-family-base)',
+    },
+    '.cm-search-toggle': {
+        color: 'var(--gray-07)',
+    }
 })
 
 interface SearchConfig {
@@ -467,20 +483,20 @@ export function search(config: SearchConfig): Extension {
             return searchKeymap.map(binding =>
                 binding.key === 'Mod-f'
                     ? {
-                          ...binding,
-                          run: view => {
-                              // By default pressing Mod+f when the search input is already focused won't select
-                              // the input value, unlike browser's built-in search feature.
-                              // We are overwriting the keybinding here to ensure that the input value is always
-                              // selected.
-                              const result = binding.run?.(view)
-                              if (result) {
-                                  view.dispatch({ effects: focusSearchInput.of(true) })
-                                  return true
-                              }
-                              return false
-                          },
-                      }
+                        ...binding,
+                        run: view => {
+                            // By default pressing Mod+f when the search input is already focused won't select
+                            // the input value, unlike browser's built-in search feature.
+                            // We are overwriting the keybinding here to ensure that the input value is always
+                            // selected.
+                            const result = binding.run?.(view)
+                            if (result) {
+                                view.dispatch({ effects: focusSearchInput.of(true) })
+                                return true
+                            }
+                            return false
+                        },
+                    }
                     : binding
             )
         }
