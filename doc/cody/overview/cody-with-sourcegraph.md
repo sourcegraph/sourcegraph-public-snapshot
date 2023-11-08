@@ -101,7 +101,7 @@
 
 <p class="subtitle">Learn how to use Cody with the default Sourcegraph Code Search.</p>
 
-Cody has a default compatiblity with the Sourcegraph's Code Search. This means that you can use Cody with your Sourcegraph.com instance while running search queries on your code. The functionality is supported on both free and enterprise Sourcegraph instances. For more advanced and customized usage, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
+Cody has a default compatibility with the Sourcegraph's Code Search. You can use Cody with your Sourcegraph.com instance while running search queries on your code. The functionality is supported on both free and enterprise Sourcegraph instances. For more advanced and customized usage, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
 
 <ul class="limg">
   <li>
@@ -114,7 +114,7 @@ Cody has a default compatiblity with the Sourcegraph's Code Search. This means t
 
 ## Initial setup
 
-Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign in. This takes you to the Sourcegraph's native Code Search interface and Cody automatically gets access to your Sourcegraph.com instance.
+Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign-in. This takes you to the Sourcegraph's native Code Search interface, and Cody automatically gets access to your Sourcegraph.com instance.
 
 ## Using Cody chat
 
@@ -124,7 +124,7 @@ To view how Cody works with Sourcegraph Search, let's run a global search query 
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/run-search-query.mp4" type="video/mp4">
 </video>
 
-You can view the default **Ask Cody** chat interface to the right sidebar. Once connected, Cody automatically gains context your connected codebase to help you provide contextually-aware and accurate answers to your questions. There are also example questions that you can use to get started.
+You can view the default **Ask Cody** chat interface on the right sidebar. Once connected, Cody automatically gains context to your connected codebase to help you provide contextually-aware and accurate answers to your questions. There are also example questions that you can use to get started.
 
 Let's **Ask Cody** to explain the tech stack of a repository.
 
@@ -132,7 +132,7 @@ Let's **Ask Cody** to explain the tech stack of a repository.
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/search-cody-chat.mp4" type="video/mp4">
 </video>
 
-## Cody Commands
+## Run Commands
 
 You can also run predefined, reusable prompts [Cody Commands](./../capabilities.md#commands) on your Code Search results. These help you generate contextually aware answers for a selected code snippet or the entire codebase. You can run the following commands:
 
@@ -164,4 +164,4 @@ For more information on what to do next, we recommend the following resources:
 <div class="cards">
   <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends how to use Cody once you have installed the extension in your VS Code editor.</p></a>
   <a class="card text-left" href="./../use-cases"><b>Cody Use Cases</b><p>Explore some of the most common use cases of Cody that helps you with your development workflow.</p></a>
-</div>
+</div
