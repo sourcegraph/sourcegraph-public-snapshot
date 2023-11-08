@@ -1,6 +1,6 @@
 # How to set up Cody Gateway locally
 
-> WARNING: This is a development guide - to use Cody Gateway for Sourcegraph, refer to [Sourcegraph Cody Gateway](../../cody/core-concepts/cody_gateway.md).
+> WARNING: This is a development guide - to use Cody Gateway for Sourcegraph, refer to [Sourcegraph Cody Gateway](../../cody/core-concepts/cody-gateway.md).
 
 This guide documents how to set up [Cody Gateway](https://handbook.sourcegraph.com/departments/engineering/teams/cody/cody-gateway/) locally for development.
 
