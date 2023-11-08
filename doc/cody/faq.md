@@ -162,7 +162,7 @@ Files may be skipped for the following reasons:
 
 ### What is the default `sourcegraph` provider for completions and embeddings?
 
-The default provider for completions and embeddings, specified as `"provider": "sourcegraph"` refers to the [Sourcegraph Cody Gateway](./core-concepts/cody_gateway.md). The Cody Gateway facilitates access to completions and embeddings for Sourcegraph enterprise instances by leveraging third-party services such as Anthropic and OpenAI.
+The default provider for completions and embeddings, specified as `"provider": "sourcegraph"` refers to the [Sourcegraph Cody Gateway](./core-concepts/cody-gateway.md). The Cody Gateway facilitates access to completions and embeddings for Sourcegraph enterprise instances by leveraging third-party services such as Anthropic and OpenAI.
 
 ### What third-party cloud services does Cody depend on?
 
@@ -170,7 +170,7 @@ Cody relies on one primary third-party dependency, i.e., Anthropic's Claude API.
 
 Additionally, Cody can optionally use OpenAI for generating embeddings, enhancing the quality of its context snippets, although this is not mandatory.
 
-It's worth noting that these dependencies remain consistent when utilizing the [default `sourcegraph` provider, Cody Gateway](./core-concepts/cody_gateway.md), which uses the same third-party providers.
+It's worth noting that these dependencies remain consistent when utilizing the [default `sourcegraph` provider, Cody Gateway](./core-concepts/cody-gateway.md), which uses the same third-party providers.
 
 ### What is the retention policy for Anthropic and OpenAI?
 
