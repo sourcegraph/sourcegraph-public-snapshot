@@ -173,7 +173,7 @@ Learn more about how to:
 - [Configure code graph context for Sourcegraph.com][cody-with-sourcegraph-config-graph]
 - [Configure code graph context for Sourcegraph Enterprise][enable-cody-enterprise-config-graph]
 
-### Enable Code Graph Context
+### Configure Code Graph Context
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. Enter the repository's name with embeddings, and Cody can provide more accurate and relevant answers to your coding questions based on that repository's content. To configure this setting in VS Code:
 
