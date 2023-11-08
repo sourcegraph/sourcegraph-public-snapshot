@@ -122,7 +122,7 @@ export const Suggestions: FC<SuggestionsProps> = ({ id, results, activeRowIndex,
                                                 role="gridcell"
                                                 className={classNames(styles.label, 'test-option-label')}
                                             >
-                                                {!option.render && (
+                                                {option.render === undefined && (
                                                     <EmphasizedLabel label={option.label} matches={option.matches} />
                                                 )}
                                                 {option.render === RenderAs.FILTER && <FilterOption option={option} />}
