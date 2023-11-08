@@ -69,7 +69,7 @@
 
 ## Cody Gateway
 
-- [How to set up Cody Gateway locally](cody-gateway.md)
+- [How to set up Cody Gateway locally](cody_gateway.md)
 
 ## Telemetry Gateway
 
