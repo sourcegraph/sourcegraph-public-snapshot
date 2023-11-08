@@ -63,7 +63,6 @@ func (c *vertexAIChatCompletionStreamClient) Stream(
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return err
 	}
-
 	if len(response.Predictions) == 0 {
 		// Empty response.
 		return nil
@@ -80,7 +79,7 @@ func (c *vertexAIChatCompletionStreamClient) Stream(
 
 	ev := types.CompletionResponse{
 		Completion: content,
-		StopReason: "", // unknown
+		StopReason: "done",
 	}
 	err = sendEvent(ev)
 	if err != nil {
@@ -109,6 +108,9 @@ func (c *vertexAIChatCompletionStreamClient) makeRequest(ctx context.Context, re
 		Instances: []chatInstance{{Messages: []message{}}},
 	}
 	for _, m := range requestParams.Messages {
+		if len(m.Text) == 0 {
+			continue
+		}
 		var role string
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
@@ -129,6 +131,7 @@ func (c *vertexAIChatCompletionStreamClient) makeRequest(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(string(reqBody))
 
 	url, err := url.Parse(c.endpoint)
 	if err != nil {
@@ -185,6 +188,7 @@ func (c *vertexAIChatCompletionStreamClient) makeCompletionRequest(ctx context.C
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(string(reqBody))
 	url, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse configured endpoint")
@@ -238,7 +242,7 @@ type completionsInstances struct {
 type parameters struct {
 	CandidateCount  int      `json:"candidateCount"`
 	MaxOutputTokens int      `json:"maxOutputTokens"`
-	StopSequences   []string `json:"stopSequences"`
+	StopSequences   []string `json:"stopSequences,omitempty"`
 	Temperature     float32  `json:"temperature"`
 }
 
@@ -262,12 +266,12 @@ type citationMetadata struct {
 }
 
 type prediction struct {
-	Content           string              `json:"content"` // completion text
-	SafetyAttributes  []safetyAttribute   `json:"safetyAttributes"`
-	Candidates        []candidate         `json:"candidates"` // chat completions
-	GroundingMetadata []groundingMetadata `json:"groundingMetadata"`
-	CitationMetadata  []citationMetadata  `json:"citationMetadata"`
-	Score             float32             `json:"score"` // prediction confidence score (code completions only)
+	Content string `json:"content"` // completion text
+	//SafetyAttributes []safetyAttribute `json:"safetyAttributes"`
+	Candidates []candidate `json:"candidates"` // chat completions
+	//GroundingMetadata []groundingMetadata `json:"groundingMetadata"`
+	//CitationMetadata  []citationMetadata  `json:"citationMetadata"`
+	Score float32 `json:"score"` // prediction confidence score (code completions only)
 }
 
 type tokenMetadata struct {
