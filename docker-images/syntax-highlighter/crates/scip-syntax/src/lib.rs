@@ -115,6 +115,8 @@ mod test {
     generate_tags_and_snapshot!(Scip, test_scip_javascript, "globals.js");
     generate_tags_and_snapshot!(Scip, test_scip_javascript_object, "javascript-object.js");
 
+    generate_tags_and_snapshot!(All, test_tags_c_example, test_scip_c_example, "example.c");
+
     // Test to make sure that kinds are the override behavior
     generate_tags_and_snapshot!(All, test_tags_go_diff, test_scip_go_diff, "go-diff.go");
     generate_tags_and_snapshot!(

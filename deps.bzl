@@ -5919,6 +5919,13 @@ def go_dependencies():
         sum = "h1:oc+BUJi+WYypX8i7vnxz4D4z/99b/H0u5Oc+b1rA5fI=",
         version = "v0.0.0-20230822024612-edb48c530722",
     )
+    go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta",
+        sum = "h1:3rJiF4VGyStWXrqJtVlXBJnpe82Q1k9k74dElVPolR8=",
+        version = "v0.0.0-20231106184355-f739cf8e1d49",
+    )
 
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_random",
@@ -5963,8 +5970,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:LaCvp0g8ICT9+O5lHxT52bE4qsMymZR+PQDW8ANJXzg=",
-        version = "v0.0.0-20231031173451-503302fe8ad1",
+        sum = "h1:W99c7C2pQfMOqXF55tEkFIlcDJvBo/BSCU9SHQj5iWw=",
+        version = "v0.0.0-20231106175229-bec12a772b51",
     )
 
     go_repository(

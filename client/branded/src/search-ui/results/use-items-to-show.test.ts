@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from '@jest/globals'
 import { act, renderHook } from '@testing-library/react'
 import { times } from 'lodash'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { INCREMENTAL_ITEMS_TO_SHOW, DEFAULT_INITIAL_ITEMS_TO_SHOW, useItemsToShow } from './use-items-to-show'
 

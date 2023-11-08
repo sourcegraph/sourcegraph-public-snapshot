@@ -33,6 +33,7 @@ pub fn captures_to_kind(kind: &Option<&String>) -> symbol_information::Kind {
         "kind.function" => Function,
         "kind.getter" => Getter,
         "kind.interface" => Interface,
+        "kind.macro" => Macro,
         "kind.method" => Method,
         "kind.methodalias" => MethodAlias,
         "kind.methodspec" => MethodSpecification,
@@ -46,6 +47,8 @@ pub fn captures_to_kind(kind: &Option<&String>) -> symbol_information::Kind {
         "kind.struct" => Struct,
         "kind.typealias" => TypeAlias,
         "kind.trait" => Trait,
+        "kind.union" => Union,
+        "kind.variable" => Variable,
         // "kind.implementation" => Implementation, TODO
         _ => UnspecifiedKind,
     })
@@ -67,6 +70,7 @@ pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'st
         Function => Some("function"),
         Getter => Some("getter"),
         Interface => Some("interface"),
+        Macro => Some("macro"),
         Method => Some("method"),
         MethodAlias => Some("methodAlias"),
         MethodSpecification => Some("methodSpec"),
@@ -80,6 +84,8 @@ pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'st
         Struct => Some("struct"),
         TypeAlias => Some("typeAlias"),
         Trait => Some("trait"),
+        Union => Some("union"),
+        Variable => Some("variable"),
         // Implementation => Some("implementation"), TODO
         _ => None,
     }

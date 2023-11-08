@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import { Collapse, CollapseHeader, CollapsePanel } from '.'
 

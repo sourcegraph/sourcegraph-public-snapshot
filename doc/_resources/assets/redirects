@@ -412,3 +412,10 @@
 /cody/explanations/cody_gateway /cody/core-concepts/cody_gateway 308
 /cody/explanations/code_graph_context /cody/core-concepts/code-graph 308
 /cody/core-concepts/cody_clients /cody/overview#getting-started 308
+
+# Cody Gateway redirects
+/cody/core-concepts/cody_gateway /cody/core-concepts/cody-gateway 308
+/cody/core-concepts/cody_gateway#using-cody-gateway-in-sourcegraph-enterprise /cody/core-concepts/cody-gateway#using-cody-gateway-in-sourcegraph-enterprise 308
+/cody/core-concepts/cody_gateway#configuring-custom-models /cody/core-concepts/cody-gateway#configuring-custom-models 308
+/cody/core-concepts/cody_gateway#rate-limits-and-quotas /cody/core-concepts/cody-gateway#rate-limits-and-quotas 308
+/cody/core-concepts/cody_gateway#privacy-and-security /cody/core-concepts/cody-gateway#privacy-and-security 308

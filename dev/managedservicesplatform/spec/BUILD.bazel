@@ -14,6 +14,7 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/internal/imageupdater",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_grafana_regexp//:regexp",
         "@io_k8s_sigs_yaml//:yaml",
     ],

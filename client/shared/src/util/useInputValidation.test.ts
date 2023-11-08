@@ -1,9 +1,9 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals'
 import { renderHook, act } from '@testing-library/react'
 import { last, min, noop } from 'lodash'
 import { BehaviorSubject, type Observable, of, Subject, Subscription } from 'rxjs'
 import { delay } from 'rxjs/operators'
 import * as sinon from 'sinon'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
     useInputValidation,

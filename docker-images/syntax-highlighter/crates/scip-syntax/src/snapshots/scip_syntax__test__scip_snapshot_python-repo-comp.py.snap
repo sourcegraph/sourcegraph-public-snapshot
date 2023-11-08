@@ -29,10 +29,10 @@ expression: dumped
       # sock is literally the socket that is used to communicate with the remote
       # collector.
       sock = None
-//    ^^^^ definition scip-ctags RemoteCollector#sock.
+//    ^^^^ definition(Variable) scip-ctags RemoteCollector#sock.
   
       _debug = False
-//    ^^^^^^ definition scip-ctags RemoteCollector#_debug.
+//    ^^^^^^ definition(Variable) scip-ctags RemoteCollector#_debug.
   
       def __init__(self, sock=None, debug=False):
 //        ^^^^^^^^ definition(Method) scip-ctags RemoteCollector#__init__().

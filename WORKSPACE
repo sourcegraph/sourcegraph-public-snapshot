@@ -43,13 +43,6 @@ http_archive(
 )
 
 http_archive(
-    name = "aspect_rules_jest",
-    sha256 = "bf8f4a4d2a833e4f96f866c686c38bcee69d3bdae8a827b1c9d2fdf92212bc0b",
-    strip_prefix = "rules_jest-95d8f1961a9c6f3aee2929881b1b74461652e775",
-    url = "https://github.com/aspect-build/rules_jest/archive/95d8f1961a9c6f3aee2929881b1b74461652e775.tar.gz",
-)
-
-http_archive(
     name = "aspect_rules_swc",
     sha256 = "8eb9e42ed166f20cacedfdb22d8d5b31156352eac190fc3347db55603745a2d8",
     strip_prefix = "rules_swc-1.1.0",
@@ -121,7 +114,7 @@ http_archive(
 )
 
 # hermetic_cc_toolchain setup ================================
-HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.2"
 
 # Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
@@ -137,7 +130,7 @@ http_archive(
     patches = [
         "//third_party/hermetic_cc:disable_ubsan.patch",
     ],
-    sha256 = "57f03a6c29793e8add7bd64186fc8066d23b5ffd06fe9cc6b0b8c499914d3a65",
+    sha256 = "28fc71b9b3191c312ee83faa1dc65b38eb70c3a57740368f7e7c7a49bedf3106",
     urls = [
         "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
         "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
@@ -196,22 +189,6 @@ npm_repositories()
 load("@aspect_rules_ts//ts:repositories.bzl", "rules_ts_dependencies")
 
 rules_ts_dependencies(ts_version = "4.9.5")
-
-# rules_jest setup ==============================
-load("@aspect_rules_jest//jest:dependencies.bzl", "rules_jest_dependencies")
-
-rules_jest_dependencies()
-
-load("@aspect_rules_jest//jest:repositories.bzl", "jest_repositories")
-
-jest_repositories(
-    name = "jest",
-    jest_version = "v28.1.0",
-)
-
-load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
-
-jest_npm_repositories()
 
 # rules_swc setup ==============================
 load("@aspect_rules_swc//swc:dependencies.bzl", "rules_swc_dependencies")

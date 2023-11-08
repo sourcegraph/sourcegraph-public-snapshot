@@ -372,7 +372,7 @@ impl<'a> DocumentGenerator<'a> {
                     Some(char) => char.0,
                     None => {
                         line_contents.chars().count()
-                            - (if line_contents.ends_with("\n") { 1 } else { 0 })
+                            - (if line_contents.ends_with('\n') { 1 } else { 0 })
                     }
                 };
 

@@ -5,12 +5,12 @@ expression: dumped
   # TODO: Deal with duplicates (bruh = 10; bruh = 10;) being marked as definitions
   
   bruh = 10
-//^^^^ definition scip-ctags bruh.
+//^^^^ definition(Variable) scip-ctags bruh.
   
   class Bruh(object):
 //      ^^^^ definition(Class) scip-ctags Bruh#
       a: int
-//    ^ definition scip-ctags Bruh#a.
+//    ^ definition(Variable) scip-ctags Bruh#a.
   
       def __init__(self) -> None:
 //        ^^^^^^^^ definition(Method) scip-ctags Bruh#__init__().
@@ -26,7 +26,7 @@ expression: dumped
   
   if 1 == 1:
       should_show_ifs = False
-//    ^^^^^^^^^^^^^^^ definition scip-ctags should_show_ifs.
+//    ^^^^^^^^^^^^^^^ definition(Variable) scip-ctags should_show_ifs.
   
   # Don't show from whiles / fors
   while False:
@@ -98,12 +98,12 @@ expression: dumped
   
   
   foo, bar, baz = 1, 2, 3
-//^^^ definition scip-ctags foo.
-//     ^^^ definition scip-ctags bar.
-//          ^^^ definition scip-ctags baz.
+//^^^ definition(Variable) scip-ctags foo.
+//     ^^^ definition(Variable) scip-ctags bar.
+//          ^^^ definition(Variable) scip-ctags baz.
   
   # semi-colons haha
   foo = 1; bar = foo
-//^^^ definition scip-ctags foo.
-//         ^^^ definition scip-ctags bar.
+//^^^ definition(Variable) scip-ctags foo.
+//         ^^^ definition(Variable) scip-ctags bar.
 

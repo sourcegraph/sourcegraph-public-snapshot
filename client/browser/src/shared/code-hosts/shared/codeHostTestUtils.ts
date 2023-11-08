@@ -1,9 +1,9 @@
 import assert from 'assert'
 
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
 import { readFile } from 'mz/fs'
 import Simmer, { type Options as SimmerOptions } from 'simmerjs'
 import type { SetIntersection } from 'utility-types'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { DiffPart } from '@sourcegraph/codeintellify'
 

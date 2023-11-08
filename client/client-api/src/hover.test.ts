@@ -1,4 +1,4 @@
-import { describe, expect, test } from '@jest/globals'
+import { describe, expect, test } from 'vitest'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import type { Range } from '@sourcegraph/extension-api-types'

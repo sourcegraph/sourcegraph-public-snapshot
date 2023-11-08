@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`StatusMessagesNavItem all messages 1`] = `
+exports[`StatusMessagesNavItem > all messages 1`] = `
 <DocumentFragment>
   <button
     aria-expanded="false"
@@ -11,7 +11,7 @@ exports[`StatusMessagesNavItem all messages 1`] = `
 </DocumentFragment>
 `;
 
-exports[`StatusMessagesNavItem no messages 1`] = `
+exports[`StatusMessagesNavItem > no messages 1`] = `
 <DocumentFragment>
   <button
     aria-expanded="false"

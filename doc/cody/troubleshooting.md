@@ -41,7 +41,7 @@ For more information, see [Generate Index to Enable Codebase-Aware Answers](core
 
 If you are automatically signed out of Cody upon every VS Code restart due to keychain authentication issues, please follow the suggested steps detailed in the official VS Code docs on [troubleshooting keychain issues](https://code.visualstudio.com/docs/editor/settings-sync#_troubleshooting-keychain-issues) to resolve this.
 
-### Autocomplete Rate limits
+### Autocomplete rate limits
 
 Cody supports 1,000 suggested autocompletions per day, per user. For Sourcegraph Enterprise instances, this rate limit is pooled across all users.
 
@@ -56,3 +56,14 @@ To resolve this via a workaround:
 1. Quit VS Code.
 2. Run `echo "export NODE_TLS_REJECT_UNAUTHORIZED=0" >> ~/.bashrc` in terminal.
 3. Restart VS Code and sign in again.
+
+### Error exceeding `localStorage` quota
+
+When using Cody chat, you may come across this error:
+
+```
+Failed to execute 'setItem' on 'Storage': Setting the value of 'user-history:$user_id' exceeded the quota.
+```
+
+Experiencing this error means that the size of the chat history exceeded what the local storage in your browser can store. Cody saves all context data along with each chat message and this is what primarily causes this.
+To fix this, navigate to https://sourcegraph.example.com/cody/chat and click on `Clear Chat History` if your instance is on v5.2.3+. If on an older version, please clear your browsing data/browser history.

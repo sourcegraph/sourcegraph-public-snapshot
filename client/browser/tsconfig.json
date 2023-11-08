@@ -2,9 +2,6 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "paths": {
-      "*": ["./src/types/*", "../shared/src/types/*", "../common/src/types/*"],
-    },
     "jsx": "react-jsx",
     "resolveJsonModule": true,
     "rootDir": ".",
