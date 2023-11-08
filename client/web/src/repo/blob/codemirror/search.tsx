@@ -263,7 +263,7 @@ class SearchPanel implements Panel {
                 {searchQuery.search ? (
                     <div>
                         <Text className="cm-search-results mt-0 mr-0 mb-0 ml-2 small">
-                            {currentMatchIndex !== null && `${currentMatchIndex} / `}
+                            {currentMatchIndex !== null && `${currentMatchIndex} of `}
                             {totalMatches} {pluralize('result', totalMatches)}
                         </Text>
                     </div>
