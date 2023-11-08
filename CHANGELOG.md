@@ -17,9 +17,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- The fork attribute in changesetTemplate is now acknowleged when creating a batch change via `src-cli`. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
-
 ### Removed
+
+## 5.2.1
+
+### Fixed
+
+- The fork attribute in changesetTemplate is now acknowleged when creating a batch change via `src-cli`. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 
 ## 5.2.0
 
