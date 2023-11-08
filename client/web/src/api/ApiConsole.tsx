@@ -41,9 +41,6 @@ interface Props {
 interface State {
     /** The dynamically imported graphiql module, undefined while loading. */
     graphiqlOrError?: typeof _graphiqlModule | ErrorLike
-
-    /** The URL parameters decoded from the location hash. */
-    parameters: Parameters
 }
 
 /** Represents URL parameters stored in the location.hash */
@@ -69,10 +66,15 @@ export const ApiConsole: React.FC<{}> = () => {
  * Component to show the GraphQL API console.
  */
 class ApiConsoleInner extends React.PureComponent<Props, State> {
-    public state: State = { parameters: {} }
+    public state: State = {}
 
     private updates = new Subject<Parameters>()
     private subscriptions = new Subscription()
+    /** The initial URL parameters decoded from the location hash. */
+    /** This is used to programmatically set the initial editor state. */
+    private initialParameters: Parameters
+    /** The up-to-date URL parameters from the editor. Used to update the URL parameters and provide shareable links. */
+    private currentParameters: Parameters
 
     constructor(props: Props) {
         super(props)
@@ -93,7 +95,8 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
                 // invalid JSON errors in the GraphiQL editor.
             }
         }
-        this.state = { parameters }
+        this.initialParameters = parameters
+        this.currentParameters = parameters
     }
 
     public componentDidMount(): void {
@@ -161,9 +164,9 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
         return (
             <>
                 <GraphiQL
-                    query={this.state.parameters.query}
-                    variables={this.state.parameters.variables}
-                    operationName={this.state.parameters.operationName}
+                    query={this.initialParameters.query}
+                    variables={this.initialParameters.variables}
+                    operationName={this.initialParameters.operationName}
                     onEditQuery={this.onEditQuery}
                     onEditVariables={this.onEditVariables}
                     onEditOperationName={this.onEditOperationName}
@@ -181,19 +184,18 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
     // Update state.parameters when query/variables/operation name are changed
     // so that we can update the browser URL.
 
-    private onEditQuery = (newQuery?: string): void => this.updates.next({ ...this.state.parameters, query: newQuery })
+    private onEditQuery = (newQuery?: string): void =>
+        this.updateCurrentParameters(parameters => ({ ...parameters, query: newQuery }))
 
     private onEditVariables = (newVariables: string): void =>
-        this.updateStateParameters(parameters => ({ ...parameters, variables: newVariables }))
+        this.updateCurrentParameters(parameters => ({ ...parameters, variables: newVariables }))
 
     private onEditOperationName = (newOperationName: string): void =>
-        this.updateStateParameters(parameters => ({ ...parameters, operationName: newOperationName }))
+        this.updateCurrentParameters(parameters => ({ ...parameters, operationName: newOperationName }))
 
-    private updateStateParameters(update: (parameters: Parameters) => Parameters): void {
-        this.setState(
-            state => ({ ...state, parameters: update(state.parameters) }),
-            () => this.updates.next(this.state.parameters)
-        )
+    private updateCurrentParameters(update: (parameters: Parameters) => Parameters): void {
+        this.currentParameters = update(this.currentParameters)
+        this.updates.next(this.currentParameters)
     }
 
     private fetcher: _graphiqlModule.Fetcher = async graphQLParameters => {
