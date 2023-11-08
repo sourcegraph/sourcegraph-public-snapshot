@@ -72,11 +72,11 @@ func TestNewTelemetryEventsExportMode(t *testing.T) {
 			wantMode: TelemetryEventsExportCodyOnly, // cody export is allowed due to terms of use
 		},
 		{
-			name: "export completely disabled via airgapped plan",
+			name: "export disabled via airgapped plan (cody-only export)",
 			licenseKey: mustKey(license.Info{
 				Tags: []string{PlanAirGappedEnterprise.tag()},
 			}),
-			wantMode: TelemetryEventsExportDisabled,
+			wantMode: TelemetryEventsExportCodyOnly, // cody export is allowed due to terms of use
 		},
 		{
 			name:       "no tags, unknown creation",
@@ -105,4 +105,31 @@ func TestNewTelemetryEventsExportMode(t *testing.T) {
 			assert.Equal(t, tc.wantMode, mode)
 		})
 	}
+
+	t.Run("forceExportNone", func(t *testing.T) {
+		forceExportNone = true
+		t.Cleanup(func() { forceExportNone = false })
+
+		t.Run("disabled with airgapped tag", func(t *testing.T) {
+			mode := newTelemetryEventsExportMode(mustKey(license.Info{
+				Tags: []string{PlanAirGappedEnterprise.tag()},
+			}), licensetest.PublicKey)
+			assert.Equal(t, TelemetryEventsExportDisabled, mode)
+		})
+
+		t.Run("cody-only with disabled", func(t *testing.T) {
+			mode := newTelemetryEventsExportMode(mustKey(license.Info{
+				Tags: []string{TelemetryEventsExportDisabledTag},
+			}), licensetest.PublicKey)
+			assert.Equal(t, TelemetryEventsExportCodyOnly, mode)
+		})
+
+		t.Run("no-op without tags", func(t *testing.T) {
+			mode := newTelemetryEventsExportMode(mustKey(license.Info{
+				CreatedAt: telemetryEventsExportEnablementCutOffDate.
+					Add(1 * time.Hour),
+			}), licensetest.PublicKey)
+			assert.Equal(t, TelemetryEventsExportAll, mode)
+		})
+	})
 }

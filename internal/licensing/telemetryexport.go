@@ -14,7 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/license"
 )
 
-var forceExportAll = env.MustGetBool("SRC_TELEMETRY_EVENTS_EXPORT_ALL", false, "Set to true to forcibly enable all events export.")
+var (
+	forceExportAll  = env.MustGetBool("SRC_TELEMETRY_EVENTS_EXPORT_ALL", false, "Set to true to forcibly enable all events export.")
+	forceExportNone = env.MustGetBool("SRC_TELEMETRY_EVENTS_EXPORT_NONE", false, "Set to true to forcibly disable all events export - only allowed if FeatureAllowAirGapped is configured on the instance's license key.")
+)
 
 // telemetryExportEnablementCutOffDate is Oct 4, 2023 UTC, and all licenses
 // created after this date will have telemetry export enabled by default.
@@ -88,7 +91,12 @@ func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) Telemetry
 	}
 
 	if p := (&Info{Info: *key}).Plan(); p.isKnown() && p.HasFeature(FeatureAllowAirGapped, false) {
-		return TelemetryEventsExportDisabled // this is the only way to disable export entirely
+		if forceExportNone {
+			// This is the only way to disable export entirely
+			return TelemetryEventsExportDisabled
+		}
+		// By default, however, we still allow the export of Cody telemetry
+		return TelemetryEventsExportCodyOnly
 	}
 
 	if slices.Contains(key.Tags, TelemetryEventsExportDisabledTag) {
