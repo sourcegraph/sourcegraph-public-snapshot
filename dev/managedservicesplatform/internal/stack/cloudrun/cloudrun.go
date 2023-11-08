@@ -22,12 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/tfvar"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder/job"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder/service"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/cloudflareprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/dynamicvariables"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
@@ -44,6 +46,8 @@ type Variables struct {
 	Service     spec.ServiceSpec
 	Image       string
 	Environment spec.EnvironmentSpec
+
+	StableGenerate bool
 }
 
 const StackName = "cloudrun"
@@ -89,17 +93,26 @@ func makeServiceEnvVarPrefix(serviceID string) string {
 	return strings.ToUpper(strings.ReplaceAll(serviceID, "-", "_")) + "_"
 }
 
+const tfVarKeyResolvedImageTag = "resolved_image_tag"
+
 // NewStack instantiates the MSP cloudrun stack, which is currently a pretty
 // monolithic stack that encompasses all the core components of an MSP service,
 // including networking and dependencies like Redis.
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, outputs := stacks.New(StackName,
+	stack, outputs, err := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
 		cloudflareprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretCloudflareAPIToken,
 			ProjectID: googlesecretsmanager.ProjectID,
 		}),
-		randomprovider.With())
+		randomprovider.With(),
+		dynamicvariables.With(vars.StableGenerate, func() (stack.TFVars, error) {
+			resolvedImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
+			return stack.TFVars{tfVarKeyResolvedImageTag: resolvedImageTag}, err
+		}))
+	if err != nil {
+		return nil, err
+	}
 
 	// Set up a service-specific env var prefix to avoid conflicts where relevant
 	serviceEnvVarPrefix := pointers.Deref(
@@ -182,15 +195,17 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		return nil, errors.Wrap(err, "add user env vars")
 	}
 
+	// Load image tag from tfvars.
+	imageTag := tfvar.New(stack, id, tfvar.Config{
+		VariableKey: tfVarKeyResolvedImageTag,
+		Description: "Resolved image tag to deploy",
+	})
+
 	// Set up build configuration.
-	resolvedImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
-	if err != nil {
-		return nil, errors.Wrap(err, "ResolveTag")
-	}
 	cloudRunBuildVars := builder.Variables{
 		Service:          vars.Service,
 		Image:            vars.Image,
-		ResolvedImageTag: resolvedImageTag,
+		ResolvedImageTag: *imageTag.StringValue,
 		Environment:      vars.Environment,
 		GCPProjectID:     vars.ProjectID,
 		GCPRegion:        gcpRegion,
@@ -287,7 +302,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Collect outputs
 	outputs.Add("cloud_run_service_account", cloudRunBuildVars.ServiceAccount.Email)
-	outputs.Add("resolved_image_tag", resolvedImageTag)
+	outputs.Add("resolved_image_tag", imageTag.StringValue)
 	return &CrossStackOutput{}, nil
 }
 
