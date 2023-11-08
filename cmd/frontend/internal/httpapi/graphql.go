@@ -43,7 +43,10 @@ func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) 
 	if anonymous {
 		return "anonymous"
 	}
-	return string(requestSource)
+	if requestSource != "" {
+		return string(requestSource)
+	}
+	return "unknown"
 }
 
 func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
@@ -113,7 +116,9 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			traceData.costError = costErr
 			traceData.cost = cost
 			// Track the cost distribution of requests in a histogram.
-			costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
+			if cost != nil {
+				costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
+			}
 
 			if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
 				return errors.New("query exceeds maximum alias count")
