@@ -31,6 +31,7 @@ func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverCli
 		gitserverClient,
 		[]OptionalResolver{},
 		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
+		graphql.MaxDepth(maxDepth),
 	)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
