@@ -2,7 +2,6 @@ package squirrel
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 
 	"github.com/grafana/regexp"
@@ -15,6 +14,8 @@ import (
 	"github.com/smacker/go-tree-sitter/python"
 	"github.com/smacker/go-tree-sitter/ruby"
 	"github.com/smacker/go-tree-sitter/typescript/tsx"
+
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 //go:embed language-file-extensions.json
@@ -23,7 +24,7 @@ var languageFileExtensionsJson string
 // Mapping from langauge name to file extensions.
 var langToExts = func() map[string][]string {
 	var m map[string][]string
-	err := json.Unmarshal([]byte(languageFileExtensionsJson), &m)
+	err := jsonc.Unmarshal(languageFileExtensionsJson, &m)
 	if err != nil {
 		panic(err)
 	}
