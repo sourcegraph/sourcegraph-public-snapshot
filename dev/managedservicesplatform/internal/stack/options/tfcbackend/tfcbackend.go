@@ -16,7 +16,7 @@ const metadataKey = "tfc-workspace"
 // With configures the stack to use Terraform Cloud as remote state backend.
 // Any top-level CDKTF stack should use this as remote state backend.
 func With(config Config) stack.NewStackOption {
-	return func(s stack.Stack) {
+	return func(s stack.Stack) error {
 		workspace := config.Workspace(s.Name)
 		_ = cdktf.NewCloudBackend(s.Stack, &cdktf.CloudBackendConfig{
 			Hostname:     pointers.Ptr("app.terraform.io"),
@@ -24,5 +24,6 @@ func With(config Config) stack.NewStackOption {
 			Workspaces:   cdktf.NewNamedCloudWorkspace(&workspace),
 		})
 		s.Metadata[metadataKey] = workspace
+		return nil
 	}
 }

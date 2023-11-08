@@ -41,6 +41,9 @@ type Renderer struct {
 	TFC TerraformCloudOptions
 	// GCPOptions declares GCP-specific configuration for rendered CDKTF components.
 	GCP GCPOptions
+	// StableGenerate, if true, is propagated to stacks to indicate that any values
+	// populated at generation time should not be regenerated.
+	StableGenerate bool
 }
 
 // RenderEnvironment sets up a CDKTF application comprised of stacks that define
@@ -101,6 +104,8 @@ func (r *Renderer) RenderEnvironment(
 		Service:     svc,
 		Image:       build.Image,
 		Environment: env,
+
+		StableGenerate: r.StableGenerate,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}
