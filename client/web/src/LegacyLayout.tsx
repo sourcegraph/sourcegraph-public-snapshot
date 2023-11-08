@@ -279,10 +279,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             batchChangesEnabled={props.batchChangesEnabled}
                             codeInsightsEnabled={props.codeInsightsEnabled ?? false}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            fetchSearchContexts={props.fetchSearchContexts}
-                            getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                             telemetryService={props.telemetryService}
-                            platformContext={props.platformContext}
                         />
                     ) : (
                         <GlobalNavbar

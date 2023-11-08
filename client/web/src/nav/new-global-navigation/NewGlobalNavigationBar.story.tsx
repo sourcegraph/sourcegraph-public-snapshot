@@ -2,10 +2,6 @@ import { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
-import {
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
@@ -55,9 +51,6 @@ export const NewGlobalNavigationBarDemo: StoryFn = () => (
             } as AuthenticatedUser
         }
         selectedSearchContextSpec=""
-        fetchSearchContexts={mockFetchSearchContexts}
-        getUserSearchContextNamespaces={mockGetUserSearchContextNamespaces}
         telemetryService={NOOP_TELEMETRY_SERVICE}
-        platformContext={{} as any}
     />
 )

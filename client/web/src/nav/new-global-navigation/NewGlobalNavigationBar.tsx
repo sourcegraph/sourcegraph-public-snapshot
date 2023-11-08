@@ -9,13 +9,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
 import { Toggles } from '@sourcegraph/branded/src'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import {
-    SearchQueryState,
-    fetchSearchContexts,
-    getUserSearchContextNamespaces,
-    SubmitSearchParameters,
-} from '@sourcegraph/shared/src/search'
+import { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text, Icon, Button, Modal, Link, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
@@ -36,7 +30,7 @@ import { UserNavItem } from '../UserNavItem'
 
 import styles from './NewGlobalNavigationBar.module.scss'
 
-interface NewGlobalNavigationBar extends TelemetryProps, PlatformContextProps<'requestGraphQL'> {
+interface NewGlobalNavigationBar extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     ownEnabled: boolean
@@ -47,8 +41,6 @@ interface NewGlobalNavigationBar extends TelemetryProps, PlatformContextProps<'r
     codeInsightsEnabled: boolean
     showSearchBox: boolean
     selectedSearchContextSpec?: string
-    fetchSearchContexts: typeof fetchSearchContexts
-    getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
 }
 
 /**
@@ -67,9 +59,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
         authenticatedUser,
         selectedSearchContextSpec,
         showSearchBox,
-        fetchSearchContexts,
-        getUserSearchContextNamespaces,
-        platformContext,
         telemetryService,
     } = props
 
@@ -108,9 +97,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         authenticatedUser={authenticatedUser}
                         selectedSearchContextSpec={selectedSearchContextSpec}
-                        fetchSearchContexts={fetchSearchContexts}
-                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                        platformContext={platformContext}
                         telemetryService={telemetryService}
                     />
                 ) : (
@@ -181,12 +167,10 @@ const selectQueryState = (state: SearchQueryState): NavigationSearchBoxState => 
     searchMode: state.searchMode,
 })
 
-interface NavigationSearchBoxProps extends TelemetryProps, PlatformContextProps<'requestGraphQL'> {
+interface NavigationSearchBoxProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     selectedSearchContextSpec?: string
-    fetchSearchContexts: typeof fetchSearchContexts
-    getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
 }
 
 /**
@@ -194,15 +178,7 @@ interface NavigationSearchBoxProps extends TelemetryProps, PlatformContextProps<
  * search box gets focus.
  */
 const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
-    const {
-        authenticatedUser,
-        isSourcegraphDotCom,
-        selectedSearchContextSpec,
-        fetchSearchContexts,
-        getUserSearchContextNamespaces,
-        platformContext,
-        telemetryService,
-    } = props
+    const { authenticatedUser, isSourcegraphDotCom, selectedSearchContextSpec, telemetryService } = props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -242,13 +218,10 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                 patternType={searchPatternType}
                 interpretComments={false}
                 queryState={queryState}
-                platformContext={platformContext}
                 submitSearch={submitSearchOnChange}
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 authenticatedUser={authenticatedUser}
                 selectedSearchContextSpec={selectedSearchContextSpec}
-                getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                fetchSearchContexts={fetchSearchContexts}
                 telemetryService={telemetryService}
                 className={classNames(styles.searchBar, { [styles.searchBarFocused]: isFocused })}
                 onFocus={handleFocus}
