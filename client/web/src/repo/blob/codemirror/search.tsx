@@ -222,21 +222,20 @@ class SearchPanel implements Panel {
                     {
                         /* commenting regex filter out since it is breaking everything
                          * TODO: fix it
-                         *
-                         * <QueryInputToggle
-                        //     isActive={searchQuery.regexp}
-                        //     onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
-                        //     iconSvgPath={mdiRegex}
-                        //     title="Regular expression"
-                        //     className="cm-search-toggle test-blob-view-search-regexp"
-                        />*/
+                         */
                     }
+                    <QueryInputToggle
+                        isActive={searchQuery.regexp}
+                        onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
+                        iconSvgPath={mdiRegex}
+                        title="Regular expression"
+                        className="cm-search-toggle test-blob-view-search-regexp"
+                    />
                 </div>
                 {totalMatches > 1 && (
                     <>
-
                         <Button
-                            className="mr-2"
+                            className="p-1 ml-2 mr-2 mt-0 mb-0"
                             type="button"
                             size="sm"
                             outline={true}
@@ -248,7 +247,7 @@ class SearchPanel implements Panel {
                         </Button>
 
                         <Button
-                            className="mr-3"
+                            className="p-1 mr-0 mt-0 mb-0"
                             type="button"
                             size="sm"
                             outline={true}
@@ -263,7 +262,7 @@ class SearchPanel implements Panel {
 
                 {searchQuery.search ? (
                     <div>
-                        <Text className="cm-search-results m-0 small">
+                        <Text className="cm-search-results mt-0 mr-0 mb-0 ml-2 small">
                             {currentMatchIndex !== null && `${currentMatchIndex} / `}
                             {totalMatches} {pluralize('result', totalMatches)}
                         </Text>
@@ -429,8 +428,7 @@ function announceMatch(view: EditorView, { from, to }: { from: number; to: numbe
 const theme = EditorView.theme({
     '.cm-sg-search-container': {
         backgroundColor: 'var(--code-bg)',
-        padding: '0.375rem 1rem',
-        border: 'none',
+        padding: '0.5rem 0.5rem',
     },
     '.cm-sg-search-input': {
         borderRadius: 'var(--border-radius)',
@@ -449,6 +447,7 @@ const theme = EditorView.theme({
     },
     '.search-container > input.form-control': {
         width: '15rem',
+        height: '1.0rem',
     },
     '.cm-searchMatch': {
         backgroundColor: 'var(--mark-bg)',
@@ -460,11 +459,12 @@ const theme = EditorView.theme({
         color: 'var(--body-color)',
     },
     '.cm-search-results': {
-        color: 'var(--body-color)',
+        color: 'var(--gray-06)',
         fontFamily: 'var(--font-family-base)',
+        marginLeft: '2rem',
     },
     '.cm-search-toggle': {
-        color: 'var(--gray-07)',
+        color: 'var(--gray-06)',
     }
 })
 
