@@ -375,7 +375,6 @@ ts_project(
         "//:node_modules/utility-types",
         "//:node_modules/whatwg-url",
         "//:node_modules/zustand",
-        "//:postcss_config_js",  #keep
         "//schema:settings",  #keep
     ],
 )
@@ -525,5 +524,6 @@ vitest_test(
         ":module_styles",
         ":shared_tests",
         ":snapshots",
+        "//:postcss_config_js",
     ],
 )
