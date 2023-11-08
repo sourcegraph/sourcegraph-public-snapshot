@@ -166,10 +166,6 @@ The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the C
 - Enter the repository name
 - For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
 
-## More benefits
-
-Read more about [Cody capabilities](./../capabilities.md) to learn about all the features it provides to boost your development productivity.
-
 ## More resources
 
 For more information on what to do next, we recommend the following resources:
