@@ -157,15 +157,6 @@ You can view the [list of repositories with embeddings here](../embedded-repos.m
 
 To use Cody with code graph on private code, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
 
-### Enable code graph context
-
-The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. Enter the repository's name with embeddings, and Cody can provide more accurate and relevant answers to your coding questions based on that repository's content. To configure this setting in VS Code:
-
-- Open the **Cody Extension Settings**
-- Search for the `Cody: Codebase`
-- Enter the repository name
-- For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
-
 ## More resources
 
 For more information on what to do next, we recommend the following resources:
