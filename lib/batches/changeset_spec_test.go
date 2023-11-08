@@ -111,6 +111,26 @@ func TestParseChangesetSpec(t *testing.T) {
 			}`,
 			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* commits: Array must have at most 1 items",
 		},
+		{
+			name: "with fork",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [{
+				  "message": "commit message",
+				  "diff": "the diff",
+				  "authorName": "Mary McButtons",
+				  "authorEmail": "mary@example.com"
+				}],
+				"fork": true
+			}`,
+		},
 	}
 
 	for _, tc := range tests {
