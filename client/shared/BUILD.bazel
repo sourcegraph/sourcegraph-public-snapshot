@@ -374,6 +374,7 @@ ts_project(
         "//:node_modules/utility-types",
         "//:node_modules/zustand",
         "//schema:settings",  #keep
+        "//:postcss_config_js",
     ],
 )
 
