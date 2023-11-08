@@ -136,10 +136,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             queryState={queryState}
             onChange={setQueryState}
             onSubmit={onSubmit}
-            platformContext={platformContext}
             authenticatedUser={authenticatedUser}
-            fetchSearchContexts={fetchSearchContexts}
-            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
             isSourcegraphDotCom={isSourcegraphDotCom}
             submitSearch={submitSearchOnChange}
             selectedSearchContextSpec={selectedSearchContextSpec}
