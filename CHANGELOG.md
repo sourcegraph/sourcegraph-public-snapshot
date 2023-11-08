@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- The fork attribute in changesetTemplate is now acknowleged when creating a batch change via `src-cli`. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
+
 ### Removed
 
 ## 5.2.0
@@ -24,12 +26,6 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 - Added flag to configure the concurrency of uploading multipart code-intel indexes, for when limited upload bandwidth causes individual parts to timeout. [#1023](https://github.com/sourcegraph/src-cli/pull/1023)
-
-### Changed
-
-### Fixed
-
-### Removed
 
 ## 5.1.2
 
@@ -57,10 +53,6 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 - Renamed `src repo {add|update|delete}-kvp` to `repo {add|update|delete}-metadata` [#972](https://github.com/sourcegraph/src-cli/pull/972)
-
-### Fixed
-
-### Removed
 
 ## 5.0.3
 
@@ -91,12 +83,6 @@ All notable changes to `src-cli` are documented in this file.
 
 - `src team` (experimental) has been added to manage teams. [#922](https://github.com/sourcegraph/src-cli/pull/922)
 - `src codeowners` (experimental) has been added to manage manually ingested `CODEOWNERS`. [#943](https://github.com/sourcegraph/src-cli/pull/943)
-
-### Changed
-
-### Fixed
-
-### Removed
 
 ## 4.5.0
 
