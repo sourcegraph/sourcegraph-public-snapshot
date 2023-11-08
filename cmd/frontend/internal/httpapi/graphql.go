@@ -128,7 +128,7 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 
 			if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
 				if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
-					logger.Warn(fmt.Sprintf("GQL cost limit exceeded. Query: (%s), Vars: (%s)", params.Query, params.Variables))
+					logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
 				}
 				return errors.New("query exceeds maximum query cost")
 			}
