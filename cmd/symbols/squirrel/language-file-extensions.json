@@ -51,7 +51,12 @@
     "h++",
     "hh",
     "h",
-    "hpp"
+    "hpp",
+    // For Pro*C/C++ which was requested by a customer
+    // See: https://github.com/sourcegraph/customer/issues/124
+    // And https://web.archive.org/web/20231107051418/https://otl.sourceforge.net/otl3_ex59.htm
+    "pc",
+    "pcc"
   ],
   "csharp": [
     "cs",
