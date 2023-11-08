@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -125,6 +127,9 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			}
 
 			if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
+				if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
+					logger.Warn(fmt.Sprintf("GQL cost limit exceeded. Query: (%s), Vars: (%s)", params.Query, params.Variables))
+				}
 				return errors.New("query exceeds maximum query cost")
 			}
 
