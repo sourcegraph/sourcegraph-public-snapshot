@@ -173,6 +173,7 @@ Learn more about how to:
 - [Configure code graph context for Sourcegraph.com][cody-with-sourcegraph-config-graph]
 - [Configure code graph context for Sourcegraph Enterprise][enable-cody-enterprise-config-graph]
 
+
 ## Updating the extension
 
 VS Code will typically notify you when updates are available for installed extensions. Follow the prompts to update the Cody AI extension to the latest version.

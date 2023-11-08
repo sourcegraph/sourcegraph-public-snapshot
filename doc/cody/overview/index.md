@@ -162,6 +162,12 @@ You can start using Cody with one of the following clients:
     </a>
   </li>
   <li>
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/sign-in?returnTo=/search">
+      <h3><img alt="Cody with Sourcegraph Search" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody with Sourcegraph Search</h3>
+      <p>Use Cody with the Sourcegraph Code Search interface.</p>
+    </a>
+  </li>
+  <li>
     <a class="card text-left" target="_blank" href="https://about.sourcegraph.com/cody/pricing">
       <h3><img alt="Cody Enterprise" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody Enterprise</h3>
       <p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p>
