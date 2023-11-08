@@ -7,7 +7,6 @@ import {
     StateField,
     type Transaction,
     type TransactionSpec,
-    type Range,
 } from '@codemirror/state'
 import { Decoration, EditorView, keymap } from '@codemirror/view'
 import { concat, from, of } from 'rxjs'
@@ -32,15 +31,22 @@ import { type TooltipSource, showTooltip } from './tooltips'
 const tokenSelection = Annotation.define<boolean>()
 const setTooltipSource = StateEffect.define<TooltipSource | null>()
 
+const interactiveOccurrenceClass = 'interactive-occurrence'
+
 const interactiveTokenDeco = Decoration.mark({
-    class: 'interactive-occurrence', // used as interactive occurrence selector
+    // We need to add the 'focus-visible' here to
+    // 1. style the focused occurrence with the same style we use for other elements
+    //    (except in certain situations, see theme extension below)
+    // 2. prevent the focus-visible polyfill from mutation CodeMirror controlled DOM,
+    //    which causes its own focus issues.
+    //    (the polyfill leaves focused elements alone which have the class set explicitly)
+    class: `${interactiveOccurrenceClass} focus-visible`,
     attributes: {
         // Selected (focused) occurrence is the only focusable element in the editor.
         // This helps to maintain the focus position when editor is blurred and then focused again.
         tabindex: '0',
     },
 })
-const focusedTokenDeco = Decoration.mark({ class: 'focus-visible' })
 
 /**
  * Returns `true` if the editor selection is empty or is inside the occurrence range.
@@ -88,10 +94,11 @@ const selectedToken = StateField.define<{
     range: { from: number; to: number }
     tooltipSource?: TooltipSource | null
 } | null>({
-    create(state) {
-        const offset = state.selection.main.from
-        const range = findOccurrenceRangeAt(state, offset)
-        return range ? { range } : null
+    create() {
+        // TODO(fkling): The selected token should be initialized form the initial selection,
+        // but at this point the syntax data used to determine the type of token might not
+        // be available yet, causing false positives.
+        return null
     },
     update(value, transaction) {
         if (shouldUpdateSelectedToken(transaction)) {
@@ -178,15 +185,30 @@ const selectedToken = StateField.define<{
                 if (!selectedRange) {
                     return Decoration.none
                 }
-                const decorations: Range<Decoration>[] = [
-                    interactiveTokenDeco.range(selectedRange.from, selectedRange.to),
-                ]
-                if (shouldApplyFocusStyles(state, selectedRange)) {
-                    decorations.unshift(focusedTokenDeco.range(selectedRange.from, selectedRange.to))
-                }
-                return Decoration.set(decorations, true)
+                return Decoration.set(interactiveTokenDeco.range(selectedRange.from, selectedRange.to), true)
             })
         ),
+
+        // Controls how the focused/selected occurrence should be styled. Don't show a focus ring
+        // (controlled by following theme), if text selection is not contained within the focused
+        // occurrence.
+        EditorView.contentAttributes.compute([self, 'selection'], state => {
+            const selectedRange = state.field(self)?.range
+            return {
+                class:
+                    selectedRange && shouldApplyFocusStyles(state, selectedRange) ? 'focus-interactive-occurrence' : '',
+            }
+        }),
+
+        EditorView.theme({
+            // Disable focus style in certain situations. We do this via CSS instead of computing
+            // different decorations prevent CodeMirror from recreating the corresponding DOM nodes,
+            // which in turn avoids loosing focus and ensures keyboard navigation continues to work.
+            // (if the DOM node that has focus is removed, focus moves to the body).
+            '.cm-content:not(.focus-interactive-occurrence) .interactive-occurrence.focus-visible': {
+                boxShadow: 'none',
+            },
+        }),
 
         /**
          * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus

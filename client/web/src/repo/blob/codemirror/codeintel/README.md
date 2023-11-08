@@ -22,7 +22,7 @@ panel).
 The extensions themselves can be organized into two groups:
 
 1. Extensions that react to user events or outside input. For example the
-   *hover* or *pin* extensions.
+   _hover_ or _pin_ extensions.
 2. Extensions that receive input from the first group to fetch data from the
    code intel API and update the "enrich" the file view e.g. via decorations.
 
