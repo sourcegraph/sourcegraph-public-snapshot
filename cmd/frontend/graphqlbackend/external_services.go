@@ -37,8 +37,6 @@ func externalServicesWritable() error {
 	return nil
 }
 
-const syncExternalServiceTimeout = 15 * time.Second
-
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
 }
