@@ -280,5 +280,6 @@ vitest_test(
     data = [
         ":branded_tests",
         ":snapshots",
+        "//:postcss_config_js",
     ],
 )
