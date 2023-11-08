@@ -14,6 +14,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -155,11 +156,18 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 					http.Error(w, "Could not encode OAuth state.", http.StatusInternalServerError)
 					return
 				}
-				http.SetCookie(w, NewCookie(config, stateVal))
+
+				if err := session.SetData(w, req, "oauthState", stateVal); err != nil {
+					log15.Error("Failed to saving state to session", "error", err)
+					http.Error(w, "Failed to saving state to session", http.StatusInternalServerError)
+					return
+				}
 				ctx = goauth2.WithState(ctx, stateVal)
-			} else if cookie, err := req.Cookie(config.Name); err == nil { // not login and cookie exists
-				// add the cookie state to the ctx
-				ctx = goauth2.WithState(ctx, cookie.Value)
+			} else {
+				var stateVal string
+				if err = session.GetData(req, "oauthState", &stateVal); err == nil {
+					ctx = goauth2.WithState(ctx, stateVal)
+				}
 			}
 			handler.ServeHTTP(w, req.WithContext(ctx))
 		}
