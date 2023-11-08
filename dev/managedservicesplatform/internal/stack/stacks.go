@@ -74,23 +74,30 @@ func NewSet(renderDir string, opts ...NewStackOption) *Set {
 	}
 }
 
-// ExplicitStackOutputs adds an explicit output to the Terraform stack for human
+// StackLocals adds an explicit output to the Terraform stack for human
 // reference. This is separate from outputs returned explicitly from Stack
-// constructors, which are intended for programatic access.
-type ExplicitStackOutputs struct{ s cdktf.TerraformStack }
+// constructors, which are intended for programatic access. It also adds
+// local variables for reference by custom resources.
+type StackLocals struct{ s Stack }
 
-// Add renders a non-sensitive key-value pair as part of the workspace outputs.
-func (o *ExplicitStackOutputs) Add(name string, value any) {
-	_ = cdktf.NewTerraformOutput(o.s,
+// Add renders a non-sensitive key-value pair as part of the workspace outputs,
+// under the resource ID 'output-${name}'.
+//
+// The value is also available to locals under '${name}', so that they can
+// accessed under 'local.${name}' in custom resources.
+func (l *StackLocals) Add(name string, value any, description string) {
+	_ = cdktf.NewTerraformOutput(l.s.Stack,
 		resourceid.New("output").ResourceID(name),
 		&cdktf.TerraformOutputConfig{
-			Value:     value,
-			Sensitive: pointers.Ptr(false),
+			Value:       value,
+			Sensitive:   pointers.Ptr(false),
+			Description: &description,
 		})
+	_ = cdktf.NewTerraformLocal(l.s.Stack, &name, value)
 }
 
 // New creates a new stack belonging to this set.
-func (s *Set) New(name string, opts ...NewStackOption) (cdktf.TerraformStack, ExplicitStackOutputs, error) {
+func (s *Set) New(name string, opts ...NewStackOption) (cdktf.TerraformStack, StackLocals, error) {
 	stack := Stack{
 		Name:             name,
 		Stack:            cdktf.NewTerraformStack(s.app, &name),
@@ -99,11 +106,11 @@ func (s *Set) New(name string, opts ...NewStackOption) (cdktf.TerraformStack, Ex
 	}
 	for _, opt := range append(s.opts, opts...) {
 		if err := opt(stack); err != nil {
-			return nil, ExplicitStackOutputs{}, err
+			return nil, StackLocals{}, err
 		}
 	}
 	s.stacks = append(s.stacks, stack)
-	return stack.Stack, ExplicitStackOutputs{stack.Stack}, nil
+	return stack.Stack, StackLocals{stack}, nil
 }
 
 // ExtractApp returns the underlying CDKTF application of this stack.Set for

@@ -98,8 +98,8 @@ const tfVarKeyResolvedImageTag = "resolved_image_tag"
 // NewStack instantiates the MSP cloudrun stack, which is currently a pretty
 // monolithic stack that encompasses all the core components of an MSP service,
 // including networking and dependencies like Redis.
-func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, outputs, err := stacks.New(StackName,
+func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOutput, _ error) {
+	stack, locals, err := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
 		cloudflareprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretCloudflareAPIToken,
@@ -303,8 +303,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	// Collect outputs
-	outputs.Add("cloud_run_service_account", cloudRunBuildVars.ServiceAccount.Email)
-	outputs.Add("resolved_image_tag", imageTag.StringValue)
+	locals.Add("cloud_run_service_account", cloudRunBuildVars.ServiceAccount.Email,
+		"Service Account email used as Cloud Run resource workload identity")
+	locals.Add("image_tag", imageTag.StringValue,
+		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{}, nil
 }
 

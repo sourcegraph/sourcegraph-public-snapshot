@@ -105,7 +105,7 @@ const (
 
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, outputs, err := stacks.New(StackName,
+	stack, locals, err := stacks.New(StackName,
 		randomprovider.With(),
 		// ID is not known ahead of time, we can omit it
 		googleprovider.With(""))
@@ -167,7 +167,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	// Collect outputs
-	outputs.Add("project_id", project.ProjectId())
+	locals.Add("project_id", project.ProjectId(), "Generated project ID")
 	return &CrossStackOutput{
 		Project: project,
 		CloudRunIdentity: googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
