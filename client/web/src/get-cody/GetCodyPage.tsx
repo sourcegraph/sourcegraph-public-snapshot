@@ -65,7 +65,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                     <div>
                         <Text className={styles.getStartedWithCodyTitle}>Get started with Cody</Text>
                         <Text className={styles.getStartedWithCodyDescription}>
-                            Try Cody free on your local machine with the Cody app and IDE extensions.
+                            Try Cody free on your local machine with our IDE extensions.
                         </Text>
                     </div>
                     <CodyLetsWorkIcon className={styles.codyLetsWorkImage} />
