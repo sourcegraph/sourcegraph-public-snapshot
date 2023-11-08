@@ -43,6 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The GitHub Proxy service is no longer required and has been removed from deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
 - The VSCode search extension "Sourcegraph for VS Code" has been sunset and removed from Sourcegraph
   repository. [#58023](https://github.com/sourcegraph/sourcegraph/pull/58023)
+- The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
 ## Unreleased 5.2.3
 
