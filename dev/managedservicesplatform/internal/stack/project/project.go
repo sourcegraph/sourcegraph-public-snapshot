@@ -36,6 +36,7 @@ var gcpServices = []string{
 	"storage-component.googleapis.com",
 	"bigquery.googleapis.com",
 	"cloudprofiler.googleapis.com",
+	"cloudscheduler.googleapis.com",
 }
 
 const (
