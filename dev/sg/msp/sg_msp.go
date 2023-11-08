@@ -205,6 +205,11 @@ sg msp generate -all <service>
 					Value: false,
 				},
 				&cli.BoolFlag{
+					Name:  "stable",
+					Usage: "Disable updating of any values that are evaluated at generation time",
+					Value: false,
+				},
+				&cli.BoolFlag{
 					Name:  "tfc",
 					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
 					Value: true,
@@ -212,9 +217,14 @@ sg msp generate -all <service>
 			},
 			Action: func(c *cli.Context) error {
 				var (
-					generateAll = c.Bool("all")
-					useTFC      = c.Bool("tfc")
+					generateAll    = c.Bool("all")
+					stableGenerate = c.Bool("stable")
+					useTFC         = c.Bool("tfc")
 				)
+
+				if stableGenerate {
+					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
+				}
 
 				// Generate specific service
 				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
@@ -226,8 +236,9 @@ sg msp generate -all <service>
 					}
 
 					return generateTerraform(serviceID, generateTerraformOptions{
-						targetEnv: targetEnv,
-						useTFC:    useTFC,
+						targetEnv:      targetEnv,
+						stableGenerate: stableGenerate,
+						useTFC:         useTFC,
 					})
 				}
 
@@ -241,7 +252,8 @@ sg msp generate -all <service>
 				}
 				for _, serviceID := range serviceIDs {
 					if err := generateTerraform(serviceID, generateTerraformOptions{
-						useTFC: useTFC,
+						stableGenerate: stableGenerate,
+						useTFC:         useTFC,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
 					}
@@ -429,6 +441,9 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 type generateTerraformOptions struct {
 	// targetEnv generates the specified env only, otherwise generates all
 	targetEnv string
+	// stableGenerate disables updating of any values that are evaluated at
+	// generation time
+	stableGenerate bool
 	// useTFC enables Terraform Cloud integration
 	useTFC bool
 }
@@ -465,6 +480,7 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 			TFC: managedservicesplatform.TerraformCloudOptions{
 				Enabled: opts.useTFC,
 			},
+			StableGenerate: opts.stableGenerate,
 		}
 
 		// CDKTF needs the output dir to exist ahead of time, even for

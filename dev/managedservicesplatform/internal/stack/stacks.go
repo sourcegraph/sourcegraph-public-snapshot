@@ -1,11 +1,34 @@
 package stack
 
 import (
+	"bytes"
+	"sort"
+	"strconv"
+
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+type TFVars map[string]string
+
+func (v TFVars) RenderTFVarsFile() []byte {
+	if len(v) == 0 {
+		return []byte{'\n'}
+	}
+	keys := maps.Keys(v)
+	sort.Strings(keys)
+	var b bytes.Buffer
+	for _, k := range keys {
+		b.WriteString(k)
+		b.WriteString(" = ")
+		b.WriteString(strconv.Quote(v[k]))
+		b.WriteByte('\n')
+	}
+	return b.Bytes()
+}
 
 // Stack encapsulates a CDKTF stack and the name the stack was originally
 // created with.
@@ -14,6 +37,10 @@ type Stack struct {
 	Stack cdktf.TerraformStack
 	// Metadata is arbitrary metadata that can be attached by stack options.
 	Metadata map[string]string
+	// DynamicVariables are rendered into a tfvar file, and should be used to
+	// track anything that requires an external datasource to populate up-front
+	// at generation time.
+	DynamicVariables TFVars
 }
 
 // Set collects the stacks that comprise a CDKTF application.
@@ -33,7 +60,7 @@ type Set struct {
 
 // NewStackOption applies modifications to cdktf.TerraformStacks when they are
 // created.
-type NewStackOption func(s Stack)
+type NewStackOption func(s Stack) error
 
 // NewSet creates a new stack.Set, which collects the stacks that comprise a
 // CDKTF application.
@@ -63,17 +90,20 @@ func (o *ExplicitStackOutputs) Add(name string, value any) {
 }
 
 // New creates a new stack belonging to this set.
-func (s *Set) New(name string, opts ...NewStackOption) (cdktf.TerraformStack, ExplicitStackOutputs) {
+func (s *Set) New(name string, opts ...NewStackOption) (cdktf.TerraformStack, ExplicitStackOutputs, error) {
 	stack := Stack{
-		Name:     name,
-		Stack:    cdktf.NewTerraformStack(s.app, &name),
-		Metadata: make(map[string]string),
+		Name:             name,
+		Stack:            cdktf.NewTerraformStack(s.app, &name),
+		Metadata:         make(map[string]string),
+		DynamicVariables: make(map[string]string),
 	}
 	for _, opt := range append(s.opts, opts...) {
-		opt(stack)
+		if err := opt(stack); err != nil {
+			return nil, ExplicitStackOutputs{}, err
+		}
 	}
 	s.stacks = append(s.stacks, stack)
-	return stack.Stack, ExplicitStackOutputs{stack.Stack}
+	return stack.Stack, ExplicitStackOutputs{stack.Stack}, nil
 }
 
 // ExtractApp returns the underlying CDKTF application of this stack.Set for
@@ -87,10 +117,4 @@ func ExtractApp(set *Set) cdktf.App { return set.app }
 //
 // It is intentionally not part of the stack.Set interface as it should not
 // generally be needed.
-func ExtractStacks(set *Set) []string {
-	var stackNames []string
-	for _, s := range set.stacks {
-		stackNames = append(stackNames, s.Name)
-	}
-	return stackNames
-}
+func ExtractStacks(set *Set) []Stack { return set.stacks }

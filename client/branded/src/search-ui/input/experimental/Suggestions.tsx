@@ -1,4 +1,4 @@
-import React, { type MouseEvent, useMemo, useState, useCallback, useLayoutEffect } from 'react'
+import React, { type MouseEvent, useMemo, useState, useCallback, useLayoutEffect, Fragment, type FC } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,7 +7,10 @@ import { isSafari } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
-import type { Action, CustomRenderer, Group, Option } from './suggestionsExtension'
+import { decorateQuery } from '../../util/query'
+
+import { RenderAs, type Action, type Group, type Option } from './suggestionsExtension'
+import { getSpans } from './utils'
 
 import styles from './Suggestions.module.scss'
 
@@ -27,7 +30,7 @@ function getActionName(action: Action): string {
     }
 }
 
-interface SuggesionsProps {
+interface SuggestionsProps {
     id: string
     results: Group[]
     activeRowIndex: number
@@ -35,13 +38,7 @@ interface SuggesionsProps {
     onSelect(option: Option, action?: Action): void
 }
 
-export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
-    id,
-    results,
-    activeRowIndex,
-    onSelect,
-    open = false,
-}) => {
+export const Suggestions: FC<SuggestionsProps> = ({ id, results, activeRowIndex, onSelect, open = false }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
     // Handles mouse clicks on suggestions. The corresponding option is determined by the extracting group and option
@@ -125,13 +122,11 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                                 role="gridcell"
                                                 className={classNames(styles.label, 'test-option-label')}
                                             >
-                                                {option.render ? (
-                                                    renderStringOrRenderer(option.render, option)
-                                                ) : option.matches ? (
-                                                    <HighlightedLabel label={option.label} matches={option.matches} />
-                                                ) : (
-                                                    option.label
+                                                {option.render === undefined && (
+                                                    <EmphasizedLabel label={option.label} matches={option.matches} />
                                                 )}
+                                                {option.render === RenderAs.FILTER && <FilterOption option={option} />}
+                                                {option.render === RenderAs.QUERY && <QueryOption option={option} />}
                                             </div>
                                             {option.description && (
                                                 <div role="gridcell" className={styles.description}>
@@ -161,49 +156,42 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
     )
 }
 
-const Footer: React.FunctionComponent<{ option: Option }> = ({ option }) => (
+const Footer: FC<{ option: Option }> = ({ option }) => (
     <div className={classNames(styles.footer, 'd-flex align-items-center justify-content-between')}>
         <span>
-            {option.info && renderStringOrRenderer(option.info, option)}
-            {!option.info && (
-                <>
-                    <ActionInfo action={option.action} shortcut="Enter" />{' '}
-                    {option.alternativeAction && <ActionInfo action={option.alternativeAction} shortcut="Mod+Enter" />}
-                </>
-            )}
+            <ActionInfo action={option.action} shortcut="Enter" />{' '}
+            {option.alternativeAction && <ActionInfo action={option.alternativeAction} shortcut="Mod+Enter" />}
         </span>
         <Icon className={styles.icon} svgPath={mdiInformationOutline} aria-hidden="true" />
     </div>
 )
 
-const ActionInfo: React.FunctionComponent<{ action: Action; shortcut: string }> = ({ action, shortcut }) => {
-    let info: Renderable = action.info ? renderStringOrRenderer(action.info, action) : null
-    if (!info) {
-        switch (action.type) {
-            case 'completion': {
-                info = (
-                    <>
-                        <strong>add</strong> to your query
-                    </>
-                )
-                break
-            }
-            case 'goto': {
-                info = (
-                    <>
-                        <strong>go to</strong> the suggestion
-                    </>
-                )
-                break
-            }
-            case 'command': {
-                info = (
-                    <>
-                        <strong>execute</strong> the command
-                    </>
-                )
-                break
-            }
+const ActionInfo: FC<{ action: Action; shortcut: string }> = ({ action, shortcut }) => {
+    let info: Renderable = action.info ?? null
+    switch (action.type) {
+        case 'completion': {
+            info = (
+                <>
+                    <strong>add</strong> to your query
+                </>
+            )
+            break
+        }
+        case 'goto': {
+            info = (
+                <>
+                    <strong>go to</strong> the suggestion
+                </>
+            )
+            break
+        }
+        case 'command': {
+            info = (
+                <>
+                    <strong>execute</strong> the command
+                </>
+            )
+            break
         }
     }
 
@@ -214,41 +202,58 @@ const ActionInfo: React.FunctionComponent<{ action: Action; shortcut: string }> 
     )
 }
 
-function renderStringOrRenderer<T>(renderer: CustomRenderer<T>, obj: T): Renderable {
-    if (typeof renderer === 'string') {
-        return renderer
-    }
-    return renderer(obj)
+const FilterOption: FC<{ option: Option }> = ({ option }) => {
+    const label = option.label
+    const separatorIndex = label.indexOf(':')
+    const field = separatorIndex > -1 ? label.slice(0, separatorIndex) : label
+    const value = separatorIndex > -1 ? label.slice(separatorIndex + 1) : ''
+
+    return (
+        <span className={styles.filterOption}>
+            <span className="search-filter-keyword">
+                {option.matches ? <EmphasizedLabel label={field} matches={option.matches} /> : field}
+                <span className={styles.separator}>:</span>
+            </span>
+            {value && <EmphasizedLabel label={value} matches={option.matches} offset={field.length + 1} />}
+        </span>
+    )
 }
 
-export const HighlightedLabel: React.FunctionComponent<{ label: string; matches: Set<number>; offset?: number }> = ({
+/**
+ * Adaption of {@link SyntaxHighlightedSearchQuery} to support emphasizing matching substrings.
+ */
+const QueryOption: FC<{ option: Option }> = ({ option: { label, matches } }) => {
+    const tokens = useMemo(() => {
+        const decorations = decorateQuery(label)
+
+        return decorations
+            ? decorations.map(({ value, key, className, token }) => (
+                  <span className={className} key={key}>
+                      <EmphasizedLabel label={value} matches={matches} offset={token.range.start} />
+                  </span>
+              ))
+            : [<Fragment key="0">{label}</Fragment>]
+    }, [label, matches])
+
+    return <span className="text-monospace search-query-link">{tokens}</span>
+}
+
+/**
+ * Emphasizes matching substring in the provided label.
+ */
+const EmphasizedLabel: FC<{ label: string; matches?: Set<number>; offset?: number }> = ({
     label,
     matches,
     offset = 0,
 }) => {
-    const spans: [number, number, boolean][] = []
-    let currentStart = 0
-    let currentEnd = 0
-    let currentMatch = false
-
-    // Includes length as upper bound to include the last character when
-    // creating the last span.
-    for (let index = 0; index <= label.length; index++) {
-        currentEnd = index
-
-        const match = matches.has(index + offset)
-        if (currentMatch !== match || index === label.length) {
-            // close previous span
-            spans.push([currentStart, currentEnd, currentMatch])
-            currentStart = index
-            currentMatch = match
-        }
+    if (!matches) {
+        return <span>{label}</span>
     }
-
+    const spans = getSpans(matches, label.length, offset)
     return (
         <span>
             {spans.map(([start, end, match]) => {
-                const value = label.slice(start, end)
+                const value = label.slice(start, end + 1)
                 return match ? (
                     <span key={offset + start} className={styles.match}>
                         {value}

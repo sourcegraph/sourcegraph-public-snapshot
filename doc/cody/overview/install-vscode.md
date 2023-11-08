@@ -166,13 +166,21 @@ In addition, to support customization and advanced use cases, you can create Cus
 
 ## Enable code graph context for context-aware answers (Optional)
 
-You can optionally configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if has context of a codebase's API schema.
+After connecting Cody with VS Code, you can optionally use and configure [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code.
 
 Learn more about how to:
 
 - [Configure code graph context for Sourcegraph.com][cody-with-sourcegraph-config-graph]
 - [Configure code graph context for Sourcegraph Enterprise][enable-cody-enterprise-config-graph]
 
+### Configure Code Graph Context
+
+The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. Enter the repository's name with embeddings, and Cody can provide more accurate and relevant answers to your coding questions based on that repository's content. To configure this setting in VS Code:
+
+- Open the **Cody Extension Settings**
+- Search for the `Cody: Codebase`
+- Enter the repository name
+- For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
 
 ## Updating the extension
 

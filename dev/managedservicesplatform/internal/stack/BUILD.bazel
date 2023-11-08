@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -9,5 +10,13 @@ go_library(
         "//dev/managedservicesplatform/internal/resourceid",
         "//lib/pointers",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+        "@org_golang_x_exp//maps",
     ],
+)
+
+go_test(
+    name = "stack_test",
+    srcs = ["stacks_test.go"],
+    embed = [":stack"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

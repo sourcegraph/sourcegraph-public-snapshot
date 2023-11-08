@@ -198,7 +198,7 @@ class SearchPanel implements Panel {
                     this.input?.select()
                 }}
             >
-                <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-2">
+                <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-1">
                     <Input
                         ref={element => (this.input = element)}
                         type="search"
@@ -216,46 +216,54 @@ class SearchPanel implements Panel {
                         onToggle={() => this.commit({ caseSensitive: !searchQuery.caseSensitive })}
                         iconSvgPath={mdiFormatLetterCase}
                         title="Case sensitivity"
-                        className="test-blob-view-search-case-sensitive"
+                        className="cm-search-toggle test-blob-view-search-case-sensitive"
                     />
+
+                    {/* commenting regex filter out since it is breaking everything
+                     * TODO: fix it
+                     */}
                     <QueryInputToggle
                         isActive={searchQuery.regexp}
                         onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
                         iconSvgPath={mdiRegex}
                         title="Regular expression"
-                        className="test-blob-view-search-regexp"
+                        className="cm-search-toggle test-blob-view-search-regexp"
                     />
                 </div>
-                <Button
-                    className="mr-2"
-                    type="button"
-                    size="sm"
-                    outline={true}
-                    variant="secondary"
-                    onClick={this.findPrevious}
-                    data-testid="blob-view-search-previous"
-                >
-                    <Icon svgPath={mdiChevronUp} aria-hidden={true} />
-                    Previous
-                </Button>
+                {totalMatches > 1 && (
+                    <>
+                        <Button
+                            className="p-1 ml-2 mr-2 mt-0 mb-0"
+                            type="button"
+                            size="sm"
+                            outline={true}
+                            variant="secondary"
+                            onClick={this.findPrevious}
+                            data-testid="blob-view-search-previous"
+                            aria-label="previous result"
+                        >
+                            <Icon svgPath={mdiChevronUp} aria-hidden={true} />
+                        </Button>
 
-                <Button
-                    className="mr-3"
-                    type="button"
-                    size="sm"
-                    outline={true}
-                    variant="secondary"
-                    onClick={this.findNext}
-                    data-testid="blob-view-search-next"
-                >
-                    <Icon svgPath={mdiChevronDown} aria-hidden={true} />
-                    Next
-                </Button>
+                        <Button
+                            className="p-1 mr-0 mt-0 mb-0"
+                            type="button"
+                            size="sm"
+                            outline={true}
+                            variant="secondary"
+                            onClick={this.findNext}
+                            data-testid="blob-view-search-next"
+                            aria-label="next result"
+                        >
+                            <Icon svgPath={mdiChevronDown} aria-hidden={true} />
+                        </Button>
+                    </>
+                )}
 
                 {searchQuery.search ? (
                     <div>
-                        <Text className="m-0">
-                            {currentMatchIndex !== null && `${currentMatchIndex} / `}
+                        <Text className="cm-search-results mt-0 mr-0 mb-0 ml-2 small">
+                            {currentMatchIndex !== null && `${currentMatchIndex} of `}
                             {totalMatches} {pluralize('result', totalMatches)}
                         </Text>
                     </div>
@@ -268,7 +276,7 @@ class SearchPanel implements Panel {
                             value={overrideBrowserSearch}
                             onToggle={this.setOverrideBrowserSearch}
                         />
-                        {searchKeybinding} searches file
+                        {searchKeybinding}
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
@@ -420,14 +428,13 @@ function announceMatch(view: EditorView, { from, to }: { from: number; to: numbe
 const theme = EditorView.theme({
     '.cm-sg-search-container': {
         backgroundColor: 'var(--code-bg)',
-        padding: '0.375rem 1rem',
+        padding: '0.5rem 0.5rem',
     },
     '.cm-sg-search-input': {
         borderRadius: 'var(--border-radius)',
         border: '1px solid var(--input-border-color)',
 
         '&:focus-within': {
-            borderColor: 'var(--inpt-focus-border-color)',
             boxShadow: 'var(--input-focus-box-shadow)',
         },
 
@@ -440,6 +447,7 @@ const theme = EditorView.theme({
     },
     '.search-container > input.form-control': {
         width: '15rem',
+        height: '1.0rem',
     },
     '.cm-searchMatch': {
         backgroundColor: 'var(--mark-bg)',
@@ -448,6 +456,14 @@ const theme = EditorView.theme({
         backgroundColor: 'var(--oc-orange-3)',
     },
     '.cm-sg-search-info': {
+        color: 'var(--body-color)',
+    },
+    '.cm-search-results': {
+        color: 'var(--gray-06)',
+        fontFamily: 'var(--font-family-base)',
+        marginLeft: '2rem',
+    },
+    '.cm-search-toggle': {
         color: 'var(--gray-06)',
     },
 })
