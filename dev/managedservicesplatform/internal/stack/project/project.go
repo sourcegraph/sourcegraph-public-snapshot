@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/googleprojectserviceidentity"
-	google_beta "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/provider"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -38,6 +36,7 @@ var gcpServices = []string{
 	"storage-component.googleapis.com",
 	"bigquery.googleapis.com",
 	"cloudprofiler.googleapis.com",
+	"cloudscheduler.googleapis.com",
 }
 
 const (
@@ -62,10 +61,6 @@ var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
 type CrossStackOutput struct {
 	// Project is created with a generated project ID.
 	Project project.Project
-
-	// CloudRunIdentity is the robot account provisioned by GCP to manage
-	// Cloud Run services and jobs.
-	CloudRunIdentity googleprojectserviceidentity.GoogleProjectServiceIdentity
 }
 
 type Variables struct {
@@ -168,21 +163,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Collect outputs
 	locals.Add("project_id", project.ProjectId(), "Generated project ID")
-	return &CrossStackOutput{
-		Project: project,
-		CloudRunIdentity: googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
-			id.ResourceID("cloudrun-identity"),
-			&googleprojectserviceidentity.GoogleProjectServiceIdentityConfig{
-				Project: project.ProjectId(),
-				Service: pointers.Ptr("run.googleapis.com"),
-
-				// Only available via beta provider:
-				// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service_identity
-				Provider: google_beta.NewGoogleBetaProvider(stack, pointers.Ptr("google_beta"), &google_beta.GoogleBetaProviderConfig{
-					Project: project.ProjectId(),
-				}),
-			}),
-	}, nil
+	return &CrossStackOutput{Project: project}, nil
 }
 
 var regexpMatchNonLowerAlphaNumericUnderscoreDash = regexp.MustCompile(`[^a-z0-9_-]`)
