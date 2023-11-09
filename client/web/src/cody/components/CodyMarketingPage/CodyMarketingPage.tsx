@@ -57,11 +57,11 @@ const codyPlatformCardItems = (
         },
     },
     {
-        title: 'More powerful in your IDE',
+        title: 'More powerful in your editor',
         description: (
             <>
                 The extensions combine an LLM with the context of your code to help you generate and fix code more
-                accurately. <Link to="/help/cody#get-cody">View supported IDEs</Link>.
+                accurately. <Link to="/help/cody#get-cody">View supported editors.</Link>
             </>
         ),
         icon: <IDEIcon />,
