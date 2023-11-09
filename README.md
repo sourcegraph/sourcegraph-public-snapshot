@@ -1,4 +1,3 @@
-foobarba 
 <p align="center">
 <a href="https://about.sourcegraph.com/" target="_blank">
 <picture>
