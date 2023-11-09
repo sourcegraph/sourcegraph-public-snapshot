@@ -32,8 +32,6 @@ export interface TemporarySettingsSchema {
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
     'search.sidebar.collapsed': boolean // Used only on non-mobile sizes and when coreWorkflowImprovements.enabled is set
-    'search.notepad.enabled': boolean
-    'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
@@ -102,8 +100,6 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'search.hiddenNoResultsSections': null,
     'search.sidebar.revisions.tab': null,
     'search.sidebar.collapsed': null,
-    'search.notepad.enabled': null,
-    'search.notepad.ctaSeen': null,
     'search.notebooks.gettingStartedTabSeen': null,
     'insights.freeGaAccepted': null,
     'insights.freeGaExpiredAccepted': null,
