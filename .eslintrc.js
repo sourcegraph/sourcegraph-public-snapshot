@@ -66,6 +66,7 @@ const config = {
     // import/no-duplicates enabled as well, which does understand type imports
     'no-duplicate-imports': 'off',
     'id-length': 'off',
+    'no-void': 'off',
     '@typescript-eslint/consistent-type-exports': 'warn',
     '@typescript-eslint/consistent-type-imports': [
       'warn',
