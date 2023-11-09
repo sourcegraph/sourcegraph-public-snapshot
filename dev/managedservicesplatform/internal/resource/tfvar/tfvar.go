@@ -18,7 +18,7 @@ type Output struct {
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
-	v := cdktf.NewTerraformVariable(scope, id.ResourceID(config.VariableKey),
+	v := cdktf.NewTerraformVariable(scope, id.TerraformID(config.VariableKey),
 		&cdktf.TerraformVariableConfig{
 			Type:        pointers.Ptr("string"), // only strings for now
 			Description: pointers.Ptr(config.Description),
