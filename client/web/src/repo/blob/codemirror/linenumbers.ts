@@ -272,7 +272,13 @@ const selectedLineNumberTheme = EditorView.theme({
 interface SelectableLineNumbersConfig {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
-    onClick?: (line: number) => void
+    /**
+     * If provided, this function will be called if the user
+     * clicks anywhere in a line, not just on the line number.
+     * In this case `onSelection` will be ignored.
+     */
+    onLineClick?: (line: number) => void
+    // todo(fkling): Refactor this logic, maybe move into separate extensions
 }
 
 /**
@@ -295,7 +301,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         lineNumbers({
             domEventHandlers: {
                 mouseup(view, block, event) {
-                    if (!config.onClick) {
+                    if (!config.onLineClick) {
                         return false
                     }
 
@@ -305,12 +311,12 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                     }
 
                     const line = view.state.doc.lineAt(block.from).number
-                    config.onClick(line)
+                    config.onLineClick(line)
                     return true
                 },
 
                 mousedown(view, block, event) {
-                    if (config.onClick) {
+                    if (config.onLineClick) {
                         return false
                     }
 

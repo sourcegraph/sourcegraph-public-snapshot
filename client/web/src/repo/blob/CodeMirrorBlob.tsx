@@ -326,7 +326,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
-                onClick: navigateOnClick,
+                onLineClick: navigateOnClick,
             }),
             scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             codeFoldingExtension(),
