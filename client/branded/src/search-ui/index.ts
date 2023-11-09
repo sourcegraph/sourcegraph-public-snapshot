@@ -17,5 +17,3 @@ export * from './results/sidebar/SearchReference'
 export * from './results/sidebar/SearchTypeLink'
 export * from './results/StreamingSearchResultsList'
 export * from './util'
-
-// REMOVE ME
