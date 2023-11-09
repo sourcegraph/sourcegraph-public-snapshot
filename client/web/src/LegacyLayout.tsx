@@ -222,6 +222,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate to={PageRoutes.PostSignUp} replace={true} />
     }
 
+    const showNavigationSearchBox =
+        isSearchRelatedPage &&
+        !isSearchHomepage &&
+        !isCommunitySearchContextPage &&
+        !isSearchConsolePage &&
+        !isSearchNotebooksPage &&
+        !isCodySearchPage &&
+        !isSearchJobsPage
+
     return (
         <div
             className={classNames(
@@ -261,15 +270,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 <>
                     {newSearchNavigation ? (
                         <NewGlobalNavigationBar
-                            showSearchBox={
-                                isSearchRelatedPage &&
-                                !isSearchHomepage &&
-                                !isCommunitySearchContextPage &&
-                                !isSearchConsolePage &&
-                                !isSearchNotebooksPage &&
-                                !isCodySearchPage &&
-                                !isSearchJobsPage
-                            }
+                            showSearchBox={showNavigationSearchBox}
                             authenticatedUser={props.authenticatedUser}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             ownEnabled={props.ownEnabled}
@@ -284,15 +285,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     ) : (
                         <GlobalNavbar
                             {...props}
-                            showSearchBox={
-                                isSearchRelatedPage &&
-                                !isSearchHomepage &&
-                                !isCommunitySearchContextPage &&
-                                !isSearchConsolePage &&
-                                !isSearchNotebooksPage &&
-                                !isCodySearchPage &&
-                                !isSearchJobsPage
-                            }
+                            showSearchBox={showNavigationSearchBox}
                             setFuzzyFinderIsVisible={setFuzzyFinderVisible}
                             isRepositoryRelatedPage={isRepositoryRelatedPage}
                             showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}

@@ -126,7 +126,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                         telemetryService={telemetryService}
                     />
                 ) : (
-                    <SighInUpButtons isSourcegraphDotCom={isSourcegraphDotCom} />
+                    <SignInUpButtons isSourcegraphDotCom={isSourcegraphDotCom} />
                 )}
             </nav>
 
@@ -247,11 +247,11 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     )
 }
 
-interface SighInUpButtonsProps {
+interface SignInUpButtonsProps {
     isSourcegraphDotCom: boolean
 }
 
-const SighInUpButtons: FC<SighInUpButtonsProps> = props => {
+const SignInUpButtons: FC<SignInUpButtonsProps> = props => {
     const { isSourcegraphDotCom } = props
     const location = useLocation()
 
