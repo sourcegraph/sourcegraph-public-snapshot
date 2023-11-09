@@ -67,9 +67,9 @@
     padding: 0 0 0 0.5rem;
     height: 1.75rem;
 
-    &:focus-visible {
-        box-shadow: none;
-    }
+    // Override standard input box-shadow styles since root container
+    // already re-implements it.
+    box-shadow: none !important;
 }
 
 .pill {

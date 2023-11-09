@@ -32,6 +32,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Cody for JetBrains](cody/overview/install-jetbrains.md)
   - [Cody for Neovim](cody/overview/install-neovim.md)
   - [Cody for Web](cody/overview/cody-with-sourcegraph.md)
+  - [Cody Desktop App](cody/overview/app/index.md)
   - [Cody Enterprise](cody/overview/enable-cody-enterprise.md)
 - [Quickstart](cody/quickstart.md)
 - [Capabilities](cody/capabilities.md)

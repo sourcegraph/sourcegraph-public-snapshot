@@ -2,16 +2,10 @@ package cloudrun
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"strconv"
 	"strings"
 
-	"github.com/aws/jsii-runtime-go"
-	"github.com/grafana/regexp"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
@@ -40,8 +34,8 @@ import (
 type CrossStackOutput struct{}
 
 type Variables struct {
-	ProjectID             string
-	CloudRunIdentityEmail string
+	ProjectID                      string
+	CloudRunWorkloadServiceAccount *serviceaccount.Output
 
 	Service     spec.ServiceSpec
 	Image       string
@@ -56,18 +50,6 @@ const StackName = "cloudrun"
 var (
 	// gcpRegion is currently hardcoded.
 	gcpRegion = "us-central1"
-	// serviceAccountRoles are granted to the service account for the Cloud Run service.
-	serviceAccountRoles = []serviceaccount.Role{
-		// Allow env vars to source from secrets
-		{ID: "role_secret_accessor", Role: "roles/secretmanager.secretAccessor"},
-		// Allow service to access private networks
-		{ID: "role_compute_networkuser", Role: "roles/compute.networkUser"},
-		// Allow service to emit observability
-		{ID: "role_cloudtrace_agent", Role: "roles/cloudtrace.agent"},
-		{ID: "role_monitoring_metricwriter", Role: "roles/monitoring.metricWriter"},
-		// Allow service to publish Cloud Profiler profiles
-		{ID: "role_cloudprofiler_agent", Role: "roles/cloudprofiler.agent"},
-	}
 )
 
 // makeServiceEnvVarPrefix returns the env var prefix for service-specific
@@ -98,8 +80,8 @@ const tfVarKeyResolvedImageTag = "resolved_image_tag"
 // NewStack instantiates the MSP cloudrun stack, which is currently a pretty
 // monolithic stack that encompasses all the core components of an MSP service,
 // including networking and dependencies like Redis.
-func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, outputs, err := stacks.New(StackName,
+func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOutput, _ error) {
+	stack, locals, err := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
 		cloudflareprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretCloudflareAPIToken,
@@ -124,45 +106,6 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	})
 
 	id := resourceid.New("cloudrun")
-
-	var customRole projectiamcustomrole.ProjectIamCustomRole
-	if vars.Service.IAM != nil && len(vars.Service.IAM.Permissions) > 0 {
-		customRole = projectiamcustomrole.NewProjectIamCustomRole(stack, id.ResourceID("custom-role"), &projectiamcustomrole.ProjectIamCustomRoleConfig{
-			RoleId:      pointers.Ptr(fmt.Sprintf("%s_custom_role", id.DisplayName())),
-			Title:       pointers.Ptr(fmt.Sprintf("%s custom role", id.DisplayName())),
-			Project:     &vars.ProjectID,
-			Permissions: jsii.Strings(vars.Service.IAM.Permissions...),
-		})
-	}
-
-	// cloudRunDependencies collects terraform resources that must be provisioned
-	// before the core Cloud Run resource is provisioned. Only resources that
-	// are not directly referenced by the Cloud Run Builder need to be included
-	// in this set.
-	var cloudRunDependencies []cdktf.ITerraformDependable
-
-	// If the service image is published to a private image repository, grant
-	// the Cloud Run robot account access to the target project to pull the
-	// image.
-	if imageProject := extractImageGoogleProject(vars.Image); imageProject != nil {
-		for _, r := range []serviceaccount.Role{{
-			ID:   "object_viewer",
-			Role: "roles/storage.objectViewer", // for gcr.io
-		}, {
-			ID:   "artifact_reader",
-			Role: "roles/artifactregistry.reader", // for artifact registry
-		}} {
-			cloudRunDependencies = append(cloudRunDependencies,
-				projectiammember.NewProjectIamMember(stack,
-					id.ResourceID("member_image_access_%s", r.ID),
-					&projectiammember.ProjectIamMemberConfig{
-						Project: imageProject,
-						Role:    pointers.Ptr(r.Role),
-						Member: pointers.Ptr(fmt.Sprintf("serviceAccount:%s",
-							vars.CloudRunIdentityEmail)),
-					}))
-		}
-	}
 
 	// Set up configuration for the Cloud Run resources
 	var cloudRunBuilder builder.Builder
@@ -203,42 +146,15 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Set up build configuration.
 	cloudRunBuildVars := builder.Variables{
-		Service:          vars.Service,
-		Image:            vars.Image,
-		ResolvedImageTag: *imageTag.StringValue,
-		Environment:      vars.Environment,
-		GCPProjectID:     vars.ProjectID,
-		GCPRegion:        gcpRegion,
-		ServiceAccount: serviceaccount.New(stack,
-			id,
-			serviceaccount.Config{
-				ProjectID: vars.ProjectID,
-				AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
-				DisplayName: fmt.Sprintf("%s Service Account",
-					pointers.Deref(vars.Service.Name, vars.Service.ID)),
-				Roles: func() []serviceaccount.Role {
-					if vars.Service.IAM != nil && len(vars.Service.IAM.Roles) > 0 {
-						var rs []serviceaccount.Role
-						for _, r := range vars.Service.IAM.Roles {
-							rs = append(rs, serviceaccount.Role{
-								ID:   matchNonAlphaNumericRegex.ReplaceAllString(r, "_"),
-								Role: r,
-							})
-						}
-						serviceAccountRoles = append(rs, serviceAccountRoles...)
-					}
-					if customRole != nil {
-						serviceAccountRoles = append(serviceAccountRoles, serviceaccount.Role{
-							ID:   "role_cloudrun_custom_role",
-							Role: *customRole.Name(),
-						})
-					}
-					return serviceAccountRoles
-				}(),
-			}),
+		Service:           vars.Service,
+		Image:             vars.Image,
+		ResolvedImageTag:  *imageTag.StringValue,
+		Environment:       vars.Environment,
+		GCPProjectID:      vars.ProjectID,
+		GCPRegion:         gcpRegion,
+		ServiceAccount:    vars.CloudRunWorkloadServiceAccount,
 		DiagnosticsSecret: diagnosticsSecret,
 		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
-		DependsOn:         cloudRunDependencies,
 	}
 
 	if vars.Environment.Resources.NeedsCloudRunConnector() {
@@ -303,12 +219,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	// Collect outputs
-	outputs.Add("cloud_run_service_account", cloudRunBuildVars.ServiceAccount.Email)
-	outputs.Add("resolved_image_tag", imageTag.StringValue)
+	locals.Add("image_tag", imageTag.StringValue,
+		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{}, nil
 }
-
-var matchNonAlphaNumericRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 type envVariablesData struct {
 	ProjectID      string
@@ -355,22 +269,4 @@ func makeContainerResourceLimits(r spec.EnvironmentInstancesResourcesSpec) map[s
 		"cpu":    pointers.Ptr(strconv.Itoa(r.CPU)),
 		"memory": pointers.Ptr(r.Memory),
 	}
-}
-
-func extractImageGoogleProject(image string) *string {
-	// Private images in our GCP projects have patterns like:
-	// - us-central1-docker.pkg.dev/control-plane-5e9ee072/docker/apiserver
-	// - us.gcr.io/sourcegraph-dev/abuse-banbot
-	// If the root matches particular patterns, the second component is the
-	// project ID.
-	imageRepoParts := strings.SplitN(image, "/", 3)
-	if len(imageRepoParts) != 3 {
-		return nil
-	}
-	repoRoot := imageRepoParts[0]
-	if strings.HasSuffix(repoRoot, ".gcr.io") ||
-		strings.HasSuffix(repoRoot, "-docker.pkg.dev") {
-		return &imageRepoParts[1]
-	}
-	return nil
 }

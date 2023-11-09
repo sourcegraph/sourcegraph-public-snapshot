@@ -49,7 +49,8 @@ export interface SearchBoxProps
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void
 
-    /** Whether or not to show the search history button. Also disables the
+    /**
+     * Whether or not to show the search history button. Also disables the
      * search button. Does not affect history in the search input itself (via
      * arrow up/down)
      */
@@ -195,9 +196,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
-                        showCopyQueryButton={props.showCopyQueryButton}
                         structuralSearchDisabled={props.structuralSearchDisabled}
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                     />
                 </div>
             </div>

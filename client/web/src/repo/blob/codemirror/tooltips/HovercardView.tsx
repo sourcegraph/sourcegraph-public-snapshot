@@ -2,24 +2,19 @@ import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate 
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
 import { combineLatest, type Observable, Subject, type Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { distinctUntilChanged, startWith, map } from 'rxjs/operators'
 
-import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import { type LineOrPositionOrRange, isErrorLike } from '@sourcegraph/common'
 
-import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
-import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../CodeMirrorBlob'
+import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
+import type { BlobPropsFacet } from '../../CodeMirrorBlob'
+import type { TooltipViewOptions } from '../codeintel/api'
+import { pinConfig, pinnedLocation } from '../codeintel/pin'
+import { blobPropsFacet } from '../index'
+import { CodeMirrorContainer } from '../react-interop'
+import { zeroToOneBasedPosition } from '../utils'
 
-import { blobPropsFacet } from './index'
-import { CodeMirrorContainer } from './react-interop'
-import { zeroToOneBasedPosition } from './utils'
-
-type UIRange = UIRangeSpec['range']
-
-/**
- * Hover information received from a hover source.
- */
-export type HoverData = Pick<WebHoverOverlayProps, 'hoverOrError' | 'actionsOrError'>
+type Unwrap<T> = T extends Observable<infer U> ? U : never
 
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.
@@ -38,22 +33,26 @@ export class HovercardView implements TooltipView {
     private nextProps = new Subject<BlobPropsFacet>()
     private props: BlobPropsFacet | null = null
     public overlap = true
-    private nextPinned = new Subject<boolean>()
+    private nextPinned = new Subject<LineOrPositionOrRange | null>()
     private subscription: Subscription
 
     constructor(
         private readonly view: EditorView,
-        private readonly tokenRange: UIRange,
-        pinned: boolean,
-        hovercardData: Observable<HoverData>
+        private readonly tokenRange: TooltipViewOptions['token'],
+        hovercardData: TooltipViewOptions['hovercardData']
     ) {
         this.dom = document.createElement('div')
+        this.dom.className = 'sg-code-intel-hovercard'
 
         this.subscription = combineLatest([
             this.nextContainer,
             hovercardData,
             this.nextProps.pipe(startWith(view.state.facet(blobPropsFacet))),
-            this.nextPinned.pipe(startWith(pinned)),
+            this.nextPinned.pipe(
+                startWith(view.state.facet(pinnedLocation)),
+                map(pin => pin?.line === tokenRange.start.line && pin?.character === tokenRange.start.character),
+                distinctUntilChanged()
+            ),
         ]).subscribe(([container, hovercardData, props, pinned]) => {
             if (!this.root) {
                 this.root = createRoot(container)
@@ -73,16 +72,17 @@ export class HovercardView implements TooltipView {
             this.props = props
             this.nextProps.next(props)
         }
+        this.nextPinned.next(update.state.facet(pinnedLocation))
     }
 
     public destroy(): void {
         this.subscription.unsubscribe()
-        this.root?.unmount()
+        window.requestAnimationFrame(() => this.root?.unmount())
     }
 
     private render(
         root: Root,
-        { hoverOrError, actionsOrError }: HoverData,
+        { hoverOrError, actionsOrError }: Unwrap<TooltipViewOptions['hovercardData']>,
         props: BlobPropsFacet,
         pinned: boolean
     ): void {
@@ -132,34 +132,12 @@ export class HovercardView implements TooltipView {
                         pinOptions={{
                             showCloseButton: pinned,
                             onCloseButtonClick: () => {
-                                const parameters = new URLSearchParams(props.location.search)
-                                parameters.delete('popover')
-
-                                updateBrowserHistoryIfChanged(props.navigate, props.location, parameters)
-                                this.nextPinned.next(false)
-                            },
-                            onCopyLinkButtonClick: async () => {
                                 const { line, character } = hoveredToken
-                                const position = { line, character }
-
-                                const search = new URLSearchParams(location.search)
-                                search.set('popover', 'pinned')
-
-                                updateBrowserHistoryIfChanged(
-                                    props.navigate,
-                                    props.location,
-                                    // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
-                                    addLineRangeQueryParameter(
-                                        search,
-                                        toPositionOrRangeQueryParameter({
-                                            position,
-                                            range: { start: position, end: position },
-                                        })
-                                    )
-                                )
-                                await navigator.clipboard.writeText(window.location.href)
-
-                                this.nextPinned.next(true)
+                                this.view.state.facet(pinConfig).onUnpin?.({ line, character })
+                            },
+                            onCopyLinkButtonClick: () => {
+                                const { line, character } = hoveredToken
+                                this.view.state.facet(pinConfig).onPin?.({ line, character })
                             },
                         }}
                         hoverOverlayContainerClassName="position-relative"
