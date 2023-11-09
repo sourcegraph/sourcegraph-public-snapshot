@@ -113,8 +113,8 @@ func NewProvider(op ProviderOp) *Provider {
 	providerID := op.ServiceID + "::" + op.OAuth2Config().ClientID
 	return &Provider{
 		ProviderOp: op,
-		Login:      stateHandler(true, providerID, op.StateConfig, op.Login),
-		Callback:   stateHandler(false, providerID, op.StateConfig, op.Callback),
+		Login:      stateHandler(true, providerID, op.Login),
+		Callback:   stateHandler(false, providerID, op.Callback),
 	}
 }
 
@@ -125,7 +125,7 @@ func NewProvider(op ProviderOp) *Provider {
 // we encode the returnTo URL in the state. We could use the `redirect_uri` parameter to do this,
 // but doing so would require using Sourcegraph's external hostname and making sure it is consistent
 // with what is specified in the OAuth app config as the "callback URL."
-func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, success func(oauth2.Config) http.Handler) func(oauth2.Config) http.Handler {
+func stateHandler(isLogin bool, providerID string, success func(oauth2.Config) http.Handler) func(oauth2.Config) http.Handler {
 	return func(oauthConfig oauth2.Config) http.Handler {
 		handler := success(oauthConfig)
 
@@ -144,7 +144,7 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 					http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
 					return
 				}
-				// add Cookie with a random state + redirect
+				//  Cookie with a random state + redirect
 				stateVal, err := LoginState{
 					Redirect:   redirect,
 					CSRF:       csrf,
