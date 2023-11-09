@@ -36,14 +36,14 @@ var (
 	// serviceAccountRoles are granted to the service account for the Cloud Run service.
 	serviceAccountRoles = []serviceaccount.Role{
 		// Allow env vars to source from secrets
-		{ID: "role_secret_accessor", Role: "roles/secretmanager.secretAccessor"},
+		{ID: resourceid.New("role_secret_accessor"), Role: "roles/secretmanager.secretAccessor"},
 		// Allow service to access private networks
-		{ID: "role_compute_networkuser", Role: "roles/compute.networkUser"},
+		{ID: resourceid.New("role_compute_networkuser"), Role: "roles/compute.networkUser"},
 		// Allow service to emit observability
-		{ID: "role_cloudtrace_agent", Role: "roles/cloudtrace.agent"},
-		{ID: "role_monitoring_metricwriter", Role: "roles/monitoring.metricWriter"},
+		{ID: resourceid.New("role_cloudtrace_agent"), Role: "roles/cloudtrace.agent"},
+		{ID: resourceid.New("role_monitoring_metricwriter"), Role: "roles/monitoring.metricWriter"},
 		// Allow service to publish Cloud Profiler profiles
-		{ID: "role_cloudprofiler_agent", Role: "roles/cloudprofiler.agent"},
+		{ID: resourceid.New("role_cloudprofiler_agent"), Role: "roles/cloudprofiler.agent"},
 	}
 )
 
@@ -57,18 +57,19 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	id := resourceid.New("iam")
 
 	var customRole projectiamcustomrole.ProjectIamCustomRole
+	const customRoleID = "msp_workload_custom_role"
 	if vars.Service.IAM != nil && len(vars.Service.IAM.Permissions) > 0 {
 		customRole = projectiamcustomrole.NewProjectIamCustomRole(stack,
-			id.ResourceID("custom-role"),
+			id.TerraformID("custom-role"),
 			&projectiamcustomrole.ProjectIamCustomRoleConfig{
-				RoleId:      pointers.Ptr("msp_workload_custom_role"),
+				RoleId:      pointers.Ptr(customRoleID),
 				Title:       pointers.Ptr("Managed Services Platform workload custom role"),
 				Project:     &vars.ProjectID,
 				Permissions: jsii.Strings(vars.Service.IAM.Permissions...),
 			})
 	}
 	workloadServiceAccount := serviceaccount.New(stack,
-		id.SubID("workload"),
+		id.Group("workload"),
 		serviceaccount.Config{
 			ProjectID: vars.ProjectID,
 			AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
@@ -79,7 +80,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 					var rs []serviceaccount.Role
 					for _, r := range vars.Service.IAM.Roles {
 						rs = append(rs, serviceaccount.Role{
-							ID:   matchNonAlphaNumericRegex.ReplaceAllString(r, "_"),
+							ID:   resourceid.New(matchNonAlphaNumericRegex.ReplaceAllString(r, "_")),
 							Role: r,
 						})
 					}
@@ -87,7 +88,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}
 				if customRole != nil {
 					serviceAccountRoles = append(serviceAccountRoles, serviceaccount.Role{
-						ID:   *customRole.Id(),
+						ID:   resourceid.New(customRoleID),
 						Role: *customRole.Name(),
 					})
 				}
@@ -99,7 +100,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	// the Cloud Run robot account access to the target project to pull the
 	// image.
 	cloudRunIdentity := googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
-		id.ResourceID("cloudrun-identity"),
+		id.TerraformID("cloudrun-identity"),
 		&googleprojectserviceidentity.GoogleProjectServiceIdentityConfig{
 			Project: &vars.ProjectID,
 			Service: pointers.Ptr("run.googleapis.com"),
@@ -111,14 +112,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		})
 	if imageProject := extractImageGoogleProject(vars.Image); imageProject != nil {
 		for _, r := range []serviceaccount.Role{{
-			ID:   "object_viewer",
+			ID:   resourceid.New("object_viewer"),
 			Role: "roles/storage.objectViewer", // for gcr.io
 		}, {
-			ID:   "artifact_reader",
+			ID:   resourceid.New("artifact_reader"),
 			Role: "roles/artifactregistry.reader", // for artifact registry
 		}} {
 			projectiammember.NewProjectIamMember(stack,
-				id.ResourceID("member_image_access_%s", r.ID),
+				id.TerraformID("member_image_access_%s", r.ID),
 				&projectiammember.ProjectIamMemberConfig{
 					Project: imageProject,
 					Role:    pointers.Ptr(r.Role),

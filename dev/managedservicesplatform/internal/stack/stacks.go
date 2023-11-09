@@ -87,7 +87,7 @@ type StackLocals struct{ s Stack }
 // accessed under 'local.${name}' in custom resources.
 func (l *StackLocals) Add(name string, value any, description string) {
 	_ = cdktf.NewTerraformOutput(l.s.Stack,
-		resourceid.New("output").ResourceID(name),
+		resourceid.New("output").TerraformID(name),
 		&cdktf.TerraformOutputConfig{
 			Value:       value,
 			Sensitive:   pointers.Ptr(false),

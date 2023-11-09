@@ -127,7 +127,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	})
 
 	project := project.NewProject(stack,
-		id.ResourceID("project"),
+		id.TerraformID("project"),
 		&project.ProjectConfig{
 			Name:              pointers.Ptr(vars.DisplayName),
 			ProjectId:         &projectID.HexValue,
@@ -151,7 +151,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	for _, service := range append(gcpServices, vars.Services...) {
 		projectservice.NewProjectService(stack,
-			id.ResourceID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
+			id.TerraformID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
 			&projectservice.ProjectServiceConfig{
 				Project:                  project.ProjectId(),
 				Service:                  pointers.Ptr(service),
