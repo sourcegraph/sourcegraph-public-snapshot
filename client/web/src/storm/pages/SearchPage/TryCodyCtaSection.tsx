@@ -120,12 +120,9 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
             >
                 <H3 className="d-flex align-items-center">
                     <CodyInIDEIcon aria-hidden={true} />
-                    Install Cody for your IDE
+                    Get Cody in your editor
                 </H3>
-                <Text>
-                    Cody for your IDE provides the power of LLMs to help you generate and fix code, right where you
-                    commit.
-                </Text>
+                <Text>Cody helps you write, fix, and understand code in your editor.</Text>
                 <div className="mb-2">
                     <ButtonLink
                         to="/help/cody#get-cody"

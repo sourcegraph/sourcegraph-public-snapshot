@@ -212,21 +212,21 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
                             <Text as="li">
                                 {installationStats.vscode}% of users have installed the{' '}
                                 <AnchorLink to="/help/integration/editor" target="_blank">
-                                    VS Code IDE extension
+                                    VS Code extension
                                 </AnchorLink>
                                 . Promote installation to increase the value.
                             </Text>
                             <Text as="li">
                                 {installationStats.jetbrains}% of users have installed the{' '}
                                 <AnchorLink to="/help/integration/editor" target="_blank">
-                                    JetBrains IDE plugin
+                                    JetBrains plugin
                                 </AnchorLink>
                                 . Promote installation to increase the value.
                             </Text>
                             <Text as="li">
                                 {installationStats.browser}% of users have installed the{' '}
                                 <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                                    Browser extension
+                                    browser extension
                                 </AnchorLink>
                                 . Promote installation to increase the value.
                             </Text>
