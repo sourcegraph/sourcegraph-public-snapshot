@@ -25,7 +25,6 @@ ts_project(
         "esbuild/manifestPlugin.ts",
         "esbuild/server.ts",
         "server/development.server.ts",
-        "server/production.server.ts",
         "utils/constants.ts",
         "utils/create-js-context.ts",
         "utils/environment-config.ts",
