@@ -83,11 +83,13 @@ function contextTiebraker(a: { item: Context }, b: { item: Context }): number {
     return (b.item.starred || b.item.default ? 1 : 0) - (a.item.starred || a.item.default ? 1 : 0)
 }
 
+// `id` is used as cache key
 const REPOS_QUERY = gql`
     query SuggestionsRepo($query: String!) {
         search(patternType: regexp, query: $query) {
             results {
                 repositories {
+                    id
                     name
                     stars
                 }
@@ -96,6 +98,7 @@ const REPOS_QUERY = gql`
     }
 `
 
+// `canonicalURL` is used as cache key
 const FILE_QUERY = gql`
     query SuggestionsFile($query: String!) {
         search(patternType: regexp, query: $query) {
@@ -106,6 +109,7 @@ const FILE_QUERY = gql`
                         file {
                             path
                             url
+                            canonicalURL
                             repository {
                                 name
                                 stars
@@ -118,6 +122,7 @@ const FILE_QUERY = gql`
     }
 `
 
+// `canonicalURL` is used as cache key
 const SYMBOL_QUERY = gql`
     query SuggestionsSymbol($query: String!) {
         search(patternType: regexp, query: $query) {
@@ -127,10 +132,12 @@ const SYMBOL_QUERY = gql`
                         __typename
                         file {
                             path
+                            canonicalURL
                         }
                         symbols {
                             kind
                             url
+                            canonicalURL
                             name
                         }
                     }
