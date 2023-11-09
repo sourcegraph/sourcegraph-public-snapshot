@@ -71,7 +71,6 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Development
 
 - [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
-  - [Full `sg` reference](background-information/sg/reference.md)
 - [Using Bazel](background-information/bazel/index.md)
   - [Bazel and Go code](background-information/bazel/go.md)
   - [Bazel and client code](background-information/bazel/web.md)
