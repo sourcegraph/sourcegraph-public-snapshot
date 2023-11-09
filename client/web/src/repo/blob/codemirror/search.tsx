@@ -420,23 +420,12 @@ function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchM
     }
 
     let index = 1
-    // Regular expressions that result in matches with length 0 would
-    // cause an infinite loop. So we guard against that by verifying
-    // whether the cursor moves to the next match at a new position.
-    let prevValue: { from: number; to: number } | null = null
     const matches = query.getCursor(document)
     let result = matches.next()
 
-    while (!result.done && result.value.from !== prevValue?.from) {
+    while (!result.done) {
         newSearchMatches.set(result.value.from, index++)
-        prevValue = result.value
         result = matches.next()
-    }
-
-    // If the result is not done, it detected an infinite loop, so we
-    // do not have any matches.
-    if (!result.done) {
-        return new Map()
     }
 
     return newSearchMatches
