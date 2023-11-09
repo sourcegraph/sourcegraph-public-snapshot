@@ -50,8 +50,15 @@ func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) 
 	return "unknown"
 }
 
-type costViolationError struct {
-	Error string `json:"error"`
+func writeViolationError(w http.ResponseWriter, message string) error {
+	w.WriteHeader(http.StatusForbidden) // 403 because retrying won't help
+	return writeJSON(w, graphql.Response{
+		Errors: []*gqlerrors.QueryError{
+			{
+				Message: message,
+			},
+		},
+	})
 }
 
 func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
@@ -125,12 +132,7 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 				costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
 
 				if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
-					w.WriteHeader(http.StatusForbidden)
-					if err := writeJSON(w, &costViolationError{Error: "query exceeds maximum query cost"}); err != nil {
-						return err
-					}
-
-					return nil
+					return writeViolationError(w, "query exceeds maximum query cost")
 				}
 
 				if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
@@ -138,12 +140,7 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 						logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
 					}
 
-					w.WriteHeader(http.StatusForbidden)
-					if err := writeJSON(w, &costViolationError{Error: "query exceeds maximum query cost"}); err != nil {
-						return err
-					}
-
-					return nil
+					return writeViolationError(w, "query exceeds maximum query cost")
 				}
 
 				if rl, enabled := rlw.Get(); enabled {
