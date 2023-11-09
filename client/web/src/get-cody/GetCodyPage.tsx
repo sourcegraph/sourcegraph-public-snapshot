@@ -119,9 +119,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
 
                     {/* Install cody extension section */}
                     <div className={classNames(styles.card, 'get-cody-step')}>
-                        <H2 className={styles.cardTitle}>
-                            Install the Cody extension for your IDE(s) and start using Cody
-                        </H2>
+                        <H2 className={styles.cardTitle}>Install the Cody editor extension and start using Cody</H2>
                         <div className={classNames(styles.downloadBtnWrapper)}>
                             <div>
                                 <Link

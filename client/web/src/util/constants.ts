@@ -21,6 +21,7 @@ export const enum EventName {
     CODY_SIDEBAR_CHAT_OPENED = 'web:codySidebar:chatOpened',
     CODY_SIGNUP = 'CodySignup',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCodeCTA',
+    CODY_CHAT_GET_EDITOR_EXTENSION = 'web:codyChat:getEditorExtensionCTA',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCodeCTA',
     CODY_CTA = 'ClickedOnCodyCTA',
     VIEW_EDITOR_EXTENSIONS = 'CodyClickViewEditorExtensions',

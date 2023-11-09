@@ -59,7 +59,6 @@ import { copyNotebook, type CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import type { SearchStreamingProps } from '../../search'
-import { useNotepad } from '../../stores'
 import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
@@ -150,23 +149,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
-
-    useNotepad(
-        useMemo(
-            () => ({
-                type: 'file',
-                path: filePath,
-                repo: repoName,
-                revision,
-                // Need to subtract 1 because IHighlightLineRange is 0-based but
-                // line information in the URL is 1-based.
-                lineRange: lineOrRange.line
-                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line) - 1 }
-                    : null,
-            }),
-            [filePath, repoName, revision, lineOrRange.line, lineOrRange.endLine]
-        )
-    )
 
     useBreadcrumb(
         useMemo(() => {

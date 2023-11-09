@@ -40,7 +40,6 @@ import {
     setSearchMode,
     useDeveloperSettings,
     useNavbarQueryState,
-    useNotepad,
 } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../tour/hooks'
@@ -255,22 +254,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     useEffect(() => {
         setAllExpanded(false)
     }, [location.search])
-
-    useNotepad(
-        useMemo(
-            () =>
-                results?.state === 'complete'
-                    ? {
-                          type: 'search',
-                          query: submittedURLQuery,
-                          caseSensitive,
-                          patternType,
-                          searchContext: props.selectedSearchContextSpec,
-                      }
-                    : null,
-            [results, submittedURLQuery, patternType, caseSensitive, props.selectedSearchContextSpec]
-        )
-    )
 
     // Expand/contract all results
     const [allExpanded, setAllExpanded] = useState(false)

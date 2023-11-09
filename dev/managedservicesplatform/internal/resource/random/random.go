@@ -33,7 +33,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	}
 	rid := randomid.NewId(
 		scope,
-		id.ResourceID("random"),
+		id.TerraformID("random"),
 		&randomid.IdConfig{
 			ByteLength: pointers.Float64(config.ByteLength),
 			Prefix:     prefix,

@@ -215,10 +215,6 @@ class SearchPanel implements Panel {
                         title="Case sensitivity"
                         className="cm-search-toggle test-blob-view-search-case-sensitive"
                     />
-
-                    {/* commenting regex filter out since it is breaking everything
-                     * TODO: fix it
-                     */}
                     <QueryInputToggle
                         isActive={searchQuery.regexp}
                         onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
@@ -346,6 +342,10 @@ class SearchPanel implements Panel {
                     topLineBlock = this.view.lineBlockAtHeight(scrollTop + topLineBlock.height)
                 }
 
+                if (query.regexp && !query.valid) {
+                    return
+                }
+
                 let result = query.getCursor(this.view.state.doc, topLineBlock.from).next()
                 if (result.done) {
                     // No match in the remainder of the document, wrap around
@@ -375,12 +375,28 @@ class SearchPanel implements Panel {
 }
 
 function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchMatches {
+    if (!query.valid) {
+        return new Map()
+    }
+
     const newSearchMatches: SearchMatches = new Map()
     let index = 1
     let result = query.getCursor(document).next()
-    while (!result.done) {
+    // Regular expressions that result in matches with length 0 would
+    // cause an infinite loop. So we guard against that by verifying
+    // whether or not the cursor moves to the next match at a new position.
+    let prevValue: { from: number; to: number } | null = null
+
+    while (!result.done && result.value.from !== prevValue?.from) {
         newSearchMatches.set(result.value.from, index++)
+        prevValue = result.value
         result = query.getCursor(document, result.value.to).next()
+    }
+
+    // If the result is not done, it detected an infinite loop, so we
+    // do not have any matches.
+    if (!result.done) {
+        return new Map()
     }
     return newSearchMatches
 }
