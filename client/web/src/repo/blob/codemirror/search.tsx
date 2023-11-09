@@ -413,22 +413,24 @@ class SearchPanel implements Panel {
 }
 
 function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchMatches {
+    const newSearchMatches: SearchMatches = new Map()
+
     if (!query.valid) {
-        return new Map()
+        return newSearchMatches
     }
 
-    const newSearchMatches: SearchMatches = new Map()
     let index = 1
-    let result = query.getCursor(document).next()
     // Regular expressions that result in matches with length 0 would
     // cause an infinite loop. So we guard against that by verifying
-    // whether or not the cursor moves to the next match at a new position.
+    // whether the cursor moves to the next match at a new position.
     let prevValue: { from: number; to: number } | null = null
+    const matches = query.getCursor(document)
+    let result = matches.next()
 
     while (!result.done && result.value.from !== prevValue?.from) {
         newSearchMatches.set(result.value.from, index++)
         prevValue = result.value
-        result = query.getCursor(document, result.value.to).next()
+        result = matches.next()
     }
 
     // If the result is not done, it detected an infinite loop, so we
@@ -436,6 +438,7 @@ function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchM
     if (!result.done) {
         return new Map()
     }
+
     return newSearchMatches
 }
 
