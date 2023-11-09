@@ -85,6 +85,7 @@ export class LocationsGroupedByFile {
 export class LocationsGroup {
     /** Invariant: `_totalCount` is the sum of sizes of Location arrays in `_groups` */
     private _locationsCount: number
+    /** Invariant: Every Location stored in the group has a distinct URL. */
     private _groups: LocationsGroupedByRepo[]
 
     public constructor(locations: Location[]) {
@@ -143,36 +144,37 @@ export class LocationsGroup {
         return out
     }
 
-    /** reset the state of this LocationsGroup to only contain entries from `locations` */
+    /** Reset the state of this LocationsGroup to only contain entries from `locations` */
     private resetLocations(locations: Location[]): void {
         this._locationsCount = 0
         this._groups = []
         const urlsSeen = new Set<string>()
-        const groupingMap = new Map<string, Map<string, Location[]>>()
+        const repoMap = new Map<string, Map<string, Location[]>>()
         for (const loc of locations) {
             if (urlsSeen.has(loc.url)) {
                 continue
             }
             urlsSeen.add(loc.url)
-            const repoMap = groupingMap.get(loc.repo)
-            if (repoMap) {
-                const pathMap = repoMap.get(loc.file)
-                if (pathMap) {
-                    pathMap.push(loc)
+            const pathToLocMap = repoMap.get(loc.repo)
+            if (pathToLocMap) {
+                const fileLocs = pathToLocMap.get(loc.file)
+                if (fileLocs) {
+                    fileLocs.push(loc)
                 } else {
-                    repoMap.set(loc.file, [loc])
+                    pathToLocMap.set(loc.file, [loc])
                 }
             } else {
-                const repoMap = new Map<string, Location[]>()
-                repoMap.set(loc.file, [loc])
-                groupingMap.set(loc.repo, repoMap)
+                const pathToLocMap = new Map<string, Location[]>()
+                pathToLocMap.set(loc.file, [loc])
+                repoMap.set(loc.repo, pathToLocMap)
             }
         }
-        groupingMap.forEach((repoMap, repoName) => {
+        repoMap.forEach((pathToLocMap, repoName) => {
             const perFileLocations: LocationsGroupedByFile[] = []
-            for (const [_, locations] of repoMap) {
+            for (const [_, locations] of pathToLocMap) {
                 console.assert(locations.length > 0, 'bug in grouping logic')
                 const g = new LocationsGroupedByFile(locations)
+                console.assert(g.locations.length <= locations.length)
                 this._locationsCount += g.locations.length
                 perFileLocations.push(g)
             }

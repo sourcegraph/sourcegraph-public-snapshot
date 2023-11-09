@@ -593,7 +593,6 @@ const CollapsibleLocationList: React.FunctionComponent<
     const repoCount = props.locationsGroup.repoCount
     const locationsCount = props.locationsGroup.locationsCount
     const quantityLabel = useMemo(() => {
-        // const repoNumber = uniqBy(props.locations, 'repo').length
         return `(${locationsCount} ${pluralize('item', locationsCount)}${
             repoCount > 1 ? ` from ${repoCount} repositories` : ''
         } displayed${props.hasMore ? ', more available' : ''})`
