@@ -46,7 +46,6 @@ import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard
 import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { createElement } from '../../../util/dom'
 
-import { blobPropsFacet } from '.'
 import { CodeMirrorContainer } from './react-interop'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
@@ -91,15 +90,13 @@ class SearchPanel implements Panel {
     private input: HTMLInputElement | null = null
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
-    private navigate: NavigateFunction
 
-    constructor(private view: EditorView) {
+    constructor(private view: EditorView, private navigate: NavigateFunction) {
         this.dom = createElement('div', {
             className: 'cm-sg-search-container d-flex align-items-center',
             id: BLOB_SEARCH_CONTAINER_ID,
             onkeydown: this.onkeydown,
         })
-        this.navigate = view.state.facet(blobPropsFacet).navigate
 
         const searchQuery = getSearchQuery(this.view.state)
         const matches = calculateMatches(searchQuery, view.state.doc)
@@ -471,6 +468,7 @@ const theme = EditorView.theme({
 interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
     onOverrideBrowserFindInPageToggle: (enabled: boolean) => void
+    navigate: NavigateFunction
 }
 
 const [overrideBrowserFindInPageShortcut, , setOverrideBrowserFindInPageShortcut] = createUpdateableField(true)
@@ -515,7 +513,7 @@ export function search(config: SearchConfig): Extension {
         theme,
         keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
         codemirrorSearch({
-            createPanel: view => new SearchPanel(view),
+            createPanel: view => new SearchPanel(view, config.navigate),
         }),
         ViewPlugin.define(view => {
             if (!config.overrideBrowserFindInPageShortcut) {
