@@ -25,6 +25,7 @@ go_library(
         "//internal/version",
         "//lib/errors",
         "//schema",
+        "@com_github_go_logr_logr//:logr",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//semconv/v1.4.0:v1_4_0",
