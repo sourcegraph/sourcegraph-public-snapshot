@@ -30,7 +30,7 @@ import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, type SourcegraphProviders } from './legacy-extensions/providers'
 import type { Occurrence } from './scip'
 
-interface CodeIntelAPI {
+export interface CodeIntelAPI {
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean>
     getDefinition(
         textParameters: TextDocumentPositionParameters,
