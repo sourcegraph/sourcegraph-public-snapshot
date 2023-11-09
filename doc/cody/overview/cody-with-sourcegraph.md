@@ -101,7 +101,7 @@
 
 <p class="subtitle">Learn how to connect and use Cody with the Sourcegraph instance.</p>
 
-Cody uses Sourcegraph to provide contextually relevant answers and code. To install and use Cody with your [code editor](./../overview/install-vscode.md), you must connect it to your Sourcegraph.com account. For more advanced and customized usage, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
+Cody uses Sourcegraph to provide contextually relevant answers and code. To install and use Cody with your [code editor](./../overview/install-vscode.md) or [desktop app](./../overview/app/index.md), you must connect it to your Sourcegraph.com account. For more advanced and customized usage, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
 
 <ul class="limg">
   <li>
@@ -128,7 +128,7 @@ After connecting Cody to Sourcegraph.com, you can optionally use [code graph con
 
 You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
 
-To use Cody with code graph on private code, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
+To use Cody with code graph on private code, it's recommended to download the [Cody App](./../overview/app/index.md) or [enable Cody for Enterprise](enable-cody-enterprise.md).
 
 ### Enable code graph context
 
