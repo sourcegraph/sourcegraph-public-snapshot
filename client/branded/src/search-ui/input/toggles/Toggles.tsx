@@ -13,7 +13,6 @@ import {
     type SearchModeProps,
 } from '@sourcegraph/shared/src/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
-import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { QueryInputToggle } from './QueryInputToggle'
 import { SmartSearchToggle } from './SmartSearchToggle'
@@ -25,7 +24,6 @@ export interface TogglesProps
         SearchPatternTypeMutationProps,
         CaseSensitivityProps,
         SearchModeProps,
-        SettingsCascadeProps,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
