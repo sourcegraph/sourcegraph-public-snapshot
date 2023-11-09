@@ -49,3 +49,9 @@ func (id ID) Append(next ID) ID {
 // DisplayName can be used for display name fields - it is the ID itself, as
 // display names generally do not need to be unique.
 func (id ID) DisplayName() string { return id.id }
+
+var _ fmt.Stringer = ID{}
+
+// String must never be used to render ID as a string. This guards against
+// accidental misuse.
+func (ID) String() string { panic("resourceid.ID must never be rendered as string") }
