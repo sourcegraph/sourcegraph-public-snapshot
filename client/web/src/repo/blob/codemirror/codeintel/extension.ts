@@ -62,6 +62,7 @@ const tooltipStyles = EditorView.theme({
     },
     '.cm-tooltip.sg-code-intel-hovercard': {
         border: 'unset',
+        borderRadius: 'var(--popover-border-radius)',
     },
 })
 
