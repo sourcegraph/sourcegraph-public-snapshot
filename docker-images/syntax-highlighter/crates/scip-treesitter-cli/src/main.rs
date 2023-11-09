@@ -1,5 +1,10 @@
+mod evaluate;
+mod index;
+mod io;
+mod progress;
+
 use clap::{Parser, Subcommand};
-use scip_treesitter_cli::{
+use crate::{
     evaluate::ScipEvaluateOptions,
     index::{index_command, AnalysisMode, IndexMode, IndexOptions},
 };
@@ -118,7 +123,7 @@ pub fn main() {
             print_true_positives,
             print_false_positives,
             print_false_negatives,
-        } => scip_treesitter_cli::evaluate::evaluate_command(
+        } => crate::evaluate::evaluate_command(
             PathBuf::from(candidate),
             PathBuf::from(ground_truth),
             ScipEvaluateOptions {
@@ -133,9 +138,9 @@ pub fn main() {
 
 #[cfg(test)]
 mod tests {
+    use crate::io::read_index_from_file;
     use assert_cmd::cargo::cargo_bin;
     use assert_cmd::prelude::*;
-    use scip_treesitter_cli::io::read_index_from_file;
     use std::collections::HashMap;
     use std::path::Path;
     use std::process::Command;
