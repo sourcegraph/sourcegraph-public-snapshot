@@ -51,7 +51,7 @@ func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) 
 }
 
 func writeViolationError(w http.ResponseWriter, message string) error {
-	w.WriteHeader(http.StatusForbidden) // 403 because retrying won't help
+	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
 	return writeJSON(w, graphql.Response{
 		Errors: []*gqlerrors.QueryError{
 			{
