@@ -26,7 +26,6 @@ import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
-import { NotepadContainer } from '../../../search/Notepad'
 import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
 import { isSourcegraphDev, useDeveloperSettings } from '../../../stores'
 
@@ -74,7 +73,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const isSearchNotebooksPage = routeMatches.some(routeMatch =>
         routeMatch.pathname.startsWith(EnterprisePageRoutes.Notebooks)
     )
-    const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isCodySearchPage = routeMatches.some(routeMatch =>
         routeMatch.pathname.startsWith(EnterprisePageRoutes.CodySearch)
     )
@@ -249,12 +247,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     <div id="references-panel-react-portal" />
                 </Suspense>
             </ErrorBoundary>
-            {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer
-                    userId={props.authenticatedUser?.id}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                />
-            )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}

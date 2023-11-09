@@ -27,7 +27,6 @@ import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
-import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { isSourcegraphDev, useDeveloperSettings } from './stores'
 import { isAccessTokenCallbackPage } from './user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
@@ -67,7 +66,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchJobsPage = routeMatch?.startsWith(EnterprisePageRoutes.SearchJobs)
     const isAppAuthCallbackPage = routeMatch?.startsWith(EnterprisePageRoutes.AppAuthCallback)
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
-    const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
@@ -197,7 +195,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // Some routes by their design require rendering on a blank page
     // without the UI chrome that Layout component renders by default.
     // If route has handle: { fullPage: true } we render just the route content
-    // and its container block without rendering global nav, notepad
+    // and its container block without rendering global nav
     // and other standard UI chrome elements.
     if (isFullPageRoute) {
         return <ApplicationRoutes routes={props.routes} />
@@ -281,12 +279,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
             />
-            {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer
-                    userId={props.authenticatedUser?.id}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                />
-            )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
