@@ -68,7 +68,7 @@ describe('Repository', () => {
     })
     after(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async function() {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -497,7 +497,6 @@ describe('Repository', () => {
                                     isDirectory: false,
                                     url: '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
                                     submodule: null,
-                                    isSingleChild: false,
                                 },
                             ],
                         },
