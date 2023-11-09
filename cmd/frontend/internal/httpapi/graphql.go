@@ -50,6 +50,17 @@ func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) 
 	return "unknown"
 }
 
+func writeViolationError(w http.ResponseWriter, message string) error {
+	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
+	return writeJSON(w, graphql.Response{
+		Errors: []*gqlerrors.QueryError{
+			{
+				Message: message,
+			},
+		},
+	})
+}
+
 func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
@@ -121,14 +132,15 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 				costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
 
 				if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
-					return errors.New("query exceeds maximum alias count")
+					return writeViolationError(w, "query exceeds maximum query cost")
 				}
 
 				if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
 					if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
 						logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
 					}
-					return errors.New("query exceeds maximum query cost")
+
+					return writeViolationError(w, "query exceeds maximum query cost")
 				}
 
 				if rl, enabled := rlw.Get(); enabled {
