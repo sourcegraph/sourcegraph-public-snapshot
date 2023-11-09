@@ -386,6 +386,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             codeIntelExtension,
             editorRef.current,
             blameDecorations,
+            wrapCodeSettings,
+            blobProps,
             pinnedTooltip,
         ]
     )
