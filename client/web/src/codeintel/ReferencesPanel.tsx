@@ -592,11 +592,9 @@ const CollapsibleLocationList: React.FunctionComponent<
 
     const repoCount = props.locationsGroup.repoCount
     const locationsCount = props.locationsGroup.locationsCount
-    const quantityLabel = useMemo(() => {
-        return `(${locationsCount} ${pluralize('item', locationsCount)}${
-            repoCount > 1 ? ` from ${repoCount} repositories` : ''
-        } displayed${props.hasMore ? ', more available' : ''})`
-    }, [repoCount, locationsCount, props.hasMore])
+    const quantityLabel = `(${locationsCount} ${pluralize('item', locationsCount)}${
+        repoCount > 1 ? ` from ${repoCount} repositories` : ''
+    } displayed${props.hasMore ? ', more available' : ''})`
 
     return (
         <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
@@ -794,28 +792,26 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
     searchToken,
     fetchHighlightedFileLineRanges,
     activeURL,
-}) => {
-    return (
-        <>
-            {locationsGroup.map((group, index) => (
-                <CollapsibleRepoLocationGroup
-                    key={group.repoName}
-                    activeURL={activeURL}
-                    searchToken={searchToken}
-                    locations={group}
-                    openByDefault={index === 0}
-                    isActiveLocation={isActiveLocation}
-                    setActiveLocation={setActiveLocation}
-                    filter={filter}
-                    navigateToUrl={navigateToUrl}
-                    handleOpenChange={handleOpenChange}
-                    isOpen={isOpen}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                />
-            ))}
-        </>
-    )
-}
+}) => (
+    <>
+        {locationsGroup.map((group, index) => (
+            <CollapsibleRepoLocationGroup
+                key={group.repoName}
+                activeURL={activeURL}
+                searchToken={searchToken}
+                locations={group}
+                openByDefault={index === 0}
+                isActiveLocation={isActiveLocation}
+                setActiveLocation={setActiveLocation}
+                filter={filter}
+                navigateToUrl={navigateToUrl}
+                handleOpenChange={handleOpenChange}
+                isOpen={isOpen}
+                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+            />
+        ))}
+    </>
+)
 
 /** Component to display the Locations for a single repo */
 const CollapsibleRepoLocationGroup: React.FunctionComponent<

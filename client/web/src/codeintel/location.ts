@@ -15,7 +15,7 @@ export interface Location {
     precise: boolean
 }
 
-export type LocationsGroupedByRepo = {
+export interface LocationsGroupedByRepo {
     /** Invariant: `repoName` matches the 'repo' key in all Locations in `perFileGroups` */
     repoName: string
     /** Invariant: This array is non-empty */
@@ -53,7 +53,7 @@ export class LocationsGroupedByFile {
      *
      * If one attempts to mix them, precise locations will be preferred.
      */
-    private tryAdd(location: Location) {
+    private tryAdd(location: Location): void {
         if (this._precise && !location.precise) {
             return
         }
@@ -62,8 +62,8 @@ export class LocationsGroupedByFile {
             this._locations = [location]
             return
         }
-        console.assert(location.file == this.path, 'pre-condition failure')
-        console.assert(location.precise == this._precise)
+        console.assert(location.file === this.path, 'pre-condition failure')
+        console.assert(location.precise === this._precise)
         this._locations.push(location)
     }
 
@@ -88,7 +88,7 @@ export class LocationsGroup {
     /** Invariant: Every Location stored in the group has a distinct URL. */
     private _groups: LocationsGroupedByRepo[]
 
-    public constructor(locations: Location[]) {
+    constructor(locations: Location[]) {
         this._locationsCount = 0
         this._groups = []
         this.resetLocations(locations)
@@ -129,9 +129,7 @@ export class LocationsGroup {
      * same file.
      */
     public combine(newLocations: Location[]): LocationsGroup {
-        let newGroup = new LocationsGroup([])
-        newGroup.resetLocations([...this.allLocations(), ...newLocations])
-        return newGroup
+        return new LocationsGroup([...this.allLocations(), ...newLocations])
     }
 
     private allLocations(): Location[] {
@@ -169,7 +167,7 @@ export class LocationsGroup {
                 repoMap.set(loc.repo, pathToLocMap)
             }
         }
-        repoMap.forEach((pathToLocMap, repoName) => {
+        for (const [repoName, pathToLocMap] of repoMap) {
             const perFileLocations: LocationsGroupedByFile[] = []
             for (const [_, locations] of pathToLocMap) {
                 console.assert(locations.length > 0, 'bug in grouping logic')
@@ -179,7 +177,7 @@ export class LocationsGroup {
                 perFileLocations.push(g)
             }
             this._groups.push({ repoName, perFileGroups: perFileLocations })
-        })
+        }
     }
 }
 
