@@ -29,16 +29,16 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	// computesslcertificate.NewComputeSslCertificate, see sourcegraph/controller
 	return &Output{
 		Certificate: computesslcertificate.NewComputeSslCertificate(scope,
-			id.ResourceID("origin-cert"),
+			id.TerraformID("origin-cert"),
 			&computesslcertificate.ComputeSslCertificateConfig{
 				Name:    pointers.Ptr(id.DisplayName()),
 				Project: pointers.Ptr(config.ProjectID),
 
-				PrivateKey: &gsmsecret.Get(scope, id.SubID("secret-origin-private-key"), gsmsecret.DataConfig{
+				PrivateKey: &gsmsecret.Get(scope, id.Group("secret-origin-private-key"), gsmsecret.DataConfig{
 					Secret:    googlesecretsmanager.SecretSourcegraphWildcardKey,
 					ProjectID: googlesecretsmanager.ProjectID,
 				}).Value,
-				Certificate: &gsmsecret.Get(scope, id.SubID("secret-origin-cert"), gsmsecret.DataConfig{
+				Certificate: &gsmsecret.Get(scope, id.Group("secret-origin-cert"), gsmsecret.DataConfig{
 					Secret:    googlesecretsmanager.SecretSourcegraphWildcardCert,
 					ProjectID: googlesecretsmanager.ProjectID,
 				}).Value,

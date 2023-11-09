@@ -24,7 +24,7 @@ type Config struct {
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	secret := secretmanagersecret.NewSecretManagerSecret(scope,
-		id.ResourceID("secret"),
+		id.TerraformID("secret"),
 		&secretmanagersecret.SecretManagerSecretConfig{
 			Project:  &config.ProjectID,
 			SecretId: &config.ID,
@@ -34,7 +34,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		})
 
 	version := secretmanagersecretversion.NewSecretManagerSecretVersion(scope,
-		id.ResourceID("secret_version"),
+		id.TerraformID("secret_version"),
 		&secretmanagersecretversion.SecretManagerSecretVersionConfig{
 			Secret:     secret.Id(),
 			SecretData: &config.Value,
@@ -57,7 +57,7 @@ type DataConfig struct {
 
 func Get(scope constructs.Construct, id resourceid.ID, config DataConfig) *Data {
 	data := datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(scope,
-		id.ResourceID("version_data"),
+		id.TerraformID("version_data"),
 		&datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
 			Secret:  &config.Secret,
 			Project: &config.ProjectID,

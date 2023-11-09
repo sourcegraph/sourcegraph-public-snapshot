@@ -30,7 +30,7 @@ type Config struct {
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
 	redis := redisinstance.NewRedisInstance(scope,
-		id.ResourceID("instance"),
+		id.TerraformID("instance"),
 		&redisinstance.RedisInstanceConfig{
 			Project: pointers.Ptr(config.ProjectID),
 			Region:  &config.Region,
@@ -50,7 +50,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		})
 
 	// Share CA certificate for connecting to Redis over TLS as a GSM secret
-	redisCACert := gsmsecret.New(scope, id.SubID("ca-cert"), gsmsecret.Config{
+	redisCACert := gsmsecret.New(scope, id.Group("ca-cert"), gsmsecret.Config{
 		ProjectID: config.ProjectID,
 		ID:        strings.ToUpper(id.DisplayName()) + "_CA_CERT",
 		Value:     *redis.ServerCaCerts().Get(pointers.Float64(0)).Cert(),
