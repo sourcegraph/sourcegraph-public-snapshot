@@ -75,5 +75,10 @@ export function getReturnTo(location: H.Location, defaultReturnTo: string = Page
     const returnTo = searchParameters.get('returnTo') || defaultReturnTo
     const newURL = new URL(returnTo, window.location.href)
 
-    return newURL.pathname + newURL.search + newURL.hash
+    // 🚨 SECURITY: check newURL scheme http or https
+    if (newURL.protocol == 'http:' || newURL.protocol == 'https:') {
+        return newURL.pathname + newURL.search + newURL.hash
+    } else {
+        return defaultReturnTo
+    }
 }
