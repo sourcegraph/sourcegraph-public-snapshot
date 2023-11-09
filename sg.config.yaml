@@ -426,15 +426,6 @@ commands:
       WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
-  web-standalone-http-prod:
-    description: Standalone web frontend (production) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web serve:prod
-    install: pnpm --filter @sourcegraph/web run build
-    env:
-      NODE_ENV: production
-      WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
   web-integration-build:
     description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
@@ -1505,11 +1496,6 @@ commandsets:
       - caddy
     env:
       SK_PORT: 3080
-
-  web-standalone-prod:
-    commands:
-      - web-standalone-http-prod
-      - caddy
 
   # For testing our OpenTelemetry stack
   otel:

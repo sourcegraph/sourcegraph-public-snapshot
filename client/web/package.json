@@ -17,7 +17,6 @@
     "test:regression:search": "pnpm task:mocha ./src/regression/search.test.ts",
     "storybook": "STORIES_GLOB='client/web/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "serve:dev": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/development.server.ts",
-    "serve:prod": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/production.server.ts",
     "generate": "pnpm -w run generate",
     "dev": "ts-node -T dev/esbuild/server.ts",
     "build": "pnpm run generate && ts-node -T dev/esbuild/build.ts",
