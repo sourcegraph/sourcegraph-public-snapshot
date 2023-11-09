@@ -1,4 +1,8 @@
 <script lang="ts" context="module">
+    // TODO(fkling): Add support for missing features
+    //  - History more
+    //  - Default context support
+    //  - Global keyboard shortcut
     import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 
     import { goto, invalidate } from '$app/navigation'
