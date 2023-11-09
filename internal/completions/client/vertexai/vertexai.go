@@ -1,28 +1,59 @@
 package vertexai
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	ai "cloud.google.com/go/aiplatform/apiv1"
+	aipb "cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
+	"google.golang.org/api/option"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// TODO: remove httpcli.Doer
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
+	// TODO: pass these options down to this function
+	ctx := context.TODO()
+	credentialsFile := "chris-warwick-dev-24660c44aa98.json" // TODO: do not hard-code
+	credentialsJSON := ""
+
+	// Client options
+	var options []option.ClientOption
+	if credentialsFile != "" {
+		options = append(options, option.WithCredentialsFile(credentialsFile))
+	}
+	if credentialsJSON != "" {
+		options = append(options, option.WithCredentialsJSON([]byte(credentialsJSON)))
+	}
+
+	cli2, err := ai.NewPredictionClient(ctx, options...)
+	if err != nil {
+		// TODO: bubble this error up
+		panic(err)
+	}
+
+	_, err = url.Parse(endpoint)
+	if err != nil {
+		// TODO: bubble this error up
+		panic(errors.Wrap(err, "failed to parse configured endpoint"))
+	}
+
 	return &vertexAIChatCompletionStreamClient{
-		cli:         cli,
+		cli2:        cli2,
+		cli:         cli, // TODO: remove
 		accessToken: accessToken,
 		endpoint:    endpoint,
 	}
 }
 
 type vertexAIChatCompletionStreamClient struct {
+	cli2        *ai.PredictionClient // TODO: should call .Close() when done with this
 	cli         httpcli.Doer
 	accessToken string
 	endpoint    string
@@ -42,55 +73,56 @@ func (c *vertexAIChatCompletionStreamClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	var resp *http.Response
-	var err error
-
-	defer (func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	})()
 	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
-	} else {
-		resp, err = c.makeRequest(ctx, requestParams, true)
-	}
-	if err != nil {
-		return err
-	}
+		resp, err := c.makeCompletionRequest(ctx, requestParams, true)
+		if err != nil {
+			return err
+		}
+		if len(resp.Predictions) == 0 {
+			// Empty response
+			return nil
+		}
+		// TODO: rewrite this hunk to use unmarshalValue
+		content := resp.Predictions[0].GetStructValue().GetFields()["Content"].GetStringValue()
 
-	var response vertexResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return err
-	}
-	if len(response.Predictions) == 0 {
-		// Empty response.
+		ev := types.CompletionResponse{
+			Completion: content,
+			StopReason: "done",
+		}
+		err = sendEvent(ev)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		resp, err := c.makeRequest(ctx, requestParams, true)
+		if err != nil {
+			return err
+		}
+		if len(resp.Predictions) == 0 {
+			// Empty response
+			return nil
+		}
+		var content string
+		// TODO: rewrite this hunk to use unmarshalValue
+		candidates := resp.Predictions[0].GetStructValue().GetFields()["Candidates"].GetListValue().GetValues()
+		if len(candidates) > 0 {
+			content += candidates[0].GetStructValue().GetFields()["Content"].GetStringValue()
+		}
+		ev := types.CompletionResponse{
+			Completion: content,
+			StopReason: "done",
+		}
+		err = sendEvent(ev)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
-	var content string
-	switch feature {
-	case types.CompletionsFeatureCode:
-		content += response.Predictions[0].Content
-	case types.CompletionsFeatureChat:
-		if len(response.Predictions[0].Candidates) > 0 {
-			content += response.Predictions[0].Candidates[0].Content
-		}
-	}
-
-	ev := types.CompletionResponse{
-		Completion: content,
-		StopReason: "done",
-	}
-	err = sendEvent(ev)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *vertexAIChatCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *vertexAIChatCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*aipb.PredictResponse, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -98,15 +130,13 @@ func (c *vertexAIChatCompletionStreamClient) makeRequest(ctx context.Context, re
 		requestParams.TopP = 0
 	}
 
-	payload := chatRequest{
-		Parameters: parameters{
-			CandidateCount:  1,
-			MaxOutputTokens: requestParams.MaxTokensToSample,
-			Temperature:     requestParams.Temperature,
-			StopSequences:   requestParams.StopSequences,
-		},
-		Instances: []chatInstance{{Messages: []message{}}},
+	params := parameters{
+		CandidateCount:  1,
+		MaxOutputTokens: requestParams.MaxTokensToSample,
+		Temperature:     requestParams.Temperature,
+		StopSequences:   requestParams.StopSequences,
 	}
+	instances := []chatInstance{{Messages: []message{}}}
 	for _, m := range requestParams.Messages {
 		if len(m.Text) == 0 {
 			continue
@@ -121,47 +151,28 @@ func (c *vertexAIChatCompletionStreamClient) makeRequest(ctx context.Context, re
 		default:
 			role = strings.ToLower(role)
 		}
-		payload.Instances[0].Messages = append(payload.Instances[0].Messages, message{
+		instances[0].Messages = append(instances[0].Messages, message{
 			Author:  role,
 			Content: m.Text,
 		})
 	}
 
-	reqBody, err := json.Marshal(payload)
+	paramsPayload, err := marshalValue(params)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(reqBody))
-
-	url, err := url.Parse(c.endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
-	}
-
-	url.Path += fmt.Sprintf("/%s:predict", requestParams.Model)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
+	instancesPayload, err := marshalValue(instances)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-
-	resp, err := c.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("VertexAI", resp)
-	}
-
-	return resp, nil
+	return c.cli2.Predict(ctx, &aipb.PredictRequest{
+		Parameters: paramsPayload,
+		Instances:  instancesPayload.GetListValue().GetValues(),
+	})
 }
 
 // makeCompletionRequest formats the request and calls the completions endpoint for code_completion requests
-func (c *vertexAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *vertexAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*aipb.PredictResponse, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -169,56 +180,55 @@ func (c *vertexAIChatCompletionStreamClient) makeCompletionRequest(ctx context.C
 		requestParams.TopP = 0
 	}
 
+	params := parameters{
+		CandidateCount:  1,
+		MaxOutputTokens: requestParams.MaxTokensToSample,
+		StopSequences:   requestParams.StopSequences,
+		Temperature:     requestParams.Temperature,
+	}
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}
+	instances := []completionsInstances{{Prefix: prompt}}
 
-	payload := vertexCompletionsRequest{
-		Parameters: parameters{
-			CandidateCount:  1,
-			MaxOutputTokens: requestParams.MaxTokensToSample,
-			StopSequences:   requestParams.StopSequences,
-			Temperature:     requestParams.Temperature,
-		},
-		Instances: []completionsInstances{{Prefix: prompt}},
-	}
-
-	reqBody, err := json.Marshal(payload)
+	paramsPayload, err := marshalValue(params)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(reqBody))
-	url, err := url.Parse(c.endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
-	}
-
-	url.Path += fmt.Sprintf("/%s:predict", requestParams.Model)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
+	instancesPayload, err := marshalValue(instances)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-
-	resp, err := c.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("VertexAI", resp)
-	}
-
-	return resp, nil
+	return c.cli2.Predict(ctx, &aipb.PredictRequest{
+		Parameters: paramsPayload,
+		Instances:  instancesPayload.GetListValue().GetValues(),
+	})
 }
 
-type chatRequest struct {
-	Instances  []chatInstance `json:"instances"`
-	Parameters parameters     `json:"parameters"`
+// json.Marshal, but for structpb values
+func marshalValue(x any) (*structpb.Value, error) {
+	j, err := json.Marshal(x)
+	if err != nil {
+		return nil, errors.Wrap(err, "Marshal")
+	}
+	var v structpb.Value
+	if err := json.Unmarshal(j, &v); err != nil {
+		return nil, errors.Wrap(err, "Unmarshal")
+	}
+	return &v, nil
+}
+
+// json.Unmarshal, but for structpb values
+func unmarshalValue(data *structpb.Value, out interface{}) error {
+	j, err := json.Marshal(data)
+	if err != nil {
+		return errors.Wrap(err, "Marshal")
+	}
+	if err := json.Unmarshal(j, out); err != nil {
+		return errors.Wrap(err, "Unmarshal")
+	}
+	return nil
 }
 
 type chatInstance struct {
@@ -228,11 +238,6 @@ type chatInstance struct {
 type message struct {
 	Author  string `json:"author"`
 	Content string `json:"content"`
-}
-
-type vertexCompletionsRequest struct {
-	Instances  []completionsInstances `json:"instances"`
-	Parameters parameters             `json:"parameters"`
 }
 
 type completionsInstances struct {
@@ -287,11 +292,6 @@ type tokenMetadata struct {
 
 type metadata struct {
 	TokenMetadata tokenMetadata `json:"tokenMetadata"`
-}
-
-type vertexResponse struct {
-	Predictions []prediction `json:"predictions"`
-	Metadata    metadata     `json:"metadata"`
 }
 
 func getPrompt(messages []types.Message) (string, error) {
