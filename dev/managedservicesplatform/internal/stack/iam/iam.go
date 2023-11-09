@@ -111,6 +111,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			}),
 		})
 	if imageProject := extractImageGoogleProject(vars.Image); imageProject != nil {
+		imageAccessID := id.Group("image_access")
 		for _, r := range []serviceaccount.Role{{
 			ID:   resourceid.New("object_viewer"),
 			Role: "roles/storage.objectViewer", // for gcr.io
@@ -119,7 +120,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			Role: "roles/artifactregistry.reader", // for artifact registry
 		}} {
 			projectiammember.NewProjectIamMember(stack,
-				id.TerraformID("member_image_access_%s", r.ID),
+				imageAccessID.Append(r.ID).TerraformID("member"),
 				&projectiammember.ProjectIamMemberConfig{
 					Project: imageProject,
 					Role:    pointers.Ptr(r.Role),
