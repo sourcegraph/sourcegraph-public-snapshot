@@ -163,8 +163,8 @@ You can start using Cody with one of the following clients:
   </li>
   <li>
     <a class="card text-left" target="_blank" href="https://sourcegraph.com/sign-in?returnTo=/search">
-      <h3><img alt="Cody with Sourcegraph Search" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody with Sourcegraph Search</h3>
-      <p>Use Cody with the Sourcegraph Code Search interface.</p>
+      <h3><img alt="Cody for Web" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody for Web</h3>
+      <p>Use Cody in the Sourcegraph web app.</p>
     </a>
   </li>
   <li>

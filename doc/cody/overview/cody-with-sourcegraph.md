@@ -99,26 +99,26 @@
 
 # Using Cody with Sourcegraph Search
 
-<p class="subtitle">Learn how to use Cody with the default Sourcegraph Code Search.</p>
+<p class="subtitle">Learn how to use Cody in the web interface with Sourcegraph.com</p>
 
-Cody has a default compatibility with the Sourcegraph's Code Search. You can use Cody with your Sourcegraph.com instance while running search queries on your code. The functionality is supported on both free and enterprise Sourcegraph instances. For more advanced and customized usage, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
+In addition to the Cody extensions for [VS Code](./install-vscode.md), [JetBrains](./install-jetbrains.md) IDEs, and [Neovim](./install-neovim.md), Cody is also available in the Sourcegraph web app. Community users can use Cody for free by logging into their accounts on Sourcegraph.com, and enterprise users can use Cody within their Sourcegraph instance.
 
 <ul class="limg">
   <li>
     <a class="card text-left" target="_blank" href="https://sourcegraph.com/sign-in?returnTo=/search">
-      <h3><img alt="Cody with Sourcegraph Search" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody with Sourcegraph Search</h3>
-      <p>Use Cody with the Sourcegraph Code Search interface.</p>
+      <h3><img alt="Cody for Web" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody for Web</h3>
+      <p>Use Cody in the Sourcegraph web app.</p>
     </a>
   </li>
   </ul>
 
 ## Initial setup
 
-Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign-in. This takes you to the Sourcegraph's native Code Search interface, and Cody automatically gets access to your Sourcegraph.com instance.
+Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign-in. This takes you to Sourcegraph's Code Search interface, where you can chat with and get help from Cody in the web.
 
 ## Using Cody chat
 
-To view how Cody works with Sourcegraph Search, let's run a global search query on a repository of your choice.
+To view how Cody works in the web, let's try running a global Sourcegraph search query on a repository of your choice.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/run-search-query.mp4" type="video/mp4">
@@ -126,7 +126,7 @@ To view how Cody works with Sourcegraph Search, let's run a global search query 
 
 You can view the default **Ask Cody** chat interface on the right sidebar. Once connected, Cody automatically gains context to your connected codebase to help you provide contextually-aware and accurate answers to your questions. There are also example questions that you can use to get started.
 
-With a free Sourcegraph instance, you can use Cody chat with Code Search on ten public and one private repository. For Sourcegraph Enterprise instance, Cody Chat extends to repositories indexed by your site administrator.
+When using Cody chat in the web, you can select up to 10 repositories to use as context for your question. If you're logged in to Sourcegraph.com, these can be any **ten** open source repositories that Sourcegraph indexes. If you're an enterprise customer logged in to your company's Sourcegraph instance, these can be any ten repositories indexed by your site admin.
 
 Let's **Ask Cody** to explain the tech stack of a repository.
 
@@ -150,14 +150,6 @@ Let's run a command to generate a unit test for a selected function.
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-commands-sg.mp4" type="video/mp4">
 </video>
-
-## Configure code graph context for code-aware answers
-
-After connecting Cody to Sourcegraph.com, you can optionally use [code graph context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on Sourcegraph.com, which have embeddings.
-
-You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
-
-To use Cody with code graph on private code, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
 
 ## More resources
 
