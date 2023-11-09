@@ -11,10 +11,10 @@ describe('blob/codemirror/codeintel/utils', () => {
             const values = [2, 4, 6]
             const previousInput = [1, 2, 3]
             const currentInput = previousInput
-            expect(syncValues({ values, previousInput, currentInput, create, update })).toBe(values)
+            expect(syncValues({ values, previousInput, currentInput, create, update: n => n })).toBe(values)
         })
 
-        it('calls create for new input values and update for existin input values', () => {
+        it('calls create for new input values and update for existing input values', () => {
             const values = [2, 6]
             const previousInput = [1, 3]
             const currentInput = [1, 2, 3]
