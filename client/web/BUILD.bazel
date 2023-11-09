@@ -2089,6 +2089,7 @@ vitest_test(
     data = [
         ":snapshots",
         ":web_tests",
+        "//:postcss_config_js",
     ],
 )
 
