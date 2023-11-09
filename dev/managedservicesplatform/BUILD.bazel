@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/internal/stack/cloudrun",
+        "//dev/managedservicesplatform/internal/stack/iam",
         "//dev/managedservicesplatform/internal/stack/options/terraformversion",
         "//dev/managedservicesplatform/internal/stack/options/tfcbackend",
         "//dev/managedservicesplatform/internal/stack/project",
