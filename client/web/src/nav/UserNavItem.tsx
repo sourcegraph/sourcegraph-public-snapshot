@@ -48,6 +48,7 @@ export interface UserNavItemProps extends TelemetryProps {
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
+    className?: string
 }
 
 /**
@@ -63,6 +64,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         showFeedbackModal,
         showKeyboardShortcutsHelp,
         telemetryService,
+        className,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
@@ -111,7 +113,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             ref={menuButtonRef}
                             variant="link"
                             data-testid="user-nav-item-toggle"
-                            className={classNames('d-flex align-items-center text-decoration-none', styles.menuButton)}
+                            className={classNames(
+                                'd-flex align-items-center text-decoration-none',
+                                styles.menuButton,
+                                className
+                            )}
                             aria-label={`${isExpanded ? 'Close' : 'Open'} user profile menu`}
                         >
                             <div className="position-relative">
