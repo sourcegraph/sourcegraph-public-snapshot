@@ -181,7 +181,7 @@ func pageContent(content []byte, startLine, endLine *int) []byte {
 func lineCount(in []byte) int {
 	c := bytes.Count(in, []byte("\n"))
 	// Final newline doesn't mark a new line.
-	if in[len(in)-1] != '\n' {
+	if len(in) > 0 && in[len(in)-1] != '\n' {
 		return c + 1
 	}
 	return c
