@@ -65,7 +65,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                     <div>
                         <Text className={styles.getStartedWithCodyTitle}>Get started with Cody</Text>
                         <Text className={styles.getStartedWithCodyDescription}>
-                            Try Cody free on your local machine with the Cody app and IDE extensions.
+                            Try Cody free on your local machine with the Cody app and editor extensions.
                         </Text>
                     </div>
                     <CodyLetsWorkIcon className={styles.codyLetsWorkImage} />
@@ -119,9 +119,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
 
                     {/* Install cody extension section */}
                     <div className={classNames(styles.card, 'get-cody-step')}>
-                        <H2 className={styles.cardTitle}>
-                            Install the Cody extension for your IDE(s) and start using Cody
-                        </H2>
+                        <H2 className={styles.cardTitle}>Install the Cody editor extension and start using Cody</H2>
                         <div className={classNames(styles.downloadBtnWrapper)}>
                             <div>
                                 <Link
@@ -194,9 +192,9 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             Optional: Install the Cody desktop app for higher quality responses
                         </H2>
                         <Text className={styles.cardDescription}>
-                            The Cody app, when combined with a Cody IDE extension, enables context fetching for all of
-                            your local repositories. Without the app, Cody only fetches context on the repository
-                            currently open in your IDE.
+                            The Cody app, when combined with a Cody editor extension, enables context fetching for all
+                            of your local repositories. Without the app, Cody only fetches context on the repository
+                            currently open in your editor.
                         </Text>
                         <div className={styles.downloadButtonWrapper}>
                             <div className={classNames('d-flex flex-row flex-wrap', styles.downloadMacWrapper)}>

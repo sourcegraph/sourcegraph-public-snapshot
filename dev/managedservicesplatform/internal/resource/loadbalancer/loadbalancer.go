@@ -63,7 +63,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 	// Endpoint group represents the Cloud Run service.
 	endpointGroup := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
-		id.ResourceID("endpoint_group"),
+		id.TerraformID("endpoint_group"),
 		&computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
 			Project: pointers.Ptr(config.ProjectID),
@@ -77,7 +77,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 	// Set up a group of virtual machines that will serve traffic for load balancing
 	backendService := computebackendservice.NewComputeBackendService(scope,
-		id.ResourceID("backend_service"),
+		id.TerraformID("backend_service"),
 		&computebackendservice.ComputeBackendServiceConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
 			Project: pointers.Ptr(config.ProjectID),
@@ -96,7 +96,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	// Enable routing requests to the backend service working serving traffic
 	// for load balancing
 	urlMap := computeurlmap.NewComputeUrlMap(scope,
-		id.ResourceID("url_map"),
+		id.TerraformID("url_map"),
 		&computeurlmap.ComputeUrlMapConfig{
 			Name:           pointers.Ptr(id.DisplayName()),
 			Project:        pointers.Ptr(config.ProjectID),
@@ -106,7 +106,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	// Set up an HTTPS proxy to route incoming HTTPS requests to our target's
 	// URL map, which handles load balancing for a service.
 	httpsProxy := computetargethttpsproxy.NewComputeTargetHttpsProxy(scope,
-		id.ResourceID("https-proxy"),
+		id.TerraformID("https-proxy"),
 		&computetargethttpsproxy.ComputeTargetHttpsProxyConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
 			Project: pointers.Ptr(config.ProjectID),
@@ -118,7 +118,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			}),
 			SslPolicy: computesslpolicy.NewComputeSslPolicy(
 				scope,
-				id.ResourceID("ssl-policy"),
+				id.TerraformID("ssl-policy"),
 				&computesslpolicy.ComputeSslPolicyConfig{
 					Name:    pointers.Ptr(id.DisplayName()),
 					Project: pointers.Ptr(config.ProjectID),
@@ -132,7 +132,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	// Set up an external address to receive traffic
 	externalAddress := computeglobaladdress.NewComputeGlobalAddress(
 		scope,
-		id.ResourceID("external-address"),
+		id.TerraformID("external-address"),
 		&computeglobaladdress.ComputeGlobalAddressConfig{
 			Name:        pointers.Ptr(id.DisplayName()),
 			Project:     pointers.Ptr(config.ProjectID),
@@ -144,7 +144,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	// Forward traffic from the external address to the HTTPS proxy that then
 	// routes request to our target
 	_ = computeglobalforwardingrule.NewComputeGlobalForwardingRule(scope,
-		id.ResourceID("forwarding-rule"),
+		id.TerraformID("forwarding-rule"),
 		&computeglobalforwardingrule.ComputeGlobalForwardingRuleConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
 			Project: pointers.Ptr(config.ProjectID),
