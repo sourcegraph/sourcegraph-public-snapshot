@@ -36,7 +36,9 @@ export class LocationsGroupedByFile {
      * should have the same value for 'file'.
      */
     constructor(locations: Location[]) {
-        console.assert(locations.length > 0, 'pre-condition failure')
+        if (locations.length === 0) {
+            throw new Error('pre-condition failure')
+        }
         this.path = locations[0].file
         this._precise = locations[0].precise
         this._locations = [locations[0]]
@@ -62,8 +64,12 @@ export class LocationsGroupedByFile {
             this._locations = [location]
             return
         }
-        console.assert(location.file === this.path, 'pre-condition failure')
-        console.assert(location.precise === this._precise)
+        if (location.file !== this.path) {
+            throw new Error('pre-condition failure')
+        }
+        if (location.precise !== this._precise) {
+            throw new Error('already handled precise same-ness check earlier')
+        }
         this._locations.push(location)
     }
 
@@ -169,10 +175,16 @@ export class LocationsGroup {
         }
         for (const [repoName, pathToLocMap] of repoMap) {
             const perFileLocations: LocationsGroupedByFile[] = []
-            for (const [_, locations] of pathToLocMap) {
-                console.assert(locations.length > 0, 'bug in grouping logic')
+            for (const [path, locations] of pathToLocMap) {
+                if (locations.length === 0) {
+                    throw new Error(
+                        `bug in grouping logic created empty locations array for repo: ${repoName}, path: ${path}`
+                    )
+                }
                 const g = new LocationsGroupedByFile(locations)
-                console.assert(g.locations.length <= locations.length)
+                if (g.locations.length > locations.length) {
+                    throw new Error('materialized new locations out of thin air')
+                }
                 this._locationsCount += g.locations.length
                 perFileLocations.push(g)
             }
