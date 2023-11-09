@@ -424,7 +424,10 @@ function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchM
     let result = matches.next()
 
     while (!result.done) {
-        newSearchMatches.set(result.value.from, index++)
+        if (result.value.from !== result.value.to) {
+            newSearchMatches.set(result.value.from, index++)
+        }
+
         result = matches.next()
     }
 
