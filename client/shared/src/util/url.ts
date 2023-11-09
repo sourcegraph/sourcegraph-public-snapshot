@@ -174,7 +174,6 @@ const parsePosition = (string: string): Position => {
  * These URIs were used when communicating with language servers over LSP and with extensions. They are being
  * phased out in favor of URLs to resources in the Sourcegraph raw API, which do not require out-of-band
  * information to fetch the contents of.
- *
  * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
@@ -253,7 +252,6 @@ export interface AbsoluteRepoFilePosition
 
 /**
  * Tells if the given fragment component is a legacy blob hash component or not.
- *
  * @param hash The URL fragment.
  */
 export function isLegacyFragment(hash: string): boolean {
@@ -274,7 +272,6 @@ export function isLegacyFragment(hash: string): boolean {
 /**
  * Parses the URL search (query) portion and looks for a parameter which matches a line, position, or range in the file. If not found, it
  * falls back to parsing the hash for backwards compatibility.
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseQueryAndHash<V extends string>(
@@ -294,7 +291,6 @@ export function parseQueryAndHash<V extends string>(
  * optional "viewState" parameter (that encodes other view state, such as for the panel).
  *
  * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
@@ -381,7 +377,6 @@ function addRenderModeQueryParameter(
 /**
  * Finds the URL search parameter which has a key like "L1-2:3" without any
  * value.
- *
  * @param searchParameters The URLSearchParams to look for the line in.
  */
 function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPositionOrRange | undefined {
@@ -510,11 +505,9 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
- *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
- *
  */
 export function buildSearchURLQuery(
     query: string,
@@ -561,7 +554,6 @@ export function buildSearchURLQuery(
 
 /**
  * Takes an input URL and adds Cody App specific query parameters to it. This includes the UTM parameters and app_os.
- *
  * @param url Original URL
  * @param campaign Optional utm_campaign value to add to the query params.
  * @returns URL string with appended query parameters
