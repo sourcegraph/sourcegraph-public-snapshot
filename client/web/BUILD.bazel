@@ -1070,7 +1070,6 @@ ts_project(
         "src/enterprise/site-admin/overview/overviewComponents.ts",
         "src/enterprise/site-admin/productSubscription/ProductSubscriptionStatus.tsx",
         "src/enterprise/site-admin/productSubscription/SiteAdminProductSubscriptionPage.tsx",
-        "src/enterprise/site-admin/routes.tsx",
         "src/enterprise/user/productSubscriptions/UserProductSubscriptionStatus.tsx",
         "src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.tsx",
         "src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage.tsx",

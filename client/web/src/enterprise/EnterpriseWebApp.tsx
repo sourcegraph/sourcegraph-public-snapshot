@@ -9,6 +9,7 @@ import { orgAreaHeaderNavItems } from '../org/area/navitems'
 import { orgAreaRoutes } from '../org/area/routes'
 import { orgSettingsAreaRoutes } from '../org/settings/routes'
 import { orgSettingsSideBarItems } from '../org/settings/sidebaritems'
+import { siteAdminAreaRoutes } from '../site-admin/routes'
 import { siteAdminSidebarGroups } from '../site-admin/sidebaritems'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import {
@@ -33,13 +34,12 @@ import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
 import { enterpriseRoutes } from './routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
-import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
 
 const injectedValuesConfig = {
     /**
      * Routes and nav links
      */
-    siteAdminAreaRoutes: enterpriseSiteAdminAreaRoutes,
+    siteAdminAreaRoutes,
     siteAdminSideBarGroups: siteAdminSidebarGroups,
     siteAdminOverviewComponents: enterpriseSiteAdminOverviewComponents,
     userAreaHeaderNavItems,
