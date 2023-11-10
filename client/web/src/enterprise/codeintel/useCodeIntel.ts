@@ -144,7 +144,7 @@ export const useCodeIntel = ({
 
                     // When no definitions are found, the hover tooltip falls back to a search based
                     // search, regardless of the mixPreciseAndSearchBasedReferences setting.
-                    if (lsifData.definitions.nodes.locationsCount === 0) {
+                    if (lsifData.definitions.nodes.getLocationsCount === 0) {
                         fetchSearchBasedDefinitions(setDefinitions)
                     }
                 } else {

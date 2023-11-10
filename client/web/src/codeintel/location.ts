@@ -28,9 +28,9 @@ export class LocationsGroupedByFile {
     /** Invariant: `path` matches the 'file' key in all Locations in `_locations` */
     public path: string
     /** Invariant: `precise` matches the 'precise' key in all Locations in `_locations` */
-    private _precise: boolean
+    private precise: boolean
     /** Invariant: This array is non-empty */
-    private _locations: Location[]
+    private locations: Location[]
 
     /** Pre-condition: `locations` should be non-empty, and every entry
      * should have the same value for 'file'.
@@ -40,8 +40,8 @@ export class LocationsGroupedByFile {
             throw new Error('pre-condition failure')
         }
         this.path = locations[0].file
-        this._precise = locations[0].precise
-        this._locations = [locations[0]]
+        this.precise = locations[0].precise
+        this.locations = [locations[0]]
         for (const [i, loc] of locations.entries()) {
             if (i === 0) {
                 continue
@@ -56,29 +56,30 @@ export class LocationsGroupedByFile {
      * If one attempts to mix them, precise locations will be preferred.
      */
     private tryAdd(location: Location): void {
-        if (this._precise && !location.precise) {
+        if (this.precise && !location.precise) {
             return
         }
-        if (!this._precise && location.precise) {
-            this._precise = true
-            this._locations = [location]
+        if (!this.precise && location.precise) {
+            this.precise = true
+            this.locations = [location]
             return
         }
         if (location.file !== this.path) {
             throw new Error('pre-condition failure')
         }
-        if (location.precise !== this._precise) {
+        if (location.precise !== this.precise) {
             throw new Error('already handled precise same-ness check earlier')
         }
-        this._locations.push(location)
+        this.locations.push(location)
     }
 
-    public get locations(): Location[] {
-        return this._locations
+    /** Do not modify the returned Array. */
+    public get getLocations(): Location[] {
+        return this.locations
     }
 
     public get quality(): LocationGroupQuality {
-        return this._precise ? 'PRECISE' : 'SEARCH-BASED'
+        return this.precise ? 'PRECISE' : 'SEARCH-BASED'
     }
 }
 
@@ -90,13 +91,13 @@ export class LocationsGroupedByFile {
  * */
 export class LocationsGroup {
     /** Invariant: `_totalCount` is the sum of sizes of Location arrays in `_groups` */
-    private _locationsCount: number
+    private locationsCount: number
     /** Invariant: Every Location stored in the group has a distinct URL. */
-    private _groups: LocationsGroupedByRepo[]
+    private groups: LocationsGroupedByRepo[]
 
     constructor(locations: Location[]) {
-        this._locationsCount = 0
-        this._groups = []
+        this.locationsCount = 0
+        this.groups = []
 
         const urlsSeen = new Set<string>()
         const repoMap = new Map<string, Map<string, Location[]>>()
@@ -128,13 +129,13 @@ export class LocationsGroup {
                     )
                 }
                 const g = new LocationsGroupedByFile(locations)
-                if (g.locations.length > locations.length) {
+                if (g.getLocations.length > locations.length) {
                     throw new Error('materialized new locations out of thin air')
                 }
-                this._locationsCount += g.locations.length
+                this.locationsCount += g.getLocations.length
                 perFileLocations.push(g)
             }
-            this._groups.push({ repoName, perFileGroups: perFileLocations })
+            this.groups.push({ repoName, perFileGroups: perFileLocations })
         }
     }
 
@@ -144,23 +145,23 @@ export class LocationsGroup {
      * in case there are mixed search-based and precise Locations,
      * or if there are duplicates.
      */
-    public get locationsCount(): number {
-        return this._locationsCount
+    public get getLocationsCount(): number {
+        return this.locationsCount
     }
 
     public get first(): Location | undefined {
-        if (this._locationsCount > 0) {
-            return this._groups[0].perFileGroups[0].locations[0]
+        if (this.locationsCount > 0) {
+            return this.groups[0].perFileGroups[0].getLocations[0]
         }
         return undefined
     }
 
     public get repoCount(): number {
-        return this._groups.length
+        return this.groups.length
     }
 
     public map<T>(callback: (arg0: LocationsGroupedByRepo, arg1: number) => T): T[] {
-        return this._groups.map(callback)
+        return this.groups.map(callback)
     }
 
     public static empty: LocationsGroup = new LocationsGroup([])
@@ -178,9 +179,9 @@ export class LocationsGroup {
 
     private allLocations(): Location[] {
         const out: Location[] = []
-        for (const group of this._groups) {
+        for (const group of this.groups) {
             for (const locs of group.perFileGroups) {
-                out.push(...locs.locations)
+                out.push(...locs.getLocations)
             }
         }
         return out

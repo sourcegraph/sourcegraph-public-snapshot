@@ -591,7 +591,7 @@ const CollapsibleLocationList: React.FunctionComponent<
     const isOpen = props.isOpen(props.name) ?? true
 
     const repoCount = props.locationsGroup.repoCount
-    const locationsCount = props.locationsGroup.locationsCount
+    const locationsCount = props.locationsGroup.getLocationsCount
     const quantityLabel = `(${locationsCount} ${pluralize('item', locationsCount)}${
         repoCount > 1 ? ` from ${repoCount} repositories` : ''
     } displayed${props.hasMore ? ', more available' : ''})`
@@ -923,14 +923,14 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         highlighted = group.path.split(filter)
     }
 
-    const { repo, commitID, file } = group.locations[0]
+    const { repo, commitID, file } = group.getLocations[0]
     const ranges = useMemo(
         () =>
-            group.locations.map(location => ({
+            group.getLocations.map(location => ({
                 startLine: location.range?.start.line ?? 0,
                 endLine: (location.range?.end.line ?? 0) + 1,
             })),
-        [group.locations]
+        [group.getLocations]
     )
 
     const fetchHighlightedFileRangeLines = useCallback(
@@ -1001,8 +1001,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                 )}{' '}
                             </span>
                             <span className={classNames('ml-2 text-muted', styles.cardHeaderSmallText)}>
-                                ({group.locations.length}{' '}
-                                {pluralize('occurrence', group.locations.length, 'occurrences')})
+                                ({group.getLocations.length}{' '}
+                                {pluralize('occurrence', group.getLocations.length, 'occurrences')})
                             </span>
                         </span>
                         <Badge small={true} variant="secondary" className="ml-4">
@@ -1014,10 +1014,10 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 <CollapsePanel id={repoName + group.path} className="ml-0">
                     <div className={styles.locationContainer}>
                         <ul className="list-unstyled mb-0">
-                            {group.locations.map((reference, index) => {
+                            {group.getLocations.map((reference, index) => {
                                 const isActive = isActiveLocation(reference)
                                 const isFirstInActive =
-                                    isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
+                                    isActive && !(index > 0 && isActiveLocation(group.getLocations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
                                 const clickReference = (event: MouseEvent<HTMLElement>): void => {
                                     // If anything other than a normal primary click is detected,
