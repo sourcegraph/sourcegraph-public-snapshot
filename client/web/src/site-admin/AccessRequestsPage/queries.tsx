@@ -86,7 +86,7 @@ export const APPROVE_ACCESS_REQUEST = gql`
  */
 export const ACCESS_REQUEST_CREATE_USER = gql`
     mutation AccessRequestCreateUser($username: String!, $email: String) {
-        createUser(username: $username, email: $email, verifiedEmail: false) {
+        accessRequestCreateUser(username: $username, email: $email, verifiedEmail: false) {
             resetPasswordURL
         }
     }

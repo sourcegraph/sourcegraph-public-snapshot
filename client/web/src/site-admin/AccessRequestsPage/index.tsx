@@ -279,7 +279,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 setLastApprovedUser({
                     username,
                     email,
-                    resetPasswordURL: data?.createUser.resetPasswordURL,
+                    resetPasswordURL: data?.accessRequestCreateUser.resetPasswordURL,
                 })
                 await refetch()
             }

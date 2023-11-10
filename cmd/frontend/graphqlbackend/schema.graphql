@@ -207,6 +207,25 @@ type Mutation {
     """
     Randomize a user's password so that they need to reset it before they can sign in again.
 
+    """
+    accessRequestCreateUser(
+        """
+        The new user's username.
+        """
+        username: String!
+        """
+        The new user's optional email address. If given, it must be verified by the user.
+        """
+        email: String
+        """
+        Whether or not to mark the provided email address as verified. If unset or set to
+        true, then the email address is immediately marked as verified - otherwise, the
+        email may be marked as unverified if SMTP and password resets are enabled.
+        """
+        verifiedEmail: Boolean
+    ): CreateUserResult!
+    """
+
     Only site admins may perform this mutation.
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not

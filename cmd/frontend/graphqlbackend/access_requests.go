@@ -175,3 +175,29 @@ func unmarshalAccessRequestID(id graphql.ID) (userID int32, err error) {
 	err = relay.UnmarshalSpec(id, &userID)
 	return
 }
+
+func (r *schemaResolver) AccessRequestCreateUser(ctx context.Context, args *struct {
+	Username      string
+	Email         *string
+	VerifiedEmail *bool
+}) (*createUserResult, error) {
+
+	newResult, err := r.CreateUser(ctx, &struct {
+		Username      string
+		Email         *string
+		VerifiedEmail *bool
+	}{
+		Username:      args.Username,
+		Email:         args.Email,
+		VerifiedEmail: args.VerifiedEmail,
+	})
+
+	if err != nil {
+		if database.IsEmailExists(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return newResult, err
+}
