@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -160,6 +161,8 @@ func TestMiddleware(t *testing.T) {
 			assert.Equal(t, uint32(123), event.UserID)
 		}
 	})
+
+	mockHttpCli = httpcli.TestExternalClient
 
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
 		t.Fatal(err)

@@ -8,11 +8,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 func TestClient_do(t *testing.T) {
@@ -29,7 +30,7 @@ func TestClient_do(t *testing.T) {
 	require.NoError(t, err)
 
 	c := &client{
-		httpClient: httpcli.ExternalDoer,
+		httpClient: httpcli.TestExternalDoer,
 		URL:        srvURL,
 		rateLimit:  &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 10)},
 	}
@@ -37,7 +38,6 @@ func TestClient_do(t *testing.T) {
 	t.Run("prefix does not get trimmed if not present", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "/unauthorized", nil)
 		require.NoError(t, err)
-
 		resp, err := c.do(context.Background(), req, nil)
 		assert.Nil(t, resp)
 		assert.Equal(t, fmt.Sprintf("Gerrit API HTTP error: code=401 url=\"%s/unauthorized\" body=\"Unauthorized\"", srvURL), err.Error())
