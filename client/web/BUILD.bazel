@@ -1077,7 +1077,6 @@ ts_project(
         "src/enterprise/site-admin/productSubscription/ProductSubscriptionStatus.tsx",
         "src/enterprise/site-admin/productSubscription/SiteAdminProductSubscriptionPage.tsx",
         "src/enterprise/site-admin/routes.tsx",
-        "src/enterprise/site-admin/sidebaritems.ts",
         "src/enterprise/user/navitems.ts",
         "src/enterprise/user/productSubscriptions/UserProductSubscriptionStatus.tsx",
         "src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.tsx",

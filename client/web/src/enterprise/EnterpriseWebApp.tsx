@@ -5,6 +5,7 @@ import '../SourcegraphWebApp.scss'
 import { logger } from '@sourcegraph/common'
 
 import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
+import { siteAdminSidebarGroups } from '../site-admin/sidebaritems'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import {
     type StaticAppConfig,
@@ -29,7 +30,6 @@ import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritem
 import { enterpriseRoutes } from './routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
-import { enterpriseSiteAdminSidebarGroups } from './site-admin/sidebaritems'
 import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
 import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
@@ -40,7 +40,7 @@ const injectedValuesConfig = {
      * Routes and nav links
      */
     siteAdminAreaRoutes: enterpriseSiteAdminAreaRoutes,
-    siteAdminSideBarGroups: enterpriseSiteAdminSidebarGroups,
+    siteAdminSideBarGroups: siteAdminSidebarGroups,
     siteAdminOverviewComponents: enterpriseSiteAdminOverviewComponents,
     userAreaHeaderNavItems: enterpriseUserAreaHeaderNavItems,
     userAreaRoutes: enterpriseUserAreaRoutes,
