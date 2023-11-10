@@ -23,7 +23,6 @@ base64 = "0.13.0"
 sg-syntax = { path = "./crates/sg-syntax" }
 scip-treesitter = { path = "./crates/scip-treesitter" }
 scip-treesitter-languages = { path = "./crates/scip-treesitter-languages" }
-scip-treesitter-cli = { path = "./crates/scip-treesitter-cli" }
 scip-syntax = { path = "./crates/scip-syntax" }
 # March 20, 2023 - Pinned explicitly with features that match the features
 # required by rocket. Once bazel rules correctly roll up all the features,

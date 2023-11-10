@@ -2215,7 +2215,6 @@ dependencies = [
  "scip",
  "scip-syntax",
  "scip-treesitter",
- "scip-treesitter-cli",
  "scip-treesitter-languages",
  "serde",
  "serde_json",
