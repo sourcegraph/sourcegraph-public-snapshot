@@ -111,7 +111,8 @@ const staticExtensions: Extension = [
     EditorView.theme({
         '&': {
             flex: 1,
-            backgroundColor: 'var(--input-bg)',
+            // To change code mirror input area color via CSS property
+            backgroundColor: 'var(--search-box-color)',
             borderRadius: 'var(--border-radius)',
             borderColor: 'var(--border-color)',
             // To ensure that the input doesn't overflow the parent
@@ -147,8 +148,6 @@ export enum QueryInputVisualMode {
 
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
-    onChange: (queryState: QueryState) => void
-    onSubmit: () => void
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
@@ -156,14 +155,16 @@ export interface CodeMirrorQueryInputWrapperProps {
     extensions?: Extension
     visualMode?: QueryInputVisualMode | `${QueryInputVisualMode}`
     className?: string
+    onChange: (queryState: QueryState) => void
+    onSubmit: () => void
+    onFocus?: (editor: EditorView) => void
+    onBlur?: (editor: EditorView) => void
 }
 
 export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<CodeMirrorQueryInputWrapperProps>>(
     (
         {
             queryState,
-            onChange,
-            onSubmit,
             interpretComments,
             patternType,
             placeholder,
@@ -172,6 +173,10 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             visualMode = QueryInputVisualMode.Standard,
             className,
             children,
+            onChange,
+            onSubmit,
+            onFocus,
+            onBlur,
         },
         ref
     ) => {
@@ -305,6 +310,8 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                         onEnter={onSubmitHandler}
                         onChange={onChangeHandler}
                         multiLine={false}
+                        onFocus={onFocus}
+                        onBlur={onBlur}
                     />
                     {!mode && children}
                 </div>
