@@ -56,13 +56,6 @@ Code Insights is currently enabled by default on customer instances 3.32 and lat
   },
 ```
 
-## Database
-Historically, Code Insights used a [TimescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
-some of the timeseries query features, as well as the hypertable. Many of these are behind a proprietary license that would have required non-trivial
-work to bundle with Sourcegraph.
-
-As of Sourcegraph 3.38, Code Insights no longer uses TimescaleDB and has moved to a standard vanilla Postgres image. 
-
 ## Insight Metadata
 Code Insights data is stored entirely in the `codeinsights-db` database, and exposed through a GraphQL API. Settings are deprecated as a storage
 option, although the text in the settings will persist unless deleted. In this release Code Insights shipped an [out of band migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b098cc6/-/blob/internal/insights/migration/migration.go) that automatically migrates

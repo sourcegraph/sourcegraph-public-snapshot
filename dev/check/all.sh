@@ -19,14 +19,12 @@ go env
 CHECKS=(
   ./gofmt.sh
   ./template-inlines.sh
-  ./go-enterprise-import.sh
   ./go-dbconn-import.sh
   ./go-lint.sh
   ./no-localhost-guard.sh
   ./bash-syntax.sh
   ./shfmt.sh
   ./shellcheck.sh
-  ./ts-enterprise-import.sh
   ./submodule.sh
 )
 

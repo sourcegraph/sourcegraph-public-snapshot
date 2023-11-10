@@ -29,9 +29,9 @@ checks:
     failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
 
 commandsets:
-  oss:
+  web:
     - frontend
-    - gitserver
+    - caddy
   enterprise:
     checks:
       - docker
@@ -58,9 +58,9 @@ commandsets:
 			},
 		},
 		Commandsets: map[string]*Commandset{
-			"oss": {
-				Name:     "oss",
-				Commands: []string{"frontend", "gitserver"},
+			"web": {
+				Name:     "web",
+				Commands: []string{"frontend", "caddy"},
 			},
 			"enterprise": {
 				Name:     "enterprise",
