@@ -585,6 +585,7 @@ filegroup(
 vitest_test(
     name = "test",
     data = [
+        ":module_styles",
         ":snapshots",
         ":wildcard_tests",
     ],
