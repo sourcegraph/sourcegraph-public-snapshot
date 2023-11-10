@@ -369,34 +369,38 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         []
     )
 
+    const isEmptySearchResults = results?.results.length === 0
+
     return (
         <div className={classNames(styles.container, sidebarCollapsed && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={submittedURLQuery} />
 
-            <SearchFiltersSidebar
-                liveQuery={liveQuery}
-                submittedURLQuery={submittedURLQuery}
-                patternType={patternType}
-                filters={results?.filters}
-                showAggregationPanel={showAggregationPanel}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                aggregationUIMode={aggregationUIMode}
-                settingsCascade={props.settingsCascade}
-                telemetryService={props.telemetryService}
-                caseSensitive={caseSensitive}
-                className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
-                onNavbarQueryChange={setQueryState}
-                onSearchSubmit={handleSidebarSearchSubmit}
-                setSidebarCollapsed={setSidebarCollapsed}
-            >
-                {showOnboardingTour && (
-                    <GettingStartedTour
-                        className="mb-1"
-                        telemetryService={props.telemetryService}
-                        authenticatedUser={authenticatedUser}
-                    />
-                )}
-            </SearchFiltersSidebar>
+            {!isEmptySearchResults && (
+                <SearchFiltersSidebar
+                    liveQuery={liveQuery}
+                    submittedURLQuery={submittedURLQuery}
+                    patternType={patternType}
+                    filters={results?.filters}
+                    showAggregationPanel={showAggregationPanel}
+                    selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    aggregationUIMode={aggregationUIMode}
+                    settingsCascade={props.settingsCascade}
+                    telemetryService={props.telemetryService}
+                    caseSensitive={caseSensitive}
+                    className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
+                    onNavbarQueryChange={setQueryState}
+                    onSearchSubmit={handleSidebarSearchSubmit}
+                    setSidebarCollapsed={setSidebarCollapsed}
+                >
+                    {showOnboardingTour && (
+                        <GettingStartedTour
+                            className="mb-1"
+                            telemetryService={props.telemetryService}
+                            authenticatedUser={authenticatedUser}
+                        />
+                    )}
+                </SearchFiltersSidebar>
+            )}
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
                 <SearchAggregationResult

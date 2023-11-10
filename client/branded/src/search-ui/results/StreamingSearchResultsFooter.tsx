@@ -1,9 +1,10 @@
 import React from 'react'
 
+import { mdiBookSearch } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { Alert, LoadingSpinner, Code, Text, H2, H3, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, Code, Text, H2, H3, ErrorAlert, Icon, Button } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
@@ -31,12 +32,10 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
         )}
 
         {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
-            <div className="pr-3 mt-3 align-self-stretch">
-                <Alert variant="info">
-                    <H3 as={H2} className="m-0 py-1">
-                        No results matched your search.
-                    </H3>
-                </Alert>
+            <div className="pr-3 mt-5 d-flex flex-column align-items-center justify-content-center">
+                <Icon aria-hidden={true} svgPath={mdiBookSearch} size="md" className="w-100" />
+                <H3 as={H2}>We couldn't find a match for your search query.</H3>
+                <Button variant="primary">Update Search Query</Button>
             </div>
         )}
 
