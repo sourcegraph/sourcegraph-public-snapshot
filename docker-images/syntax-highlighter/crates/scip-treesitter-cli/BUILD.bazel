@@ -4,7 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 rust_binary(
     name = "scip-treesitter-cli",
-    srcs = glob(["src/*.rs"]),
+    srcs = glob(["src/main.rs"]),
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
@@ -13,15 +13,44 @@ rust_binary(
     deps = all_crate_deps(
         normal = True,
     ) + [
-        "//docker-images/syntax-highlighter/crates/scip-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+        ":scip-treesitter-cli-lib",
     ],
+)
+
+WORKSPACE_DEPS = [
+    "//docker-images/syntax-highlighter/crates/scip-syntax",
+    "//docker-images/syntax-highlighter/crates/scip-treesitter",
+    "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+]
+
+rust_library(
+    name = "scip-treesitter-cli-lib",
+    srcs = glob([
+        "src/*.rs",
+    ], exclude=["src/main.rs"], allow_empty=False),
+    aliases = aliases(),
+    crate_name = "scip_treesitter_cli",
+    crate_root = "src/lib.rs",
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = [":__subpackages__"],
+    deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
 )
 
 rust_test(
     name = "unit_test",
     srcs = glob(["src/*.rs"]),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
+    size = "small",
+)
+
+rust_test(
+    name = "integration_test",
+    srcs = glob(["tests/*.rs"]),
     compile_data = glob(
         [
             "testdata/**",
@@ -31,12 +60,10 @@ rust_test(
     # Make sure this name matches the crate name in cargo configuration
     # This is to ensure that snapshots produced by Bazel tests and
     # ones produced by `cargo test` command - otherwise insta testing will fail!
-    crate = ":scip-treesitter-cli",
-    data = glob(
-               ["testdata/**"],
-           ) + [":scip-treesitter-cli"] +
+    # crate = ":integration_test",
+    data = [":scip-treesitter-cli"] +
            glob(
-               ["src/snapshots/**"],
+               ["tests/snapshots/**"],
                allow_empty = False,
            ),
     env = {
@@ -46,9 +73,6 @@ rust_test(
     },
     deps = all_crate_deps(
         normal = True,
-    ) + [
-        "//docker-images/syntax-highlighter/crates/scip-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
-    ],
+    ) + [":scip-treesitter-cli", ":scip-treesitter-cli-lib"] + WORKSPACE_DEPS,
+    size = "small",
 )

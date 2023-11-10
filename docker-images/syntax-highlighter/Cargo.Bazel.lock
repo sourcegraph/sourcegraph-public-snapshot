@@ -1,5 +1,5 @@
 {
-  "checksum": "f1deac78768a1de9ed51dd37a32abaf1371d95d0eefb7d379b66b6c6a8b1cc97",
+  "checksum": "ae3b30d9b7f75f8e8cbe503b5263485011fc1478728c759237e33bde6a129544",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10509,8 +10509,18 @@
       "name": "scip-treesitter-cli",
       "version": "0.1.0",
       "repository": null,
-      "targets": [],
-      "library_target_name": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_treesitter_cli",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_treesitter_cli",
       "common_attrs": {
         "compile_data_glob": [
           "**"
