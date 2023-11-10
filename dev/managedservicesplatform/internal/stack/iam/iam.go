@@ -32,9 +32,17 @@ type Variables struct {
 
 const StackName = "iam"
 
-var (
+func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
+	stack, locals, err := stacks.New(StackName,
+		googleprovider.With(vars.ProjectID))
+	if err != nil {
+		return nil, err
+	}
+
+	id := resourceid.New("iam")
+
 	// serviceAccountRoles are granted to the service account for the Cloud Run service.
-	serviceAccountRoles = []serviceaccount.Role{
+	serviceAccountRoles := []serviceaccount.Role{
 		// Allow env vars to source from secrets
 		{ID: resourceid.New("role_secret_accessor"), Role: "roles/secretmanager.secretAccessor"},
 		// Allow service to access private networks
@@ -45,29 +53,36 @@ var (
 		// Allow service to publish Cloud Profiler profiles
 		{ID: resourceid.New("role_cloudprofiler_agent"), Role: "roles/cloudprofiler.agent"},
 	}
-)
 
-func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, locals, err := stacks.New(StackName,
-		googleprovider.With(vars.ProjectID))
-	if err != nil {
-		return nil, err
+	// Grant configured roles to the workload identity
+	if vars.Service.IAM != nil && len(vars.Service.IAM.Roles) > 0 {
+		var rs []serviceaccount.Role
+		for _, r := range vars.Service.IAM.Roles {
+			rs = append(rs, serviceaccount.Role{
+				ID:   resourceid.New(matchNonAlphaNumericRegex.ReplaceAllString(r, "_")),
+				Role: r,
+			})
+		}
+		serviceAccountRoles = append(rs, serviceAccountRoles...)
 	}
 
-	id := resourceid.New("iam")
-
-	var customRole projectiamcustomrole.ProjectIamCustomRole
-	const customRoleID = "msp_workload_custom_role"
+	// Configure a role with custom permissions and grant it to the workload
+	// identity
 	if vars.Service.IAM != nil && len(vars.Service.IAM.Permissions) > 0 {
-		customRole = projectiamcustomrole.NewProjectIamCustomRole(stack,
+		customRole := projectiamcustomrole.NewProjectIamCustomRole(stack,
 			id.TerraformID("custom-role"),
 			&projectiamcustomrole.ProjectIamCustomRoleConfig{
-				RoleId:      pointers.Ptr(customRoleID),
+				RoleId:      pointers.Ptr("msp_workload_custom_role"),
 				Title:       pointers.Ptr("Managed Services Platform workload custom role"),
 				Project:     &vars.ProjectID,
 				Permissions: jsii.Strings(vars.Service.IAM.Permissions...),
 			})
+		serviceAccountRoles = append(serviceAccountRoles, serviceaccount.Role{
+			ID:   resourceid.New("msp_workload_custom_role"),
+			Role: *customRole.Name(),
+		})
 	}
+
 	workloadServiceAccount := serviceaccount.New(stack,
 		id.Group("workload"),
 		serviceaccount.Config{
@@ -76,22 +91,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			DisplayName: fmt.Sprintf("%s Service Account",
 				pointers.Deref(vars.Service.Name, vars.Service.ID)),
 			Roles: func() []serviceaccount.Role {
-				if vars.Service.IAM != nil && len(vars.Service.IAM.Roles) > 0 {
-					var rs []serviceaccount.Role
-					for _, r := range vars.Service.IAM.Roles {
-						rs = append(rs, serviceaccount.Role{
-							ID:   resourceid.New(matchNonAlphaNumericRegex.ReplaceAllString(r, "_")),
-							Role: r,
-						})
-					}
-					serviceAccountRoles = append(rs, serviceAccountRoles...)
-				}
-				if customRole != nil {
-					serviceAccountRoles = append(serviceAccountRoles, serviceaccount.Role{
-						ID:   resourceid.New(customRoleID),
-						Role: *customRole.Name(),
-					})
-				}
+
 				return serviceAccountRoles
 			}(),
 		})
