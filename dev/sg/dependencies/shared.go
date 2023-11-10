@@ -30,6 +30,7 @@ func categoryCloneRepositories() category {
 See here on how to set that up:
 
 https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
+				Enabled: disableInCI(),
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					return check.CommandOutputContains(
 						"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com",
@@ -40,6 +41,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 			{
 				Name:        "github.com/sourcegraph/sourcegraph",
 				Description: `The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
+				Enabled:     disableInCI(),
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					if _, err := root.RepositoryRoot(); err == nil {
 						return nil
@@ -70,6 +72,7 @@ so they sit alongside each other, like this:
     |-- dev-private
     +-- sourcegraph
 `,
+				Enabled: disableInCI(),
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					ok, err := pathExists("dev-private")
 					if ok && err == nil {

@@ -120,9 +120,10 @@ var Mac = []category{
 				},
 			},
 			{
-				Name:  "p4 CLI (Perforce)",
-				Check: checkAction(check.InPath("p4")),
-				Fix:   cmdFix(`brew install --cask p4`),
+				Name:    "p4 CLI (Perforce)",
+				Check:   checkAction(check.InPath("p4")),
+				Enabled: disableInCI(), // giving a SHA256 mismatch error in CI
+				Fix:     cmdFix(`brew install --cask p4`),
 			},
 		},
 	},
@@ -330,6 +331,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Cloud services",
 		DependsOn: []string{depsHomebrew},
+		Enabled:   disableInCI(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 		},
