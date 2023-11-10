@@ -1179,7 +1179,6 @@ Flags:
 
 * `--check, -c`: Run checks and report setup state
 * `--fix, -f`: Fix all checks
-* `--oss`: Omit Sourcegraph-teammate-specific setup
 * `--skip-pre-commit`: Skip overwriting pre-commit.com installation
 
 ### sg setup disable-pre-commit

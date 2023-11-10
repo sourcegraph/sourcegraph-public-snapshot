@@ -1,4 +1,13 @@
-import { FC, MutableRefObject, type SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+    type FC,
+    type MutableRefObject,
+    type SetStateAction,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
@@ -157,7 +166,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         }
     }, [showSearchBox, onNavbarQueryChange])
 
-    // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     const codeInsights = (codeInsightsEnabled && !isCodyApp && !isSourcegraphDotCom) ?? false
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
