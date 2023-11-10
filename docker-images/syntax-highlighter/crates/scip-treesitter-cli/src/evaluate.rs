@@ -521,20 +521,13 @@ fn index_occurrences(idx: &Index) -> HashMap<LocationInFile, String> {
         for occ in &doc.occurrences {
             let rng = PackedRange::from_vec(&occ.range).unwrap();
             let mut new_sym = occ.symbol.clone();
-            let sanitised_relative_path: String = doc
-                .relative_path
-                .chars()
-                .filter(|c| c.is_alphanumeric() || *c == '-' || *c == '+' || *c == '$')
-                .collect();
-
             if occ.symbol.starts_with("local ") {
                 new_sym = format!(
                     "local doc-{}-{}",
-                    calculate_hash(&sanitised_relative_path),
+                    calculate_hash(&doc.relative_path),
                     occ.symbol.strip_prefix("local ").unwrap()
                 )
             }
-
             let loc = LocationInFile {
                 rng,
                 file: doc.relative_path.to_string(),
