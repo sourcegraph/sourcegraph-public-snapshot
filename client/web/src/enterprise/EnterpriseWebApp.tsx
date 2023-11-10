@@ -33,7 +33,7 @@ import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButton
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
 import { enterpriseRoutes } from './routes'
-import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
+import { siteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 
 const injectedValuesConfig = {
     /**
@@ -41,7 +41,7 @@ const injectedValuesConfig = {
      */
     siteAdminAreaRoutes,
     siteAdminSideBarGroups: siteAdminSidebarGroups,
-    siteAdminOverviewComponents: enterpriseSiteAdminOverviewComponents,
+    siteAdminOverviewComponents,
     userAreaHeaderNavItems,
     userAreaRoutes,
     userSettingsSideBarItems,
