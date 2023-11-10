@@ -1,3 +1,5 @@
+import { parseURL } from 'whatwg-url'
+
 import {
     addLineRangeQueryParameter,
     encodeURIPathComponent,
@@ -177,14 +179,22 @@ const parsePosition = (string: string): Position => {
  * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
-    const parsed = new URL(uri)
-    const repoName = parsed.hostname + decodeURIComponent(parsed.pathname)
-    const revision = decodeURIComponent(parsed.search.slice('?'.length)) || undefined
+    // We are not using the environments URL constructor because Chrome and Firefox do
+    // not correctly parse out the hostname for URLs . We have a polyfill for the main web app
+    // (see client/shared/src/polyfills/configure-core-js.ts) but that might not be used in all apps.
+    const parsed = parseURL(uri)
+    if (!parsed?.host) {
+        throw new Error('Unable to parse repo URI: ' + uri)
+    }
+    const pathname =
+        typeof parsed.path === 'string' ? parsed.path : parsed.path.length === 0 ? '' : '/' + parsed.path.join('/')
+    const repoName = String(parsed.host) + decodeURIComponent(pathname)
+    const revision = parsed.query ? decodeURIComponent(parsed.query) : undefined
     let commitID: string | undefined
     if (revision?.match(/[\dA-f]{40}/)) {
         commitID = revision
     }
-    const fragmentSplit = parsed.hash.slice('#'.length).split(':').map(decodeURIComponent)
+    const fragmentSplit = parsed.fragment ? parsed.fragment.split(':').map(decodeURIComponent) : []
     let filePath: string | undefined
     let position: UIPosition | undefined
     let range: UIRange | undefined
@@ -207,7 +217,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         }
     }
     if (fragmentSplit.length > 2) {
-        throw new Error('unexpected fragment: ' + parsed.hash)
+        throw new Error('unexpected fragment: ' + parsed.fragment)
     }
 
     return { repoName, revision, commitID, filePath: filePath || undefined, position, range }
