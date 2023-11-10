@@ -1021,7 +1021,6 @@ ts_project(
         "src/enterprise/repo/settings/routes.tsx",
         "src/enterprise/repo/settings/sidebaritems.ts",
         "src/enterprise/repo/settings/utils.ts",
-        "src/enterprise/routes.tsx",
         "src/enterprise/search-jobs/SearchJobBadge/SearchJobBadge.tsx",
         "src/enterprise/search-jobs/SearchJobCard/SearchJobCard.tsx",
         "src/enterprise/search-jobs/SearchJobModal/SearchJobModal.tsx",

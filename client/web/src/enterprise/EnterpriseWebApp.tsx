@@ -9,6 +9,7 @@ import { orgAreaHeaderNavItems } from '../org/area/navitems'
 import { orgAreaRoutes } from '../org/area/routes'
 import { orgSettingsAreaRoutes } from '../org/settings/routes'
 import { orgSettingsSideBarItems } from '../org/settings/sidebaritems'
+import { routes } from '../routes'
 import { siteAdminAreaRoutes } from '../site-admin/routes'
 import { siteAdminSidebarGroups } from '../site-admin/sidebaritems'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
@@ -19,7 +20,7 @@ import {
     windowContextConfig,
 } from '../staticAppConfig'
 import type { AppShellInit } from '../storm/app-shell-init'
-import { routes } from '../storm/routes'
+import { routes as stormRoutes } from '../storm/routes'
 import { userAreaHeaderNavItems } from '../user/area/navitems'
 import { userAreaRoutes } from '../user/area/routes'
 import { userSettingsAreaRoutes } from '../user/settings/routes'
@@ -32,7 +33,6 @@ import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevi
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
-import { enterpriseRoutes } from './routes'
 import { siteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 
 const injectedValuesConfig = {
@@ -55,7 +55,7 @@ const injectedValuesConfig = {
     repoHeaderActionButtons: enterpriseRepoHeaderActionButtons,
     repoSettingsAreaRoutes: enterpriseRepoSettingsAreaRoutes,
     repoSettingsSidebarGroups: enterpriseRepoSettingsSidebarGroups,
-    routes: windowContextConfig.isCodyApp ? APP_ROUTES : enterpriseRoutes,
+    routes: windowContextConfig.isCodyApp ? APP_ROUTES : routes,
 
     /**
      * Per feature injections
@@ -88,7 +88,7 @@ export const EnterpriseWebApp: FC<AppShellInit> = props => {
         return (
             <SourcegraphWebApp
                 {...staticAppConfig}
-                routes={routes}
+                routes={stormRoutes}
                 graphqlClient={graphqlClient}
                 temporarySettingsStorage={temporarySettingsStorage}
             />
