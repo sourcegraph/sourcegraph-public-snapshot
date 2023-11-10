@@ -62,11 +62,10 @@ string-interner = "0.14.0"
 syntect = { git = "https://github.com/sourcegraph/syntect", rev = "7e02c5b4085e6d935b960b8106cdd85da04532d2" }
 tree-sitter = "0.20.9"
 tree-sitter-highlight = "0.20.1"
+walkdir = "2"
 
 scip = "0.3.2"
 protobuf = "3"
-
-
 
 [profile.release]
 # Enabled debug symbols in release build, so if we have a crash
