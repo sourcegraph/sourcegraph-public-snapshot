@@ -225,8 +225,8 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                     className={classNames(
                                         styles.sortDscIcon,
                                         sortColumn.column === 'Files' &&
-                                        sortColumn.direction === 'desc' &&
-                                        styles.sortSelectedIcon
+                                            sortColumn.direction === 'desc' &&
+                                            styles.sortSelectedIcon
                                     )}
                                 />
                                 <Icon
@@ -235,8 +235,8 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                     className={classNames(
                                         styles.sortAscIcon,
                                         sortColumn.column === 'Files' &&
-                                        sortColumn.direction === 'asc' &&
-                                        styles.sortSelectedIcon
+                                            sortColumn.direction === 'asc' &&
+                                            styles.sortSelectedIcon
                                     )}
                                 />
                             </div>
@@ -259,8 +259,8 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                     className={classNames(
                                         styles.sortDscIcon,
                                         sortColumn.column === 'Activity' &&
-                                        sortColumn.direction === 'desc' &&
-                                        styles.sortSelectedIcon
+                                            sortColumn.direction === 'desc' &&
+                                            styles.sortSelectedIcon
                                     )}
                                 />
                                 <Icon
@@ -269,8 +269,8 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                     className={classNames(
                                         styles.sortAscIcon,
                                         sortColumn.column === 'Activity' &&
-                                        sortColumn.direction === 'asc' &&
-                                        styles.sortSelectedIcon
+                                            sortColumn.direction === 'asc' &&
+                                            styles.sortSelectedIcon
                                     )}
                                 />
                             </div>

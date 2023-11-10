@@ -127,7 +127,7 @@ interface FileTreeProviderArgs {
 }
 
 export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
-    constructor(private args: FileTreeProviderArgs) { }
+    constructor(private args: FileTreeProviderArgs) {}
 
     getRoot(): FileTreeNodeValue {
         return this.args.root
