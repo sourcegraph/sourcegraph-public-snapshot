@@ -1,6 +1,6 @@
 use tree_sitter::Node;
 
-#[derive(Debug, PartialEq, Eq, Default, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Default, Hash, Copy, Clone)]
 pub struct PackedRange {
     pub start_line: i32,
     pub start_col: i32,

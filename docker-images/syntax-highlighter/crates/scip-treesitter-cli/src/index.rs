@@ -8,7 +8,7 @@ use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::DirEntry;
 
 use crate::{
-    evaluate::{evaluate_indexes, print_evaluation_summary},
+    evaluate::Evaluator,
     io::read_index_from_file,
     progress::{create_progress_bar, create_spinner},
 };
@@ -162,9 +162,11 @@ pub fn index_command(
 
         let ground_truth = read_index_from_file(file);
 
-        let evaluation_result = evaluate_indexes(&index, &ground_truth, Default::default());
-
-        print_evaluation_summary(evaluation_result.unwrap(), Default::default());
+        let mut evaluator = Evaluator::default();
+        evaluator
+            .evaluate_indexes(&index, &ground_truth, Default::default())
+            .unwrap()
+            .print_summary();
     }
 
     write_message_to_file(out, index).expect("to write the file");

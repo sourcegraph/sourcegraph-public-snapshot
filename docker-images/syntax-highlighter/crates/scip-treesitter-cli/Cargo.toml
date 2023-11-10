@@ -21,6 +21,7 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+string-interner = { workspace = true }
 
 scip-syntax = { path = "../scip-syntax" }
 scip-treesitter-languages = { path = "../scip-treesitter-languages" }
