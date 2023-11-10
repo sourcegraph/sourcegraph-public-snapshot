@@ -306,6 +306,7 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dghubble/sling v1.4.1 // indirect
 	github.com/di-wu/parser v0.2.2 // indirect
+	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -336,6 +337,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.7 // indirect
 	github.com/onsi/gomega v1.27.8 // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
@@ -421,7 +423,7 @@ require (
 	github.com/djherbis/buffer v1.2.0 // indirect
 	github.com/djherbis/nio/v3 v3.0.1 // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
-	github.com/docker/docker v23.0.1+incompatible // indirect
+	github.com/docker/docker v24.0.7+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1
@@ -544,7 +546,7 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/snabb/diagio v1.0.0 // indirect
-	github.com/sourcegraph/conc v0.2.0
+	github.com/sourcegraph/conc v0.3.0
 	github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
 	github.com/sourcegraph/zoekt v0.0.0-20231018143538-16e2ff8c98ee

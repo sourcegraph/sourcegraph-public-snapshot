@@ -1,4 +1,4 @@
-load(":defs.bzl", "server_integration_test", "migration_test_binary")
+load(":defs.bzl", "migration_test_binary", "server_integration_test")
 
 server_integration_test(
     name = "e2e_test",
@@ -254,5 +254,5 @@ server_integration_test(
 )
 
 migration_test_binary(
-    target_version = "5.1.0"
+    target_version = "5.1.0",
 )

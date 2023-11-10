@@ -5,7 +5,13 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/testing/tools/upgradetest",
     visibility = ["//visibility:private"],
-    deps = ["@com_github_sourcegraph_run//:run"],
+    deps = [
+        "@com_github_docker_docker//api/types",
+        "@com_github_docker_docker//client",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_run//:run",
+    ],
 )
 
 go_binary(
