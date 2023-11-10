@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/gorilla/csrf"
 	"github.com/inconshreveable/log15"
+	"github.com/russellhaering/gosaml2/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -382,15 +382,13 @@ const stateCookieTimeout = time.Minute * 15
 // external authentication provider.
 func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, cookieName, returnToURL string) {
 	// The state parameter is an opaque value used to maintain state between the
-	// original Authentication Request and the callback. We do not record any state
-	// beyond a CSRF token used to defend against CSRF attacks against the callback.
-	// We use the CSRF token created by gorilla/csrf that is used for other app
-	// endpoints as the OIDC state parameter.
+	// original Authentication Request and the callback. We generate a random unique
+	// value as the OIDC state parameter.
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
 	state := (&AuthnState{
-		CSRFToken:  csrf.Token(r),
+		CSRFToken:  uuid.NewV4().String(), // NOTE: "CSRF" is misleading here as all we want is a unique random value in the state cookie
 		Redirect:   returnToURL,
 		ProviderID: p.ConfigID().ID,
 	}).Encode()
