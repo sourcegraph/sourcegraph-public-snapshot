@@ -157,13 +157,19 @@ type providerExtraClaims struct {
 }
 
 var mockNewProvider func(issuerURL string) (*oidcProvider, error)
+var mockHttpCli *http.Client
 
 func newOIDCProvider(issuerURL string) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}
 
-	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpcli.ExternalClient), issuerURL)
+	client := httpcli.ExternalClient
+	if mockHttpCli != nil {
+		client = mockHttpCli
+	}
+
+	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), client), issuerURL)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +199,14 @@ func revokeToken(ctx context.Context, p *Provider, accessToken, tokenType string
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(p.config.ClientID, p.config.ClientSecret)
-	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
+
+	doer := httpcli.ExternalDoer
+
+	if mockHttpCli != nil {
+		doer = httpcli.TestExternalDoer
+	}
+
+	resp, err := doer.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
