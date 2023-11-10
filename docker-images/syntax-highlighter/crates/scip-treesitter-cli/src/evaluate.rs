@@ -1,3 +1,6 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::needless_lifetimes)]
+
 use std::{
     collections::{HashMap, HashSet},
     marker::PhantomData,
@@ -49,7 +52,7 @@ struct SymbolId<T> {
 }
 
 impl<T> SymbolId<T> {
-    fn to_any(self) -> SymbolId<Any> {
+    fn into_any(self) -> SymbolId<Any> {
         SymbolId {
             value: self.value,
             _marker: PhantomData,
@@ -502,7 +505,7 @@ impl Evaluator {
                 // some symbol but doesn't
                 None => classified_locations.push(ClassifiedLocation {
                     location: ground_truth_location,
-                    symbol: ground_truth_symbol.to_any(),
+                    symbol: ground_truth_symbol.into_any(),
                     mark: Mark::FalseNegative { weight: 1.0 },
                 }),
                 Some(candidate_symbol) => {
@@ -518,7 +521,7 @@ impl Evaluator {
                         // ground truth symbols - this weight comes from mapping we constructed earlier.
                         Some(weight) => classified_locations.push(ClassifiedLocation {
                             location: ground_truth_location,
-                            symbol: ground_truth_symbol.to_any(),
+                            symbol: ground_truth_symbol.into_any(),
                             mark: Mark::TruePositive { weight: *weight },
                         }),
                         // This is an impossible situation by construction
@@ -544,7 +547,7 @@ impl Evaluator {
             if !ground_truth_occurrences.contains_key(candidate_location) {
                 classified_locations.push(ClassifiedLocation {
                     location: *candidate_location,
-                    symbol: candidate_symbol.to_any(),
+                    symbol: candidate_symbol.into_any(),
                     mark: Mark::FalsePositive { weight: 1.0 },
                 });
             }
@@ -630,29 +633,22 @@ mod tests {
 
     fn occurrence(n: i32, symbol: &str) -> Occurrence {
         let mut occ = Occurrence::new();
-
         occ.range = vec![n, 5, 10];
         occ.symbol = symbol.to_string();
-
         occ
     }
 
     fn document(path: &str, occs: Vec<Occurrence>) -> Document {
         let mut doc = Document::new();
-
         doc.relative_path = path.to_string();
-
         doc.occurrences.extend(occs);
-
-        return doc;
+        doc
     }
 
     fn index(documents: Vec<Document>) -> Index {
         let mut idx = Index::new();
-
         idx.documents.extend(documents);
-
-        return idx;
+        idx
     }
 
     #[test]
