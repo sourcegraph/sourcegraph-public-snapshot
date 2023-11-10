@@ -7,6 +7,8 @@ import { logger } from '@sourcegraph/common'
 import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
 import { orgAreaHeaderNavItems } from '../org/area/navitems'
 import { orgAreaRoutes } from '../org/area/routes'
+import { orgSettingsAreaRoutes } from '../org/settings/routes'
+import { orgSettingsSideBarItems } from '../org/settings/sidebaritems'
 import { siteAdminSidebarGroups } from '../site-admin/sidebaritems'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import {
@@ -19,11 +21,11 @@ import type { AppShellInit } from '../storm/app-shell-init'
 import { routes } from '../storm/routes'
 import { userAreaHeaderNavItems } from '../user/area/navitems'
 import { userAreaRoutes } from '../user/area/routes'
+import { userSettingsAreaRoutes } from '../user/settings/routes'
+import { userSettingsSideBarItems } from '../user/settings/sidebaritems'
 
 import { APP_ROUTES } from './app/routes'
 import { BrainDot } from './codeintel/dashboard/components/BrainDot'
-import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
-import { enterpriseOrgSettingsSideBarItems } from './organizations/settings/sidebaritems'
 import { enterpriseRepoContainerRoutes } from './repo/enterpriseRepoContainerRoutes'
 import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevisionContainerRoutes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
@@ -32,8 +34,6 @@ import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritem
 import { enterpriseRoutes } from './routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
-import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
-import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 
 const injectedValuesConfig = {
     /**
@@ -44,10 +44,10 @@ const injectedValuesConfig = {
     siteAdminOverviewComponents: enterpriseSiteAdminOverviewComponents,
     userAreaHeaderNavItems,
     userAreaRoutes,
-    userSettingsSideBarItems: enterpriseUserSettingsSideBarItems,
-    userSettingsAreaRoutes: enterpriseUserSettingsAreaRoutes,
-    orgSettingsSideBarItems: enterpriseOrgSettingsSideBarItems,
-    orgSettingsAreaRoutes: enterpriseOrgSettingsAreaRoutes,
+    userSettingsSideBarItems,
+    userSettingsAreaRoutes,
+    orgSettingsSideBarItems,
+    orgSettingsAreaRoutes,
     orgAreaRoutes,
     orgAreaHeaderNavItems,
     repoContainerRoutes: enterpriseRepoContainerRoutes,
