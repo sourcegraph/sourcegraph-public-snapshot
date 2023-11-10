@@ -23,6 +23,8 @@ WORKSPACE_DEPS = [
     "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
 ]
 
+# This separate library target is needed so that the integration
+# test can re-use some of the code in the CLI.
 rust_library(
     name = "scip-treesitter-cli-lib",
     srcs = glob([
@@ -48,6 +50,14 @@ rust_test(
     size = "small",
 )
 
+# This separate integration test is needed because in Cargo,
+# unit tests don't have an implicit dependency on the binary
+# target, but integration tests do.
+#
+# https://users.rust-lang.org/t/cargo-how-do-i-make-a-integration-test-a-depend-on-binary-b/9821
+#
+# This extra target makes sure that Bazel & Cargo have the
+# same configuration.
 rust_test(
     name = "integration_test",
     srcs = glob(["tests/*.rs"]),
@@ -57,10 +67,6 @@ rust_test(
         ],
         allow_empty = False,
     ),
-    # Make sure this name matches the crate name in cargo configuration
-    # This is to ensure that snapshots produced by Bazel tests and
-    # ones produced by `cargo test` command - otherwise insta testing will fail!
-    # crate = ":integration_test",
     data = [":scip-treesitter-cli"] +
            glob(
                ["tests/snapshots/**"],
