@@ -30,6 +30,7 @@ interface NavBarProps {
 
 interface NavGroupProps {
     children: React.ReactNode
+    className?: string
 }
 
 interface NavItemProps {
@@ -69,26 +70,26 @@ export const NavBar = forwardRef(function NavBar({ children, logo }, reference):
 
 export const MobileNavGroupContext = React.createContext(false)
 
-export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
+export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(({ children, className }: NavGroupProps, ref) => {
     const isMobileSize = useMatchMedia(`(max-width: ${VIEWPORT_SM}px)`)
 
     return (
         <MobileNavGroupContext.Provider value={isMobileSize}>
             {isMobileSize ? (
-                <Menu>
+                <Menu ref={ref} className={className}>
                     <MenuButton aria-label="Sections Navigation">
                         <Icon aria-hidden={true} svgPath={mdiMenu} />
                     </MenuButton>
                     <MenuList>{children}</MenuList>
                 </Menu>
             ) : (
-                <div className={navBarStyles.menu}>
+                <div ref={ref} className={classNames(navBarStyles.menu, className)}>
                     <ul className={navBarStyles.list}>{children}</ul>
                 </div>
             )}
         </MobileNavGroupContext.Provider>
     )
-}
+})
 
 export const NavActions: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({ children }) => (
     <ul className={navActionStyles.actions}>{children}</ul>

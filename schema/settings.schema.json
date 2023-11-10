@@ -13,6 +13,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "newSearchNavigationUI": {
+          "description": "Enables new experimental search UI navigation",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsRepoUI": {
           "description": "Specifies which (code insight repo) editor to use for repo query UI",
           "type": "string",

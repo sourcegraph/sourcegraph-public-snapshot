@@ -91,7 +91,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-    const [rankingEnabled] = useFeatureFlag('search-ranking')
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
@@ -141,10 +140,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 index,
                 type,
                 resultsLength,
-                ranked: rankingEnabled,
             })
         },
-        [telemetryService, resultsLength, rankingEnabled]
+        [telemetryService, resultsLength]
     )
 
     // Log view event on first load
@@ -345,8 +343,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
 
-    // Show aggregation panel only if we're in Enterprise versions and hide it in OSS and
-    // when search doesn't have any matches
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
     const onDisableSmartSearch = useCallback(() => {

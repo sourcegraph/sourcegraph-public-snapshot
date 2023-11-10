@@ -192,7 +192,6 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         setCaseSensitivity={props.setCaseSensitivity}
                         searchMode={props.searchMode}
                         setSearchMode={props.setSearchMode}
-                        settingsCascade={props.settingsCascade}
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
