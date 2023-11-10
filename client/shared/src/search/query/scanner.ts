@@ -538,6 +538,7 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
+        case SearchPatternType.standardv2:
         case SearchPatternType.keyword: {
             return scanStandard(query)
         }

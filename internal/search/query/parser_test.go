@@ -817,3 +817,26 @@ func TestParseStandard(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
 	})
 }
+
+func TestParseStandardV2(t *testing.T) {
+	test := func(input string) string {
+		result, err := Parse(input, SearchTypeStandardV2)
+		if err != nil {
+			return err.Error()
+		}
+		jsonStr, _ := PrettyJSON(result)
+		return jsonStr
+	}
+
+	t.Run("patterns are literal and slash-delimited patterns slash...slash are regexp", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("anjou /saumur/")))
+	})
+
+	t.Run("quoted patterns are still literal", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test(`"veneto"`)))
+	})
+
+	t.Run("parens around slash...slash", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
+	})
+}

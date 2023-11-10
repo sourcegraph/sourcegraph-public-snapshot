@@ -1029,19 +1029,27 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 }
 
 func Test_computeResultTypes(t *testing.T) {
-	test := func(input string) string {
-		plan, _ := query.Pipeline(query.Init(input, query.SearchTypeStandard))
+	test := func(input string, searchType query.SearchType) string {
+		plan, _ := query.Pipeline(query.Init(input, searchType))
 		b := plan[0]
-		resultTypes := computeResultTypes(b, query.SearchTypeStandard)
+		resultTypes := computeResultTypes(b, searchType)
 		return resultTypes.String()
 	}
 
-	t.Run("only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar")))
+	t.Run("standard, only search file content when type not set", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeStandard)))
 	})
 
-	t.Run("plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar")))
+	t.Run("standard, plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandard)))
+	})
+
+	t.Run("standardv2, only search file content when type not set", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeStandardV2)))
+	})
+
+	t.Run("standardv2, plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandardV2)))
 	})
 }
 

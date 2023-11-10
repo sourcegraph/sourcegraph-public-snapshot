@@ -42,6 +42,7 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
         case SearchPatternType.regexp:
         case SearchPatternType.structural:
         case SearchPatternType.lucky:
+        case SearchPatternType.standardv2:
         case SearchPatternType.keyword: {
             return patternType
         }
