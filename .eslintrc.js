@@ -110,12 +110,6 @@ const config = {
         ],
         patterns: [
           {
-            group: ['**/enterprise/*'],
-            message: `The OSS product may not pull in any code from the enterprise codebase, to stay a 100% open-source program.
-
-See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
-          },
-          {
             group: ['@sourcegraph/branded/src/search-ui/experimental'],
             message:
               'The experimental search input is not available for general use. If you have questions about it reach out to the search product team.',

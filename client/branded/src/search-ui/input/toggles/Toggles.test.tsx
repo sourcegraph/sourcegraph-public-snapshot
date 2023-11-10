@@ -19,7 +19,6 @@ describe('Toggles', () => {
                     setCaseSensitivity={() => undefined}
                     searchMode={SearchMode.Precise}
                     setSearchMode={() => undefined}
-                    settingsCascade={{ subjects: null, final: {} }}
                 />
             )
 
@@ -36,7 +35,6 @@ describe('Toggles', () => {
                     setCaseSensitivity={() => undefined}
                     searchMode={SearchMode.Precise}
                     setSearchMode={() => undefined}
-                    settingsCascade={{ subjects: null, final: {} }}
                 />
             )
             expect(screen.getAllByRole('checkbox', { name: 'Case sensitivity toggle' })).toMatchSnapshot()
@@ -52,7 +50,6 @@ describe('Toggles', () => {
                     setCaseSensitivity={() => undefined}
                     searchMode={SearchMode.Precise}
                     setSearchMode={() => undefined}
-                    settingsCascade={{ subjects: null, final: {} }}
                 />
             )
             expect(screen.getAllByRole('checkbox', { name: 'Regular expression toggle' })).toMatchSnapshot()

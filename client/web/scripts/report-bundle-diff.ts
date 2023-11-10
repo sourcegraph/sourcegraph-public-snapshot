@@ -27,8 +27,8 @@ const MERGE_BASE = execSync('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''
 
 async function findFile(root: string, filename: string): Promise<string> {
-    // file can be in one of 3 base paths
-    const parts: string[] = ['oss', 'enterprise', '']
+    // file can be in one of 2 base paths
+    const parts: string[] = ['enterprise', '']
     const files = await Promise.all(
         parts.flatMap(async (dir: string) => {
             const filePath = path.join(root, dir, filename)

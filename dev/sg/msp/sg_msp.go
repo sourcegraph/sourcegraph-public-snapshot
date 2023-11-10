@@ -472,6 +472,8 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 	}
 
 	for _, env := range envs {
+		env := env
+
 		pending := std.Out.Pending(output.Styledf(output.StylePending,
 			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
 		renderer := managedservicesplatform.Renderer{
