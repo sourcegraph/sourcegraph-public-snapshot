@@ -9,14 +9,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Contract loads standardized MSP-provisioned configuration.
 type Contract struct {
 	// Port is the port the service must listen on.
 	Port int
+	// ExternalDNSName is the DNS name the service uses, if one is configured.
+	ExternalDNSName *string
 }
 
 func newContract(env *Env) Contract {
 	return Contract{
-		Port: env.GetInt("PORT", "", "service port"),
+		Port:            env.GetInt("PORT", "", "service port"),
+		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
 	}
 }
 
@@ -86,8 +90,12 @@ func (e *Env) Get(name, defaultValue, description string) string {
 }
 
 // GetOptional returns the value with the given name.
-func (e *Env) GetOptional(name, description string) string {
-	return e.get(name, "", description)
+func (e *Env) GetOptional(name, description string) *string {
+	v, ok := e.env[name]
+	if !ok {
+		return nil
+	}
+	return &v
 }
 
 // GetInt returns the value with the given name interpreted as an integer. If no
