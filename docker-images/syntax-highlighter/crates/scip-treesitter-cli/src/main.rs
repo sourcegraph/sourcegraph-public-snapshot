@@ -3,11 +3,11 @@ mod index;
 mod io;
 mod progress;
 
-use clap::{Parser, Subcommand};
 use crate::{
     evaluate::ScipEvaluateOptions,
     index::{index_command, AnalysisMode, IndexMode, IndexOptions},
 };
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
