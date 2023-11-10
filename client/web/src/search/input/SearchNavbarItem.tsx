@@ -105,7 +105,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         setCaseSensitivity={setSearchCaseSensitivity}
                         searchMode={searchMode}
                         setSearchMode={setSearchMode}
-                        settingsCascade={props.settingsCascade}
                         navbarSearchQuery={queryState.query}
                         submitSearch={submitSearchOnChange}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}

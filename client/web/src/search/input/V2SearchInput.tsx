@@ -109,6 +109,8 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
     submitSearch,
     selectedSearchContextSpec,
     visualMode,
+    onFocus,
+    onBlur,
     ...inputProps
 }) => {
     const { recentSearches } = useRecentSearches()
@@ -183,16 +185,18 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
 
     return (
         <CodeMirrorQueryInputWrapper
-            patternType={inputProps.patternType}
             interpretComments={false}
-            queryState={inputProps.queryState}
-            onChange={inputProps.onChange}
-            onSubmit={inputProps.onSubmit}
             placeholder="Search for code or files..."
+            patternType={inputProps.patternType}
+            queryState={inputProps.queryState}
             suggestionSource={suggestionSource}
             extensions={extensions}
             visualMode={visualMode}
             className={inputProps.className}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            onChange={inputProps.onChange}
+            onSubmit={inputProps.onSubmit}
         >
             {children}
         </CodeMirrorQueryInputWrapper>

@@ -21,7 +21,7 @@ exports[`GlobalNavbar > default 1`] = `
       class="divider"
     />
     <div
-      class="menu"
+      class="menu list"
     >
       <ul
         class="list"
