@@ -310,7 +310,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(user.ID)
 
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
