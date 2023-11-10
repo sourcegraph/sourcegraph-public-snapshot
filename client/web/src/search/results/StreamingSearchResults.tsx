@@ -345,8 +345,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
 
-    // Show aggregation panel only if we're in Enterprise versions and hide it in OSS and
-    // when search doesn't have any matches
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
     const onDisableSmartSearch = useCallback(() => {

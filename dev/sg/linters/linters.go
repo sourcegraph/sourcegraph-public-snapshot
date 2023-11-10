@@ -38,7 +38,6 @@ var Targets = []Target{
 		Checks: []*linter{
 			goGenerateLinter,
 			goDBConnImport,
-			goEnterpriseImport,
 			noLocalHost,
 			lintGoDirectives(),
 			lintLoggingLibraries(),
@@ -73,7 +72,6 @@ var Targets = []Target{
 		Name:        "client",
 		Description: "Check client code for linting errors, forbidden imports, etc",
 		Checks: []*linter{
-			tsEnterpriseImport,
 			inlineTemplates,
 			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
 			// we only run this linter locally, since on CI it has it's own job

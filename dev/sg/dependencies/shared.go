@@ -31,13 +31,9 @@ See here on how to set that up:
 
 https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
-					if args.Teammate {
-						return check.CommandOutputContains(
-							"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com",
-							"successfully authenticated")(ctx)
-					}
-					// otherwise, we don't need auth set up at all, since everything is OSS
-					return nil
+					return check.CommandOutputContains(
+						"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com",
+						"successfully authenticated")(ctx)
 				},
 				// TODO we might be able to automate this fix
 			},
@@ -56,12 +52,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 					return nil
 				},
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					var cmd *run.Command
-					if args.Teammate {
-						cmd = run.Cmd(ctx, `git clone git@github.com:sourcegraph/sourcegraph.git`)
-					} else {
-						cmd = run.Cmd(ctx, `git clone https://github.com/sourcegraph/sourcegraph.git`)
-					}
+					cmd := run.Cmd(ctx, `git clone git@github.com:sourcegraph/sourcegraph.git`)
 					return cmd.Run().StreamLines(cio.Write)
 				},
 			},
@@ -78,9 +69,8 @@ so they sit alongside each other, like this:
     /dir
     |-- dev-private
     +-- sourcegraph
-
-NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
-				Enabled: enableForTeammatesOnly(),
+`,
+				Enabled: disableInCI(),
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					ok, err := pathExists("dev-private")
 					if ok && err == nil {

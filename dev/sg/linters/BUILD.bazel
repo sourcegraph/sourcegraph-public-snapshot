@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "buf.go",
         "client.go",
-        "enterprise.go",
         "go_checks.go",
         "godirective.go",
         "gogenerate.go",
