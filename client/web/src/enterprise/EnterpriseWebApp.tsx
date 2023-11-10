@@ -9,6 +9,8 @@ import { orgAreaHeaderNavItems } from '../org/area/navitems'
 import { orgAreaRoutes } from '../org/area/routes'
 import { orgSettingsAreaRoutes } from '../org/settings/routes'
 import { orgSettingsSideBarItems } from '../org/settings/sidebaritems'
+import { repoSettingsAreaRoutes } from '../repo/settings/routes'
+import { repoSettingsSideBarGroups } from '../repo/settings/sidebaritems'
 import { routes } from '../routes'
 import { siteAdminAreaRoutes } from '../site-admin/routes'
 import { siteAdminSidebarGroups } from '../site-admin/sidebaritems'
@@ -30,9 +32,6 @@ import { APP_ROUTES } from './app/routes'
 import { BrainDot } from './codeintel/dashboard/components/BrainDot'
 import { enterpriseRepoContainerRoutes } from './repo/enterpriseRepoContainerRoutes'
 import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevisionContainerRoutes'
-import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
-import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
 import { siteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 
 const injectedValuesConfig = {
@@ -52,9 +51,8 @@ const injectedValuesConfig = {
     orgAreaHeaderNavItems,
     repoContainerRoutes: enterpriseRepoContainerRoutes,
     repoRevisionContainerRoutes: enterpriseRepoRevisionContainerRoutes,
-    repoHeaderActionButtons: enterpriseRepoHeaderActionButtons,
-    repoSettingsAreaRoutes: enterpriseRepoSettingsAreaRoutes,
-    repoSettingsSidebarGroups: enterpriseRepoSettingsSidebarGroups,
+    repoSettingsAreaRoutes,
+    repoSettingsSidebarGroups: repoSettingsSideBarGroups,
     routes: windowContextConfig.isCodyApp ? APP_ROUTES : routes,
 
     /**

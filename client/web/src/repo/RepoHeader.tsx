@@ -12,7 +12,6 @@ import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 import type { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, type BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import type { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
@@ -115,15 +114,7 @@ export interface RepoHeaderContext {
     actionType: 'nav' | 'dropdown'
 }
 
-export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
-
 interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps {
-    /**
-     * An array of render functions for action buttons that can be configured *in addition* to action buttons
-     * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
-     */
-    actionButtons: readonly RepoHeaderActionButton[]
-
     /** The repoName from the URL */
     repoName: string
 
