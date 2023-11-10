@@ -97,7 +97,45 @@ export class LocationsGroup {
     constructor(locations: Location[]) {
         this._locationsCount = 0
         this._groups = []
-        this.resetLocations(locations)
+
+        const urlsSeen = new Set<string>()
+        const repoMap = new Map<string, Map<string, Location[]>>()
+        for (const loc of locations) {
+            if (urlsSeen.has(loc.url)) {
+                continue
+            }
+            urlsSeen.add(loc.url)
+            const pathToLocMap = repoMap.get(loc.repo)
+            if (pathToLocMap) {
+                const fileLocs = pathToLocMap.get(loc.file)
+                if (fileLocs) {
+                    fileLocs.push(loc)
+                } else {
+                    pathToLocMap.set(loc.file, [loc])
+                }
+            } else {
+                const pathToLocMap = new Map<string, Location[]>()
+                pathToLocMap.set(loc.file, [loc])
+                repoMap.set(loc.repo, pathToLocMap)
+            }
+        }
+        for (const [repoName, pathToLocMap] of repoMap) {
+            const perFileLocations: LocationsGroupedByFile[] = []
+            for (const [path, locations] of pathToLocMap) {
+                if (locations.length === 0) {
+                    throw new Error(
+                        `bug in grouping logic created empty locations array for repo: ${repoName}, path: ${path}`
+                    )
+                }
+                const g = new LocationsGroupedByFile(locations)
+                if (g.locations.length > locations.length) {
+                    throw new Error('materialized new locations out of thin air')
+                }
+                this._locationsCount += g.locations.length
+                perFileLocations.push(g)
+            }
+            this._groups.push({ repoName, perFileGroups: perFileLocations })
+        }
     }
 
     /** Returns the total number of locations combined across all groups.
@@ -146,50 +184,6 @@ export class LocationsGroup {
             }
         }
         return out
-    }
-
-    /** Reset the state of this LocationsGroup to only contain entries from `locations` */
-    private resetLocations(locations: Location[]): void {
-        this._locationsCount = 0
-        this._groups = []
-        const urlsSeen = new Set<string>()
-        const repoMap = new Map<string, Map<string, Location[]>>()
-        for (const loc of locations) {
-            if (urlsSeen.has(loc.url)) {
-                continue
-            }
-            urlsSeen.add(loc.url)
-            const pathToLocMap = repoMap.get(loc.repo)
-            if (pathToLocMap) {
-                const fileLocs = pathToLocMap.get(loc.file)
-                if (fileLocs) {
-                    fileLocs.push(loc)
-                } else {
-                    pathToLocMap.set(loc.file, [loc])
-                }
-            } else {
-                const pathToLocMap = new Map<string, Location[]>()
-                pathToLocMap.set(loc.file, [loc])
-                repoMap.set(loc.repo, pathToLocMap)
-            }
-        }
-        for (const [repoName, pathToLocMap] of repoMap) {
-            const perFileLocations: LocationsGroupedByFile[] = []
-            for (const [path, locations] of pathToLocMap) {
-                if (locations.length === 0) {
-                    throw new Error(
-                        `bug in grouping logic created empty locations array for repo: ${repoName}, path: ${path}`
-                    )
-                }
-                const g = new LocationsGroupedByFile(locations)
-                if (g.locations.length > locations.length) {
-                    throw new Error('materialized new locations out of thin air')
-                }
-                this._locationsCount += g.locations.length
-                perFileLocations.push(g)
-            }
-            this._groups.push({ repoName, perFileGroups: perFileLocations })
-        }
     }
 }
 
