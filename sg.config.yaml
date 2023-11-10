@@ -29,8 +29,6 @@ env:
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ':3082'
-
   # I don't think we even need to set these?
   SEARCHER_URL: http://127.0.0.1:3181
   REPO_UPDATER_URL: http://127.0.0.1:3182
@@ -409,7 +407,7 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: pnpm --filter @sourcegraph/web dev
+    cmd: pnpm --filter @sourcegraph/web run dev --clearScreen=false
     install: |
       pnpm install
       pnpm run generate

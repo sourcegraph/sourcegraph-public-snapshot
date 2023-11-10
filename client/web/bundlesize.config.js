@@ -1,6 +1,6 @@
 const path = require('path')
 
-const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(__dirname, 'dist')
+const STATIC_ASSETS_PATH = path.join(process.env.WEB_BUNDLE_PATH || path.join(__dirname, 'dist'), 'assets')
 
 const config = {
   files: [
@@ -21,7 +21,7 @@ const config = {
       maxSize: '155kb',
     },
     {
-      path: path.join(STATIC_ASSETS_PATH, 'chunks/chunk-*.js'),
+      path: path.join(STATIC_ASSETS_PATH, '*.js'),
       maxSize: '600kb', // 2 monaco chunks are very big
     },
     /**
@@ -39,7 +39,7 @@ const config = {
       maxSize: '350kb',
     },
     {
-      path: path.join(STATIC_ASSETS_PATH, 'chunks/chunk-*.css'),
+      path: path.join(STATIC_ASSETS_PATH, '*.css'),
       maxSize: '45kb',
     },
   ],
