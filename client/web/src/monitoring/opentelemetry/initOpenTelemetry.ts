@@ -2,7 +2,13 @@
 // Don't remove the empty lines between these imports.
 import './initZones'
 
-import type { ZoneContextManager } from '@opentelemetry/context-zone'
+/**
+ * The @opentelemetry/context-zone import enables zone.js which patches global web API
+ * modules. You can find a list of the patched modules here:
+ * https://github.com/angular/angular/blob/main/packages/zone.js/MODULE.md
+ */
+
+import { ZoneContextManager } from '@opentelemetry/context-zone'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { type InstrumentationOption, registerInstrumentations } from '@opentelemetry/instrumentation'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
@@ -53,17 +59,6 @@ export function initOpenTelemetry(): void {
             const consoleExporter = new ConsoleBatchSpanExporter()
             provider.addSpanProcessor(new BatchSpanProcessor(consoleExporter))
         }
-
-        /**
-         * This import enables zone.js which patches global web API modules.
-         * You can find a list of the patched modules here:
-         * https://github.com/angular/angular/blob/main/packages/zone.js/MODULE.md
-         *
-         * It's added with the `require` statement to avoid polluting stack traces in
-         * the development environment when OpenTelemetry is disabled.
-         */
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-        const ZoneContextManager = require('@opentelemetry/context-zone').ZoneContextManager
 
         provider.register({
             contextManager: new ZoneContextManager() as ZoneContextManager,

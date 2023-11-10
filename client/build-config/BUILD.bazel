@@ -22,7 +22,6 @@ ts_config(
 ts_project(
     name = "build-config_lib",
     srcs = [
-        "src/esbuild/monacoPlugin.ts",
         "src/esbuild/packageResolutionPlugin.ts",
         "src/esbuild/plugins.ts",
         "src/esbuild/stylePlugin.ts",
