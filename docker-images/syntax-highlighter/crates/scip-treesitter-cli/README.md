@@ -7,39 +7,64 @@ A command line tool that uses other scip-* crates to either
 
 ## Usage
 
-**Indexing** (`index --help` for more details)
+### Indexing
 
-List of files:
+Index a list of files:
 
-```
+```bash
 scip-treesitter-cli index --language java --out ./index.scip file1.java file2.java ...
 ```
 
-Entire folder (files discovered according to pre-defined set of extensions):
+Index a folder recursively:
 
-```
+```bash
 scip-treesitter-cli index --language java --out ./index.scip --workspace <some-folder>
 ```
 
-**Evaluation** (`scip-evaluate --help` for more details)
+### Evaluation
 
+```bash
+scip-treesitter-cli evaluate --candidate index-tree-sitter.scip --ground-truth index.scip
 ```
-scip-treesitter-cli scip-evaluate --candidate index-tree-sitter.scip --ground-truth index.scip
-```
 
-
-## Contributing
+## Development
 
 This is a standard Rust CLI project, with a single runnable entry point - the CLI itself.
 
-1. Run tests: `cargo test`
+The CI uses Bazel for building and testing,
+but Cargo usage is also supported for convenience.
 
-   We use Insta for snapshot testing, if you're changing the output produced by the CLI,
-   run `cargo test` and then `cargo insta review` to accept/reject changes in symbols
+### Running tests
 
-2. Run CLI: `cargo run -- index --language java --out ./index.scip file1.java file2.java ...`
+```bash
+cargo test
+```
 
-On CI, Bazel is used instead of Cargo.
+```bash
+bazel test //docker-images/syntax-highlighter/crates/scip-treesitter-cli:all
+```
 
-1. Run tests: `bazel test //docker-images/syntax-highlighter/crates/scip-treesitter-cli:unit_test`
-2. Build CLI: `bazel build //docker-images/syntax-highlighter/crates/scip-treesitter-cli:scip-treesitter-cli`
+We use [Insta](https://insta.rs/) for snapshot testing.
+If you're changing the output produced by the CLI,
+run `cargo test` and then `cargo insta review`
+to accept/reject changes in snapshots.
+
+### Build the CLI for local testing
+
+```bash
+cargo build
+```
+
+```bash
+bazel build //docker-images/syntax-highlighter/crates/scip-treesitter-cli
+```
+
+### Run the locally built CLI
+
+```bash
+cargo run -- index --language java --out ./index.scip file1.java file2.java ...
+```
+
+```bash
+bazel run //docker-images/syntax-highlighter/crates/scip-treesitter-cli -- index --language java --out ./index.scip file1.java file2.java ...
+```
