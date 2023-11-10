@@ -1,7 +1,6 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
-
 rust_binary(
     name = "scip-treesitter-cli",
     srcs = glob(["src/main.rs"]),
@@ -27,9 +26,13 @@ WORKSPACE_DEPS = [
 # test can re-use some of the code in the CLI.
 rust_library(
     name = "scip-treesitter-cli-lib",
-    srcs = glob([
-        "src/*.rs",
-    ], exclude=["src/main.rs"], allow_empty=False),
+    srcs = glob(
+        [
+            "src/*.rs",
+        ],
+        allow_empty = False,
+        exclude = ["src/main.rs"],
+    ),
     aliases = aliases(),
     crate_name = "scip_treesitter_cli",
     crate_root = "src/lib.rs",
@@ -42,12 +45,12 @@ rust_library(
 
 rust_test(
     name = "unit_test",
+    size = "small",
     srcs = glob(["src/*.rs"]),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
     deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
-    size = "small",
 )
 
 # This separate integration test is needed because in Cargo,
@@ -60,6 +63,7 @@ rust_test(
 # same configuration.
 rust_test(
     name = "integration_test",
+    size = "small",
     srcs = glob(["tests/*.rs"]),
     compile_data = glob(
         [
@@ -79,6 +83,8 @@ rust_test(
     },
     deps = all_crate_deps(
         normal = True,
-    ) + [":scip-treesitter-cli", ":scip-treesitter-cli-lib"] + WORKSPACE_DEPS,
-    size = "small",
+    ) + [
+        ":scip-treesitter-cli",
+        ":scip-treesitter-cli-lib",
+    ] + WORKSPACE_DEPS,
 )
