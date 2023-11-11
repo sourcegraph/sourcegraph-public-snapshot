@@ -36,7 +36,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	})
@@ -77,7 +77,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
 	client := gitserver.NewMockClient()
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	})
@@ -117,7 +117,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
 	client := gitserver.NewMockClient()
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	})
@@ -157,7 +157,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
 	client := gitserver.NewMockClient()
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return "", errors.New("x")
 	})

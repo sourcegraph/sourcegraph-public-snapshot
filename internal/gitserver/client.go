@@ -358,7 +358,7 @@ type Client interface {
 	// * Commit does not exist: gitdomain.RevisionNotFoundError
 	// * Empty repository: gitdomain.RevisionNotFoundError
 	// * Other unexpected errors.
-	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
+	ResolveRevision(ctx context.Context, repo api.RepoName, spec string) (api.CommitID, error)
 
 	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
 	// into an equivalent set of commit hashes
@@ -480,7 +480,7 @@ type Client interface {
 	// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 	// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 	// the repository or if the commit must be fetched from the remote.
-	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error)
+	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (*gitdomain.Commit, error)
 
 	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
@@ -787,9 +787,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 			Args:      stringsToByteSlices(c.args[1:]),
 			Stdin:     c.stdin,
 			NoTimeout: c.noTimeout,
-
-			// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
-			EnsureRevision: []byte(c.EnsureRevision()),
 		}
 
 		stream, err := client.Exec(ctx, req)
@@ -810,11 +807,10 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 
 	} else {
 		req := &protocol.ExecRequest{
-			Repo:           repoName,
-			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
-			Stdin:          c.stdin,
-			NoTimeout:      c.noTimeout,
+			Repo:      repoName,
+			Args:      c.args[1:],
+			Stdin:     c.stdin,
+			NoTimeout: c.noTimeout,
 		}
 		resp, err := c.execer.httpPost(ctx, repoName, "exec", req)
 		if err != nil {

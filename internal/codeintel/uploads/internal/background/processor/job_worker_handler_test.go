@@ -346,7 +346,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		}
 		return &types.Repo{ID: repoID}, nil
 	})
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string) (api.CommitID, error) {
 		return "", &gitdomain.RepoNotExistError{Repo: repo, CloneInProgress: true}
 	})
 

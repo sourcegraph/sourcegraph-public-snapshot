@@ -67,7 +67,7 @@ func NewUnknownCommitJanitor(
 }
 
 func shouldDeleteRecordsForCommit(ctx context.Context, gitserverClient gitserver.Client, repositoryName, commit string) (bool, error) {
-	if _, err := gitserverClient.ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{}); err != nil {
+	if _, err := gitserverClient.ResolveRevision(ctx, api.RepoName(repositoryName), commit); err != nil {
 		if gitdomain.IsRepoNotExist(err) {
 			// Repository not found; we'll delete these in a separate process
 			return false, nil

@@ -9,6 +9,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,8 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitserver.Hunk) gitserver.Client {
@@ -30,7 +31,6 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 		func(_ context.Context,
 			repoName api.RepoName,
 			commit api.CommitID,
-			opts gitserver.ResolveRevisionOptions,
 		) (*gitdomain.Commit, error) {
 			return &gitdomain.Commit{
 				Parents: []api.CommitID{"xxx", "yyy"},

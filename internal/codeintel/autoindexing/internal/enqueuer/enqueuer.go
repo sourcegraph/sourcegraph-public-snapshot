@@ -64,7 +64,7 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 		return nil, err
 	}
 
-	commitID, err := s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+	commitID, err := s.gitserverClient.ResolveRevision(ctx, repo.Name, rev)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
@@ -98,7 +98,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 	}
 	repoID := int(repo.ID)
 
-	commit, err := s.gitserverClient.ResolveRevision(ctx, repoName, revision, gitserver.ResolveRevisionOptions{})
+	commit, err := s.gitserverClient.ResolveRevision(ctx, repoName, revision)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil

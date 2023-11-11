@@ -25,7 +25,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	defaultBranchRef := "refs/heads/main"
 	gsClient := gitserver.NewMockClient()
 	gsClient.GetDefaultBranchFunc.SetDefaultReturn(defaultBranchRef, "", nil)
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string) (api.CommitID, error) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
 			return "", errors.New("x")
 		}

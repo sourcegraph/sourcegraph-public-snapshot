@@ -26,9 +26,8 @@ import (
 )
 
 type RepositoryComparisonInput struct {
-	Base         *string
-	Head         *string
-	FetchMissing bool
+	Base *string
+	Head *string
 }
 
 type FileDiffsConnectionArgs struct {
@@ -73,13 +72,9 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserv
 			return nil, nil
 		}
 
-		opt := gitserver.ResolveRevisionOptions{
-			NoEnsureRevision: !args.FetchMissing,
-		}
-
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := client.ResolveRevision(ctx, repo, revspec, opt)
+		commitID, err := client.ResolveRevision(ctx, repo, revspec)
 		if err != nil {
 			return nil, err
 		}

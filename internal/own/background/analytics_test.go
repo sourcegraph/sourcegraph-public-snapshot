@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -30,7 +31,7 @@ func (f fakeGitServer) LsFiles(ctx context.Context, repo api.RepoName, commit ap
 	return f.files, nil
 }
 
-func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, spec string) (api.CommitID, error) {
 	return api.CommitID(""), nil
 }
 

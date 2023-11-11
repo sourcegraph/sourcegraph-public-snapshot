@@ -353,7 +353,7 @@ const requeueDelay = time.Minute
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[uploadsshared.Upload], upload uploadsshared.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{})
+	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit)
 	if err == nil {
 		// commit is resolvable
 		return false, nil

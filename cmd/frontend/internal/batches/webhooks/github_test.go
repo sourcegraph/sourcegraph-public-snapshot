@@ -162,7 +162,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		gsClient := gitserver.NewMockClient()
-		gsClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		gsClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 			return "", nil
 		})
 

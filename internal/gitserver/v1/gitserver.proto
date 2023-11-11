@@ -173,8 +173,10 @@ message CreateCommitFromPatchBinaryResponse {
   string changelist_id = 3;
 }
 message ExecRequest {
+  reserved 2;
+  reserved "ensure_revision";
+
   string repo = 1;
-  bytes ensure_revision = 2;
   repeated bytes args = 3;
   bytes stdin = 4;
   bool no_timeout = 5;

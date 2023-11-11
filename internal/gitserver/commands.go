@@ -1033,16 +1033,10 @@ func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitComman
 // gitCommandFunc is a func that creates a new executable Git command.
 type gitCommandFunc func(args []string) GitCommand
 
-// ResolveRevisionOptions configure how we resolve revisions.
-// The zero value should contain appropriate default values.
-type ResolveRevisionOptions struct {
-	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
-}
-
-var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+var resolveRevisionCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_resolve_revision_total",
 	Help: "The number of times we call internal/vcs/git/ResolveRevision",
-}, []string{"ensure_revision"})
+})
 
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 // used.
@@ -1052,19 +1046,14 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Commit does not exist: gitdomain.RevisionNotFoundError
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
-func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (_ api.CommitID, err error) {
-	labelEnsureRevisionValue := "true"
-	if opt.NoEnsureRevision {
-		labelEnsureRevisionValue = "false"
-	}
-	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
+func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string) (_ api.CommitID, err error) {
+	resolveRevisionCounter.Inc()
 
 	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
 			attribute.String("spec", spec),
-			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 		},
 	})
 	defer endObservation(1, observation.Args{})
@@ -1084,14 +1073,6 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	}
 
 	cmd := c.gitCommand(repo, "rev-parse", spec)
-	cmd.SetEnsureRevision(spec)
-
-	// We don't ever need to ensure that HEAD is in git-server.
-	// HEAD is always there once a repo is cloned
-	// (except empty repos, but we don't need to ensure revision on those).
-	if opt.NoEnsureRevision || spec == "HEAD" {
-		cmd.SetEnsureRevision("")
-	}
 
 	return runRevParse(ctx, cmd, spec)
 }
@@ -1363,7 +1344,7 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 
 	if err == nil && exitCode == 0 {
 		// Check that our repo is not empty
-		commit, err = c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
+		commit, err = c.ResolveRevision(ctx, repo, "HEAD")
 	}
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -1674,9 +1655,6 @@ type CommitsOptions struct {
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
 
-	// When true we opt out of attempting to fetch missing revisions
-	NoEnsureRevision bool
-
 	// When true return the names of the files changed in the commit
 	NameOnly bool
 }
@@ -1684,14 +1662,13 @@ type CommitsOptions struct {
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
 			ev.SetSampleRate(10) // 1 in 10
 			ev.AddField("repo", repo)
 			ev.AddField("commit", id)
-			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
 			ev.AddField("actor", actor.FromContext(ctx).UIDString())
 
 			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
@@ -1710,9 +1687,8 @@ func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id
 	}
 
 	commitOptions := CommitsOptions{
-		Range:            string(id),
-		N:                1,
-		NoEnsureRevision: opt.NoEnsureRevision,
+		Range: string(id),
+		N:     1,
 	}
 	commitOptions = addNameOnly(commitOptions, c.subRepoPermsChecker)
 
@@ -1737,18 +1713,17 @@ func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
 			id.Attr(),
-			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	return c.getCommit(ctx, repo, id, opt)
+	return c.getCommit(ctx, repo, id)
 }
 
 // Commits returns all commits matching the options.
@@ -1850,11 +1825,7 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.
 func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// The commits are returned from git log, so we are sure they exist and
-			// don't need to ensure the revision.
-			NoEnsureRevision: true,
-		})
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
 		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
@@ -1907,7 +1878,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 		revspec = "HEAD"
 	}
 
-	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
+	commitid, err := c.ResolveRevision(ctx, repo, revspec)
 	if err != nil {
 		return false, err
 	}
@@ -1972,9 +1943,6 @@ func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.Repo
 	}
 
 	cmd := c.gitCommand(repo, args...)
-	if !opt.NoEnsureRevision {
-		cmd.SetEnsureRevision(opt.Range)
-	}
 	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
 	if err != nil {
 		return nil, err
@@ -2184,7 +2152,7 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	}
 	first := tokens[0]
 	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+	return c.GetCommit(ctx, repo, id)
 }
 
 // CommitExists determines if the given commit exists in the given repository.
@@ -2198,7 +2166,7 @@ func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName,
 	})
 	defer endObservation(1, observation.Args{})
 
-	commit, err := c.getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := c.getCommit(ctx, repo, id)
 	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return false, nil
 	}
@@ -2345,11 +2313,7 @@ func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName) (_ stri
 	}
 	commitID := string(out)
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// We expect the HEAD reference to not be broken, let's not ensure the
-			// revision here.
-			NoEnsureRevision: true,
-		}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID)); err != nil {
 			return checkError(err)
 		}
 	}
@@ -2440,11 +2404,7 @@ func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.Rep
 
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
-			// Don't ensure the revision here, the branch command below will fail
-			// anyways.
-			NoEnsureRevision: true,
-		}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit); err != nil {
 			return nil, err
 		}
 	}
@@ -2539,10 +2499,7 @@ func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
 ) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// The commits are returned from git already, so they must exist.
-			NoEnsureRevision: true,
-		})
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
 		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
@@ -2643,11 +2600,7 @@ func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, c
 
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
-			// The show command below will fail anyways, so no need to ensure
-			// that the revision exists here.
-			NoEnsureRevision: true,
-		}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit); err != nil {
 			return "", time.Time{}, false, nil
 		}
 	}
@@ -2947,11 +2900,7 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 
 		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{
-				// The commitID comes from git, so surely it knows about it and
-				// there's no need to ensure the revision exists.
-				NoEnsureRevision: true,
-			})
+			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID)
 			if err != nil {
 				return nil, err
 			}

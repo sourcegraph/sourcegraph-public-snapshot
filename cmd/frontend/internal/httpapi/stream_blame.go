@@ -109,12 +109,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			if p, ok := parentsCache[h.CommitID]; ok {
 				parents = p
 			} else {
-				c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{
-					// The list of hunks and commit IDs came from gitserver, that
-					// means the commit will exist and we don't need to ensure
-					// the revision exists.
-					NoEnsureRevision: true,
-				})
+				c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID)
 				if err != nil {
 					tr.SetError(err)
 					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)

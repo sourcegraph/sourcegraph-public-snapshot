@@ -313,7 +313,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		GetCommitFunc: &ClientGetCommitFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (r0 *gitdomain.Commit, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 *gitdomain.Commit, r1 error) {
 				return
 			},
 		},
@@ -458,7 +458,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ResolveRevisionFunc: &ClientResolveRevisionFunc{
-			defaultHook: func(context.Context, api.RepoName, string, ResolveRevisionOptions) (r0 api.CommitID, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -615,7 +615,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		GetCommitFunc: &ClientGetCommitFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockClient.GetCommit")
 			},
 		},
@@ -760,7 +760,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ResolveRevisionFunc: &ClientResolveRevisionFunc{
-			defaultHook: func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+			defaultHook: func(context.Context, api.RepoName, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockClient.ResolveRevision")
 			},
 		},
@@ -3303,23 +3303,23 @@ func (c ClientGetBehindAheadFuncCall) Results() []interface{} {
 // ClientGetCommitFunc describes the behavior when the GetCommit method of
 // the parent MockClient instance is invoked.
 type ClientGetCommitFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)
 	history     []ClientGetCommitFuncCall
 	mutex       sync.Mutex
 }
 
 // GetCommit delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) GetCommit(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 ResolveRevisionOptions) (*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2, v3)
-	m.GetCommitFunc.appendCall(ClientGetCommitFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockClient) GetCommit(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (*gitdomain.Commit, error) {
+	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2)
+	m.GetCommitFunc.appendCall(ClientGetCommitFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetCommit method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)) {
+func (f *ClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)) {
 	f.defaultHook = hook
 }
 
@@ -3327,7 +3327,7 @@ func (f *ClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.Repo
 // GetCommit method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error)) {
+func (f *ClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3336,19 +3336,19 @@ func (f *ClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientGetCommitFunc) SetDefaultReturn(r0 *gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientGetCommitFunc) PushReturn(r0 *gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientGetCommitFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, ResolveRevisionOptions) (*gitdomain.Commit, error) {
+func (f *ClientGetCommitFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3390,9 +3390,6 @@ type ClientGetCommitFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 ResolveRevisionOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitdomain.Commit
@@ -3404,7 +3401,7 @@ type ClientGetCommitFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientGetCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -6544,24 +6541,24 @@ func (c ClientRequestRepoUpdateFuncCall) Results() []interface{} {
 // ClientResolveRevisionFunc describes the behavior when the ResolveRevision
 // method of the parent MockClient instance is invoked.
 type ClientResolveRevisionFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)
-	hooks       []func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)
+	defaultHook func(context.Context, api.RepoName, string) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, string) (api.CommitID, error)
 	history     []ClientResolveRevisionFuncCall
 	mutex       sync.Mutex
 }
 
 // ResolveRevision delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) ResolveRevision(v0 context.Context, v1 api.RepoName, v2 string, v3 ResolveRevisionOptions) (api.CommitID, error) {
-	r0, r1 := m.ResolveRevisionFunc.nextHook()(v0, v1, v2, v3)
-	m.ResolveRevisionFunc.appendCall(ClientResolveRevisionFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockClient) ResolveRevision(v0 context.Context, v1 api.RepoName, v2 string) (api.CommitID, error) {
+	r0, r1 := m.ResolveRevisionFunc.nextHook()(v0, v1, v2)
+	m.ResolveRevisionFunc.appendCall(ClientResolveRevisionFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ResolveRevision
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientResolveRevisionFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)) {
+func (f *ClientResolveRevisionFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) (api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -6569,7 +6566,7 @@ func (f *ClientResolveRevisionFunc) SetDefaultHook(hook func(context.Context, ap
 // ResolveRevision method of the parent MockClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientResolveRevisionFunc) PushHook(hook func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)) {
+func (f *ClientResolveRevisionFunc) PushHook(hook func(context.Context, api.RepoName, string) (api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6578,19 +6575,19 @@ func (f *ClientResolveRevisionFunc) PushHook(hook func(context.Context, api.Repo
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientResolveRevisionFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientResolveRevisionFunc) PushReturn(r0 api.CommitID, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+	f.PushHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientResolveRevisionFunc) nextHook() func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+func (f *ClientResolveRevisionFunc) nextHook() func(context.Context, api.RepoName, string) (api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6632,9 +6629,6 @@ type ClientResolveRevisionFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 ResolveRevisionOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 api.CommitID
@@ -6646,7 +6640,7 @@ type ClientResolveRevisionFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientResolveRevisionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

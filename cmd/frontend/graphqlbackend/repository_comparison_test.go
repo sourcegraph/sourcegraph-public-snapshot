@@ -41,7 +41,7 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 
 	gsClient := gitserver.NewMockClient()
 	gsClient.MergeBaseFunc.SetDefaultReturn("", errors.Errorf("merge base doesn't exist!"))
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
@@ -84,7 +84,7 @@ func TestRepositoryComparison(t *testing.T) {
 		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	})
 
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string) (api.CommitID, error) {
 		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}

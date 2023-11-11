@@ -533,7 +533,7 @@ func (r *Resolver) normalizeRepoRefs(
 			revs = append(revs, rev.RevSpec)
 		case rev.RevSpec != "":
 			trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
-			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev)
 			if err != nil {
 				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 					return nil, err
@@ -773,7 +773,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	{ // Use searcher for unindexed revs
 
 		checkHasMatches := func(ctx context.Context, arg query.RepoHasFileContentArgs, repo types.MinimalRepo, rev string) (bool, error) {
-			commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev)
 			if err != nil {
 				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
 					return false, err

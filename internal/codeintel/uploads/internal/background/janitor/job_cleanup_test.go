@@ -92,7 +92,7 @@ var testSourcedCommits = []sourcedCommits{
 
 func testShouldDeleteRecordsForCommit(t *testing.T, resolveRevisionFunc func(commit string) error, expectedCalls []updateInvocation) {
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, _ api.RepoName, spec string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, _ api.RepoName, spec string) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 

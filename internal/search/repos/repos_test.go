@@ -53,7 +53,7 @@ func toParsedRepoFilters(repoRevs ...string) []query.ParsedRepoFilter {
 
 func TestRevisionValidation(t *testing.T) {
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string) (api.CommitID, error) {
 		// trigger errors
 		if spec == "bad_commit" {
 			return "", &gitdomain.BadCommitError{}
@@ -286,7 +286,7 @@ func TestResolverIterator(t *testing.T) {
 	}
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string) (api.CommitID, error) {
 		if spec == "bad_commit" {
 			return "", &gitdomain.BadCommitError{}
 		}
@@ -555,7 +555,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	}
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	})
 
@@ -625,7 +625,7 @@ func TestRepoHasFileContent(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, _ string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, _ string) (api.CommitID, error) {
 		if name == repoE.Name {
 			return "", &gitdomain.RevisionNotFoundError{}
 		}

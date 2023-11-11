@@ -82,14 +82,14 @@ func TestClient_GRPCRouting(t *testing.T) {
 	})
 
 	client := NewClient("test")
-	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
+	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD")
 
 	if !(m1.called && !m2.called) {
 		t.Fatalf("expected repo 'a' to hit srv1, got %v, %v", m1.called, m2.called)
 	}
 
 	m1.called, m2.called = false, false
-	_, _ = client.ResolveRevision(context.Background(), "b", "HEAD", ResolveRevisionOptions{})
+	_, _ = client.ResolveRevision(context.Background(), "b", "HEAD")
 
 	if !(!m1.called && m2.called) {
 		t.Fatalf("expected repo 'b' to hit srv2, got %v, %v", m1.called, m2.called)

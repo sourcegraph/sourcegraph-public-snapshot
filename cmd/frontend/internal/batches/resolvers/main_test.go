@@ -200,7 +200,7 @@ func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, bas
 		return io.NopCloser(bytes.NewReader(diff)), nil
 	})
 
-	gitserverClientWithExecReader.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserverClientWithExecReader.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string) (api.CommitID, error) {
 		if spec != baseRev && spec != headRev {
 			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
 		}

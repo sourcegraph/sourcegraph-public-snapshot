@@ -65,7 +65,7 @@ index 884601b..c4886d5 100644
 `
 		return gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(testGitHubDiff))), nil
 	})
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		return api.CommitID(generateFakeCommitID()), nil
 	})
 

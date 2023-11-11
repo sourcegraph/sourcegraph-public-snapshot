@@ -204,7 +204,7 @@ func mockGitserver(repoMocks []repoMock) *gitserver.MockClient {
 	}
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string) (api.CommitID, error) {
 		repo, err := get(name)
 		if err != nil {
 			return "", err

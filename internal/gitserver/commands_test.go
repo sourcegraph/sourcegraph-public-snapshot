@@ -457,7 +457,7 @@ func TestRepository_BlameFile(t *testing.T) {
 
 	client := NewClient("test")
 	for label, test := range tests {
-		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
+		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit))
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
 			continue
@@ -528,7 +528,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -560,7 +560,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.branch)
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -593,7 +593,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -625,7 +625,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient("test").ResolveRevision(context.Background(), test.repo, test.tag)
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -965,19 +965,19 @@ func TestMerger_MergeBase(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		a, err := client.ResolveRevision(ctx, test.repo, test.a, ResolveRevisionOptions{})
+		a, err := client.ResolveRevision(ctx, test.repo, test.a)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
 			continue
 		}
 
-		b, err := client.ResolveRevision(ctx, test.repo, test.b, ResolveRevisionOptions{})
+		b, err := client.ResolveRevision(ctx, test.repo, test.b)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
 			continue
 		}
 
-		want, err := client.ResolveRevision(ctx, test.repo, test.wantMergeBase, ResolveRevisionOptions{})
+		want, err := client.ResolveRevision(ctx, test.repo, test.wantMergeBase)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
 			continue
@@ -1178,7 +1178,6 @@ func TestRepository_GetCommit(t *testing.T) {
 		gitCmds               []string
 		id                    api.CommitID
 		wantCommit            *gitdomain.Commit
-		noEnsureRevision      bool
 		revisionNotFoundError bool
 	}
 
@@ -1188,20 +1187,14 @@ func TestRepository_GetCommit(t *testing.T) {
 				client := NewTestClient(t).WithChecker(checker)
 
 				testRepo := MakeGitRepository(t, test.gitCmds...)
-				var noEnsureRevision bool
 				t.Cleanup(func() {
 					runCommitLog = oldRunCommitLog
 				})
 				runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
-					// Track the value of NoEnsureRevision we pass to gitserver
-					noEnsureRevision = opt.NoEnsureRevision
 					return oldRunCommitLog(ctx, cmd, opt)
 				}
 
-				resolveRevisionOptions := ResolveRevisionOptions{
-					NoEnsureRevision: test.noEnsureRevision,
-				}
-				commit, err := client.GetCommit(ctx, testRepo, test.id, resolveRevisionOptions)
+				commit, err := client.GetCommit(ctx, testRepo, test.id)
 				if err != nil {
 					if test.revisionNotFoundError {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -1218,12 +1211,8 @@ func TestRepository_GetCommit(t *testing.T) {
 				}
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.GetCommit(ctx, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.GetCommit(ctx, testRepo, NonExistentCommitID); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
-				}
-
-				if noEnsureRevision != test.noEnsureRevision {
-					t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
 				}
 			})
 		}
@@ -1237,17 +1226,10 @@ func TestRepository_GetCommit(t *testing.T) {
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]testCase{
-		"git cmd with NoEnsureRevision false": {
-			gitCmds:          gitCommands,
-			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommit:       wantGitCommit,
-			noEnsureRevision: false,
-		},
-		"git cmd with NoEnsureRevision true": {
-			gitCmds:          gitCommands,
-			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommit:       wantGitCommit,
-			noEnsureRevision: true,
+		"git cmd": {
+			gitCmds:    gitCommands,
+			id:         "b266c7e3ca00b1a17ad0b1449825d0854225c007",
+			wantCommit: wantGitCommit,
 		},
 	}
 	// Run basic tests w/o sub-repo permissions checker
@@ -1263,13 +1245,11 @@ func TestRepository_GetCommit(t *testing.T) {
 			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit1",
 		},
-		noEnsureRevision: true,
 	}
 	tests["with sub-repo permissions and NO access to file"] = testCase{
 		gitCmds:               gitCommandsWithFiles,
 		id:                    "ee7773505e98390e809cbf518b2a92e4748b0187",
 		wantCommit:            &gitdomain.Commit{},
-		noEnsureRevision:      true,
 		revisionNotFoundError: true,
 	}
 	// Run test w/ sub-repo permissions filtering
@@ -1875,7 +1855,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
 			client := NewTestClient(t).WithChecker(checker)
-			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}

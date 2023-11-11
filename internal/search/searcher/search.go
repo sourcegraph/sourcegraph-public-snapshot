@@ -194,7 +194,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := client.ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := client.ResolveRevision(ctx, gitserverRepo, rev)
 	if err != nil {
 		return false, err
 	}

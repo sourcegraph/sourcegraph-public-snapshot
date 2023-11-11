@@ -7,7 +7,6 @@ go_library(
         "cleanup.go",
         "clone.go",
         "disk.go",
-        "ensurerevision.go",
         "gitservice.go",
         "list_gitolite.go",
         "lock.go",

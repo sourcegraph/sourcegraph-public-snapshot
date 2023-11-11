@@ -319,9 +319,7 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 		getVersion := func(branch string) (string, error) {
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
-				NoEnsureRevision: true,
-			})
+			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Name, branch)
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
 				// GetIndexOptions wants an empty rev for a missing rev or empty
 				// repo.

@@ -120,7 +120,7 @@ index 9bd8209..d2acfa9 100644
 		wantHeadRevision:          {},
 	}
 
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string) (api.CommitID, error) {
 		if _, ok := byRev[api.CommitID(rev)]; !ok {
 			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
 		}

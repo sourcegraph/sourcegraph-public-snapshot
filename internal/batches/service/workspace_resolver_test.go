@@ -130,7 +130,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			return nil, os.ErrNotExist
 		})
 
-		gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, spec string, rro gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, spec string) (api.CommitID, error) {
 			if commit, ok := branches[spec]; ok {
 				return commit, nil
 			}

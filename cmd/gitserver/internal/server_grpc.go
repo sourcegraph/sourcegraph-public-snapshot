@@ -111,9 +111,6 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		Args:      byteSlicesToStrings(req.GetArgs()),
 		Stdin:     req.GetStdin(),
 		NoTimeout: req.GetNoTimeout(),
-
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
-		EnsureRevision: string(req.GetEnsureRevision()),
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {

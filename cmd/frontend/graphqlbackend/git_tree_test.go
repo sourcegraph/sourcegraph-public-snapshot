@@ -52,7 +52,7 @@ func TestGitTree_History(t *testing.T) {
 	gs := gitserver.NewTestClient(t)
 	db := dbmocks.NewMockDB()
 
-	oid, err := gs.ResolveRevision(ctx, repoName, "HEAD", gitserver.ResolveRevisionOptions{})
+	oid, err := gs.ResolveRevision(ctx, repoName, "HEAD")
 	require.NoError(t, err)
 
 	rr := NewRepositoryResolver(db, gs, &types.Repo{Name: repoName})

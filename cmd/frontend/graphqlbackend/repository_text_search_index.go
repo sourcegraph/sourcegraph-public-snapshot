@@ -12,7 +12,6 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -147,7 +146,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
 		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
-			if _, err := repoResolver.gitserverClient.ResolveRevision(ctx, repoResolver.RepoName(), ref, gitserver.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+			if _, err := repoResolver.gitserverClient.ResolveRevision(ctx, repoResolver.RepoName(), ref); err == nil {
 				name = ref
 				break
 			}

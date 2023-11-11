@@ -48,7 +48,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
 		return wantDefaultBranchRef, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", nil
 	})
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string) (api.CommitID, error) {
 		if want := "HEAD"; spec != want {
 			t.Errorf("got spec %q, want %q", spec, want)
 		}

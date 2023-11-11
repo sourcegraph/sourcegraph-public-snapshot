@@ -91,8 +91,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 			return
 		}
 
-		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
 	})
 	return r.commit, r.commitErr
 }
@@ -387,9 +386,8 @@ func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
 		base = *args.Base
 	}
 	return NewRepositoryComparison(ctx, r.db, r.gitserverClient, r.repoResolver, &RepositoryComparisonInput{
-		Base:         &base,
-		Head:         &oidString,
-		FetchMissing: false,
+		Base: &base,
+		Head: &oidString,
 	})
 }
 

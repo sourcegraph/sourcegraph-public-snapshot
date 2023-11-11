@@ -69,7 +69,7 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, che
 		return errors.Wrap(err, "ls-files")
 	}
 	// Try to compute ownership stats
-	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD")
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "cannot resolve HEAD"))
 	}

@@ -1027,7 +1027,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
-	ensureRevisionStatus := "noop"
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	repoName := req.Repo
@@ -1044,7 +1043,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		tr, ctx = trace.New(ctx, "exec."+cmd, repoName.Attr())
 		tr.SetAttributes(
 			attribute.String("args", args),
-			attribute.String("ensure_revision", req.EnsureRevision),
 		)
 		logger = logger.WithTrace(trace.Context(ctx))
 
@@ -1055,7 +1053,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				attribute.String("status", status),
 				attribute.Int64("stdout", stdoutN),
 				attribute.Int64("stderr", stderrN),
-				attribute.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
 			tr.End()
@@ -1081,8 +1078,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("actor", act.UIDString())
-				ev.AddField("ensure_revision", req.EnsureRevision)
-				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdin_size", len(req.Stdin))
@@ -1131,9 +1126,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	}
 
 	dir := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
-	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
-		ensureRevisionStatus = "fetched"
-	}
 
 	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead

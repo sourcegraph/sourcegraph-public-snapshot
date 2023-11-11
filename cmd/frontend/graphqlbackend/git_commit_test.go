@@ -81,7 +81,7 @@ func TestGitCommitResolver(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		client := gitserver.NewMockClient()
-		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 			return commit, nil
 		})
 

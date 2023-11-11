@@ -14,8 +14,6 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 
 >NOTE: Sourcegraph.com is different since it isn't feasible to maintain a clone of all open source repositories. It works via on-demand requests from users.
 
->NOTE: There is one other way repositories are fetched. A new commit may not be on Sourcegraph yet, but a user is browsing it via our browser extension. `gitserver` supports a ["EnsureRevision"](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.36.3/-/blob/cmd/gitserver/server/server.go#L1278-1283) use-case which will do a "git fetch" for the missing revision.
-
 ## Services
 
 ### Repo Updater
