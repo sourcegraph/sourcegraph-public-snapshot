@@ -21,7 +21,7 @@ import {
 
 import type { AuthenticatedUser } from '../../auth'
 import type { CreateNotebookVariables } from '../../graphql-operations'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import { blockToGQLInput } from '../serialize'
 import { convertMarkdownToBlocks } from '../serialize/convertMarkdownToBlocks'
 
@@ -103,7 +103,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
             />
             <Menu>
                 <ButtonGroup>
-                    <Button to={EnterprisePageRoutes.NotebookCreate} variant="primary" as={Link}>
+                    <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link}>
                         Create notebook
                     </Button>
                     <MenuButton variant="primary" className={styles.dropdownButton}>

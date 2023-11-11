@@ -3,7 +3,7 @@ import { Navigate, type RouteObject } from 'react-router-dom'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../../LegacyRouteContext'
-import { EnterprisePageRoutes, PageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 
 const AppSetup = lazyComponent(() => import('./setup/AppSetupWizard'), 'AppSetupWizard')
 const AppAuthCallbackPage = lazyComponent(() => import('./AppAuthCallbackPage'), 'AppAuthCallbackPage')
@@ -21,24 +21,24 @@ export const APP_ROUTES: RouteObject[] = [
     {
         path: PageRoutes.Index,
         // The default page of the Sourcegraph (Cody) app is Cody chat UI page
-        element: <Navigate replace={true} to={EnterprisePageRoutes.Cody} />,
+        element: <Navigate replace={true} to={PageRoutes.Cody} />,
     },
     {
         path: PageRoutes.Search,
         // The default page of the Sourcegraph (Cody) app is Cody chat UI page
-        element: <Navigate replace={true} to={EnterprisePageRoutes.Cody} />,
+        element: <Navigate replace={true} to={PageRoutes.Cody} />,
     },
     {
-        path: EnterprisePageRoutes.Cody + '/*',
+        path: PageRoutes.Cody + '/*',
         element: <LegacyRoute render={props => <CodyChatPage context={window.context} {...props} />} />,
     },
     {
-        path: `${EnterprisePageRoutes.AppSetup}/*`,
+        path: `${PageRoutes.AppSetup}/*`,
         handle: { isFullPage: true },
         element: <LegacyRoute render={props => <AppSetup telemetryService={props.telemetryService} />} />,
     },
     {
-        path: EnterprisePageRoutes.AppAuthCallback,
+        path: PageRoutes.AppAuthCallback,
         element: <LegacyRoute render={() => <AppAuthCallbackPage />} />,
     },
     {

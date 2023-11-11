@@ -8,7 +8,7 @@ import { renderMarkdown, pluralize } from '@sourcegraph/common'
 import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
 import type { NotebookFields } from '../../graphql-operations'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 
 import styles from './NotebookNode.module.scss'
 
@@ -36,7 +36,7 @@ export const NotebookNode: FC<NotebookNodeProps> = ({ node }: NotebookNodeProps)
     return (
         <li className={classNames('py-3', styles.notebookNode)}>
             <div className="d-flex align-items-center">
-                <Link to={EnterprisePageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
+                <Link to={PageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
                     <strong>{node.title}</strong>
                 </Link>
                 {!node.public && (

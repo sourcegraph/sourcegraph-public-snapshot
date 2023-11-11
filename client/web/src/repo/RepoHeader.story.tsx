@@ -140,7 +140,6 @@ const createBreadcrumbs = (path: string) => [
 ]
 
 const createProps = (path: string, forceWrap: boolean = false): React.ComponentProps<typeof RepoHeader> => ({
-    actionButtons: [],
     breadcrumbs: createBreadcrumbs(path),
     repoName: 'sourcegraph/sourcegraph',
     revision: 'main',
