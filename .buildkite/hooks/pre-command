@@ -5,6 +5,10 @@ set -e
 # Create the folder for annotations
 mkdir -p ./annotations/
 
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ aspect-.* ]]; then
+    exit 0
+fi
+
 # asdf setup
 # ----------
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DATA_QUEUE" != "macos" ]]; then

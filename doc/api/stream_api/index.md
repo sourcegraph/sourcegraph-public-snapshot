@@ -24,7 +24,7 @@ curl --header "Accept: text/event-stream" \
      --get \
      --url "<Sourcegraph URL>/.api/search/stream" \
      --data-urlencode "q=<query>" \
-     [--data-urlencode "display=<display-limit>"]
+     ["display=<display-limit>"]
 ```
 
 | parameter | description |

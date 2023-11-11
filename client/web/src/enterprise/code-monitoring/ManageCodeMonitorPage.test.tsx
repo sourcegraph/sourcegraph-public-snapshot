@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'

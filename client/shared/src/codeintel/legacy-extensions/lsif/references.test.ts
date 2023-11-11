@@ -1,7 +1,7 @@
-/* eslint-disable etc/no-deprecated */
 import * as assert from 'assert'
 
 import * as sinon from 'sinon'
+import { describe, it } from 'vitest'
 
 import * as sourcegraph from '../api'
 import type { QueryGraphQLFn } from '../util/graphql'
@@ -114,7 +114,7 @@ describe('referencesForPosition', () => {
 
         const values = [[location]]
         for (let index = 1; index < MAX_REFERENCE_PAGE_REQUESTS; index++) {
-            const lastCopy = [...values[values.length - 1]]
+            const lastCopy = [...values.at(-1)!]
             lastCopy.push(location)
             values.push(lastCopy)
         }

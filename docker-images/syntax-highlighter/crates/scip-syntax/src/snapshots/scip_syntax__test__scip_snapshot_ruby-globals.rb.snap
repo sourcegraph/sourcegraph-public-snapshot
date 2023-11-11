@@ -1,0 +1,101 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: dumped
+---
+  SOME_CONSTANT = 2.718
+//^^^^^^^^^^^^^ definition(Constant) scip-ctags SOME_CONSTANT.
+  
+  if true
+    a = 1
+  elsif false
+    b = 2
+  else
+    c = 3
+  end
+  
+  (1..5).each do |counter|
+    z = 3
+  end
+  
+  for counter in 1..5
+    y = 10
+  end
+  
+  counter = 1
+//^^^^^^^ definition(Variable) scip-ctags counter.
+  while counter <= 5 do
+    no = true
+    counter += 1
+  end
+  
+  begin
+    raise NoMemoryError, 'Z.'
+  rescue NoMemoryError => exception_variable
+    puts 'A', exception_variable
+  rescue RuntimeError => other_exception_variable
+    puts 'K'
+  else
+    puts 'L'
+  ensure
+    puts 'O'
+  end
+  
+  grade = 42
+//^^^^^ definition(Variable) scip-ctags grade.
+  case grade
+  when 0.100
+    shouldntgetcaptured = true
+    puts 'you got a grade i guess'
+  end
+  
+  module MyModule
+//       ^^^^^^^^ definition(Module) scip-ctags MyModule/
+    def self.abc(base)
+//           ^^^ definition(SingletonMethod) scip-ctags MyModule/abc().
+    end
+  
+    class MyClass
+//        ^^^^^^^ definition(Class) scip-ctags MyModule/MyClass#
+      def yay
+//        ^^^ definition(Method) scip-ctags MyModule/MyClass#yay().
+      end
+  
+      def self.woo(base)
+//             ^^^ definition(SingletonMethod) scip-ctags MyModule/MyClass#woo().
+      end
+    end
+  end
+  
+  class Foo
+//      ^^^ definition(Class) scip-ctags Foo#
+    attr_accessor :bar
+//                ^^^^ definition(Accessor) scip-ctags Foo#`bar=`().
+//                ^^^^ definition(Accessor) scip-ctags Foo#bar().
+    attr_reader :baz
+//              ^^^^ definition(Getter) scip-ctags Foo#baz().
+    attr_writer :qux
+//              ^^^^ definition(Setter) scip-ctags Foo#`qux=`().
+  end
+  
+  class Aliased
+//      ^^^^^^^ definition(Class) scip-ctags Aliased#
+    def bar
+//      ^^^ definition(Method) scip-ctags Aliased#bar().
+    end
+  
+    alias_method :baz, :bar
+//               ^^^^ definition(MethodAlias) scip-ctags Aliased#baz().
+  end
+  
+  class Parental
+//      ^^^^^^^^ definition(Class) scip-ctags Parental#
+      def parental_func()
+//        ^^^^^^^^^^^^^ definition(Method) scip-ctags Parental#parental_func().
+      end
+  end
+  
+  class Composed
+//      ^^^^^^^^ definition(Class) scip-ctags Composed#
+      include Parental
+  end
+

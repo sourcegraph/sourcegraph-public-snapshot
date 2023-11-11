@@ -1,6 +1,6 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 
 import { ResetPasswordPage } from './ResetPasswordPage'

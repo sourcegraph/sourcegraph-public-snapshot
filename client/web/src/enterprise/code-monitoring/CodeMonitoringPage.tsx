@@ -8,7 +8,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
     PageHeader,
     LoadingSpinner,
@@ -43,12 +43,15 @@ function getSelectedTabFromLocation(
 ): MonitorsTab {
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
-        case 'list':
+        case 'list': {
             return 'list'
-        case 'getting-started':
+        }
+        case 'getting-started': {
             return 'getting-started'
-        case 'logs':
+        }
+        case 'logs': {
             return 'logs'
+        }
     }
 
     return userHasCodeMonitors ? 'list' : 'getting-started'
@@ -123,14 +126,17 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     useEffect(() => {
         if (userHasCodeMonitors !== undefined) {
             switch (currentTab) {
-                case 'getting-started':
+                case 'getting-started': {
                     eventLogger.logPageView('CodeMonitoringGettingStartedPage')
                     break
-                case 'logs':
+                }
+                case 'logs': {
                     eventLogger.logPageView('CodeMonitoringLogsPage')
                     break
-                case 'list':
+                }
+                case 'list': {
                     eventLogger.logPageView('CodeMonitoringPage')
+                }
             }
         }
     }, [currentTab, userHasCodeMonitors])

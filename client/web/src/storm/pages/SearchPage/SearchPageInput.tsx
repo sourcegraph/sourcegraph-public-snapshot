@@ -20,9 +20,9 @@ import { Form } from '@sourcegraph/wildcard'
 import { Notices } from '../../../global/Notices'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { submitSearch } from '../../../search/helpers'
-import { LazyExperimentalSearchInput } from '../../../search/input/LazyExperimentalSearchInput'
+import { LazyV2SearchInput } from '../../../search/input/LazyV2SearchInput'
 import { useRecentSearches } from '../../../search/input/useRecentSearches'
-import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../../../search/useV2QueryInput'
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
 import { SimpleSearch } from './SimpleSearch'
@@ -60,7 +60,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         telemetryService,
         platformContext,
         searchContextsEnabled,
-        settingsCascade,
         selectedSearchContextSpec: dynamicSearchContextSpec,
         fetchSearchContexts,
         setSelectedSearchContextSpec,
@@ -72,7 +71,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     const navigate = useNavigate()
 
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [v2QueryInput] = useV2QueryInput()
 
     const { recentSearches } = useRecentSearches()
 
@@ -91,7 +90,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     searchMode,
                     // In the new query input, context is either omitted (-> global)
                     // or explicitly specified.
-                    selectedSearchContextSpec: experimentalQueryInput ? undefined : selectedSearchContextSpec,
+                    selectedSearchContextSpec: v2QueryInput ? undefined : selectedSearchContextSpec,
                     ...parameters,
                 })
             }
@@ -104,7 +103,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             patternType,
             caseSensitive,
             searchMode,
-            experimentalQueryInput,
+            v2QueryInput,
         ]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
@@ -128,18 +127,15 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     )
 
     // TODO (#48103): Remove/simplify when new search input is released
-    const input = experimentalQueryInput ? (
-        <LazyExperimentalSearchInput
+    const input = v2QueryInput ? (
+        <LazyV2SearchInput
             telemetryService={telemetryService}
             patternType={patternType}
             interpretComments={false}
             queryState={queryState}
             onChange={setQueryState}
             onSubmit={onSubmit}
-            platformContext={platformContext}
             authenticatedUser={authenticatedUser}
-            fetchSearchContexts={fetchSearchContexts}
-            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
             isSourcegraphDotCom={isSourcegraphDotCom}
             submitSearch={submitSearchOnChange}
             selectedSearchContextSpec={selectedSearchContextSpec}
@@ -152,13 +148,11 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 setCaseSensitivity={setSearchCaseSensitivity}
                 searchMode={searchMode}
                 setSearchMode={setSearchMode}
-                settingsCascade={settingsCascade}
                 navbarSearchQuery={queryState.query}
-                showCopyQueryButton={false}
                 showSmartSearchButton={false}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
-        </LazyExperimentalSearchInput>
+        </LazyV2SearchInput>
     ) : (
         <SearchBox
             platformContext={platformContext}
@@ -169,7 +163,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             telemetryService={telemetryService}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
-            settingsCascade={settingsCascade}
             searchContextsEnabled={searchContextsEnabled}
             showSearchContext={searchContextsEnabled}
             showSearchContextManagement={true}

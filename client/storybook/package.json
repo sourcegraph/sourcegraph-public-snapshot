@@ -11,7 +11,7 @@
     "start": "TS_NODE_TRANSPILE_ONLY=true sb dev -p 9001 -c ./src",
     "start:chromatic": "CHROMATIC=true TS_NODE_TRANSPILE_ONLY=true sb dev -p 9001 -c ./src",
     "build": "TS_NODE_TRANSPILE_ONLY=true sb build -c ./src",
-    "test": "jest"
+    "test": "echo no tests"
   },
   "dependencies": {
     "@sourcegraph/wildcard": "workspace:*",

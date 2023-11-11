@@ -129,7 +129,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if bzlCmd == "" {
 			return nil, errors.Newf("no bazel command was given")
 		}
-	case runtype.PullRequest:
+	case runtype.ManuallyTriggered, runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
 		ops.Merge(CoreTestOperations(buildOptions, c.Diff, CoreTestOperationsOptions{
@@ -151,17 +151,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(baseImageOps)
 		}
 
-		// Now we set up conditional operations that only apply to pull requests.
-		if c.Diff.Has(changed.Client) {
-			// triggers a slow pipeline, currently only affects web. It's optional so we
-			// set it up separately from CoreTestOperations
-			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-				triggerAsync(buildOptions)))
-		}
-
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
 			ops.Merge(operations.NewNamedSet("Browser Extensions",
-				addBrowserExtensionUnitTests,
 				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			))
 		}
@@ -172,35 +163,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
+		ops = BazelOpsSet(buildOptions,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
-			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
 
-	case runtype.VsceReleaseBranch:
-		// If this is a vs code extension release branch, run the vscode-extension tests and release
-		ops = operations.NewSet(
-			addVsceTests,
-			wait,
-			addVsceReleaseSteps)
-
-	case runtype.BextNightly:
+	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
+		ops = BazelOpsSet(buildOptions,
 			recordBrowserExtensionIntegrationTests,
-			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
-
-	case runtype.VsceNightly:
-		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
-		ops = operations.NewSet(
-			addVsceTests,
-		)
 
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
@@ -279,10 +253,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
-		// Slow async pipeline
-		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
-			triggerAsync(buildOptions)))
-
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
@@ -430,4 +400,13 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
+}
+
+func BazelOpsSet(buildOptions bk.BuildOptions, extra ...operations.Operation) *operations.Set {
+	var isMain = buildOptions.Branch == "main"
+	ops := operations.NewSet(
+		BazelOperations(buildOptions, isMain)...,
+	)
+	ops.Append(extra...)
+	return ops
 }

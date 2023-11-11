@@ -75,41 +75,6 @@
       }
     },
     {
-      "type": "node",
-      "name": "vscode-jest-tests",
-      "request": "launch",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
-      "args": [
-        "--color",
-        "--runInBand"
-        // "path/to/test/file",
-        // "-t",
-        // "test name",
-      ],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": [
-        "**/async_hooks.js",
-        "**/inspector_async_hook.js"
-        // "**/node_modules/rxjs",
-      ],
-      "smartStep": false
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Gulp",
-      "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
-      "args": ["webpack"],
-      "env": {
-        // prettier-ignore
-        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
-      },
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
       "name": "Webapp Chrome",
       "type": "chrome",
       "request": "attach",

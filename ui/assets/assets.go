@@ -27,9 +27,9 @@ var Provider AssetsProvider = FailingAssetsProvider{}
 type FailingAssetsProvider struct{}
 
 func (p FailingAssetsProvider) LoadWebBuildManifest() (*WebBuildManifest, error) {
-	return nil, errors.New("assets are not configured for this binary, please see ui/assets")
+	return nil, errors.New("assets are not configured for this binary, please see ui/assets/doc.go")
 }
 
 func (p FailingAssetsProvider) Assets() http.FileSystem {
-	panic("assets are not configured for this binary, please see ui/assets")
+	panic("assets are not configured for this binary, please see ui/assets/doc.go")
 }

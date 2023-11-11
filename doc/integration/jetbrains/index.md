@@ -1,5 +1,5 @@
 # JetBrains plugin
 
-- See user docs at [client/jetbrains/README.md](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/jetbrains/README.md)
-- See dev docs at [client/jetbrains/CONTRIBUTING.md](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/jetbrains/CONTRIBUTING.md)
+- See user docs at [jetbrains/README.md](https://sourcegraph.com/github.com/sourcegraph/jetbrains/-/tree/README.md)
+- See dev docs at [jetbrains/CONTRIBUTING.md](https://sourcegraph.com/github.com/sourcegraph/jetbrains/-/tree/CONTRIBUTING.md)
 - [Manual test cases](manual_testing.md)

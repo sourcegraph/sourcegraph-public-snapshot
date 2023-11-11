@@ -4,13 +4,13 @@ import { sampleSize } from 'lodash'
 import type { Token } from '@sourcegraph/shared/src/search/query/token'
 
 import { getQueryInformation } from '../../codemirror/parsedQuery'
-import { queryRenderer } from '../optionRenderer'
 import {
     type Action,
     type Option,
     startCompletion,
     suggestionSources,
     selectionListener,
+    RenderAs,
 } from '../suggestionsExtension'
 
 export interface Example {
@@ -87,7 +87,7 @@ export function exampleSuggestions(config: {
                                 (example): Option => ({
                                     label: example.label,
                                     description: example.description,
-                                    render: queryRenderer,
+                                    render: RenderAs.QUERY,
                                     kind: 'example',
                                     action: {
                                         type: 'completion',

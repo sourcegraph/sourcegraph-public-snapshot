@@ -52,10 +52,6 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
-			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
-
 			// On Sourcegraph.com, we clone repos lazily, meaning whatever github.com
 			// repo is visited will be cloned eventually. So over time, we would always
 			// accumulate terabytes of repos, of which many are probably not visited
@@ -75,6 +71,11 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 					logger.Error("error freeing up space", log.Error(err))
 				}
 			}
+
+			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			// TODO: Should this return an error?
+			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+
 			return nil
 		}),
 		goroutine.WithName("gitserver.janitor"),

@@ -1,6 +1,7 @@
 import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
 import { BehaviorSubject, type Observer } from 'rxjs'
 import type { DocumentHighlight } from 'sourcegraph'
+import { describe, expect, it } from 'vitest'
 
 import { Range } from '@sourcegraph/extension-api-classes'
 

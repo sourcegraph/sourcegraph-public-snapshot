@@ -35,7 +35,7 @@ const config: Meta = {
 
 export default config
 
-export const Unstarted: Story = args => (
+export const Unstarted: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_CONNECTION_MOCKS)}>
@@ -60,7 +60,7 @@ Unstarted.args = {
     batchSpec: true,
 }
 
-export const UnstartedWithCachedConnectionResult: Story = args => (
+export const UnstartedWithCachedConnectionResult: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
@@ -87,7 +87,7 @@ UnstartedWithCachedConnectionResult.args = {
 
 UnstartedWithCachedConnectionResult.storyName = 'unstarted, with cached connection result'
 
-export const QueuedInProgress: Story = args => {
+export const QueuedInProgress: StoryFn = args => {
     const inProgressResolution = mockWorkspaceResolutionStatus(args.inProgressResolution)
 
     const inProgressConnectionMocks = new WildcardMockLink([
@@ -153,7 +153,7 @@ QueuedInProgress.args = {
 
 QueuedInProgress.storyName = 'queued/in progress'
 
-export const QueuedInProgressWithCachedConnectionResult: Story = args => {
+export const QueuedInProgressWithCachedConnectionResult: StoryFn = args => {
     const inProgressResolution = mockWorkspaceResolutionStatus(args.inProgressResolution)
 
     const inProgressConnectionMocks = new WildcardMockLink([
@@ -215,7 +215,7 @@ QueuedInProgressWithCachedConnectionResult.args = {
 
 QueuedInProgressWithCachedConnectionResult.storyName = 'queued/in progress, with cached connection result'
 
-export const FailedErrored: Story = args => {
+export const FailedErrored: StoryFn = args => {
     const failedResolution = mockWorkspaceResolutionStatus(
         args.inProgressResolution,
         "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that."
@@ -280,7 +280,7 @@ FailedErrored.args = {
 
 FailedErrored.storyName = 'failed/errored'
 
-export const FailedErroredWithCachedConnectionResult: Story = args => {
+export const FailedErroredWithCachedConnectionResult: StoryFn = args => {
     const failedResolution = mockWorkspaceResolutionStatus(
         args.inProgressResolution,
         "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that."

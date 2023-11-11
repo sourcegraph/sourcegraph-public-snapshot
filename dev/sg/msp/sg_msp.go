@@ -53,6 +53,11 @@ func init() {
 			Description: "Initialize a template Managed Services Platform service spec",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
+					Name:  "kind",
+					Usage: "Kind of service (one of: 'service', 'job')",
+					Value: "service",
+				},
+				&cli.StringFlag{
 					Name:    "output",
 					Aliases: []string{"o"},
 					Usage:   "Output directory for generated spec file",
@@ -64,54 +69,105 @@ func init() {
 				if c.Args().Len() != 1 {
 					return errors.New("exactly 1 argument required: service ID")
 				}
-				exampleSpec, err := (spec.Spec{
-					Service: spec.ServiceSpec{
-						ID: c.Args().First(),
-					},
-					Build: spec.BuildSpec{
-						Image: "index.docker.io/sourcegraph/" + c.Args().First(),
-					},
-					Environments: []spec.EnvironmentSpec{
-						{
-							ID: "dev",
-							// For dev deployment, specify category 'test'.
-							Category: pointers.Ptr(spec.EnvironmentCategoryTest),
 
-							Deploy: spec.EnvironmentDeploySpec{
-								Type: "manual",
-								Manual: &spec.EnvironmentDeployManualSpec{
-									Tag: "insiders",
+				var svc spec.Spec
+				switch c.String("kind") {
+				case "service":
+					svc = spec.Spec{
+						Service: spec.ServiceSpec{
+							ID: c.Args().First(),
+						},
+						Build: spec.BuildSpec{
+							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
+						},
+						Environments: []spec.EnvironmentSpec{
+							{
+								ID: "dev",
+								// For dev deployment, specify category 'test'.
+								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
+
+								Deploy: spec.EnvironmentDeploySpec{
+									Type: "manual",
+									Manual: &spec.EnvironmentDeployManualSpec{
+										Tag: "insiders",
+									},
 								},
-							},
-							Domain: spec.EnvironmentDomainSpec{
-								Type: "cloudflare",
-								Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
-									Subdomain: c.Args().First(),
-									Zone:      "sgdev.org",
-									Required:  false,
+								EnvironmentServiceSpec: &spec.EnvironmentServiceSpec{
+									Domain: &spec.EnvironmentServiceDomainSpec{
+										Type: "cloudflare",
+										Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
+											Subdomain: c.Args().First(),
+											Zone:      "sgdev.org",
+											Required:  false,
+										},
+									},
+									StatupProbe: &spec.EnvironmentServiceStartupProbeSpec{
+										// Disable startup probes by default, as it is
+										// prone to causing the entire initial Terraform
+										// apply to fail.
+										Disabled: pointers.Ptr(true),
+									},
 								},
-							},
-							Instances: spec.EnvironmentInstancesSpec{
-								Resources: spec.EnvironmentInstancesResourcesSpec{
-									CPU:    1,
-									Memory: "512Mi",
+								Instances: spec.EnvironmentInstancesSpec{
+									Resources: spec.EnvironmentInstancesResourcesSpec{
+										CPU:    1,
+										Memory: "512Mi",
+									},
+									Scaling: &spec.EnvironmentInstancesScalingSpec{
+										MaxCount: pointers.Ptr(1),
+									},
 								},
-								Scaling: spec.EnvironmentInstancesScalingSpec{
-									MaxCount: pointers.Ptr(1),
+								Env: map[string]string{
+									"SRC_LOG_LEVEL":  "info",
+									"SRC_LOG_FORMAT": "json_gcp",
 								},
-							},
-							StatupProbe: &spec.EnvironmentStartupProbeSpec{
-								// Disable startup probes by default, as it is
-								// prone to causing the entire initial Terraform
-								// apply to fail.
-								Disabled: pointers.Ptr(true),
-							},
-							Env: map[string]string{
-								"SRC_LOG_LEVEL": "info",
 							},
 						},
-					},
-				}).MarshalYAML()
+					}
+				case "job":
+					svc = spec.Spec{
+						Service: spec.ServiceSpec{
+							ID:   c.Args().First(),
+							Kind: pointers.Ptr(spec.ServiceKindJob),
+						},
+						Build: spec.BuildSpec{
+							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
+						},
+						Environments: []spec.EnvironmentSpec{
+							{
+								ID: "dev",
+								// For dev deployment, specify category 'test'.
+								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
+
+								Deploy: spec.EnvironmentDeploySpec{
+									Type: "manual",
+									Manual: &spec.EnvironmentDeployManualSpec{
+										Tag: "insiders",
+									},
+								},
+								EnvironmentJobSpec: &spec.EnvironmentJobSpec{
+									Schedule: &spec.EnvironmentJobScheduleSpec{
+										Cron: "0 * * * *",
+									},
+								},
+								Instances: spec.EnvironmentInstancesSpec{
+									Resources: spec.EnvironmentInstancesResourcesSpec{
+										CPU:    1,
+										Memory: "512Mi",
+									},
+								},
+								Env: map[string]string{
+									"SRC_LOG_LEVEL":  "info",
+									"SRC_LOG_FORMAT": "json_gcp",
+								},
+							},
+						},
+					}
+				default:
+					return errors.Newf("unsupported service kind: %q", c.String("kind"))
+				}
+
+				exampleSpec, err := svc.MarshalYAML()
 				if err != nil {
 					return err
 				}
@@ -124,7 +180,8 @@ func init() {
 					return err
 				}
 
-				std.Out.WriteSuccessf("Rendered template spec in %s", outputPath)
+				std.Out.WriteSuccessf("Rendered %s template spec in %s",
+					c.String("kind"), outputPath)
 				return nil
 			},
 		},
@@ -132,13 +189,25 @@ func init() {
 			Name:        "generate",
 			ArgsUsage:   "<service ID> <environment ID>",
 			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
-			Before:      msprepo.UseManagedServicesRepo,
+			UsageText: `
+# generate single env for a single service
+sg msp generate <service> <env>
+# generate all envs across all services
+sg msp generate -all
+# generate all envs for a single service
+sg msp generate -all <service>
+			`,
+			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "output",
-					Aliases: []string{"o"},
-					Usage:   "Output directory for generated Terraform assets, relative to service spec",
-					Value:   "terraform",
+				&cli.BoolFlag{
+					Name:  "all",
+					Usage: "Generate infrastructure stacks for all services, or all envs for a service if service ID is provided",
+					Value: false,
+				},
+				&cli.BoolFlag{
+					Name:  "stable",
+					Usage: "Disable updating of any values that are evaluated at generation time",
+					Value: false,
 				},
 				&cli.BoolFlag{
 					Name:  "tfc",
@@ -147,61 +216,48 @@ func init() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				if c.Args().Len() != 2 {
-					return errors.New("exactly 2 arguments required: service ID and environment ID")
+				var (
+					generateAll    = c.Bool("all")
+					stableGenerate = c.Bool("stable")
+					useTFC         = c.Bool("tfc")
+				)
+
+				if stableGenerate {
+					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
 				}
 
-				// Load specification
-				serviceSpecPath := msprepo.ServiceYAMLPath(c.Args().First())
-
-				serviceSpecData, err := os.ReadFile(serviceSpecPath)
-				if err != nil {
-					return err
-				}
-				service, err := spec.Parse(serviceSpecData)
-				if err != nil {
-					return err
-				}
-				deployEnv := service.GetEnvironment(c.Args().Get(1))
-				if deployEnv == nil {
-					return errors.Newf("environment %q not found in service spec", c.Args().Get(1))
-				}
-
-				renderer := managedservicesplatform.Renderer{
-					OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), c.String("output"), deployEnv.ID),
-					GCP:       managedservicesplatform.GCPOptions{},
-					TFC: managedservicesplatform.TerraformCloudOptions{
-						Enabled: c.Bool("tfc"),
-					},
-				}
-
-				// CDKTF needs the output dir to exist ahead of time, even for
-				// rendering. If it doesn't exist yet, create it
-				if f, err := os.Lstat(renderer.OutputDir); err != nil {
-					if !os.IsNotExist(err) {
-						return errors.Wrap(err, "check output directory")
+				// Generate specific service
+				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
+					return errors.New("first argument service ID is required without the '-all' flag")
+				} else if serviceID != "" {
+					targetEnv := c.Args().Get(1)
+					if targetEnv == "" && !generateAll {
+						return errors.New("second argument environment ID is required without the '-all' flag")
 					}
-					if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
-						return errors.Wrap(err, "prepare output directory")
-					}
-				} else if !f.IsDir() {
-					return errors.Newf("output directory %q is not a directory", renderer.OutputDir)
+
+					return generateTerraform(serviceID, generateTerraformOptions{
+						targetEnv:      targetEnv,
+						stableGenerate: stableGenerate,
+						useTFC:         useTFC,
+					})
 				}
 
-				// Render environment
-				cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, *deployEnv)
+				// Generate all services
+				serviceIDs, err := msprepo.ListServices()
 				if err != nil {
-					return err
+					return errors.Wrap(err, "list services")
 				}
-
-				pending := std.Out.Pending(output.Styledf(output.StylePending,
-					"Generating Terraform assets in %q...", renderer.OutputDir))
-				if err := cdktf.Synthesize(); err != nil {
-					pending.Destroy()
-					return err
+				if len(serviceIDs) == 0 {
+					return errors.New("no services found")
 				}
-				pending.Complete(
-					output.Styledf(output.StyleSuccess, "Terraform assets generated in %q!", renderer.OutputDir))
+				for _, serviceID := range serviceIDs {
+					if err := generateTerraform(serviceID, generateTerraformOptions{
+						stableGenerate: stableGenerate,
+						useTFC:         useTFC,
+					}); err != nil {
+						return errors.Wrap(err, serviceID)
+					}
+				}
 				return nil
 			},
 		},
@@ -277,12 +333,12 @@ func init() {
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspace(c, tfcClient, service.Service, service.Build, *env); err != nil {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspace(c, tfcClient, service.Service, service.Build, env); err != nil {
+								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
@@ -323,10 +379,11 @@ func init() {
 	}
 }
 
-func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec) error {
+func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec) error {
 	if os.TempDir() == "" {
 		return errors.New("no temp dir available")
 	}
+
 	renderer := &managedservicesplatform.Renderer{
 		// Even though we're not synthesizing we still
 		// need an output dir or CDKTF will not work
@@ -337,13 +394,18 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 	}
 	defer os.RemoveAll(renderer.OutputDir)
 
+	renderPending := std.Out.Pending(output.Styledf(output.StylePending,
+		"[%s] Rendering required Terraform Cloud workspaces for environment %q",
+		service.ID, env.ID))
 	cdktf, err := renderer.RenderEnvironment(service, build, env)
 	if err != nil {
 		return err
 	}
+	renderPending.Destroy() // We need to destroy this pending so we can prompt on deletion.
 
 	if c.Bool("delete") {
-		std.Out.Promptf("Deleting workspaces for environment %q - are you sure? (y/N) ", env.ID)
+		std.Out.Promptf("[%s] Deleting workspaces for environment %q - are you sure? (y/N) ",
+			service.ID, env.ID)
 		var input string
 		if _, err := fmt.Scan(&input); err != nil {
 			return err
@@ -352,22 +414,29 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 			return errors.New("aborting")
 		}
 
+		pending := std.Out.Pending(output.Styledf(output.StylePending,
+			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
 		if errs := tfc.DeleteWorkspaces(c.Context, service, env, cdktf.Stacks()); len(errs) > 0 {
 			for _, err := range errs {
 				std.Out.WriteWarningf(err.Error())
 			}
 			return errors.New("some errors occurred when deleting workspaces")
 		}
+		pending.Complete(output.Styledf(output.StyleSuccess,
+			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
 
-		std.Out.WriteSuccessf("Deleted Terraform Cloud workspaces for environment %q", env.ID)
-		return nil // exit early for deletion
+		return nil // exit early for deletion, we are done
 	}
 
+	pending := std.Out.Pending(output.Styledf(output.StylePending,
+		"[%s] Synchronizing Terraform Cloud workspaces for environment %q", service.ID, env.ID))
 	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
 	if err != nil {
 		return errors.Wrap(err, "sync Terraform Cloud workspace")
 	}
-	std.Out.WriteSuccessf("Prepared Terraform Cloud workspaces for environment %q", env.ID)
+	pending.Complete(output.Styledf(output.StyleSuccess,
+		"[%s] Synchronized Terraform Cloud workspaces for environment %q", service.ID, env.ID))
+
 	var summary strings.Builder
 	for _, ws := range workspaces {
 		summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name, ws.URL()))
@@ -379,5 +448,83 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 		summary.WriteString("\n")
 	}
 	std.Out.WriteMarkdown(summary.String())
+	return nil
+}
+
+type generateTerraformOptions struct {
+	// targetEnv generates the specified env only, otherwise generates all
+	targetEnv string
+	// stableGenerate disables updating of any values that are evaluated at
+	// generation time
+	stableGenerate bool
+	// useTFC enables Terraform Cloud integration
+	useTFC bool
+}
+
+func generateTerraform(serviceID string, opts generateTerraformOptions) error {
+	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+
+	serviceSpecData, err := os.ReadFile(serviceSpecPath)
+	if err != nil {
+		return err
+	}
+	service, err := spec.Parse(serviceSpecData)
+	if err != nil {
+		return err
+	}
+
+	var envs []spec.EnvironmentSpec
+	if opts.targetEnv != "" {
+		deployEnv := service.GetEnvironment(opts.targetEnv)
+		if deployEnv == nil {
+			return errors.Newf("environment %q not found in service spec", opts.targetEnv)
+		}
+		envs = append(envs, *deployEnv)
+	} else {
+		envs = service.Environments
+	}
+
+	for _, env := range envs {
+		env := env
+
+		pending := std.Out.Pending(output.Styledf(output.StylePending,
+			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
+		renderer := managedservicesplatform.Renderer{
+			OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), "terraform", env.ID),
+			GCP:       managedservicesplatform.GCPOptions{},
+			TFC: managedservicesplatform.TerraformCloudOptions{
+				Enabled: opts.useTFC,
+			},
+			StableGenerate: opts.stableGenerate,
+		}
+
+		// CDKTF needs the output dir to exist ahead of time, even for
+		// rendering. If it doesn't exist yet, create it
+		if f, err := os.Lstat(renderer.OutputDir); err != nil {
+			if !os.IsNotExist(err) {
+				return errors.Wrap(err, "check output directory")
+			}
+			if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
+				return errors.Wrap(err, "prepare output directory")
+			}
+		} else if !f.IsDir() {
+			return errors.Newf("output directory %q is not a directory", renderer.OutputDir)
+		}
+
+		// Render environment
+		cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, env)
+		if err != nil {
+			return err
+		}
+
+		pending.Updatef("[%s] Generating Terraform assets in %q for environment %q...",
+			serviceID, renderer.OutputDir, env.ID)
+		if err := cdktf.Synthesize(); err != nil {
+			return err
+		}
+		pending.Complete(output.Styledf(output.StyleSuccess,
+			"[%s] Terraform assets generated in %q!", serviceID, renderer.OutputDir))
+	}
+
 	return nil
 }

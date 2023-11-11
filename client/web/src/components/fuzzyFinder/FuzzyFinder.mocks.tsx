@@ -67,7 +67,6 @@ export const FUZZY_FILES_MOCK: MockedResponse<FileNamesResult> = {
                         'client/branded/.src/components/BrandedStory.tsx/client/branded/srcndedStory.tsx/client/branded/src/components/BrandedStory.tsx/client/branded/src/components/BrandedStory.tsx',
                         'client/branded/.stylelintrc.json',
                         'client/branded/README.md',
-                        'client/branded/babel.config.js',
                         'client/branded/jest.config.js',
                         'client/branded/package.json',
                         'client/branded/src/components/CodeSnippet.tsx',

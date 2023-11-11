@@ -1,4 +1,5 @@
 import { startCase } from 'lodash'
+import { describe } from 'vitest'
 
 import { testDOMFunctions } from '../shared/codeHostTestUtils'
 

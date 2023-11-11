@@ -1,10 +1,4 @@
-load("@aspect_rules_webpack//webpack:defs.bzl", "webpack_binary")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
-
-webpack_binary(
-    name = "webpack",
-    node_modules = "//:node_modules",
-)
 
 exports_files(srcs = ["eslint-report-test.sh"])
 
@@ -16,7 +10,6 @@ write_source_files(
         "//cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
         "//doc/admin/observability:write_monitoring_docs",
         "//doc/cli/references:write_doc_files",
-        "//doc/dev/background-information/sg:write_cli_reference_doc",
         "//doc/dev/background-information/telemetry:write_telemetrygateway_doc",
         "//internal/batches/search/syntax:write_token_type",
         "//internal/database:write_schemas",

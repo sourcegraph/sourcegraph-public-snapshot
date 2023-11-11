@@ -15,7 +15,7 @@ const config: Meta = {
 
 export default config
 
-export const DefaultStory: Story = args => {
+export const DefaultStory: StoryFn = args => {
     const count = args.count
     return (
         <WebStory>

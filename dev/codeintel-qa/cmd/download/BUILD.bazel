@@ -24,6 +24,7 @@ go_binary(
 go_cross_binary(
     name = "download-darwin-arm64",
     platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
+    tags = ["manual"],
     target = ":download",
     visibility = ["//testing:__pkg__"],
 )

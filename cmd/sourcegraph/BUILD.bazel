@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/sourcegraph",
     visibility = ["//visibility:private"],
     deps = [
+        "//client/web/dist",
         "//cmd/blobstore/shared",
         "//cmd/embeddings/shared",
         "//cmd/executor/singlebinary",
@@ -14,15 +15,14 @@ go_library(
         "//cmd/precise-code-intel-worker/shared",
         "//cmd/repo-updater/shared",
         "//cmd/searcher/shared",
-        "//cmd/sourcegraph/osscmd",
         "//cmd/symbols/shared",
         "//cmd/worker/shared",
         "//internal/sanitycheck",
         "//internal/service",
         "//internal/service/localcodehost",
         "//internal/service/servegit",
+        "//internal/service/svcmain",
         "//ui/assets",
-        "//ui/assets/enterprise",
     ],
 )
 

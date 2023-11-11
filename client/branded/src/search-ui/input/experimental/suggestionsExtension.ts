@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { snippet } from '@codemirror/autocomplete'
 import {
     EditorSelection,
@@ -19,14 +17,15 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
-import { createRoot, type Root } from 'react-dom/client'
-
-import { compatNavigate, type HistoryOrNavigate } from '@sourcegraph/common'
 
 import { getSelectedMode, modeChanged, setModeEffect } from './modes'
-import { Suggestions } from './Suggestions'
 
 const ASYNC_THROTTLE_TIME = 300
+
+export enum RenderAs {
+    FILTER,
+    QUERY,
+}
 
 /**
  * A source for completion/suggestion results
@@ -51,8 +50,6 @@ export interface SuggestionResult {
     valid?: (state: EditorState, position: number) => boolean
 }
 
-export type CustomRenderer<T> = ((value: T) => React.ReactElement) | string
-
 export interface Option {
     /**
      * The label the input is matched against and shown in the UI.
@@ -76,14 +73,9 @@ export interface Option {
      */
     icon?: string
     /**
-     * If present the provided component will be used to render the label of the
-     * option.
+     * If present tells the UI which renderer to use.
      */
-    render?: CustomRenderer<Option>
-    /**
-     * If present this component is rendered as footer.
-     */
-    info?: CustomRenderer<Option>
+    render?: RenderAs
     /**
      * A set of character indexes. If provided the characters of at these
      * positions in the label will be highlighted as matches.
@@ -101,18 +93,18 @@ export interface CommandAction {
     apply: (option: Option, view: EditorView) => void
     name?: string
     /**
-     * If present this component is rendered as part of the footer.
+     * If present this string is rendered as part of the footer.
      */
-    info?: CustomRenderer<Action>
+    info?: string
 }
 export interface GoToAction {
     type: 'goto'
     url: string
     name?: string
     /**
-     * If present this component is rendered as part of the footer.
+     * If present this string is rendered as part of the footer.
      */
-    info?: CustomRenderer<Action>
+    info?: string
 }
 export interface CompletionAction {
     type: 'completion'
@@ -120,82 +112,17 @@ export interface CompletionAction {
     name?: string
     to?: number
     insertValue?: string
-    /**
-     * If present this component is rendered as part of the footer.
-     */
-    info?: CustomRenderer<Action>
     asSnippet?: boolean
+    /**
+     * If present this string is rendered as part of the footer.
+     */
+    info?: string
 }
 export type Action = CommandAction | GoToAction | CompletionAction
 
 export interface Group {
     title: string
     options: Option[]
-}
-
-class SuggestionView {
-    private container: HTMLDivElement
-    private root: Root
-
-    private onSelect = (option: Option, action?: Action): void => {
-        applyAction(this.view, action ?? option.action, option, 'mouse')
-        // Query input looses focus when option is selected via
-        // mousedown/click. This is a necessary hack to re-focus the query
-        // input.
-        window.requestAnimationFrame(() => this.view.contentDOM.focus())
-    }
-
-    constructor(private readonly id: string, public readonly view: EditorView, public parent: HTMLDivElement) {
-        const state = view.state.field(suggestionsStateField)
-        this.container = document.createElement('div')
-        this.root = createRoot(this.container)
-        parent.append(this.container)
-
-        // We need to delay the initial render otherwise React complains that
-        // wer are rendering a component while already rendering another one
-        // (the query input component)
-        setTimeout(() => {
-            this.root.render(
-                React.createElement(Suggestions, {
-                    id,
-                    results: state.result.groups,
-                    activeRowIndex: state.selectedOption,
-                    open: state.open,
-                    onSelect: this.onSelect,
-                })
-            )
-        }, 0)
-    }
-
-    public update(update: ViewUpdate): void {
-        const state = update.state.field(suggestionsStateField)
-
-        if (state !== update.startState.field(suggestionsStateField)) {
-            this.updateResults(state)
-        }
-    }
-
-    private updateResults(state: SuggestionsState): void {
-        this.root.render(
-            React.createElement(Suggestions, {
-                id: this.id,
-                results: state.result.groups,
-                activeRowIndex: state.selectedOption,
-                open: state.open,
-                onSelect: this.onSelect,
-            })
-        )
-    }
-
-    public destroy(): void {
-        this.container.remove()
-
-        // We need to delay unmounting the root otherwise React complains about
-        // synchronsouly unmounting multiple components.
-        setTimeout(() => {
-            this.root.unmount()
-        }, 0)
-    }
 }
 
 /**
@@ -494,7 +421,7 @@ function isUserInput(transaction: Transaction): boolean {
 
 interface Config {
     id: string
-    historyOrNavigate?: HistoryOrNavigate
+    navigate?: (destination: string) => void
 }
 
 const suggestionsConfig = Facet.define<Config, Config>({
@@ -548,9 +475,9 @@ function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
     }
 }
 
-function applyAction(view: EditorView, action: Action, option: Option, source: SelectionSource): void {
+export function applyAction(view: EditorView, action: Action, option: Option, source: SelectionSource): void {
     switch (action.type) {
-        case 'completion':
+        case 'completion': {
             {
                 const to = action.to ?? view.state.selection.main.to
                 const value = action.insertValue ?? option.label
@@ -582,20 +509,23 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                 notifySelectionListeners(view.state, option, action, source)
             }
             break
-        case 'command':
+        }
+        case 'command': {
             notifySelectionListeners(view.state, option, action, source)
             action.apply(option, view)
             break
-        case 'goto':
+        }
+        case 'goto': {
             {
-                const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
-                if (historyOrNavigate) {
+                const navigate = view.state.facet(suggestionsConfig).navigate
+                if (navigate) {
                     notifySelectionListeners(view.state, option, action, source)
-                    compatNavigate(historyOrNavigate, action.url)
+                    navigate(action.url)
                     view.contentDOM.blur()
                 }
             }
             break
+        }
     }
 }
 
@@ -647,7 +577,7 @@ const defaultKeyboardBindings: KeyBinding[] = [
         run(view) {
             const state = view.state.field(suggestionsStateField)
             const option = state.result.at(state.selectedOption)
-            if (state.open && option && option.alternativeAction) {
+            if (state.open && option?.alternativeAction) {
                 applyAction(view, option.alternativeAction, option, 'keyboard')
             }
             return true
@@ -687,14 +617,12 @@ export const selectionListener =
     Facet.define<(params: { option: Option; action: Action; source: SelectionSource }) => void>()
 
 interface ExternalConfig extends Config {
-    parent: HTMLDivElement
     source: Source
 }
 
-export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalConfig): Extension => [
-    suggestionsConfig.of({ historyOrNavigate, id }),
+export const suggestions = ({ id, source, navigate }: ExternalConfig): Extension => [
+    suggestionsConfig.of({ navigate, id }),
     suggestionSources.of(source),
-    ViewPlugin.define(view => new SuggestionView(id, view, parent)),
 ]
 
 /**
@@ -702,4 +630,11 @@ export const suggestions = ({ id, parent, source, historyOrNavigate }: ExternalC
  */
 export function startCompletion(view: EditorView): void {
     view.dispatch({ effects: startCompletionEffect.of() })
+}
+
+/**
+ * Returns the current completion state.
+ */
+export function getSuggestionsState(state: EditorState): SuggestionsState {
+    return state.field(suggestionsStateField)
 }

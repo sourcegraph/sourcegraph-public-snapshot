@@ -300,7 +300,7 @@ func tarArchive(dir string) (*tar.Reader, error) {
 func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
-		GitserverClient: gitserver.NewClient(),
+		GitserverClient: gitserver.NewTestClient(t),
 		Path:            d,
 		Log:             logtest.Scoped(t),
 

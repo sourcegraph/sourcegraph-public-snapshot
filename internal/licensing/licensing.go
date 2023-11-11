@@ -1,6 +1,7 @@
 package licensing
 
 import (
+	"bytes"
 	"log"
 	"sync"
 	"time"
@@ -19,6 +20,9 @@ type Info struct {
 	license.Info
 }
 
+// publicKeyData is the public key used to verify Sourcegraph license keys
+const publicKeyData = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUUd9r83fGmYVLzcqQp5InyAoJB5lLxlM7s41SUUtxfnG6JpmvjNd+WuEptJGk0C/Zpyp/cCjCV4DljDs8Z7xjRbvJYW+vklFFxXrMTBs/+HjpIBKlYTmG8SqTyXyu1s4485Kh1fEC5SK6z2IbFaHuSHUXgDi/IepSOg1QudW4n8J91gPtT2E30/bPCBRq8oz/RVwJSDMvYYjYVb//LhV0Mx3O6hg4xzUNuwiCtNjCJ9t4YU2sV87+eJwWtQNbSQ8TelQa8WjG++XSnXUHw12bPDe7wGL/7/EJb7knggKSAMnpYpCyV35dyi4DsVc46c+b6P0gbVSosh3Uc3BJHSWF`
+
 // publicKey is the public key used to verify product license keys.
 var publicKey = func() ssh.PublicKey {
 	// If a key is set from SOURCEGRAPH_LICENSE_GENERATION_KEY, use that key to verify licenses instead.
@@ -32,7 +36,6 @@ var publicKey = func() ssh.PublicKey {
 	//
 	// To convert PKCS#8 format (which `openssl rsa -in key.pem -pubout` produces) to the format
 	// that ssh.ParseAuthorizedKey reads here, use `ssh-keygen -i -mPKCS8 -f key.pub`.
-	const publicKeyData = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUUd9r83fGmYVLzcqQp5InyAoJB5lLxlM7s41SUUtxfnG6JpmvjNd+WuEptJGk0C/Zpyp/cCjCV4DljDs8Z7xjRbvJYW+vklFFxXrMTBs/+HjpIBKlYTmG8SqTyXyu1s4485Kh1fEC5SK6z2IbFaHuSHUXgDi/IepSOg1QudW4n8J91gPtT2E30/bPCBRq8oz/RVwJSDMvYYjYVb//LhV0Mx3O6hg4xzUNuwiCtNjCJ9t4YU2sV87+eJwWtQNbSQ8TelQa8WjG++XSnXUHw12bPDe7wGL/7/EJb7knggKSAMnpYpCyV35dyi4DsVc46c+b6P0gbVSosh3Uc3BJHSWF`
 	var err error
 	publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKeyData))
 	if err != nil {
@@ -40,6 +43,11 @@ var publicKey = func() ssh.PublicKey {
 	}
 	return publicKey
 }()
+
+// IsLicensePublicKeyOverridden checks if the hardcoded license public key has been overridden with a *different* key
+func IsLicensePublicKeyOverridden() bool {
+	return publicKeyData != string(bytes.TrimSpace(ssh.MarshalAuthorizedKey(publicKey)))
+}
 
 // toInfo converts from the return type of license.ParseSignedKey to the return type of this
 // package's methods (which use the Info wrapper type).

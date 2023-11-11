@@ -36,13 +36,13 @@ import type {
     DiffSinceResult,
     DiffSinceVariables,
     GitCommitFields,
-    RepositoryContributorNodeFields,
     Scalars,
     TreeCommitsResult,
     TreeCommitsVariables,
     TreePageOwnershipNodeFields,
     TreePageOwnershipResult,
     TreePageOwnershipVariables,
+    TreePageRepositoryContributorNodeFields,
     TreePageRepositoryContributorsResult,
     TreePageRepositoryContributorsVariables,
     TreePageRepositoryFields,
@@ -228,7 +228,8 @@ const ExtraInfoSection: React.FC<{
                         tooltip={
                             <>
                                 Repository metadata allows you to search, filter and navigate between repositories.
-                                Administrators can add repository metadata via the web, cli or API. Learn more about{' '}
+                                Users with the Repository metadata write role can add repository metadata via the web,
+                                cli or API. Learn more about{' '}
                                 <Link to="/help/admin/repo/metadata" className={styles.linkDark}>
                                     Repository Metadata
                                 </Link>
@@ -402,17 +403,6 @@ const CONTRIBUTORS_QUERY = gql`
             }
         }
         count
-        commits(first: 1) {
-            nodes {
-                oid
-                abbreviatedOID
-                url
-                subject
-                author {
-                    date
-                }
-            }
-        }
     }
 `
 
@@ -664,7 +654,7 @@ interface QuerySpec {
 }
 
 interface RepositoryContributorNodeProps extends QuerySpec {
-    node: RepositoryContributorNodeFields
+    node: TreePageRepositoryContributorNodeFields
     repoName: string
     sourceType: string
 }

@@ -13,9 +13,9 @@ import { Form } from '@sourcegraph/wildcard'
 import type { AuthenticatedUser } from '../../auth'
 import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { type NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
-import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
+import { useV2QueryInput } from '../useV2QueryInput'
 
-import { LazyExperimentalSearchInput } from './LazyExperimentalSearchInput'
+import { LazyV2SearchInput } from './LazyV2SearchInput'
 import { useRecentSearches } from './useRecentSearches'
 
 interface Props
@@ -51,7 +51,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
-    const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [v2QueryInput] = useV2QueryInput()
 
     const { recentSearches } = useRecentSearches()
 
@@ -78,13 +78,13 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     }, [])
 
     // TODO (#48103): Remove/simplify when new search input is released
-    if (experimentalQueryInput) {
+    if (v2QueryInput) {
         return (
             <Form
                 className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
                 onSubmit={onSubmit}
             >
-                <LazyExperimentalSearchInput
+                <LazyV2SearchInput
                     visualMode="compact"
                     telemetryService={props.telemetryService}
                     patternType={searchPatternType}
@@ -92,10 +92,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     queryState={queryState}
                     onChange={setQueryState}
                     onSubmit={onSubmit}
-                    platformContext={props.platformContext}
                     authenticatedUser={props.authenticatedUser}
-                    fetchSearchContexts={props.fetchSearchContexts}
-                    getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     submitSearch={submitSearchOnChange}
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
@@ -108,12 +105,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         setCaseSensitivity={setSearchCaseSensitivity}
                         searchMode={searchMode}
                         setSearchMode={setSearchMode}
-                        settingsCascade={props.settingsCascade}
                         navbarSearchQuery={queryState.query}
                         submitSearch={submitSearchOnChange}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                     />
-                </LazyExperimentalSearchInput>
+                </LazyV2SearchInput>
             </Form>
         )
     }

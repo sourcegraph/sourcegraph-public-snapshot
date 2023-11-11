@@ -73,7 +73,11 @@ export const UsernameInput: React.FunctionComponent<React.PropsWithChildren<Comm
 export function getReturnTo(location: H.Location, defaultReturnTo: string = PageRoutes.Search): string {
     const searchParameters = new URLSearchParams(location.search)
     const returnTo = searchParameters.get('returnTo') || defaultReturnTo
-    const newURL = new URL(returnTo, window.location.href)
 
-    return newURL.pathname + newURL.search + newURL.hash
+    // 🚨 SECURITY: check newURL scheme http or https or relative
+    if (returnTo.startsWith('http:') || returnTo.startsWith('https:') || returnTo.startsWith('/')) {
+        const newURL = new URL(returnTo, window.location.href)
+        return newURL.pathname + newURL.search + newURL.hash
+    }
+    return defaultReturnTo
 }

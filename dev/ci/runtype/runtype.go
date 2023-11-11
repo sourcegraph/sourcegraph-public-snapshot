@@ -18,19 +18,18 @@ const (
 
 	// Nightly builds - must be first because they take precedence
 
-	ReleaseNightly   // release branch nightly healthcheck builds
-	BextNightly      // browser extension nightly build
-	VsceNightly      // vs code extension nightly build
-	AppRelease       // app release build
-	AppInsiders      // app insiders build
-	WolfiBaseRebuild // wolfi base image build
+	ReleaseNightly    // release branch nightly healthcheck builds
+	BextNightly       // browser extension nightly build
+	BextManualNightly // browser extension nightly build, triggered with a branch pattern
+	AppRelease        // app release build
+	AppInsiders       // app insiders build
+	WolfiBaseRebuild  // wolfi base image build
 
 	// Release branches
 
 	TaggedRelease     // semver-tagged release
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
-	VsceReleaseBranch // vs code extension release build
 
 	// Main branches
 
@@ -98,16 +97,9 @@ func (t RunType) Matcher() *RunTypeMatcher {
 				"BEXT_NIGHTLY": "true",
 			},
 		}
-	case VsceNightly:
+	case BextManualNightly:
 		return &RunTypeMatcher{
-			EnvIncludes: map[string]string{
-				"VSCE_NIGHTLY": "true",
-			},
-		}
-	case VsceReleaseBranch:
-		return &RunTypeMatcher{
-			Branch:      "vsce/release",
-			BranchExact: true,
+			Branch: "bext-nightly/",
 		}
 	case WolfiBaseRebuild:
 		return &RunTypeMatcher{
@@ -197,8 +189,8 @@ func (t RunType) String() string {
 		return "Release branch nightly healthcheck build"
 	case BextNightly:
 		return "Browser extension nightly release build"
-	case VsceNightly:
-		return "VS Code extension nightly release build"
+	case BextManualNightly:
+		return "Manually triggered browser extension nightly release build"
 	case WolfiBaseRebuild:
 		return "Wolfi base images rebuild"
 	case AppRelease:
@@ -211,8 +203,6 @@ func (t RunType) String() string {
 		return "Release branch"
 	case BextReleaseBranch:
 		return "Browser extension release build"
-	case VsceReleaseBranch:
-		return "VS Code extension release build"
 	case MainBranch:
 		return "Main branch"
 	case MainDryRun:

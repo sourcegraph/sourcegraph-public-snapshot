@@ -17,23 +17,28 @@ import { parseBrowserRepoURL } from '../../util/url'
 export function serializeBlockToMarkdown(block: SerializableBlock, sourcegraphURL: string): Observable<string> {
     const serializedInput = serializeBlockInput(block, sourcegraphURL)
     switch (block.type) {
-        case 'md':
+        case 'md': {
             return serializedInput.pipe(map(input => input.trimEnd()))
-        case 'query':
+        }
+        case 'query': {
             return serializedInput.pipe(map(input => `\`\`\`sourcegraph\n${input}\n\`\`\``))
+        }
         case 'file':
-        case 'symbol':
+        case 'symbol': {
             return serializedInput
+        }
     }
 }
 
 export function serializeBlockInput(block: SerializableBlock, sourcegraphURL: string): Observable<string> {
     switch (block.type) {
-        case 'md':
+        case 'md': {
             return of(block.input.text)
-        case 'query':
+        }
+        case 'query': {
             return of(block.input.query)
-        case 'file':
+        }
+        case 'file': {
             return of(
                 toAbsoluteBlobURL(sourcegraphURL, {
                     repoName: block.input.repositoryName,
@@ -47,6 +52,7 @@ export function serializeBlockInput(block: SerializableBlock, sourcegraphURL: st
                         : undefined,
                 })
             )
+        }
         case 'symbol': {
             if (!block.output) {
                 return of('')
@@ -123,12 +129,15 @@ function parseSymbolBlockInput(input: string): SymbolBlockInput {
 
 export function deserializeBlockInput(type: Block['type'], input: string): BlockInput {
     switch (type) {
-        case 'md':
+        case 'md': {
             return { type, input: { text: input } }
-        case 'query':
+        }
+        case 'query': {
             return { type, input: { query: input } }
-        case 'file':
+        }
+        case 'file': {
             return { type, input: parseFileBlockInput(input) }
+        }
         case 'symbol': {
             return { type, input: parseSymbolBlockInput(input) }
         }
@@ -163,38 +172,46 @@ export function parseLineRange(value: string): HighlightLineRange | null {
 
 export function blockToGQLInput(block: BlockInit): CreateNotebookBlockInput {
     switch (block.type) {
-        case 'md':
+        case 'md': {
             return { id: block.id, type: NotebookBlockType.MARKDOWN, markdownInput: block.input.text }
-        case 'query':
+        }
+        case 'query': {
             return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.input.query }
-        case 'file':
+        }
+        case 'file': {
             return { id: block.id, type: NotebookBlockType.FILE, fileInput: block.input }
-        case 'symbol':
+        }
+        case 'symbol': {
             return { id: block.id, type: NotebookBlockType.SYMBOL, symbolInput: block.input }
+        }
     }
 }
 
 export function GQLBlockToGQLInput(block: NotebookFields['blocks'][number]): CreateNotebookBlockInput {
     switch (block.__typename) {
-        case 'MarkdownBlock':
+        case 'MarkdownBlock': {
             return { id: block.id, type: NotebookBlockType.MARKDOWN, markdownInput: block.markdownInput }
-        case 'QueryBlock':
+        }
+        case 'QueryBlock': {
             return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.queryInput }
-        case 'FileBlock':
+        }
+        case 'FileBlock': {
             return {
                 id: block.id,
                 type: NotebookBlockType.FILE,
                 fileInput: block.fileInput,
             }
-        case 'SymbolBlock':
+        }
+        case 'SymbolBlock': {
             return {
                 id: block.id,
                 type: NotebookBlockType.SYMBOL,
                 symbolInput: block.symbolInput,
             }
+        }
     }
 }
 
 export function convertNotebookTitleToFileName(title: string): string {
-    return title.replace(/[^\da-z]/gi, '_').replace(/_+/g, '_')
+    return title.replaceAll(/[^\da-z]/gi, '_').replaceAll(/_+/g, '_')
 }

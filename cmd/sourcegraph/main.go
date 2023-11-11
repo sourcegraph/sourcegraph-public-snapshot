@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/localcodehost"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
+	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 
 	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
 	embeddings_shared "github.com/sourcegraph/sourcegraph/cmd/embeddings/shared"
@@ -20,8 +20,8 @@ import (
 	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 
+	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 	"github.com/sourcegraph/sourcegraph/ui/assets"
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
 // services is a list of services to run.
@@ -45,5 +45,5 @@ func main() {
 	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
-	osscmd.MainOSS(services, os.Args)
+	svcmain.Main(services, os.Args)
 }

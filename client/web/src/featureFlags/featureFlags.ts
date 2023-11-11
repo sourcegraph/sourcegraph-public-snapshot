@@ -18,7 +18,6 @@ export const FEATURE_FLAGS = [
     'accessible-symbol-tree',
     'accessible-file-tree-always-load-ancestors',
     'enable-ownership-panels',
-    'search-ranking',
     'blob-page-switch-areas-shortcuts',
     'clone-progress-logging',
     'sourcegraph-operator-site-admin-hide-maintenance',
@@ -30,6 +29,9 @@ export const FEATURE_FLAGS = [
     'end-user-onboarding',
     'admin-onboarding',
     'enable-sveltekit',
+    'search-content-based-lang-detection',
+    'search-new-keyword',
+    'search-debug',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

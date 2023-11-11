@@ -478,6 +478,8 @@ type BranchChangesetSpec struct {
 	Body string `json:"body"`
 	// Commits description: The Git commits with the proposed changes. These commits are pushed to the head ref.
 	Commits []*GitCommitDescription `json:"commits"`
+	// Fork description: Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global `batches.enforceFork` setting is enabled. If set, this property will override any global setting.
+	Fork bool `json:"fork,omitempty"`
 	// HeadRef description: The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.
 	HeadRef string `json:"headRef"`
 	// HeadRepository description: The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.
@@ -1235,6 +1237,8 @@ type GitLabAuthProvider struct {
 	Order         int     `json:"order,omitempty"`
 	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
 	SsoURL string `json:"ssoURL,omitempty"`
+	// SyncInternalRepoPermissions description: Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.
+	SyncInternalRepoPermissions *bool `json:"syncInternalRepoPermissions,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`
@@ -1268,6 +1272,8 @@ type GitLabConnection struct {
 	GitURLType string `json:"gitURLType,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitLab repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
+	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public, and user permission syncs will no longer check for public repositories. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
+	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
 	// NameTransformations description: An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after "repositoryPathPattern" is processed.
 	NameTransformations []*GitLabNameTransformation `json:"nameTransformations,omitempty"`
 	// ProjectQuery description: An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL path and query that targets a GitLab API endpoint returning a list of projects. If the string only contains a query, then "projects" is used as the path. Examples: "?membership=true&search=foo", "groups/mygroup/projects".
@@ -2374,6 +2380,8 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
+	// NewSearchNavigationUI description: Enables new experimental search UI navigation
+	NewSearchNavigationUI *bool `json:"newSearchNavigationUI,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
@@ -2438,6 +2446,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderRepositories")
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
+	delete(m, "newSearchNavigationUI")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
 	delete(m, "searchQueryInput")

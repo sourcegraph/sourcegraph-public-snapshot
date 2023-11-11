@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { parseGitURI } from './uri'
 
 describe('parseGitURI', () => {

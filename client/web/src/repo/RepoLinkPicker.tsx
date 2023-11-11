@@ -1,4 +1,4 @@
-import { FC, useRef, useState } from 'react'
+import { type FC, useRef, useState } from 'react'
 
 import {
     mdiAws,
@@ -32,11 +32,10 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import {
-    ExternalServiceKind,
-    RepositoriesSuggestionsResult,
-    RepositoriesSuggestionsVariables,
-} from '../graphql-operations'
+import { type RepositoriesSuggestionsResult, type RepositoriesSuggestionsVariables } from '../graphql-operations'
+
+import { CodeHostType } from './constants'
+import { getInitialSearchTerm, stringToCodeHostType } from './utils'
 
 import styles from './RepoLinkPicker.module.scss'
 
@@ -47,11 +46,11 @@ const REPOSITORIES_QUERY = gql`
                 id
                 name
                 url
-                externalServices(first: 1) {
-                    nodes {
-                        id
-                        kind
-                    }
+                # We use externalRepository over externalServices here
+                # because externalServices is accessible only to admins.
+                externalRepository {
+                    id
+                    serviceType
                 }
             }
             pageInfo {
@@ -75,8 +74,14 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
 
     const rootRef = useRef<HTMLDivElement>(null)
     const [isSuggestionOpen, setSuggestionOpen] = useState<boolean>(false)
-    const [searchTerm, setSearchTerm] = useState<string>('')
-    const debouncedSearchTerm = useDebounce(searchTerm, 500)
+    const [searchTerm, setSearchTerm] = useState<string>(getInitialSearchTerm(repositoryName))
+
+    // Still narrow down the repository picker search to prevent timeout
+    // on instance with big number of repositories.
+    const debouncedSearchTerm = useDebounce(
+        searchTerm.length === 0 ? getInitialSearchTerm(repositoryName) : searchTerm,
+        500
+    )
 
     const {
         data: currentData,
@@ -86,12 +91,13 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
     } = useQuery<RepositoriesSuggestionsResult, RepositoriesSuggestionsVariables>(REPOSITORIES_QUERY, {
         skip: !isSuggestionOpen,
         variables: { query: debouncedSearchTerm },
-        fetchPolicy: 'cache-and-network',
+        fetchPolicy: 'cache-first',
     })
 
     const handleSelect = (selectedValue: string): void => {
-        navigate(`/${selectedValue}`)
+        setSearchTerm(selectedValue)
         setSuggestionOpen(false)
+        navigate(`/${selectedValue}`)
     }
 
     const data = currentData ?? previousData
@@ -146,7 +152,9 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
                                         className={styles.item}
                                     >
                                         <Icon
-                                            svgPath={getCodeHostIconPath(suggestion.externalServices.nodes[0]?.kind)}
+                                            svgPath={getCodeHostIconPath(
+                                                stringToCodeHostType(suggestion.externalRepository.serviceType)
+                                            )}
                                             height="1rem"
                                             width="1rem"
                                             inline={false}
@@ -165,23 +173,31 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
     )
 }
 
-export const getCodeHostIconPath = (codeHostType?: ExternalServiceKind): string => {
-    switch (codeHostType) {
-        case ExternalServiceKind.GITHUB:
+export const getCodeHostIconPath = (codehost: CodeHostType): string => {
+    switch (codehost) {
+        case CodeHostType.GITHUB: {
             return mdiGithub
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case CodeHostType.BITBUCKETCLOUD: {
             return mdiBitbucket
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case CodeHostType.BITBUCKETSERVER: {
             return mdiBitbucket
-        case ExternalServiceKind.GITLAB:
+        }
+        case CodeHostType.GITLAB: {
             return mdiGitlab
-        case ExternalServiceKind.GITOLITE:
+        }
+        case CodeHostType.GITOLITE: {
             return mdiGit
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case CodeHostType.AWSCODECOMMIT: {
             return mdiAws
-        case ExternalServiceKind.AZUREDEVOPS:
+        }
+        case CodeHostType.AZUREDEVOPS: {
             return mdiMicrosoftAzure
-        default:
+        }
+        default: {
             return mdiSourceRepository
+        }
     }
 }

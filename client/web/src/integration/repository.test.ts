@@ -2,6 +2,7 @@ import assert from 'assert'
 import * as path from 'path'
 
 import { subDays } from 'date-fns'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { RepositoryType, type SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
@@ -565,11 +566,13 @@ describe('Repository', () => {
                 "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
             )
 
-            const blobContent = await driver.page.evaluate(
-                () => document.querySelector('[data-testid="repo-blob"] .cm-content')?.textContent
+            const blobContent = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('[data-testid="repo-blob"] .cm-line')]
+                    .map(line => line.textContent)
+                    .join('\n')
             )
             // CodeMirror blob content has no newline characters
-            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replace(/\n/g, '')
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`
             assert.strictEqual(blobContent, expectedBlobContent)
         })
 

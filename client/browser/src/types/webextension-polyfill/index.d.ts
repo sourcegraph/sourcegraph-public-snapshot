@@ -430,10 +430,6 @@ declare namespace browser.contentScripts {
 declare namespace browser.devtools.inspectedWindow {
     const tabId: number
 
-    function eval(
-        expression: string
-    ): Promise<[any, { isException: boolean; value: string } | { isError: boolean; code: string }]>
-
     function reload(reloadOptions?: { ignoreCache?: boolean; userAgent?: string; injectedScript?: string }): void
 }
 

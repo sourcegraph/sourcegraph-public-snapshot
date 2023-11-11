@@ -39,7 +39,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
     const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
 
     // Redirect tree and blob routes pointing to the root to the repo page
-    if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
+    if (maybeObjectType && filePath.replaceAll(/\/+$/g, '') === '') {
         return <Navigate to={toRepoURL({ repoName, revision: context.revision })} replace={true} />
     }
 

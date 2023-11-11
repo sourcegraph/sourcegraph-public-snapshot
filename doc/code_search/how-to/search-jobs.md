@@ -14,7 +14,7 @@ To enable Search Jobs, you need to configure a managed object storage service to
 
 ## Storing search results
 
-To target a managed object storage service, you must set a handful of environment variables for configuration and authentication to the target service. 
+By default, search jobs stores results using the `blobstore` service. To target a managed object storage service, you must set a handful of environment variables for configuration and authentication to the target service.
 
 - If you are running a `sourcegraph/server` deployment, set the environment variables on the server container
 - If you are running via Docker-compose or Kubernetes, set the environment variables on the `frontend` and `worker` containers

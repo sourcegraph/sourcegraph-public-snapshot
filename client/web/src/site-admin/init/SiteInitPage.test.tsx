@@ -1,3 +1,5 @@
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteInitPage } from './SiteInitPage'

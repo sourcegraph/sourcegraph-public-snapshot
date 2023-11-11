@@ -330,7 +330,7 @@ pub mod test {
     #[test]
     fn test_enclosing_range() -> Result<()> {
         let config =
-            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
+            crate::languages::get_tag_configuration(BundledParser::Go).expect("to have parser");
         let source_code = include_str!("../testdata/scopes_of_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 

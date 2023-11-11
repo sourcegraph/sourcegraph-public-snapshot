@@ -43,7 +43,7 @@ export const JSONRequest: StoryFn = () => (
 
 JSONRequest.storyName = 'JSON request'
 
-export const JSONResponse: Story = args => (
+export const JSONResponse: StoryFn = args => (
     <WebStory>
         {() => (
             <MessagePanel
@@ -87,7 +87,7 @@ export const PlainRequest: StoryFn = () => (
 
 PlainRequest.storyName = 'plain request'
 
-export const PlainResponse: Story = args => (
+export const PlainResponse: StoryFn = args => (
     <WebStory>
         {() => (
             <MessagePanel

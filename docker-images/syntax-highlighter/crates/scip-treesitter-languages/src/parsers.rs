@@ -1,6 +1,6 @@
 use tree_sitter::Language;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BundledParser {
     C,
     Cpp,
@@ -29,7 +29,7 @@ pub enum BundledParser {
 }
 
 impl BundledParser {
-    pub fn get_language(&self) -> Language {
+    pub fn get_language(self) -> Language {
         match self {
             BundledParser::C => tree_sitter_c::language(),
             BundledParser::Cpp => tree_sitter_cpp::language(),

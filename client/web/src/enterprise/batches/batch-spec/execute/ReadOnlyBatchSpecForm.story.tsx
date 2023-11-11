@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-export const Executing: Story = args => (
+export const Executing: StoryFn = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -45,7 +45,7 @@ Executing.args = {
 
 Executing.storyName = 'while executing'
 
-export const ExecutionFinished: Story = args => (
+export const ExecutionFinished: StoryFn = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider

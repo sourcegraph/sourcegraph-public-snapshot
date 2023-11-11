@@ -141,7 +141,8 @@ export function canRunStep(step: TourTaskStepType, userInfo: UserOnboardingConfi
                 ([placeholder, value]) => !containsPlaceholder(action.query, placeholder) || !!value
             )
         }
-        default:
+        default: {
             return true
+        }
     }
 }

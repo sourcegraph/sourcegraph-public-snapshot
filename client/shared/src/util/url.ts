@@ -174,7 +174,6 @@ const parsePosition = (string: string): Position => {
  * These URIs were used when communicating with language servers over LSP and with extensions. They are being
  * phased out in favor of URLs to resources in the Sourcegraph raw API, which do not require out-of-band
  * information to fetch the contents of.
- *
  * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
@@ -253,7 +252,6 @@ export interface AbsoluteRepoFilePosition
 
 /**
  * Tells if the given fragment component is a legacy blob hash component or not.
- *
  * @param hash The URL fragment.
  */
 export function isLegacyFragment(hash: string): boolean {
@@ -274,7 +272,6 @@ export function isLegacyFragment(hash: string): boolean {
 /**
  * Parses the URL search (query) portion and looks for a parameter which matches a line, position, or range in the file. If not found, it
  * falls back to parsing the hash for backwards compatibility.
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseQueryAndHash<V extends string>(
@@ -294,7 +291,6 @@ export function parseQueryAndHash<V extends string>(
  * optional "viewState" parameter (that encodes other view state, such as for the panel).
  *
  * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
@@ -356,11 +352,11 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
         }
     }
     let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
-    if (typeof line === 'undefined' || (typeof endLine !== 'undefined' && typeof character !== typeof endCharacter)) {
+    if (line === undefined || (endLine !== undefined && typeof character !== typeof endCharacter)) {
         lpr = {}
-    } else if (typeof character === 'undefined') {
-        lpr = typeof endLine === 'undefined' ? { line } : { line, endLine }
-    } else if (typeof endLine === 'undefined' || typeof endCharacter === 'undefined') {
+    } else if (character === undefined) {
+        lpr = endLine === undefined ? { line } : { line, endLine }
+    } else if (endLine === undefined || endCharacter === undefined) {
         lpr = { line, character }
     } else {
         lpr = { line, character, endLine, endCharacter }
@@ -381,7 +377,6 @@ function addRenderModeQueryParameter(
 /**
  * Finds the URL search parameter which has a key like "L1-2:3" without any
  * value.
- *
  * @param searchParameters The URLSearchParams to look for the line in.
  */
 function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPositionOrRange | undefined {
@@ -406,7 +401,7 @@ function parseLineOrPosition(
     }
     line = typeof line === 'number' && isNaN(line) ? undefined : line
     character = typeof character === 'number' && isNaN(character) ? undefined : character
-    if (typeof line === 'undefined') {
+    if (line === undefined) {
         return { line: undefined, character: undefined }
     }
     return { line, character }
@@ -510,11 +505,9 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
- *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
- *
  */
 export function buildSearchURLQuery(
     query: string,
@@ -556,7 +549,7 @@ export function buildSearchURLQuery(
 
     searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
-    return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
+    return searchParameters.toString().replaceAll('%2F', '/').replaceAll('%3A', ':')
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 
+import type Mocha from 'mocha'
 import { RouterProvider, createMemoryRouter, type MemoryRouterProps } from 'react-router-dom'
 
 import { EMPTY_SETTINGS_CASCADE, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'

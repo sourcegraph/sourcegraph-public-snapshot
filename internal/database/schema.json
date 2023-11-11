@@ -83,6 +83,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_user_repo_permissions_on_user_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM user_repo_permissions WHERE user_id = OLD.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
     },
     {
+      "Name": "extract_topics_from_metadata",
+      "Definition": "CREATE OR REPLACE FUNCTION public.extract_topics_from_metadata(external_service_type text, metadata jsonb)\n RETURNS text[]\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n    RETURN CASE external_service_type\n    WHEN 'github' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))\n    WHEN 'gitlab' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata-\u003e'topics'))\n    ELSE\n        '{}'::text[]\n    END;\nEXCEPTION WHEN others THEN\n    -- Catch exceptions in the case that metadata is not shaped like we expect\n    RETURN '{}'::text[];\nEND;\n$function$\n"
+    },
+    {
       "Name": "func_configuration_policies_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE configuration_policies_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE policy_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -23608,8 +23612,8 @@
           "Name": "fork",
           "Index": 4,
           "TypeName": "boolean",
-          "IsNullable": true,
-          "Default": "",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -23683,6 +23687,19 @@
           "Comment": ""
         },
         {
+          "Name": "topics",
+          "Index": 17,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "ALWAYS",
+          "GenerationExpression": "extract_topics_from_metadata(external_service_type, metadata)",
+          "Comment": ""
+        },
+        {
           "Name": "updated_at",
           "Index": 6,
           "TypeName": "timestamp with time zone",
@@ -23741,22 +23758,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "idx_repo_github_topics",
+          "Name": "idx_repo_topics",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX idx_repo_github_topics ON repo USING gin (((metadata -\u003e 'RepositoryTopics'::text) -\u003e 'Nodes'::text)) WHERE external_service_type = 'github'::text",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "idx_repo_gitlab_topics",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX idx_repo_gitlab_topics ON repo USING gin ((metadata -\u003e 'topics'::text)) WHERE external_service_type = 'gitlab'::text",
+          "IndexDefinition": "CREATE INDEX idx_repo_topics ON repo USING gin (topics)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -27994,6 +28001,19 @@
           "Name": "code_completions_quota",
           "Index": 21,
           "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cody_pro_enabled_at",
+          "Index": 23,
+          "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,

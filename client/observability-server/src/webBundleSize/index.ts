@@ -2,7 +2,7 @@
  * The script collects web application bundlesize information from the disk and uploads it to Honeycomb.
  *
  * 1. Build web application using:
- * NODE_ENV=production DISABLE_TYPECHECKING=true WEBPACK_USE_NAMED_CHUNKS=true pnpm build-web
+ * NODE_ENV=production DISABLE_TYPECHECKING=true pnpm build-web
  *
  * 2. Upload bundlesize information to Honeycomb:
  * HONEYCOMB_API_KEY=XXX pnpm --filter @sourcegraph/observability-server run bundlesize:web:upload
@@ -48,11 +48,8 @@ for (const [baseFilePath, fileInfo] of Object.entries(bundleSizeStats)) {
 
         'bundle.file.name': baseFilePath,
         'bundle.file.size.raw': fileInfo.raw,
-        'bundle.file.size.gzip': fileInfo.gzip,
-        'bundle.file.size.brotli': fileInfo.brotli,
         'bundle.file.isInitial': fileInfo.isInitial,
         'bundle.file.isDynamicImport': fileInfo.isDynamicImport,
-        'bundle.file.isDefaultVendors': fileInfo.isDefaultVendors,
         'bundle.file.isCss': fileInfo.isCss,
         'bundle.file.isJs': fileInfo.isJs,
         'bundle.env': environment.NODE_ENV,

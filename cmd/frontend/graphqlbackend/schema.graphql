@@ -90,6 +90,12 @@ type Mutation {
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
+    Upgrades the user to Cody Pro.
+
+    Only the user may perform this mutation.
+    """
+    upgradeToCodyPro(user: ID!): User!
+    """
     Creates an organization. The caller is added as a member of the newly created organization.
 
     Only authenticated users may perform this mutation.
@@ -3381,6 +3387,11 @@ type ExternalService implements Node {
     True if this external service configuration supports `exclude` parameter.
     """
     supportsRepoExclusion: Boolean!
+
+    """
+    True if this external service is unrestricted and marks all repositories added by it as publicly accessible.
+    """
+    unrestricted: Boolean!
 }
 
 """
@@ -5305,12 +5316,6 @@ type GitCommit implements Node {
         The path of the tree.
         """
         path: String = ""
-        """
-        Whether to recurse into sub-trees. If true, it overrides the value of the "recursive" parameter on all of
-        GitTree's fields.
-        DEPRECATED: Use the "recursive" parameter on GitTree's fields instead.
-        """
-        recursive: Boolean = false
     ): GitTree
     """
     A list of file names in this repository.
@@ -5525,20 +5530,35 @@ interface TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
+    """
+    The Git commit containing this tree entry was reached through.
+    Note that a tree entry can exist in multiple commits.
+    """
+    commit: GitCommit!
+}
+
+"""
+A list of TreeEntry
+"""
+type TreeEntryConnection {
+    """
+    A list of TreeEntry.
+    """
+    nodes: [TreeEntry!]!
+    """
+    The total count of TreeEntry in the connection. This total count may be larger
+    than the number of nodes in this object when the result is paginated.
+    """
+    totalCount: Int
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -5595,7 +5615,7 @@ type GitTree implements TreeEntry {
     """
     directories(
         """
-        Returns the first n files in the tree.
+        Returns the first n directories in the tree.
         """
         first: Int
         """
@@ -5629,9 +5649,15 @@ type GitTree implements TreeEntry {
         """
         recursive: Boolean = false
         """
-        Recurse into sub-trees of single-child directories. If true, we return a flat list of
-        every directory that is a single child, and any directories or files that are
-        nested in a single child.
+        If recurseSingleChild is true, and the requested path only has a single child
+        that is a directory, recurse into that directory.
+        Only respected when recursive is false.
+        Example:
+        FS structure:
+        /folder/subfolder/file
+        Request for entries of /folder:
+        Instead of returning just /folder/subfolder, this API also travserse into subfolder
+        until it hits something with more than 1 child that's not a dir.
         """
         recursiveSingleChild: Boolean = false
         """
@@ -5663,20 +5689,11 @@ type GitTree implements TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """
@@ -6020,7 +6037,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """
@@ -6083,24 +6100,15 @@ type GitBlob implements TreeEntry & File2 {
     """
     Always false, since a blob is a file, not directory.
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
     """
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
+    """
+    The revision history for this file
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """
@@ -6534,6 +6542,14 @@ type User implements Node & SettingsSubject & Namespace {
     Null, if not overwritten.
     """
     codeCompletionsQuotaOverride: Int
+    """
+    Whether the user has enrolled for Cody Pro.
+    """
+    codyProEnabled: Boolean!
+    """
+    The date when the user enrolled for Cody Pro.
+    """
+    codyProEnabledAt: DateTime
 }
 
 """

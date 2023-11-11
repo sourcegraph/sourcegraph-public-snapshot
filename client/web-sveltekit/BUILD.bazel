@@ -42,10 +42,9 @@ SRCS = [
     ".prettierignore",
     ".env",
     ".env.dotcom",
-    ".env.oss",
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
-    "//ui/assets/img:copy",
+    "//client/web/dist/img:copy",
 ] + glob(
     ["src/" + d for d in [
         "**/*.scss",
@@ -123,7 +122,6 @@ npm_link_all_packages(name = "node_modules")
 vite_bin.vite(
     name = "web-sveltekit",
     srcs = SRCS + BUILD_DEPS + CONFIGS,
-    out_dirs= ["build"],
     args = [
         "build",
         "--force",
@@ -133,7 +131,8 @@ vite_bin.vite(
     env = {
         "BAZEL": "1",
     },
-    visibility = ["//ui/assets/enterprise:__pkg__"],
+    out_dirs = ["build"],
+    visibility = ["//client/web/dist:__pkg__"],
     # silent_on_success = False,
 )
 

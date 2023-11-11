@@ -18,7 +18,7 @@ func withBundleSizeCache(commit string) buildkite.StepOpt {
 		ID:          "bundle_size_cache",
 		Key:         "bundle_size_cache-{{ git.commit }}",
 		RestoreKeys: []string{"bundle_size_cache-{{ git.commit }}"},
-		Paths:       []string{"ui/assets/stats-" + commit + ".json"},
+		Paths:       []string{"client/web/dist/stats-" + commit + ".json"},
 		Compress:    true,
 	})
 }

@@ -38,7 +38,7 @@ enabling smooth resolution of dependencies.
 
 Basically, any bazel rule-sets (in our example `rules_js`) serve as entry points/targets for bazel build, in order
 to create an internal build-graph and by this to establish a right cache and output generation. You can think about 
-this as entry points in bundlers world like webpack or esbuild (but of course rules in bazel can be more complex 
+this as entry points in bundlers world like esbuild (but of course rules in bazel can be more complex
 rather just entry points, it could be macros, custom rules with some additional effect, etc).
 
 This approach comes with several benefits, like solving TypeScript's `rootDirs` issue. However, it does require 
@@ -326,12 +326,12 @@ Based on `./client/common/BUILD.bazel`, one of the smallest client packages.
     similar to a traditional multi-repo setup. In non-Bazel setups, we use TypeScript project references and bundlers to directly
     link to the source code of a dependency package when it's needed by the current package.
 
-5. Definiing the [jest_test](https://docs.aspect.build/rules/aspect_rules_jest/docs/jest_test/#jest_test) target.
+5. Defining the `vitest_test` target.
 
     ```py
-    load("//dev:defs.bzl", "jest_test")
+    load("//dev:defs.bzl", "vitest_test")
 
-    jest_test(
+    vitest_test(
         name = "test",
         data = [
             ":common_tests",
@@ -339,7 +339,7 @@ Based on `./client/common/BUILD.bazel`, one of the smallest client packages.
     )
     ```
 
-    Allows to run jest tests inside of Bazel via `bazel test //client/common:test`.
+    Allows to run Vitest tests inside of Bazel via `bazel test //client/common:test`.
 
 ### How to create nested BUILD files to leverage caching
 
@@ -366,7 +366,7 @@ mocha_test(
     timeout = "moderate",
     data = ["//client/web:app"],
     env = {
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle)",
     },
     is_percy_enabled = True,
     tags = [

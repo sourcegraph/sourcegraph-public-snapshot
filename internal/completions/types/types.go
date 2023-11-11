@@ -60,6 +60,7 @@ type CompletionRequestParameters struct {
 	TopP              float32   `json:"topP,omitempty"`
 	Model             string    `json:"model,omitempty"`
 	Stream            *bool     `json:"stream,omitempty"`
+	Logprobs          *uint8    `json:"logprobs"`
 }
 
 // IsStream returns whether a streaming response is requested. For backwards
@@ -98,8 +99,42 @@ func (p *CompletionRequestParameters) Attrs(feature CompletionsFeature) []attrib
 }
 
 type CompletionResponse struct {
-	Completion string `json:"completion"`
-	StopReason string `json:"stopReason"`
+	Completion string    `json:"completion"`
+	StopReason string    `json:"stopReason"`
+	Logprobs   *Logprobs `json:"logprobs,omitempty"`
+}
+
+type Logprobs struct {
+	Tokens        []string             `json:"tokens"`
+	TokenLogprobs []float32            `json:"token_logprobs"`
+	TopLogprobs   []map[string]float32 `json:"top_logprobs"`
+	TextOffset    []int32              `json:"text_offset"`
+}
+
+// Append concatenates the additional logprobs to the original ones
+// and returns a reference to the mutated original logprobs. Note
+// this mutates the receiver. If the receiver is nil, a shallow
+// copy of additional is returned.
+//
+// Intended usage: original = original.Append(additional)
+func (original *Logprobs) Append(additional *Logprobs) *Logprobs {
+	if original == nil {
+		if additional == nil {
+			return nil
+		} else {
+			newLogprobs := *additional
+			return &newLogprobs
+		}
+	}
+	if additional == nil {
+		return original
+	}
+
+	original.Tokens = append(original.Tokens, additional.Tokens...)
+	original.TokenLogprobs = append(original.TokenLogprobs, additional.TokenLogprobs...)
+	original.TopLogprobs = append(original.TopLogprobs, additional.TopLogprobs...)
+	original.TextOffset = append(original.TextOffset, additional.TextOffset...)
+	return original
 }
 
 type SendCompletionEvent func(event CompletionResponse) error
@@ -118,6 +153,18 @@ func (b CompletionsFeature) IsValid() bool {
 		return true
 	}
 	return false
+}
+
+// ID returns a numeric ID representing the feature for analytics purposes.
+func (b CompletionsFeature) ID() int {
+	switch b {
+	case CompletionsFeatureChat:
+		return 1
+	case CompletionsFeatureCode:
+		return 2
+	default:
+		return -1
+	}
 }
 
 type CompletionsClient interface {

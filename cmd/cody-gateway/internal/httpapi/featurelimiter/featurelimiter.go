@@ -191,9 +191,10 @@ func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisSt
 			}
 
 			el := listLimitElement{
-				Limit:    rateLimit.Limit,
-				Interval: rateLimit.Interval.String(),
-				Usage:    int64(currentUsage),
+				Limit:         rateLimit.Limit,
+				Interval:      rateLimit.Interval.String(),
+				Usage:         int64(currentUsage),
+				AllowedModels: rateLimit.AllowedModels,
 			}
 			if !expiry.IsZero() {
 				el.Expiry = &expiry
@@ -209,10 +210,11 @@ func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisSt
 }
 
 type listLimitElement struct {
-	Limit    int64      `json:"limit"`
-	Interval string     `json:"interval"`
-	Usage    int64      `json:"usage"`
-	Expiry   *time.Time `json:"expiry,omitempty"`
+	Limit         int64      `json:"limit"`
+	Interval      string     `json:"interval"`
+	Usage         int64      `json:"usage"`
+	Expiry        *time.Time `json:"expiry,omitempty"`
+	AllowedModels []string   `json:"allowedModels"`
 }
 
 func noopRateLimitNotifier(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {

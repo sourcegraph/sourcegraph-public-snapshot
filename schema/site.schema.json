@@ -2742,7 +2742,7 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "sourcegraph",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
         },
         "endpoint": {
           "type": "string",
@@ -3152,6 +3152,14 @@
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
           "default": 10,
           "type": "integer"
+        },
+        "syncInternalRepoPermissions": {
+          "description": "Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },

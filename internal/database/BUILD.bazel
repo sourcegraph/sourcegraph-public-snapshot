@@ -307,6 +307,7 @@ go_test(
         "//internal/temporarysettings",
         "//internal/timeutil",
         "//internal/trace",
+        "//internal/trace/tracetest",
         "//internal/types",
         "//internal/types/typestest",
         "//internal/version",
@@ -372,4 +373,12 @@ write_generated_to_source_files(
         "schema.codeinsights.md": "_schema.codeinsights.md",
     },
     target = ":generate_schemas",
+)
+
+exports_files(
+    srcs = [
+        "schema.codeinsights.json",
+        "schema.codeintel.json",
+        "schema.json",
+    ],
 )

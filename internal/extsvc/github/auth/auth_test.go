@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
-	"github.com/tj/assert"
 )
 
 // Random valid private key generated for this test and nothing else

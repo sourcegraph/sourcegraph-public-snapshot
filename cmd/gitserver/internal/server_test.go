@@ -181,7 +181,7 @@ func TestExecRequest(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
@@ -310,7 +310,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
@@ -458,7 +458,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
+	assertRepoState := func(status types.CloneStatus, size int64, wantErr string) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
@@ -466,15 +466,11 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		}
 		assert.Equal(t, status, fromDB.CloneStatus)
 		assert.Equal(t, size, fromDB.RepoSizeBytes)
-		var errString string
-		if wantErr != nil {
-			errString = wantErr.Error()
-		}
-		assert.Equal(t, errString, fromDB.LastError)
+		assert.Equal(t, wantErr, fromDB.LastError)
 	}
 
 	// Verify the gitserver repo entry exists.
-	assertRepoState(types.CloneStatusNotCloned, 0, nil)
+	assertRepoState(types.CloneStatusNotCloned, 0, "")
 
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
@@ -482,7 +478,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	for _, tc := range []struct {
 		name         string
 		getVCSSyncer func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error)
-		wantErr      error
+		wantErr      string
 	}{
 		{
 			name: "Not cloneable",
@@ -493,18 +489,20 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 				})
 				return m, nil
 			},
-			wantErr: errors.New("error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable"),
+			wantErr: "error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable",
 		},
 		{
 			name: "Failing clone",
 			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
 				m := vcssyncer.NewMockVCSSyncer()
-				m.CloneCommandFunc.SetDefaultHook(func(ctx context.Context, url *vcs.URL, s string) (*exec.Cmd, error) {
-					return exec.Command("git", "clone", "/dev/null"), nil
+				m.CloneFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ *vcs.URL, _ common.GitDir, _ string, w io.Writer) error {
+					_, err := fmt.Fprint(w, "fatal: repository '/dev/null' does not exist")
+					require.NoError(t, err)
+					return &exec.ExitError{ProcessState: &os.ProcessState{}}
 				})
 				return m, nil
 			},
-			wantErr: errors.New("failed to clone example.com/foo/bar: clone failed. Output: fatal: repository '/dev/null' does not exist: exit status 128"),
+			wantErr: "failed to clone example.com/foo/bar: clone failed. Output: fatal: repository '/dev/null' does not exist: exit status 0",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -868,19 +866,10 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		t.Cleanup(func() { testRepoCorrupter = nil })
 		// Use block so we get clone errors right here and don't have to rely on the
 		// clone queue. There's no other reason for blocking here, just convenience/simplicity.
-		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true}); err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+		_, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
+		require.NoError(t, err)
 
 		dst := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
-		for i := 0; i < 1000; i++ {
-			_, cloning := s.Locker.Status(dst)
-			if !cloning {
-				break
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
-
 		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
 			t.Fatal("expected a reconstituted HEAD, but no file exists")
@@ -906,19 +895,11 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
+		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{Block: true}); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		// wait for repo to be cloned
 		dst := gitserverfs.RepoDirFromName(s.ReposDir, "example.com/foo/bar")
-		for i := 0; i < 1000; i++ {
-			_, cloning := s.Locker.Status(dst)
-			if !cloning {
-				break
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
 
 		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
@@ -1418,5 +1399,118 @@ error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		if stdErrIndicatesCorruption(stderr) {
 			t.Errorf("should not contain corrupt line:\n%s", stderr)
 		}
+	}
+}
+
+func TestLinebasedBufferedWriter(t *testing.T) {
+	testCases := []struct {
+		name   string
+		writes []string
+		text   string
+	}{
+		{
+			name:   "identity",
+			writes: []string{"hello"},
+			text:   "hello",
+		},
+		{
+			name:   "single write begin newline",
+			writes: []string{"\nhelloworld"},
+			text:   "\nhelloworld",
+		},
+		{
+			name:   "single write contains newline",
+			writes: []string{"hello\nworld"},
+			text:   "hello\nworld",
+		},
+		{
+			name:   "single write end newline",
+			writes: []string{"helloworld\n"},
+			text:   "helloworld\n",
+		},
+		{
+			name:   "first write end newline",
+			writes: []string{"hello\n", "world"},
+			text:   "hello\nworld",
+		},
+		{
+			name:   "second write begin newline",
+			writes: []string{"hello", "\nworld"},
+			text:   "hello\nworld",
+		},
+		{
+			name:   "single write begin return",
+			writes: []string{"\rhelloworld"},
+			text:   "helloworld",
+		},
+		{
+			name:   "single write contains return",
+			writes: []string{"hello\rworld"},
+			text:   "world",
+		},
+		{
+			name:   "single write end return",
+			writes: []string{"helloworld\r"},
+			text:   "helloworld\r",
+		},
+		{
+			name:   "first write contains return",
+			writes: []string{"hel\rlo", "world"},
+			text:   "loworld",
+		},
+		{
+			name:   "first write end return",
+			writes: []string{"hello\r", "world"},
+			text:   "world",
+		},
+		{
+			name:   "second write begin return",
+			writes: []string{"hello", "\rworld"},
+			text:   "world",
+		},
+		{
+			name:   "second write contains return",
+			writes: []string{"hello", "wor\rld"},
+			text:   "ld",
+		},
+		{
+			name:   "second write ends return",
+			writes: []string{"hello", "world\r"},
+			text:   "helloworld\r",
+		},
+		{
+			name:   "third write",
+			writes: []string{"hello", "world\r", "hola"},
+			text:   "hola",
+		},
+		{
+			name:   "progress one write",
+			writes: []string{"progress\n1%\r20%\r100%\n"},
+			text:   "progress\n100%\n",
+		},
+		{
+			name:   "progress multiple writes",
+			writes: []string{"progress\n", "1%\r", "2%\r", "100%"},
+			text:   "progress\n100%",
+		},
+		{
+			name:   "one two three four",
+			writes: []string{"one\ntwotwo\nthreethreethree\rfourfourfourfour\n"},
+			text:   "one\ntwotwo\nfourfourfourfour\n",
+		},
+		{
+			name:   "real git",
+			writes: []string{"Cloning into bare repository '/Users/nick/.sourcegraph/repos/github.com/nicksnyder/go-i18n/.git'...\nremote: Counting objects: 2148, done.        \nReceiving objects:   0% (1/2148)   \rReceiving objects: 100% (2148/2148), 473.65 KiB | 366.00 KiB/s, done.\nResolving deltas:   0% (0/1263)   \rResolving deltas: 100% (1263/1263), done.\n"},
+			text:   "Cloning into bare repository '/Users/nick/.sourcegraph/repos/github.com/nicksnyder/go-i18n/.git'...\nremote: Counting objects: 2148, done.        \nReceiving objects: 100% (2148/2148), 473.65 KiB | 366.00 KiB/s, done.\nResolving deltas: 100% (1263/1263), done.\n",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			var w linebasedBufferedWriter
+			for _, write := range testCase.writes {
+				_, _ = w.Write([]byte(write))
+			}
+			assert.Equal(t, testCase.text, w.String())
+		})
 	}
 }

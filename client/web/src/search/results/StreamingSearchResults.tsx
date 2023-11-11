@@ -35,7 +35,12 @@ import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
-import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
+import {
+    buildSearchURLQueryFromQueryState,
+    setSearchMode,
+    useDeveloperSettings,
+    useNavbarQueryState,
+} from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../tour/hooks'
 import { submitSearch } from '../helpers'
@@ -86,7 +91,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-    const [rankingEnabled] = useFeatureFlag('search-ranking')
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
@@ -107,6 +111,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     // Derived state
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
+    const { searchOptions } = useDeveloperSettings(settings => settings.zoekt)
     const featureOverrides = useFeatureFlagOverrides()
     const { addRecentSearch } = useRecentSearches()
 
@@ -119,8 +124,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
             searchMode,
             chunkMatches: true,
+            zoektSearchOptions: searchOptions,
         }),
-        [caseSensitive, patternType, searchMode, trace, featureOverrides]
+        [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
@@ -134,10 +140,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 index,
                 type,
                 resultsLength,
-                ranked: rankingEnabled,
             })
         },
-        [telemetryService, resultsLength, rankingEnabled]
+        [telemetryService, resultsLength]
     )
 
     // Log view event on first load
@@ -248,22 +253,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         setAllExpanded(false)
     }, [location.search])
 
-    useNotepad(
-        useMemo(
-            () =>
-                results?.state === 'complete'
-                    ? {
-                          type: 'search',
-                          query: submittedURLQuery,
-                          caseSensitive,
-                          patternType,
-                          searchContext: props.selectedSearchContextSpec,
-                      }
-                    : null,
-            [results, submittedURLQuery, patternType, caseSensitive, props.selectedSearchContextSpec]
-        )
-    )
-
     // Expand/contract all results
     const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
@@ -354,8 +343,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
 
-    // Show aggregation panel only if we're in Enterprise versions and hide it in OSS and
-    // when search doesn't have any matches
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
     const onDisableSmartSearch = useCallback(() => {
@@ -551,8 +538,9 @@ const applyAdditionalFilters = (query: string, additionalFilters: string[]): str
 function isSmartSearchAlert(kind: AlertKind): kind is SmartSearchAlertKind {
     switch (kind) {
         case 'smart-search-additional-results':
-        case 'smart-search-pure-results':
+        case 'smart-search-pure-results': {
             return true
+        }
     }
     return false
 }

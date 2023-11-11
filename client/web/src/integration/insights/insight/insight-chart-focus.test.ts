@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { beforeEach, describe, it } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { hasFocus } from '@sourcegraph/shared/src/testing/dom-test-helpers'

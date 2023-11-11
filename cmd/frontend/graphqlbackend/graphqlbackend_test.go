@@ -201,7 +201,7 @@ func TestResolverTo(t *testing.T) {
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
-	// codecov coverage reports are noisy.
+	// code coverage reports are noisy.
 	resolvers := []any{
 		&FileMatchResolver{db: db},
 		&NamespaceResolver{},

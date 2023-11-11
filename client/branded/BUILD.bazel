@@ -1,5 +1,5 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
@@ -24,7 +24,6 @@ eslint_test_with_types(
     ]),
     config = ":eslint_config",
     deps = [
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )
@@ -35,8 +34,6 @@ ts_config(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:tsconfig",
-        "//client/client-api:tsconfig",
-        "//client/codeintellify:tsconfig",
         "//client/common:tsconfig",
         "//client/extension-api-types:tsconfig",
         "//client/observability-client:tsconfig",
@@ -61,21 +58,16 @@ ts_project(
     name = "branded_lib",
     srcs = [
         "src/components/CodeSnippet.tsx",
-        "src/components/DownloadSourcegraphIcon.tsx",
         "src/components/SourcegraphLogo.tsx",
         "src/components/Timestamp/Timestamp.tsx",
         "src/components/Timestamp/index.ts",
         "src/components/Toggle.tsx",
-        "src/components/ToggleBig.tsx",
         "src/components/constants.ts",
         "src/components/panel/MixPreciseAndSearchBasedReferencesToggle.tsx",
         "src/components/panel/TabbedPanelContent.fixtures.ts",
         "src/components/panel/TabbedPanelContent.tsx",
         "src/components/panel/views/EmptyPanelView.tsx",
-        "src/components/panel/views/ExtensionsLoadingView.tsx",
-        "src/components/panel/views/FileLocations.tsx",
         "src/components/panel/views/PanelContent.tsx",
-        "src/components/panel/views/locations.ts",
         "src/globals.d.ts",
         "src/index.ts",
         "src/search-ui/components/CodeExcerpt.tsx",
@@ -87,7 +79,6 @@ ts_project(
         "src/search-ui/components/FileMatchChildren.tsx",
         "src/search-ui/components/FilePathSearchResult.tsx",
         "src/search-ui/components/LastSyncedIcon.tsx",
-        "src/search-ui/components/LegacyResultContainer.tsx",
         "src/search-ui/components/OwnerSearchResult.tsx",
         "src/search-ui/components/QueryExamples.constants.ts",
         "src/search-ui/components/QueryExamples.tsx",
@@ -132,7 +123,6 @@ ts_project(
         "src/search-ui/input/experimental/CodeMirrorQueryInputWrapper.tsx",
         "src/search-ui/input/experimental/LazyCodeMirrorQueryInput.tsx",
         "src/search-ui/input/experimental/Suggestions.tsx",
-        "src/search-ui/input/experimental/SyntaxHighlightedSearchQuery.tsx",
         "src/search-ui/input/experimental/codemirror/example-suggestions.ts",
         "src/search-ui/input/experimental/codemirror/history.ts",
         "src/search-ui/input/experimental/codemirror/searchcontext.ts",
@@ -140,10 +130,9 @@ ts_project(
         "src/search-ui/input/experimental/filters.ts",
         "src/search-ui/input/experimental/index.ts",
         "src/search-ui/input/experimental/modes.ts",
-        "src/search-ui/input/experimental/optionRenderer.tsx",
+        "src/search-ui/input/experimental/placeholder.ts",
         "src/search-ui/input/experimental/suggestionsExtension.ts",
         "src/search-ui/input/experimental/utils.ts",
-        "src/search-ui/input/toggles/CopyQueryButton.tsx",
         "src/search-ui/input/toggles/QueryInputToggle.tsx",
         "src/search-ui/input/toggles/SmartSearchToggle.tsx",
         "src/search-ui/input/toggles/Toggles.tsx",
@@ -175,9 +164,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":module_style_typings",
-        ":node_modules/@sourcegraph/codeintellify",  #keep
         ":node_modules/@sourcegraph/common",
-        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
@@ -195,9 +182,7 @@ ts_project(
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
-        "//:node_modules/@types/react-dom",
         "//:node_modules/classnames",
-        "//:node_modules/comlink",  #keep
         "//:node_modules/copy-to-clipboard",
         "//:node_modules/date-fns",
         "//:node_modules/dompurify",
@@ -206,7 +191,6 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
         "//:node_modules/react",
-        "//:node_modules/react-dom",
         "//:node_modules/react-router-dom",
         "//:node_modules/react-sticky-box",
         "//:node_modules/react-visibility-sensor",
@@ -225,13 +209,10 @@ ts_project(
     srcs = [
         "src/components/Timestamp/Timestamp.test.tsx",
         "src/components/Toggle.test.tsx",
-        "src/components/ToggleBig.test.tsx",
         "src/components/panel/TabbedPanelContent.test.tsx",
-        "src/components/panel/views/locations.test.ts",
         "src/search-ui/components/CodeExcerpt.test.tsx",
         "src/search-ui/components/FileContentSearchResult.test.tsx",
         "src/search-ui/components/FileMatchChildren.test.tsx",
-        "src/search-ui/components/LegacyResultContainer.test.tsx",
         "src/search-ui/components/RepoFileLink.test.tsx",
         "src/search-ui/components/SyntaxHighlightedSearchQuery.test.tsx",
         "src/search-ui/input/LazyQueryInput.test.tsx",
@@ -250,16 +231,17 @@ ts_project(
         "src/search-ui/results/sidebar/SearchFilterSection.test.tsx",
         "src/search-ui/results/sidebar/helpers.test.ts",
         "src/search-ui/results/use-items-to-show.test.ts",
+        "src/testSetup.test.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":branded_lib",
-        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@codemirror/autocomplete",
         "//:node_modules/@codemirror/state",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",
@@ -274,6 +256,7 @@ ts_project(
         "//:node_modules/react-dom",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
+        "//:node_modules/vitest",
     ],
 )
 
@@ -286,13 +269,16 @@ npm_package(
     ],
 )
 
-jest_test(
+filegroup(
+    name = "snapshots",
+    srcs = glob(["src/**/__snapshots__/*"]),
+)
+
+vitest_test(
     name = "test",
     timeout = "long",
     data = [
         ":branded_tests",
+        ":snapshots",
     ],
-    patch_node_fs = False,
-    shard_count = 6,
-    tags = ["no-sandbox"],
 )

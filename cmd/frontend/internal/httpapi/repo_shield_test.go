@@ -59,7 +59,7 @@ func TestRepoShield(t *testing.T) {
 	}
 
 	var resp map[string]any
-	if err := c.GetJSON("/repos/github.com/gorilla/mux/-/shield", &resp); err != nil {
+	if err := c.GetJSON("/.api/repos/github.com/gorilla/mux/-/shield", &resp); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(resp, wantResp) {

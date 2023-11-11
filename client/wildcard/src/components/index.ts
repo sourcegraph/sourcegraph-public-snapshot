@@ -100,7 +100,6 @@ export {
 
 /**
  * Type Exports
- * `export type` is required to avoid Webpack warnings.
  */
 export type { ButtonGroupProps } from './Button'
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'

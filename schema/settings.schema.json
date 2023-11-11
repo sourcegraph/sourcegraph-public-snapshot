@@ -13,6 +13,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "newSearchNavigationUI": {
+          "description": "Enables new experimental search UI navigation",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsRepoUI": {
           "description": "Specifies which (code insight repo) editor to use for repo query UI",
           "type": "string",
@@ -194,7 +202,7 @@
           "description": "Specify which version of the search query input to use",
           "type": "string",
           "default": "v1",
-          "enum": ["v1", "experimental"],
+          "enum": ["v1", "v2"],
           "!go": {
             "pointer": true
           }

@@ -1,5 +1,6 @@
 import type { Observable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
+import { describe, expect, it } from 'vitest'
 
 import { fromHoverMerged, type HoverMerged, type TextDocumentIdentifier } from '@sourcegraph/client-api'
 import { LOADING } from '@sourcegraph/codeintellify'

@@ -1,8 +1,8 @@
 import React, {
     createContext,
     type FC,
-    PropsWithChildren,
-    RefObject,
+    type PropsWithChildren,
+    type RefObject,
     Suspense,
     useContext,
     useEffect,
@@ -53,17 +53,17 @@ import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, type SearchStreamingProps } from '../search'
-import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
 import type { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, Repo } from './backend'
+import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, type Repo } from './backend'
 import { AskCodyButton } from './cody/AskCodyButton'
 import { RepoContainerError } from './RepoContainerError'
-import { RepoHeader, type RepoHeaderActionButton, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoLinkPicker } from './RepoLinkPicker'
 import {
@@ -135,7 +135,6 @@ interface RepoContainerProps
         OwnConfigProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
-    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: AuthenticatedUser | null
@@ -234,7 +233,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         <RepoContainerRoot>
             <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
                 <RepoHeader
-                    actionButtons={props.repoHeaderActionButtons}
                     breadcrumbs={props.breadcrumbs}
                     repoName={repoName}
                     revision={revision}
@@ -261,6 +259,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                         setBreadcrumb={childBreadcrumbSetters.setBreadcrumb}
                                         useBreadcrumb={childBreadcrumbSetters.useBreadcrumb}
                                         telemetryService={props.telemetryService}
+                                        telemetryRecorder={props.platformContext.telemetryRecorder}
                                     />
                                 }
                             />
@@ -402,11 +401,10 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const [enableExperimentalQueryInput] = useExperimentalQueryInput()
+    const [enableV2QueryInput] = useV2QueryInput()
     const queryPrefix = useMemo(
-        () =>
-            enableExperimentalQueryInput && selectedSearchContextSpec ? `context:${selectedSearchContextSpec} ` : '',
-        [enableExperimentalQueryInput, selectedSearchContextSpec]
+        () => (enableV2QueryInput && selectedSearchContextSpec ? `context:${selectedSearchContextSpec} ` : ''),
+        [enableV2QueryInput, selectedSearchContextSpec]
     )
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {

@@ -84,8 +84,9 @@ export function useFeatureFlag(
             /**
              * Do nothing. The `setTimeout` is in progress and we can use the cached value for now.
              */
-            case 'valid':
+            case 'valid': {
                 break
+            }
 
             /**
              * If we have the stale value, initiate the refetch with the `network-only`
@@ -103,8 +104,9 @@ export function useFeatureFlag(
             /**
              * Do nothing. The `refetch` is in progress and we can use the cached value for now.
              */
-            case 'refetch':
+            case 'refetch': {
                 break
+            }
         }
     }
 

@@ -4,10 +4,6 @@
     "jsx": "react-jsx",
     "module": "commonjs",
     "sourceRoot": "src",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["src/types/*", "*"],
-    },
     "rootDir": ".",
     "outDir": "./out",
   },
@@ -43,6 +39,6 @@
       "path": "../wildcard",
     },
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
+  "include": ["src", "dev", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "./src/end-to-end"],
 }

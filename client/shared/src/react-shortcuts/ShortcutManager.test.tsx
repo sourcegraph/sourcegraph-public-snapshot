@@ -1,6 +1,7 @@
 import { createEvent, fireEvent, render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as sinon from 'sinon'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { platform } from '../testing/dom-utils'
 
@@ -10,30 +11,34 @@ import type { ModifierKey } from './keys'
 describe('ShortcutManager', () => {
     // We only want to preserve the original implementation, not call it as a
     // function.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+
     const originalGetModifierState = KeyboardEvent.prototype.getModifierState
 
     beforeAll(() => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         // jsdom doesn't implement getModifierState properly:
         // https://github.com/jsdom/jsdom/issues/3126
         KeyboardEvent.prototype.getModifierState = function (key: string): boolean {
             switch (key) {
-                case 'Alt':
+                case 'Alt': {
                     return this.altKey
-                case 'Control':
+                }
+                case 'Control': {
                     return this.ctrlKey
-                case 'Meta':
+                }
+                case 'Meta': {
                     return this.metaKey
-                case 'Shift':
+                }
+                case 'Shift': {
                     return this.shiftKey
+                }
             }
             return false
         }
     })
 
     afterAll(() => {
-        jest.useRealTimers()
+        vi.useRealTimers()
         KeyboardEvent.prototype.getModifierState = originalGetModifierState
     })
 
@@ -89,7 +94,7 @@ describe('ShortcutManager', () => {
 
         sinon.assert.notCalled(foSpy)
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.notCalled(fSpy)
         sinon.assert.calledOnce(foSpy)
@@ -108,7 +113,7 @@ describe('ShortcutManager', () => {
 
         sinon.assert.notCalled(spy)
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.notCalled(spy)
     })
@@ -124,7 +129,7 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('fo')
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.notCalled(spy)
     })
@@ -141,7 +146,7 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('foo')
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.calledOnce(spy)
     })

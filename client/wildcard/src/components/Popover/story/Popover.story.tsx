@@ -189,7 +189,7 @@ export const StandardExample: StoryFn = () => (
 
 const TARGET_PADDING = createRectangle(0, 0, 10, 10)
 
-export const TargetPaddingExample: Story = () => (
+export const TargetPaddingExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -247,7 +247,7 @@ export const AbsoluteStrategyExample: StoryFn = () => (
     </ScrollCenterBox>
 )
 
-export const WithCustomAnchor: Story = () => {
+export const WithCustomAnchor: StoryFn = () => {
     const customAnchor = useRef<HTMLDivElement>(null)
 
     return (
@@ -361,7 +361,7 @@ export const ShowOnFocus: StoryFn = () => {
     )
 }
 
-export const WithControlledState: Story = () => {
+export const WithControlledState: StoryFn = () => {
     const [open, setOpen] = useState<boolean>(false)
     const handleOpenChange = (event: PopoverOpenEvent): void => {
         setOpen(event.isOpen)
@@ -397,7 +397,7 @@ export const WithControlledState: Story = () => {
     )
 }
 
-export const WithNestedScrollParents: Story = (args = {}) => {
+export const WithNestedScrollParents: StoryFn = (args = {}) => {
     const constrainToScrollParents = args.constrainToScrollParents
 
     return (
@@ -446,7 +446,7 @@ WithNestedScrollParents.args = {
     constrainToScrollParents: true,
 }
 
-export const WithVirtualTarget: Story = () => {
+export const WithVirtualTarget: StoryFn = () => {
     const [virtualElement, setVirtualElement] = useState<Point | null>(null)
     const activeZoneReference = useRef<HTMLDivElement>(null)
 
@@ -493,7 +493,7 @@ export const WithVirtualTarget: Story = () => {
     )
 }
 
-export const WithTail: Story = (args = {}) => (
+export const WithTail: StoryFn = (args = {}) => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>

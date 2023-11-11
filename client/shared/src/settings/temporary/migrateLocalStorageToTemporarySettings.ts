@@ -78,9 +78,8 @@ export async function migrateLocalStorageToTemporarySettings(storage: TemporaryS
         // Use the first value of the setting to check if it exists.
         // Only migrate if the setting is not already set.
         const temporarySetting = await storage.get(migration.temporarySettingsKey).pipe(take(1)).toPromise()
-        if (typeof temporarySetting === 'undefined') {
+        if (temporarySetting === undefined) {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const value = parse(migration.type, localStorage.getItem(migration.localStorageKey))
                 if (!value) {
                     continue
