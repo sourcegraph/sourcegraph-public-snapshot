@@ -27,12 +27,13 @@ Customer should reach out to their account manager to initiate the process. The 
 
 When a customer has private code hosts inside the AWS VPC and needs to expose it for Sourcegraph managed AWS VPC, customers can follow [AWS Documentation](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html). An example can be found from our [handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/private-code-hosts/#aws-private-link-playbook-for-customer).
 
-The customer needs to share the following detail with Sourcegraph:
+Sourcegraph will provide the Sourcegraph-managed AWS account ARN that needs to be allowlist in your VPC endpoint service, e.g., `arn:aws:iam::$accountId:root`.
+
+The customer needs to share the following details with Sourcegraph:
 
 - VPC endpoint serivce name in the format of `com.amazonaws.vpce.<REGION>.<VPC_ENDPOINT_SERVICE_ID>`.
 
 Upon receiving the detail, Sourcegraph will create a connection to the customer code host, and Sourcegraph will follow up with the customer to confirm the connection is established.
-
 
 ### Create the code host connection
 
