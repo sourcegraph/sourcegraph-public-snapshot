@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -47,74 +48,86 @@ func main() {
 	imageTarball := args[1]
 	fmt.Println(imageTarball)
 
-	// debugging
-	run.Cmd(ctx, "docker", "info").Run().Stream(os.Stdout)
-	run.Cmd(ctx, "env").Run().Stream(os.Stdout)
-
 	if err := standardUpgradeTest(ctx, cli); err != nil {
 		fmt.Println("--- 🚨 Standard Upgrade Test Failed: ", err)
 		os.Exit(1)
 	}
 
-	multiversionUpgradeTest(ctx)
-	autoUpgradeTest(ctx)
+	if err := multiversionUpgradeTest(ctx); err != nil {
+		fmt.Println("--- 🚨 Multiversion Upgrade Test Failed: ", err)
+	}
+
+	if err := autoUpgradeTest(ctx); err != nil {
+		fmt.Println("--- 🚨 Auto Upgrade Test Failed: ", err)
+	}
 }
 
+// TODO: get latest minor version rather than hardcode
+var latestMinorVersion = "5.2.0"
+
 func standardUpgradeTest(ctx context.Context, cli *client.Client) error {
-	fmt.Println("--- 🕵️  standard upgrade test")
-	cleanup, err := setupTestEnv(ctx, "5.2.0", cli)
+	fmt.Println("🕵️  standard upgrade test")
+	networkName, dbs, cleanup, err := setupTestEnv(ctx, latestMinorVersion, cli)
 	if err != nil {
 		fmt.Println("failed to setup env: ", err)
 		return err
 	}
+	fmt.Println(networkName, dbs)
 	defer cleanup()
+
+	// cmd.Run(ctx, dockerMigratorBaseString("release-candidate", networkName, "up"))
+
+	if err := validateUpgrade(ctx); err != nil {
+		fmt.Println("🚨 Upgrade failed: ", err)
+		return err
+	}
+
 	return nil
 }
 
 func multiversionUpgradeTest(ctx context.Context) error {
-	fmt.Println("--- 🕵️  multiversion upgrade test")
+	fmt.Println("🕵️  multiversion upgrade test")
 	return nil
 }
 
 func autoUpgradeTest(ctx context.Context) error {
-	fmt.Println("--- 🕵️  auto upgrade test")
+	fmt.Println("🕵️  auto upgrade test")
 	return nil
 }
 
-// Create a docker network for testing as well as instances of our three databases. Return a cleanup function.
-func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (cleanup func(), err error) {
-	fmt.Println("--- 🏗️  setting up test environment")
+type testDB struct {
+	Name              string
+	HashName          string
+	Image             string
+	ContainerHostPort string
+}
 
-	type testDB struct {
-		Name             string
-		User             string
-		Image            string
-		CreateMessage    string
-		LocalPort        string
-		ConnectionString string
-	}
+// Create a docker network for testing as well as instances of our three databases. Return a cleanup function.
+func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (networkName string, dbs []testDB, cleanup func(), err error) {
+	fmt.Println("--- 🏗️  setting up test environment")
 
 	// Generate random hash for naming containers in test
 	hash := make([]byte, 4)
 	_, err = rand.Read(hash)
 	if err != nil {
-		return nil, err
+		return "", nil, nil, err
 	}
 
 	// TODO: current connection strings are hardcoded examples to illustrate the postgres connection protocol.
-	dbs := []testDB{
-		{"pgsql", "sg", "postgres-12-alpine", "--- 🐋 creating pgsql", "5432", ""},
-		{"codeintel-db", "sg", "codeintel-db", "--- 🐋 creating codeintel-db", "5433", ""},
-		{"codeinsights-db", "sg", "codeinsights-db", "--- 🐋 creating codeinsights-db", "5434", ""},
+	// connection string example: "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
+	dbs = []testDB{
+		{"pgsql", fmt.Sprintf("wg_pgsql_%x", hash), "postgres-12-alpine", "5433"},
+		{"codeintel-db", fmt.Sprintf("wg_codeintel-db_%x", hash), "codeintel-db", "5434"},
+		{"codeinsights-db", fmt.Sprintf("wg_codeinsights-db_%x", hash), "codeinsights-db", "5435"},
 	}
 
 	// Create a docker network for testing
-	networkName := fmt.Sprintf("wg_test_%x", hash)
-	fmt.Println("--- 🐋 creating network", networkName)
+	networkName = fmt.Sprintf("wg_test_%x", hash)
+	fmt.Println("🐋 creating network", networkName)
 
 	if err := run.Cmd(ctx, "docker", "network", "create", networkName).Run().Wait(); err != nil {
 		fmt.Printf("🚨 failed to create test network: %s", err)
-		return nil, err
+		return "", nil, nil, err
 	}
 
 	// TODO start doing things via the docker API
@@ -128,14 +141,15 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 	// Here we create the three databases using docker run.
 	wgInit := pool.New().WithErrors()
 	for _, db := range dbs {
-		fmt.Println(db.CreateMessage)
+		fmt.Printf("🐋 creating %s\n", db.HashName)
 		wgInit.Go(func() error {
 			db := db
 			cmd := run.Cmd(ctx, "docker", "run", "--rm",
 				"--detach",
 				"--platform", "linux/amd64",
-				"--name", fmt.Sprintf("wg_%s_%x", db.Name, hash),
+				"--name", db.HashName,
 				"--network", networkName,
+				"-p", fmt.Sprintf("%s:5432", db.ContainerHostPort),
 				fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
 			)
 			return cmd.Run().Wait()
@@ -145,7 +159,7 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 		fmt.Printf("🚨 failed to create test databases: %s", err)
 	}
 
-	timeout, cancel := context.WithTimeout(ctx, time.Second*5)
+	timeout, cancel := context.WithTimeout(ctx, time.Second*20)
 	wgPing := pool.New().WithErrors().WithContext(timeout)
 	defer cancel()
 
@@ -155,8 +169,7 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 	for _, db := range dbs {
 		db := db // this closure locks the index for the inner for loop
 		wgPing.Go(func(ctx context.Context) error {
-			fmt.Println(" --- ", db.Name, " --- ")
-			dbClient, err := sql.Open("postgres", db.ConnectionString)
+			dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
 			if err != nil {
 				fmt.Printf("🚨 failed to connect to %s: %s\n", db.Name, err)
 			}
@@ -169,38 +182,57 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 				}
 				err = dbClient.Ping()
 				if err != nil {
-					fmt.Printf("🚨 failed to ping %s: %s\n", db.Name, err)
+					fmt.Printf(" ... pinging %s\n", db.Name)
+					if err == sql.ErrConnDone || strings.Contains(err.Error(), "connection refused") {
+						return fmt.Errorf("🚨 unrecoverable error pinging %s: %w", db.Name, err)
+					}
 					time.Sleep(1 * time.Second)
 					continue
 				} else {
-					fmt.Printf("--- ✅ %s is up\n", db.Name)
+					fmt.Printf("✅ %s is up\n", db.Name)
 					return nil
 				}
 			}
 		})
 	}
 	if err := wgPing.Wait(); err != nil {
-		fmt.Println("🚨 failed to ping test databases: ", err)
+		fmt.Println("--- 🚨 containerized database startup error: ", err)
 	}
 
-	// time.Sleep(time.Second * 5)
-
-	// initialize the database and schema
+	// Initialize the databases by running migrator with the `up` command.
 	fmt.Println("--- 🏗️  initializing database schemas with migrator")
-	if err := run.Cmd(ctx, dockerMigratorBaseString("sourcegraph/migrator:5.2.0", networkName, "up", hash)...).Run().Stream(os.Stdout); err != nil {
+	if err := run.Cmd(ctx,
+		dockerMigratorBaseString(fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion), networkName, "up", hash)...).
+		Run().Stream(os.Stdout); err != nil {
 		fmt.Println("--- 🚨 failed to initialize database: ", err)
 	}
 
+	// Verify that the databases are initialized.
+	fmt.Println("--- 🔎 checking db schemas initialized")
 	for _, db := range dbs {
-		fmt.Printf("--- 🔎 checking %s for init\n", db.Name)
-		if err := run.Cmd(ctx, "docker", "exec",
-			fmt.Sprintf("wg_%s_%x", db.Name, hash),
-			"psql", "-U", db.User, "-c", "'\\dt'").
-			Run().Stream(os.Stdout); err != nil {
-			fmt.Printf("--- 🚨 %s not initialized: %s\n", db.Name, err)
+		dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
+		if err != nil {
+			fmt.Printf("🚨 failed to connect to %s: %s\n", db.Name, err)
+			continue
+		}
+		defer dbClient.Close()
+
+		// check if tables have been created
+		rows, err := dbClient.Query(`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public';`)
+		if err != nil {
+			fmt.Printf("🚨 failed to check %s for init: %s\n", db.Name, err)
+			continue
+		}
+		defer rows.Close()
+		if rows.Next() {
+			fmt.Printf("✅ %s initialized\n", db.Name)
+			continue
+		} else {
+			fmt.Printf("🚨 %s schema not initialized\n", db.Name)
 		}
 	}
 
+	// Return a cleanup function that will remove the containers and network.
 	cleanup = func() {
 		fmt.Println("--- 🧹 removing database containers")
 		if err := run.Cmd(ctx, "docker", "kill",
@@ -216,7 +248,17 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 		}
 	}
 
-	return cleanup, err
+	fmt.Println("--- 🏗️  setup complete")
+
+	return networkName, dbs, cleanup, err
+}
+
+func validateUpgrade(ctx context.Context) error {
+	fmt.Println("--- 🏗️  validating upgrade")
+	// TODO: validate the upgrade by running the same tests as the e2e tests.
+	// TODO: validate the upgrade by running the same tests as the e2e tests.
+	// TODO: validate the upgrade by running the same tests as the e2e tests.
+	return nil
 }
 
 // dockerMigratorBaseString a slice of strings constituting the necessary arguments to run the migrator via docker container the CI test env.

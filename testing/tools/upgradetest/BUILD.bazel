@@ -6,7 +6,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/testing/tools/upgradetest",
     visibility = ["//visibility:private"],
     deps = [
-        "@com_github_docker_docker//api/types",
         "@com_github_docker_docker//client",
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_conc//pool",
@@ -40,5 +39,6 @@ sh_binary(
         ":upgradetest-darwin-amd64",
         "//cmd/migrator:image_tarball",
     ],
+
     # tags = ["requires-network", "no-sandbox"]
 )
