@@ -71,7 +71,6 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 		return 0, err
 	}
 
-	// TODO: Run GQL directly instead of HTTPing to self.
 	rawurl, err := gqlURL("CountGoImporters")
 	if err != nil {
 		return 0, err
