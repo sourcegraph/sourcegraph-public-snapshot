@@ -21,16 +21,3 @@ var System = syncx.OnceValues(func() ([][]byte, error) {
 type CertPool struct {
 	certs [][]byte
 }
-
-// CertPool exists for interaction with x509. Do not use.
-func NewCertPool() *CertPool {
-	return &CertPool{}
-}
-
-func (c *CertPool) AppendCertsFromPEM(data []byte) {
-	c.certs = append(c.certs, data)
-}
-
-func (c *CertPool) len() int {
-	return len(c.certs)
-}
