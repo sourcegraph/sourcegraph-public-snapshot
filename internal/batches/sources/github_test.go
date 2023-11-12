@@ -194,6 +194,13 @@ func (d *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return args.Get(0).(*http.Response), args.Error(1)
 }
 
+// Implement httpcli.WrappedTransport so that setting additional doers in the client
+// works.
+func (d *mockTransport) Unwrap() *http.RoundTripper {
+	c := http.DefaultClient.Transport
+	return &c
+}
+
 func TestGithubSource_CloseChangeset(t *testing.T) {
 	// Repository used: https://github.com/sourcegraph/automation-testing
 	//

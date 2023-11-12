@@ -34,6 +34,13 @@ func (c *mockTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
+// Implement httpcli.WrappedTransport so that setting additional doers in the client
+// works.
+func (d *mockTransport) Unwrap() *http.RoundTripper {
+	c := http.DefaultClient.Transport
+	return &c
+}
+
 func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	ratelimit.SetupForTest(t)
 

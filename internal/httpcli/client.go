@@ -401,11 +401,11 @@ func TracedTransportOpt(cli *http.Client) error {
 	}
 
 	// Propagate trace policy
-	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
+	cli.Transport = WrapTransport(&policy.Transport{RoundTripper: cli.Transport}, cli.Transport)
 
 	// Collect and propagate OpenTelemetry trace (among other formats initialized
 	// in internal/tracer)
-	cli.Transport = instrumentation.NewHTTPTransport(cli.Transport)
+	cli.Transport = WrapTransport(instrumentation.NewHTTPTransport(cli.Transport), cli.Transport)
 
 	return nil
 }
@@ -428,12 +428,12 @@ func MeteredTransportOpt(subsystem string) Opt {
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = meter.Transport(cli.Transport, func(u *url.URL) string {
+		cli.Transport = WrapTransport(meter.Transport(cli.Transport, func(u *url.URL) string {
 			// We don't have a way to return a low cardinality label here (for
 			// the prometheus label "category"). Previously we returned u.Path
 			// but that blew up prometheus. So we just return unknown.
 			return "unknown"
-		})
+		}), cli.Transport)
 
 		return nil
 	}
@@ -677,7 +677,7 @@ func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) O
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = rehttp.NewTransport(cli.Transport, retry, delay)
+		cli.Transport = WrapTransport(rehttp.NewTransport(cli.Transport, retry, delay), cli.Transport)
 		return nil
 	}
 }
@@ -745,7 +745,7 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		wrapped := unwrapAll(v)
 		t, ok := (*wrapped).(*http.Transport)
 		if !ok {
-			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
+			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", *wrapped)
 		}
 		transport = t.Clone()
 		// Replace underlying implementation
