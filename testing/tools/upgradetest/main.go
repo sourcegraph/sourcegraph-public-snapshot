@@ -23,7 +23,6 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/docker/docker/client"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/run"
 )
@@ -32,12 +31,13 @@ func main() {
 
 	ctx := context.Background()
 
+	// TODO: use docker client instread of run.Cmd
 	// Initialize docker client for tests
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		panic(err)
-	}
-	defer cli.Close()
+	// cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer cli.Close()
 
 	// Get the release candidate image tarball
 	args := os.Args
@@ -45,10 +45,19 @@ func main() {
 		fmt.Println("--- 🚨 Error: release candidate image not provided")
 		os.Exit(1)
 	}
-	imageTarball := args[1]
-	fmt.Println(imageTarball)
 
-	if err := standardUpgradeTest(ctx, cli); err != nil {
+	fmt.Println(args[0])
+	fmt.Println(args[1])
+
+	// load migrator from release candidate image tarball
+	imageTarball := args[1]
+	fmt.Println("--- 🐋 ", imageTarball)
+	if err := run.Cmd(ctx, "docker", "image", "ls").Run().Stream(os.Stdout); err != nil {
+		fmt.Println("--- 🚨 Error: failed to load migrator imageTarball: ", err)
+		os.Exit(1)
+	}
+
+	if err := standardUpgradeTest(ctx, "candidate"); err != nil {
 		fmt.Println("--- 🚨 Standard Upgrade Test Failed: ", err)
 		os.Exit(1)
 	}
@@ -65,17 +74,26 @@ func main() {
 // TODO: get latest minor version rather than hardcode
 var latestMinorVersion = "5.2.0"
 
-func standardUpgradeTest(ctx context.Context, cli *client.Client) error {
+func standardUpgradeTest(ctx context.Context, candidate string) error {
 	fmt.Println("🕵️  standard upgrade test")
-	networkName, dbs, cleanup, err := setupTestEnv(ctx, latestMinorVersion, cli)
+	initHash, networkName, _, cleanup, err := setupTestEnv(ctx, latestMinorVersion)
 	if err != nil {
 		fmt.Println("failed to setup env: ", err)
 		return err
 	}
-	fmt.Println(networkName, dbs)
 	defer cleanup()
 
-	// cmd.Run(ctx, dockerMigratorBaseString("release-candidate", networkName, "up"))
+	hash, err := newContainerHash()
+	if err != nil {
+		fmt.Println("failed to generate hash during standard upgrade test: ", err)
+		return err
+	}
+
+	if err := run.Cmd(ctx,
+		dockerMigratorBaseString(fmt.Sprintf("migrator:%s", candidate), networkName, "up", initHash, hash)...).
+		Run().Stream(os.Stdout); err != nil {
+		fmt.Println("--- 🚨 failed to initialize database: ", err)
+	}
 
 	if err := validateUpgrade(ctx); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
@@ -102,19 +120,27 @@ type testDB struct {
 	ContainerHostPort string
 }
 
+// Generate random hash for naming containers in test
+func newContainerHash() ([]byte, error) {
+	hash := make([]byte, 4)
+	_, err := rand.Read(hash)
+	if err != nil {
+		return nil, err
+	}
+	return hash, nil
+}
+
 // Create a docker network for testing as well as instances of our three databases. Return a cleanup function.
-func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (networkName string, dbs []testDB, cleanup func(), err error) {
+func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, networkName string, dbs []testDB, cleanup func(), err error) {
 	fmt.Println("--- 🏗️  setting up test environment")
 
 	// Generate random hash for naming containers in test
-	hash := make([]byte, 4)
-	_, err = rand.Read(hash)
+	hash, err = newContainerHash()
 	if err != nil {
-		return "", nil, nil, err
+		fmt.Println("🚨 failed to generate random hash for naming containers in test: ")
+		return nil, "", nil, nil, err
 	}
 
-	// TODO: current connection strings are hardcoded examples to illustrate the postgres connection protocol.
-	// connection string example: "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
 	dbs = []testDB{
 		{"pgsql", fmt.Sprintf("wg_pgsql_%x", hash), "postgres-12-alpine", "5433"},
 		{"codeintel-db", fmt.Sprintf("wg_codeintel-db_%x", hash), "codeintel-db", "5434"},
@@ -127,7 +153,7 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 
 	if err := run.Cmd(ctx, "docker", "network", "create", networkName).Run().Wait(); err != nil {
 		fmt.Printf("🚨 failed to create test network: %s", err)
-		return "", nil, nil, err
+		return nil, "", nil, nil, err
 	}
 
 	// TODO start doing things via the docker API
@@ -164,8 +190,7 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 	defer cancel()
 
 	// Here we poll/ping the dbs to ensure postgres has initialized before we make calls to the databases.
-	// TODO: I think I need to use the docker client go package to poll the containers, but I'll need to
-	// set the client up to get the db connection schemes. I'll need to do some research on that.
+	// TODO: Use docker client to do this instead of using run.Cmd
 	for _, db := range dbs {
 		db := db // this closure locks the index for the inner for loop
 		wgPing.Go(func(ctx context.Context) error {
@@ -202,7 +227,7 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 	// Initialize the databases by running migrator with the `up` command.
 	fmt.Println("--- 🏗️  initializing database schemas with migrator")
 	if err := run.Cmd(ctx,
-		dockerMigratorBaseString(fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion), networkName, "up", hash)...).
+		dockerMigratorBaseString(fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion), networkName, "up", hash, hash)...).
 		Run().Stream(os.Stdout); err != nil {
 		fmt.Println("--- 🚨 failed to initialize database: ", err)
 	}
@@ -250,7 +275,7 @@ func setupTestEnv(ctx context.Context, initVersion string, cli *client.Client) (
 
 	fmt.Println("--- 🏗️  setup complete")
 
-	return networkName, dbs, cleanup, err
+	return hash, networkName, dbs, cleanup, err
 }
 
 func validateUpgrade(ctx context.Context) error {
@@ -262,23 +287,23 @@ func validateUpgrade(ctx context.Context) error {
 }
 
 // dockerMigratorBaseString a slice of strings constituting the necessary arguments to run the migrator via docker container the CI test env.
-func dockerMigratorBaseString(migratorImage, networkName, cmd string, hash []byte) []string {
+func dockerMigratorBaseString(migratorImage, networkName, cmd string, initHash, migratorHash []byte) []string {
 	return []string{"docker", "run", "--rm",
 		"--platform", "linux/amd64",
-		"--name", fmt.Sprintf("wg_migrator_%x", hash),
-		"-e", fmt.Sprintf("PGHOST=wg_pgsql_%x", hash),
+		"--name", fmt.Sprintf("wg_migrator_%x", migratorHash),
+		"-e", fmt.Sprintf("PGHOST=wg_pgsql_%x", initHash),
 		"-e", "PGPORT=5432",
 		"-e", "PGUSER=sg",
 		"-e", "PGPASSWORD=sg",
 		"-e", "PGDATABASE=sg",
 		"-e", "PGSSLMODE=disable",
-		"-e", fmt.Sprintf("CODEINTEL_PGHOST=wg_codeintel-db_%x", hash),
+		"-e", fmt.Sprintf("CODEINTEL_PGHOST=wg_codeintel-db_%x", initHash),
 		"-e", "CODEINTEL_PGPORT=5432",
 		"-e", "CODEINTEL_PGUSER=sg",
 		"-e", "CODEINTEL_PGPASSWORD=sg",
 		"-e", "CODEINTEL_PGDATABASE=sg",
 		"-e", "CODEINTEL_PGSSLMODE=disable",
-		"-e", fmt.Sprintf("CODEINSIGHTS_PGHOST=wg_codeinsights-db_%x", hash),
+		"-e", fmt.Sprintf("CODEINSIGHTS_PGHOST=wg_codeinsights-db_%x", initHash),
 		"-e", "CODEINSIGHTS_PGPORT=5432",
 		"-e", "CODEINSIGHTS_PGUSER=sg", // starting codeinsights without frontend initializes with user sg rather than postgres
 		"-e", "CODEINSIGHTS_PGPASSWORD=password",
