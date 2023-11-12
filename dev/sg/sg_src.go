@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"os/exec"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -141,12 +141,12 @@ var srcCommand = &cli.Command{
 			return errors.New("instance not found")
 		}
 
-		c := usershell.Command(cmd.Context, append([]string{"src"}, cmd.Args().Slice()...)...)
-		c = c.Env(map[string]string{
-			"SRC_ACCESS_TOKEN": instance.AccessToken,
-			"SRC_ENDPOINT":     instance.Endpoint,
-		})
-		return c.Run().Stream(os.Stdout)
+		c := exec.CommandContext(cmd.Context, "src", cmd.Args().Slice()...)
+		c.Env = append(c.Environ(), "SRC_ACCESS_TOKEN="+instance.AccessToken, "SRC_ENDPOINT="+instance.Endpoint)
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		c.Stdin = os.Stdin
+		return c.Run()
 	},
 }
 
