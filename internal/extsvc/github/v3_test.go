@@ -1029,7 +1029,7 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 
 func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	c := newTestClient(t, httpcli.NewFactory(nil, func(c *http.Client) error {
-		c.Transport = &mockTransport{do: func(r *http.Request) (*http.Response, error) {
+		c.Transport = httpcli.WrapTransport(&mockTransport{do: func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
 				Request:    r,
 				StatusCode: 200,
@@ -1056,7 +1056,7 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 				}
 				`)),
 			}, nil
-		}}
+		}}, http.DefaultTransport)
 		return nil
 	}))
 
@@ -1076,13 +1076,6 @@ type mockTransport struct {
 
 func (c *mockTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return c.do(r)
-}
-
-// Implement httpcli.WrappedTransport so that setting additional doers in the client
-// works.
-func (d *mockTransport) Unwrap() *http.RoundTripper {
-	c := http.DefaultClient.Transport
-	return &c
 }
 
 type testCase struct {
@@ -1270,7 +1263,7 @@ func TestRateLimitRetry(t *testing.T) {
 		srvURL, err := url.Parse(srv.URL)
 		require.NoError(t, err)
 
-		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", nil)
+		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", httpcli.ExternalDoer)
 		testCase.client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 		testCase.client.waitForRateLimit = true
 

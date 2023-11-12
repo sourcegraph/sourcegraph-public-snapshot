@@ -11,12 +11,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
@@ -31,11 +28,12 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -69,10 +67,6 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	// orig := httpcli.InternalDoer
-	// httpcli.InternalDoer = httpcli.DoerFunc(mockDoer)
-	// t.Cleanup(func() { httpcli.InternalDoer = orig })
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -743,6 +737,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			afterDone, err := executePlan(
 				ctx,
 				logtest.Scoped(t),
+				httpcli.DoerFunc(mockDoer),
 				state.MockClient,
 				sourcer,
 				// Don't actually sleep for the sake of testing.
@@ -904,7 +899,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = bt.BuildChangeset(bt.TestChangesetOpts{Repo: repo.ID})
 
-	_, err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
+	_, err := executePlan(ctx, logtest.Scoped(t), httpcli.DoerFunc(panicDoer), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -940,7 +935,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationClose)
 
-		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlan(ctx, logtest.Scoped(t), httpcli.DoerFunc(panicDoer), nil, sourcer, true, bstore, plan)
 		if err != ourError {
 			t.Fatalf("executePlan did not return expected error: %s", err)
 		}
@@ -953,7 +948,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationDetach)
 
-		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlan(ctx, logtest.Scoped(t), httpcli.DoerFunc(panicDoer), nil, sourcer, true, bstore, plan)
 		if err != nil {
 			t.Fatalf("executePlan returned unexpected error: %s", err)
 		}
@@ -1183,6 +1178,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			_, err := executePlan(
 				actor.WithActor(ctx, actor.FromUser(tt.user.ID)),
 				logtest.Scoped(t),
+				httpcli.DoerFunc(panicDoer),
 				gitserverClient,
 				sourcer,
 				true,
@@ -1296,3 +1292,7 @@ type mockRepoArchivedError struct{}
 func (mockRepoArchivedError) Archived() bool     { return true }
 func (mockRepoArchivedError) Error() string      { return "mock repo archived" }
 func (mockRepoArchivedError) NonRetryable() bool { return true }
+
+func panicDoer(*http.Request) (*http.Response, error) {
+	panic("called panicDoer")
+}

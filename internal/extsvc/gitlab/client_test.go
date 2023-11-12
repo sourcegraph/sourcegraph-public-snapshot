@@ -79,18 +79,11 @@ func (c *mockTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-// Implement httpcli.WrappedTransport so that setting additional doers in the client
-// works.
-func (d *mockTransport) Unwrap() *http.RoundTripper {
-	c := http.DefaultClient.Transport
-	return &c
-}
-
 func TestClient_doWithBaseURL(t *testing.T) {
 	baseURL, err := url.Parse("https://gitlab.com/")
 	require.NoError(t, err)
 
-	cf := &mockTransport{
+	cf := httpcli.WrapTransport(&mockTransport{
 		do: func(r *http.Request) (*http.Response, error) {
 			if r.Header.Get("Authorization") == "Bearer bad token" {
 				return &http.Response{
@@ -107,7 +100,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}, nil
 		},
-	}
+	}, http.DefaultTransport)
 
 	ctx := context.Background()
 

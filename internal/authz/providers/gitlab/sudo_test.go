@@ -278,7 +278,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 				SyncInternalRepoPermissions: true,
 			},
 			httpcli.NewFactory(nil, func(c *http.Client) error {
-				c.Transport = &mockTransport{
+				c.Transport = httpcli.WrapTransport(&mockTransport{
 					do: func(r *http.Request) (*http.Response, error) {
 						visibility := r.URL.Query().Get("visibility")
 						if visibility != "private" && visibility != "internal" {
@@ -311,7 +311,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 							Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 						}, nil
 					},
-				}
+				}, http.DefaultTransport)
 				return nil
 			}),
 		)
@@ -355,7 +355,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 				SudoToken: "admin_token",
 			},
 			httpcli.NewFactory(nil, func(c *http.Client) error {
-				c.Transport = &mockTransport{
+				c.Transport = httpcli.WrapTransport(&mockTransport{
 					do: func(r *http.Request) (*http.Response, error) {
 						visibility := r.URL.Query().Get("visibility")
 						if visibility != "private" && visibility != "internal" {
@@ -388,7 +388,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 							Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 						}, nil
 					},
-				}
+				}, http.DefaultTransport)
 				return nil
 			}),
 		)
@@ -484,7 +484,7 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 			SudoToken: "admin_token",
 		},
 		httpcli.NewFactory(nil, func(c *http.Client) error {
-			c.Transport = &mockTransport{
+			c.Transport = httpcli.WrapTransport(&mockTransport{
 				do: func(r *http.Request) (*http.Response, error) {
 					want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
 					if r.URL.String() != want {
@@ -509,7 +509,7 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 					}, nil
 				},
-			}
+			}, http.DefaultTransport)
 			return nil
 		}),
 	)

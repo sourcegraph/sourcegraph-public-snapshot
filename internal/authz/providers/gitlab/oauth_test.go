@@ -34,13 +34,6 @@ func (c *mockTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-// Implement httpcli.WrappedTransport so that setting additional doers in the client
-// works.
-func (d *mockTransport) Unwrap() *http.RoundTripper {
-	c := http.DefaultClient.Transport
-	return &c
-}
-
 func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	ratelimit.SetupForTest(t)
 
@@ -92,7 +85,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				SyncInternalRepoPermissions: true,
 			},
 			httpcli.NewFactory(nil, func(c *http.Client) error {
-				c.Transport = &mockTransport{
+				c.Transport = httpcli.WrapTransport(&mockTransport{
 					do: func(req *http.Request) (*http.Response, error) {
 						body := bytes.NewBufferString(`{
 							"data": [{
@@ -110,7 +103,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 							StatusCode: 200,
 						}, nil
 					},
-				}
+				}, http.DefaultTransport)
 				return nil
 			}),
 		)
@@ -168,7 +161,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				DB:      dbmocks.NewMockDB(),
 			},
 			httpcli.NewFactory(nil, func(c *http.Client) error {
-				c.Transport = &mockTransport{
+				c.Transport = httpcli.WrapTransport(&mockTransport{
 					do: func(r *http.Request) (*http.Response, error) {
 						visibility := r.URL.Query().Get("visibility")
 						if visibility != "private" && visibility != "internal" {
@@ -195,7 +188,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 							Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 						}, nil
 					},
-				}
+				}, http.DefaultTransport)
 				return nil
 			}),
 		)

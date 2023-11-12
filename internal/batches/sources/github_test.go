@@ -151,7 +151,7 @@ func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
 	apiURL, err := url.Parse("https://fake.api.github.com")
 	require.NoError(t, err)
 	client, err := github.NewV4Client("extsvc:github:0", apiURL, nil, httpcli.NewFactory(nil, func(c *http.Client) error {
-		c.Transport = rt
+		c.Transport = httpcli.WrapTransport(rt, http.DefaultTransport)
 		return nil
 	}))
 	require.NoError(t, err)
@@ -192,13 +192,6 @@ type mockTransport struct {
 func (d *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	args := d.Called(req)
 	return args.Get(0).(*http.Response), args.Error(1)
-}
-
-// Implement httpcli.WrappedTransport so that setting additional doers in the client
-// works.
-func (d *mockTransport) Unwrap() *http.RoundTripper {
-	c := http.DefaultClient.Transport
-	return &c
 }
 
 func TestGithubSource_CloseChangeset(t *testing.T) {

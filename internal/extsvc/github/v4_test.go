@@ -1177,13 +1177,13 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 			c, err := NewV4Client("Test", apiURL, nil, httpcli.NewFactory(nil, func(c *http.Client) error {
-				c.Transport = &mockTransport{do: func(r *http.Request) (*http.Response, error) {
+				c.Transport = httpcli.WrapTransport(&mockTransport{do: func(r *http.Request) (*http.Response, error) {
 					return &http.Response{
 						Request:    r,
 						StatusCode: 200,
 						Body:       io.NopCloser(strings.NewReader(tc.mockResponseBody)),
 					}, nil
-				}}
+				}}, http.DefaultTransport)
 				return nil
 			}))
 			require.NoError(t, err)
@@ -1238,13 +1238,13 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 	c, err := NewV4Client("Test", apiURL, nil, httpcli.NewFactory(nil, func(c *http.Client) error {
-		c.Transport = &mockTransport{do: func(r *http.Request) (*http.Response, error) {
+		c.Transport = httpcli.WrapTransport(&mockTransport{do: func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
 				Request:    r,
 				StatusCode: 200,
 				Body:       io.NopCloser(strings.NewReader("")),
 			}, nil
-		}}
+		}}, http.DefaultTransport)
 		return nil
 	}))
 	if err != nil {
