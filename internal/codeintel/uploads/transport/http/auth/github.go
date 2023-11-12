@@ -58,8 +58,11 @@ var _ AuthValidator = enforceAuthViaGitHub
 func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
 	logger := log.Scoped("uncachedEnforceAuthViaGitHub")
 
-	ghClient := github.NewV3Client(logger,
+	ghClient, err := github.NewV3Client(logger,
 		extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	if author, err := checkGitHubPermissions(ctx, repoName, ghClient); err != nil {
 		if githubErr := new(github.APIError); errors.As(err, &githubErr) {

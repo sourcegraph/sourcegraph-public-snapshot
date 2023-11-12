@@ -412,7 +412,11 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 			apiURL, _ := github.APIRoot(baseURL)
 
 			logger := log.NoOp()
-			client := github.NewV3Client(logger, "", apiURL, auther, nil)
+			client, err := github.NewV3Client(logger, "", apiURL, auther, nil)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
 			// The installation often takes a few seconds to become available after the
 			// app is first installed, so we sleep for a bit to give it time to load. The exact

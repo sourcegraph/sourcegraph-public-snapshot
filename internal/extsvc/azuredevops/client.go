@@ -85,16 +85,20 @@ func NewClient(urn string, url string, auth auth.Authenticator, cf *httpcli.Fact
 		return nil, err
 	}
 
+	return newClient(urn, u, auth, httpClient), nil
+}
+
+func newClient(urn string, url *url.URL, auth auth.Authenticator, cli httpcli.Doer) Client {
 	return &client{
-		httpClient:          httpClient,
-		URL:                 u,
+		httpClient:          cli,
+		URL:                 url,
 		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("AzureDevOpsClient"), urn)),
-		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
+		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url.String(), auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
 		auth:                auth,
 		urn:                 urn,
 		waitForRateLimit:    true,
 		maxRateLimitRetries: 2,
-	}, nil
+	}
 }
 
 // do performs the specified request, returning any errors and a continuationToken used for pagination (if the API supports it).
@@ -194,7 +198,7 @@ func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
 	}
 
-	return NewClient(c.urn, c.URL.String(), a, c.httpClient)
+	return newClient(c.urn, c.URL, a, c.httpClient), nil
 }
 
 func (c *client) SetWaitForRateLimit(wait bool) {

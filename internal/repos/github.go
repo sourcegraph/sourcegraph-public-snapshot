@@ -106,19 +106,8 @@ func newGitHubSource(
 		cf = httpcli.NewExternalClientFactory()
 	}
 
-	opts := []httpcli.Opt{
-		// Use a 30s timeout to avoid running into EOF errors, because GitHub
-		// closes idle connections after 60s
-		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
-	}
-
 	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
-	}
-
-	cli, err := cf.Doer(opts...)
-	if err != nil {
-		return nil, err
+		cf = cf.WithOpts(httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
 	var (
@@ -160,14 +149,21 @@ func newGitHubSource(
 	}
 	urn := svc.URN()
 
-	var (
-		v3ClientLogger = log.Scoped("source")
-		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
-		v4Client       = github.NewV4Client(urn, apiURL, auther, cli)
+	v4Client, err := github.NewV4Client(urn, apiURL, auther, cf)
+	if err != nil {
+		return nil, err
+	}
 
-		searchClientLogger = log.Scoped("search")
-		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, auther, cli)
-	)
+	v3ClientLogger := log.Scoped("source")
+	v3Client, err := github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cf)
+	if err != nil {
+		return nil, err
+	}
+	searchClientLogger := log.Scoped("search")
+	searchClient, err := github.NewV3SearchClient(searchClientLogger, urn, apiURL, auther, cf)
+	if err != nil {
+		return nil, err
+	}
 
 	for resource, monitor := range map[string]*ratelimit.Monitor{
 		"rest":    v3Client.ExternalRateLimiter(),
