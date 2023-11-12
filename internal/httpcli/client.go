@@ -335,7 +335,7 @@ func ExternalTransportOpt(cli *http.Client) error {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
-	cli.Transport = &externalTransport{base: tr}
+	cli.Transport = WrapTransport(&externalTransport{base: tr}, tr)
 	return nil
 }
 
@@ -380,14 +380,14 @@ func NewCachedTransportOpt(c httpcache.Cache) Opt {
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = &wrappedTransport{
-			RoundTripper: &httpcache.Transport{
+		cli.Transport = WrapTransport(
+			&httpcache.Transport{
 				Transport:           cli.Transport,
 				Cache:               c,
 				MarkCachedResponses: true,
 			},
-			Wrapped: cli.Transport,
-		}
+			cli.Transport,
+		)
 
 		return nil
 	}
@@ -767,10 +767,10 @@ func ActorTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
-		Wrapped:      cli.Transport,
-	}
+	cli.Transport = WrapTransport(
+		&actor.HTTPTransport{RoundTripper: cli.Transport},
+		cli.Transport,
+	)
 
 	return nil
 }
@@ -784,10 +784,10 @@ func RequestClientTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
-		Wrapped:      cli.Transport,
-	}
+	cli.Transport = WrapTransport(
+		&requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		cli.Transport,
+	)
 
 	return nil
 }

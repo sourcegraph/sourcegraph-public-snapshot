@@ -261,10 +261,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		{
 			name: "IdleConnTimeout is set to what is given on a wrapped transport",
 			cli: func() *http.Client {
-				return &http.Client{Transport: &wrappedTransport{
-					RoundTripper: &actor.HTTPTransport{RoundTripper: originalRoundtripper},
-					Wrapped:      originalRoundtripper,
-				}}
+				return &http.Client{Transport: WrapTransport(&actor.HTTPTransport{RoundTripper: originalRoundtripper}, originalRoundtripper)}
 			}(),
 			timeout: timeout,
 			assert: func(t testing.TB, cli *http.Client) {
