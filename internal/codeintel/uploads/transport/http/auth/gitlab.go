@@ -10,6 +10,7 @@ import (
 
 	"github.com/tomnomnom/linkheader"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -78,8 +79,13 @@ func requestGitlabProjects(ctx context.Context, url, token string) (_ []string, 
 	}
 	req.Header.Add("PRIVATE-TOKEN", token)
 
-	// Perform requset
-	resp, err := http.DefaultClient.Do(req)
+	cli, err := httpcli.NewExternalClientFactory().Doer()
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Perform request
+	resp, err := cli.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

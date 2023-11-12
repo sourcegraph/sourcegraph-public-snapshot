@@ -19,11 +19,11 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, cf *httpcli.Factory) (*Client, error) {
+func NewClient(urn string, cf *httpcli.Factory) *Client {
 	return &Client{
 		cf:      cf,
 		limiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RustCratesClient"), urn)),
-	}, nil
+	}
 }
 
 func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {

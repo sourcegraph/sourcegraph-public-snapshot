@@ -57,12 +57,12 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) (*Client, error) {
+func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client {
 	return &Client{
 		urls:    urls,
 		cf:      httpfactory,
 		limiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PyPiClient"), urn)),
-	}, nil
+	}
 }
 
 // Project returns the Files of the simple-API /<project>/ endpoint.

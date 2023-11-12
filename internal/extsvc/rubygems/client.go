@@ -24,12 +24,12 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) (*Client, error) {
+func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) *Client {
 	return &Client{
 		registryURL: registryURL,
 		cf:          httpfactory,
 		limiter:     ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RubyGemsClient"), urn)),
-	}, nil
+	}
 }
 
 func (c *Client) GetPackageContents(ctx context.Context, dep reposource.VersionedPackage) (body io.ReadCloser, err error) {

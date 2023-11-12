@@ -54,12 +54,9 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 		cf = httpcli.NewExternalClientFactory()
 	}
 
-	opts := []httpcli.Opt{httpcli.CachedTransportOpt}
 	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+		cf = cf.WithOpts(httpcli.NewCertPoolOpt(c.Certificate))
 	}
-
-	cf = cf.WithOpts(opts...)
 
 	var eb excludeBuilder
 	for _, r := range c.Exclude {

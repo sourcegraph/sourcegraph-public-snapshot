@@ -133,7 +133,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.NewExternalClientFactory())
+		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.NewExternalClientFactory())
 		if err != nil {
 			return nil, err
 		}
@@ -152,10 +152,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := pypi.NewClient(urn, c.Urls, httpcli.NewExternalClientFactory())
-		if err != nil {
-			return nil, err
-		}
+		cli := pypi.NewClient(urn, c.Urls, httpcli.NewExternalClientFactory())
 		return NewPythonPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
@@ -163,10 +160,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := crates.NewClient(urn, httpcli.NewExternalClientFactory())
-		if err != nil {
-			return nil, err
-		}
+		cli := crates.NewClient(urn, httpcli.NewExternalClientFactory())
 		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
@@ -174,10 +168,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.NewExternalClientFactory())
-		if err != nil {
-			return nil, err
-		}
+		cli := rubygems.NewClient(urn, c.Repository, httpcli.NewExternalClientFactory())
 		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	}
 

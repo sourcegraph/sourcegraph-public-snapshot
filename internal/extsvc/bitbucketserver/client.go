@@ -61,8 +61,7 @@ type Client struct {
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
-// the provided configuration. If a nil httpClient is provided, http.DefaultClient
-// will be used.
+// the provided configuration.
 func NewClient(urn string, config *schema.BitbucketServerConnection, cf *httpcli.Factory) (*Client, error) {
 	client, err := newClient(urn, config, cf)
 	if err != nil {

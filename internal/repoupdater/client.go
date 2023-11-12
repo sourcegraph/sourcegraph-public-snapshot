@@ -329,8 +329,10 @@ func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, e
 
 	req = req.WithContext(ctx)
 
-	if c.HTTPClient != nil {
-		return c.HTTPClient.Do(req)
+	cli := c.HTTPClient
+	if cli == nil {
+		cli = httpcli.InternalDoer
 	}
-	return http.DefaultClient.Do(req)
+
+	return cli.Do(req)
 }

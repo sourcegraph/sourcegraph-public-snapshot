@@ -55,8 +55,8 @@ type Client interface {
 }
 
 // NewClient returns an authenticated Gerrit API client with
-// the provided configuration. If a nil httpClient is provided, httpcli.ExternalDoer
-// will be used.
+// the provided configuration. If a nil cf is provided, an external doer will be
+// used.
 func NewClient(urn string, url *url.URL, creds *AccountCredentials, cf *httpcli.Factory) (Client, error) {
 	if cf == nil {
 		cf = httpcli.NewExternalClientFactory()

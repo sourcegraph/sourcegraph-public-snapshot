@@ -57,13 +57,13 @@ type HTTPClient struct {
 
 var _ Client = &HTTPClient{}
 
-func NewHTTPClient(urn string, registryURL string, credentials string, httpfactory *httpcli.Factory) (*HTTPClient, error) {
+func NewHTTPClient(urn string, registryURL string, credentials string, httpfactory *httpcli.Factory) *HTTPClient {
 	return &HTTPClient{
 		registryURL: registryURL,
 		cf:          httpfactory,
 		limiter:     ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("NPMClient"), urn)),
 		credentials: credentials,
-	}, nil
+	}
 }
 
 type PackageInfo struct {

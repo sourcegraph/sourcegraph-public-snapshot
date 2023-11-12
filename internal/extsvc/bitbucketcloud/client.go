@@ -77,8 +77,7 @@ type client struct {
 }
 
 // NewClient creates a new Bitbucket Cloud API client from the given external
-// service configuration. If a nil httpClient is provided, http.DefaultClient
-// will be used.
+// service configuration. If a nil cf is provided, an external doer will be used.
 func NewClient(urn string, config *schema.BitbucketCloudConnection, cf *httpcli.Factory) (Client, error) {
 	return newClient(urn, config, cf)
 }
