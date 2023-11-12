@@ -18,7 +18,6 @@ go_library(
         "//cmd/symbols/observability",
         "//cmd/symbols/squirrel",
         "//cmd/symbols/types",
-        "//internal/conf/deploy",
         "//internal/database",
         "//internal/env",
         "//internal/grpc",
