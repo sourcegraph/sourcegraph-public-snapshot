@@ -11,6 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// We want to reuse the client because when using the DefaultAzureCredential
+// it will acquire a short lived token and reusing the client
+// prevents acquiring a new token on every request.
+// The client will refresh the token as needed.
 var azureClient *azopenai.Client
 
 func getClient(endpoint, accessToken string) (*azopenai.Client, error) {
