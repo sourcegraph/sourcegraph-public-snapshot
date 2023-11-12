@@ -103,7 +103,7 @@ func newGitHubSource(
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.NewExternalClientFactory()
 	}
 
 	opts := []httpcli.Opt{

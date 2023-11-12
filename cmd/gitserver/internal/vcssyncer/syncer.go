@@ -133,7 +133,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
+		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.NewExternalClientFactory())
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +144,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.NewExternalClientFactory())
 		return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
@@ -152,7 +152,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+		cli, err := pypi.NewClient(urn, c.Urls, httpcli.NewExternalClientFactory())
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +163,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
+		cli, err := crates.NewClient(urn, httpcli.NewExternalClientFactory())
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +174,7 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		if err != nil {
 			return nil, err
 		}
-		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
+		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.NewExternalClientFactory())
 		if err != nil {
 			return nil, err
 		}

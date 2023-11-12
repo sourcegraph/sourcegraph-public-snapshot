@@ -48,12 +48,8 @@ func createTestProvider(t *testing.T) *ClientProvider {
 	t.Helper()
 	fac, cleanup := httptestutil.NewRecorderFactory(t, update(t.Name()), t.Name())
 	t.Cleanup(cleanup)
-	doer, err := fac.Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
 	baseURL, _ := url.Parse("https://gitlab.com/")
-	provider := NewClientProvider("Test", baseURL, doer)
+	provider := NewClientProvider("Test", baseURL, fac)
 	return provider
 }
 

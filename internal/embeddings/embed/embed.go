@@ -23,13 +23,18 @@ import (
 )
 
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
+	cli, err := httpcli.NewExternalClientFactory().Doer()
+	if err != nil {
+		return nil, err
+	}
+
 	switch config.Provider {
 	case conftypes.EmbeddingsProviderNameSourcegraph:
-		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
+		return sourcegraph.NewClient(cli, config), nil
 	case conftypes.EmbeddingsProviderNameOpenAI:
-		return openai.NewClient(httpcli.ExternalClient, config), nil
+		return openai.NewClient(cli, config), nil
 	case conftypes.EmbeddingsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(httpcli.ExternalClient, config), nil
+		return azureopenai.NewClient(cli, config), nil
 	default:
 		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}

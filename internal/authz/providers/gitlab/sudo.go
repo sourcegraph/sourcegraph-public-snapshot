@@ -66,12 +66,12 @@ type SudoProviderOp struct {
 	SyncInternalRepoPermissions bool
 }
 
-func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
+func newSudoProvider(op SudoProviderOp, cf *httpcli.Factory) *SudoProvider {
 	return &SudoProvider{
 		sudoToken: op.SudoToken,
 
 		urn:                         op.URN,
-		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cf),
 		clientURL:                   op.BaseURL,
 		codeHost:                    extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		authnConfigID:               op.AuthnConfigID,

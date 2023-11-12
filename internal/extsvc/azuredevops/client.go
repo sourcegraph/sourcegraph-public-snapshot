@@ -71,14 +71,19 @@ type client struct {
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (Client, error) {
+func NewClient(urn string, url string, auth auth.Authenticator, cf *httpcli.Factory) (Client, error) {
 	u, err := urlx.Parse(url)
 	if err != nil {
 		return nil, err
 	}
 
-	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+	if cf == nil {
+		cf = httpcli.NewExternalClientFactory()
+	}
+
+	httpClient, err := cf.Doer(httpcli.CachedTransportOpt)
+	if err != nil {
+		return nil, err
 	}
 
 	return &client{

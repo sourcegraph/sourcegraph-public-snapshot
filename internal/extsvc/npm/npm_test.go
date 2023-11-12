@@ -76,7 +76,7 @@ func TestCredentials(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	client, _ := NewHTTPClient("urn", server.URL, credentials, httpcli.ExternalClientFactory)
+	client, _ := NewHTTPClient("urn", server.URL, credentials, httpcli.NewExternalClientFactory())
 	client.limiter = ratelimit.NewInstrumentedLimiter("npm", rate.NewLimiter(100, 10))
 
 	presentDep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")

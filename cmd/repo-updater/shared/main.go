@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -155,6 +154,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		repos.NewPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
 		// Run git fetches scheduler
 		updateScheduler,
+		// git-server repos purging thread
+		repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker"), db, conf.DefaultClient()),
 	}
 
 	routines = append(routines,
@@ -168,15 +169,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
 		routines = append(routines, syncer.NewSyncReposWithLastErrorsWorker(ctx, rateLimiter))
-	}
-
-	// git-server repos purging thread
-	// Temporary escape hatch if this feature proves to be dangerous
-	// TODO: Move to config.
-	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
-		logger.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
-	} else {
-		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker"), db, conf.DefaultClient()))
 	}
 
 	// Register recorder in all routines that support it.

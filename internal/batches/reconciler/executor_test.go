@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -71,9 +70,9 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		t.Skip()
 	}
 
-	orig := httpcli.InternalDoer
-	httpcli.InternalDoer = httpcli.DoerFunc(mockDoer)
-	t.Cleanup(func() { httpcli.InternalDoer = orig })
+	// orig := httpcli.InternalDoer
+	// httpcli.InternalDoer = httpcli.DoerFunc(mockDoer)
+	// t.Cleanup(func() { httpcli.InternalDoer = orig })
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -1152,7 +1151,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer func() { bstore.UserCredentials().Delete(ctx, cred.ID) }()
+				t.Cleanup(func() {
+					require.NoError(t, bstore.UserCredentials().Delete(ctx, cred.ID))
+				})
 			}
 
 			batchSpec := bt.CreateBatchSpec(t, ctx, bstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, 0)

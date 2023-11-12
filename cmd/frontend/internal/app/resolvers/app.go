@@ -40,7 +40,6 @@ type appResolver struct {
 	logger    log.Logger
 	db        database.DB
 	gitClient gitserver.Client
-	doer      httpcli.Doer
 }
 
 var _ graphqlbackend.AppResolver = &appResolver{}
@@ -50,7 +49,6 @@ func NewAppResolver(logger log.Logger, db database.DB, gitClient gitserver.Clien
 		logger:    logger,
 		db:        db,
 		gitClient: gitClient,
-		doer:      httpcli.InternalDoer,
 	}
 }
 

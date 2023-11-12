@@ -152,8 +152,7 @@ func TestGitHubHandler(t *testing.T) {
 	defer server.Close()
 
 	cf := httpcli.NewExternalClientFactory()
-	opts := []httpcli.Opt{}
-	doer, err := cf.Doer(opts...)
+	doer, err := cf.Doer()
 	if err != nil {
 		t.Fatal(err)
 	}

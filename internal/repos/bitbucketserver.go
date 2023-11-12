@@ -51,18 +51,15 @@ func NewBitbucketServerSource(ctx context.Context, logger log.Logger, svc *types
 
 func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.NewExternalClientFactory()
 	}
 
-	var opts []httpcli.Opt
+	opts := []httpcli.Opt{httpcli.CachedTransportOpt}
 	if c.Certificate != "" {
 		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
-	cli, err := cf.Doer(opts...)
-	if err != nil {
-		return nil, err
-	}
+	cf = cf.WithOpts(opts...)
 
 	var eb excludeBuilder
 	for _, r := range c.Exclude {
@@ -75,7 +72,7 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 		return nil, err
 	}
 
-	client, err := bitbucketserver.NewClient(svc.URN(), c, cli)
+	client, err := bitbucketserver.NewClient(svc.URN(), c, cf)
 	if err != nil {
 		return nil, err
 	}

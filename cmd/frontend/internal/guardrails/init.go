@@ -32,7 +32,7 @@ func Init(
 
 	// TODO(keegancsmith) configuration for access token and enabling.
 	if !envvar.SourcegraphDotComMode() {
-		httpClient, err := httpcli.UncachedExternalClientFactory.Doer()
+		httpClient, err := httpcli.NewExternalClientFactory().Doer()
 		if err != nil {
 			return errors.Wrap(err, "failed to initialize external http client for guardrails")
 		}

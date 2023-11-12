@@ -77,18 +77,15 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.NewExternalClientFactory()
 	}
 
-	var opts []httpcli.Opt
+	opts := []httpcli.Opt{httpcli.CachedTransportOpt}
 	if c.Certificate != "" {
 		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
-	cli, err := cf.Doer(opts...)
-	if err != nil {
-		return nil, err
-	}
+	cf = cf.WithOpts(opts...)
 
 	var eb excludeBuilder
 	for _, r := range c.Exclude {
@@ -116,7 +113,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		return nil, err
 	}
 
-	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli)
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cf)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {

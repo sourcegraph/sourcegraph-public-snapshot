@@ -39,11 +39,6 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 	}
 	rec.SetMatcher(ignoreHostMatcher)
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	cli, err := NewClient(
 		"urn",
 		AzureDevOpsAPIURL,
@@ -51,7 +46,7 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 			Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
 			Password: os.Getenv("AZURE_DEV_OPS_TOKEN"),
 		},
-		hc,
+		httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)),
 	)
 	if err != nil {
 		t.Fatal(err)

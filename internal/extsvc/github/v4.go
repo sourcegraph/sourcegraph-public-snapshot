@@ -74,6 +74,10 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 		cli = disabledClient{}
 	}
 	if cli == nil {
+		// We don't need a cached doer here like we initialize for the v3 client,
+		// because GraphQL is using POST only and we don't cache that, also GitHub
+		// doesn't have a way to not count GraphQL requests that are cacheable
+		// to the rate limits.
 		cli = httpcli.ExternalDoer
 	}
 

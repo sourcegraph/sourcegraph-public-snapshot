@@ -266,7 +266,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		log.Scoped("externalServiceResolver.CheckConnection"),
 		r.db,
 		r.externalService,
-		httpcli.ExternalClientFactory,
+		httpcli.NewExternalClientFactory(),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create source")

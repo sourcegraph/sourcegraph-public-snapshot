@@ -7,7 +7,6 @@ go_library(
         "client.go",
         "doc.go",
         "external.go",
-        "noop_response_cache.go",
         "redis_logger_middleware.go",
         "transport.go",
     ],

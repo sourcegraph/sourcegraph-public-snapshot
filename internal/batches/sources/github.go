@@ -53,7 +53,7 @@ func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.
 	apiURL, _ := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.NewExternalClientFactory()
 	}
 
 	opts := httpClientCertificateOptions([]httpcli.Opt{

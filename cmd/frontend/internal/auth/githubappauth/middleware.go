@@ -503,7 +503,7 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 		return nil, err
 	}
 
-	cf := httpcli.UncachedExternalClientFactory
+	cf := httpcli.NewExternalClientFactory()
 	client, err := cf.Doer()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create GitHub client")

@@ -20,8 +20,10 @@ import (
 //
 // Once our retry framework supports the use of Request.GetBody we can switch
 // back to the normal internal request factory.
+// TODO: Can we streamline?
 var zoektHTTPClient, _ = httpcli.NewFactory(
 	httpcli.NewMiddleware(
+		// TODO: Not used.
 		httpcli.ContextErrorMiddleware,
 	),
 	httpcli.NewMaxIdleConnsPerHostOpt(500),

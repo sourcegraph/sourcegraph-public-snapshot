@@ -95,44 +95,20 @@ var redisCache = rcache.NewWithTTL("http", 604800)
 // return 304 / Not Modified.
 //
 // Responses load from cache will have the 'X-From-Cache' header set.
-var CachedTransportOpt = NewCachedTransportOpt(redisCache, true)
-
-// ExternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services.
-// WARN: Clients from this factory cache entire responses for etag matching. Do not
-// use them for one-off requests if possible, and definitely not for larger payloads,
-// like downloading arbitrarily sized files! See UncachedExternalClientFactory instead.
-var ExternalClientFactory = NewExternalClientFactory()
-
-// UncachedExternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services, but with caching
-// responses disabled.
-var UncachedExternalClientFactory = newExternalClientFactory(false)
+var CachedTransportOpt = NewCachedTransportOpt(redisCache)
 
 var (
-	externalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
-	externalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
-	externalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
-	externalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
-	externalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
+	externalTimeout               = env.MustGetDuration("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", 5*time.Minute, "Timeout for external HTTP requests")
+	externalRetryDelayBase        = env.MustGetDuration("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", 200*time.Millisecond, "Base retry delay duration for external HTTP requests")
+	externalRetryDelayMax         = env.MustGetDuration("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", 3*time.Second, "Max retry delay duration for external HTTP requests")
+	externalRetryMaxAttempts      = env.MustGetInt("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", 20, "Max retry attempts for external HTTP requests")
+	externalRetryAfterMaxDuration = env.MustGetDuration("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", 3*time.Second, "Max duration to wait in retry-after header before we won't auto-retry")
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services. Additional
 // middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
-// WARN: Clients from this factory cache entire responses for etag matching. Do not
-// use them for one-off requests if possible, and definitely not for larger payloads,
-// like downloading arbitrarily sized files!
 func NewExternalClientFactory(middleware ...Middleware) *Factory {
-	return newExternalClientFactory(true, middleware...)
-}
-
-// NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services. Additional
-// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
-// If cache is true, responses will be cached in redis for improved rate limiting
-// and reduced byte transfer sizes.
-func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 	mw := []Middleware{
 		ContextErrorMiddleware,
 		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
@@ -140,7 +116,8 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 	}
 	mw = append(mw, middleware...)
 
-	opts := []Opt{
+	return NewFactory(
+		NewMiddleware(mw...),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
@@ -151,41 +128,19 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
-	}
-	if cache {
-		opts = append(opts, CachedTransportOpt)
-	}
-
-	return NewFactory(
-		NewMiddleware(mw...),
-		opts...,
 	)
 }
 
 // ExternalDoer is a shared client for external communication. This is a
 // convenience for existing uses of http.DefaultClient.
-// WARN: This client caches entire responses for etag matching. Do not use it for
-// one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
-var ExternalDoer, _ = ExternalClientFactory.Doer()
-
-// ExternalClient returns a shared client for external communication. This is
-// a convenience for existing uses of http.DefaultClient.
-// WARN: This client caches entire responses for etag matching. Do not use it for
-// one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
-var ExternalClient, _ = ExternalClientFactory.Client()
-
-// InternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services.
-var InternalClientFactory = NewInternalClientFactory("internal")
+var ExternalDoer, _ = NewExternalClientFactory().Doer()
 
 var (
-	internalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
-	internalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
-	internalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
-	internalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
-	internalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
+	internalTimeout               = env.MustGetDuration("SRC_HTTP_CLI_INTERNAL_TIMEOUT", 0, "Timeout for internal HTTP requests")
+	internalRetryDelayBase        = env.MustGetDuration("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", 50*time.Millisecond, "Base retry delay duration for internal HTTP requests")
+	internalRetryDelayMax         = env.MustGetDuration("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", 1*time.Second, "Max retry delay duration for internal HTTP requests")
+	internalRetryMaxAttempts      = env.MustGetInt("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", 20, "Max retry attempts for internal HTTP requests")
+	internalRetryAfterMaxDuration = env.MustGetDuration("SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION", 3*time.Second, "Max duration to wait in retry-after header before we won't auto-retry")
 )
 
 // NewInternalClientFactory returns a httpcli.Factory with common options
@@ -214,11 +169,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 
 // InternalDoer is a shared client for internal communication. This is a
 // convenience for existing uses of http.DefaultClient.
-var InternalDoer, _ = InternalClientFactory.Doer()
-
-// InternalClient returns a shared client for internal communication. This is
-// a convenience for existing uses of http.DefaultClient.
-var InternalClient, _ = InternalClientFactory.Client()
+var InternalDoer, _ = NewInternalClientFactory("internal").Doer()
 
 // Doer returns a new Doer wrapped with the middleware stack
 // provided in the Factory constructor and with the given common
@@ -252,6 +203,11 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 	}
 
 	return &cli, err
+}
+
+// WithOpts returns a new Factory with the given opts added to the common opts.
+func (f *Factory) WithOpts(addtl ...Opt) *Factory {
+	return &Factory{stack: f.stack, common: append(f.common, addtl...)}
 }
 
 // NewFactory returns a Factory that applies the given common
@@ -416,9 +372,9 @@ func NewCertPoolOpt(certs ...string) Opt {
 // NewCachedTransportOpt returns an Opt that wraps the existing http.Transport
 // of an http.Client with caching using the given Cache.
 //
-// If markCachedResponses, responses returned from the cache will be given an extra header,
+// Responses returned from the cache will be given an extra header,
 // X-From-Cache.
-func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
+func NewCachedTransportOpt(c httpcache.Cache) Opt {
 	return func(cli *http.Client) error {
 		if cli.Transport == nil {
 			cli.Transport = http.DefaultTransport
@@ -428,7 +384,7 @@ func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
 			RoundTripper: &httpcache.Transport{
 				Transport:           cli.Transport,
 				Cache:               c,
-				MarkCachedResponses: markCachedResponses,
+				MarkCachedResponses: true,
 			},
 			Wrapped: cli.Transport,
 		}

@@ -55,13 +55,13 @@ type OAuthProviderOp struct {
 	SyncInternalRepoPermissions bool
 }
 
-func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
+func newOAuthProvider(op OAuthProviderOp, cf *httpcli.Factory) *OAuthProvider {
 	return &OAuthProvider{
 		token:     op.Token,
 		tokenType: op.TokenType,
 
 		urn:                         op.URN,
-		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cf),
 		clientURL:                   op.BaseURL,
 		codeHost:                    extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		db:                          op.DB,
