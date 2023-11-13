@@ -2,7 +2,7 @@ import { defineProjectWithDefaults } from '../../vitest.shared'
 
 export default defineProjectWithDefaults(__dirname, {
     test: {
-        environment: 'happy-dom',
+        environment: 'jsdom',
         environmentMatchGlobs: [
             ['src/enterprise/code-monitoring/ManageCodeMonitorPage.test.tsx', 'jsdom'], // needs window.confirm, Request
             ['src/enterprise/code-monitoring/CreateCodeMonitorPage.test.tsx', 'jsdom'], // 'Error: Should not already be working.'

@@ -522,5 +522,6 @@ vitest_test(
         ":module_styles",
         ":shared_tests",
         ":snapshots",
+        ":graphql_operations_ts",
     ],
 )
