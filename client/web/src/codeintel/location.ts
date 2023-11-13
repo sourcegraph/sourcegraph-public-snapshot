@@ -25,9 +25,9 @@ export interface LocationsGroupedByRepo {
 export type LocationGroupQuality = 'PRECISE' | 'SEARCH-BASED'
 
 export class LocationsGroupedByFile {
-    /** Invariant: `path` matches the 'file' key in all Locations in `_locations` */
+    /** Invariant: `path` matches the 'file' key in all Locations in `locations` */
     public path: string
-    /** Invariant: `precise` matches the 'precise' key in all Locations in `_locations` */
+    /** Invariant: `precise` matches the 'precise' key in all Locations in `locations` */
     private precise: boolean
     /** Invariant: This array is non-empty */
     private locations: Location[]
@@ -90,7 +90,7 @@ export class LocationsGroupedByFile {
  * and precise Locations, the search-based Locations are discarded.
  * */
 export class LocationsGroup {
-    /** Invariant: `_totalCount` is the sum of sizes of Location arrays in `_groups` */
+    /** Invariant: `locationsCount` is the sum of sizes of Location arrays in `groups` */
     private locationsCount: number
     /** Invariant: Every Location stored in the group has a distinct URL. */
     private groups: LocationsGroupedByRepo[]
