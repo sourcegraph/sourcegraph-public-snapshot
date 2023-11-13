@@ -17,7 +17,14 @@ import (
 // The client will refresh the token as needed.
 var azureClient *azopenai.Client
 
-func getClient(endpoint, accessToken string) (*azopenai.Client, error) {
+type AzureCompletionsClient interface {
+	GetCompletionsStream(ctx context.Context, body azopenai.CompletionsOptions, options *azopenai.GetCompletionsStreamOptions) (azopenai.GetCompletionsStreamResponse, error)
+	GetCompletions(ctx context.Context, body azopenai.CompletionsOptions, options *azopenai.GetCompletionsOptions) (azopenai.GetCompletionsResponse, error)
+	GetChatCompletions(ctx context.Context, body azopenai.ChatCompletionsOptions, options *azopenai.GetChatCompletionsOptions) (azopenai.GetChatCompletionsResponse, error)
+	GetChatCompletionsStream(ctx context.Context, body azopenai.ChatCompletionsOptions, options *azopenai.GetChatCompletionsStreamOptions) (azopenai.GetChatCompletionsStreamResponse, error)
+}
+
+func GetAzureAPIClient(endpoint, accessToken string) (AzureCompletionsClient, error) {
 	if azureClient != nil {
 		return azureClient, nil
 	}
@@ -38,22 +45,14 @@ func getClient(endpoint, accessToken string) (*azopenai.Client, error) {
 	return azureClient, err
 }
 
-func NewClient(endpoint, accessToken string) (types.CompletionsClient, error) {
-	client, err := getClient(endpoint, accessToken)
-	if err != nil {
-		return nil, err
-	}
+func NewClient(client AzureCompletionsClient) (types.CompletionsClient, error) {
 	return &azureCompletionClient{
-		client:      client,
-		accessToken: accessToken,
-		endpoint:    endpoint,
+		client: client,
 	}, nil
 }
 
 type azureCompletionClient struct {
-	client      *azopenai.Client
-	accessToken string
-	endpoint    string
+	client AzureCompletionsClient
 }
 
 func (c *azureCompletionClient) Complete(
@@ -73,7 +72,7 @@ func (c *azureCompletionClient) Complete(
 
 func completeAutocomplete(
 	ctx context.Context,
-	client *azopenai.Client,
+	client AzureCompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
@@ -98,7 +97,7 @@ func completeAutocomplete(
 
 func completeChat(
 	ctx context.Context,
-	client *azopenai.Client,
+	client AzureCompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
@@ -133,7 +132,7 @@ func (c *azureCompletionClient) Stream(
 
 func streamAutocomplete(
 	ctx context.Context,
-	client *azopenai.Client,
+	client AzureCompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
@@ -172,7 +171,7 @@ func streamAutocomplete(
 
 func streamChat(
 	ctx context.Context,
-	client *azopenai.Client,
+	client AzureCompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
