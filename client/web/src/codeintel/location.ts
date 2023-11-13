@@ -32,7 +32,8 @@ export class LocationsGroupedByFile {
     /** Invariant: This array is non-empty */
     private locations: Location[]
 
-    /** Pre-condition: `locations` should be non-empty, and every entry
+    /**
+     * Pre-condition: `locations` should be non-empty, and every entry
      * should have the same value for 'file'.
      */
     constructor(locations: Location[]) {
@@ -50,7 +51,8 @@ export class LocationsGroupedByFile {
         }
     }
 
-    /** Attempt to add the Location to this group without mixing
+    /**
+     * Attempt to add the Location to this group without mixing
      * search-based and precise Locations.
      *
      * If one attempts to mix them, precise locations will be preferred.
@@ -83,12 +85,13 @@ export class LocationsGroupedByFile {
     }
 }
 
-/** Type to store locations grouped by (repo, file) pairs.
+/**
+ * Type to store locations grouped by (repo, file) pairs.
  *
  * This type is specialized for use in the reference panel code.
  * So if a given (repo, file) pair contains both search-based Locations
  * and precise Locations, the search-based Locations are discarded.
- * */
+  */
 export class LocationsGroup {
     /** Invariant: `locationsCount` is the sum of sizes of Location arrays in `groups` */
     private locationsCount: number
@@ -139,7 +142,8 @@ export class LocationsGroup {
         }
     }
 
-    /** Returns the total number of locations combined across all groups.
+    /**
+     * Returns the total number of locations combined across all groups.
      *
      * This may be less than the number of Locations passed to the constructor,
      * in case there are mixed search-based and precise Locations,
@@ -166,7 +170,8 @@ export class LocationsGroup {
 
     public static empty: LocationsGroup = new LocationsGroup([])
 
-    /** Attempt to combine the existing locations with the new set
+    /**
+     * Attempt to combine the existing locations with the new set
      * into a new LocationsGroup.
      *
      * Some of the Locations in `newLocations` may be dropped if they

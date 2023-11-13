@@ -60,7 +60,7 @@ import type { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import type { CodeIntelligenceProps } from '.'
-import { type Location, LocationsGroup, LocationsGroupedByRepo, LocationsGroupedByFile } from './location'
+import { type Location, LocationsGroup, type LocationsGroupedByRepo, type LocationsGroupedByFile } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
@@ -883,14 +883,15 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         highlighted = group.path.split(filter)
     }
 
-    const { repo, commitID, file } = group.getLocations()[0]
+    const locations = group.getLocations()
+    const { repo, commitID, file } = locations[0]
     const ranges = useMemo(
         () =>
-            group.getLocations().map(location => ({
+            locations.map(location => ({
                 startLine: location.range?.start.line ?? 0,
                 endLine: (location.range?.end.line ?? 0) + 1,
             })),
-        [group.getLocations()]
+        [locations]
     )
 
     const fetchHighlightedFileRangeLines = useCallback(
