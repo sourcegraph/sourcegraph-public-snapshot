@@ -720,23 +720,26 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
-		}
-	}()
+	// We don't bother doing these on Sourcegraph.com as they are expensive and not needed.
+	if !envvar.SourcegraphDotComMode() {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
+			if err != nil {
+				logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
+			}
+		}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
-		}
-	}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
+			if err != nil {
+				logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
+			}
+		}()
+	}
 
 	wg.Wait()
 
