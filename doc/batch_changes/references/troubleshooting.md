@@ -190,12 +190,6 @@ For Rancher Desktop:
 export SRC_BATCH_TMP_DIR=/tmp/rancher-desktop/batchchange
 ```
 
-
-2) Run the batch changes again with parameter -“cache” passing SRC_BATCH_TMP_DIR like below
- 
-
-user$ src batch preview -f test.yaml - cache $SRC_BATCH_TMP_DIR
-
 ## Publishing changesets
 
 ### Do you have the right credentials?
