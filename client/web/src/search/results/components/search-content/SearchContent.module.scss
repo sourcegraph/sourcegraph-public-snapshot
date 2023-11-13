@@ -1,0 +1,67 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.container {
+    width: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        'infobar  sidebar'
+        'contents sidebar';
+    column-gap: 1rem;
+    height: min-content;
+    padding: 0.5rem 1rem 0 1rem;
+    isolation: isolate;
+
+    &--with-sidebar-hidden {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            'infobar'
+            'contents';
+    }
+
+    @media (--md-breakpoint-down) {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas:
+            'infobar'
+            'sidebar'
+            'contents';
+    }
+}
+
+.sidebar {
+    grid-area: sidebar;
+
+    .container--with-sidebar-hidden & {
+        display: none;
+
+        @media (--md-breakpoint-down) {
+            &--show-mobile {
+                display: block;
+            }
+        }
+    }
+
+    @media (--md-breakpoint-down) {
+        display: none;
+
+        &--show-mobile {
+            display: block;
+        }
+    }
+}
+
+.infobar {
+    grid-area: infobar;
+    margin-bottom: 0.25rem;
+}
+
+.contents {
+    grid-area: contents;
+}
+
+.alert-area {
+    max-width: 65rem;
+    margin: auto;
+}

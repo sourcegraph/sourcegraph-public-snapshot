@@ -6,7 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../../../graphql-operations'
 
 import { SearchResultsInfoBar, type SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 

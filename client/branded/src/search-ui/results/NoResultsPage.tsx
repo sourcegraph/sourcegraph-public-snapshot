@@ -53,7 +53,6 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
     showQueryExamples?: boolean
-    setQueryState?: (query: QueryState) => void
     searchMode?: SearchMode
     setSearchMode?: (mode: SearchMode) => void
     submitSearch?: (parameters: SubmitSearchParameters) => void
@@ -68,7 +67,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     showQueryExamples,
-    setQueryState,
     searchMode,
     setSearchMode,
     submitSearch,
@@ -107,7 +105,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     />
                 )}
 
-            {showQueryExamples && setQueryState && (
+            {showQueryExamples && (
                 <>
                     <H3 as={H2}>Search basics</H3>
                     <div className={styles.queryExamplesContainer}>

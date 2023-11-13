@@ -1,4 +1,4 @@
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { Route, Routes } from 'react-router-dom'
 
@@ -219,9 +219,9 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
             </Routes>
             {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
-                    position="right"
-                    priority={3}
                     id="go-to-permalink"
+                    priority={3}
+                    position="right"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
                     {context => (
