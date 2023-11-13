@@ -248,6 +248,11 @@ All Sourcegraph Cloud instances have Sourcegraph management access enabled by de
 
 Our Cloud instances provide [audit logs](../admin/audit_log.md#cloud) to help you monitor and investigate actions taken by users and the system. These logs are available to download by request  and are also sent to a [centralized logging service](https://about.sourcegraph.com/security#logging) for 30 day retention (configurable for greater periods by request).
 
+#### Audit Log Pricing
+
+See this google doc for our raw audit log pricing to help our Sales team structure costs
+[Sheet](https://docs.google.com/spreadsheets/d/1ikRo-HjvJ-TFJ92aFKqbILAliF0dw2SNyy01UDA8feI/edit?usp=sharing)
+
 ## Accommodating special requirements
 
 We may be able to support special requests (network access policies, infrastructure requirements, custom version control systems, etc.) with additional time, support, and fees. [Contact us](https://about.sourcegraph.com/contact/sales) to discuss any special requirements you may have.
