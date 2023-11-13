@@ -3,7 +3,6 @@ package azureopenai
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -21,7 +20,11 @@ import (
 // The client will refresh the token as needed.
 var azureClient *azopenai.Client
 
-func getClient(endpoint, accessToken string) (*azopenai.Client, error) {
+type AzureEmbeddingsAPIClient interface {
+	GetEmbeddings(ctx context.Context, body azopenai.EmbeddingsOptions, options *azopenai.GetEmbeddingsOptions) (azopenai.GetEmbeddingsResponse, error)
+}
+
+func GetAzureAPIClient(endpoint, accessToken string) (AzureEmbeddingsAPIClient, error) {
 	if azureClient != nil {
 		return azureClient, nil
 	}
@@ -42,11 +45,7 @@ func getClient(endpoint, accessToken string) (*azopenai.Client, error) {
 	return azureClient, err
 }
 
-func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
-	client, err := getClient(config.Endpoint, config.AccessToken)
-	if err != nil {
-		return nil, err
-	}
+func NewClient(client AzureEmbeddingsAPIClient, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
 	return &azureOpenaiEmbeddingsClient{
 		client:      client,
 		dimensions:  config.Dimensions,
@@ -57,7 +56,7 @@ func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) (*az
 }
 
 type azureOpenaiEmbeddingsClient struct {
-	client      *azopenai.Client
+	client      AzureEmbeddingsAPIClient
 	model       string
 	dimensions  int
 	endpoint    string
@@ -111,8 +110,7 @@ func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 		return *response.Data[i].Index < *response.Data[j].Index
 	})
 
-	dimensionality := len(response.Data[0].Embedding)
-	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
+	embeddings := make([]float32, 0, len(response.Data)*c.dimensions)
 	failed := make([]int, 0)
 	for _, embedding := range response.Data {
 		if len(embedding.Embedding) != 0 {
@@ -126,14 +124,14 @@ func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 				failed = append(failed, int(*embedding.Index))
 
 				// reslice to provide zero value embedding for failed chunk
-				embeddings = embeddings[:len(embeddings)+dimensionality]
+				embeddings = embeddings[:len(embeddings)+c.dimensions]
 				continue
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}
 	}
 
-	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: dimensionality}, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: c.dimensions}, nil
 }
 
 func (c *azureOpenaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*azopenai.GetEmbeddingsResponse, error) {
