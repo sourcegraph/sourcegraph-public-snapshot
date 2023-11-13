@@ -74,7 +74,7 @@ export class LocationsGroupedByFile {
     }
 
     /** Do not modify the returned Array. */
-    public get getLocations(): Location[] {
+    public getLocations(): Location[] {
         return this.locations
     }
 
@@ -129,10 +129,10 @@ export class LocationsGroup {
                     )
                 }
                 const g = new LocationsGroupedByFile(locations)
-                if (g.getLocations.length > locations.length) {
+                if (g.getLocations().length > locations.length) {
                     throw new Error('materialized new locations out of thin air')
                 }
-                this.locationsCount += g.getLocations.length
+                this.locationsCount += g.getLocations().length
                 perFileLocations.push(g)
             }
             this.groups.push({ repoName, perFileGroups: perFileLocations })
@@ -145,13 +145,13 @@ export class LocationsGroup {
      * in case there are mixed search-based and precise Locations,
      * or if there are duplicates.
      */
-    public get getLocationsCount(): number {
+    public getLocationsCount(): number {
         return this.locationsCount
     }
 
     public get first(): Location | undefined {
         if (this.locationsCount > 0) {
-            return this.groups[0].perFileGroups[0].getLocations[0]
+            return this.groups[0].perFileGroups[0].getLocations()[0]
         }
         return undefined
     }
@@ -181,7 +181,7 @@ export class LocationsGroup {
         const out: Location[] = []
         for (const group of this.groups) {
             for (const locs of group.perFileGroups) {
-                out.push(...locs.getLocations)
+                out.push(...locs.getLocations())
             }
         }
         return out
