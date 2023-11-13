@@ -182,7 +182,7 @@ func (r *schemaResolver) AccessRequestCreateUser(ctx context.Context, args *stru
 	VerifiedEmail *bool
 }) (*createUserResult, error) {
 
-	newResult, err := r.CreateUser(ctx, &struct {
+	newUser, err := r.CreateUser(ctx, &struct {
 		Username      string
 		Email         *string
 		VerifiedEmail *bool
@@ -199,5 +199,5 @@ func (r *schemaResolver) AccessRequestCreateUser(ctx context.Context, args *stru
 		return nil, err
 	}
 
-	return newResult, err
+	return newUser, err
 }

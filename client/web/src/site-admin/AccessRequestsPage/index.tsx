@@ -279,7 +279,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 setLastApprovedUser({
                     username,
                     email,
-                    resetPasswordURL: data?.accessRequestCreateUser.resetPasswordURL,
+                    resetPasswordURL: data?.accessRequestCreateUser?.resetPasswordURL,
                 })
                 await refetch()
             }
@@ -320,6 +320,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                         email={lastApprovedUser.email}
                         username={lastApprovedUser.username}
                         resetPasswordURL={lastApprovedUser.resetPasswordURL}
+                        showEmail={true}
                     />
                 )}
                 <div className="d-flex align-items-start justify-content-between">

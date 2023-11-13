@@ -223,7 +223,7 @@ type Mutation {
         email may be marked as unverified if SMTP and password resets are enabled.
         """
         verifiedEmail: Boolean
-    ): CreateUserResult!
+    ): CreateUserResult
     """
 
     Only site admins may perform this mutation.

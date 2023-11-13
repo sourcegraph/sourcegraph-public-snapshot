@@ -8,6 +8,7 @@ interface AccountCreatedAlertProps {
     username: string
     email?: string
     resetPasswordURL?: string | null
+    showEmail?: boolean | null
 }
 
 /**
@@ -21,10 +22,11 @@ export const AccountCreatedAlert: React.FunctionComponent<React.PropsWithChildre
     email,
     resetPasswordURL,
     children,
+    showEmail,
 }) => (
     <Alert variant="success">
         <Text>
-            Account created for <Link to={`/users/${username}`}>{username}</Link>.
+            {showEmail ? <>Account created for {email}.</> : <>Account created for <Link to={`/users/${username}`}>{username}</Link>.</>}
         </Text>
         <Text>
             {resetPasswordURL
