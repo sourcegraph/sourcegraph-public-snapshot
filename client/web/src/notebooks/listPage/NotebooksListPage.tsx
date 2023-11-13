@@ -15,7 +15,7 @@ import type { AuthenticatedUser } from '../../auth'
 import type { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { type CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
@@ -236,7 +236,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
     if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
-        return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
+        return <Navigate to={PageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
     }
 
     return (

@@ -105,17 +105,6 @@ commandsets:
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
-  oss:
-    noDevPrivate: true
-    checks:
-      - docker
-      - redis
-    commands:
-      - frontend
-      - repo-updater
-      - gitserver
-      - web
-
 tests:
   # These can be run with `sg test [name]`
   # Every command is run from the repository root.

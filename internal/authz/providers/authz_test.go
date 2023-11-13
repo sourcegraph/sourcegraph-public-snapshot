@@ -848,8 +848,6 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 	})
 }
 
-// This test lives in cmd/enterprise because it tests a proprietary
-// super-set of the validation performed by the OSS version.
 func TestValidateExternalServiceConfig(t *testing.T) {
 	t.Parallel()
 	t.Cleanup(licensing.TestingSkipFeatureChecks())

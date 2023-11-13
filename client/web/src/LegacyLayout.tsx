@@ -25,7 +25,8 @@ import { useHandleSubmitFeedback } from './hooks'
 import type { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
+import { NewGlobalNavigationBar } from './nav/new-global-navigation/NewGlobalNavigationBar'
+import { PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { isSourcegraphDev, useDeveloperSettings } from './stores'
@@ -62,11 +63,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isAppSetupPage = routeMatch?.startsWith(EnterprisePageRoutes.AppSetup)
-    const isSearchJobsPage = routeMatch?.startsWith(EnterprisePageRoutes.SearchJobs)
-    const isAppAuthCallbackPage = routeMatch?.startsWith(EnterprisePageRoutes.AppAuthCallback)
-    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
-    const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
+    const isAppSetupPage = routeMatch?.startsWith(PageRoutes.AppSetup)
+    const isSearchJobsPage = routeMatch?.startsWith(PageRoutes.SearchJobs)
+    const isAppAuthCallbackPage = routeMatch?.startsWith(PageRoutes.AppAuthCallback)
+    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
+    const isCodySearchPage = routeMatch === PageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
     // Since the access token callback page is rendered in a nested route, we can't use
@@ -112,6 +113,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isGetCodyPage = location.pathname === PageRoutes.GetCody
     const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
 
+    const newSearchNavigation = useExperimentalFeatures<boolean>(features => features.newSearchNavigationUI ?? false)
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
     const { theme } = useTheme()
@@ -189,7 +191,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !isAppAuthCallbackPage &&
         !isAuthTokenCallbackPage
     ) {
-        return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
+        return <Navigate to={PageRoutes.AppSetup} replace={true} />
     }
 
     // Some routes by their design require rendering on a blank page
@@ -217,6 +219,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
         return <Navigate to={PageRoutes.PostSignUp} replace={true} />
     }
+
+    const showNavigationSearchBox =
+        isSearchRelatedPage &&
+        !isSearchHomepage &&
+        !isCommunitySearchContextPage &&
+        !isSearchConsolePage &&
+        !isSearchNotebooksPage &&
+        !isCodySearchPage &&
+        !isSearchJobsPage
 
     return (
         <div
@@ -254,22 +265,32 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 !disableFeedbackSurvey &&
                 !props.isCodyApp && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
-                <GlobalNavbar
-                    {...props}
-                    showSearchBox={
-                        isSearchRelatedPage &&
-                        !isSearchHomepage &&
-                        !isCommunitySearchContextPage &&
-                        !isSearchConsolePage &&
-                        !isSearchNotebooksPage &&
-                        !isCodySearchPage &&
-                        !isSearchJobsPage
-                    }
-                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
-                    showFeedbackModal={showFeedbackModal}
-                />
+                <>
+                    {newSearchNavigation ? (
+                        <NewGlobalNavigationBar
+                            showSearchBox={showNavigationSearchBox}
+                            authenticatedUser={props.authenticatedUser}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            ownEnabled={props.ownEnabled}
+                            notebooksEnabled={props.notebooksEnabled}
+                            searchContextsEnabled={props.searchContextsEnabled}
+                            codeMonitoringEnabled={props.codeMonitoringEnabled}
+                            batchChangesEnabled={props.batchChangesEnabled}
+                            codeInsightsEnabled={props.codeInsightsEnabled ?? false}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            telemetryService={props.telemetryService}
+                        />
+                    ) : (
+                        <GlobalNavbar
+                            {...props}
+                            showSearchBox={showNavigationSearchBox}
+                            setFuzzyFinderIsVisible={setFuzzyFinderVisible}
+                            isRepositoryRelatedPage={isRepositoryRelatedPage}
+                            showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                            showFeedbackModal={showFeedbackModal}
+                        />
+                    )}
+                </>
             )}
             {props.isCodyApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
