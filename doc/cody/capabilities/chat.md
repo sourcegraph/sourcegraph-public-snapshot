@@ -37,7 +37,7 @@ Let's use Cody VS Code extension's chat interface to answer your first question.
 - Next, click the icon for **Start a New Chat Panel** to open a new chat window
 - Here, you can directly write your question or type slash `/` to select one of the commands and then press **Enter**
 
-For example, ask Cody to "explain what this code does?"
+For example, ask Cody to "What does this file do?"
 
 Cody will take a few seconds to process your question, providing contextual information about the files it reads and generating the answer.
 
