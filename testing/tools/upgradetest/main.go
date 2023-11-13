@@ -48,6 +48,9 @@ func main() {
 
 	fmt.Println(args[0])
 	fmt.Println(args[1])
+	fmt.Println(args[2])
+	validateUpgrade(ctx)
+	os.Exit(1)
 
 	// load migrator from release candidate image tarball
 	imageTarball := args[1]
@@ -280,8 +283,7 @@ func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, network
 
 func validateUpgrade(ctx context.Context) error {
 	fmt.Println("--- 🏗️  validating upgrade")
-	// TODO: validate the upgrade by running the same tests as the e2e tests.
-	// TODO: validate the upgrade by running the same tests as the e2e tests.
+	run.Cmd(ctx, "ls", os.Args[2]).Run().Stream(os.Stdout)
 	// TODO: validate the upgrade by running the same tests as the e2e tests.
 	return nil
 }

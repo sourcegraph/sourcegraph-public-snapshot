@@ -4,6 +4,9 @@ set -e
 
 RUNNER="$1"
 TARBALL="$2"
-"$RUNNER" "$($TARBALL)"
+FILES="$(dirname "$3")"
+"$RUNNER" "$($TARBALL)" "$FILES"
+
+echo $FILES
 
 exit 1
