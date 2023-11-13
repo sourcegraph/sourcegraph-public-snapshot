@@ -21,7 +21,7 @@ import { CodyLogo } from '../../cody/components/CodyLogo'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { EnterprisePageRoutes, PageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { LazyV2SearchInput } from '../../search/input/LazyV2SearchInput'
 import { setSearchCaseSensitivity, setSearchMode, setSearchPatternType, useNavbarQueryState } from '../../stores'
@@ -336,34 +336,30 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
 
                         <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>
                             {showSearchContext && (
-                                <NavItemLink url={EnterprisePageRoutes.Contexts} onClick={handleNavigationClick}>
+                                <NavItemLink url={PageRoutes.Contexts} onClick={handleNavigationClick}>
                                     Context
                                 </NavItemLink>
                             )}
-                            {showOwn && <NavItemLink url={EnterprisePageRoutes.Own}>Code ownership</NavItemLink>}
+                            {showOwn && <NavItemLink url={PageRoutes.Own}>Code ownership</NavItemLink>}
                             {showCodySearch && (
-                                <NavItemLink url={EnterprisePageRoutes.CodySearch} onClick={handleNavigationClick}>
+                                <NavItemLink url={PageRoutes.CodySearch} onClick={handleNavigationClick}>
                                     Natural language search <ProductStatusBadge status="experimental" />
                                 </NavItemLink>
                             )}
                             {showSearchJobs && (
-                                <NavItemLink url={EnterprisePageRoutes.SearchJobs} onClick={handleNavigationClick}>
+                                <NavItemLink url={PageRoutes.SearchJobs} onClick={handleNavigationClick}>
                                     Search Jobs <ProductStatusBadge className="ml-2" status="experimental" />
                                 </NavItemLink>
                             )}
                         </ul>
                     </li>
 
-                    <NavItemLink url={EnterprisePageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
+                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
                         Cody
                     </NavItemLink>
 
                     {showSearchNotebook && (
-                        <NavItemLink
-                            url={EnterprisePageRoutes.Notebooks}
-                            icon={BookOutlineIcon}
-                            onClick={handleNavigationClick}
-                        >
+                        <NavItemLink url={PageRoutes.Notebooks} icon={BookOutlineIcon} onClick={handleNavigationClick}>
                             Notebooks
                         </NavItemLink>
                     )}

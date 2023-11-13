@@ -26,7 +26,7 @@ import type { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { NewGlobalNavigationBar } from './nav/new-global-navigation/NewGlobalNavigationBar'
-import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
+import { PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { isSourcegraphDev, useDeveloperSettings } from './stores'
@@ -63,11 +63,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isAppSetupPage = routeMatch?.startsWith(EnterprisePageRoutes.AppSetup)
-    const isSearchJobsPage = routeMatch?.startsWith(EnterprisePageRoutes.SearchJobs)
-    const isAppAuthCallbackPage = routeMatch?.startsWith(EnterprisePageRoutes.AppAuthCallback)
-    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
-    const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
+    const isAppSetupPage = routeMatch?.startsWith(PageRoutes.AppSetup)
+    const isSearchJobsPage = routeMatch?.startsWith(PageRoutes.SearchJobs)
+    const isAppAuthCallbackPage = routeMatch?.startsWith(PageRoutes.AppAuthCallback)
+    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
+    const isCodySearchPage = routeMatch === PageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
     // Since the access token callback page is rendered in a nested route, we can't use
@@ -191,7 +191,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !isAppAuthCallbackPage &&
         !isAuthTokenCallbackPage
     ) {
-        return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
+        return <Navigate to={PageRoutes.AppSetup} replace={true} />
     }
 
     // Some routes by their design require rendering on a blank page
