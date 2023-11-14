@@ -11,7 +11,7 @@ import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } fr
 import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
+// import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
@@ -41,7 +41,8 @@ export interface SignInPageProps {
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     const { context, authenticatedUser } = props
     useEffect(() => {
-        eventLogger.logViewEvent('SignIn', null, false), props.telemetryRecorder.recordEvent('SignIn', 'viewed')
+        // eventLogger.logViewEvent('SignIn', null, false),
+        props.telemetryRecorder.recordEvent('SignIn', 'viewed')
     })
 
     const location = useLocation()
@@ -212,10 +213,10 @@ const SignUpNotice: React.FunctionComponent<{
             <Link
                 to="https://sourcegraph.com/get-started?t=enterprise"
                 onClick={() => {
-                    eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' }),
-                        telemetryRecorder.recordEvent('ClickedOnEnterpriseCTA', 'clicked', {
-                            privateMetadata: { location: 'SignInPage' },
-                        })
+                    // eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' }),
+                    telemetryRecorder.recordEvent('ClickedOnEnterpriseCTA', 'clicked', {
+                        privateMetadata: { location: 'SignInPage' },
+                    })
                 }}
             >
                 consider Sourcegraph Enterprise

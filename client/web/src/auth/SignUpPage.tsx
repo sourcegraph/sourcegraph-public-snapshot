@@ -11,7 +11,8 @@ import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import type { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
-import { eventLogger } from '../tracking/eventLogger'
+
+// import { eventLogger } from '../tracking/eventLogger'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
@@ -49,7 +50,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     const isLightTheme = useIsLightTheme()
 
     useEffect(() => {
-        eventLogger.logViewEvent('SignUp', null, false)
+        // eventLogger.logViewEvent('SignUp', null, false)
         telemetryRecorder.recordEvent('SignUp', 'viewed')
 
         if (invitedBy !== null) {
@@ -57,7 +58,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 isAuthenticated: !!authenticatedUser,
                 allowSignup: context.allowSignup,
             }
-            eventLogger.log('SignUpInvitedByUser', parameters, parameters)
+            // eventLogger.log('SignUpInvitedByUser', parameters, parameters)
             telemetryRecorder.recordEvent('SignUpInvitedByUser', 'clicked', { privateMetadata: { parameters } })
         }
     }, [invitedBy, authenticatedUser, context.allowSignup])

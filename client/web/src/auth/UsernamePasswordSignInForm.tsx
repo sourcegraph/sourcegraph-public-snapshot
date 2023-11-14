@@ -8,7 +8,8 @@ import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
 
 import type { SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
+
+// import { eventLogger } from '../tracking/eventLogger'
 
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
@@ -52,7 +53,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
             }
 
             setLoading(true)
-            eventLogger.log('InitiateSignIn')
+            // eventLogger.log('InitiateSignIn')
             telemetryRecorder.recordEvent('InitiatesSignIn', 'started')
             fetch('/-/sign-in', {
                 credentials: 'same-origin',
