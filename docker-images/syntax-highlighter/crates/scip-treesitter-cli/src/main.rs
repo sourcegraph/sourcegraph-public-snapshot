@@ -18,7 +18,7 @@ enum Commands {
     /// Index source files using Tree Sitter parser for a given language
     /// and produce a SCIP file
     Index {
-        ///
+        /// Which language parser to use to process the files
         #[arg(short, long)]
         language: String,
 
@@ -54,16 +54,27 @@ enum Commands {
 
     /// Fuzzily evaluate candidate SCIP index against known ground truth
     ScipEvaluate {
+        /// SCIP file to evaluate (refered to as "candidate")
         #[arg(long)]
         candidate: String,
+
+        /// SCIP file to be used as the source of truth (referred to as "ground truth")
         #[arg(long)]
         ground_truth: String,
+
+        /// Print to stdout the mapping between candidate symbols and groun truth symbols
         #[arg(long)]
         print_mapping: bool,
+
+        /// Print all occurrences in candidate SCIP that are matching occurrences in ground truth SCIP
         #[arg(long)]
         print_true_positives: bool,
+
+        /// Print all occurrences in candidate SCIP that don't match any occurrences in ground truth SCIP
         #[arg(long)]
         print_false_positives: bool,
+
+        /// Print all occurrences in ground truth SCIP that don't match any occurrences in candidate SCIP
         #[arg(long)]
         print_false_negatives: bool,
     },

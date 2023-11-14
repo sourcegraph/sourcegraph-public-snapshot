@@ -1,5 +1,13 @@
 # scip-treesitter-cli
 
+<!--toc:start-->
+- [scip-treesitter-cli](#scip-treesitter-cli)
+  - [Usage](#usage)
+    - [Indexing](#indexing)
+    - [Evaluation](#evaluation)
+  - [Contributing](#contributing)
+<!--toc:end-->
+
 A command line tool that uses other scip-* crates to either
 
 - produce a SCIP file containing global and local symbols discovered during analysis.
@@ -20,7 +28,6 @@ Index a folder recursively:
 ```bash
 scip-treesitter-cli index --language java --out ./index.scip --workspace <some-folder>
 ```
-
 ### Evaluation
 
 ```bash
