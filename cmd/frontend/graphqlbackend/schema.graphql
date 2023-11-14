@@ -206,7 +206,6 @@ type Mutation {
     ): CreateUserResult!
     """
     Randomize a user's password so that they need to reset it before they can sign in again.
-
     """
     accessRequestCreateUser(
         """
@@ -225,7 +224,6 @@ type Mutation {
         verifiedEmail: Boolean
     ): CreateUserResult
     """
-
     Only site admins may perform this mutation.
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not

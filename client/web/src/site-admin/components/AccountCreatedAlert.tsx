@@ -26,7 +26,13 @@ export const AccountCreatedAlert: React.FunctionComponent<React.PropsWithChildre
 }) => (
     <Alert variant="success">
         <Text>
-            {showEmail ? <>Account created for {email}.</> : <>Account created for <Link to={`/users/${username}`}>{username}</Link>.</>}
+            {showEmail ? (
+                <>Account created for {email}.</>
+            ) : (
+                <>
+                    Account created for <Link to={`/users/${username}`}>{username}</Link>.
+                </>
+            )}
         </Text>
         <Text>
             {resetPasswordURL
