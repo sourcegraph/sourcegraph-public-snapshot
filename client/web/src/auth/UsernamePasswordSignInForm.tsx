@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { asError, logger } from '@sourcegraph/common'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
 
 import type { SourcegraphContext } from '../jscontext'
@@ -12,6 +13,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
+    telemetryRecorder: TelemetryRecorder
     onAuthError: (error: Error | null) => void
     context: Pick<
         SourcegraphContext,
@@ -24,6 +26,7 @@ interface Props {
  * The form for signing in with a username and password.
  */
 export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryRecorder,
     onAuthError,
     className,
     context,
@@ -50,6 +53,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
 
             setLoading(true)
             eventLogger.log('InitiateSignIn')
+            telemetryRecorder.recordEvent('InitiatesSignIn', 'started')
             fetch('/-/sign-in', {
                 credentials: 'same-origin',
                 method: 'POST',

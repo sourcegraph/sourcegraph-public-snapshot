@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -21,6 +22,7 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 import styles from './SignInPage.module.scss'
 
 export interface SignInPageProps {
+    telemetryRecorder: TelemetryRecorder
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -38,7 +40,9 @@ export interface SignInPageProps {
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     const { context, authenticatedUser } = props
-    useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
+    useEffect(() => {
+        eventLogger.logViewEvent('SignIn', null, false), props.telemetryRecorder.recordEvent('SignIn', 'viewed')
+    })
 
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
@@ -158,6 +162,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 allowSignup={context.allowSignup}
                 isRequestAccessAllowed={isRequestAccessAllowed}
                 sourcegraphDotComMode={context.sourcegraphDotComMode}
+                telemetryRecorder={props.telemetryRecorder}
             />
         </>
     )
@@ -200,12 +205,18 @@ const SignUpNotice: React.FunctionComponent<{
     allowSignup: boolean
     sourcegraphDotComMode: boolean
     isRequestAccessAllowed: boolean
-}> = ({ allowSignup, sourcegraphDotComMode, isRequestAccessAllowed }) => {
+    telemetryRecorder: TelemetryRecorder
+}> = ({ allowSignup, sourcegraphDotComMode, isRequestAccessAllowed, telemetryRecorder }) => {
     const dotcomCTAs = (
         <>
             <Link
                 to="https://sourcegraph.com/get-started?t=enterprise"
-                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
+                onClick={() => {
+                    eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' }),
+                        telemetryRecorder.recordEvent('ClickedOnEnterpriseCTA', 'clicked', {
+                            privateMetadata: { location: 'SignInPage' },
+                        })
+                }}
             >
                 consider Sourcegraph Enterprise
             </Link>

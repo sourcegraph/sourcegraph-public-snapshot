@@ -2,11 +2,12 @@ import React from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'
-import { telemetryRecorder } from '../telemetry/telemetryRecorder'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { getReturnTo } from './SignInSignUpCommon'
@@ -16,9 +17,10 @@ import styles from './PostSignUpPage.module.scss'
 
 interface PostSignUpPageProps {
     authenticatedUser: AuthenticatedUser
+    telemetryRecorder: TelemetryRecorder
 }
 
-const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser }) => {
+const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser, telemetryRecorder }) => {
     const location = useLocation()
 
     // Redirect if user has already completed post signup flow

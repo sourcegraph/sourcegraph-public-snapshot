@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
-import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Link, Text } from '@sourcegraph/wildcard'
@@ -21,7 +21,8 @@ import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import styles from './SignUpPage.module.scss'
 
-export interface SignUpPageProps extends TelemetryProps, TelemetryV2Props {
+export interface SignUpPageProps extends TelemetryProps {
+    telemetryRecorder: TelemetryRecorder
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
