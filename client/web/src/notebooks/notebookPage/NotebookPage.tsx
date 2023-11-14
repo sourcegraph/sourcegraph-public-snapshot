@@ -11,6 +11,7 @@ import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, useEventObservable, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
@@ -39,6 +40,7 @@ import styles from './NotebookPage.module.scss'
 interface NotebookPageProps
     extends SearchStreamingProps,
         TelemetryProps,
+        TelemetryV2Props,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         OwnConfigProps {
@@ -66,6 +68,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     copyNotebook = _copyNotebook,
     streamSearch,
     telemetryService,
+    telemetryRecorder,
     searchContextsEnabled,
     ownEnabled,
     isSourcegraphDotCom,
@@ -76,7 +79,10 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
 }) => {
     const { id: notebookId } = useParams()
 
-    useEffect(() => telemetryService.logPageView('SearchNotebookPage'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logPageView('SearchNotebookPage'),
+            telemetryRecorder.recordEvent('SearchNotebookPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
@@ -212,6 +218,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                         createNotebookStar={createNotebookStar}
                                         deleteNotebookStar={deleteNotebookStar}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                     />
                                 }
                             >
@@ -227,6 +234,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                             viewerCanManage={notebookOrError.viewerCanManage}
                                             onUpdateTitle={onUpdateTitle}
                                             telemetryService={telemetryService}
+                                            telemetryRecorder={telemetryRecorder}
                                         />
                                     </PageHeader.Breadcrumb>
                                 </PageHeader.Heading>
@@ -282,6 +290,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 exportedFileName={exportedFileName}
                                 streamSearch={streamSearch}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 searchContextsEnabled={searchContextsEnabled}
                                 ownEnabled={ownEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
