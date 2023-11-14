@@ -4,6 +4,7 @@ import { mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
@@ -16,13 +17,15 @@ export const CopyPathAction: React.FunctionComponent<
     {
         filePath: string
         className?: string
-    } & TelemetryProps
-> = ({ filePath, className, telemetryService }) => {
+    } & TelemetryProps &
+        TelemetryV2Props
+> = ({ filePath, className, telemetryService, telemetryRecorder }) => {
     const [copied, setCopied] = useState(false)
 
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()
         telemetryService.log('CopyFilePath')
+        telemetryRecorder.recordEvent('CopyFilePath', 'copied')
         copy(filePath)
         setCopied(true)
         screenReaderAnnounce('Path copied to clipboard')

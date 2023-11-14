@@ -11,6 +11,7 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
@@ -49,7 +50,10 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     </div>
 )
 
-interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
+interface NoResultsPageProps
+    extends TelemetryProps,
+        TelemetryV2Props,
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
     showQueryExamples?: boolean
@@ -65,6 +69,7 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
 export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
     searchContextsEnabled,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
     showSearchContext,
     showQueryExamples,
@@ -81,16 +86,20 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     const onClose = useCallback(
         (sectionID: SectionID) => {
             telemetryService.log('NoResultsPanel', { panelID: sectionID, action: 'closed' })
+            telemetryRecorder.recordEvent('NoResultsPanel', 'closed', {
+                privateMetadata: { panelID: sectionID, action: 'closed' },
+            })
             setHiddenSectionIds((hiddenSectionIDs = []) =>
                 !hiddenSectionIDs.includes(sectionID) ? [...hiddenSectionIDs, sectionID] : hiddenSectionIDs
             )
         },
-        [setHiddenSectionIds, telemetryService]
+        [setHiddenSectionIds, telemetryService, telemetryRecorder]
     )
 
     useEffect(() => {
         telemetryService.logViewEvent('NoResultsPage')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('NoResultsPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div className={styles.root}>
@@ -114,6 +123,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>
@@ -149,6 +159,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 className="p-0 border-0 align-baseline"
                                 onClick={() => {
                                     telemetryService.log('NoResultsPanel', { action: 'showAll' })
+                                    telemetryRecorder.recordEvent('NoResultsPanel', 'showAll')
                                     setHiddenSectionIds([])
                                 }}
                                 variant="link"

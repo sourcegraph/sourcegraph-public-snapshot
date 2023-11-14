@@ -24,6 +24,7 @@ import {
     type SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
@@ -44,6 +45,7 @@ import styles from './StreamingSearchResultsList.module.scss'
 export interface StreamingSearchResultsListProps
     extends SettingsCascadeProps,
         TelemetryProps,
+        TelemetryV2Props,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
@@ -105,6 +107,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     fetchHighlightedFileLineRanges,
     settingsCascade,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
     searchContextsEnabled,
     platformContext,
@@ -156,6 +159,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         index={index}
                                         location={location}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                         result={result}
                                         onSelect={() => logSearchResultClicked?.(index, 'fileMatch')}
                                         defaultExpanded={false}
@@ -172,6 +176,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                     <SymbolSearchResult
                                         index={index}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                         result={result}
                                         onSelect={() => logSearchResultClicked?.(index, 'symbolMatch')}
                                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
@@ -189,6 +194,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         repoDisplayName={displayRepoName(result.repository)}
                                         containerClassName={resultClassName}
                                         telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
                                     />
                                 )}
                             </PrefetchableFile>
@@ -231,6 +237,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 onSelect={() => logSearchResultClicked?.(index, 'person')}
                                 containerClassName={resultClassName}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 queryState={queryState}
                                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />
@@ -256,6 +263,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             prefetchFile,
             location,
             telemetryService,
+            telemetryRecorder,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
@@ -304,6 +312,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 showSearchContext={searchContextsEnabled}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}

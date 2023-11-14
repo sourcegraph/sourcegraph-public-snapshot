@@ -8,6 +8,7 @@ import type { BuildSearchQueryURLParameters, QueryState, SearchContextProps } fr
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { getOwnerMatchUrl, type OwnerMatch } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,10 @@ import { ResultContainer } from './ResultContainer'
 import styles from './OwnerSearchResult.module.scss'
 import resultStyles from './SearchResult.module.scss'
 
-export interface OwnerSearchResultProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'>, TelemetryProps {
+export interface OwnerSearchResultProps
+    extends Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        TelemetryProps,
+        TelemetryV2Props {
     result: OwnerMatch
     onSelect: () => void
     containerClassName?: string
@@ -38,6 +42,7 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
     buildSearchURLQueryFromQueryState,
     selectedSearchContextSpec,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const displayName = useMemo(() => {
         let displayName = ''
@@ -95,12 +100,15 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
     const logSearchOwnerClicked = (): void => {
         if (url.startsWith('mailto:')) {
             telemetryService.log('searchResults:ownershipMailto:clicked')
+            telemetryRecorder.recordEvent('searchResults.ownershipMailto', 'clicked')
         }
         if (url.startsWith('/users/')) {
             telemetryService.log('searchResults:ownershipUsers:clicked')
+            telemetryRecorder.recordEvent('searchResults.ownershipUsers', 'clicked')
         }
         if (url.startsWith('/teams/')) {
             telemetryService.log('searchResults:ownershipTeams:clicked')
+            telemetryRecorder.recordEvent('searchResults.ownershipTeams', 'clicked')
         }
     }
 
