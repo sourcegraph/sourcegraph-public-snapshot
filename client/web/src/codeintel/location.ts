@@ -91,7 +91,7 @@ export class LocationsGroupedByFile {
  * This type is specialized for use in the reference panel code.
  * So if a given (repo, file) pair contains both search-based Locations
  * and precise Locations, the search-based Locations are discarded.
-  */
+ */
 export class LocationsGroup {
     /** Invariant: `locationsCount` is the sum of sizes of Location arrays in `groups` */
     private locationsCount: number
