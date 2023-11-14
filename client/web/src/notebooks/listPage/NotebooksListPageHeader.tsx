@@ -5,6 +5,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import * as uuid from 'uuid'
 
 import type { ErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Link,
@@ -35,7 +36,7 @@ const INVALID_IMPORT_FILE_ERROR = new Error(
 
 const MAX_FILE_SIZE_IN_BYTES = 1000 * 1000 // 1MB
 
-interface NotebooksListPageHeaderProps extends TelemetryProps {
+interface NotebooksListPageHeaderProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     importNotebook: (notebook: CreateNotebookVariables['notebook']) => void
     setImportState: (state: typeof LOADING | ErrorLike | undefined) => void
@@ -43,14 +44,15 @@ interface NotebooksListPageHeaderProps extends TelemetryProps {
 
 export const NotebooksListPageHeader: React.FunctionComponent<
     React.PropsWithChildren<NotebooksListPageHeaderProps>
-> = ({ authenticatedUser, telemetryService, setImportState, importNotebook }) => {
+> = ({ authenticatedUser, telemetryService, telemetryRecorder, setImportState, importNotebook }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
 
     const onImportMenuItemSelect = useCallback(() => {
         telemetryService.log('SearchNotebookImportMarkdownNotebookButtonClick')
+        telemetryRecorder.recordEvent('SearchNotebookImportMarkdownNotebookButton', 'clicked')
         // Open the system file picker.
         fileInputReference.current?.click()
-    }, [fileInputReference, telemetryService])
+    }, [fileInputReference, telemetryService, telemetryRecorder])
 
     const onFileLoad = useCallback(
         (event: ProgressEvent<FileReader>, fileName: string): void => {

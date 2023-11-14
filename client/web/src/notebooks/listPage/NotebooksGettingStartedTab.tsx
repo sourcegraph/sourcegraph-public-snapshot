@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
@@ -16,7 +17,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
-interface NotebooksGettingStartedTabProps extends TelemetryProps {
+interface NotebooksGettingStartedTabProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -55,8 +56,11 @@ const functionalityPanels = [
 
 export const NotebooksGettingStartedTab: React.FunctionComponent<
     React.PropsWithChildren<NotebooksGettingStartedTabProps>
-> = ({ telemetryService, authenticatedUser }) => {
-    useEffect(() => telemetryService.log('NotebooksGettingStartedTabViewed'), [telemetryService])
+> = ({ telemetryService, telemetryRecorder, authenticatedUser }) => {
+    useEffect(() => {
+        telemetryService.log('NotebooksGettingStartedTabViewed'),
+            telemetryRecorder.recordEvent('NotebooksGettingStartedTab', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
