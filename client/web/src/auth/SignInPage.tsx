@@ -204,7 +204,7 @@ const SignUpNotice: React.FunctionComponent<{
     const dotcomCTAs = (
         <>
             <Link
-                to="https://sourcegraph.com/get-started?t=enterprise"
+                to="https://about.sourcegraph.com/get-started?t=enterprise"
                 onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
             >
                 consider Sourcegraph Enterprise
