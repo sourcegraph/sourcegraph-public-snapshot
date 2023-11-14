@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Modal, Button, Checkbox, H3 } from '@sourcegraph/wildcard'
 
@@ -11,7 +12,7 @@ import { NotebookShareOptionsDropdown, type ShareOption } from './NotebookShareO
 
 import styles from './ShareNotebookModal.module.scss'
 
-interface ShareNotebookModalProps extends TelemetryProps {
+interface ShareNotebookModalProps extends TelemetryProps, TelemetryV2Props {
     isSourcegraphDotCom: boolean
     selectedShareOption: ShareOption
     setSelectedShareOption: (option: ShareOption) => void
@@ -39,13 +40,15 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
     toggleModal,
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
     onUpdateVisibility,
 }) => {
     useEffect(() => {
         if (isOpen) {
             telemetryService.log('SearchNotebookShareModalOpened')
+            telemetryRecorder.recordEvent('SearchNotebookShareModal', 'opened')
         }
-    }, [isOpen, telemetryService])
+    }, [isOpen, telemetryService, telemetryRecorder])
 
     const shareLabelId = 'shareNotebookId'
 
