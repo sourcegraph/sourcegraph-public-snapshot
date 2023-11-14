@@ -128,7 +128,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 	// Write the session cookie
 	a := &sgactor.Actor{UID: usr.ID}
 	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+		httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 	}
 
 	// Track user data
@@ -383,7 +383,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 
 		// Write the session cookie
 		if err := session.SetActor(w, r, &act, 0, user.CreatedAt); err != nil {
-			httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 			return
 		}
 

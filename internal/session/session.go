@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -209,6 +210,15 @@ func waitForRedis(s *redistore.RediStore) {
 //
 // The value is JSON-encoded before being stored.
 func SetData(w http.ResponseWriter, r *http.Request, key string, value any) error {
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return err
+	}
+
+	if info.IsExpired() {
+		return errors.New("Sourcegraph license is expired. Only admins are allowed to sign in.")
+	}
+
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")

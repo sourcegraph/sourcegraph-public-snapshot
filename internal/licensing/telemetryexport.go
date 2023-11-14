@@ -65,12 +65,10 @@ const (
 	TelemetryEventsExportCodyOnly
 )
 
-var (
-	// legacyExportUsageDataEnabled is the legacy 'EXPORT_USAGE_DATA_ENABLED'
-	// env var is set. Typically used in Cloud, if the legacy export is enabled,
-	// we can assume exports are enabled as well.
-	legacyExportUsageDataEnabled = os.Getenv("EXPORT_USAGE_DATA_ENABLED") == "true"
-)
+// legacyExportUsageDataEnabled is the legacy 'EXPORT_USAGE_DATA_ENABLED'
+// env var is set. Typically used in Cloud, if the legacy export is enabled,
+// we can assume exports are enabled as well.
+var legacyExportUsageDataEnabled = os.Getenv("EXPORT_USAGE_DATA_ENABLED") == "true"
 
 func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) TelemetryEventsExportMode {
 	if licenseKey == "" {
@@ -87,7 +85,7 @@ func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) Telemetry
 		return TelemetryEventsExportAll // without a valid license key
 	}
 
-	if p := (&Info{Info: *key}).Plan(); p.isKnown() && p.HasFeature(FeatureAllowAirGapped, false) {
+	if p := (&Info{Info: *key}).Plan(); p.isKnown() && p.HasFeature(FeatureAllowAirGapped) {
 		return TelemetryEventsExportDisabled // this is the only way to disable export entirely
 	}
 
