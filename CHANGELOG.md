@@ -51,7 +51,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Defining file filters for embeddings jobs no longer causes all files to be skipped if `MaxFileSizeBytes` isn't defined. [#58262](https://github.com/sourcegraph/sourcegraph/pull/58262)
 
 ### Removed
 
