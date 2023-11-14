@@ -7,10 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/gobwas/glob"
-	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
@@ -26,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
@@ -80,94 +76,6 @@ type Client struct {
 	// function since we expect the client to be set at runtime once we have a
 	// database connection.
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
-
-	langMappingOnce  resetonce.Once
-	langMappingCache map[string][]glob.Glob
-}
-
-func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {
-	c.langMappingOnce.Do(func() {
-		var mappings map[string][]string
-
-		if conf.IsGRPCEnabled(ctx) {
-			mappings, err = c.listLanguageMappingsGRPC(ctx, repo)
-		} else {
-			mappings, err = c.listLanguageMappingsJSON(ctx, repo)
-		}
-
-		if err != nil {
-			err = errors.Wrap(err, "fetching language mappings")
-			return
-		}
-
-		globs := make(map[string][]glob.Glob, len(ctags.SupportedLanguages))
-
-		for _, allowedLanguage := range ctags.SupportedLanguages {
-			for _, pattern := range mappings[allowedLanguage] {
-				var compiled glob.Glob
-				compiled, err = glob.Compile(pattern)
-				if err != nil {
-					return
-				}
-
-				globs[allowedLanguage] = append(globs[allowedLanguage], compiled)
-			}
-		}
-
-		c.langMappingCache = globs
-		time.AfterFunc(time.Minute*10, c.langMappingOnce.Reset)
-	})
-
-	return c.langMappingCache, nil
-}
-
-func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
-	// an arbitrary symbols host. We should remove this requirement from this method.
-	conn, err := c.getGRPCConn(string(repository))
-	if err != nil {
-		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
-	}
-
-	client := proto.NewSymbolsServiceClient(conn)
-	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
-	if err != nil {
-		return nil, translateGRPCError(err)
-	}
-
-	mappings := make(map[string][]string, len(resp.LanguageFileNameMap))
-	for language, fp := range resp.LanguageFileNameMap {
-		mappings[language] = fp.Patterns
-	}
-
-	return mappings, nil
-}
-
-func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
-	// an arbitrary symbols host. We should remove this requirement from this method.
-
-	var resp *http.Response
-	resp, err := c.httpPost(ctx, "list-languages", repository, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		err = errors.Errorf(
-			"Symbol.ListLanguageMappings http status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
-		return nil, err
-	}
-
-	mapping := make(map[string][]string)
-	err = json.NewDecoder(resp.Body).Decode(&mapping)
-	return mapping, err
 }
 
 // Search performs a symbol search on the symbols service.
