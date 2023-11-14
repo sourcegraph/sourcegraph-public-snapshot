@@ -1,4 +1,4 @@
-# Cody Chat
+# Chat
 
 <p class="subtitle">Use Cody's chat to get contextually-aware answers to your questions.</p>
 

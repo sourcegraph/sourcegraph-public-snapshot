@@ -1,4 +1,4 @@
-# Cody Autocomplete
+# Autocomplete
 
 <p class="subtitle">Learn how Cody helps you get contextually-aware autocompletions for your codebase.</p>
 

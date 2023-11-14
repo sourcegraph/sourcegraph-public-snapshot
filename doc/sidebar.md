@@ -35,7 +35,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Cody with Sourcegraph](cody/overview/cody-with-sourcegraph.md)
   - [Cody Enterprise](cody/overview/enable-cody-enterprise.md)
 - [Quickstart](cody/quickstart.md)
-- [Capabilities](cody/index.md)
+- [Capabilities](cody/capabilities/index.md)
   - [Chat](cody/capabilities/chat.md)
   - [Autocomplete](cody/capabilities/autocomplete.md)
   - [Commands](cody/capabilities/commands.md)
