@@ -4,6 +4,7 @@ import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
@@ -18,7 +19,7 @@ import styles from './VsCodeSignUpPage.module.scss'
 
 export const ShowEmailFormQueryParameter = 'showEmail'
 
-export interface VsCodeSignUpPageProps extends TelemetryProps {
+export interface VsCodeSignUpPageProps extends TelemetryProps, TelemetryV2Props {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -43,6 +44,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const isLightTheme = useIsLightTheme()
     const location = useLocation()
@@ -56,19 +58,22 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
 
     const assetsRoot = window.context?.assetsRoot || ''
 
-    const logEvent = (type: AuthProvider['serviceType']): void => {
+    const recordEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log(
             'SignupInitiated',
             { type: eventType, source: 'vs-code' },
             { type: eventType, source: 'vs-code' }
         )
+        telemetryRecorder.recordEvent('SignupInitiated', 'succeeded', {
+            privateMetadata: { type: eventType, source: 'vs-code' },
+        })
     }
 
     const signUpForm = (
         <SignUpForm
             onSignUp={args => {
-                logEvent('builtin')
+                recordEvent('builtin')
                 return onSignUp(args)
             }}
             context={{
@@ -89,7 +94,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
                 googleLabel="Continue with Google"
-                onClick={logEvent}
+                onClick={recordEvent}
             />
         </>
     )

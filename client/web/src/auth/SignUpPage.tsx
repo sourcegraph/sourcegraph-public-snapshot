@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Link, Text } from '@sourcegraph/wildcard'
@@ -20,7 +21,7 @@ import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import styles from './SignUpPage.module.scss'
 
-export interface SignUpPageProps extends TelemetryProps {
+export interface SignUpPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -37,6 +38,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     authenticatedUser,
     context,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -47,6 +49,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
 
     useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)
+        telemetryRecorder.recordEvent('SignUp', 'viewed')
 
         if (invitedBy !== null) {
             const parameters = {
@@ -54,6 +57,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 allowSignup: context.allowSignup,
             }
             eventLogger.log('SignUpInvitedByUser', parameters, parameters)
+            telemetryRecorder.recordEvent('SignUpInvitedByUser', 'clicked', { privateMetadata: { parameters } })
         }
     }, [invitedBy, authenticatedUser, context.allowSignup])
 
@@ -94,6 +98,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
@@ -107,6 +112,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 isSourcegraphDotCom={context.sourcegraphDotComMode}
             />
         )

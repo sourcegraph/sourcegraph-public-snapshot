@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ import { type SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -55,6 +56,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
 }) => {
     const location = useLocation()
@@ -78,15 +80,18 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     })
     const invitedByUser = data?.user
 
-    const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
+    const recordEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
+        telemetryRecorder.recordEvent('SignupInitiated', 'succeeded', {
+            privateMetadata: { type: eventType },
+        })
     }
 
     const signUpForm = (
         <SignUpForm
             onSignUp={args => {
-                logEventAndSetFlags('builtin')
+                recordEventAndSetFlags('builtin')
                 return onSignUp(args)
             }}
             context={{
@@ -107,7 +112,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
                 googleLabel="Continue with Google"
-                onClick={logEventAndSetFlags}
+                onClick={recordEventAndSetFlags}
             />
         </>
     )
