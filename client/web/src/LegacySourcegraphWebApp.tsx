@@ -55,6 +55,7 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useDeveloperSettings, useNavbarQueryState } from './stores'
 import { TelemetryRecorderProvider } from './telemetry'
+import { telemetryRecorder } from './telemetry/telemetryRecorder'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
@@ -237,6 +238,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
                             telemetryService={eventLogger}
+                            telemetryRecorder={telemetryRecorder}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isCodyApp={window.context.codyAppMode}
                             isSearchContextSpecAvailable={isSearchContextSpecAvailable}

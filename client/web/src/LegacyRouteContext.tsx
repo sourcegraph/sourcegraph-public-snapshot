@@ -17,6 +17,7 @@ import {
     type SearchContextProps,
 } from '@sourcegraph/shared/src/search'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { isBatchChangesExecutionEnabled } from './batches'
@@ -25,9 +26,12 @@ import { NotFoundPage } from './components/HeroPage'
 import type { SearchStreamingProps } from './search'
 import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
 import type { StaticAppConfig } from './staticAppConfig'
+import { telemetryRecorder } from './telemetry/telemetryRecorder'
 import { eventLogger } from './tracking/eventLogger'
 
-export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {}
+export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {
+    telemetryRecorder: TelemetryRecorder
+}
 
 /**
  * Static values we compute in the `<LegacyRoute /> component.
@@ -54,6 +58,7 @@ export interface LegacyRouteComputedContext {
  */
 export interface LegacyRouteStaticInjections
     extends Pick<TelemetryProps, 'telemetryService'>,
+        Pick<TelemetryV2Props, 'telemetryRecorder'>,
         Pick<
             SearchContextProps,
             | 'getUserSearchContextNamespaces'
@@ -144,6 +149,7 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         streamSearch: aggregateStreamingSearch,
         fetchHighlightedFileLineRanges: _fetchHighlightedFileLineRanges,
         telemetryService: eventLogger,
+        telemetryRecorder: telemetryRecorder,
 
         /**
          * Breadcrumb props
