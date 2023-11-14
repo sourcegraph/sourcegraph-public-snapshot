@@ -91,6 +91,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const signUpForm = (
         <SignUpForm
+            telemetryRecorder={telemetryRecorder}
             onSignUp={args => {
                 recordEventAndSetFlags('builtin')
                 return onSignUp(args)

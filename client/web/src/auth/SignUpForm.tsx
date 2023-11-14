@@ -7,6 +7,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     useInputValidation,
     type ValidationOptions,
@@ -23,7 +24,7 @@ import { OrDivider } from './OrDivider'
 import { PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { SignupEmailField } from './SignupEmailField'
 
-export interface SignUpArguments {
+export interface SignUpArguments extends TelemetryV2Props {
     email: string
     username: string
     password: string
@@ -32,7 +33,7 @@ export interface SignUpArguments {
     lastSourceUrl?: string
 }
 
-interface SignUpFormProps {
+interface SignUpFormProps extends TelemetryV2Props {
     className?: string
 
     /** Called to perform the signup on the server. */
@@ -54,6 +55,7 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
  * The form for creating an account
  */
 export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpFormProps>> = ({
+    telemetryRecorder,
     onSignUp,
     buttonLabel,
     className,
@@ -104,6 +106,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
 
             setLoading(true)
             onSignUp({
+                telemetryRecorder: telemetryRecorder,
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,
@@ -115,8 +118,9 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 setLoading(false)
             })
             eventLogger.log('InitiateSignUp')
+            telemetryRecorder.recordEvent('InitiateSignUp', 'clicked')
         },
-        [onSignUp, disabled, emailState, usernameState, passwordState]
+        [telemetryRecorder, onSignUp, disabled, emailState, usernameState, passwordState]
     )
 
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)

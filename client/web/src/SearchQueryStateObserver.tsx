@@ -7,6 +7,7 @@ import { first } from 'rxjs/operators'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSearchContextSpecAvailable } from '@sourcegraph/shared/src/search'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import { getQueryStateFromLocation } from './search'
 import { useV2QueryInput } from './search/useV2QueryInput'
@@ -22,7 +23,7 @@ interface SearchQueryStateObserverProps {
 }
 
 // Update search query state whenever the URL changes
-export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props => {
+export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps & TelemetryV2Props> = props => {
     const { searchContextsEnabled, platformContext, setSelectedSearchContextSpec, selectedSearchContextSpec } = props
 
     const location = useLocation()

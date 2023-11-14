@@ -4,6 +4,7 @@ import type * as H from 'history'
 
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzyModal } from './FuzzyModal'
@@ -14,6 +15,7 @@ const DEFAULT_MAX_RESULTS = 50
 
 export interface FuzzyFinderContainerProps
     extends TelemetryProps,
+        TelemetryV2Props,
         Pick<FuzzyFinderProps, 'location'>,
         SettingsCascadeProps,
         FuzzyTabsProps {
@@ -84,15 +86,19 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
     useEffect(() => {
         if (isVisible) {
             props.telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
+            props.telemetryRecorder.recordEvent('FuzzyFinderViewed', 'viewed', {
+                privateMetadata: { action: 'shortcut open' },
+            })
         }
-    }, [props.telemetryService, isVisible])
+    }, [props.telemetryService, props.telemetryRecorder, isVisible])
 
     const handleItemClick = useCallback(
-        (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => {
-            props.telemetryService.log(eventName, { activeTab, scope }, { activeTab, scope })
+        (eventName: 'FuzzyFinderResult' | 'FuzzyFinderGoToResultsPage') => {
+            props.telemetryService.log(`${eventName}Clicked`, { activeTab, scope }, { activeTab, scope })
+            props.telemetryRecorder.recordEvent(eventName, 'clicked', { privateMetadata: { activeTab, scope } })
             setIsVisible(false)
         },
-        [props.telemetryService, setIsVisible, activeTab, scope]
+        [props.telemetryService, props.telemetryRecorder, setIsVisible, activeTab, scope]
     )
 
     if (tabs.isAllDisabled()) {
@@ -121,6 +127,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 )}
             {isVisible && (
                 <FuzzyFinder
+                    telemetryRecorder={props.telemetryRecorder}
                     {...state}
                     setIsVisible={setIsVisible}
                     location={props.location}
@@ -131,13 +138,13 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
     )
 }
 
-interface FuzzyFinderProps extends FuzzyState {
+interface FuzzyFinderProps extends FuzzyState, TelemetryV2Props {
     setIsVisible: Dispatch<SetStateAction<boolean>>
 
     /**
      * Search result click handler.
      */
-    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
+    onClickItem: (eventName: 'FuzzyFinderResult' | 'FuzzyFinderGoToResultsPage') => void
 
     location: H.Location
 
@@ -156,5 +163,13 @@ const FuzzyFinder: React.FunctionComponent<React.PropsWithChildren<FuzzyFinderPr
     const { setIsVisible } = props
     const onClose = useCallback(() => setIsVisible(false), [setIsVisible])
 
-    return <FuzzyModal {...props} initialMaxResults={DEFAULT_MAX_RESULTS} initialQuery="" onClose={onClose} />
+    return (
+        <FuzzyModal
+            {...props}
+            initialMaxResults={DEFAULT_MAX_RESULTS}
+            initialQuery=""
+            onClose={onClose}
+            telemetryRecorder={props.telemetryRecorder}
+        />
+    )
 }

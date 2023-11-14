@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
@@ -15,9 +15,8 @@ import { withAuthenticatedUser } from './withAuthenticatedUser'
 
 import styles from './PostSignUpPage.module.scss'
 
-interface PostSignUpPageProps {
+interface PostSignUpPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
-    telemetryRecorder: TelemetryRecorder
 }
 
 const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser, telemetryRecorder }) => {

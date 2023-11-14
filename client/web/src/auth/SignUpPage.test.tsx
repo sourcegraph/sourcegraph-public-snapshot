@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -52,6 +53,7 @@ describe('SignUpPage', () => {
                                         xhrHeaders: {},
                                     }}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                 />
                             }
                         />
@@ -81,6 +83,7 @@ describe('SignUpPage', () => {
                                         xhrHeaders: {},
                                     }}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                 />
                             }
                         />
@@ -118,6 +121,7 @@ describe('SignUpPage', () => {
                                         xhrHeaders: {},
                                     }}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                 />
                             }
                         />

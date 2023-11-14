@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Link, Text } from '@sourcegraph/wildcard'
@@ -22,8 +22,7 @@ import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import styles from './SignUpPage.module.scss'
 
-export interface SignUpPageProps extends TelemetryProps {
-    telemetryRecorder: TelemetryRecorder
+export interface SignUpPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -133,7 +132,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             >
                 {context.sourcegraphDotComMode && <Text className="pt-1 pb-2">Start searching public code now</Text>}
                 <Container>
-                    <SignUpForm context={context} onSignUp={handleSignUp} />
+                    <SignUpForm telemetryRecorder={telemetryRecorder} context={context} onSignUp={handleSignUp} />
                 </Container>
                 <Text className="text-center mt-3">
                     Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>

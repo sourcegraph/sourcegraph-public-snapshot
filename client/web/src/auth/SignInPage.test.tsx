@@ -2,6 +2,7 @@ import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import type { AuthenticatedUser } from '../auth'
@@ -40,6 +41,7 @@ describe('SignInPage', () => {
     const render = (
         route: string,
         props: {
+            telemetryRecorder?: SourcegraphContext['telemetryRecorder']
             authProviders?: SourcegraphContext['authProviders']
             authenticatedUser?: AuthenticatedUser
             sourcegraphDotComMode?: SourcegraphContext['sourcegraphDotComMode']
@@ -53,6 +55,7 @@ describe('SignInPage', () => {
                     path="/sign-in"
                     element={
                         <SignInPage
+                            telemetryRecorder={props.telemetryRecorder ?? noOpTelemetryRecorder}
                             authenticatedUser={props.authenticatedUser ?? null}
                             context={{
                                 allowSignup: props.allowSignup ?? true,

@@ -18,6 +18,7 @@ import { escapeRegExp } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Modal,
@@ -55,11 +56,11 @@ const FUZZY_MODAL_RESULTS = 'fuzzy-modal-results'
 // The number of results to jump by on PageUp/PageDown keyboard shortcuts.
 const PAGE_DOWN_INCREMENT = 10
 
-export interface FuzzyModalProps extends FuzzyState {
+export interface FuzzyModalProps extends FuzzyState, TelemetryV2Props {
     initialMaxResults: number
     initialQuery: string
     onClose: () => void
-    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
+    onClickItem: (eventName: 'FuzzyFinderResult' | 'FuzzyFinderGoToResultsPage') => void
     tabs: FuzzyTabs
     location: H.Location
 }
@@ -275,7 +276,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     )
 
     // Stage 2: render results from the fuzzy matcher.
-    const handleResultClick = useCallback(() => onClickItem('FuzzyFinderResultClicked'), [onClickItem])
+    const handleResultClick = useCallback(() => onClickItem('FuzzyFinderResult'), [onClickItem])
     const queryResult = useMemo<QueryResult>(() => {
         const fsmErrors = fuzzyErrors(tabs, activeTab, scope)
         if (fsmErrors.length > 0) {
@@ -388,10 +389,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
           }
         : {}
 
-    const handleGoToResultsPageClick = useCallback(
-        () => onClickItem('FuzzyFinderGoToResultsPageClicked'),
-        [onClickItem]
-    )
+    const handleGoToResultsPageClick = useCallback(() => onClickItem('FuzzyFinderGoToResultsPage'), [onClickItem])
 
     return (
         <Modal

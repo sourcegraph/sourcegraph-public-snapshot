@@ -3,6 +3,7 @@ import * as React from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -232,11 +233,12 @@ interface ResetPasswordPageProps {
  * A page that implements the reset-password flow for a user: (1) initiate the flow by providing the email address
  * of the account whose password to reset, and (2) complete the flow by providing the password-reset code.
  */
-export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> = props => {
+export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps & TelemetryV2Props> = props => {
     const location = useLocation()
 
     React.useEffect(() => {
         eventLogger.logViewEvent('ResetPassword', false)
+        props.telemetryRecorder.recordEvent('ResetPassword', 'viewed')
     }, [])
 
     let body: JSX.Element

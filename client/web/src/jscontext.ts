@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import type { TemporarySettingsResult } from './graphql-operations'
@@ -208,6 +209,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
+
+    telemetryRecorder: TelemetryRecorder
 
     /** primaryLoginProvidersCount sets the max number of primary login providers on signin page */
     primaryLoginProvidersCount: number

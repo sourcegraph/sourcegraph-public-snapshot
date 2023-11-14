@@ -72,6 +72,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
 
     const signUpForm = (
         <SignUpForm
+            telemetryRecorder={telemetryRecorder}
             onSignUp={args => {
                 recordEvent('builtin')
                 return onSignUp(args)

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
-import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -21,7 +21,7 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 import styles from './SignInPage.module.scss'
 
-export interface SignInPageProps {
+export interface SignInPageProps extends TelemetryV2Props {
     telemetryRecorder: TelemetryRecorder
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
@@ -39,7 +39,7 @@ export interface SignInPageProps {
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
-    const { context, authenticatedUser } = props
+    const { context, authenticatedUser, telemetryRecorder } = props
     useEffect(() => {
         // eventLogger.logViewEvent('SignIn', null, false),
         props.telemetryRecorder.recordEvent('SignIn', 'viewed')

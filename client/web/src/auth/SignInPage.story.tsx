@@ -1,5 +1,7 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../components/WebStory'
 import type { SourcegraphContext } from '../jscontext'
 
@@ -13,6 +15,8 @@ const config: Meta = {
 }
 
 export default config
+
+const telemetryRecorder: SourcegraphContext['telemetryRecorder'] = noOpTelemetryRecorder
 
 const authProviders: SourcegraphContext['authProviders'] = [
     {
@@ -55,45 +59,88 @@ const context: SignInPageProps['context'] = {
 }
 
 export const Default: StoryFn = () => (
-    <WebStory>{() => <SignInPage context={context} authenticatedUser={null} />}</WebStory>
+    <WebStory>
+        {() => <SignInPage telemetryRecorder={telemetryRecorder} context={context} authenticatedUser={null} />}
+    </WebStory>
 )
 
 export const ShowMore: StoryFn = () => (
     <WebStory initialEntries={[{ pathname: '/sign-in', search: '?showMore' }]}>
-        {() => <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, primaryLoginProvidersCount: 1 }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
 export const Dotcom: StoryFn = () => (
     <WebStory>
-        {() => <SignInPage context={{ ...context, sourcegraphDotComMode: true }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, sourcegraphDotComMode: true }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
 export const NoProviders: StoryFn = () => (
-    <WebStory>{() => <SignInPage context={{ ...context, authProviders: [] }} authenticatedUser={null} />}</WebStory>
+    <WebStory>
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, authProviders: [] }}
+                authenticatedUser={null}
+            />
+        )}
+    </WebStory>
 )
 
 export const NoBuiltIn: StoryFn = () => (
     <WebStory>
-        {() => <SignInPage context={{ ...context, authProviders: noBuiltInAuthProviders }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, authProviders: noBuiltInAuthProviders }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
 export const NoResetPassword: StoryFn = () => (
     <WebStory>
-        {() => <SignInPage context={{ ...context, resetPasswordEnabled: false }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, resetPasswordEnabled: false }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
 export const NoSignUp: StoryFn = () => (
-    <WebStory>{() => <SignInPage context={{ ...context, allowSignup: false }} authenticatedUser={null} />}</WebStory>
+    <WebStory>
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, allowSignup: false }}
+                authenticatedUser={null}
+            />
+        )}
+    </WebStory>
 )
 
 export const NoAccessRequest: StoryFn = () => (
     <WebStory>
         {() => (
             <SignInPage
+                telemetryRecorder={telemetryRecorder}
                 context={{ ...context, allowSignup: false, authAccessRequest: { enabled: false } }}
                 authenticatedUser={null}
             />
@@ -103,13 +150,25 @@ export const NoAccessRequest: StoryFn = () => (
 
 export const DotComSignUp: StoryFn = () => (
     <WebStory>
-        {() => <SignInPage context={{ ...context, sourcegraphDotComMode: true }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, sourcegraphDotComMode: true }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
 export const OnlyOnePrimaryProvider: StoryFn = () => (
     <WebStory>
-        {() => <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, primaryLoginProvidersCount: 1 }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
@@ -117,6 +176,7 @@ export const OnlyOnePrimaryProviderWithoutBuiltIn: StoryFn = () => (
     <WebStory>
         {() => (
             <SignInPage
+                telemetryRecorder={telemetryRecorder}
                 context={{ ...context, primaryLoginProvidersCount: 1, authProviders: noBuiltInAuthProviders }}
                 authenticatedUser={null}
             />
@@ -126,7 +186,13 @@ export const OnlyOnePrimaryProviderWithoutBuiltIn: StoryFn = () => (
 
 export const ShowMoreProviders: StoryFn = () => (
     <WebStory initialEntries={['/sign-in?showMore']}>
-        {() => <SignInPage context={{ ...context, primaryLoginProvidersCount: 1 }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, primaryLoginProvidersCount: 1 }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
@@ -134,6 +200,7 @@ export const ShowMoreProvidersWithoutBuiltIn: StoryFn = () => (
     <WebStory initialEntries={['/sign-in?showMore']}>
         {() => (
             <SignInPage
+                telemetryRecorder={telemetryRecorder}
                 context={{ ...context, authProviders: noBuiltInAuthProviders, primaryLoginProvidersCount: 1 }}
                 authenticatedUser={null}
             />
@@ -143,7 +210,13 @@ export const ShowMoreProvidersWithoutBuiltIn: StoryFn = () => (
 
 export const OnlyBuiltInAuthProvider: StoryFn = () => (
     <WebStory>
-        {() => <SignInPage context={{ ...context, authProviders: onlyBuiltInAuthProvider }} authenticatedUser={null} />}
+        {() => (
+            <SignInPage
+                telemetryRecorder={telemetryRecorder}
+                context={{ ...context, authProviders: onlyBuiltInAuthProvider }}
+                authenticatedUser={null}
+            />
+        )}
     </WebStory>
 )
 
@@ -152,7 +225,13 @@ export const PrefixCanBeChanged: StoryFn = () => {
 
     return (
         <WebStory>
-            {() => <SignInPage context={{ ...context, authProviders: providers }} authenticatedUser={null} />}
+            {() => (
+                <SignInPage
+                    telemetryRecorder={telemetryRecorder}
+                    context={{ ...context, authProviders: providers }}
+                    authenticatedUser={null}
+                />
+            )}
         </WebStory>
     )
 }
