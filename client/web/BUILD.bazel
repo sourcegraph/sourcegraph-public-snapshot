@@ -1652,6 +1652,7 @@ ts_project(
         "src/team/new/team-select/backend.ts",
         "src/telemetry/apolloTelemetryExporter.ts",
         "src/telemetry/index.ts",
+        "src/telemetry/telemetryRecorder.ts",
         "src/tour/GettingStartedTour.tsx",
         "src/tour/GettingStartedTourSetup.tsx",
         "src/tour/components/ItemPicker.tsx",
