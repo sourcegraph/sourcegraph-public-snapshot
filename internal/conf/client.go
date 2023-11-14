@@ -84,10 +84,6 @@ func SiteConfig() schema.SiteConfiguration {
 	return Get().SiteConfiguration
 }
 
-func ServiceConnections() conftypes.ServiceConnections {
-	return Get().ServiceConnections()
-}
-
 // Raw returns a copy of the raw configuration.
 func (c *client) Raw() conftypes.RawUnified {
 	return c.store.Raw()

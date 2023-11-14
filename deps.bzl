@@ -3075,13 +3075,6 @@ def go_dependencies():
         sum = "h1:AWwleXJkX/nhcU9bZSnZoi3h/qGYqQAGhq6zZe/aQW8=",
         version = "v1.1.1",
     )
-    go_repository(
-        name = "com_github_gorilla_csrf",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/gorilla/csrf",
-        sum = "h1:Ir3o2c1/Uzj6FBxMlAUB6SivgVMy1ONXwYgXn+/aHPE=",
-        version = "v1.7.1",
-    )
 
     go_repository(
         name = "com_github_gorilla_css",
@@ -5970,8 +5963,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:4wcRD0YpO1C27OZnb2Ee3glrUGtbMuJbb+mpAWoDr3s=",
-        version = "v0.0.0-20231109091759-db067d1294f3",
+        sum = "h1:p+ejFr9s/9PfldOMF1+lsbsaMOy3nOpnJeQf/rxoei4=",
+        version = "v0.0.0-20231114160819-5e2620e0cf64",
     )
 
     go_repository(

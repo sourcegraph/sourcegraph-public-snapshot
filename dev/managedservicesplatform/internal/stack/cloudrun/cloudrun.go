@@ -129,11 +129,16 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// convention across MSP services.
 	cloudRunBuilder.AddEnv("DIAGNOSTICS_SECRET", diagnosticsSecret.HexValue)
 
+	// Add the domain as an environment variable.
+	dnsName := pointers.DerefZero(vars.Environment.EnvironmentServiceSpec).Domain.GetDNSName()
+	if dnsName != "" {
+		cloudRunBuilder.AddEnv("EXTERNAL_DNS_NAME", dnsName)
+	}
+
 	// Add user-configured env vars
 	if err := addContainerEnvVars(cloudRunBuilder, vars.Environment.Env, vars.Environment.SecretEnv, envVariablesData{
-		ProjectID: vars.ProjectID,
-		ServiceDnsName: pointers.DerefZero(vars.Environment.EnvironmentServiceSpec).
-			Domain.GetDNSName(),
+		ProjectID:      vars.ProjectID,
+		ServiceDnsName: dnsName,
 	}); err != nil {
 		return nil, errors.Wrap(err, "add user env vars")
 	}

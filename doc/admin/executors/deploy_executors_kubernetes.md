@@ -77,6 +77,7 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | KUBERNETES_JOB_ANNOTATIONS                                   | N/A               | The JSON encoded annotations to add to the Kubernetes Jobs. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                        |
 | KUBERNETES_JOB_POD_ANNOTATIONS                               | N/A               | The JSON encoded annotations to add to the Kubernetes Job Pods. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                    |
 | KUBERNETES_IMAGE_PULL_SECRETS                                | N/A               | The names of Kubernetes image pull secrets to use for pulling images. e.g. my-secret,my-other-secret                                                                                                   |
+> Note: `EXECUTOR_KUBERNETES_NAMESPACE` should be set to either "default" or the specific namespace where your Executor is deployed.
 
 <!--
 
