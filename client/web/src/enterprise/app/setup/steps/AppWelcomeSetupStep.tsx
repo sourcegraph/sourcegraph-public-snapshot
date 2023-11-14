@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { Button, H1, H2, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { EnterprisePageRoutes } from '../../../../routes.constants'
+import { PageRoutes } from '../../../../routes.constants'
 import { SetupStepsContext, type StepComponentProps } from '../../../../setup-wizard/components'
 import { useQueryParameters } from '../../../insights/hooks'
 
@@ -107,7 +107,7 @@ const ConnectToSourcegraphComForm: FC = () => (
 
         <Button
             as={Link}
-            to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${EnterprisePageRoutes.AppSetup}/welcome?emailCheck=true`}
+            to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${PageRoutes.AppSetup}/welcome?emailCheck=true`}
             variant="primary"
             size="lg"
             className={styles.actionsButton}

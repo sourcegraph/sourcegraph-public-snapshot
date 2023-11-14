@@ -43,7 +43,7 @@ import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import { OnboardingChecklist } from '../onboarding'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
-import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
+import { PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
@@ -326,10 +326,10 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
-            showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
-            showOwn && { path: EnterprisePageRoutes.Own, content: 'Code ownership' },
+            showSearchContext && { path: PageRoutes.Contexts, content: 'Contexts' },
+            showOwn && { path: PageRoutes.Own, content: 'Code ownership' },
             showCodySearch && {
-                path: EnterprisePageRoutes.CodySearch,
+                path: PageRoutes.CodySearch,
                 content: (
                     <>
                         Natural language search <ProductStatusBadge status="experimental" />
@@ -337,7 +337,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                 ),
             },
             showSearchJobs && {
-                path: EnterprisePageRoutes.SearchJobs,
+                path: PageRoutes.SearchJobs,
                 content: (
                     <>
                         Search Jobs <ProductStatusBadge className="ml-2" status="experimental" />
@@ -373,13 +373,13 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                     </NavItem>
                 ))}
             <NavItem icon={CodyLogo}>
-                <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
+                <NavLink variant={navLinkVariant} to={PageRoutes.Cody}>
                     Cody
                 </NavLink>
             </NavItem>
             {showSearchNotebook && (
                 <NavItem icon={BookOutlineIcon}>
-                    <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>
+                    <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
                         Notebooks
                     </NavLink>
                 </NavItem>
