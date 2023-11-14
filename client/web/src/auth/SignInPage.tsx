@@ -22,7 +22,6 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 import styles from './SignInPage.module.scss'
 
 export interface SignInPageProps extends TelemetryV2Props {
-    telemetryRecorder: TelemetryRecorder
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -39,7 +38,7 @@ export interface SignInPageProps extends TelemetryV2Props {
 }
 
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
-    const { context, authenticatedUser, telemetryRecorder } = props
+    const { context, authenticatedUser } = props
     useEffect(() => {
         // eventLogger.logViewEvent('SignIn', null, false),
         props.telemetryRecorder.recordEvent('SignIn', 'viewed')

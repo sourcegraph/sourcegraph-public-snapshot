@@ -3,7 +3,7 @@ import * as React from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
