@@ -1,9 +1,16 @@
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 
-import type { ResolveRepoAndRevisionResult, ResolveRepoAndRevisionVariables } from '../graphql-operations'
+import {
+    HighlightResponseFormat,
+    type ReferencesPanelHighlightedBlobResult,
+    type ReferencesPanelHighlightedBlobVariables,
+    type ResolveRepoAndRevisionResult,
+    type ResolveRepoAndRevisionVariables,
+} from '../graphql-operations'
 
-import { RESOLVE_REPO_REVISION_BLOB_QUERY } from './ReferencesPanelQueries'
+import { FETCH_HIGHLIGHTED_BLOB, RESOLVE_REPO_REVISION_BLOB_QUERY } from './ReferencesPanelQueries'
+import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 
 interface RepoAndBlob {
     isFork: boolean
@@ -11,6 +18,7 @@ interface RepoAndBlob {
     revision: string
     commitID: string
     fileContent: string
+    occurrences: Occurrence[]
 }
 
 interface UseRepoAndBlobResult {
@@ -34,7 +42,25 @@ export const useRepoAndBlob = (repoName: string, filePath: string, revision?: st
         }
     )
 
-    if (loading || error) {
+    const { data: highlightingData, error: highlightingError, loading: highlightingLoading }  = useQuery<
+        ReferencesPanelHighlightedBlobResult,
+        ReferencesPanelHighlightedBlobVariables
+    >(FETCH_HIGHLIGHTED_BLOB, {
+        variables: {
+            repository: repoName,
+            commit: revision ?? 'BOOM',
+            path: filePath,
+            format: HighlightResponseFormat.JSON_SCIP,
+        },
+        // Cache this data but always re-request it in the background when we revisit
+        // this page to pick up newer changes.
+        fetchPolicy: 'cache-and-network',
+        nextFetchPolicy: 'network-only',
+    })
+    const lsif = highlightingData?.repository?.commit?.blob?.highlight?.lsif
+    console.log({lsif})
+
+    if (loading || error || highlightingError || highlightingLoading) {
         return { loading, error }
     }
 
@@ -65,6 +91,7 @@ export const useRepoAndBlob = (repoName: string, filePath: string, revision?: st
             revision: revision ?? defaultBranch,
             commitID: repository.commit.oid,
             fileContent: repository.commit.file.content,
+            occurrences: [].
         },
     }
 }
