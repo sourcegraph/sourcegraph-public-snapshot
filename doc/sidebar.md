@@ -39,6 +39,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Chat](cody/capabilities/chat.md)
   - [Autocomplete](cody/capabilities/autocomplete.md)
   - [Commands](cody/capabilities/commands.md)
+  - [Debug Code](cody/capabilities/debug-code.md)
 - [Core Concepts](cody/core-concepts/index.md)
 - [Cody Use Cases](cody/use-cases.md)
 - [Custom Commands](cody/custom-commands.md)
