@@ -656,8 +656,7 @@ function nodeIsImmediateParentOf(nodeA: TreeNode, nodeB: TreeNode): boolean {
     if (nodeB.path === '') {
         return false
     }
-    let bParentPath = getParentPath(nodeB.path)
-    return nodeA.path === bParentPath
+    return nodeA.path === getParentPath(nodeB.path)
 }
 
 function isImmediateParentOf(fullPathA: string, fullPathB: string): boolean {
