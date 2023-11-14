@@ -17,7 +17,7 @@ export const defaultProjectConfig: UserWorkspaceConfig = {
     test: {
         testTimeout: 10000,
         hookTimeout: 1000,
-        experimentalVmThreads: true,
+        pool: 'vmThreads',
         include: [`**/*.test.${TS_EXT}?(x)`],
         exclude: [
             '**/integration-test',
@@ -61,8 +61,12 @@ const userConfig: UserConfig = {
     test: {
         cache: BAZEL ? false : undefined, // don't cache in Bazel
 
-        minThreads: 1, // otherwise it's slow when there are many CPU cores
-        maxThreads: 16,
+        poolOptions: {
+            vmThreads: {
+                minThreads: 1, // Otherwise it's slow when there are many CPU cores
+                maxThreads: 8, // Warning: setting this value to 16 leads to "Error: Failed to terminate worker"
+            },
+        },
         teardownTimeout: 1000,
 
         // For compatibility with Jest's defaults; can be changed to the Vitest defaults.
