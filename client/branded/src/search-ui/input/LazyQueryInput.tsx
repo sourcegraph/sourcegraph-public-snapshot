@@ -2,6 +2,7 @@ import React, { Suspense } from 'react'
 
 import classNames from 'classnames'
 
+import { noOptelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Input } from '@sourcegraph/wildcard'
 
@@ -54,6 +55,6 @@ export type LazyQueryInputProps = CodeMirrorQueryInputFacadeProps
  */
 export const LazyQueryInput: React.FunctionComponent<LazyQueryInputProps> = ({ ...props }) => (
     <Suspense fallback={<PlainQueryInput {...props} placeholder={props.placeholder} />}>
-        <CodeMirrorQueryInput {...props} />
+        <CodeMirrorQueryInput {...props} telemetryRecorder={noOptelemetryRecorderProvider.getRecorder()} />
     </Suspense>
 )
