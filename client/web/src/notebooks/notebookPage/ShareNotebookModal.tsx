@@ -69,6 +69,7 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
                 <NotebookShareOptionsDropdown
                     isSourcegraphDotCom={isSourcegraphDotCom}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     authenticatedUser={authenticatedUser}
                     selectedShareOption={selectedShareOption}
                     onSelectShareOption={setSelectedShareOption}

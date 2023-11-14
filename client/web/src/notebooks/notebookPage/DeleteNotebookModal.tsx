@@ -5,12 +5,13 @@ import type { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useEventObservable, Modal, Button, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import type { deleteNotebook as _deleteNotebook } from '../backend'
 
-interface DeleteNotebookModalProps extends TelemetryProps {
+interface DeleteNotebookModalProps extends TelemetryProps, TelemetryV2Props {
     notebookId: string
     isOpen: boolean
     toggleDeleteModal: () => void
@@ -26,12 +27,14 @@ export const DeleteNotebookModal: FC<DeleteNotebookModalProps> = ({
     isOpen,
     toggleDeleteModal,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
 
     useEffect(() => {
         if (isOpen) {
             telemetryService.log('SearchNotebookDeleteModalOpened')
+            telemetryRecorder.recordEvent('SearchNotebookDeleteModal', 'opened')
         }
     }, [isOpen, telemetryService])
 
@@ -39,7 +42,10 @@ export const DeleteNotebookModal: FC<DeleteNotebookModalProps> = ({
         useCallback(
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
-                    tap(() => telemetryService.log('SearchNotebookDeleteButtonClicked')),
+                    tap(() => {
+                        telemetryService.log('SearchNotebookDeleteButtonClicked'),
+                            telemetryRecorder.recordEvent('SearchNotebookDeleteButton', 'clicked')
+                    }),
                     mergeMap(() =>
                         deleteNotebook(notebookId).pipe(
                             tap(() => {
@@ -50,7 +56,7 @@ export const DeleteNotebookModal: FC<DeleteNotebookModalProps> = ({
                         )
                     )
                 ),
-            [deleteNotebook, navigate, notebookId, telemetryService]
+            [deleteNotebook, navigate, notebookId, telemetryService, telemetryRecorder]
         )
     )
 
