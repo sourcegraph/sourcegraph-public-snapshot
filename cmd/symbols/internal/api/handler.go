@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
@@ -46,22 +45,6 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 	}
 
 	return &response, nil
-}
-
-func (s *grpcService) ListLanguages(ctx context.Context, _ *proto.ListLanguagesRequest) (*proto.ListLanguagesResponse, error) {
-	rawMapping, err := ctags.ListLanguageMappings(ctx, s.ctagsBinary)
-	if err != nil {
-		return nil, errors.Wrap(err, "listing ctags language mappings")
-	}
-
-	protoMapping := make(map[string]*proto.ListLanguagesResponse_GlobFilePatterns, len(rawMapping))
-	for language, filePatterns := range rawMapping {
-		protoMapping[language] = &proto.ListLanguagesResponse_GlobFilePatterns{Patterns: filePatterns}
-	}
-
-	return &proto.ListLanguagesResponse{
-		LanguageFileNameMap: protoMapping,
-	}, nil
 }
 
 func (s *grpcService) Healthz(ctx context.Context, _ *proto.HealthzRequest) (*proto.HealthzResponse, error) {

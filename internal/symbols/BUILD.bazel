@@ -22,7 +22,6 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
-        "@com_github_gobwas_glob//:glob",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",

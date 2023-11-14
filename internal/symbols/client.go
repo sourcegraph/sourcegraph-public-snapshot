@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gobwas/glob"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
@@ -24,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
@@ -78,9 +76,6 @@ type Client struct {
 	// function since we expect the client to be set at runtime once we have a
 	// database connection.
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
-
-	langMappingOnce  resetonce.Once
-	langMappingCache map[string][]glob.Glob
 }
 
 // Search performs a symbol search on the symbols service.
