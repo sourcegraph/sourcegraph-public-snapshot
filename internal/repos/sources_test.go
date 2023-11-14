@@ -182,13 +182,21 @@ func TestSources_ListRepos_Excluded(t *testing.T) {
 						"sourcegraph/sourcegraph",
 						"keegancsmith/sqlf",
 						"tsenart/VEGETA",
-						"tsenart/go-tsz", // fork
+						"tsenart/go-tsz",     // fork
+						"sourcegraph/about",  // has >500MB and < 200 stars
+						"facebook/react",     // has 215k stars as of now
+						"torvalds/linux",     // has ~4GB
+						"avelino/awesome-go", // has < 20 MB and > 100k stars
 					},
 					Exclude: []*schema.ExcludedGitHubRepo{
 						{Name: "tsenart/Vegeta"},
 						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
 						{Pattern: "^keegancsmith/.*"},
 						{Forks: true},
+						{Stars: "> 215000"},                  // exclude facebook/react
+						{Size: "> 3GB"},                      // exclude torvalds/linux
+						{Size: ">= 500MB", Stars: "< 200"},   // exclude about repo
+						{Size: "<= 20MB", Stars: "> 100000"}, // exclude awesome-go
 					},
 				})),
 			},
