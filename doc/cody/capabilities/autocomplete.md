@@ -2,7 +2,7 @@
 
 <p class="subtitle">Learn how Cody helps you get contextually-aware autocompletions for your codebase.</p>
 
-Cody provides intelligent autocomplete suggestions as you type using context from your code, such as your open files and file history. Cody autocompletes single lines or whole functions in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models for accuracy and performance.
+Cody provides intelligent **autocomplete** suggestions as you type using context from your code, such as your open files and file history. Cody autocompletes single lines or whole functions in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models for accuracy and performance.
 
 Autocomplete supports any programming language because it uses LLMs trained on broad data. It supports all programming languages but works exceptionally well for Python, Go, JavaScript, and TypeScript.
 

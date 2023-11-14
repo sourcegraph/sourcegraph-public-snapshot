@@ -257,4 +257,3 @@ Include currently selected code. When not specified, Cody will try to use visibl
 Type: `boolean`
 
 Default: `false`
-
