@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, RefObject } from 'react'
 
 import { debounce } from 'lodash'
 import { useLocation, useNavigationType } from 'react-router-dom'
@@ -32,7 +32,7 @@ const SCROLL_RETRY_TIMEOUT = 3000
  * @param containerKey A unique key to identify the container where scrolling will be managed. Usually the component name.
  * @param containerRef A React ref object of the container where scrolling will be managed.
  */
-export function useScrollManager(containerKey: string, containerRef: React.RefObject<HTMLElement>): void {
+export function useScrollManager(containerKey: string, containerRef: RefObject<HTMLElement>): void {
     const location = useLocation()
     const navigationType = useNavigationType()
 

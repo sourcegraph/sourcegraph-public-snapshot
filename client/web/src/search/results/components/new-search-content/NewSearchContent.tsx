@@ -1,7 +1,7 @@
-import { FC, useCallback, useState } from 'react'
+import { FC, HTMLAttributes, PropsWithChildren, useCallback, useRef } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
@@ -11,18 +11,16 @@ import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, QueryStateUpdate, QueryUpdate, SearchMode } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Icon, H2, H4, useScrollManager } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
-import { PageTitle } from '../../../../components/PageTitle'
-import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import { fetchBlob } from '../../../../repo/blob/backend'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
-import { useShowOnboardingTour } from '../../../../tour/hooks'
 import { submitSearch } from '../../../helpers'
 import { DidYouMean } from '../../../suggestion/DidYouMean'
 import { SmartSearch } from '../../../suggestion/SmartSearch'
@@ -33,11 +31,11 @@ import { SearchAlert } from '../SearchAlert'
 import { UnownedResultsAlert } from '../UnownedResultsAlert'
 import { isSmartSearchAlert } from '../utils'
 
-import styles from './SearchContent.module.scss'
+import styles from './NewSearchContent.module.scss'
 
-interface SearchContentProps
-    extends SettingsCascadeProps,
-        TelemetryProps,
+interface NewSearchContentProps
+    extends TelemetryProps,
+        SettingsCascadeProps,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'> {
     submittedURLQuery: string
     queryState: QueryState
@@ -67,7 +65,7 @@ interface SearchContentProps
     onLogSearchResultClick: (index: number, type: string, resultsLength: number) => void
 }
 
-export const SearchContent: FC<SearchContentProps> = props => {
+export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const {
         searchMode,
         submittedURLQuery,
@@ -100,13 +98,10 @@ export const SearchContent: FC<SearchContentProps> = props => {
         onLogSearchResultClick,
     } = props
 
-    const location = useLocation()
-    const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
-    const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
-    const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
 
-    const [showMobileSidebar, setShowMobileSidebar] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
+    useScrollManager('SearchResultsContainer', containerRef)
 
     const prefetchFile: FilePrefetcher = useCallback(
         params =>
@@ -118,79 +113,72 @@ export const SearchContent: FC<SearchContentProps> = props => {
     )
 
     return (
-        <div className={classNames(styles.container, sidebarCollapsed && styles.containerWithSidebarHidden)}>
-            <PageTitle key="page-title" title={submittedURLQuery} />
-
-            <SearchFiltersSidebar
-                liveQuery={liveQuery}
-                submittedURLQuery={submittedURLQuery}
-                patternType={patternType}
-                filters={results?.filters}
-                showAggregationPanel={showAggregationPanel}
-                selectedSearchContextSpec={selectedSearchContextSpec}
-                aggregationUIMode={aggregationUIMode}
-                settingsCascade={settingsCascade}
-                telemetryService={telemetryService}
-                caseSensitive={caseSensitive}
-                className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
-                setSidebarCollapsed={setSidebarCollapsed}
-                onNavbarQueryChange={onNavbarQueryChange}
-                onSearchSubmit={onSearchSubmit}
-            >
-                {showOnboardingTour && (
-                    <GettingStartedTour
-                        className="mb-1"
-                        telemetryService={props.telemetryService}
-                        authenticatedUser={authenticatedUser}
-                    />
-                )}
-            </SearchFiltersSidebar>
-
-            {aggregationUIMode === AggregationUIMode.SearchPage && (
-                <SearchAggregationResult
-                    query={submittedURLQuery}
+        <div className={styles.root}>
+            {!sidebarCollapsed && (
+                <SearchFiltersSidebar
+                    as={NewSearchSidebarWrapper}
+                    liveQuery={liveQuery}
+                    submittedURLQuery={submittedURLQuery}
                     patternType={patternType}
-                    caseSensitive={caseSensitive}
-                    aria-label="Aggregation results panel"
-                    className={styles.contents}
-                    onQuerySubmit={onQuerySubmit}
+                    filters={results?.filters}
+                    showAggregationPanel={showAggregationPanel}
+                    selectedSearchContextSpec={selectedSearchContextSpec}
+                    aggregationUIMode={aggregationUIMode}
+                    settingsCascade={settingsCascade}
                     telemetryService={telemetryService}
+                    caseSensitive={caseSensitive}
+                    className={classNames(styles.filters)}
+                    setSidebarCollapsed={setSidebarCollapsed}
+                    onNavbarQueryChange={onNavbarQueryChange}
+                    onSearchSubmit={onSearchSubmit}
                 />
             )}
 
-            {aggregationUIMode !== AggregationUIMode.SearchPage && (
-                <>
-                    <SearchResultsInfoBar
-                        telemetryService={telemetryService}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
-                        sourcegraphURL={platformContext.sourcegraphURL}
-                        patternType={patternType}
-                        authenticatedUser={authenticatedUser}
-                        caseSensitive={caseSensitive}
-                        query={submittedURLQuery}
-                        results={results}
-                        options={options}
-                        enableCodeMonitoring={codeMonitoringEnabled}
-                        className={styles.infobar}
-                        allExpanded={allExpanded}
-                        onExpandAllResultsToggle={onExpandAllResultsToggle}
-                        onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
-                        sidebarCollapsed={!!sidebarCollapsed}
-                        setSidebarCollapsed={setSidebarCollapsed}
-                        stats={
-                            <StreamingProgress
-                                showTrace={trace}
-                                query={`${submittedURLQuery} patterntype:${patternType}`}
-                                progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                                state={results?.state || 'loading'}
-                                onSearchAgain={onSearchAgain}
-                                isSearchJobsEnabled={isSearchJobsEnabled()}
-                                telemetryService={props.telemetryService}
-                            />
-                        }
+            <SearchResultsInfoBar
+                query={submittedURLQuery}
+                patternType={patternType}
+                results={results}
+                options={options}
+                allExpanded={allExpanded}
+                caseSensitive={caseSensitive}
+                enableCodeMonitoring={codeMonitoringEnabled}
+                sidebarCollapsed={!!sidebarCollapsed}
+                setSidebarCollapsed={setSidebarCollapsed}
+                authenticatedUser={authenticatedUser}
+                sourcegraphURL={platformContext.sourcegraphURL}
+                isSourcegraphDotCom={isSourcegraphDotCom}
+                telemetryService={telemetryService}
+                className={styles.infobar}
+                onExpandAllResultsToggle={onExpandAllResultsToggle}
+                onShowMobileFiltersChanged={setSidebarCollapsed}
+                stats={
+                    <StreamingProgress
+                        showTrace={trace}
+                        query={`${submittedURLQuery} patterntype:${patternType}`}
+                        progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                        state={results?.state || 'loading'}
+                        onSearchAgain={onSearchAgain}
+                        isSearchJobsEnabled={isSearchJobsEnabled()}
+                        telemetryService={props.telemetryService}
                     />
+                }
+            />
 
-                    <div className={styles.contents}>
+            <div className={styles.content} ref={containerRef}>
+                {aggregationUIMode === AggregationUIMode.SearchPage && (
+                    <SearchAggregationResult
+                        query={submittedURLQuery}
+                        patternType={patternType}
+                        caseSensitive={caseSensitive}
+                        aria-label="Aggregation results panel"
+                        className="mt-3"
+                        onQuerySubmit={onQuerySubmit}
+                        telemetryService={telemetryService}
+                    />
+                )}
+
+                {aggregationUIMode !== AggregationUIMode.SearchPage && (
+                    <>
                         <DidYouMean
                             telemetryService={props.telemetryService}
                             query={submittedURLQuery}
@@ -240,9 +228,9 @@ export const SearchContent: FC<SearchContentProps> = props => {
                             results={results}
                             allExpanded={allExpanded}
                             executedQuery={location.search}
-                            prefetchFileEnabled={prefetchFileEnabled}
+                            prefetchFileEnabled={true}
                             prefetchFile={prefetchFile}
-                            enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
+                            enableKeyboardNavigation={true}
                             showQueryExamplesOnNoResultsPage={true}
                             queryState={queryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
@@ -254,9 +242,31 @@ export const SearchContent: FC<SearchContentProps> = props => {
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             logSearchResultClicked={onLogSearchResultClick}
                         />
-                    </div>
-                </>
-            )}
+                    </>
+                )}
+            </div>
         </div>
+    )
+}
+
+interface NewSearchSidebarWrapper extends HTMLAttributes<HTMLElement> {
+    onClose: () => void
+}
+
+const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = props => {
+    const { children, className, onClose, ...attributes } = props
+
+    return (
+        <aside {...attributes} className={classNames(styles.filters, className)}>
+            <header className={styles.filtersHeader}>
+                <H4 as={H2} className="mb-0">
+                    Filters
+                </H4>
+                <Button variant="icon" aria-label="Close" onClick={onClose}>
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
+                </Button>
+            </header>
+            <div className={styles.filtersContent}>{children}</div>
+        </aside>
     )
 }
