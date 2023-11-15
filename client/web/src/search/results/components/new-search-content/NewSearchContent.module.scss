@@ -38,7 +38,6 @@
     padding: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     background: var(--color-bg-1);
-    background: var(--sidebar-bg);
     border-left: 1px solid var(--border-color);
 
     @media (--md-breakpoint-down) {
@@ -49,7 +48,6 @@
   &-content {
     grid-area: filters;
     background: var(--color-bg-1);
-    background: var(--sidebar-bg);
     border-left: 1px solid var(--border-color);
     overflow: auto;
     width: 17.5rem;
