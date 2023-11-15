@@ -246,13 +246,24 @@ enum QueryState {
 }
 
 /**
+ * Used to identify whether two queries refer to the same
+ * completion request. A new completion request is triggered
+ * by e.g. typing into the query input or moving the cursor.
+ * This is used to properly reset internal state.
+ *
+ * Because objects are always unique we can use them as IDs.
+ */
+interface CompletionID {}
+
+/**
  * Wrapper around the configered sources. Keeps track of the state and results.
  */
 class Query {
     constructor(
         public readonly sources: readonly Source[],
         public readonly state: QueryState,
-        public readonly result: Result
+        public readonly result: Result,
+        private readonly completionID: CompletionID
     ) {}
 
     public update(transaction: Transaction): Query {
@@ -276,7 +287,7 @@ class Query {
             // Only "apply" the effect if the results are for the curent query. This prevents
             // overwriting the results from stale requests.
             if (effect.is(updateResultEffect) && effect.value.query === query) {
-                query = query.updateWithSuggestionResult(effect.value.result)
+                query = query.updateWithSuggestionResult(effect.value.result, query.completionID)
             } else if (effect.is(startCompletionEffect)) {
                 query = query.run(transaction.state)
             } else if (effect.is(hideCompletionEffect)) {
@@ -287,23 +298,28 @@ class Query {
         return query
     }
 
+    private createNewCompletionID(): CompletionID {
+        // We use an object as completion ID because objects are always unique.
+        return {}
+    }
+
     private run(state: EditorState): Query {
         const selectedMode = getSelectedMode(state)
         const activeSources = this.sources.filter(source => source.mode === selectedMode?.name)
         const result = combineResults(
             activeSources.map(source => source.query(state, state.selection.main.head, selectedMode?.name))
         )
-        return this.updateWithSuggestionResult(result)
+        return this.updateWithSuggestionResult(result, this.createNewCompletionID())
     }
 
-    private updateWithSuggestionResult(result: SuggestionResult): Query {
+    private updateWithSuggestionResult(result: SuggestionResult, completionID: CompletionID): Query {
         return result.next
-            ? new PendingQuery(this.sources, Result.fromSuggestionResult(result), result.next)
-            : new Query(this.sources, QueryState.Complete, Result.fromSuggestionResult(result))
+            ? new PendingQuery(this.sources, Result.fromSuggestionResult(result), result.next, completionID)
+            : new Query(this.sources, QueryState.Complete, Result.fromSuggestionResult(result), completionID)
     }
 
     private updateWithState(state: QueryState.Inactive | QueryState.Complete): Query {
-        return state !== this.state ? new Query(this.sources, state, this.result) : this
+        return state !== this.state ? new Query(this.sources, state, this.result, this.completionID) : this
     }
 
     public isInactive(): boolean {
@@ -313,15 +329,22 @@ class Query {
     public isPending(): this is PendingQuery {
         return this.state === QueryState.Pending
     }
+
+    public isSameRequest(query: Query): boolean {
+        return this.completionID === query.completionID
+    }
 }
 
 class PendingQuery extends Query {
     constructor(
         public readonly sources: readonly Source[],
         public readonly result: Result,
-        public readonly fetch: () => Promise<SuggestionResult>
+        public readonly fetch: () => Promise<SuggestionResult>,
+        // Used to identify whether two queries refer to the same
+        // completion request.
+        completionID: CompletionID
     ) {
-        super(sources, QueryState.Pending, result)
+        super(sources, QueryState.Pending, result, completionID)
     }
 }
 
@@ -378,15 +401,16 @@ class SuggestionsState {
         let state: SuggestionsState = this
 
         const sources = transaction.state.facet(suggestionSources)
-        let query = sources === state.query.sources ? state.query : new Query(sources, QueryState.Inactive, emptyResult)
+        let query =
+            sources === state.query.sources ? state.query : new Query(sources, QueryState.Inactive, emptyResult, {})
         query = query.update(transaction)
         if (query !== state.query) {
             state = new SuggestionsState(
                 query,
                 !query.isInactive(),
-                // Preserve the currently selected option if the query was pending
-                // (ensures that the selected option doesn't change when new options become available)
-                state.query.isPending() ? state.selectedOption : -1
+                // Preserve the currently selected option if the query _was_ pending and refers to the same request.
+                // This ensures that the selected option doesn't change as new options become available.
+                state.query.isPending() && state.query.isSameRequest(query) ? state.selectedOption : -1
             )
         }
 
@@ -436,7 +460,7 @@ const hideCompletionEffect = StateEffect.define<void>()
 const updateResultEffect = StateEffect.define<{ query: Query; result: SuggestionResult }>()
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
-        return new SuggestionsState(new Query([], QueryState.Inactive, emptyResult), false, -1)
+        return new SuggestionsState(new Query([], QueryState.Inactive, emptyResult, {}), false, -1)
     },
 
     update(state, transaction) {

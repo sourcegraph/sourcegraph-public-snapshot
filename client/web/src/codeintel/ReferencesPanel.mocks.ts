@@ -19,7 +19,7 @@ import {
     type ResolveRepoAndRevisionVariables,
 } from '../graphql-operations'
 
-import { buildPreciseLocation } from './location'
+import { buildPreciseLocation, LocationsGroup } from './location'
 import type { ReferencesPanelProps } from './ReferencesPanel'
 import {
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
@@ -701,10 +701,10 @@ export const defaultProps: ReferencesPanelProps = {
     useCodeIntel: ({ variables }: UseCodeIntelParameters): UseCodeIntelResult => {
         const [result, setResult] = useState<UseCodeIntelResult>({
             data: {
-                implementations: { endCursor: '', nodes: [] },
-                prototypes: { endCursor: '', nodes: [] },
-                references: { endCursor: '', nodes: [] },
-                definitions: { endCursor: '', nodes: [] },
+                implementations: { endCursor: '', nodes: LocationsGroup.empty },
+                prototypes: { endCursor: '', nodes: LocationsGroup.empty },
+                references: { endCursor: '', nodes: LocationsGroup.empty },
+                definitions: { endCursor: '', nodes: LocationsGroup.empty },
             },
             loading: true,
             referencesHasNextPage: false,
@@ -737,20 +737,20 @@ export const defaultProps: ReferencesPanelProps = {
                     data: {
                         implementations: {
                             endCursor: lsif.implementations.pageInfo.endCursor,
-                            nodes: lsif.implementations.nodes.map(buildPreciseLocation),
+                            nodes: new LocationsGroup(lsif.implementations.nodes.map(buildPreciseLocation)),
                         },
                         prototypes: {
                             endCursor: lsif.prototypes.pageInfo.endCursor,
-                            nodes: lsif.prototypes.nodes.map(buildPreciseLocation),
+                            nodes: new LocationsGroup(lsif.prototypes.nodes.map(buildPreciseLocation)),
                         },
 
                         references: {
                             endCursor: lsif.references.pageInfo.endCursor,
-                            nodes: lsif.references.nodes.map(buildPreciseLocation),
+                            nodes: new LocationsGroup(lsif.references.nodes.map(buildPreciseLocation)),
                         },
                         definitions: {
                             endCursor: lsif.definitions.pageInfo.endCursor,
-                            nodes: lsif.definitions.nodes.map(buildPreciseLocation),
+                            nodes: new LocationsGroup(lsif.definitions.nodes.map(buildPreciseLocation)),
                         },
                     },
                 }))

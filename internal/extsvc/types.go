@@ -630,12 +630,6 @@ func GetLimitFromConfig(config any, kind string) (limit rate.Limit, isDefault bo
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-	case *schema.PerforceConnection:
-		limit = GetDefaultRateLimit(KindPerforce)
-		if c != nil && c.RateLimit != nil {
-			isDefault = false
-			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-		}
 	case *schema.JVMPackagesConnection:
 		limit = GetDefaultRateLimit(KindJVMPackages)
 		if c != nil && c.Maven.RateLimit != nil {

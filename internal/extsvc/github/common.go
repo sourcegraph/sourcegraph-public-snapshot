@@ -1582,15 +1582,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	}()
 	req = req.WithContext(ctx)
 
-	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther, func(r *http.Request) (*http.Response, error) {
-		// For GitHub.com, to avoid running into rate limits we're limiting concurrency
-		// per auth token to 1 globally.
-		if URLIsGitHubDotCom(r.URL) {
-			return restrictGitHubDotComConcurrency(logger, httpClient, r)
-		}
-
-		return httpClient.Do(r)
-	})
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
 	if err != nil {
 		return nil, errors.Wrap(err, "request failed")
 	}

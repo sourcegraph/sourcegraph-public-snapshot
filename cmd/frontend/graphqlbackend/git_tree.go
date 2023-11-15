@@ -22,16 +22,6 @@ func (r *GitTreeEntryResolver) IsRoot() bool {
 type gitTreeEntryConnectionArgs struct {
 	graphqlutil.ConnectionArgs
 	Recursive bool
-	// If recurseSingleChild is true, and the requested path only has a single child
-	// that is a directory, we recurse into that directory.
-	// Only respected when Recursive is false.
-	// Example:
-	// FS structure:
-	// /folder/subfolder/file
-	// Request for entries of /folder
-	// We don't return only /folder/subfolder, and instead also travserse into subfolder
-	// until we hit something with more than 1 child that's not a dir.
-	RecursiveSingleChild bool
 	// If Ancestors is true and the tree is loaded from a subdirectory, we will
 	// return a flat list of all entries in all parent directories.
 	Ancestors bool
@@ -57,14 +47,6 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		return nil, errors.Newf("invalid argument for first, must be non-negative")
 	}
 
-	if args.Recursive && args.RecursiveSingleChild {
-		// No extra work needed, recursive includes all these.
-		args.RecursiveSingleChild = false
-	}
-
-	// If RecursiveSingleChild is true, we also get all files recursively. Otherwise, we would
-	// have to do a readdir for every single directory to see if it has only one child (and nested)
-	// dirs, too.
 	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
@@ -88,24 +70,6 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		entries = entries[len(strings.Split(strings.Trim(r.Path(), "/"), "/")):]
 	}
 
-	if !args.Recursive && args.RecursiveSingleChild && len(entries) == 1 && entries[0].IsDir() {
-		opts := GitTreeEntryResolverOpts{
-			Commit: r.Commit(),
-			Stat:   entries[0],
-		}
-		r := NewGitTreeEntryResolver(r.db, r.gitserverClient, opts)
-
-		subEntries, err := r.entries(ctx, &gitTreeEntryConnectionArgs{
-			RecursiveSingleChild: true,
-		}, nil)
-		if err != nil {
-			return nil, err
-		}
-		for _, e := range subEntries {
-			entries = append(entries, e.stat)
-		}
-	}
-
 	maxResolvers := len(entries)
 	if args.First != nil && int(*args.First) < maxResolvers {
 		maxResolvers = int(*args.First)
@@ -114,15 +78,13 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	sort.Sort(byDirectory(entries))
 
 	resolvers := make([]*GitTreeEntryResolver, 0, maxResolvers)
-	seen := 0
 	for _, entry := range entries {
-		if seen == maxResolvers {
+		if len(resolvers) >= maxResolvers {
 			break
 		}
 
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			seen++
 			opts := GitTreeEntryResolverOpts{
 				Commit: r.Commit(),
 				Stat:   entry,
