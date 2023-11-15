@@ -257,6 +257,7 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
                 initialStarsCount,
                 initialViewerHasStarred,
                 telemetryService,
+                telemetryRecorder,
             ]
         )
     )

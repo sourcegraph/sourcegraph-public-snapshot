@@ -80,8 +80,8 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     const { id: notebookId } = useParams()
 
     useEffect(() => {
-        telemetryService.logPageView('SearchNotebookPage'),
-            telemetryRecorder.recordEvent('SearchNotebookPage', 'viewed')
+        telemetryService.logPageView('SearchNotebookPage')
+        telemetryRecorder.recordEvent('SearchNotebookPage', 'viewed')
     }, [telemetryService, telemetryRecorder])
 
     const [notebookTitle, setNotebookTitle] = useState('')

@@ -97,7 +97,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
             telemetryService.log(logName)
             telemetryRecorder.recordEvent('log', 'viewed', { privateMetadata: { logName } })
         },
-        [navigate, location, setSelectedTab, telemetryService]
+        [navigate, location, setSelectedTab, telemetryService, telemetryRecorder]
     )
 
     const orderOptions: FilteredConnectionFilter[] = [

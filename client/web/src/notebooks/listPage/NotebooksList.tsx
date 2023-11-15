@@ -39,8 +39,8 @@ export const NotebooksList: FC<NotebooksListProps> = ({
     telemetryRecorder,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`),
-            telemetryRecorder.recordEvent(`SearchNotebooksList${logEventName}`, 'searched')
+        telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`)
+        telemetryRecorder.recordEvent(`SearchNotebooksList${logEventName}`, 'searched')
     }, [logEventName, telemetryService, telemetryRecorder])
 
     const queryConnection = useCallback(

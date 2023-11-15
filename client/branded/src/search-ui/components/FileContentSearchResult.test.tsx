@@ -6,6 +6,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 
 import type { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
@@ -37,7 +38,9 @@ describe('FileContentSearchResult', () => {
     }
 
     it('renders one result container', () => {
-        const { container } = renderWithBrandedContext(<FileContentSearchResult {...defaultProps} />)
+        const { container } = renderWithBrandedContext(
+            <FileContentSearchResult {...defaultProps} telemetryRecorder={noOpTelemetryRecorder} />
+        )
         expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
@@ -92,7 +95,12 @@ describe('FileContentSearchResult', () => {
         } satisfies SettingsCascade
 
         const { container } = renderWithBrandedContext(
-            <FileContentSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
+            <FileContentSearchResult
+                {...defaultProps}
+                result={result}
+                settingsCascade={settingsCascade}
+                telemetryRecorder={noOpTelemetryRecorder}
+            />
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
         expect(tableRows.length).toBe(4)

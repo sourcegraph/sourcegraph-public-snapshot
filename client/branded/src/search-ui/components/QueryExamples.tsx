@@ -30,8 +30,8 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
 
     const onQueryExampleClick = useCallback(
         (query: string) => {
-            telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query }),
-                telemetryRecorder.recordEvent('QueryExample', 'clicked', { privateMetadata: { queryExample: query } })
+            telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+            telemetryRecorder.recordEvent('QueryExample', 'clicked', { privateMetadata: { queryExample: query } })
         },
         [telemetryService, telemetryRecorder]
     )

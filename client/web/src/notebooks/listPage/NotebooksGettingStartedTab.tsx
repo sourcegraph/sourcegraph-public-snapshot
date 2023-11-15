@@ -58,8 +58,8 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     React.PropsWithChildren<NotebooksGettingStartedTabProps>
 > = ({ telemetryService, telemetryRecorder, authenticatedUser }) => {
     useEffect(() => {
-        telemetryService.log('NotebooksGettingStartedTabViewed'),
-            telemetryRecorder.recordEvent('NotebooksGettingStartedTab', 'viewed')
+        telemetryService.log('NotebooksGettingStartedTabViewed')
+        telemetryRecorder.recordEvent('NotebooksGettingStartedTab', 'viewed')
     }, [telemetryService, telemetryRecorder])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
