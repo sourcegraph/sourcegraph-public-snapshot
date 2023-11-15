@@ -81,9 +81,8 @@ func key(userID int32) string {
 }
 
 func (s *lockoutStore) IsLockedOut(userID int32) (reason string, locked bool) {
-	// v, locked := s.lockouts.Get(key(userID))
-	// return string(v), locked
-	return "", false
+	v, locked := s.lockouts.Get(key(userID))
+	return string(v), locked
 }
 
 func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
