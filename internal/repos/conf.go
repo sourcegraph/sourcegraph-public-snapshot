@@ -21,10 +21,6 @@ func ConfRepoListUpdateInterval() time.Duration {
 		}
 		v = 1
 	}
-	// d, err := time.ParseDuration(v)
-	// if err != nil {
-
-	// }
 	return time.Duration(v) * time.Minute
 }
 

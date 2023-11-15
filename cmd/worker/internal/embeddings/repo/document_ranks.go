@@ -19,7 +19,6 @@ func getDocumentRanks(ctx context.Context, repoName string) (types.RepoPathRanks
 	if err != nil {
 		return types.RepoPathRanks{}, err
 	}
-	// TODO: Compute in worker instead.
 	u := root.ResolveReference(&url.URL{
 		Path: "/.internal/ranks/" + strings.Trim(repoName, "/") + "/documents",
 	})
