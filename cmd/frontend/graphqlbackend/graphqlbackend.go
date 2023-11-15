@@ -634,7 +634,7 @@ func NewSchema(
 	opts := []graphql.SchemaOpt{
 		graphql.Tracer(newRequestTracer(logger, db)),
 		graphql.UseStringDescriptions(),
-		graphql.MaxDepth(maxDepth),
+		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
 	}
 	opts = append(opts, graphqlOpts...)
 	return graphql.ParseSchema(

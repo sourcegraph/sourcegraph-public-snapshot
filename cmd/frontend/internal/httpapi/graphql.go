@@ -102,11 +102,13 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			} else if cost != nil {
 				traceData.cost = cost
 
-				if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
+				rl := conf.RateLimits()
+
+				if !isInternal && (cost.AliasCount > rl.GraphQLMaxAliases) {
 					return writeViolationError(w, "query exceeds maximum query cost")
 				}
 
-				if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
+				if !isInternal && (cost.FieldCount > rl.GraphQLMaxFieldCount) {
 					return writeViolationError(w, "query exceeds maximum query cost")
 				}
 
