@@ -23,6 +23,7 @@ import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/sh
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { createSuggestionsSource, type SuggestionsSourceConfig } from './suggestions'
@@ -94,6 +95,7 @@ export interface V2SearchInputProps
     extends Omit<CodeMirrorQueryInputWrapperProps, 'suggestionSource' | 'extensions' | 'placeholder'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps,
+        TelemetryV2Props,
         Pick<SuggestionsSourceConfig, 'authenticatedUser' | 'isSourcegraphDotCom'> {
     submitSearch(parameters: Partial<SubmitSearchParameters>): void
 }
@@ -197,6 +199,7 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
             onBlur={onBlur}
             onChange={inputProps.onChange}
             onSubmit={inputProps.onSubmit}
+            telemetryRecorder={window.context.telemetryRecorder}
         >
             {children}
         </CodeMirrorQueryInputWrapper>

@@ -2,7 +2,6 @@ import { Suspense, type PropsWithChildren, type FC, useCallback, ChangeEvent } f
 
 import classNames from 'classnames'
 
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Input } from '@sourcegraph/wildcard'
 
@@ -14,7 +13,7 @@ const V2SearchInput = lazyComponent(() => import('./V2SearchInput'), 'V2SearchIn
 
 export const LazyV2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = props => (
     <Suspense fallback={<PlainQueryInput {...props} />}>
-        <V2SearchInput {...props} telemetryRecorder={noOpTelemetryRecorder} />
+        <V2SearchInput {...props} telemetryRecorder={window.context.telemetryRecorder} />
     </Suspense>
 )
 

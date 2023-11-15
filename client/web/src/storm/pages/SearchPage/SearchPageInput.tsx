@@ -15,6 +15,7 @@ import {
     type SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Form } from '@sourcegraph/wildcard'
 
 import { Notices } from '../../../global/Notices'
@@ -44,7 +45,7 @@ const queryStateSelector = (
     searchMode: state.searchMode,
 })
 
-interface SearchPageInputProps {
+interface SearchPageInputProps extends TelemetryV2Props {
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
     hardCodedSearchContextSpec?: string
@@ -130,6 +131,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     const input = v2QueryInput ? (
         <LazyV2SearchInput
             telemetryService={telemetryService}
+            telemetryRecorder={props.telemetryRecorder}
             patternType={patternType}
             interpretComments={false}
             queryState={queryState}
