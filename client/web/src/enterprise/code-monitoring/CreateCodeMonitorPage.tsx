@@ -4,6 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { useLocation } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -17,7 +18,7 @@ import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps {
+interface CreateCodeMonitorPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
