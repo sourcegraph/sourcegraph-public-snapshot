@@ -10,8 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 
@@ -25,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -41,6 +41,9 @@ func TestSources_ListRepos(t *testing.T) {
 		},
 	})
 	defer conf.Mock(nil)
+
+	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	type testCase struct {
 		name   string
@@ -650,42 +653,6 @@ func newClientFactoryWithOpt(t testing.TB, name string, opt httpcli.Opt) (*httpc
 	mw, rec := TestClientFactorySetup(t, name)
 	return httpcli.NewFactory(mw, opt, httptestutil.NewRecorderOpt(rec)),
 		func(t testing.TB) { Save(t, rec) }
-}
-
-func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
-	rec, err := httptestutil.NewRecorder(file, record, func(i *cassette.Interaction) error {
-		// The ratelimit.Monitor type resets its internal timestamp if it's
-		// updated with a timestamp in the past. This makes tests ran with
-		// recorded interations just wait for a very long time. Removing
-		// these headers from the casseste effectively disables rate-limiting
-		// in tests which replay HTTP interactions, which is desired behaviour.
-		for _, name := range [...]string{
-			"RateLimit-Limit",
-			"RateLimit-Observed",
-			"RateLimit-Remaining",
-			"RateLimit-Reset",
-			"RateLimit-Resettime",
-			"X-RateLimit-Limit",
-			"X-RateLimit-Remaining",
-			"X-RateLimit-Reset",
-		} {
-			i.Response.Headers.Del(name)
-		}
-
-		// Phabricator requests include a token in the form and body.
-		ua := i.Request.Headers.Get("User-Agent")
-		if strings.Contains(strings.ToLower(ua), extsvc.TypePhabricator) {
-			i.Request.Body = ""
-			i.Request.Form = nil
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return rec
 }
 
 func getAWSEnv(envVar string) string {

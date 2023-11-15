@@ -12,6 +12,9 @@ If you have any questions about telemetry collection, please reach out to your S
 
 <span class="badge badge-note">Sourcegraph 5.2.1+</span>
 
+> WARNING: This section refers to a new system for collecting telemetry introduced in Sourcegraph 5.2.1, and only applies to telemetry that has been migrated to use this new system.
+> Certain Sourcegraph components - namely [Cody editor extensions](../../cody/index.md) - will continue to use a legacy mechanism for reporting telemetry directly to Sourcegraph.com until the migration is complete.
+
 Sourcegraph instances 5.2.1 and later collect telemetry events to understand usage patterns and help improve the product. Telemetry events can be generated when certain user actions occur, like opening files or performing searches. This data helps us provide the highest level of support to Sourcegraph's customers.
 
 Sensitive data/PII exfiltration, intentional or not, is a significant concern to Sourcegraph that we take very seriously.

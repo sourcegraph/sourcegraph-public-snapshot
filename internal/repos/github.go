@@ -110,10 +110,7 @@ func newGitHubSource(
 		cf = cf.WithOpts(httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
-	var (
-		eb           excludeBuilder
-		excludeForks bool
-	)
+	var eb excludeBuilder
 	excludeArchived := func(repo any) bool {
 		if githubRepo, ok := repo.(github.Repository); ok {
 			return githubRepo.IsArchived
@@ -131,7 +128,6 @@ func newGitHubSource(
 			eb.Generic(excludeArchived)
 		}
 		if r.Forks {
-			excludeForks = true
 			eb.Generic(excludeFork)
 		}
 		eb.Exact(r.Name)
@@ -198,7 +194,6 @@ func newGitHubSource(
 		markInternalReposAsPublic: (c.Authorization != nil) && c.Authorization.MarkInternalReposAsPublic,
 		logger: logger.With(
 			log.Object("GitHubSource",
-				log.Bool("excludeForks", excludeForks),
 				log.Bool("githubDotCom", githubDotCom),
 				log.String("originalHostname", originalHostname),
 			),

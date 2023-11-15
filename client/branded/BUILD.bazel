@@ -279,6 +279,7 @@ vitest_test(
     timeout = "long",
     data = [
         ":branded_tests",
+        ":module_styles",
         ":snapshots",
     ],
 )

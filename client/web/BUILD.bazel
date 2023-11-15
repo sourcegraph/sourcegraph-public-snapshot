@@ -2070,6 +2070,7 @@ vitest_test(
     size = "enormous",  # make sure bazel reserves enough RAM for this.
     timeout = "moderate",
     data = [
+        ":module_styles",
         ":snapshots",
         ":web_tests",
     ],

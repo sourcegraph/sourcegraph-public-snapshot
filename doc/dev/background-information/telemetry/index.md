@@ -12,6 +12,8 @@ There are currently two ways to log product telemetry:
 
 All usages of old telemetry mechanisms should be migrated to the new framework.
 
+> WARNING: This page primarily pertains to the new system introduced in Sourcegraph 5.2.1 - refer to [DEPRECATED: Telemetry](deprecated.md) for the legacy system which may still be in use if a callsite has not been migrated yet.
+
 - [Why a new framework and APIs?](#why-a-new-framework-and-apis)
 - [Event lifecycle](#event-lifecycle)
 - [Recording events](#recording-events)
@@ -28,7 +30,7 @@ All usages of old telemetry mechanisms should be migrated to the new framework.
 
 The new telemetry framework and API aims to address the following issues:
 
-- The existing `event_logs` parameters are arbitrarily shaped - to provide stronger guarantees against accidentally exporting sensitive data, the new APIs enforce stricter requirements - see [recording events](#recording-events) for more details.
+- The existing `event_logs` parameters are arbitrarily shaped - to provide stronger guarantees against accidentally exporting sensitive data, the new APIs enforce stricter requirements, such as numeric metadata - see [recording events](#recording-events) for more details.
 - The shape of existing `event_logs` have grown organically over time without a clear structured schema.
   Callsites must construct full events on their own, and we cannot easily prune event objects of potentially [sensitive attributes](#sensitive-attributes) before export.
 
@@ -49,21 +51,41 @@ See [telemetry export architecture](./architecture.md) for more details.
 
 ## Recording events
 
-Note that recording APIs are intentionally stricter and have a smaller surface area than [the full events we end up exporting](#exported-event-schema).
-This is to help prevent accidental export of sensitive data, and to make it clear what properties should be injected in a uniform manner instead of being constructed ad-hoc by callers - see [event lifecycle](#event-lifecycle) for details.
+Recording events can be done via recording APIs available on each of the platforms documented below:
+
+- [Clients](#clients): web app, extensions, etc.
+- [Backend services](#backend-services)
+
+Note that:
+
+- Recording APIs are intentionally stricter and have a smaller surface area than [the full events we end up exporting](#exported-event-schema). This make it clear what properties should be injected in a uniform manner serverside instead of being constructed ad-hoc by callers - see [event lifecycle](#event-lifecycle) for details.
+- Metadata that gets exported by default only accepts numeric values. This offers a guard against accidentally exporting sensitive data. Arbitrarily shaped metadata can be collected, but not exported, via the `additionalMetadata` parameter - see [sensitive attributes](#sensitive-attributes).
+- An escape hatch to export arbitrarily shaped metadata is available via an instance-side allowlist - see [sensitive attributes](#sensitive-attributes).
 
 ### Clients
 
 Clients (web apps, extensions, etc) should use [`@sourcegraph/telemetry`](https://github.com/sourcegraph/telemetry), providing client-specific metadata and implementation for exporting to a Sourcegraph instance's `mutation { telemetry { recordEvent(...) }}` GraphQL mutation.
 [sourcegraph/cody#1192](https://github.com/sourcegraph/cody/pull/1192) is a pull request demonstrating how to integrate `@sourcegraph/telemetry` into a client by extending specific classes and providing backing implementations for various interfaces.
 
-#### VS Code
+#### Cody extensions
+
+##### VS Code
 
 Event-recording development documentation for the VS Code extension is available in [`sourcegraph/cody/vscode/CONTRIBUTING.md`'s "Telemetry events" section](https://github.com/sourcegraph/cody/blob/main/vscode/CONTRIBUTING.md#telemetry-events).
 
-#### Sourcegraph web app
+##### Cody Agent
 
 > WARNING: Not yet available, coming soon!
+
+#### Sourcegraph web app
+
+A shared event recorder for web app components is available in the platform context type, under `(PlatformContext).telemetryRecorder`:
+
+```ts
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+```
+
+In the web app, if a component has `PlatformContext` available, the `telemetryRecorder` instance can be used directly - otherwise, it can be prop-drilled in from the closest parent component with `PlatformContext` available.
 
 ### Backend services
 
@@ -133,7 +155,6 @@ There are two core attributes in events that are considered potentially sensitiv
 - `parameters.privateMetadata`: this fields allows the recording of arbitrarily shaped metadata, as opposed to the integer values supported in `parameters.metadata`. Due to the risk of sensitive data and PII exposure, we do not export this field by default
   - Certain events may be allowlisted to have this field exported - this is defined in [`internal/telemetry/sensitiviemetadataallowlist`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/telemetry/sensitivemetadataallowlist/sensitiviemetadataallowlist.go). Adding events to this list requires review and approval from Legal.
 - `marketingTracking`: this field tracks a lot of properties around URLs visited and marketing tracking that may contain sensitive data. This is only exported from the [Sourcegraph.com](https://sourcegraph.com/search) instance.
-
 
 ## Testing events
 
