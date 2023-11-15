@@ -24,7 +24,13 @@ interface SearchQueryStateObserverProps {
 
 // Update search query state whenever the URL changes
 export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps & TelemetryV2Props> = props => {
-    const { searchContextsEnabled, platformContext, setSelectedSearchContextSpec, selectedSearchContextSpec } = props
+    const {
+        searchContextsEnabled,
+        platformContext,
+        setSelectedSearchContextSpec,
+        selectedSearchContextSpec,
+        telemetryRecorder,
+    } = props
 
     const location = useLocation()
 
@@ -87,6 +93,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps & Teleme
         selectedSearchContextSpecRef,
         enableV2QueryInput,
         setSelectedSearchContextSpec,
+        telemetryRecorder,
     ])
 
     return null

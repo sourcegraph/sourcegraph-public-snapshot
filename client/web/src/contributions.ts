@@ -15,7 +15,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps, Telemet
  * registrations use the React lifecycle.
  */
 export function GlobalContributions(props: Props): null {
-    const { extensionsController, platformContext } = props
+    const { extensionsController, platformContext, telemetryRecorder } = props
 
     const location = useLocation()
     const navigate = useNavigate()
@@ -55,7 +55,7 @@ export function GlobalContributions(props: Props): null {
             )
         }
         return () => subscriptions.unsubscribe()
-    }, [extensionsController, platformContext])
+    }, [extensionsController, platformContext, telemetryRecorder])
 
     // Throw error to the <ErrorBoundary />
     if (error) {
