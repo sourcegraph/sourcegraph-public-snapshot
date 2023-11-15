@@ -1,7 +1,5 @@
 import type { FC } from 'react'
 
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
-
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 
 import { usePreloadedQueryData } from './SearchPage.loader'
@@ -20,7 +18,7 @@ export const SearchPage: FC = () => {
     return (
         <SearchPageContent
             shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget}
-            telemetryRecorder={noOpTelemetryRecorder}
+            telemetryRecorder={window.context.telemetryRecorder}
         />
     )
 }

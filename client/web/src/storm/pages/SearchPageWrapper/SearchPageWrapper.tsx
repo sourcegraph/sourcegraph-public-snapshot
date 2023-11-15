@@ -3,7 +3,6 @@ import type { FC } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../../../LegacyRouteContext'
@@ -29,7 +28,7 @@ export const SearchPageWrapper: FC = () => {
         </TraceSpanProvider>
     ) : (
         <TraceSpanProvider name="SearchPage">
-            <SearchPage telemetryRecorder={noOpTelemetryRecorder} />
+            <SearchPage telemetryRecorder={window.context.telemetryRecorder} />
         </TraceSpanProvider>
     )
 }
