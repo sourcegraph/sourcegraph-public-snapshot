@@ -835,6 +835,39 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "File filters w/o MaxFileSizeBytes",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         embeddingsMaxFileSizeBytes,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
 			name: "Disable exclude failed chunk during indexing",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
