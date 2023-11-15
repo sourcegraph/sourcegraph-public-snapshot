@@ -75,7 +75,7 @@ $ sg start batches
 $ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
 
 # View configuration for a commandset
-$ sg start -describe oss
+$ sg start -describe single-program
 ```
 
 Flags:
