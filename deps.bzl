@@ -537,13 +537,6 @@ def go_dependencies():
         sum = "h1:hgz0X/DX0dGqTYpGALqXJoRKRj5oQ7150i5FdTePzO8=",
         version = "v1.13.5",
     )
-    go_repository(
-        name = "com_github_aybabtme_iocontrol",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/aybabtme/iocontrol",
-        sum = "h1:0NmehRCgyk5rljDQLKUO+cRJCnduDyn11+zGZIc9Z48=",
-        version = "v0.0.0-20150809002002-ad15bcfc95a0",
-    )
 
     go_repository(
         name = "com_github_aymerick_douceur",
@@ -5391,13 +5384,6 @@ def go_dependencies():
         sum = "h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tNFfI=",
         version = "v1.1.1",
     )
-    go_repository(
-        name = "com_github_puerkitobio_rehttp",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/PuerkitoBio/rehttp",
-        sum = "h1:JFZ7OeK+hbJpTxhNB0NDZT47AuXqCU0Smxfjtph7/Rs=",
-        version = "v1.1.0",
-    )
 
     go_repository(
         name = "com_github_puerkitobio_urlesc",
@@ -5963,8 +5949,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:p+ejFr9s/9PfldOMF1+lsbsaMOy3nOpnJeQf/rxoei4=",
-        version = "v0.0.0-20231114160819-5e2620e0cf64",
+        sum = "h1:OhE8s4VXGZ6bkxZxGUWyjDU96hzXXRQ3jJ1f1ZUDIOg=",
+        version = "v0.0.0-20231112214222-29ff711f0163",
     )
 
     go_repository(

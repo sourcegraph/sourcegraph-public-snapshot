@@ -21,7 +21,6 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/PuerkitoBio/rehttp"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -345,7 +344,7 @@ func TestErrorResilience(t *testing.T) {
 			),
 			NewErrorResilientTransportOpt(
 				NewRetryPolicy(20, time.Second),
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -368,7 +367,7 @@ func TestErrorResilience(t *testing.T) {
 			),
 			NewErrorResilientTransportOpt(
 				NewRetryPolicy(0, time.Second), // zero retries
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -386,7 +385,7 @@ func TestErrorResilience(t *testing.T) {
 		// spy on policy so we see what decisions it makes
 		retries := 0
 		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-		wrapped := func(a rehttp.Attempt) bool {
+		wrapped := func(a Attempt) bool {
 			if policy(a) {
 				retries++
 				return true
@@ -410,7 +409,7 @@ func TestErrorResilience(t *testing.T) {
 			},
 			NewErrorResilientTransportOpt(
 				wrapped,
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -492,7 +491,7 @@ func TestLoggingMiddleware(t *testing.T) {
 			),
 			NewErrorResilientTransportOpt(
 				NewRetryPolicy(20, time.Second),
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -610,7 +609,7 @@ func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
 		}
 		attempt := int(a)
 
-		delay := ExpJitterDelayOrRetryAfterDelay(base, max)(rehttp.Attempt{
+		delay := ExpJitterDelayOrRetryAfterDelay(base, max)(Attempt{
 			Index: attempt,
 		})
 
@@ -668,7 +667,7 @@ func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				assert.Equal(t, tc.wantDelay, ExpJitterDelayOrRetryAfterDelay(tc.base, tc.max)(rehttp.Attempt{
+				assert.Equal(t, tc.wantDelay, ExpJitterDelayOrRetryAfterDelay(tc.base, tc.max)(Attempt{
 					Index: 2,
 					Response: &http.Response{
 						Header: tc.responseHeaders,
@@ -716,7 +715,7 @@ func TestRetryAfter(t *testing.T) {
 		// spy on policy so we see what decisions it makes
 		retries := 0
 		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-		wrapped := func(a rehttp.Attempt) bool {
+		wrapped := func(a Attempt) bool {
 			if policy(a) {
 				retries++
 				return true
@@ -730,7 +729,7 @@ func TestRetryAfter(t *testing.T) {
 			),
 			NewErrorResilientTransportOpt(
 				wrapped,
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -768,7 +767,7 @@ func TestRetryAfter(t *testing.T) {
 					// spy on policy so we see what decisions it makes
 					retries := 0
 					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
-					wrapped := func(a rehttp.Attempt) bool {
+					wrapped := func(a Attempt) bool {
 						if policy(a) {
 							retries++
 							return true
@@ -782,7 +781,7 @@ func TestRetryAfter(t *testing.T) {
 						),
 						NewErrorResilientTransportOpt(
 							wrapped,
-							rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+							ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 						),
 					).Doer()
 
@@ -817,7 +816,7 @@ func TestRetryAfter(t *testing.T) {
 			// spy on policy so we see what decisions it makes
 			retries := 0
 			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-			wrapped := func(a rehttp.Attempt) bool {
+			wrapped := func(a Attempt) bool {
 				if policy(a) {
 					retries++
 					return true
@@ -831,7 +830,7 @@ func TestRetryAfter(t *testing.T) {
 				),
 				NewErrorResilientTransportOpt(
 					wrapped,
-					rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+					ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 				),
 			).Doer()
 
@@ -871,7 +870,7 @@ func TestRetryAfter(t *testing.T) {
 					// spy on policy so we see what decisions it makes
 					retries := 0
 					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
-					wrapped := func(a rehttp.Attempt) bool {
+					wrapped := func(a Attempt) bool {
 						if policy(a) {
 							retries++
 							return true
@@ -885,7 +884,7 @@ func TestRetryAfter(t *testing.T) {
 						),
 						NewErrorResilientTransportOpt(
 							wrapped,
-							rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+							ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 						),
 					).Doer()
 
@@ -920,7 +919,7 @@ func TestRetryAfter(t *testing.T) {
 			// spy on policy so we see what decisions it makes
 			retries := 0
 			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-			wrapped := func(a rehttp.Attempt) bool {
+			wrapped := func(a Attempt) bool {
 				if policy(a) {
 					retries++
 					return true
@@ -934,7 +933,7 @@ func TestRetryAfter(t *testing.T) {
 				),
 				NewErrorResilientTransportOpt(
 					wrapped,
-					rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+					ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 				),
 			).Doer()
 
@@ -967,7 +966,7 @@ func TestRetryAfter(t *testing.T) {
 		// spy on policy so we see what decisions it makes
 		retries := 0
 		policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
-		wrapped := func(a rehttp.Attempt) bool {
+		wrapped := func(a Attempt) bool {
 			if policy(a) {
 				retries++
 				return true
@@ -981,7 +980,7 @@ func TestRetryAfter(t *testing.T) {
 			),
 			NewErrorResilientTransportOpt(
 				wrapped,
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 

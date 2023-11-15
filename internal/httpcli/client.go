@@ -1,26 +1,17 @@
 package httpcli
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"math"
-	"math/rand"
-	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -256,7 +247,7 @@ func ContextErrorMiddleware(cli Doer) Doer {
 type requestContextKey int
 
 const (
-	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
+	// requestRetryAttemptKey is the key to the Attempt attached to a request, if
 	// a request undergoes retries via NewRetryPolicy
 	requestRetryAttemptKey requestContextKey = iota
 
@@ -296,7 +287,7 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 			// Gather fields from request context. When adding fields set into context,
 			// make sure to test that the fields get propagated and picked up correctly
 			// in TestLoggingMiddleware.
-			if attempt, ok := ctx.Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+			if attempt, ok := ctx.Value(requestRetryAttemptKey).(Attempt); ok {
 				// Get fields from NewRetryPolicy
 				fields = append(fields, log.Object("retry",
 					log.Int("attempts", attempt.Index),
@@ -447,234 +438,6 @@ var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
 // scheme specified in the URL is invalid. This error isn't typed
 // specifically so we resort to matching on the error string.
 var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
-
-// MaxRetries returns the max retries to be attempted, which should be passed
-// to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
-// parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
-func MaxRetries(n int) int {
-	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], "_test") {
-		return 0
-	}
-	return n
-}
-
-// NewRetryPolicy returns a retry policy based on some Sourcegraph defaults.
-func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn {
-	// Indicates in trace whether or not this request was retried at some point
-	const retriedTraceAttributeKey = "httpcli.retried"
-
-	return func(a rehttp.Attempt) (retry bool) {
-		tr := trace.FromContext(a.Request.Context())
-		if a.Index == 0 {
-			// For the initial attempt set it to false in case we never retry,
-			// to make this easier to query in Cloud Trace. This attribute will
-			// get overwritten later if a retry occurs.
-			tr.SetAttributes(
-				attribute.Bool(retriedTraceAttributeKey, false))
-		}
-
-		status := 0
-		var retryAfterHeader string
-
-		defer func() {
-			// Avoid trace log spam if we haven't invoked the retry policy.
-			shouldTraceLog := retry || a.Index > 0
-			if tr.IsRecording() && shouldTraceLog {
-				fields := []attribute.KeyValue{
-					attribute.Bool("retry", retry),
-					attribute.Int("attempt", a.Index),
-					attribute.String("method", a.Request.Method),
-					attribute.Stringer("url", a.Request.URL),
-					attribute.Int("status", status),
-					attribute.String("retry-after", retryAfterHeader),
-				}
-				if a.Error != nil {
-					fields = append(fields, trace.Error(a.Error))
-				}
-				tr.AddEvent("request-retry-decision", fields...)
-				// Record on span itself as well for ease of querying, updates
-				// will overwrite previous values.
-				tr.SetAttributes(
-					attribute.Bool(retriedTraceAttributeKey, true),
-					attribute.Int("httpcli.retriedAttempts", a.Index))
-			}
-
-			// Update request context with latest retry for logging middleware
-			if shouldTraceLog {
-				*a.Request = *a.Request.WithContext(
-					context.WithValue(a.Request.Context(), requestRetryAttemptKey, a))
-			}
-
-			if retry {
-				metricRetry.Inc()
-			}
-		}()
-
-		if a.Response != nil {
-			status = a.Response.StatusCode
-		}
-
-		if a.Index >= max { // Max retries
-			return false
-		}
-
-		switch a.Error {
-		case nil:
-		case context.DeadlineExceeded, context.Canceled:
-			return false
-		default:
-			// Don't retry more than 3 times for no such host errors.
-			// This affords some resilience to dns unreliability while
-			// preventing 20 attempts with a non existing name.
-			var dnsErr *net.DNSError
-			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
-				return false
-			}
-
-			if v, ok := a.Error.(*url.Error); ok {
-				e := v.Error()
-				// Don't retry if the error was due to too many redirects.
-				if redirectsErrorRe.MatchString(e) {
-					return false
-				}
-
-				// Don't retry if the error was due to an invalid protocol scheme.
-				if schemeErrorRe.MatchString(e) {
-					return false
-				}
-
-				// Don't retry if the error was due to TLS cert verification failure.
-				if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
-					return false
-				}
-
-			}
-			// The error is likely recoverable so retry.
-			return true
-		}
-
-		// If we have some 5xx response or 429 response that could work after
-		// a few retries, retry the request, as determined by retryWithRetryAfter
-		if status == 0 ||
-			(status >= 500 && status != http.StatusNotImplemented) ||
-			status == http.StatusTooManyRequests {
-			retry, retryAfterHeader = retryWithRetryAfter(a.Response, maxRetryAfterDuration)
-			return retry
-		}
-
-		return false
-	}
-}
-
-// retryWithRetryAfter always retries, unless we have a non-nil response that
-// indicates a retry-after header as outlined here: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
-func retryWithRetryAfter(response *http.Response, retryAfterMaxSleepDuration time.Duration) (bool, string) {
-	// If a retry-after header exists, we only want to retry if it might resolve
-	// the issue.
-	retryAfterHeader, retryAfter := extractRetryAfter(response)
-	if retryAfter != nil {
-		// Retry if retry-after is within the maximum sleep duration, otherwise
-		// there's no point retrying
-		return *retryAfter <= retryAfterMaxSleepDuration, retryAfterHeader
-	}
-
-	// Otherwise, default to the behavior we always had: retry.
-	return true, retryAfterHeader
-}
-
-// extractRetryAfter attempts to extract a retry-after time from retryAfterHeader,
-// returning a nil duration if it cannot infer one.
-func extractRetryAfter(response *http.Response) (retryAfterHeader string, retryAfter *time.Duration) {
-	if response != nil {
-		// See  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
-		// for retry-after standards.
-		retryAfterHeader = response.Header.Get("retry-after")
-		if retryAfterHeader != "" {
-			// There are two valid formats for retry-after headers: seconds
-			// until retry in int, or a RFC1123 date string.
-			// First, see if it is denoted in seconds.
-			s, err := strconv.Atoi(retryAfterHeader)
-			if err == nil {
-				d := time.Duration(s) * time.Second
-				return retryAfterHeader, &d
-			}
-
-			// If we weren't able to parse as seconds, try to parse as RFC1123.
-			if err != nil {
-				after, err := time.Parse(time.RFC1123, retryAfterHeader)
-				if err != nil {
-					// We don't know how to parse this header
-					return retryAfterHeader, nil
-				}
-				in := time.Until(after)
-				return retryAfterHeader, &in
-			}
-		}
-	}
-	return retryAfterHeader, nil
-}
-
-// ExpJitterDelayOrRetryAfterDelay returns a DelayFn that returns a delay
-// between 0 and base * 2^attempt capped at max (an exponential backoff delay
-// with jitter), unless a 'retry-after' value is provided in the response - then
-// the 'retry-after' duration is used, up to max.
-//
-// See the full jitter algorithm in:
-// http://www.awsarchitectureblog.com/2015/03/backoff.html
-//
-// This is adapted from rehttp.ExpJitterDelay to not use a non-thread-safe
-// package level PRNG and to be safe against overflows. It assumes that
-// max > base.
-//
-// This retry policy has also been adapted to support using
-func ExpJitterDelayOrRetryAfterDelay(base, max time.Duration) rehttp.DelayFn {
-	var mu sync.Mutex
-	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return func(attempt rehttp.Attempt) time.Duration {
-		var delay time.Duration
-		if _, retryAfter := extractRetryAfter(attempt.Response); retryAfter != nil {
-			// Delay by what upstream request tells us. If retry-after is
-			// significantly higher than max, then it should be up to the retry
-			// policy to choose not to retry the request.
-			delay = *retryAfter
-		} else {
-			// Otherwise, generate a delay with some jitter.
-			exp := math.Pow(2, float64(attempt.Index))
-			top := float64(base) * exp
-			n := int64(math.Min(float64(max), top))
-			if n <= 0 {
-				return base
-			}
-
-			mu.Lock()
-			delay = time.Duration(prng.Int63n(n))
-			mu.Unlock()
-		}
-
-		// Overflow handling
-		switch {
-		case delay < base:
-			return base
-		case delay > max:
-			return max
-		default:
-			return delay
-		}
-	}
-}
-
-// NewErrorResilientTransportOpt returns an Opt that wraps an existing
-// http.Transport of an http.Client with automatic retries.
-func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) Opt {
-	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
-
-		cli.Transport = WrapTransport(rehttp.NewTransport(cli.Transport, retry, delay), cli.Transport)
-		return nil
-	}
-}
 
 // NewIdleConnTimeoutOpt returns a Opt that sets the IdleConnTimeout of an
 // http.Client's transport.
