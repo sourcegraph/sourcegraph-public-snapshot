@@ -342,6 +342,7 @@ vitest_test(
     timeout = "moderate",
     data = [
         ":browser_tests",
+        ":module_styles",
         ":snapshots",
     ],
 )

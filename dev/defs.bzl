@@ -153,8 +153,8 @@ def vitest_test(name, data = [], **kwargs):
             "//:node_modules/jsdom",
         ],
         env = {"BAZEL": "1", "CI": "1"},
-        patch_node_fs = False,
-        tags = kwargs.pop("tags", []) + ["no-sandbox"],
+        patch_node_fs = True,
+        tags = kwargs.pop("tags", []),
         timeout = kwargs.pop("timeout", "short"),
         **kwargs
     )
