@@ -55,7 +55,7 @@
       "properties": {
         "GraphQLMaxDepth": {
           "description": "Maximum depth of nested objects allowed for GraphQL queries",
-          "type" : "integer",
+          "type": "integer",
           "default": 30
         },
         "GraphQLMaxAliases": {
@@ -65,7 +65,7 @@
         },
         "GraphQLMaxFieldCount": {
           "description": "Maximum number of estimated fields allowed in a GraphQL response",
-          "type":"integer",
+          "type": "integer",
           "default": 500000
         }
       }
