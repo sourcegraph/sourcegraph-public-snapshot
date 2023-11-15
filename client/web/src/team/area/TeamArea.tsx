@@ -4,6 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Routes, useParams } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -89,9 +90,21 @@ export const TeamArea: React.FunctionComponent<TeamAreaProps> = ({ authenticated
     return (
         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
             <Routes>
-                <Route path="" element={<TeamProfilePage {...context} />} errorElement={<RouteError />} />
-                <Route path="members" element={<TeamMembersPage {...context} />} errorElement={<RouteError />} />
-                <Route path="child-teams" element={<TeamChildTeamsPage {...context} />} errorElement={<RouteError />} />
+                <Route
+                    path=""
+                    element={<TeamProfilePage {...context} telemetryRecorder={noOpTelemetryRecorder} />}
+                    errorElement={<RouteError />}
+                />
+                <Route
+                    path="members"
+                    element={<TeamMembersPage {...context} telemetryRecorder={noOpTelemetryRecorder} />}
+                    errorElement={<RouteError />}
+                />
+                <Route
+                    path="child-teams"
+                    element={<TeamChildTeamsPage {...context} telemetryRecorder={noOpTelemetryRecorder} />}
+                    errorElement={<RouteError />}
+                />
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </React.Suspense>

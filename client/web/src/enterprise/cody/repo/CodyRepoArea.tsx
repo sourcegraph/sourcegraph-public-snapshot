@@ -2,6 +2,7 @@ import type { FC } from 'react'
 
 import { Navigate, Route, Routes } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -15,7 +16,7 @@ import { CodyConfigurationPage } from '../configuration/pages/CodyConfigurationP
 
 import { CodyRepoSidebar, type CodyRepoSidebarGroups } from './CodyRepoSidebar'
 
-export interface CodyRepoAreaRouteContext extends TelemetryProps {
+export interface CodyRepoAreaRouteContext extends TelemetryProps, TelemetryV2Props {
     repo: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
 }
@@ -41,11 +42,17 @@ export const codyRepoAreaRoutes: readonly CodyRepoAreaRoute[] = [
     },
     {
         path: '/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
+        render: props => (
+            <CodeIntelConfigurationPolicyPage
+                {...props}
+                domain="embeddings"
+                telemetryRecorder={props.telemetryRecorder}
+            />
+        ),
     },
 ]
 
-export interface CodyRepoAreaProps extends BreadcrumbSetters, TelemetryProps {
+export interface CodyRepoAreaProps extends BreadcrumbSetters, TelemetryProps, TelemetryV2Props {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
 }

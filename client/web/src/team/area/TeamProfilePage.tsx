@@ -5,6 +5,7 @@ import { mdiDelete, mdiPencil } from '@mdi/js'
 import { logger } from '@sourcegraph/common'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
@@ -17,7 +18,7 @@ import { EditParentTeamModal } from './EditParentTeamModal'
 import { RemoveParentTeamModal } from './RemoveParentTeamModal'
 import { TeamHeader } from './TeamHeader'
 
-export interface TeamProfilePageProps {
+export interface TeamProfilePageProps extends TelemetryV2Props {
     /** The team that is the subject of the page. */
     team: TeamAreaTeamFields
 

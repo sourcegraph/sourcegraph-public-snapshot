@@ -145,7 +145,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 }
             }
         }
-    }, [currentTab, userHasCodeMonitors])
+    }, [currentTab, userHasCodeMonitors, telemetryRecorder])
 
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 

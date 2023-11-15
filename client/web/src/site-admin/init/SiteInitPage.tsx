@@ -3,6 +3,7 @@ import React from 'react'
 import { Navigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Text, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -43,7 +44,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
@@ -62,6 +63,7 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
     authenticatedUser,
     needsSiteInit = window.context.needsSiteInit,
     context,
+    telemetryRecorder,
 }) => {
     // This page is never shown on dotcom, to keep the API surface
     // of this component clean, we don't expose this option.
@@ -99,6 +101,7 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
                             // This page is never shown on dotcom, to keep the API surface
                             // of this component clean, we don't expose this option.
                             context={{ ...context, sourcegraphDotComMode, authProviders: [] }}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     </Container>
                 )}
