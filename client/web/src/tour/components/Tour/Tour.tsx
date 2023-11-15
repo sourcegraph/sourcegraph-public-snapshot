@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 
 import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import type { UserOnboardingConfig } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { TourContext } from './context'
@@ -10,22 +11,29 @@ import { TourContent } from './TourContent'
 import { useTour } from './useTour'
 import { canRunStep, isNotNullOrUndefined, isQuerySuccessful } from './utils'
 
-export type TourProps = TelemetryProps & {
-    id: string
-    tasks: TourTaskType[]
-    extraTask?: TourTaskType
-    userInfo?: UserOnboardingConfig['userinfo']
-    defaultSnippets: Record<string, string[]>
-} & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
+export type TourProps = TelemetryProps &
+    TelemetryV2Props & {
+        id: string
+        tasks: TourTaskType[]
+        extraTask?: TourTaskType
+        userInfo?: UserOnboardingConfig['userinfo']
+        defaultSnippets: Record<string, string[]>
+    } & Pick<
+        React.ComponentProps<typeof TourContent>,
+        'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'
+    >
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
-    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, userInfo, ...props }) => {
+    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, telemetryRecorder, userInfo, ...props }) => {
         const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
                 telemetryService.log('Tour' + eventName, { tourId, ...eventProperties }, { ...publicArgument })
+                telemetryRecorder.recordEvent('Tour', 'visited', {
+                    privateMetadata: { eventName, tourId, ...eventProperties, ...publicArgument },
+                })
             },
-            [telemetryService, tourId]
+            [telemetryService, telemetryRecorder, tourId]
         )
 
         useEffect(() => {
@@ -130,7 +138,12 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         return (
             <TourContext.Provider value={{ onStepClick, onRestart, userInfo, isQuerySuccessful }}>
                 <TourContent {...props} onClose={onClose} tasks={finalTasks} />
-                <TourAgent tasks={finalTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
+                <TourAgent
+                    tasks={finalTasks}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={window.context.telemetryRecorder}
+                    onStepComplete={onStepComplete}
+                />
             </TourContext.Provider>
         )
     }

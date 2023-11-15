@@ -20,6 +20,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     useBreadcrumb,
     repo,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [searchParams] = useSearchParams()
     const filePath = searchParams.get('path') ?? ''
@@ -40,10 +41,11 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                         filePath={filePath}
                         isDir={true}
                         telemetryService={telemetryService}
+                        telemetryRecorder={window.context.telemetryRecorder}
                     />
                 ),
             }
-        }, [filePath, repo, telemetryService])
+        }, [filePath, repo, telemetryService, telemetryRecorder])
     )
 
     useBreadcrumb({ key: 'own', element: 'Ownership' })

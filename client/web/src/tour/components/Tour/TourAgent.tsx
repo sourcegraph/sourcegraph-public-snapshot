@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom'
 import { useLocation } from 'react-router-dom'
 
 import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -13,7 +14,7 @@ import { parseURIMarkers } from './utils'
 
 import styles from './Tour.module.scss'
 
-interface TourAgentProps extends TelemetryProps {
+interface TourAgentProps extends TelemetryProps, TelemetryV2Props {
     tasks: TourTaskType[]
     onStepComplete: (step: TourTaskStepType) => void
 }

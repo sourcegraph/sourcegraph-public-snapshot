@@ -3,6 +3,7 @@ import type { Unsubscribable } from 'rxjs'
 
 import type { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
 import type { FlatExtensionHostAPI } from '../api/contract'
+import { TelemetryV2Props } from '../telemetry'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -28,7 +29,7 @@ export interface Controller extends Unsubscribable {
  * React props or state containing the client. There should be only a single client for the whole
  * application.
  */
-export interface ExtensionsControllerProps<K extends keyof Controller = keyof Controller> {
+export interface ExtensionsControllerProps<K extends keyof Controller = keyof Controller> extends TelemetryV2Props {
     /**
      * The client, which is used to communicate with and manage extensions.
      */

@@ -22,6 +22,7 @@ import type { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
 import type { ExtensionsControllerProps } from '../extensions/controller'
 import type { PlatformContextProps } from '../platform/context'
+import { TelemetryV2Props } from '../telemetry'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import styles from './ActionItem.module.scss'
@@ -62,7 +63,7 @@ export interface ActionItemComponentProps
     actionItemStyleProps?: ActionItemStyleProps
 }
 
-export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
+export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps, TelemetryV2Props {
     variant?: 'actionItem'
 
     hideLabel?: boolean

@@ -1,7 +1,7 @@
 import { type FC, memo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../auth'
 import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
@@ -19,9 +19,10 @@ interface TourWrapperProps
     extends Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id' | 'defaultSnippets' | 'userInfo'>,
         TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
+    telemetryRecorder: TelemetryRecorder
 }
 
-const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, ...props }) => {
+const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, telemetryRecorder, ...props }) => {
     const showOnboardingSetup = useShowOnboardingSetup()
     const [config] = useTemporarySetting('onboarding.userconfig')
 
@@ -31,7 +32,7 @@ const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, ...props }) => {
     }
 
     if (authenticatedUser && showOnboardingSetup) {
-        return <GettingStartedTourSetup user={authenticatedUser} />
+        return <GettingStartedTourSetup user={authenticatedUser} telemetryRecorder={telemetryRecorder} />>
     }
 
     return (
@@ -42,6 +43,7 @@ const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, ...props }) => {
             defaultSnippets={data.defaultSnippets}
             tasks={data.tasks}
             extraTask={authenticatedExtraTask}
+            telemetryRecorder={telemetryRecorder}
         />
     )
 }
