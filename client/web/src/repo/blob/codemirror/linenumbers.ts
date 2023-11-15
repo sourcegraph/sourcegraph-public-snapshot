@@ -335,11 +335,8 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                     }
 
                     const line = view.state.doc.lineAt(block.from).number
-                    const range = view.state.field(selectedLines)
                     view.dispatch({
-                        effects: mouseEvent.shiftKey
-                            ? setEndLine.of(line)
-                            : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                        effects: mouseEvent.shiftKey ? setEndLine.of(line) : setSelectedLines.of({ line }),
                         annotations: lineSelectionSource.of('gutter'),
                         // Collapse/reset text selection
                         selection: { anchor: view.state.selection.main.anchor },
