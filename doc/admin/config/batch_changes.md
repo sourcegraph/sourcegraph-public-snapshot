@@ -190,7 +190,7 @@ Gerrit | API call | ✗ | ✓ | Requires ["delete own changes" permission](https
 
 <span class="badge badge-note">Sourcegraph 5.1+</span>
 
-Sourcegraph can be configured to sign commits pushed to GitHub using a GitHub App. Commit signing prevents tampering by unauthorized parties and provides a way to ensure that commits pushed to branches created by Batch Changes actually do come from Sourcegraph. Enabling commit signing for Batch Changes can also help pass checks in build systems or CI/CD pipelines that require that all commits are signed and verified before they can be merged.
+Sourcegraph can be configured to [sign commits pushed to GitHub](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) using a GitHub App. Commit signing prevents tampering by unauthorized parties and provides a way to ensure that commits pushed to branches created by Batch Changes actually do come from Sourcegraph. Enabling commit signing for Batch Changes can also help pass checks in build systems or CI/CD pipelines that require that all commits are signed and verified before they can be merged.
 
 At present, only GitHub code hosts (both Cloud and Enterprise) are supported, and only GitHub App signing is supported. Support for other code hosts and signing methods may be added in the future.
 
