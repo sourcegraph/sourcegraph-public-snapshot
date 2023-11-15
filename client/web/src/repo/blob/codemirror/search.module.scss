@@ -9,12 +9,12 @@
     border-left: none;
 }
 
-.hovered {
+.close-button {
     border-radius: 100%;
     padding: 0.2rem;
 }
 
-.hovered:hover {
+.close-button:hover {
     background-color: var(--subtle-bg);
 }
 

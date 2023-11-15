@@ -285,13 +285,13 @@ class SearchPanel implements Panel {
                         {searchKeybinding}
                     </Label>
                     {searchKeybindingTooltip}
-                    <span className={classNames(styles.hovered, 'ml-2')}>
+                    <span className={classNames(styles.closeButton, 'ml-2')}>
                         <Icon
                             className={classNames(styles.x)}
                             onClick={() => closeSearchPanel(this.view)}
                             size="sm"
                             svgPath={mdiClose}
-                            aria-hidden={true}
+                            aria-hidden={false}
                             aria-label="close search"
                         />
                     </span>
