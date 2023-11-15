@@ -1,13 +1,3 @@
-// Init DBs and network
-// Seed DBs with test data
-
-/* Have a unit-like/integration test that can use a test db + in-process code (doesn’t require docker), but will end up modifying the git state with new tags when it runs
-Use internal/database/dbtesting to create a cheap new (empty) database
-Create a new versioned git tag on the current commit, modify the min/max versions constants that modify the stitched migration graph (link above), and run go-generate in that directory to regenerate the json file. If you call test code or build the migrator after this, it will include the tag. Also note that if you just create a tag like this (but don’t push it to remote) then you won’t have to modify any code where it assumes versions are accessible via git (second link above).
-Call the internal/database/migration/cliutil shims directly for the unit test (you might want to expose some simpler core you can call for testing that doesn’t do stuff like flag parsing)
-You can inspect the databases directly at this point (post-upgrade maybe check that there’s zero drift as the assertion?)
-*/
-
 // Run with bazel run //testing/tools/upgradetest:sh_upgradetest --config=darwin-docker
 
 package main
@@ -16,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -25,81 +16,85 @@ import (
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/run"
+
+	"github.com/Masterminds/semver"
 )
 
 func main() {
 
 	ctx := context.Background()
 
-	// TODO: use docker client instread of run.Cmd
-	// Initialize docker client for tests
-	// cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer cli.Close()
+	latestMinorVersion, latestVersion, err := getLatestVersions(ctx)
+	if err != nil {
+		fmt.Println("🚨 Error: could not get latest major or minor releases: ", err)
+		os.Exit(1)
+	}
 
 	// Get the release candidate image tarball
 	args := os.Args
 	if len(args) < 2 {
-		fmt.Println("--- 🚨 Error: release candidate image not provided")
+		fmt.Println("🚨 Error: release candidate image not provided")
 		os.Exit(1)
 	}
 
-	fmt.Println(args[0])
-	fmt.Println(args[1])
-	fmt.Println(args[2])
-	validateUpgrade(ctx)
-	os.Exit(1)
-
-	// load migrator from release candidate image tarball
-	imageTarball := args[1]
-	fmt.Println("--- 🐋 ", imageTarball)
-	if err := run.Cmd(ctx, "docker", "image", "ls").Run().Stream(os.Stdout); err != nil {
-		fmt.Println("--- 🚨 Error: failed to load migrator imageTarball: ", err)
-		os.Exit(1)
-	}
-
-	if err := standardUpgradeTest(ctx, "candidate"); err != nil {
+	if err := standardUpgradeTest(ctx, latestMinorVersion, latestVersion); err != nil {
 		fmt.Println("--- 🚨 Standard Upgrade Test Failed: ", err)
 		os.Exit(1)
 	}
 
 	if err := multiversionUpgradeTest(ctx); err != nil {
 		fmt.Println("--- 🚨 Multiversion Upgrade Test Failed: ", err)
+		os.Exit(1)
 	}
 
 	if err := autoUpgradeTest(ctx); err != nil {
 		fmt.Println("--- 🚨 Auto Upgrade Test Failed: ", err)
+		os.Exit(1)
 	}
 }
 
-// TODO: get latest minor version rather than hardcode
-var latestMinorVersion = "5.2.0"
-
-func standardUpgradeTest(ctx context.Context, candidate string) error {
-	fmt.Println("🕵️  standard upgrade test")
-	initHash, networkName, _, cleanup, err := setupTestEnv(ctx, latestMinorVersion)
+// standardUpgradeTest initializes Sourcegraph's dbs and runs a standard upgrade
+// i.e. an upgrade test between the last minor version and the current release candidate
+func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion *semver.Version) error {
+	fmt.Println("--- 🕵️  standard upgrade test")
+	//start test env
+	initHash, networkName, dbs, cleanup, err := setupTestEnv(ctx, latestMinorVersion)
 	if err != nil {
 		fmt.Println("failed to setup env: ", err)
+		cleanup()
 		return err
 	}
 	defer cleanup()
 
-	hash, err := newContainerHash()
-	if err != nil {
-		fmt.Println("failed to generate hash during standard upgrade test: ", err)
+	// ensure env correctly initialized
+	if err := validateUpgrade(ctx, latestMinorVersion, dbs); err != nil {
+		fmt.Println("🚨 Upgrade failed: ", err)
+		cleanup()
 		return err
 	}
 
-	if err := run.Cmd(ctx,
-		dockerMigratorBaseString(fmt.Sprintf("migrator:%s", candidate), networkName, "up", initHash, hash)...).
-		Run().Stream(os.Stdout); err != nil {
-		fmt.Println("--- 🚨 failed to initialize database: ", err)
+	fmt.Println("-- ⚙️  performing standard upgrade")
+
+	// create hash for new migrator job, migrator runs in env setup, we want a new hash for each run
+	hash, err := newContainerHash()
+	if err != nil {
+		fmt.Println("🚨 failed to generate hash during standard upgrade test: ", err)
+		cleanup()
+		return err
 	}
 
-	if err := validateUpgrade(ctx); err != nil {
+	// Run standard upgrade via migrators "up" command
+	if err := run.Cmd(ctx,
+		dockerMigratorBaseString("migrator:candidate", networkName, "up", initHash, hash)...).
+		Run().Stream(os.Stdout); err != nil {
+		fmt.Println("🚨 failed to upgrade: ", err)
+		cleanup()
+		return err
+	}
+	// Validate the upgrade
+	if err := validateUpgrade(ctx, latestMinorVersion, dbs); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
+		cleanup()
 		return err
 	}
 
@@ -107,12 +102,12 @@ func standardUpgradeTest(ctx context.Context, candidate string) error {
 }
 
 func multiversionUpgradeTest(ctx context.Context) error {
-	fmt.Println("🕵️  multiversion upgrade test")
+	fmt.Println("--- 🕵️  multiversion upgrade test")
 	return nil
 }
 
 func autoUpgradeTest(ctx context.Context) error {
-	fmt.Println("🕵️  auto upgrade test")
+	fmt.Println("--- 🕵️  auto upgrade test")
 	return nil
 }
 
@@ -123,19 +118,10 @@ type testDB struct {
 	ContainerHostPort string
 }
 
-// Generate random hash for naming containers in test
-func newContainerHash() ([]byte, error) {
-	hash := make([]byte, 4)
-	_, err := rand.Read(hash)
-	if err != nil {
-		return nil, err
-	}
-	return hash, nil
-}
-
 // Create a docker network for testing as well as instances of our three databases. Return a cleanup function.
-func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, networkName string, dbs []testDB, cleanup func(), err error) {
-	fmt.Println("--- 🏗️  setting up test environment")
+// TODO: setupTestEnv should seed some initial data at the target initVersion. This will be usefull for testing OOB migrations
+func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte, networkName string, dbs []testDB, cleanup func(), err error) {
+	fmt.Println("-- 🏗️  setting up test environment")
 
 	// Generate random hash for naming containers in test
 	hash, err = newContainerHash()
@@ -159,14 +145,6 @@ func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, network
 		return nil, "", nil, nil, err
 	}
 
-	// TODO start doing things via the docker API
-	// _, err = cli.NetworkCreate(ctx, networkName, types.NetworkCreate{
-	// 	Driver: "bridge",
-	// })
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	// Here we create the three databases using docker run.
 	wgInit := pool.New().WithErrors()
 	for _, db := range dbs {
@@ -188,15 +166,14 @@ func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, network
 		fmt.Printf("🚨 failed to create test databases: %s", err)
 	}
 
-	timeout, cancel := context.WithTimeout(ctx, time.Second*20)
-	wgPing := pool.New().WithErrors().WithContext(timeout)
+	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
+	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
 
 	// Here we poll/ping the dbs to ensure postgres has initialized before we make calls to the databases.
-	// TODO: Use docker client to do this instead of using run.Cmd
 	for _, db := range dbs {
 		db := db // this closure locks the index for the inner for loop
-		wgPing.Go(func(ctx context.Context) error {
+		wgDbPing.Go(func(ctx context.Context) error {
 			dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
 			if err != nil {
 				fmt.Printf("🚨 failed to connect to %s: %s\n", db.Name, err)
@@ -204,8 +181,8 @@ func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, network
 			defer dbClient.Close()
 			for {
 				select {
-				case <-timeout.Done():
-					return timeout.Err()
+				case <-dbPingTimeout.Done():
+					return dbPingTimeout.Err()
 				default:
 				}
 				err = dbClient.Ping()
@@ -223,20 +200,20 @@ func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, network
 			}
 		})
 	}
-	if err := wgPing.Wait(); err != nil {
-		fmt.Println("--- 🚨 containerized database startup error: ", err)
+	if err := wgDbPing.Wait(); err != nil {
+		fmt.Println("🚨 containerized database startup error: ", err)
 	}
 
 	// Initialize the databases by running migrator with the `up` command.
-	fmt.Println("--- 🏗️  initializing database schemas with migrator")
+	fmt.Println("-- 🏗️  initializing database schemas with migrator")
 	if err := run.Cmd(ctx,
-		dockerMigratorBaseString(fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion), networkName, "up", hash, hash)...).
+		dockerMigratorBaseString(fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, "up", hash, hash)...).
 		Run().Stream(os.Stdout); err != nil {
-		fmt.Println("--- 🚨 failed to initialize database: ", err)
+		fmt.Println("🚨 failed to initialize database: ", err)
 	}
 
 	// Verify that the databases are initialized.
-	fmt.Println("--- 🔎 checking db schemas initialized")
+	fmt.Println("🔎 checking db schemas initialized")
 	for _, db := range dbs {
 		dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
 		if err != nil {
@@ -252,40 +229,145 @@ func setupTestEnv(ctx context.Context, initVersion string) (hash []byte, network
 			continue
 		}
 		defer rows.Close()
-		if rows.Next() {
-			fmt.Printf("✅ %s initialized\n", db.Name)
+		if err := rows.Err(); err != nil {
+			fmt.Printf("🚨 failed to check %s for init: %s\n", db.Name, err)
 			continue
 		} else {
-			fmt.Printf("🚨 %s schema not initialized\n", db.Name)
+			fmt.Printf("✅ %s initialized\n", db.Name)
 		}
 	}
 
+	//start frontend and poll db until initial version is set
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(ctx, initVersion, networkName, hash, dbs)
+	if err != nil {
+		fmt.Println("🚨 failed to start frontend: ", err)
+	}
+	defer cleanFrontend()
+
 	// Return a cleanup function that will remove the containers and network.
 	cleanup = func() {
-		fmt.Println("--- 🧹 removing database containers")
+		fmt.Println("🧹 removing database containers")
 		if err := run.Cmd(ctx, "docker", "kill",
 			fmt.Sprintf("wg_pgsql_%x", hash),
 			fmt.Sprintf("wg_codeintel-db_%x", hash),
 			fmt.Sprintf("wg_codeinsights-db_%x", hash)).
 			Run().Stream(os.Stdout); err != nil {
-			fmt.Println("--- 🚨 failed to remove database containers after testing: ", err)
+			fmt.Println("🚨 failed to remove database containers after testing: ", err)
 		}
-		fmt.Println("--- 🧹 removing testing network")
+		fmt.Println("🧹 removing testing network")
 		if err := run.Cmd(ctx, "docker", "network", "rm", networkName).Run().Stream(os.Stdout); err != nil {
-			fmt.Println("--- 🚨 failed to remove test network after testing: ", err)
+			fmt.Println("🚨 failed to remove test network after testing: ", err)
 		}
 	}
 
-	fmt.Println("--- 🏗️  setup complete")
+	fmt.Println("-- 🏗️  setup complete")
 
 	return hash, networkName, dbs, cleanup, err
 }
 
-func validateUpgrade(ctx context.Context) error {
-	fmt.Println("--- 🏗️  validating upgrade")
-	run.Cmd(ctx, "ls", os.Args[2]).Run().Stream(os.Stdout)
-	// TODO: validate the upgrade by running the same tests as the e2e tests.
+func validateUpgrade(ctx context.Context, initVersion *semver.Version, dbs []testDB) error {
+	fmt.Println("-- 🔎  validating dbs")
+	fmt.Println("🔎 checking dbs for drift")
+
+	// Check that pgsql versions version has been updated
+	fmt.Println("🔎 checking pgsql version")
+	dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", dbs[0].ContainerHostPort))
+	if err != nil {
+		fmt.Printf("🚨 failed to connect to %s: %s\n", dbs[0].Name, err)
+		return err
+	}
+	defer dbClient.Close()
+	rows, err := dbClient.Query(`SELECT version FROM versions;`)
+	if err != nil {
+		fmt.Println("🚨 failed to get version from pgsql db: ", err)
+		return err
+	}
+	var version string
+	if rows.Next() {
+		err = rows.Scan(&version)
+		if err != nil {
+			fmt.Println("🚨 failed to get version from pgsql db: ", err)
+			return err
+		}
+	} else {
+		fmt.Println("🚨 failed to get version from pgsql db: no version found")
+		return err
+	}
+	fmt.Println("version from pgsql: ", version)
+	defer rows.Close()
+
 	return nil
+}
+
+// startFrontend starts the frontend container in the CI test env.
+func startFrontend(ctx context.Context, version *semver.Version, networkName string, hash []byte, dbs []testDB) (cleanup func(), err error) {
+	fmt.Printf("🐋 creating wg_frontend_%x\n", hash)
+	cleanup = func() {
+		fmt.Println("🧹 removing frontend container")
+		if err := run.Cmd(ctx, "docker", "kill",
+			fmt.Sprintf("wg_frontend_%x", hash),
+		).Run().Stream(os.Stdout); err != nil {
+			fmt.Println("🚨 failed to remove frontend after testing: ", err)
+		}
+	}
+
+	// Start the frontend container
+	err = run.Cmd(ctx, "docker", "run",
+		"--detach",
+		"--platform", "linux/amd64",
+		"--name", fmt.Sprintf("wg_frontend_%x", hash),
+		"-e", "DEPLOY_TYPE=docker-compose",
+		"-e", fmt.Sprintf("PGHOST=%s", dbs[0].HashName),
+		"-e", fmt.Sprintf("CODEINTEL_PGHOST=%s", dbs[1].HashName),
+		"-e", fmt.Sprintf("CODEINSIGHTS_PGDATASOURCE=postgres://sg@%s:5432/sg?sslmode=disable", dbs[2].HashName),
+		"--network", networkName,
+		fmt.Sprintf("sourcegraph/frontend:%s", version),
+	).Run().Wait()
+	if err != nil {
+		fmt.Println("🚨 failed to start frontend: ", err)
+		return cleanup, err
+	}
+	// time.Sleep(time.Second * 10)
+
+	// poll db until initial versions.version is set
+	setVersionTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
+	defer cancel()
+	fmt.Println("🔎 checking pgsql versions.version set")
+
+	dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", dbs[0].ContainerHostPort))
+	if err != nil {
+		fmt.Printf("🚨 failed to connect to %s: %s\n", dbs[0].HashName, err)
+	}
+	defer dbClient.Close()
+
+	for {
+		select {
+		case <-setVersionTimeout.Done():
+			return cleanup, setVersionTimeout.Err()
+		default:
+		}
+		// check version string set
+		var dbVersion string
+		row := dbClient.QueryRowContext(setVersionTimeout, `SELECT version FROM versions;`)
+		err = row.Scan(&dbVersion)
+		if err != nil {
+			fmt.Printf("... querying versions.version: %s\n", err)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		if version.String() == dbVersion {
+			fmt.Printf("✅ versions.version is set: %s\n", version)
+			break
+		}
+		if version.String() == "" {
+			time.Sleep(1 * time.Second)
+			fmt.Println(" ... waiting for versions.version to be set")
+			continue
+		}
+	}
+
+	return cleanup, nil
 }
 
 // dockerMigratorBaseString a slice of strings constituting the necessary arguments to run the migrator via docker container the CI test env.
@@ -317,32 +399,54 @@ func dockerMigratorBaseString(migratorImage, networkName, cmd string, initHash, 
 	}
 }
 
-// Main
+// Generate random hash for naming containers in test
+func newContainerHash() ([]byte, error) {
+	hash := make([]byte, 4)
+	_, err := rand.Read(hash)
+	if err != nil {
+		return nil, err
+	}
+	return hash, nil
+}
 
-// standardUpgrade: runs a standard upgrade with run from the last version to the release candidate, checks for drift
-// multiversionUpgrade: runs a multiversion upgrade from some version defined at each last Major release, to the current release candidate
-// - might make sense to do only a few random versions here from previous major releases
-// autoUpgrade: runs an auto upgrade from the last version to the current release candidate, runs a multiversion upgrade from some previous major version
+// getLatestVersions returns the latest minor semver version, as well as the latest full semver version.
+func getLatestVersions(ctx context.Context) (latestMinor *semver.Version, latestFull *semver.Version, err error) {
+	tags, err := run.Cmd(ctx, "git",
+		"for-each-ref",
+		"--format", "'%(refname:short)'",
+		"refs/tags").Run().Lines()
+	if err != nil {
+		return nil, nil, err
+	}
 
-// Note: these upgrade tests should be deployment independent and call migrator methods from relevnat packages rather than as an invocation of migrator binary.
-// Invocation of migrator binary should be done by the upgradeTests defined in the various deployment repos.
+	var latestMinorVer *semver.Version
+	var latestFullVer *semver.Version
 
-// Helper functions
-//
-// Setup:
-//   initDBs: creates dbs at some specified version, seeds with data for the purpose of testing that OOB migrations are working correctly
-//   createNetwork: creates a docker network for the test
-//   base string for invocations of migrator binary
+	for _, tag := range tags {
+		v, err := semver.NewVersion(tag)
+		if err != nil {
+			continue // skip non-matching tags
+		}
 
-// runMigrator
-//   up
-//   upgrade
-//   drift
+		// Track latest full version
+		if latestFullVer == nil || v.GreaterThan(latestFullVer) {
+			latestFullVer = v
+		}
 
-// DB checks:
-//   verify frontend db version
-//   verify migration_logs table
+		latestMinorVer, err = semver.NewVersion(fmt.Sprintf("%d.%d.0", latestFullVer.Major(), latestFullVer.Minor()))
+		if err != nil {
+			return nil, nil, err
+		}
+	}
 
-// Test tests:
-//   introduce a bad db migration i.e. alter metadata for a registered migration
-//
+	if latestMinorVer == nil {
+		return nil, nil, errors.New("No valid minor semver tags found")
+	}
+
+	if latestFullVer == nil {
+		return nil, nil, errors.New("No valid full semver tags found")
+	}
+
+	return latestMinorVer, latestFullVer, nil
+
+}
