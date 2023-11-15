@@ -1,19 +1,25 @@
 import type { FC } from 'react'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../../auth'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalServicesTotalCountResult } from '../../graphql-operations'
 import { SearchPageContent, getShouldShowAddCodeHostWidget } from '../../storm/pages/SearchPage/SearchPageContent'
 
-export interface SearchPageProps {
+export interface SearchPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchPage: FC<SearchPageProps> = props => {
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
-    return <SearchPageContent shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget} />
+    return (
+        <SearchPageContent
+            shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget}
+            telemetryRecorder={props.telemetryRecorder}
+        />
+    )
 }
 
 const EXTERNAL_SERVICES_TOTAL_COUNT = gql`

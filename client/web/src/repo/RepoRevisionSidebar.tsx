@@ -7,6 +7,7 @@ import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
@@ -34,7 +35,7 @@ import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCascadeProps {
+interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, TelemetryV2Props, SettingsCascadeProps {
     repoID?: Scalars['ID']
     isDir: boolean
     defaultBranch: string
@@ -107,6 +108,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             <GettingStartedTour
                                 className="mr-3"
                                 telemetryService={props.telemetryService}
+                                telemetryRecorder={props.telemetryRecorder}
                                 authenticatedUser={props.authenticatedUser}
                             />
                         )}

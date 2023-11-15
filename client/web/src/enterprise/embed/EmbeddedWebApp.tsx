@@ -103,6 +103,7 @@ export const EmbeddedWebApp: FC<Props> = ({ graphqlClient }) => {
                                                 authenticatedUser={null}
                                                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                                                 platformContext={platformContext}
+                                                telemetryRecorder={window.context.telemetryRecorder}
                                             />
                                         }
                                     />

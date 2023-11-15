@@ -3,6 +3,7 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import {
@@ -240,6 +241,7 @@ interface SearchAggregationDataInput {
     extendedTimeout: boolean
     proactive?: boolean
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
 }
 
 interface AggregationState {

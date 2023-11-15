@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/shared/src/backend/file'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -21,7 +22,8 @@ import { convertNotebookTitleToFileName } from '../serialize'
 import { NotebookContent, type NotebookContentProps } from './NotebookContent'
 
 interface EmbeddedNotebookPageProps
-    extends Pick<
+    extends TelemetryV2Props,
+        Pick<
             NotebookContentProps,
             'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade' | 'ownEnabled'
         >,
@@ -29,10 +31,17 @@ interface EmbeddedNotebookPageProps
 
 const LOADING = 'loading' as const
 
-export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformContext, ...props }) => {
+export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({
+    telemetryRecorder,
+    platformContext,
+    ...props
+}) => {
     const { notebookId } = useParams()
 
-    useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
+    useEffect(() => {
+        eventLogger.logPageView('EmbeddedNotebookPage')
+        telemetryRecorder.recordEvent('EmbeddedNotebookPage', 'viewed')
+    }, [telemetryRecorder])
 
     const notebookOrError = useObservable(
         useMemo(
@@ -78,6 +87,7 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}
+                    telemetryRecorder={telemetryRecorder}
                     platformContext={platformContext}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
                     // Copying is not supported in embedded notebooks

@@ -15,12 +15,13 @@ import { merge, of } from 'rxjs'
 import { last, share, tap, throttleTime } from 'rxjs/operators'
 
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import type { SearchStreamingProps } from '..'
 
-interface CachedResults {
+interface CachedResults extends TelemetryV2Props {
     results: AggregateStreamingSearchResults | undefined
     query: string
     options: StreamSearchOptions
@@ -42,7 +43,8 @@ export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
     options: StreamSearchOptions,
-    telemetryService: TelemetryService
+    telemetryService: TelemetryService,
+    telemetryRecorder: TelemetryRecorder
 ): AggregateStreamingSearchResults | undefined {
     const cachedResults = useContext(SearchResultsCacheContext)
 
@@ -68,7 +70,7 @@ export function useCachedSearchResults(
             // See: https://github.com/ReactiveX/rxjs/issues/5732
             return merge(stream.pipe(throttleTime(500)), stream.pipe(last())).pipe(
                 tap(results => {
-                    cachedResults.current = { results, query, options }
+                    cachedResults.current = { results, query, options, telemetryRecorder }
                 })
             )
             // We also need to pass `queryTimestamp` to the dependency array, because

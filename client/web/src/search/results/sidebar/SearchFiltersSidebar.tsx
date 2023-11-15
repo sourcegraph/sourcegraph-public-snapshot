@@ -27,6 +27,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
@@ -37,7 +38,11 @@ import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 import { getRevisions } from './Revisions'
 import { SearchAggregations } from './SearchAggregations'
 
-export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCascadeProps, HTMLAttributes<HTMLElement> {
+export interface SearchFiltersSidebarProps
+    extends TelemetryProps,
+        TelemetryV2Props,
+        SettingsCascadeProps,
+        HTMLAttributes<HTMLElement> {
     liveQuery: string
     submittedURLQuery: string
     patternType: SearchPatternType
@@ -65,6 +70,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         onSearchSubmit,
         setSidebarCollapsed,
         telemetryService,
+        telemetryRecorder,
         settingsCascade,
         children,
         ...attributes
@@ -83,17 +89,19 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const onDynamicFilterClicked = useCallback(
         (value: string, kind?: string) => {
             telemetryService.log('DynamicFilterClicked', { search_filter: { kind } })
+            telemetryRecorder.recordEvent('DynamicFilter', 'clicked', { privateMetadata: { search_filter: { kind } } })
             onSearchSubmit([{ type: 'toggleSubquery', value }])
         },
-        [telemetryService, onSearchSubmit]
+        [telemetryService, telemetryRecorder, onSearchSubmit]
     )
 
     const onSnippetClicked = useCallback(
         (value: string) => {
             telemetryService.log('SearchSnippetClicked')
+            telemetryRecorder.recordEvent('SearchSnippet', 'clicked')
             onSearchSubmit([{ type: 'toggleSubquery', value }])
         },
-        [telemetryService, onSearchSubmit]
+        [telemetryService, telemetryRecorder, onSearchSubmit]
     )
 
     const handleAggregationBarLinkClick = useCallback(
@@ -106,8 +114,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     const handleGroupedByToggle = useCallback(
         (open: boolean): void => {
             telemetryService.log(open ? GroupResultsPing.ExpandSidebarSection : GroupResultsPing.CollapseSidebarSection)
+            telemetryRecorder.recordEvent(
+                open ? GroupResultsPing.ExpandSidebarSection : GroupResultsPing.CollapseSidebarSection,
+                'clicked'
+            )
         },
-        [telemetryService]
+        [telemetryService, telemetryRecorder]
     )
 
     return (
@@ -131,6 +143,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                         proactive={proactiveSearchAggregations}
                         caseSensitive={caseSensitive}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         onQuerySubmit={handleAggregationBarLinkClick}
                     />
                 </SearchSidebarSection>

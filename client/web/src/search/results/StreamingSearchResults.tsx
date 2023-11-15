@@ -21,6 +21,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -64,6 +65,7 @@ export interface StreamingSearchResultsProps
         SettingsCascadeProps,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
+        TelemetryV2Props,
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps,
@@ -78,6 +80,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         streamSearch,
         authenticatedUser,
         telemetryService,
+        telemetryRecorder,
         isSourcegraphDotCom,
         searchAggregationEnabled,
         codeMonitoringEnabled,
@@ -129,7 +132,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
 
-    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
+    const results = useCachedSearchResults(
+        streamSearch,
+        submittedURLQuery,
+        options,
+        telemetryService,
+        telemetryRecorder
+    )
 
     const resultsLength = results?.results.length || 0
     const logSearchResultClicked = useCallback(
@@ -381,6 +390,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 aggregationUIMode={aggregationUIMode}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
+                telemetryRecorder={props.telemetryRecorder}
                 caseSensitive={caseSensitive}
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onNavbarQueryChange={setQueryState}
@@ -391,6 +401,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     <GettingStartedTour
                         className="mb-1"
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                         authenticatedUser={authenticatedUser}
                     />
                 )}
@@ -405,6 +416,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     className={styles.contents}
                     onQuerySubmit={handleSearchAggregationBarClick}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                 />
             )}
 
