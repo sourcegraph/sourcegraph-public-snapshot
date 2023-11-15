@@ -3,7 +3,10 @@ package repos
 import (
 	"context"
 	"net/url"
+	"os"
 	"strings"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -83,7 +86,11 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 			results <- SourceResult{Source: s, Err: err}
 			continue
 		}
-		syncer := server.PerforceDepotSyncer{}
+		tmpDir, err := os.MkdirTemp("", "perforce-syncer")
+		if err != nil {
+			log.Scoped("repos.source.perforce", "").Error("failed to create tmpDir", log.Error(err))
+		}
+		syncer := server.PerforceDepotSyncer{P4Home: tmpDir}
 		// We don't need to provide repo name and use "" instead because p4 commands are
 		// not recorded in the following `syncer.IsCloneable` call.
 		if err := syncer.IsCloneable(ctx, "", p4Url); err == nil {
