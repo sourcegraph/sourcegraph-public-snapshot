@@ -1991,6 +1991,14 @@ type Ranking struct {
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
 }
+type RateLimits struct {
+	// GraphQLMaxAliases description: Maximum number of aliases allowed in a GraphQL query
+	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
+	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.
+	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
+	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
+	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
+}
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
 type RepoPurgeWorker struct {
@@ -2741,7 +2749,8 @@ type SiteConfiguration struct {
 	// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
-	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
+	ProductResearchPageEnabled *bool       `json:"productResearchPage.enabled,omitempty"`
+	RateLimits                 *RateLimits `json:"rateLimits,omitempty"`
 	// RedactOutboundRequestHeaders description: Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.
 	RedactOutboundRequestHeaders *bool `json:"redactOutboundRequestHeaders,omitempty"`
 	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
@@ -2917,6 +2926,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "permissions.syncUsersMaxConcurrency")
 	delete(m, "permissions.userMapping")
 	delete(m, "productResearchPage.enabled")
+	delete(m, "rateLimits")
 	delete(m, "redactOutboundRequestHeaders")
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
