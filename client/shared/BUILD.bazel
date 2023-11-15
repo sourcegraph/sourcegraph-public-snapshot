@@ -519,6 +519,7 @@ filegroup(
 vitest_test(
     name = "test",
     data = [
+        ":module_styles",
         ":shared_tests",
         ":snapshots",
     ],
