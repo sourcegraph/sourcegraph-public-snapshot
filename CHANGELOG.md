@@ -44,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The GitHub Proxy service is no longer required and has been removed from deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
 - The VSCode search extension "Sourcegraph for VS Code" has been sunset and removed from Sourcegraph
   repository. [#58023](https://github.com/sourcegraph/sourcegraph/pull/58023)
+- The `rateLimit` configuration for Perforce code host connections has been removed to avoid confusion, it was unused. [#58188](https://github.com/sourcegraph/sourcegraph/pull/58188)
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
