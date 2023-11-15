@@ -23,6 +23,7 @@ import { type Editor, useCompartment, viewToEditor } from '@sourcegraph/shared/s
 import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { BaseCodeMirrorQueryInput } from '../BaseCodeMirrorQueryInput'
@@ -146,7 +147,7 @@ export enum QueryInputVisualMode {
     Compact = 'compact',
 }
 
-export interface CodeMirrorQueryInputWrapperProps {
+export interface CodeMirrorQueryInputWrapperProps extends TelemetryV2Props {
     queryState: QueryState
     interpretComments: boolean
     patternType: SearchPatternType

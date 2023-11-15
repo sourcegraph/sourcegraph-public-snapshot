@@ -8,7 +8,7 @@ import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { TelemetryRecorder, TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -37,7 +37,6 @@ query {
 interface Props extends TelemetryV2Props {
     location: H.Location
     navigate: NavigateFunction
-    telemetryRecorder: TelemetryRecorder
 }
 
 interface State {
@@ -63,9 +62,10 @@ interface Parameters {
 export const ApiConsole: React.FC<{}> = () => {
     const navigate = useNavigate()
     const location = useLocation()
-    const telemetryRecorder = noOpTelemetryRecorder
 
-    return <ApiConsoleInner location={location} navigate={navigate} telemetryRecorder={telemetryRecorder} />
+    return (
+        <ApiConsoleInner location={location} navigate={navigate} telemetryRecorder={window.context.telemetryRecorder} />
+    )
 }
 
 /**
