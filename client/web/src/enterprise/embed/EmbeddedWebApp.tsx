@@ -97,6 +97,7 @@ export const EmbeddedWebApp: FC<Props> = ({ graphqlClient }) => {
                                         path="/embed/notebooks/:notebookId"
                                         element={
                                             <EmbeddedNotebookPage
+                                                telemetryRecorder={window.context.telemetryRecorder}
                                                 searchContextsEnabled={true}
                                                 ownEnabled={false}
                                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}

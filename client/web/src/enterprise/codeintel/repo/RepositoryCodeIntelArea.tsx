@@ -2,6 +2,7 @@ import type { FC } from 'react'
 
 import { Routes, Route, Navigate } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -20,7 +21,7 @@ import type { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelP
 
 import { CodeIntelSidebar, type CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
-export interface CodeIntelAreaRouteContext extends TelemetryProps {
+export interface CodeIntelAreaRouteContext extends TelemetryProps, TelemetryV2Props {
     repo: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
 }
@@ -111,7 +112,7 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
 /**
  * Properties passed to all page components in the repository code navigation area.
  */
-export interface RepositoryCodeIntelAreaPageProps extends BreadcrumbSetters, TelemetryProps {
+export interface RepositoryCodeIntelAreaPageProps extends BreadcrumbSetters, TelemetryProps, TelemetryV2Props {
     /** The active repository. */
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null

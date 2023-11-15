@@ -2,6 +2,7 @@ import type { FC } from 'react'
 
 import { Route, Routes } from 'react-router-dom'
 
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { NotFoundPage } from '../../components/HeroPage'
@@ -15,15 +16,15 @@ const ExecutorsListPage = lazyComponent<ExecutorsListPageProps, 'ExecutorsListPa
 )
 
 const GlobalExecutorSecretsListPage = lazyComponent<
-    GlobalExecutorSecretsListPageProps,
+    GlobalExecutorSecretsListPageProps & TelemetryV2Props,
     'GlobalExecutorSecretsListPage'
 >(() => import('./secrets/ExecutorSecretsListPage'), 'GlobalExecutorSecretsListPage')
 
 /** The page area for all executors settings in site-admin. */
 export const ExecutorsSiteAdminArea: FC = () => (
     <Routes>
-        <Route index={true} element={<ExecutorsListPage />} />
-        <Route path="secrets" element={<GlobalExecutorSecretsListPage />} />
+        <Route index={true} element={<ExecutorsListPage telemetryRecorder={noOpTelemetryRecorder} />} />
+        <Route path="secrets" element={<GlobalExecutorSecretsListPage telemetryRecorder={noOpTelemetryRecorder} />} />
         <Route path="*" element={<NotFoundPage pageType="settings" />} />
     </Routes>
 )

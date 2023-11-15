@@ -3,6 +3,7 @@ import type { FC } from 'react'
 import classNames from 'classnames'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -13,7 +14,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 import styles from './RepositoryCompareArea.module.scss'
 
-interface RepositoryCompareAreaProps extends BreadcrumbSetters {
+interface RepositoryCompareAreaProps extends BreadcrumbSetters, TelemetryV2Props {
     repo?: RepositoryFields
 }
 

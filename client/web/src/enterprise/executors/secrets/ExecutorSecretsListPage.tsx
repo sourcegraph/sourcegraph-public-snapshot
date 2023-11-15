@@ -1,5 +1,6 @@
 import React, { type FC, useCallback, useState } from 'react'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import type { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -30,7 +31,7 @@ import {
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
 
-export interface GlobalExecutorSecretsListPageProps {}
+export interface GlobalExecutorSecretsListPageProps extends TelemetryV2Props {}
 
 export const GlobalExecutorSecretsListPage: FC<GlobalExecutorSecretsListPageProps> = props => {
     const connectionLoader = useCallback(

@@ -4,6 +4,7 @@ import { mdiChevronRight, mdiCircleOffOutline } from '@mdi/js'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
@@ -78,17 +79,19 @@ const DashboardNode: React.FunctionComponent<DashboardNodeProps> = props => {
     )
 }
 
-export interface GlobalDashboardPageProps extends TelemetryProps {
+export interface GlobalDashboardPageProps extends TelemetryProps, TelemetryV2Props {
     indexingEnabled?: boolean
 }
 
 export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPageProps> = ({
     telemetryService,
+    telemetryRecorder,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelGlobalDashboard')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('CodeIntelGlobalDashboard', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, error, loading } = useQuery<GlobalCodeIntelStatusResult>(globalCodeIntelStatusQuery, {
         notifyOnNetworkStatusChange: false,
