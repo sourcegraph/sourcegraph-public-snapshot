@@ -48,7 +48,7 @@ const QUERY = gql`
                 tree(path: $filePath) {
                     isRoot
                     url
-                    entries(first: $first, ancestors: $ancestors, recursiveSingleChild: true) {
+                    entries(first: $first, ancestors: $ancestors) {
                         name
                         path
                         isDirectory
@@ -57,7 +57,6 @@ const QUERY = gql`
                             url
                             commit
                         }
-                        isSingleChild
                     }
                 }
             }
@@ -486,11 +485,8 @@ type TreeNode = WildcardTreeNode & {
     entry: FileTreeEntry | null
     error: string | null
     dotdot: string | null
-
-    // In case of a single child expansion, this is the path that should be used
-    // when finding the right parent
-    singleChildParentPath: string | null
 }
+
 interface TreeData {
     // The flat nodes list used by react-accessible-treeview
     nodes: TreeNode[]
@@ -524,23 +520,6 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: s
         insertRootNode(tree, rootTreeUrl)
     }
 
-    // Bookkeeping for single child expansion:
-    //
-    // - `singleChildFolderPath`: This is a list of all folder names that are
-    //   to be combined into the single child. This is needed to update the
-    //   parent name properly.
-    // - `singleChildParentPathForPath`: When set, this tuple is used to find
-    //   the parent for a single child substitution.
-    let singleChildFolderPath: string[] = []
-    let singleChildParentPathForPath:
-        | null
-        | [
-              // parent path to use for the next entries
-              string,
-              // entry parent path for which the substitution is valid
-              string
-          ] = null
-
     let siblingCount = 0
     for (let idx = 0; idx < entries.length; idx++) {
         const entry = entries[idx]
@@ -556,61 +535,9 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: s
             siblingCount = 0
         }
 
-        // When entry.isSingleChild is true, it means that the entry is the only
-        // child of its parents.
-        //
-        // When we encounter such entries, we skip over them and instead update
-        // the respective parent when we finish the list. Since this child
-        // is already entered before, we need to update it.
-        //
-        // If we start the tree on a single child, we add the first entry to
-        // have a visible parent to append things to.
-        if (entry.isSingleChild && !(isNewTree && idx === 0)) {
-            if (singleChildParentPathForPath === null) {
-                singleChildParentPathForPath = [getParentPath(entry.path), entry.path]
-            } else {
-                singleChildParentPathForPath = [singleChildParentPathForPath[0], entry.path]
-            }
-            singleChildFolderPath.push(entry.name)
-
-            // Store the path id in our lookup map and point to the single child
-            // parent (where this path name will be appended to)
-            const parentId = tree.pathToId.get(singleChildParentPathForPath[0])
-            if (parentId) {
-                tree.pathToId.set(entry.path, parentId)
-            }
-
-            // Single child entries are not rendered, so we're skipping over
-            // them.
-            continue
-        }
-
-        // If we skipped over various single child entries, we need to find the
-        // parent and update it.
-        //
-        // This is only done for the first entry after a series of single child
-        // entries are skipped over.
-        if (singleChildFolderPath.length > 0 && singleChildParentPathForPath) {
-            const parentId = tree.pathToId.get(singleChildParentPathForPath[0])
-            if (parentId) {
-                const parent = tree.nodes[parentId]
-                tree.nodes[parentId] = {
-                    ...parent,
-                    name: parent.name + '/' + singleChildFolderPath.join('/'),
-                    entry: entries[idx - 1],
-                }
-            }
-            singleChildFolderPath = []
-        }
-
-        // Unset singleChildParentPathForPath when the parent path no longer matches
-        if (singleChildParentPathForPath !== null && singleChildParentPathForPath[1] !== getParentPath(entry.path)) {
-            singleChildParentPathForPath = null
-        }
-
         const id = tree.nodes.length
         const node: TreeNode = {
-            name: singleChildFolderPath.length > 0 ? `${singleChildFolderPath.join('/')}/${entry.name}` : entry.name,
+            name: entry.name,
             id,
             isBranch: entry.isDirectory,
             parent: 0,
@@ -619,7 +546,6 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: s
             entry,
             error: null,
             dotdot: null,
-            singleChildParentPath: singleChildParentPathForPath ? singleChildParentPathForPath[0] : null,
         }
         appendNode(tree, node)
 
@@ -648,7 +574,6 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: s
                 entry: null,
                 error: errorMessage,
                 dotdot: null,
-                singleChildParentPath: singleChildParentPathForPath ? singleChildParentPathForPath[0] : null,
             }
             appendNode(tree, node)
         }
@@ -668,7 +593,6 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string): void {
         entry: null,
         error: null,
         dotdot: null,
-        singleChildParentPath: null,
     }
     tree.nodes.push(root)
     tree.pathToId.set(tree.rootPath, 0)
@@ -688,7 +612,6 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string): void {
             entry: null,
             error: null,
             dotdot: dirname(rootTreeUrl),
-            singleChildParentPath: null,
         }
         appendNode(tree, node)
     }
@@ -733,11 +656,7 @@ function nodeIsImmediateParentOf(nodeA: TreeNode, nodeB: TreeNode): boolean {
     if (nodeB.path === '') {
         return false
     }
-    let bParentPath = getParentPath(nodeB.path)
-    if (nodeB.singleChildParentPath !== null) {
-        bParentPath = nodeB.singleChildParentPath
-    }
-    return nodeA.path === bParentPath
+    return nodeA.path === getParentPath(nodeB.path)
 }
 
 function isImmediateParentOf(fullPathA: string, fullPathB: string): boolean {

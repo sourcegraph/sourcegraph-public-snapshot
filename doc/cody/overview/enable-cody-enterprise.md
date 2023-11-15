@@ -168,7 +168,7 @@ You're all set to use Cody on your self-hosted Sourcegraph instance. You can lea
 ## Cody on Sourcegraph Cloud
 
 - With [Sourcegraph Cloud](../../cloud/index.md), you get Cody as a managed service, and you **do not** need to [enable Cody as is required for self-hosted setup](#enable-cody-on-your-sourcegraph-instance)
-- However, by contacting your account manager, Cody can still be enabled on-demand on your Sourcegraph instance. The Sourcegraph team will refer to the [handbook](https://handbook.sourcegraph.com/departments/cloud/#managed-instance-requests)
+- However, by contacting your account manager, Cody can still be enabled on-demand on your Sourcegraph instance. The Sourcegraph team will refer to the [handbook](https://golinks.io/cloud-requests-cody)
 - Next, you can configure the [VS Code extension](#configure-the-vs-code-extension) by following the same steps as mentioned for the self-hosted environment
 - After which, you are all set to use Cody with Sourcegraph Cloud
 

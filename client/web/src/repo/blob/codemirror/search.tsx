@@ -30,7 +30,8 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
-import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
+import { mdiChevronLeft, mdiChevronRight, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
+import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
 import type { NavigateFunction } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
@@ -47,6 +48,8 @@ import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardS
 import { createElement } from '../../../util/dom'
 
 import { CodeMirrorContainer } from './react-interop'
+
+import styles from './search.module.scss'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 
@@ -224,9 +227,9 @@ class SearchPanel implements Panel {
                     />
                 </div>
                 {totalMatches > 1 && (
-                    <>
+                    <div className="ml-2">
                         <Button
-                            className="p-1 ml-2 mr-2 mt-0 mb-0"
+                            className={classNames(styles.bgroupLeft, 'p-1')}
                             type="button"
                             size="sm"
                             outline={true}
@@ -235,11 +238,11 @@ class SearchPanel implements Panel {
                             data-testid="blob-view-search-previous"
                             aria-label="previous result"
                         >
-                            <Icon svgPath={mdiChevronUp} aria-hidden={true} />
+                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} />
                         </Button>
 
                         <Button
-                            className="p-1 mr-0 mt-0 mb-0"
+                            className={classNames(styles.bgroupRight, 'p-1')}
                             type="button"
                             size="sm"
                             outline={true}
@@ -248,9 +251,9 @@ class SearchPanel implements Panel {
                             data-testid="blob-view-search-next"
                             aria-label="next result"
                         >
-                            <Icon svgPath={mdiChevronDown} aria-hidden={true} />
+                            <Icon svgPath={mdiChevronRight} aria-hidden={true} />
                         </Button>
-                    </>
+                    </div>
                 )}
 
                 {searchQuery.search ? (

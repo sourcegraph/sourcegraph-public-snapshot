@@ -4,25 +4,25 @@ import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-exte
 import type { ConnectionQueryArguments } from '../components/FilteredConnection'
 import type { UsePreciseCodeIntelForPositionVariables } from '../graphql-operations'
 
-import type { Location } from './location'
+import type { LocationsGroup } from './location'
 import type { SettingsGetter } from './settings'
 
 export interface CodeIntelData {
     references: {
         endCursor: string | null
-        nodes: Location[]
+        nodes: LocationsGroup
     }
     implementations: {
         endCursor: string | null
-        nodes: Location[]
+        nodes: LocationsGroup
     }
     prototypes: {
         endCursor: string | null
-        nodes: Location[]
+        nodes: LocationsGroup
     }
     definitions: {
         endCursor: string | null
-        nodes: Location[]
+        nodes: LocationsGroup
     }
 }
 
