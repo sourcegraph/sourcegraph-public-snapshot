@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import type { TemporarySettingsResult } from './graphql-operations'
@@ -73,7 +74,9 @@ export type SourcegraphContextTemporarySettings = Pick<
     '__typename' | 'contents'
 >
 
-export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
+export interface SourcegraphContext
+    extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'>,
+        TelemetryV2Props {
     xhrHeaders: { [key: string]: string }
     userAgentIsBot: boolean
 

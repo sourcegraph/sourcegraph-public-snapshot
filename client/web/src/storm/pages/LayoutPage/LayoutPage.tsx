@@ -250,6 +250,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
                     location={location}
                     userHistory={userHistory}
                 />

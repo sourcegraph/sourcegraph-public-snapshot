@@ -237,6 +237,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
                             telemetryService={eventLogger}
+                            telemetryRecorder={window.context.telemetryRecorder}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isCodyApp={window.context.codyAppMode}
                             isSearchContextSpecAvailable={isSearchContextSpecAvailable}

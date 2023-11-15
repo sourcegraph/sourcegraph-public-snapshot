@@ -7,6 +7,7 @@ import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/Que
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -25,14 +26,14 @@ import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
 
-interface SearchPageContentProps {
+interface SearchPageContentProps extends TelemetryV2Props {
     shouldShowAddCodeHostWidget?: boolean
 }
 
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
-    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
+    const { telemetryService, telemetryRecorder, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
@@ -123,6 +124,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             <GettingStartedTour
                                 className="mt-5"
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 variant="horizontal"
                                 authenticatedUser={authenticatedUser}
                             />
@@ -132,10 +134,15 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                 <TryCodyCtaSection
                                     className="mx-auto my-5"
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                 />
                             ) : (
-                                <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
+                                <TryCodySignUpCtaSection
+                                    className="mx-auto my-5"
+                                    telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
+                                />
                             )
                         ) : null}
                     </>
@@ -147,6 +154,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     )}

@@ -3,6 +3,7 @@ import React from 'react'
 import { mdiChevronRight, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, H1, H2, Icon, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
@@ -66,12 +67,15 @@ const MeetCodySVG: React.FC = () => (
     </svg>
 )
 
-export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: string }> = ({
+export const TryCodySignUpCtaSection: React.FC<TelemetryProps & TelemetryV2Props & { className?: string }> = ({
     className,
     telemetryService,
+    telemetryRecorder,
 }) => {
-    const onSignUpClick = (): void =>
+    const onSignUpClick = (): void => {
         telemetryService.log(EventName.CODY_SIGNUP, { type: 'ComHome' }, { type: 'ComHome' })
+        telemetryRecorder.recordEvent(EventName.CODY_SIGNUP, 'clicked', { privateMetadata: { type: 'ComHome' } })
+    }
 
     return (
         <div className={classNames('d-flex', className, styles.container)}>
