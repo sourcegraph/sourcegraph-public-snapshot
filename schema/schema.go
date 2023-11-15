@@ -1985,11 +1985,11 @@ type Ranking struct {
 }
 type RateLimits struct {
 	// GraphQLMaxAliases description: Maximum number of aliases allowed in a GraphQL query
-	GraphQLMaxAliases int `json:"GraphQLMaxAliases,omitempty"`
+	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
 	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries
-	GraphQLMaxDepth int `json:"GraphQLMaxDepth,omitempty"`
+	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
 	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
-	GraphQLMaxFieldCount int `json:"GraphQLMaxFieldCount,omitempty"`
+	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
 }
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
@@ -2491,7 +2491,6 @@ type SettingsOpenInEditor struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
-	RateLimits *RateLimits `json:"RateLimits,omitempty"`
 	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// App description: Configuration options for App only.
@@ -2740,7 +2739,8 @@ type SiteConfiguration struct {
 	// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
-	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
+	ProductResearchPageEnabled *bool       `json:"productResearchPage.enabled,omitempty"`
+	RateLimits                 *RateLimits `json:"rateLimits,omitempty"`
 	// RedactOutboundRequestHeaders description: Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.
 	RedactOutboundRequestHeaders *bool `json:"redactOutboundRequestHeaders,omitempty"`
 	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
@@ -2798,7 +2798,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "RateLimits")
 	delete(m, "RedirectUnsupportedBrowser")
 	delete(m, "app")
 	delete(m, "auth.accessRequest")
@@ -2916,6 +2915,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "permissions.syncUsersMaxConcurrency")
 	delete(m, "permissions.userMapping")
 	delete(m, "productResearchPage.enabled")
+	delete(m, "rateLimits")
 	delete(m, "redactOutboundRequestHeaders")
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
