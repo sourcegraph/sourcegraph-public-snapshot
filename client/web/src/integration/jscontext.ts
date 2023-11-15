@@ -1,3 +1,4 @@
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import type { SourcegraphContext } from '../jscontext'
@@ -65,4 +66,5 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     runningOnMacOS: true,
     srcServeGitUrl: 'http://127.0.0.1:3434',
     primaryLoginProvidersCount: 5,
+    telemetryRecorder: noOpTelemetryRecorder,
 })
