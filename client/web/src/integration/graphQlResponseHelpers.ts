@@ -25,7 +25,6 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
                     isDirectory: false,
                     url: `${url}/-/blob/${name}`,
                     submodule: null,
-                    isSingleChild: false,
                 })),
             },
         },

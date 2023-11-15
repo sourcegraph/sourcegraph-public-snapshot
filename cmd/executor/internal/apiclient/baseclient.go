@@ -161,16 +161,6 @@ func (c *BaseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
 	return err
 }
 
-// NewRequest creates a new http.Request with the provided URL and path.
-func NewRequest(method string, baseURL, urlPath string, payload any) (*http.Request, error) {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, err
-	}
-	u.Path = path.Join(u.Path, urlPath)
-	return newJSONRequest(method, u, payload)
-}
-
 // NewRequest creates a new http.Request where only the Authorization HTTP header is set.
 func (c *BaseClient) NewRequest(jobId int, token, method, path string, payload io.Reader) (*http.Request, error) {
 	u := c.newRelativeURL(path)

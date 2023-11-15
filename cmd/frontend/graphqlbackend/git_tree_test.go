@@ -370,55 +370,6 @@ func TestGitTree_Entries(t *testing.T) {
 		}, entries)
 	})
 
-	t.Run("RecursiveSingleChild", func(t *testing.T) {
-		opts := GitTreeEntryResolverOpts{
-			Commit: &GitCommitResolver{
-				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
-			},
-			Stat: CreateFileInfo(".aspect/", true),
-		}
-		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
-
-		entries, err := gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{RecursiveSingleChild: true})
-		require.NoError(t, err)
-		assertEntries(t, []fs.FileInfo{
-			CreateFileInfo(".aspect/cli/", true),
-			CreateFileInfo(".aspect/rules/", true),
-		}, entries)
-
-		opts = GitTreeEntryResolverOpts{
-			Commit: &GitCommitResolver{
-				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
-			},
-			Stat: CreateFileInfo(".aspect/rules/", true),
-		}
-		gitTree = NewGitTreeEntryResolver(db, gitserverClient, opts)
-
-		entries, err = gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{RecursiveSingleChild: true})
-		require.NoError(t, err)
-		assertEntries(t, []fs.FileInfo{
-			CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
-			CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
-		}, entries)
-
-		opts = GitTreeEntryResolverOpts{
-			Commit: &GitCommitResolver{
-				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
-			},
-			Stat: CreateFileInfo(wantPath, true),
-		}
-		gitTree = NewGitTreeEntryResolver(db, gitserverClient, opts)
-
-		entries, err = gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{RecursiveSingleChild: true})
-		require.NoError(t, err)
-		assertEntries(t, []fs.FileInfo{
-			CreateFileInfo(".aspect/", true),
-			CreateFileInfo("folder/", true),
-			CreateFileInfo("folder2/", true),
-			CreateFileInfo("file", false),
-		}, entries)
-	})
-
 	t.Run("Ancestors", func(t *testing.T) {
 		opts := GitTreeEntryResolverOpts{
 			Commit: &GitCommitResolver{
