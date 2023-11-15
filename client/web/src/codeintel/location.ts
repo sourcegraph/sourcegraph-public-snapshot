@@ -106,7 +106,7 @@ export class LocationsGroup {
 
     constructor(locations: Location[]) {
         let locationsCount = 0
-        let groups: LocationsGroupedByRepo[] = []
+        const groups: LocationsGroupedByRepo[] = []
 
         const urlsSeen = new Set<string>()
         const repoMap = new Map<string, Map<string, Location[]>>()
