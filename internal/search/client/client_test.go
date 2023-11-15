@@ -30,7 +30,7 @@ func TestDetectSearchType(t *testing.T) {
 		{"V1, no pattern type", "V1", nil, "", query.SearchTypeRegex},
 		{"V2, no pattern type", "V2", nil, "", query.SearchTypeLiteral},
 		{"V3, no pattern type", "V3", nil, "", query.SearchTypeStandard},
-		{"V4, no pattern type", "V4", nil, "", query.SearchTypeStandardV2},
+		{"V4-rc1, no pattern type", "V4-rc1", nil, "", query.SearchTypeNewStandardRC1},
 		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", query.SearchTypeLiteral},
 		{"V1, regexp pattern type", "V1", &typeRegexp, "", query.SearchTypeRegex},
 		{"V2, regexp pattern type", "V2", &typeRegexp, "", query.SearchTypeRegex},
@@ -70,7 +70,7 @@ func TestDetectSearchType(t *testing.T) {
 		}, {
 			version:     "V99",
 			patternType: nil,
-			errorString: "unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4\", got \"V99\"",
+			errorString: "unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4-rc1\", got \"V99\"",
 		}}
 
 		for _, tc := range cases {

@@ -818,9 +818,9 @@ func TestParseStandard(t *testing.T) {
 	})
 }
 
-func TestParseStandardV2(t *testing.T) {
+func TestParseNewStandard(t *testing.T) {
 	test := func(input string) string {
-		result, err := Parse(input, SearchTypeStandardV2)
+		result, err := Parse(input, SearchTypeNewStandardRC1)
 		if err != nil {
 			return err.Error()
 		}

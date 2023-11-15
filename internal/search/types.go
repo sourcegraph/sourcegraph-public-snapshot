@@ -228,7 +228,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 	// are evaluating to deliver a better keyword-based search experience. For now
 	// these are separate, but we might combine them in the future. Both profit from
 	// higher defaults.
-	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeStandardV2 {
+	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeNewStandardRC1 {
 		// Keyword searches tends to match much more broadly than code searches, so we need to
 		// consider more candidates to ensure we don't miss highly-ranked documents
 		searchOpts.ShardMaxMatchCount *= 10

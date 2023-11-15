@@ -2676,7 +2676,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
-    standardv2
+    newStandardRC1
 }
 
 """

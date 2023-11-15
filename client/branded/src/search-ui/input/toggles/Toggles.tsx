@@ -95,13 +95,15 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, submitOnToggle])
 
-    const toggleStandardV2 = useCallback((): void => {
+    const toggleNewStandard = useCallback((): void => {
         const newPatternType =
-            patternType !== SearchPatternType.standardv2 ? SearchPatternType.standardv2 : SearchPatternType.standard
+            patternType !== SearchPatternType.newStandardRC1
+                ? SearchPatternType.newStandardRC1
+                : SearchPatternType.standard
 
         setPatternType(newPatternType)
 
-        // We always want precise mode when switching to standardv2.
+        // We always want precise mode when switching to the experimental pattern type.
         setSearchMode(SearchMode.Precise)
 
         submitOnToggle({ newPatternType })
@@ -120,7 +122,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
             const newSearchMode: SearchMode = enabled ? SearchMode.SmartSearch : SearchMode.Precise
 
             // Disable the experimental pattern type the user activates smart search
-            if (patternType === SearchPatternType.standardv2) {
+            if (patternType === SearchPatternType.newStandardRC1) {
                 setPatternType(SearchPatternType.standard)
             }
 
@@ -130,19 +132,19 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         [setSearchMode, submitOnToggle, patternType, setPatternType]
     )
 
-    // This is hacky and is just for demo purposes. Once we have made standardv2
-    // the default we can revert this.
+    // This is hacky and is just for demo purposes. Once we have made the new
+    // pattern type the default we can revert this.
     const onSelectSearchMode = useCallback(
         (mode: SearchModes): void => {
             if (mode === SearchModes.Smart) {
                 onSelectSmartSearch(true)
             } else if (mode === SearchModes.PreciseNew) {
-                toggleStandardV2()
+                toggleNewStandard()
             } else {
                 onSelectSmartSearch(false)
             }
         },
-        [onSelectSmartSearch, toggleStandardV2]
+        [onSelectSmartSearch, toggleNewStandard]
     )
 
     return (
@@ -212,7 +214,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         <SmartSearchToggleExtended
                             className="test-smart-search-toggle"
                             mode={
-                                patternType === SearchPatternType.standardv2
+                                patternType === SearchPatternType.newStandardRC1
                                     ? SearchModes.PreciseNew
                                     : searchMode === SearchMode.SmartSearch
                                     ? SearchModes.Smart

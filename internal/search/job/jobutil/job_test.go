@@ -1044,12 +1044,12 @@ func Test_computeResultTypes(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandard)))
 	})
 
-	t.Run("standardv2, only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeStandardV2)))
+	t.Run("newStandardRC1, only search file content when type not set", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeNewStandardRC1)))
 	})
 
-	t.Run("standardv2, plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandardV2)))
+	t.Run("newStandardRC1, plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeNewStandardRC1)))
 	})
 }
 
