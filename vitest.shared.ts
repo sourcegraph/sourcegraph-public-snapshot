@@ -34,7 +34,7 @@ export const defaultProjectConfig: UserWorkspaceConfig = {
         ],
         css: { modules: { classNameStrategy: 'non-scoped' } },
         hideSkippedTests: true,
-        globalSetup: [path.join(__dirname, `client/testing/src/globalTestSetup.${TS_EXT}`)],
+        globalSetup: [path.join(process.cwd(), `client/testing/src/globalTestSetup.${TS_EXT}`)],
     },
     plugins: BAZEL
         ? [
@@ -86,6 +86,11 @@ export function defineProjectWithDefaults(dir: string, config: UserWorkspaceConf
         config.test.name = name
     }
     if (!config.test.root) {
+        // Reorient the dir around process.cwd() if we're running in Bazel and we got a __dirname-relative path.
+        // https://medium.com/@Jakeherringbone/running-tools-under-bazel-8aa416e7090c
+        if (BAZEL && dir.startsWith(__dirname)) {
+            dir = path.join(process.cwd(), dir.slice(__dirname.length))
+        }
         config.test.root = dir
     }
 
