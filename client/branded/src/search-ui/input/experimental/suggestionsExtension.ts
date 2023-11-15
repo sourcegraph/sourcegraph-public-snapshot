@@ -246,6 +246,16 @@ enum QueryState {
 }
 
 /**
+ * Used to identify whether two queries refer to the same
+ * completion request. A new completion request is triggered
+ * by e.g. typing into the query input or moving the cursor.
+ * This is used to properly reset internal state.
+ *
+ * Because objects are always unique we can use them as IDs.
+ */
+interface CompletionID {}
+
+/**
  * Wrapper around the configered sources. Keeps track of the state and results.
  */
 class Query {
@@ -253,11 +263,7 @@ class Query {
         public readonly sources: readonly Source[],
         public readonly state: QueryState,
         public readonly result: Result,
-        // Used to identify whether two queries refer to the same
-        // completion request. Any new completion request is
-        // triggered by e.g. typing into the query input or moving
-        // the cursor.
-        private readonly completionID: {}
+        private readonly completionID: CompletionID
     ) {}
 
     public update(transaction: Transaction): Query {
@@ -292,16 +298,21 @@ class Query {
         return query
     }
 
+    private createNewCompletionID(): CompletionID {
+        // We use an object as completion ID because objects are always unique.
+        return {}
+    }
+
     private run(state: EditorState): Query {
         const selectedMode = getSelectedMode(state)
         const activeSources = this.sources.filter(source => source.mode === selectedMode?.name)
         const result = combineResults(
             activeSources.map(source => source.query(state, state.selection.main.head, selectedMode?.name))
         )
-        return this.updateWithSuggestionResult(result, {})
+        return this.updateWithSuggestionResult(result, this.createNewCompletionID())
     }
 
-    private updateWithSuggestionResult(result: SuggestionResult, completionID: {}): Query {
+    private updateWithSuggestionResult(result: SuggestionResult, completionID: CompletionID): Query {
         return result.next
             ? new PendingQuery(this.sources, Result.fromSuggestionResult(result), result.next, completionID)
             : new Query(this.sources, QueryState.Complete, Result.fromSuggestionResult(result), completionID)
@@ -331,7 +342,7 @@ class PendingQuery extends Query {
         public readonly fetch: () => Promise<SuggestionResult>,
         // Used to identify whether two queries refer to the same
         // completion request.
-        completionID: {}
+        completionID: CompletionID
     ) {
         super(sources, QueryState.Pending, result, completionID)
     }
