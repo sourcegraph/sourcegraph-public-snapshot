@@ -49,6 +49,27 @@
       "type": "boolean",
       "default": false
     },
+    "RateLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "GraphQLMaxDepth": {
+          "description": "Maximum depth of nested objects allowed for GraphQL queries",
+          "type" : "integer",
+          "default": 30
+        },
+        "GraphQLMaxAliases": {
+          "description": "Maximum number of aliases allowed in a GraphQL query",
+          "type": "integer",
+          "default": 500
+        },
+        "GraphQLMaxFieldCount": {
+          "description": "Maximum number of estimated fields allowed in a GraphQL response",
+          "type":"integer",
+          "default": 500000
+        }
+      }
+    },
     "exportUsageTelemetry": {
       "type": "object",
       "additionalProperties": false,

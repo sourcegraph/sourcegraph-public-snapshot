@@ -15,6 +15,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -31,7 +32,7 @@ func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverCli
 		gitserverClient,
 		[]OptionalResolver{},
 		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
-		graphql.MaxDepth(maxDepth),
+		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
 	)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)

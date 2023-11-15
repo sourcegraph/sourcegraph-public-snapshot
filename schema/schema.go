@@ -1983,6 +1983,14 @@ type Ranking struct {
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
 }
+type RateLimits struct {
+	// GraphQLMaxAliases description: Maximum number of aliases allowed in a GraphQL query
+	GraphQLMaxAliases int `json:"GraphQLMaxAliases,omitempty"`
+	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries
+	GraphQLMaxDepth int `json:"GraphQLMaxDepth,omitempty"`
+	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
+	GraphQLMaxFieldCount int `json:"GraphQLMaxFieldCount,omitempty"`
+}
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
 type RepoPurgeWorker struct {
@@ -2483,6 +2491,7 @@ type SettingsOpenInEditor struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
+	RateLimits *RateLimits `json:"RateLimits,omitempty"`
 	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// App description: Configuration options for App only.
@@ -2789,6 +2798,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
+	delete(m, "RateLimits")
 	delete(m, "RedirectUnsupportedBrowser")
 	delete(m, "app")
 	delete(m, "auth.accessRequest")
