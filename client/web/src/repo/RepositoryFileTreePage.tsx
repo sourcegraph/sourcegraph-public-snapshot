@@ -5,6 +5,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -22,7 +23,11 @@ import { TreePage } from './tree/TreePage'
 
 import styles from './RepositoryFileTreePage.module.scss'
 
-export interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
+export interface RepositoryFileTreePageProps
+    extends RepoRevisionContainerContext,
+        NotebookProps,
+        OwnConfigProps,
+        TelemetryV2Props {
     objectType: 'blob' | 'tree' | undefined
     globalContext: Pick<SourcegraphContext, 'authProviders'>
 }
@@ -33,7 +38,15 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
-    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, globalContext, ...context } = props
+    const {
+        telemetryRecorder,
+        repo,
+        resolvedRevision,
+        repoName,
+        objectType: maybeObjectType,
+        globalContext,
+        ...context
+    } = props
 
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
@@ -78,6 +91,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                 revision={context.revision}
                 settingsCascade={context.settingsCascade}
                 telemetryService={context.telemetryService}
+                telemetryRecorder={props.telemetryRecorder}
                 authenticatedUser={context.authenticatedUser}
                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                 commitID={resolvedRevision?.commitID}
@@ -108,6 +122,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                     className={styles.pageContent}
                                     context={globalContext}
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (
