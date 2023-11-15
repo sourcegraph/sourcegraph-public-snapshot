@@ -8,6 +8,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, Button, useEventObservable, Alert, Link, Select, Input, Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
@@ -20,7 +21,7 @@ import { FormTriggerArea } from './FormTriggerArea'
 
 import styles from './CodeMonitorForm.module.scss'
 
-export interface CodeMonitorFormProps {
+export interface CodeMonitorFormProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     /**
      * A function that takes in a code monitor and emits an Observable with all or some

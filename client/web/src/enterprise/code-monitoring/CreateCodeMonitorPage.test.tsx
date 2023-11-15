@@ -5,6 +5,7 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -34,6 +35,7 @@ describe('CreateCodeMonitorPage', () => {
         ),
         isLightTheme: true,
         isSourcegraphDotCom: false,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
 
     const origContext = window.context
@@ -55,7 +57,10 @@ describe('CreateCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/new" element={<CreateCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/new"
+                        element={<CreateCodeMonitorPage {...props} telemetryRecorder={props.telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             {

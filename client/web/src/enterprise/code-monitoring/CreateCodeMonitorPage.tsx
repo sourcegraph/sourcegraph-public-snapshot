@@ -28,7 +28,7 @@ interface CreateCodeMonitorPageProps extends TelemetryV2Props {
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     React.PropsWithChildren<CreateCodeMonitorPageProps>
-> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom }) => {
+> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom, telemetryRecorder }) => {
     const location = useLocation()
 
     const triggerQuery = useMemo(
@@ -41,18 +41,20 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
         [location.search]
     )
 
-    useEffect(
-        () =>
-            eventLogger.logPageView('CreateCodeMonitorPage', {
-                hasTriggerQuery: !!triggerQuery,
-                hasDescription: !!description,
-            }),
-        [triggerQuery, description]
-    )
+    useEffect(() => {
+        eventLogger.logPageView('CreateCodeMonitorPage', {
+            hasTriggerQuery: !!triggerQuery,
+            hasDescription: !!description,
+        })
+        telemetryRecorder.recordEvent('CreateCodeMonitorPage', 'viewed', {
+            privateMetadata: { hasTriggerQuery: !!triggerQuery, hasDescription: !!description },
+        })
+    }, [triggerQuery, description, telemetryRecorder])
 
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
             eventLogger.log('CreateCodeMonitorFormSubmitted')
+            telemetryRecorder.recordEvent('CreateCodeMonitorForm', 'submitted')
             return createCodeMonitor({
                 monitor: {
                     namespace: authenticatedUser.id,
@@ -64,7 +66,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
                 actions: convertActionsForCreate(codeMonitor.actions.nodes, authenticatedUser.id),
             })
         },
-        [authenticatedUser.id, createCodeMonitor]
+        [authenticatedUser.id, createCodeMonitor, telemetryRecorder]
     )
 
     return (
@@ -97,6 +99,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
                 description={description}
                 submitButtonLabel="Create code monitor"
                 isSourcegraphDotCom={isSourcegraphDotCom}
+                telemetryRecorder={telemetryRecorder}
             />
         </div>
     )

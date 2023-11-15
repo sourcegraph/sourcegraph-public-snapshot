@@ -14,6 +14,7 @@ import type {
 } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
@@ -26,6 +27,7 @@ import { SearchContextForm } from './SearchContextForm'
 
 export interface EditSearchContextPageProps
     extends TelemetryProps,
+        TelemetryV2Props,
         Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser

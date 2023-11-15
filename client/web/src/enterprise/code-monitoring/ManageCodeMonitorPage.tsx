@@ -6,6 +6,7 @@ import type { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -23,7 +24,7 @@ import {
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface ManageCodeMonitorPageProps {
+interface ManageCodeMonitorPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 
     fetchCodeMonitor?: typeof _fetchCodeMonitor
@@ -41,10 +42,14 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     updateCodeMonitor = _updateCodeMonitor,
     deleteCodeMonitor = _deleteCodeMonitor,
     isSourcegraphDotCom,
+    telemetryRecorder,
 }) => {
     const LOADING = 'loading' as const
 
-    useEffect(() => eventLogger.logPageView('ManageCodeMonitorPage'), [])
+    useEffect(() => {
+        eventLogger.logPageView('ManageCodeMonitorPage')
+        telemetryRecorder.recordEvent('ManageCodeMonitorPage', 'viewed')
+    }, [telemetryRecorder])
 
     const { id } = useParams()
 
@@ -80,6 +85,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     const updateMonitorRequest = React.useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
             eventLogger.log('ManageCodeMonitorFormSubmitted')
+            telemetryRecorder.recordEvent('ManageCodeMonitorForm', 'submitted')
             return updateCodeMonitor(
                 {
                     id: id!,
@@ -93,15 +99,16 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                 convertActionsForUpdate(codeMonitor.actions.nodes, authenticatedUser.id)
             )
         },
-        [authenticatedUser.id, id, updateCodeMonitor]
+        [authenticatedUser.id, id, updateCodeMonitor, telemetryRecorder]
     )
 
     const deleteMonitorRequest = React.useCallback(
         (id: string): Observable<void> => {
             eventLogger.log('ManageCodeMonitorDeleteSubmitted')
+            telemetryRecorder.recordEvent('ManageCodeMonitorDelete', 'submitted')
             return deleteCodeMonitor(id)
         },
-        [deleteCodeMonitor]
+        [deleteCodeMonitor, telemetryRecorder]
     )
 
     return (
@@ -138,6 +145,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                         submitButtonLabel="Save"
                         showDeleteButton={true}
                         isSourcegraphDotCom={isSourcegraphDotCom}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </>
             )}

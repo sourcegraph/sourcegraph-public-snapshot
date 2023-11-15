@@ -7,6 +7,7 @@ import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLa
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, Button, Link, Alert, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
@@ -25,7 +26,7 @@ import { OrgAvatar } from '../OrgAvatar'
 
 import type { OrgAreaRouteContext } from './OrgArea'
 
-interface Props extends OrgAreaRouteContext {
+interface Props extends OrgAreaRouteContext, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */
@@ -52,6 +53,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
 
         public componentDidMount(): void {
             eventLogger.logViewEvent('OrgInvitation')
+            this.props.telemetryRecorder.recordEvent('OrgInvitation', 'viewed')
 
             const orgChanges = this.componentUpdates.pipe(
                 distinctUntilKeyChanged('org'),
@@ -74,7 +76,10 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                                     organizationInvitation: org.viewerPendingInvitation!.id,
                                     responseType,
                                 }).pipe(
-                                    tap(() => eventLogger.log('OrgInvitationRespondedTo')),
+                                    tap(() => {
+                                        eventLogger.log('OrgInvitationRespondedTo')
+                                        this.props.telemetryRecorder.recordEvent('OrgInvitation', 'responded')
+                                    }),
                                     tap(() =>
                                         this.props.onDidRespondToInvitation(
                                             responseType === OrganizationInvitationResponseType.ACCEPT

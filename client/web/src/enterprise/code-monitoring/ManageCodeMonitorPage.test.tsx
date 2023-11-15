@@ -16,6 +16,7 @@ import {
     type MonitorEditActionInput,
     MonitorEmailPriority,
 } from '../../graphql-operations'
+import { telemetryRecorder } from '../../telemetry/telemetryRecorder'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
@@ -54,7 +55,10 @@ describe('ManageCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/test-monitor-id' }
@@ -76,7 +80,10 @@ describe('ManageCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/test-monitor-id' }
@@ -128,7 +135,10 @@ describe('ManageCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/test-monitor-id' }
@@ -142,7 +152,10 @@ describe('ManageCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/test-monitor-id' }
@@ -157,7 +170,10 @@ describe('ManageCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/test-monitor-id' }
@@ -174,7 +190,10 @@ describe('ManageCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/test-monitor-id' }
@@ -192,7 +211,10 @@ describe('ManageCodeMonitorPage', () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                 </Routes>
             </MockedTestProvider>,
             { route: '/code-monitoring/test-monitor-id' }
@@ -208,7 +230,10 @@ describe('ManageCodeMonitorPage', () => {
         const { locationRef } = renderWithBrandedContext(
             <MockedTestProvider>
                 <Routes>
-                    <Route path="/code-monitoring/:id" element={<ManageCodeMonitorPage {...props} />} />
+                    <Route
+                        path="/code-monitoring/:id"
+                        element={<ManageCodeMonitorPage {...props} telemetryRecorder={telemetryRecorder} />}
+                    />
                     <Route path="/code-monitoring" element={null} />
                 </Routes>
             </MockedTestProvider>,
