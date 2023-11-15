@@ -54,7 +54,7 @@
       "additionalProperties": false,
       "properties": {
         "graphQLMaxDepth": {
-          "description": "Maximum depth of nested objects allowed for GraphQL queries",
+          "description": "Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.",
           "type": "integer",
           "default": 30
         },
