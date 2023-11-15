@@ -16,9 +16,9 @@
 
 After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's **Chat** panel will open. This interface is used to ask Cody questions and paste in code snippets.
 
-![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/cody-icon.png)
+![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/cody-icon-vscode.png)
 
-Cody also supports `Commands` with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
+Cody also supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
 
 1. Type `/` in the chat bar, and Cody will suggest a list of commands
 2. Right click > Cody > Select a command
@@ -71,12 +71,12 @@ function getTimeAgoDescription(dateString) {
 
 ## 1. Generate a unit test
 
-To ensure code quality and early bug detection, one of the most useful commands that Cody offers is `Generate Unit Tests`. It quickly helps you write a test code for any snippet that you have highlighted. To generate a unit test for our example function:
+To ensure code quality and early bug detection, one of the most useful commands that Cody offers is **Generate unit tests**. It quickly helps you write a test code for any snippet that you have highlighted. To generate a unit test for our example function:
 
 - Open the `date.js` file in VS Code
 - Highlight a code snippet that you'd like to test
 - Inside Cody chat, type `/test` or press the command hotkey (`⌥` + `c` / `alt` + `c`)
-- Select `Generate Unit Tests` option and hit `Enter`
+- Select `Generate unit tests` option and hit `Enter`
 
 Cody will help you generate the following unit test in the sidebar:
 
@@ -122,15 +122,9 @@ Leveraging the failed test output, Cody is able to identify the potential bug an
 
 ![Example of successfully running unit test ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/passed-tests.png)
 
-## 3. Ask Cody to pull reference documentation
+## 3. Ask Cody to add code documentation
 
-Cody can also directly reference documentation. If you've committed docs within your codebase, Cody can search through the text to understand documentation and quickly pull out information so you don't have to search it yourself.
-
-Inside the Cody chat, type `/doc` followed by a query to search documentation. For example, ask Cody: "Can the getTimeAgoDescription() function run out of memory?"
-
-And you get the following response:
-
-![Cody referencing docs ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/get-ref-docs.png)
+Cody can also create well-crafted code documentation and comments, significantly improving the readability experience. You can add it by selecting a code snippet and clicking **Document** from the **Commands** panel. Alternatively, select the code, and inside the Cody chat window, type `/doc`. Cody will add a comment to the top of the code snippet.
 
 ## Try other commands and Cody chat
 
