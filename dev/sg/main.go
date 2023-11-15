@@ -82,6 +82,9 @@ var (
 const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/new?template=sg_bug.md"
 
 // sg is the main sg CLI application.
+//
+// To generate the reference.md (previously done with go generate) do:
+// bazel run //doc/dev/background-information/sg:write_cli_reference_doc
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",

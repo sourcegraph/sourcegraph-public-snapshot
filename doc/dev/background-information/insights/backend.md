@@ -300,4 +300,4 @@ UNION
 
 `migrations/codeinsights` in the root of this repository contains the migrations for the Code Insights database, they are executed when the frontend starts up (as is the same with e.g. codeintel DB migrations.)
 
-Migrations can be created using [`sg`](../sg/index.md).
+Migrations can be created using [`sg`](../sg/reference.md#sg-migration-add) 

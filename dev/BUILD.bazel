@@ -10,6 +10,7 @@ write_source_files(
         "//cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
         "//doc/admin/observability:write_monitoring_docs",
         "//doc/cli/references:write_doc_files",
+        "//doc/dev/background-information/sg:write_cli_reference_doc",
         "//doc/dev/background-information/telemetry:write_telemetrygateway_doc",
         "//internal/batches/search/syntax:write_token_type",
         "//internal/database:write_schemas",
