@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackBadge } from '@sourcegraph/wildcard'
 
@@ -197,37 +198,37 @@ const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && wind
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
-        render: () => <AnalyticsOverviewPage />,
+        render: () => <AnalyticsOverviewPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/analytics/search',
-        render: () => <AnalyticsSearchPage />,
+        render: () => <AnalyticsSearchPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/analytics/code-intel',
-        render: () => <AnalyticsCodeIntelPage />,
+        render: () => <AnalyticsCodeIntelPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/analytics/extensions',
-        render: () => <AnalyticsExtensionsPage />,
+        render: () => <AnalyticsExtensionsPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/analytics/users',
-        render: () => <AnalyticsUsersPage />,
+        render: () => <AnalyticsUsersPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/analytics/code-insights',
-        render: () => <AnalyticsCodeInsightsPage />,
+        render: () => <AnalyticsCodeInsightsPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
         path: '/analytics/batch-changes',
-        render: () => <AnalyticsBatchChangesPage />,
+        render: () => <AnalyticsBatchChangesPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/analytics/notebooks',
-        render: () => <AnalyticsNotebooksPage />,
+        render: () => <AnalyticsNotebooksPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/configuration',
@@ -260,12 +261,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/account-requests',
-        render: () => <AccessRequestsPage />,
+        render: () => <AccessRequestsPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: () => checkRequestAccessAllowed(window.context),
     },
     {
         path: '/users/new',
-        render: () => <SiteAdminCreateUserPage />,
+        render: () => <SiteAdminCreateUserPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/tokens',
@@ -358,19 +359,25 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/users',
         render: () => (
             <UsersManagement
+                telemetryRecorder={noOpTelemetryRecorder}
                 renderAssignmentModal={(onCancel, onSuccess, user) => (
-                    <RoleAssignmentModal onCancel={onCancel} onSuccess={onSuccess} user={user} />
+                    <RoleAssignmentModal
+                        onCancel={onCancel}
+                        onSuccess={onSuccess}
+                        user={user}
+                        telemetryRecorder={noOpTelemetryRecorder}
+                    />
                 )}
             />
         ),
     },
     {
         path: '/license',
-        render: () => <SiteAdminProductSubscriptionPage />,
+        render: () => <SiteAdminProductSubscriptionPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/dotcom/customers',
-        render: () => <SiteAdminProductCustomersPage />,
+        render: () => <SiteAdminProductCustomersPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
@@ -380,35 +387,35 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/dotcom/product/subscriptions/:subscriptionUUID',
-        render: () => <DotComSiteAdminProductSubscriptionPage />,
+        render: () => <DotComSiteAdminProductSubscriptionPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/subscriptions',
-        render: () => <SiteAdminProductSubscriptionsPage />,
+        render: () => <SiteAdminProductSubscriptionsPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/licenses',
-        render: () => <SiteAdminLicenseKeyLookupPage />,
+        render: () => <SiteAdminLicenseKeyLookupPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/auth/providers',
-        render: () => <SiteAdminAuthenticationProvidersPage />,
+        render: () => <SiteAdminAuthenticationProvidersPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/auth/external-accounts',
-        render: () => <SiteAdminExternalAccountsPage />,
+        render: () => <SiteAdminExternalAccountsPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: '/batch-changes',
-        render: () => <BatchChangesSiteConfigSettingsPage />,
+        render: () => <BatchChangesSiteConfigSettingsPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/batch-changes/github-apps/new',
-        render: () => <BatchChangesCreateGitHubAppPage />,
+        render: () => <BatchChangesCreateGitHubAppPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
@@ -418,13 +425,14 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
                 headerParentBreadcrumb={{ to: '/site-admin/batch-changes', text: 'Batch Changes settings' }}
                 headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 telemetryService={props.telemetryService}
+                telemetryRecorder={props.telemetryRecorder}
             />
         ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/batch-changes/specs',
-        render: () => <BatchSpecsPage />,
+        render: () => <BatchSpecsPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },
@@ -443,13 +451,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         exact: true,
         path: '/code-insights-jobs',
-        render: () => <CodeInsightsJobsPage />,
+        render: () => <CodeInsightsJobsPage telemetryRecorder={noOpTelemetryRecorder} />,
         condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
         exact: true,
         path: '/own-signal-page',
-        render: () => <OwnStatusPage />,
+        render: () => <OwnStatusPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
 
     // Code intelligence redirect
@@ -464,13 +472,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/lsif-uploads/:id',
-        render: () => <SiteAdminPreciseIndexPage />,
+        render: () => <SiteAdminPreciseIndexPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
 
     // Executor routes
     {
         path: '/executors/*',
-        render: () => <ExecutorsSiteAdminArea />,
+        render: () => <ExecutorsSiteAdminArea telemetryRecorder={noOpTelemetryRecorder} />,
         condition: () => Boolean(window.context?.executorsEnabled),
     },
 
@@ -521,7 +529,7 @@ function NavigateToCodeGraph(): JSX.Element {
 
 const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
     path: '/users',
-    render: () => <UsersManagement renderAssignmentModal={() => null} />,
+    render: () => <UsersManagement renderAssignmentModal={() => null} telemetryRecorder={noOpTelemetryRecorder} />,
 }
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [

@@ -9,6 +9,7 @@ import { catchError, map } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     PageHeader,
     LoadingSpinner,
@@ -65,12 +66,13 @@ function setSelectedLocationTab(location: Location, navigate: NavigateFunction, 
     }
 }
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     fetchCodeMonitors?: typeof _fetchCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
     isCodyApp: boolean
+    telemetryRecorder: TelemetryRecorder
     // For testing purposes only
     testForceTab?: 'list' | 'getting-started' | 'logs'
 }
@@ -82,6 +84,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     testForceTab,
     isCodyApp,
+    telemetryRecorder,
 }) => {
     const userHasCodeMonitors = useObservable(
         useMemo(
@@ -128,14 +131,17 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             switch (currentTab) {
                 case 'getting-started': {
                     eventLogger.logPageView('CodeMonitoringGettingStartedPage')
+                    telemetryRecorder.recordEvent('CodeMonitoringGettingStartedPage', 'viewed')
                     break
                 }
                 case 'logs': {
                     eventLogger.logPageView('CodeMonitoringLogsPage')
+                    telemetryRecorder.recordEvent('CodeMonitoringLogsPage', 'viewed')
                     break
                 }
                 case 'list': {
                     eventLogger.logPageView('CodeMonitoringPage')
+                    telemetryRecorder.recordEvent('CodeMonitoringPage', 'viewed')
                 }
             }
         }
@@ -225,6 +231,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
                             fetchCodeMonitors={fetchCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     )}
                 </div>

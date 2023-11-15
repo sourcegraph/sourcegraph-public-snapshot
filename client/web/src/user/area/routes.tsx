@@ -50,7 +50,7 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     },
     {
         path: 'profile',
-        render: props => <UserProfile user={props.user} />,
+        render: props => <UserProfile user={props.user} telemetryRecorder={props.platformContext.telemetryRecorder} />,
     },
     ...namespaceAreaRoutes,
 
@@ -71,7 +71,12 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     // for more context on user settings page.
     {
         path: 'app-settings/*',
-        render: props => <AppSettingsArea telemetryService={props.telemetryService} />,
+        render: props => (
+            <AppSettingsArea
+                telemetryService={props.telemetryService}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+            />
+        ),
         condition: context => context.isCodyApp,
     },
 
@@ -87,27 +92,42 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     },
     {
         path: 'batch-changes/create',
-        render: props => <CreateBatchChangePage headingElement="h1" {...props} initialNamespaceID={props.user.id} />,
+        render: props => (
+            <CreateBatchChangePage
+                headingElement="h1"
+                {...props}
+                initialNamespaceID={props.user.id}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+            />
+        ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/:batchChangeName/edit',
-        render: props => <EditBatchSpecPage {...props} />,
+        render: props => <EditBatchSpecPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/:batchChangeName/executions/:batchSpecID/*',
-        render: props => <ExecuteBatchSpecPage {...props} />,
+        render: props => (
+            <ExecuteBatchSpecPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+        ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/*',
-        render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.user.id} />,
+        render: props => (
+            <NamespaceBatchChangesArea
+                {...props}
+                namespaceID={props.user.id}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+            />
+        ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
 ]

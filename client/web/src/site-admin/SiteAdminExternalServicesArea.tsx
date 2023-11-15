@@ -7,6 +7,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
@@ -32,7 +33,7 @@ const AddExternalServicesPage = lazyComponent(
     'AddExternalServicesPage'
 )
 
-interface Props extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
+interface Props extends TelemetryProps, TelemetryV2Props, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser
     isCodyApp: boolean
 }
@@ -64,6 +65,7 @@ export const SiteAdminExternalServicesArea: FC<Props> = props => {
                         {...props}
                         externalServicesFromFile={data?.site?.externalServicesFromFile}
                         allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 }
             />

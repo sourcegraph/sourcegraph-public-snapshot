@@ -1,5 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { userURL } from '..'
 import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -10,6 +12,7 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
  */
 export const RedirectToUserSettings = withAuthenticatedUser<{
     authenticatedUser: AuthenticatedUser
+    telemetryRecorder: TelemetryRecorder
 }>(({ authenticatedUser }) => {
     const location = useLocation()
 

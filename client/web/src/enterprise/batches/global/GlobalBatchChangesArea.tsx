@@ -111,7 +111,7 @@ const AuthenticatedCreateBatchChangePage = withAuthenticatedUser<
     />
 ))
 
-export interface NamespaceBatchChangesAreaProps extends Props {
+export interface NamespaceBatchChangesAreaProps extends Props, TelemetryV2Props {
     namespaceID: Scalars['ID']
 }
 

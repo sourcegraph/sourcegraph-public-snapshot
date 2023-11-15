@@ -5,6 +5,7 @@ import sinon from 'sinon'
 import { describe, expect, test } from 'vitest'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
@@ -31,6 +32,7 @@ const additionalProps = {
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     isLightTheme: false,
     isCodyApp: false,
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 const generateMockFetchMonitors =
@@ -51,7 +53,11 @@ describe('CodeMonitoringListPage', () => {
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring?tab=list']}>
-                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
+                <CodeMonitoringPage
+                    {...additionalProps}
+                    fetchUserCodeMonitors={generateMockFetchMonitors(1)}
+                    telemetryRecorder={additionalProps.telemetryRecorder}
+                />
             </MemoryRouter>
         )
         const toggle = component.getByTestId('toggle-monitor-enabled')

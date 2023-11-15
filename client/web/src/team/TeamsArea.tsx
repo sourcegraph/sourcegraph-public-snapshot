@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import { Routes, Route } from 'react-router-dom'
 
+import { TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -21,7 +22,7 @@ const TeamListPage = lazyComponent<TeamListPageProps, 'TeamListPage'>(
 )
 const NewTeamPage = lazyComponent<NewTeamPageProps, 'NewTeamPage'>(() => import('./new/NewTeamPage'), 'NewTeamPage')
 
-export interface Props {
+export interface Props extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
@@ -37,7 +38,11 @@ const AuthenticatedTeamsArea: React.FunctionComponent<React.PropsWithChildren<Pr
     return (
         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
             <Routes>
-                <Route path="new" element={<NewTeamPage />} errorElement={<RouteError />} />
+                <Route
+                    path="new"
+                    element={<NewTeamPage telemetryRecorder={noOpTelemetryRecorder} />}
+                    errorElement={<RouteError />}
+                />
                 <Route path="" element={<TeamListPage {...props} />} errorElement={<RouteError />} />
                 <Route path=":teamName/*" element={<TeamArea {...props} />} errorElement={<RouteError />} />
                 <Route path="*" element={<NotFoundPage pageType="team" />} errorElement={<RouteError />} />

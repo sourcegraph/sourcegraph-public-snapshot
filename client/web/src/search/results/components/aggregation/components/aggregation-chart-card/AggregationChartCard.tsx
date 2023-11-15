@@ -5,6 +5,7 @@ import { useDebouncedCallback } from 'use-debounce'
 
 import { pluralize } from '@sourcegraph/common'
 import { NotAvailableReasonType, type SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text, Link, Tooltip, Button, Icon, ErrorAlert, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -184,6 +185,7 @@ export function AggregationChartCard(props: AggregationChartCardProps): ReactEle
                     onDatumHover={onBarHoverDebounced}
                     onMouseLeave={handleMouseLeave}
                     className={styles.chart}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
 
                 {!!missingCount && (

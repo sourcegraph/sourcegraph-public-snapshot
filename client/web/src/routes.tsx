@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
@@ -95,7 +96,9 @@ export const routes: RouteObject[] = [
         handle: { isFullPage: true },
         element: (
             <LegacyRoute
-                render={props => <AppSetup telemetryService={props.telemetryService} />}
+                render={props => (
+                    <AppSetup telemetryService={props.telemetryService} telemetryRecorder={props.telemetryRecorder} />
+                )}
                 condition={({ isCodyApp }) => isCodyApp}
             />
         ),
@@ -133,6 +136,7 @@ export const routes: RouteObject[] = [
                     <SearchJob
                         isAdmin={props.authenticatedUser?.siteAdmin ?? false}
                         telemetryService={props.telemetryService}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 )}
                 condition={isSearchJobsEnabled}
@@ -192,11 +196,16 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.Own,
-        element: <OwnPage />,
+        element: <OwnPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: PageRoutes.AppAuthCallback,
-        element: <LegacyRoute render={() => <AppAuthCallbackPage />} condition={({ isCodyApp }) => isCodyApp} />,
+        element: (
+            <LegacyRoute
+                render={props => <AppAuthCallbackPage telemetryRecorder={props.telemetryRecorder} />}
+                condition={({ isCodyApp }) => isCodyApp}
+            />
+        ),
     },
     {
         path: PageRoutes.Index,
@@ -216,7 +225,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.RequestAccess,
-        element: <RequestAccessPage />,
+        element: <RequestAccessPage telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: PageRoutes.SignUp,
@@ -273,7 +282,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.ApiConsole,
-        element: <ApiConsole />,
+        element: <ApiConsole telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: PageRoutes.UserArea,
@@ -297,7 +306,10 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
+                    <CodySidebarStoreProvider
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.telemetryRecorder}
+                    >
                         <RepoContainer {...props} />
                     </CodySidebarStoreProvider>
                 )}
