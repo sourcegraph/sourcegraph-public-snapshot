@@ -40,8 +40,7 @@ const treeEntriesQuery = gql`
             submodule {
                 commit
             }
-            isSingleChild
-            entries(first: $first, recursiveSingleChild: false) {
+            entries(first: $first) {
                 canonicalURL
                 name
                 path
@@ -49,7 +48,6 @@ const treeEntriesQuery = gql`
                 submodule {
                     commit
                 }
-                isSingleChild
             }
         }
     }
