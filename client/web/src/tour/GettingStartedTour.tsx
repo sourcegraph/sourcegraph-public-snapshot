@@ -32,7 +32,7 @@ const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, telemetryRecorde
     }
 
     if (authenticatedUser && showOnboardingSetup) {
-        return <GettingStartedTourSetup user={authenticatedUser} telemetryRecorder={telemetryRecorder} />>
+        return <GettingStartedTourSetup user={authenticatedUser} telemetryRecorder={telemetryRecorder} />
     }
 
     return (
