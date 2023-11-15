@@ -21,7 +21,8 @@ import {
     type ViewUpdate,
 } from '@codemirror/view'
 
-import { browserIsFirefox, isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
+import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
+import { isFirefox } from '@sourcegraph/common'
 
 const selectedLinesTheme = EditorView.theme({
     /**
@@ -35,7 +36,7 @@ const selectedLinesTheme = EditorView.theme({
      *
      * todo(fkling): Revisit this, styling is not correct for empty lines
      */
-    '.selected-lines-layer .selected-line': browserIsFirefox()
+    '.selected-lines-layer .selected-line': isFirefox()
         ? {
               marginTop: '-1px',
           }

@@ -263,7 +263,3 @@ export function isRegularEvent(event: MouseEvent | KeyboardEvent): boolean {
         !event.ctrlKey
     )
 }
-
-export function browserIsFirefox(): boolean {
-    return navigator.userAgent.includes('Firefox')
-}
