@@ -96,7 +96,15 @@ See "[Sourcegraph GraphQL API examples](examples.md)".
 
 ## Cost Limits
 
-To enhance system performance and stability, configurable GraphQL query cost limitations have been implemented. This feature is crucial for preventing resource exhaustion due to extensive or overly complex queries.
+To ensure system performance and stability, configurable GraphQL query cost limitations have been implemented. This feature is crucial for preventing resource exhaustion due to extensive or overly complex queries. The default configuration looks as follows:
+
+```
+  "rateLimits": {
+    "graphQLMaxAliases": 500,
+    "graphQLMaxDepth": 30,
+    "graphQLMaxFieldCount": 500000
+  },
+```
 
 ### GraphQLMaxDepth
 - **Default Value**: 30
