@@ -6,6 +6,7 @@ export default defineProjectWithDefaults(__dirname, {
         environmentMatchGlobs: [
             ['src/enterprise/code-monitoring/ManageCodeMonitorPage.test.tsx', 'jsdom'], // needs window.confirm, Request
             ['src/enterprise/code-monitoring/CreateCodeMonitorPage.test.tsx', 'jsdom'], // 'Error: Should not already be working.'
+            ['src/enterprise/code-monitoring/components/FormTriggerArea.test.tsx', 'jsdom'], // 'Error: Should not already be working.'
             ['src/hooks/useScrollManager/useScrollManager.test.tsx', 'jsdom'], // for correct scroll counting
             ['src/components/KeyboardShortcutsHelp/KeyboardShortcutsHelp.test.tsx', 'jsdom'], // event.getModifierState
         ],

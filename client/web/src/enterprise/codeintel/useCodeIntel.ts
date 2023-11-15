@@ -4,7 +4,7 @@ import type { QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
-import { type Location, buildPreciseLocation } from '../../codeintel/location'
+import { type Location, buildPreciseLocation, LocationsGroup } from '../../codeintel/location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_PROTOTYPES_QUERY,
@@ -27,11 +27,11 @@ import type {
 
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 
-const EMPTY_CODE_INTEL_DATA = {
-    implementations: { endCursor: null, nodes: [] },
-    prototypes: { endCursor: null, nodes: [] },
-    definitions: { endCursor: null, nodes: [] },
-    references: { endCursor: null, nodes: [] },
+const EMPTY_CODE_INTEL_DATA: CodeIntelData = {
+    implementations: { endCursor: null, nodes: LocationsGroup.empty },
+    prototypes: { endCursor: null, nodes: LocationsGroup.empty },
+    definitions: { endCursor: null, nodes: LocationsGroup.empty },
+    references: { endCursor: null, nodes: LocationsGroup.empty },
 }
 
 export const useCodeIntel = ({
@@ -53,7 +53,7 @@ export const useCodeIntel = ({
             ...(previousData || EMPTY_CODE_INTEL_DATA),
             references: {
                 endCursor: null,
-                nodes: references,
+                nodes: new LocationsGroup(references),
             },
         }))
     }
@@ -62,21 +62,11 @@ export const useCodeIntel = ({
         setCodeIntelData(previousData => {
             const previous = previousData || EMPTY_CODE_INTEL_DATA
 
-            const lsifFiles = new Set(previous.references.nodes.map(location => location.file))
-
-            // Filter out any search results that occur in the same file as LSIF results. These
-            // results are definitely incorrect and will pollute the ordering of precise and fuzzy
-            // results in the references pane.
-            const searchResults = searchBasedReferences.filter(location => !lsifFiles.has(location.file))
-            if (searchResults.length === 0) {
-                return previous
-            }
-
             return {
                 ...previous,
                 references: {
                     endCursor: previous.references.endCursor,
-                    nodes: [...previous.references.nodes, ...searchResults],
+                    nodes: previous.references.nodes.combine(searchBasedReferences),
                 },
             }
         })
@@ -87,7 +77,7 @@ export const useCodeIntel = ({
             ...(previousData || EMPTY_CODE_INTEL_DATA),
             definitions: {
                 endCursor: null,
-                nodes: definitions,
+                nodes: new LocationsGroup(definitions),
             },
         }))
     }
@@ -154,7 +144,7 @@ export const useCodeIntel = ({
 
                     // When no definitions are found, the hover tooltip falls back to a search based
                     // search, regardless of the mixPreciseAndSearchBasedReferences setting.
-                    if (lsifData.definitions.nodes.length === 0) {
+                    if (lsifData.definitions.nodes.locationsCount === 0) {
                         fetchSearchBasedDefinitions(setDefinitions)
                     }
                 } else {
@@ -186,10 +176,7 @@ export const useCodeIntel = ({
                 definitions: previousData.definitions,
                 references: {
                     endCursor: newReferenceData.pageInfo.endCursor,
-                    nodes: dedupeLocations([
-                        ...previousData.references.nodes,
-                        ...newReferenceData.nodes.map(buildPreciseLocation),
-                    ]),
+                    nodes: previousData.references.nodes.combine(newReferenceData.nodes.map(buildPreciseLocation)),
                 },
             })
 
@@ -220,10 +207,7 @@ export const useCodeIntel = ({
                 implementations: previousData.implementations,
                 prototypes: {
                     endCursor: newPrototypesData.pageInfo.endCursor,
-                    nodes: dedupeLocations([
-                        ...previousData.prototypes.nodes,
-                        ...newPrototypesData.nodes.map(buildPreciseLocation),
-                    ]),
+                    nodes: previousData.prototypes.nodes.combine(newPrototypesData.nodes.map(buildPreciseLocation)),
                 },
             })
         },
@@ -249,10 +233,9 @@ export const useCodeIntel = ({
                 prototypes: previousData.prototypes,
                 implementations: {
                     endCursor: newImplementationsData.pageInfo.endCursor,
-                    nodes: dedupeLocations([
-                        ...previousData.implementations.nodes,
-                        ...newImplementationsData.nodes.map(buildPreciseLocation),
-                    ]),
+                    nodes: previousData.implementations.nodes.combine(
+                        newImplementationsData.nodes.map(buildPreciseLocation)
+                    ),
                 },
             })
         },
@@ -342,31 +325,19 @@ const getLsifData = ({
     return {
         implementations: {
             endCursor: lsif.implementations.pageInfo.endCursor,
-            nodes: dedupeLocations(lsif.implementations.nodes).map(buildPreciseLocation),
+            nodes: new LocationsGroup(lsif.implementations.nodes.map(buildPreciseLocation)),
         },
         prototypes: {
             endCursor: lsif.prototypes.pageInfo.endCursor,
-            nodes: dedupeLocations(lsif.prototypes.nodes).map(buildPreciseLocation),
+            nodes: new LocationsGroup(lsif.prototypes.nodes.map(buildPreciseLocation)),
         },
         references: {
             endCursor: lsif.references.pageInfo.endCursor,
-            nodes: dedupeLocations(lsif.references.nodes).map(buildPreciseLocation),
+            nodes: new LocationsGroup(lsif.references.nodes.map(buildPreciseLocation)),
         },
         definitions: {
             endCursor: lsif.definitions.pageInfo.endCursor,
-            nodes: lsif.definitions.nodes.map(buildPreciseLocation),
+            nodes: new LocationsGroup(lsif.definitions.nodes.map(buildPreciseLocation)),
         },
     }
-}
-
-const dedupeLocations = <L extends { url: string }>(locations: L[]): L[] => {
-    const deduped = []
-    const seenURLs = new Set<string>()
-    for (const location of locations) {
-        if (!seenURLs.has(location.url)) {
-            deduped.push(location)
-            seenURLs.add(location.url)
-        }
-    }
-    return deduped
 }
