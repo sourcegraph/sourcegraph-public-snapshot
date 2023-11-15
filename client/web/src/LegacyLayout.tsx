@@ -302,6 +302,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 key={3}
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
+                telemetryRecorder={props.telemetryRecorder}
             />
             {fuzzyFinder && (
                 <LazyFuzzyFinder

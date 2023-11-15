@@ -6,8 +6,9 @@ import { Subscription } from 'rxjs'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {}
+interface Props extends ExtensionsControllerProps, PlatformContextProps, TelemetryV2Props {}
 
 /**
  * A component that registers global contributions. It is implemented as a React component so that its
