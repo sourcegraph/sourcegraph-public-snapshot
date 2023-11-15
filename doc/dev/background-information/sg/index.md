@@ -79,6 +79,8 @@ On the next command run, if a new version is detected, `sg` will auto update bef
 
 To see what's changed, use `sg version changelog`.
 
+## Usage
+
 ### Help
 
 You can get help about commands locally in a variety of ways:
@@ -92,6 +94,9 @@ sg <command> --help
 
 sg help -full # full reference
 ```
+
+A full `sg` command reference is available in the [sg command reference](./reference.md).
+If you have an outdated installation of `sg`, the reference might not match the commands your installation of `sg` has - see [updates](#updates) to make sure you are up-to-date.
 
 ### Autocompletion
 

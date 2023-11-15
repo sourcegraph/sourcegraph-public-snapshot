@@ -1,5 +1,7 @@
 # `sg` Vision
 
+This page outlines the overarching vision for [`sg`, the Sourcegraph developer tool](./index.md).
+
 ## Principles
 
 - `sg` should be fun to use.
