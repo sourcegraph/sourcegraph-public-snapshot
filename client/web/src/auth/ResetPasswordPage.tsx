@@ -239,7 +239,7 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps &
     React.useEffect(() => {
         eventLogger.logViewEvent('ResetPassword', false)
         props.telemetryRecorder.recordEvent('ResetPassword', 'viewed')
-    }, [])
+    }, [props.telemetryRecorder])
 
     let body: JSX.Element
     if (props.authenticatedUser) {

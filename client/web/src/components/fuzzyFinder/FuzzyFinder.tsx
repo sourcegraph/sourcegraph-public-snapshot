@@ -79,7 +79,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 }
             }
         },
-        [telemetryRecorder, setActiveTab, setIsVisible, toggleScope, setQuery]
+        [setActiveTab, setIsVisible, toggleScope, setQuery]
     )
 
     const shortcuts = useFuzzyShortcuts()

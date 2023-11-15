@@ -106,7 +106,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
 
             setLoading(true)
             onSignUp({
-                telemetryRecorder: telemetryRecorder,
+                telemetryRecorder,
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,

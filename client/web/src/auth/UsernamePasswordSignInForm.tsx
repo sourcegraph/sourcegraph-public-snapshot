@@ -90,7 +90,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     onAuthError(asError(error))
                 })
         },
-        [usernameOrEmail, loading, location, password, onAuthError, context]
+        [usernameOrEmail, loading, location, password, onAuthError, context, telemetryRecorder]
     )
 
     return (

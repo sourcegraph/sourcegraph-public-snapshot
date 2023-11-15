@@ -60,7 +60,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             // eventLogger.log('SignUpInvitedByUser', parameters, parameters)
             telemetryRecorder.recordEvent('SignUpInvitedByUser', 'clicked', { privateMetadata: { parameters } })
         }
-    }, [invitedBy, authenticatedUser, context.allowSignup])
+    }, [invitedBy, authenticatedUser, context.allowSignup, telemetryRecorder])
 
     if (authenticatedUser) {
         return <Navigate to={returnTo} replace={true} />
