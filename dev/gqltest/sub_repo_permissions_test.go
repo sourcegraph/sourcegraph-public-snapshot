@@ -21,7 +21,6 @@ const (
 )
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
-	t.Skip("disabled pending p4 trust fix")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
@@ -85,7 +84,6 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSymbols(t *testing.T) {
-	t.Skip("disabled pending p4 trust fix")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
@@ -123,7 +121,6 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
-	t.Skip("disabled pending p4 trust fix")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, false)
