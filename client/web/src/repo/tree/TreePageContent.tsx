@@ -1,26 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { formatISO, subYears } from 'date-fns'
-import { capitalize, escapeRegExp } from 'lodash'
-import type { Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { escapeRegExp } from 'lodash'
 
 import { RepoMetadata } from '@sourcegraph/branded'
 import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { RepositoryType, SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
-import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -31,14 +27,8 @@ import {
 } from '../../components/FilteredConnection/ui'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
-    CommitAtTimeResult,
-    CommitAtTimeVariables,
-    DiffSinceResult,
-    DiffSinceVariables,
-    GitCommitFields,
-    Scalars,
     TreeCommitsResult,
-    TreeCommitsVariables,
+    TreeHistoryFields,
     TreePageOwnershipNodeFields,
     TreePageOwnershipResult,
     TreePageOwnershipVariables,
@@ -52,11 +42,9 @@ import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
-import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { getRefType, isPerforceChangelistMappingEnabled } from '../utils'
+import { getRefType } from '../utils'
 
-import { type DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
+import { FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
 import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
@@ -68,118 +56,6 @@ export interface TreeCommitsResponse {
     ancestors: NonNullable<Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']>['ancestors']
     externalURLs: Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['externalURLs']
 }
-
-export const fetchCommit = (args: {
-    repo: Scalars['String']
-    revspec: Scalars['String']
-    beforespec: Scalars['String'] | null
-}): Observable<GitCommitFields> =>
-    requestGraphQL<CommitAtTimeResult, CommitAtTimeVariables>(
-        gql`
-            query CommitAtTime($repo: String!, $revspec: String!, $beforespec: String) {
-                repository(name: $repo) {
-                    commit(rev: $revspec) {
-                        ancestors(first: 1, before: $beforespec) {
-                            nodes {
-                                ...GitCommitFields
-                            }
-                        }
-                    }
-                }
-            }
-            ${gitCommitFragment}
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            const nodes = data.repository?.commit?.ancestors.nodes
-            if (!nodes || nodes.length === 0) {
-                throw new Error(`no commit found before ${args.beforespec} from revspec ${args.revspec}`)
-            }
-            return nodes[0]
-        })
-    )
-
-export const fetchDiffStats = (args: {
-    repo: Scalars['String']
-    revspec: Scalars['String']
-    beforespec: Scalars['String']
-    filePath: Scalars['String']
-}): Observable<DiffStat[]> =>
-    fetchCommit({
-        repo: args.repo,
-        revspec: args.revspec,
-        beforespec: null,
-    }).pipe(
-        switchMap(headCommit => {
-            const headDate = new Date(Date.parse(headCommit.author.date))
-            const absBeforespec = `${headDate.getUTCFullYear()}-${
-                headDate.getUTCMonth() + 1
-            }-${headDate.getUTCDate()} ${args.beforespec}`
-            return fetchCommit({
-                repo: args.repo,
-                revspec: args.revspec,
-                beforespec: absBeforespec,
-            })
-        }),
-        switchMap((base: GitCommitFields) =>
-            requestGraphQL<DiffSinceResult, DiffSinceVariables>(
-                gql`
-                    query DiffSince($repo: String!, $basespec: String!, $headspec: String!, $filePath: String!) {
-                        repository(name: $repo) {
-                            comparison(base: $basespec, head: $headspec) {
-                                fileDiffs(paths: [$filePath]) {
-                                    nodes {
-                                        newPath
-                                        stat {
-                                            added
-                                            deleted
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                `,
-                {
-                    repo: args.repo,
-                    basespec: base.oid,
-                    headspec: args.revspec,
-                    filePath: args.filePath,
-                }
-            )
-        ),
-        map(dataOrThrowErrors),
-        map(
-            (data): DiffStat[] =>
-                data.repository?.comparison.fileDiffs.nodes
-                    ?.filter(node => node.newPath)
-                    .map(node => ({
-                        path: node.newPath!,
-                        ...node.stat,
-                    })) || []
-        ),
-        map((fileDiffStats: DiffStat[]) => {
-            const aggregatedDiffStats: { [path: string]: DiffStat } = {}
-            for (const diffStat of fileDiffStats) {
-                // strip filePath prefix from fileDiffStat.path
-                const strippedPath =
-                    args.filePath === '.' ? diffStat.path : diffStat.path.slice(args.filePath.length + 1)
-                let subdirName = strippedPath
-                if (subdirName.includes('/')) {
-                    subdirName = subdirName.slice(0, subdirName.indexOf('/'))
-                }
-                if (!aggregatedDiffStats[subdirName]) {
-                    aggregatedDiffStats[subdirName] = { path: subdirName, added: 0, deleted: 0 }
-                }
-                aggregatedDiffStats[subdirName].added += diffStat.added
-                aggregatedDiffStats[subdirName].deleted += diffStat.deleted
-            }
-            return Array.from(Object.values(aggregatedDiffStats))
-        }),
-        catchError(() => []) // ignore errors
-    )
 
 const ExtraInfoSectionItem: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
     <div className={styles.extraInfoSectionItem}>{children}</div>
@@ -271,6 +147,7 @@ const ExtraInfoSection: React.FC<{
 interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
+    treeWithHistory?: TreeHistoryFields[]
     repo: TreePageRepositoryFields
     commitID: string
     revision: string
@@ -279,7 +156,7 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
-    const { filePath, tree, repo, revision, isPackage } = props
+    const { filePath, tree, treeWithHistory, repo, revision, isPackage } = props
 
     const isRoot = filePath === ''
 
@@ -292,19 +169,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         }
         return null
     }, [tree.entries])
-
-    const [diffStats, setDiffStats] = useState<DiffStat[]>()
-    useEffect(() => {
-        const subscription = fetchDiffStats({
-            repo: repo.name,
-            revspec: revision,
-            beforespec: '1 month',
-            filePath: filePath || '.',
-        }).subscribe(results => {
-            setDiffStats(results)
-        })
-        return () => subscription.unsubscribe()
-    }, [repo.name, revision, filePath])
 
     const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
     const hasRepoMetaWritePermissions = canWriteRepoMetadata(props.authenticatedUser)
@@ -331,16 +195,11 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 </section>
             )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
-                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
-
-                {!isPackage && (
-                    <Card className={styles.commits}>
-                        <CardHeader className={panelStyles.cardColHeaderWrapper}>
-                            {capitalize(pluralize(getRefType(repo.sourceType), 0))}
-                        </CardHeader>
-                        <Commits {...props} />
-                    </Card>
-                )}
+                <FilesCard
+                    historyEntries={treeWithHistory}
+                    entries={tree.entries}
+                    className={styles.files}
+                />
 
                 {!isPackage && (
                     <div className={styles.contributors}>
@@ -700,110 +559,5 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
                 </Tooltip>
             </td>
         </tr>
-    )
-}
-
-const COMMITS_QUERY = gql`
-    query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
-        node(id: $repo) {
-            __typename
-            ... on Repository {
-                sourceType
-                externalURLs {
-                    url
-                    serviceKind
-                }
-                commit(rev: $revspec) {
-                    ancestors(first: $first, path: $filePath, after: $after) {
-                        nodes {
-                            ...GitCommitFields
-                        }
-                        pageInfo {
-                            hasNextPage
-                        }
-                    }
-                }
-            }
-        }
-    }
-    ${gitCommitFragment}
-`
-
-interface CommitsProps extends TreePageContentProps {}
-
-const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => {
-    const after: string = useMemo(() => formatISO(subYears(Date.now(), 1)), [])
-    const { data, error, loading } = useQuery<TreeCommitsResult, TreeCommitsVariables>(COMMITS_QUERY, {
-        variables: {
-            first: COUNT,
-            repo: repo.id,
-            revspec: revision || '',
-            after,
-            filePath,
-        },
-        errorPolicy: 'all',
-    })
-
-    const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
-    const connection = node?.commit?.ancestors
-
-    const revisionType =
-        isPerforceChangelistMappingEnabled() && node?.sourceType === RepositoryType.PERFORCE_DEPOT
-            ? '/-/changelists'
-            : '/-/commits'
-
-    let revisionURL = tree.url
-    if (tree.url.includes('/-/tree')) {
-        revisionURL = revisionURL.replace('/-/tree', revisionType)
-    } else {
-        revisionURL = revisionURL + revisionType
-    }
-
-    return (
-        <ConnectionContainer>
-            {error && <ConnectionError errors={[error.message]} />}
-            {connection && connection.nodes.length > 0 && (
-                <ConnectionList className={classNames('test-commits-connection', styles.table)} as="table">
-                    <tbody>
-                        {connection.nodes.map(node => (
-                            <GitCommitNodeTableRow
-                                key={node.id}
-                                node={node}
-                                className={styles.gitCommitNode}
-                                messageSubjectClassName={styles.gitCommitNodeMessageSubject}
-                                compact={true}
-                            />
-                        ))}
-                    </tbody>
-                </ConnectionList>
-            )}
-            {loading && (
-                <div className={contributorsStyles.filteredConnectionLoading}>
-                    <ConnectionLoading />
-                </div>
-            )}
-            <SummaryContainer className={styles.tableSummary}>
-                {connection && (
-                    <>
-                        <small className="text-muted">
-                            <span>
-                                {connection.nodes.length > 0 ? (
-                                    <>
-                                        Showing last {connection.nodes.length}{' '}
-                                        {pluralize(getRefType(node.sourceType), connection.nodes.length)} of the past
-                                        year
-                                    </>
-                                ) : (
-                                    <>No {pluralize(getRefType(node.sourceType), 0)} in the past year</>
-                                )}
-                            </span>
-                        </small>
-                        <small>
-                            <Link to={revisionURL}>Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}</Link>
-                        </small>
-                    </>
-                )}
-            </SummaryContainer>
-        </ConnectionContainer>
     )
 }

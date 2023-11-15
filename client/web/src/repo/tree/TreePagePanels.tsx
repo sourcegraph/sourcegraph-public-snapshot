@@ -1,10 +1,12 @@
-import React, { type FC, useCallback, useRef, useState, useEffect } from 'react'
+import React, { type FC, useRef, useState, useEffect, useMemo } from 'react'
 
-import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { basename } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import type { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
@@ -14,19 +16,42 @@ import {
     Link,
     LinkOrSpan,
     LoadingSpinner,
-    ParentSize,
-    StackedMeter,
-    Tooltip,
     useElementObscuredArea,
 } from '@sourcegraph/wildcard'
 
 import { FileContentEditor } from '../../cody/components/FileContentEditor'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
-import type { BlobFileFields } from '../../graphql-operations'
+import type { BlobFileFields, GitCommitFields, TreeHistoryFields } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
+import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 import styles from './TreePagePanels.module.scss'
+
+export const treeHistoryFragment = gql`
+    fragment TreeHistoryFields on TreeEntry {
+        path
+        history(first: 1) {
+            nodes {
+                commit {
+                    id
+                    canonicalURL
+                    subject
+                    author {
+                        date
+                    }
+                    committer {
+                        date
+                    }
+                    externalURLs {
+                        url
+                        serviceKind
+                    }
+                }
+            }
+        }
+    }
+`
 
 interface ReadmePreviewCardProps {
     entry: TreeFields['entries'][number]
@@ -123,246 +148,80 @@ export interface DiffStat {
 
 export interface FilePanelProps {
     entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
-    diffStats?: DiffStat[]
+    historyEntries?: TreeHistoryFields[]
     className?: string
-    filePath: string
 }
 
-export const FilesCard: FC<FilePanelProps> = props => {
-    const { entries, diffStats, className } = props
-
-    const [sortColumn, setSortColumn] = useState<{
-        column: 'Files' | 'Activity'
-        direction: 'asc' | 'desc'
-    }>({ column: 'Files', direction: 'asc' })
-
-    const diffStatsByPath: { [path: string]: DiffStat } = {}
-    let maxLinesChanged = 1
-    if (diffStats) {
-        for (const diffStat of diffStats) {
-            if (diffStat.added + diffStat.deleted > maxLinesChanged) {
-                maxLinesChanged = diffStat.added + diffStat.deleted
-            }
-            diffStatsByPath[diffStat.path] = diffStat
+export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className }) => {
+    const hasHistoryEntries = historyEntries && historyEntries.length > 0
+    const fileHistoryByPath = useMemo(() => {
+        const fileHistoryByPath: Record<string, GitCommitFields> = {}
+        for (const entry of historyEntries || []) {
+            fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
         }
-    }
-
-    let sortedEntries = [...entries]
-    const { column, direction } = sortColumn
-    switch (column) {
-        case 'Files': {
-            if (direction === 'desc') {
-                entries.reverse()
-            }
-            break
-        }
-        case 'Activity': {
-            sortedEntries = [...entries]
-            if (diffStats) {
-                sortedEntries.sort((entry1, entry2) => {
-                    const stats1: DiffStat = diffStatsByPath[entry1.name]
-                    const stats2: DiffStat = diffStatsByPath[entry2.name]
-                    let difference =
-                        (stats2 ? stats2.added + stats2.deleted : 0) - (stats1 ? stats1.added + stats1.deleted : 0)
-                    if (direction === 'desc') {
-                        difference *= -1
-                    }
-                    return difference
-                })
-            }
-            break
-        }
-    }
-
-    const sortCallback = useCallback(
-        (column: 'Files' | 'Activity'): void => {
-            if (sortColumn.column === column && sortColumn.direction === 'asc') {
-                setSortColumn({ column, direction: 'desc' })
-            } else {
-                setSortColumn({ column, direction: 'asc' })
-            }
-        },
-        [sortColumn]
-    )
-    const clickFiles = useCallback(() => sortCallback('Files'), [sortCallback])
-    const keydownFiles = useCallback(
-        ({ key }: React.KeyboardEvent<HTMLDivElement>) => key === 'Enter' && sortCallback('Files'),
-        [sortCallback]
-    )
-    const clickActivity = useCallback(() => sortCallback('Activity'), [sortCallback])
-    const keydownActivity = useCallback(
-        ({ key }: React.KeyboardEvent<HTMLDivElement>) => key === 'Enter' && sortCallback('Activity'),
-        [sortCallback]
-    )
-
-    interface Datum {
-        name: 'deleted' | 'added'
-        value: number
-        className: string
-    }
-
-    const getDatumValue = useCallback((datum: Datum) => datum.value, [])
-    const getDatumName = useCallback((datum: Datum) => datum.name, [])
-    const getDatumClassName = useCallback((datum: Datum) => datum.className, [])
+        return fileHistoryByPath
+    }, [historyEntries])
 
     return (
-        <Card className={className}>
-            <CardHeader className={styles.cardColHeaderWrapper}>
-                <div className="container-fluid px-2">
-                    <div className="row">
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={clickFiles}
-                            onKeyDown={keydownFiles}
-                            className={classNames('d-flex flex-row align-items-start col-9 px-2', styles.cardColHeader)}
-                        >
-                            Files
-                            <div className="flex-shrink-1 d-flex flex-column">
-                                <Icon
-                                    aria-label="Sort ascending"
-                                    svgPath={mdiMenuUp}
-                                    className={classNames(
-                                        styles.sortDscIcon,
-                                        sortColumn.column === 'Files' &&
-                                            sortColumn.direction === 'desc' &&
-                                            styles.sortSelectedIcon
-                                    )}
-                                />
-                                <Icon
-                                    aria-label="Sort descending"
-                                    svgPath={mdiMenuDown}
-                                    className={classNames(
-                                        styles.sortAscIcon,
-                                        sortColumn.column === 'Files' &&
-                                            sortColumn.direction === 'asc' &&
-                                            styles.sortSelectedIcon
-                                    )}
-                                />
-                            </div>
-                        </div>
-                        <div
-                            title="1 month activity"
-                            role="button"
-                            tabIndex={0}
-                            onClick={clickActivity}
-                            onKeyDown={keydownActivity}
-                            className={classNames(
-                                'd-flex flex-row-reverse align-items-start col-3 px-2 text-right',
-                                styles.cardColHeader
-                            )}
-                        >
-                            <div className="flex-shrink-1 d-flex flex-column">
-                                <Icon
-                                    aria-label="Sort ascending"
-                                    svgPath={mdiMenuUp}
-                                    className={classNames(
-                                        styles.sortDscIcon,
-                                        sortColumn.column === 'Activity' &&
-                                            sortColumn.direction === 'desc' &&
-                                            styles.sortSelectedIcon
-                                    )}
-                                />
-                                <Icon
-                                    aria-label="Sort descending"
-                                    svgPath={mdiMenuDown}
-                                    className={classNames(
-                                        styles.sortAscIcon,
-                                        sortColumn.column === 'Activity' &&
-                                            sortColumn.direction === 'asc' &&
-                                            styles.sortSelectedIcon
-                                    )}
-                                />
-                            </div>
-                            Recent activity
-                        </div>
-                    </div>
-                </div>
-            </CardHeader>
-            <div className="container-fluid">
-                {sortedEntries.map(entry => (
-                    <div key={entry.name} className={classNames('row', styles.fileItem)}>
-                        <div className="list-group list-group-flush px-2 py-1 col-9">
+        <Card as="table" className={classNames(className, styles.files)}>
+            <thead>
+                <CardHeader as="tr">
+                    <th className={styles.fileNameColumn}>File</th>
+                    {hasHistoryEntries && (
+                        <>
+                            <th>Last commit message</th>
+                            <th className={styles.commitDateColumn}>Last commit date</th>
+                        </>
+                    )}
+                </CardHeader>
+            </thead>
+            <tbody>
+                {entries.map(entry => (
+                    <tr key={entry.name}>
+                        <td className={styles.fileName}>
                             <LinkOrSpan
                                 to={entry.url}
                                 className={classNames(
                                     'test-page-file-decorable',
-                                    styles.treeEntry,
                                     entry.isDirectory && 'font-weight-bold',
                                     `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`
                                 )}
                                 title={entry.path}
                                 data-testid="tree-entry"
                             >
-                                <div
-                                    className={classNames(
-                                        'd-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden'
-                                    )}
-                                >
-                                    <span>
-                                        <Icon
-                                            className="mr-1"
-                                            svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
-                                            aria-hidden={true}
-                                        />
-                                        {
-                                            // In case of single child expansion, we need to get the name relative to
-                                            // the start of the directory (to include subdirectories)
-                                        }
-                                        {entry.name}
-                                        {entry.isDirectory && '/'}
-                                    </span>
-                                </div>
+                                <Icon
+                                    className="mr-1"
+                                    svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
+                                    aria-hidden={true}
+                                />
+                                {entry.name}
+                                {entry.isDirectory && '/'}
                             </LinkOrSpan>
-                        </div>
-                        <div className="list-group list-group-flush px-2 py-1 col-3">
-                            {diffStatsByPath[entry.name] && (
-                                <Tooltip
-                                    placement="topEnd"
-                                    content={`${Intl.NumberFormat('en', {
-                                        notation: 'compact',
-                                    }).format(diffStatsByPath[entry.name].added)} lines added,\n${Intl.NumberFormat(
-                                        'en',
-                                        {
-                                            notation: 'compact',
-                                        }
-                                    ).format(diffStatsByPath[entry.name].deleted)} lines removed in the past 30 days`}
-                                >
-                                    <div className={styles.meterContainer}>
-                                        <ParentSize>
-                                            {({ width }) => (
-                                                <StackedMeter
-                                                    width={width}
-                                                    height={10}
-                                                    viewMinMax={[0, maxLinesChanged]}
-                                                    data={[
-                                                        {
-                                                            name: 'deleted',
-                                                            value: diffStatsByPath[entry.name].deleted,
-                                                            className: styles.diffStatDeleted,
-                                                        },
-                                                        {
-                                                            name: 'added',
-                                                            value: diffStatsByPath[entry.name].added,
-                                                            className: styles.diffStatAdded,
-                                                        },
-                                                    ]}
-                                                    getDatumValue={getDatumValue}
-                                                    getDatumName={getDatumName}
-                                                    getDatumClassName={getDatumClassName}
-                                                    minBarWidth={10}
-                                                    className={styles.barSvg}
-                                                    rightToLeft={true}
-                                                />
-                                            )}
-                                        </ParentSize>
-                                    </div>
-                                </Tooltip>
-                            )}
-                        </div>
-                    </div>
+                        </td>
+                        {fileHistoryByPath[entry.path] && (
+                            <>
+                                <td className={styles.commitMessage}>
+                                    <span title={fileHistoryByPath[entry.path].subject}>
+                                        <CommitMessageWithLinks
+                                            to={fileHistoryByPath[entry.path].canonicalURL}
+                                            message={fileHistoryByPath[entry.path].subject}
+                                            className="text-muted"
+                                            externalURLs={fileHistoryByPath[entry.path].externalURLs}
+                                        />
+                                    </span>
+                                </td>
+                                <td className={classNames(styles.commitDate, 'text-muted')}>
+                                    <Timestamp noAbout={true} date={getCommitDate(fileHistoryByPath[entry.path])} />
+                                </td>
+                            </>
+                        )}
+                    </tr>
                 ))}
-            </div>
+            </tbody>
         </Card>
     )
+}
+
+function getCommitDate(commit: { author: { date: string }; committer?: { date: string } | null }): string {
+    return commit.committer ? commit.committer.date : commit.author.date
 }
