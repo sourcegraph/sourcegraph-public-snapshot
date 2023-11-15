@@ -460,6 +460,29 @@ func PasswordPolicyEnabled() bool {
 	return pc.Enabled
 }
 
+func RateLimits() schema.RateLimits {
+	rl := schema.RateLimits{
+		GraphQLMaxAliases:    500,
+		GraphQLMaxFieldCount: 500_000,
+		GraphQLMaxDepth:      30,
+	}
+
+	configured := Get().RateLimits
+
+	if configured != nil {
+		if configured.GraphQLMaxAliases <= 0 {
+			rl.GraphQLMaxAliases = configured.GraphQLMaxAliases
+		}
+		if configured.GraphQLMaxFieldCount <= 0 {
+			rl.GraphQLMaxFieldCount = configured.GraphQLMaxFieldCount
+		}
+		if configured.GraphQLMaxDepth <= 0 {
+			rl.GraphQLMaxDepth = configured.GraphQLMaxDepth
+		}
+	}
+	return rl
+}
+
 // By default, password reset links are valid for 4 hours.
 const defaultPasswordLinkExpiry = 14400
 
