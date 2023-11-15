@@ -166,7 +166,7 @@ In addition, to support customization and advanced use cases, you can create Cus
 
 ## Enable code graph context for context-aware answers (Optional)
 
-After connecting Cody extenion to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
+After connecting Cody extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
 
 You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
 

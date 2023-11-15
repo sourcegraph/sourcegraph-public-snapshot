@@ -97,7 +97,7 @@
 
 </style>
 
-# Using Cody with Sourcegraph Search
+# Cody for Web
 
 <p class="subtitle">Learn how to use Cody in the web interface with Sourcegraph.com</p>
 
@@ -115,6 +115,8 @@ In addition to the Cody extensions for [VS Code](./install-vscode.md), [JetBrain
 ## Initial setup
 
 Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign-in. This takes you to Sourcegraph's Code Search interface, where you can chat with and get help from Cody in the web.
+
+Enterprise users can also log in to their Sourcegraph.com Enterprise instance and use Cody in the web interface.
 
 ## Using Cody chat
 
