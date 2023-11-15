@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -18,34 +19,53 @@ import (
 // it will acquire a short lived token and reusing the client
 // prevents acquiring a new token on every request.
 // The client will refresh the token as needed.
-var azureClient *azopenai.Client
+var apiClient embeddingsClient
 
-type AzureEmbeddingsAPIClient interface {
+type embeddingsClient struct {
+	mu          sync.RWMutex
+	accessToken string
+	endpoint    string
+	client      *azopenai.Client
+}
+
+type EmbeddingsClient interface {
 	GetEmbeddings(ctx context.Context, body azopenai.EmbeddingsOptions, options *azopenai.GetEmbeddingsOptions) (azopenai.GetEmbeddingsResponse, error)
 }
 
-func GetAzureAPIClient(endpoint, accessToken string) (AzureEmbeddingsAPIClient, error) {
-	if azureClient != nil {
-		return azureClient, nil
+type GetEmbeddingsAPIClientFunc func(accessToken, endpoint string) (EmbeddingsClient, error)
+
+func GetAPIClient(endpoint, accessToken string) (EmbeddingsClient, error) {
+	apiClient.mu.RLock()
+	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken == accessToken {
+		apiClient.mu.RUnlock()
+		return apiClient.client, nil
 	}
+	apiClient.mu.RUnlock()
+	apiClient.mu.Lock()
+	defer apiClient.mu.Unlock()
 	var err error
 	if accessToken != "" {
 		credential, credErr := azopenai.NewKeyCredential(accessToken)
 		if credErr != nil {
 			return nil, credErr
 		}
-		azureClient, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
+		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
 	} else {
 		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
 		if credErr != nil {
 			return nil, credErr
 		}
-		azureClient, err = azopenai.NewClient(endpoint, credential, nil)
+		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
 	}
-	return azureClient, err
+	return apiClient.client, err
+
 }
 
-func NewClient(client AzureEmbeddingsAPIClient, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
+func NewClient(getClient GetEmbeddingsAPIClientFunc, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
+	client, err := getClient(config.Endpoint, config.AccessToken)
+	if err != nil {
+		return nil, err
+	}
 	return &azureOpenaiEmbeddingsClient{
 		client:      client,
 		dimensions:  config.Dimensions,
@@ -56,7 +76,7 @@ func NewClient(client AzureEmbeddingsAPIClient, config *conftypes.EmbeddingsConf
 }
 
 type azureOpenaiEmbeddingsClient struct {
-	client      AzureEmbeddingsAPIClient
+	client      EmbeddingsClient
 	model       string
 	dimensions  int
 	endpoint    string

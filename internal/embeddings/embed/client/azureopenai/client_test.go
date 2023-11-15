@@ -32,9 +32,11 @@ func (c *mockAzureClient) GetEmbeddings(ctx context.Context, body azopenai.Embed
 
 }
 
-func newMockAPIClient(responses []mockResponse) AzureEmbeddingsAPIClient {
-	return &mockAzureClient{
-		responses: responses,
+func newMockAPIClient(responses []mockResponse) GetEmbeddingsAPIClientFunc {
+	return func(accessToken, endpoint string) (EmbeddingsClient, error) {
+		return &mockAzureClient{
+			responses: responses,
+		}, nil
 	}
 }
 

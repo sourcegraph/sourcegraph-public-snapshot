@@ -3,6 +3,7 @@ package azureopenai
 import (
 	"context"
 	"io"
+	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -15,44 +16,62 @@ import (
 // it will acquire a short lived token and reusing the client
 // prevents acquiring a new token on every request.
 // The client will refresh the token as needed.
-var azureClient *azopenai.Client
 
-type AzureCompletionsClient interface {
+var apiClient completionsClient
+
+type completionsClient struct {
+	mu          sync.RWMutex
+	accessToken string
+	endpoint    string
+	client      *azopenai.Client
+}
+
+type CompletionsClient interface {
 	GetCompletionsStream(ctx context.Context, body azopenai.CompletionsOptions, options *azopenai.GetCompletionsStreamOptions) (azopenai.GetCompletionsStreamResponse, error)
 	GetCompletions(ctx context.Context, body azopenai.CompletionsOptions, options *azopenai.GetCompletionsOptions) (azopenai.GetCompletionsResponse, error)
 	GetChatCompletions(ctx context.Context, body azopenai.ChatCompletionsOptions, options *azopenai.GetChatCompletionsOptions) (azopenai.GetChatCompletionsResponse, error)
 	GetChatCompletionsStream(ctx context.Context, body azopenai.ChatCompletionsOptions, options *azopenai.GetChatCompletionsStreamOptions) (azopenai.GetChatCompletionsStreamResponse, error)
 }
 
-func GetAzureAPIClient(endpoint, accessToken string) (AzureCompletionsClient, error) {
-	if azureClient != nil {
-		return azureClient, nil
+func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
+	apiClient.mu.RLock()
+	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken == accessToken {
+		apiClient.mu.RUnlock()
+		return apiClient.client, nil
 	}
+	apiClient.mu.RUnlock()
+	apiClient.mu.Lock()
+	defer apiClient.mu.Unlock()
 	var err error
 	if accessToken != "" {
 		credential, credErr := azopenai.NewKeyCredential(accessToken)
 		if credErr != nil {
 			return nil, credErr
 		}
-		azureClient, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
+		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
 	} else {
 		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
 		if credErr != nil {
 			return nil, credErr
 		}
-		azureClient, err = azopenai.NewClient(endpoint, credential, nil)
+		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
 	}
-	return azureClient, err
+	return apiClient.client, err
+
 }
 
-func NewClient(client AzureCompletionsClient) (types.CompletionsClient, error) {
+func NewClient(getClient func(accessToken, endpoint string) (CompletionsClient, error), accessToken, endpoint string) (types.CompletionsClient, error) {
+	client, err := getClient(endpoint, accessToken)
+	if err != nil {
+		return nil, err
+	}
 	return &azureCompletionClient{
 		client: client,
 	}, nil
 }
 
 type azureCompletionClient struct {
-	client AzureCompletionsClient
+	client CompletionsClient
 }
 
 func (c *azureCompletionClient) Complete(
@@ -60,6 +79,7 @@ func (c *azureCompletionClient) Complete(
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
+
 	switch feature {
 	case types.CompletionsFeatureCode:
 		return completeAutocomplete(ctx, c.client, feature, requestParams)
@@ -72,7 +92,7 @@ func (c *azureCompletionClient) Complete(
 
 func completeAutocomplete(
 	ctx context.Context,
-	client AzureCompletionsClient,
+	client CompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
@@ -97,7 +117,7 @@ func completeAutocomplete(
 
 func completeChat(
 	ctx context.Context,
-	client AzureCompletionsClient,
+	client CompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
@@ -132,7 +152,7 @@ func (c *azureCompletionClient) Stream(
 
 func streamAutocomplete(
 	ctx context.Context,
-	client AzureCompletionsClient,
+	client CompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
@@ -171,7 +191,7 @@ func streamAutocomplete(
 
 func streamChat(
 	ctx context.Context,
-	client AzureCompletionsClient,
+	client CompletionsClient,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,

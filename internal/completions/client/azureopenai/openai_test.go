@@ -36,8 +36,14 @@ func (c *mockAzureClient) GetChatCompletionsStream(ctx context.Context, body azo
 	return c.getChatCompletionsStream(ctx, body, options)
 }
 
+func getNewMockAzureAPIClient(mock *mockAzureClient) func(accessToken, endpoint string) (CompletionsClient, error) {
+	return func(accessToken, endpoint string) (CompletionsClient, error) {
+		return mock, nil
+	}
+}
+
 func TestErrStatusNotOK(t *testing.T) {
-	mockClient, _ := NewClient(&mockAzureClient{
+	getAzureAPIClient := getNewMockAzureAPIClient(&mockAzureClient{
 		getCompletionsStream: func(ctx context.Context, body azopenai.CompletionsOptions, options *azopenai.GetCompletionsStreamOptions) (azopenai.GetCompletionsStreamResponse, error) {
 			return azopenai.GetCompletionsStreamResponse{}, errors.New("unexpected error")
 		},
@@ -52,6 +58,7 @@ func TestErrStatusNotOK(t *testing.T) {
 		},
 	})
 
+	mockClient, _ := NewClient(getAzureAPIClient, "", "")
 	t.Run("Complete", func(t *testing.T) {
 		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{})
 		require.Error(t, err)
