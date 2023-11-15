@@ -161,7 +161,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard telemetryService={props.telemetryService} />
+                <LazySetupWizard
+                    telemetryRecorder={props.telemetryRecorder}
+                    telemetryService={props.telemetryService}
+                />
             </Suspense>
         )
     }
@@ -307,12 +310,14 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     location={location}
                     userHistory={userHistory}
                 />
             )}
-            {showDeveloperDialog && <LazyDeveloperDialog />}
+            {showDeveloperDialog && <LazyDeveloperDialog telemetryRecorder={props.telemetryRecorder} />}
             <SearchQueryStateObserver
+                telemetryRecorder={props.telemetryRecorder}
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}
                 setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}

@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router-dom'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../../LegacyRouteContext'
@@ -35,11 +36,17 @@ export const APP_ROUTES: RouteObject[] = [
     {
         path: `${PageRoutes.AppSetup}/*`,
         handle: { isFullPage: true },
-        element: <LegacyRoute render={props => <AppSetup telemetryService={props.telemetryService} />} />,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <AppSetup telemetryRecorder={props.telemetryRecorder} telemetryService={props.telemetryService} />
+                )}
+            />
+        ),
     },
     {
         path: PageRoutes.AppAuthCallback,
-        element: <LegacyRoute render={() => <AppAuthCallbackPage />} />,
+        element: <LegacyRoute render={props => <AppAuthCallbackPage telemetryRecorder={props.telemetryRecorder} />} />,
     },
     {
         path: PageRoutes.User,
@@ -67,7 +74,7 @@ export const APP_ROUTES: RouteObject[] = [
     },
     {
         path: PageRoutes.ApiConsole,
-        element: <ApiConsole />,
+        element: <ApiConsole telemetryRecorder={noOpTelemetryRecorder} />,
     },
     {
         path: PageRoutes.UserArea,
