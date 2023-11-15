@@ -21,7 +21,7 @@ import {
     type ViewUpdate,
 } from '@codemirror/view'
 
-import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
+import { browserIsFirefox, isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
 const selectedLinesTheme = EditorView.theme({
     /**
@@ -30,14 +30,21 @@ const selectedLinesTheme = EditorView.theme({
      * are visible) more in its `top` value breaking alignment wih the line.
      * We compensate this spacing by setting negative margin-top.
      *
+     * Line highlighting breaks (highlights two lines instead of 1) in firefox if minHeight is set, so we
+     * add a conditional to check for the current browser, and set the css accordingly.
+     *
      * todo(fkling): Revisit this, styling is not correct for empty lines
      */
-    '.selected-lines-layer .selected-line': {
-        marginTop: '-1px',
+    '.selected-lines-layer .selected-line': browserIsFirefox()
+        ? {
+              marginTop: '-1px',
+          }
+        : {
+              marginTop: '-1px',
+              // Ensure selection marker height matches line height.
+              minHeight: '1.0rem',
+          },
 
-        // Ensure selection marker height matches line height.
-        minHeight: '1rem',
-    },
     '.selected-lines-layer .selected-line.blame-visible': {
         marginTop: '-5px',
 
