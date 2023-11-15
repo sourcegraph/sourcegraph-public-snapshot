@@ -2,24 +2,36 @@ package sensitivemetadataallowlist
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
+var rawAdditionalAllowedEventTypes = env.Get("SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES", "",
+	"Additional event types to include in sensitivemetadataallowlist.AllowedEventTypes, in comma-separated '${feature}::${action}' format.")
+var additionalAllowedEventTypes = func() []EventType {
+	types, err := parseAdditionalAllowedEventTypes(rawAdditionalAllowedEventTypes)
+	if err != nil {
+		panic(err)
+	}
+	return types
+}()
+
 // AllowedEventTypes denotes a list of all events allowed to export sensitive
 // telemetry metadata.
 func AllowedEventTypes() EventTypes {
-	return eventTypes(
+	return eventTypes(append(additionalAllowedEventTypes,
 		// Example event for testing.
 		EventType{
 			Feature: string(telemetry.FeatureExample),
 			Action:  string(telemetry.ActionExample),
 		},
-	)
+	)...)
 }
 
 type EventTypes struct {
@@ -84,4 +96,25 @@ func init() {
 	if err := AllowedEventTypes().validate(); err != nil {
 		panic(errors.Wrap(err, "AllowedEvents has invalid event(s)"))
 	}
+}
+
+func parseAdditionalAllowedEventTypes(config string) ([]EventType, error) {
+	if len(config) == 0 {
+		return nil, nil
+	}
+
+	var types []EventType
+	for _, rawType := range strings.Split(config, ",") {
+		parts := strings.SplitN(rawType, "::", 2)
+		if len(parts) != 2 {
+			return nil, errors.Newf(
+				"cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value %q",
+				rawType)
+		}
+		types = append(types, EventType{
+			Feature: parts[0],
+			Action:  parts[1],
+		})
+	}
+	return types, nil
 }

@@ -111,7 +111,6 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	github.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
 	logger := logtest.Scoped(t)
@@ -288,7 +287,6 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 		t.Skip()
 	}
 
-	github.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 	rcache.SetupForTest(t)
 
