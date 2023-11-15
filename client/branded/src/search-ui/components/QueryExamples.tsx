@@ -4,6 +4,7 @@ import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, ButtonLink } from '@sourcegraph/wildcard'
@@ -14,7 +15,7 @@ import { useQueryExamples, type QueryExamplesSection } from './useQueryExamples'
 
 import styles from './QueryExamples.module.scss'
 
-export interface QueryExamplesProps extends TelemetryProps {
+export interface QueryExamplesProps extends TelemetryProps, TelemetryV2Props {
     selectedSearchContextSpec?: string
     isSourcegraphDotCom?: boolean
 }
@@ -22,6 +23,7 @@ export interface QueryExamplesProps extends TelemetryProps {
 export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom = false,
 }) => {
     const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
@@ -29,8 +31,9 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     const onQueryExampleClick = useCallback(
         (query: string) => {
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+            telemetryRecorder.recordEvent('QueryExample', 'clicked', { privateMetadata: { queryExample: query } })
         },
-        [telemetryService]
+        [telemetryService, telemetryRecorder]
     )
 
     return isSourcegraphDotCom ? (

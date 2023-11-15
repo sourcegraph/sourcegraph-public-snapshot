@@ -66,6 +66,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     copyNotebook = _copyNotebook,
     streamSearch,
     telemetryService,
+    telemetryRecorder,
     searchContextsEnabled,
     ownEnabled,
     isSourcegraphDotCom,
@@ -282,6 +283,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 exportedFileName={exportedFileName}
                                 streamSearch={streamSearch}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 searchContextsEnabled={searchContextsEnabled}
                                 ownEnabled={ownEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}

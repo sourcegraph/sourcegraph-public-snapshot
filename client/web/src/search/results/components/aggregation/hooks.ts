@@ -3,6 +3,7 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import {
@@ -240,6 +241,7 @@ interface SearchAggregationDataInput {
     extendedTimeout: boolean
     proactive?: boolean
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
 }
 
 interface AggregationState {
@@ -263,6 +265,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         extendedTimeout,
         proactive = false,
         telemetryService,
+        telemetryRecorder,
     } = input
 
     const [, setURLAggregationMode] = useAggregationSearchMode()
@@ -314,7 +317,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 // skip: true resets data field in the useQuery hook, in order to use previously
                 // saved data we use useState to store data outside useQuery hook
                 setState({ data, calculatedMode: calculatedAggregationMode })
-                sendAggregationPing({ data, extendedTimeout, proactive, telemetryService })
+                sendAggregationPing({ data, extendedTimeout, proactive, telemetryService, telemetryRecorder })
             },
         }
     )
@@ -363,10 +366,11 @@ interface UseAggregationPingsArgs {
     proactive: boolean
     extendedTimeout: boolean
     telemetryService: TelemetryService
+    telemetryRecorder: TelemetryRecorder
 }
 
 function sendAggregationPing(props: UseAggregationPingsArgs): void {
-    const { data, proactive, extendedTimeout, telemetryService } = props
+    const { data, proactive, extendedTimeout, telemetryService, telemetryRecorder } = props
 
     const aggregation = data?.searchQueryAggregate.aggregations
 
@@ -388,6 +392,9 @@ function sendAggregationPing(props: UseAggregationPingsArgs): void {
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent(GroupResultsPing.ProactiveLimitHit, 'hit', {
+                privateMetadata: { aggregationMode: mode },
+            })
         }
 
         if (noExtensionAvailable) {
@@ -396,6 +403,9 @@ function sendAggregationPing(props: UseAggregationPingsArgs): void {
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent(GroupResultsPing.ExplicitLimitHit, 'hit', {
+                privateMetadata: { aggregationMode: mode },
+            })
         }
     } else {
         const { mode } = aggregation
@@ -406,12 +416,18 @@ function sendAggregationPing(props: UseAggregationPingsArgs): void {
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent(GroupResultsPing.ExplicitLimitSuccess, 'success', {
+                privateMetadata: { aggregationMode: mode },
+            })
         } else {
             telemetryService.log(
                 GroupResultsPing.ProactiveLimitSuccess,
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent(GroupResultsPing.ProactiveLimitSuccess, 'success', {
+                privateMetadata: { aggregationMode: mode },
+            })
         }
     }
 }

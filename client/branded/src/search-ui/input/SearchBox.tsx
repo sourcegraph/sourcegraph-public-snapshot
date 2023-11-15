@@ -15,6 +15,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { type IEditor, LazyQueryInput, type LazyQueryInputProps } from './LazyQueryInput'
@@ -30,6 +31,7 @@ export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
         SearchContextInputProps,
         TelemetryProps,
+        TelemetryV2Props,
         PlatformContextProps<'requestGraphQL'>,
         Pick<LazyQueryInputProps, 'autoFocus' | 'onFocus' | 'onSubmit' | 'interpretComments' | 'onChange'> {
     authenticatedUser: AuthenticatedUser | null

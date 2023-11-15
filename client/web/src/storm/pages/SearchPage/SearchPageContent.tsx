@@ -112,6 +112,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                     simpleSearch={false}
                                     queryState={queryState}
                                     setQueryState={setQueryState}
+                                    telemetryRecorder={telemetryRecorder}
                                 />
                             </div>
                         </Tooltip>
@@ -123,11 +124,13 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             simpleSearch={simpleSearch && simpleSearchEnabled}
                             queryState={queryState}
                             setQueryState={setQueryState}
+                            telemetryRecorder={telemetryRecorder}
                         />
                         {authenticatedUser && showOnboardingTour && (
                             <GettingStartedTour
                                 className="mt-5"
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 variant="horizontal"
                                 authenticatedUser={authenticatedUser}
                             />
@@ -137,6 +140,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                 <TryCodyCtaSection
                                     className="mx-auto my-5"
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                 />
                             ) : (
@@ -152,6 +156,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     )}

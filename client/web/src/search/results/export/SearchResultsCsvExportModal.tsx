@@ -4,6 +4,7 @@ import { type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Code, H3, Modal, Text } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,10 @@ import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 
 import { downloadSearchResults, EXPORT_RESULT_DISPLAY_LIMIT } from './searchResultsExport'
 
-interface SearchResultsCsvExportModalProps extends Pick<PlatformContext, 'sourcegraphURL'>, TelemetryProps {
+interface SearchResultsCsvExportModalProps
+    extends Pick<PlatformContext, 'sourcegraphURL'>,
+        TelemetryProps,
+        TelemetryV2Props {
     query?: string
     options: StreamSearchOptions
     results?: AggregateStreamingSearchResults

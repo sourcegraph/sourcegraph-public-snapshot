@@ -18,6 +18,7 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Badge } from '@sourcegraph/wildcard'
 
@@ -29,7 +30,7 @@ import { ResultContainer } from './ResultContainer'
 import resultContainerStyles from './ResultContainer.module.scss'
 import styles from './SearchResult.module.scss'
 
-interface Props extends SettingsCascadeProps, TelemetryProps {
+interface Props extends SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     location: H.Location
     /**
      * The file match search result.
@@ -72,6 +73,8 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     openInNewTab?: boolean
 
     index: number
+
+    telemetryRecorder: TelemetryRecorder
 }
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
@@ -91,6 +94,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     showAllMatches,
     openInNewTab,
     telemetryService,
+    telemetryRecorder,
     fetchHighlightedFileLineRanges,
     onSelect,
 }) => {
@@ -220,6 +224,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     className={styles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </span>
             {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
@@ -269,6 +274,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     settingsCascade={settingsCascade}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     openInNewTab={openInNewTab}
                 />
                 {collapsible && (

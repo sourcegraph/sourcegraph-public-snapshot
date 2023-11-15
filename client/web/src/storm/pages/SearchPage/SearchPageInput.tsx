@@ -59,6 +59,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         authenticatedUser,
         isSourcegraphDotCom,
         telemetryService,
+        telemetryRecorder,
         platformContext,
         searchContextsEnabled,
         selectedSearchContextSpec: dynamicSearchContextSpec,
@@ -163,6 +164,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             selectedSearchContextSpec={selectedSearchContextSpec}
             setSelectedSearchContextSpec={setSelectedSearchContextSpec}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}

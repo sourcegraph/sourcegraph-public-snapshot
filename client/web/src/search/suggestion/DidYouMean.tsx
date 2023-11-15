@@ -9,6 +9,7 @@ import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilt
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, type Pattern, type Token } from '@sourcegraph/shared/src/search/query/token'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Link, createLinkUrl, Icon } from '@sourcegraph/wildcard'
@@ -124,7 +125,8 @@ interface DidYouMeanProps
     extends SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        TelemetryProps {
+        TelemetryProps,
+        TelemetryV2Props {
     query: string
 }
 

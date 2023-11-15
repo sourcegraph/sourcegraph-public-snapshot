@@ -282,6 +282,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             codeInsightsEnabled={props.codeInsightsEnabled ?? false}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.telemetryRecorder}
                         />
                     ) : (
                         <GlobalNavbar

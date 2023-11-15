@@ -281,6 +281,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}
                         isRepositoryRelatedPage={isRepositoryRelatedPage}
+                        telemetryRecorder={window.context.telemetryRecorder}
                     />
                 </div>
             )}

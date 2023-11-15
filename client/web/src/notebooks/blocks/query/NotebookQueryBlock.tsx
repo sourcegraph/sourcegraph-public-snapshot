@@ -12,6 +12,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
@@ -35,6 +36,7 @@ interface NotebookQueryBlockProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         SettingsCascadeProps,
         TelemetryProps,
+        TelemetryV2Props,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
         OwnConfigProps {
     isSourcegraphDotCom: boolean
@@ -59,6 +61,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         input,
         output,
         telemetryService,
+        telemetryRecorder,
         settingsCascade,
         isSelected,
         onBlockInputChange,
@@ -194,6 +197,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 results={searchResults}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 settingsCascade={settingsCascade}
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}

@@ -3,6 +3,7 @@ import type { Meta, StoryFn } from '@storybook/react'
 import type { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
@@ -33,6 +34,7 @@ const defaultProps: SearchFiltersSidebarProps = {
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     setSidebarCollapsed: () => {},
 }
 

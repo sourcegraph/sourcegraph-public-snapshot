@@ -4,6 +4,7 @@ import { mdiClipboardPulseOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { Progress, StreamingResultsState } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,7 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 
 import styles from './StreamingProgressCount.module.scss'
 
-export interface StreamingProgressProps extends TelemetryProps {
+export interface StreamingProgressProps extends TelemetryProps, TelemetryV2Props {
     query: string
     state: StreamingResultsState
     progress: Progress
@@ -29,6 +30,7 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
     onSearchAgain,
     isSearchJobsEnabled,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const isLoading = state === 'loading'
 
@@ -42,6 +44,7 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
                     isSearchJobsEnabled={isSearchJobsEnabled}
                     onSearchAgain={onSearchAgain}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             <TraceLink showTrace={showTrace} trace={progress.trace} />

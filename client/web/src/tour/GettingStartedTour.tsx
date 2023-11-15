@@ -1,6 +1,7 @@
 import { type FC, memo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../auth'
 import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
@@ -15,7 +16,8 @@ import { useShowOnboardingSetup } from './hooks'
 const GatedTour = withFeatureFlag('end-user-onboarding', Tour)
 
 interface TourWrapperProps
-    extends Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id' | 'defaultSnippets' | 'userInfo'> {
+    extends Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id' | 'defaultSnippets' | 'userInfo'>,
+        TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
