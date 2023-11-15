@@ -2,6 +2,7 @@ import { fireEvent, getByRole, screen } from '@testing-library/react'
 import { NEVER } from 'rxjs'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -15,6 +16,7 @@ const PROPS: CodeMonitorFormProps = {
     submitButtonLabel: '',
     authenticatedUser: mockAuthenticatedUser,
     isSourcegraphDotCom: false,
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 describe('CodeMonitorForm', () => {
