@@ -2,9 +2,9 @@
 
 <p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have installed the extension in your VS Code editor. Here you will perform the following three tasks:</p>
 
-1. Try the `Generate Unit Tests` command
-2. Ask Cody to suggest bug fixes and changes to code snippets
-3. Ask Cody to pull additional information from the documentation
+1. Generate unit tests for your code
+2. Identify errors and suggest code fixes
+3. Adding documentation to your code snippets
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@
 
 ## Getting started with Cody extension and commands
 
-After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's `Chat` panel will open. This interface is used to ask Cody questions and paste in code snippets.
+After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's **Chat** panel will open. This interface is used to ask Cody questions and paste in code snippets.
 
 ![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/cody-icon.png)
 
