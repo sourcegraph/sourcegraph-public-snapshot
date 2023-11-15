@@ -26,11 +26,11 @@ export type LocationGroupQuality = 'PRECISE' | 'SEARCH-BASED'
 
 export class LocationsGroupedByFile {
     /** Invariant: `path` matches the 'file' key in all Locations in `locations` */
-    public path: string
+    public readonly path: string
     /** Invariant: `precise` matches the 'precise' key in all Locations in `locations` */
-    private precise: boolean
+    private readonly precise: boolean
     /** Invariant: This array is non-empty */
-    private locations: Location[]
+    public readonly locations: Location[]
 
     /**
      * Pre-condition: `locations` should be non-empty, and every entry
@@ -41,43 +41,43 @@ export class LocationsGroupedByFile {
             throw new Error('pre-condition failure')
         }
         this.path = locations[0].file
-        this.precise = locations[0].precise
-        this.locations = [locations[0]]
+        const out = LocationsGroupedByFile.preferPrecise(locations)
+        this.locations = out.locs
+        this.precise = out.precise
+    }
+
+    /**
+     * Aggregate information about whether provided locations are search-based
+     * or precise.
+     *
+     * If one attempts to mix them, precise locations will be preferred, and
+     * search-based locations will be discarded.
+     */
+    private static preferPrecise(locations: Location[]): { locs: Location[]; precise: boolean } {
+        const path: string = locations[0].file
+        let precise: boolean = locations[0].precise
+        let finalLocations: Location[] = [locations[0]]
         for (const [i, loc] of locations.entries()) {
             if (i === 0) {
                 continue
             }
-            this.tryAdd(loc)
+            if (loc.file !== path) {
+                throw new Error('pre-condition failure')
+            }
+            if (precise && !loc.precise) {
+                continue
+            }
+            if (!precise && loc.precise) {
+                precise = true
+                finalLocations = [loc]
+                continue
+            }
+            if (loc.precise !== precise) {
+                throw new Error('already handled precise same-ness check earlier')
+            }
+            finalLocations.push(loc)
         }
-    }
-
-    /**
-     * Attempt to add the Location to this group without mixing
-     * search-based and precise Locations.
-     *
-     * If one attempts to mix them, precise locations will be preferred.
-     */
-    private tryAdd(location: Location): void {
-        if (this.precise && !location.precise) {
-            return
-        }
-        if (!this.precise && location.precise) {
-            this.precise = true
-            this.locations = [location]
-            return
-        }
-        if (location.file !== this.path) {
-            throw new Error('pre-condition failure')
-        }
-        if (location.precise !== this.precise) {
-            throw new Error('already handled precise same-ness check earlier')
-        }
-        this.locations.push(location)
-    }
-
-    /** Do not modify the returned Array. */
-    public getLocations(): Location[] {
-        return this.locations
+        return { locs: finalLocations, precise }
     }
 
     public get quality(): LocationGroupQuality {
@@ -93,14 +93,20 @@ export class LocationsGroupedByFile {
  * and precise Locations, the search-based Locations are discarded.
  */
 export class LocationsGroup {
-    /** Invariant: `locationsCount` is the sum of sizes of Location arrays in `groups` */
-    private locationsCount: number
+    /**
+     * The total number of locations combined across all groups.
+     *
+     * This may be less than the number of Locations passed to the constructor,
+     * in case there are mixed search-based and precise Locations,
+     * or if there are duplicates.
+     */
+    public readonly locationsCount: number
     /** Invariant: Every Location stored in the group has a distinct URL. */
-    private groups: LocationsGroupedByRepo[]
+    private readonly groups: LocationsGroupedByRepo[]
 
     constructor(locations: Location[]) {
-        this.locationsCount = 0
-        this.groups = []
+        let locationsCount = 0
+        let groups: LocationsGroupedByRepo[] = []
 
         const urlsSeen = new Set<string>()
         const repoMap = new Map<string, Map<string, Location[]>>()
@@ -109,18 +115,16 @@ export class LocationsGroup {
                 continue
             }
             urlsSeen.add(loc.url)
-            const pathToLocMap = repoMap.get(loc.repo)
-            if (pathToLocMap) {
-                const fileLocs = pathToLocMap.get(loc.file)
-                if (fileLocs) {
-                    fileLocs.push(loc)
-                } else {
-                    pathToLocMap.set(loc.file, [loc])
-                }
-            } else {
-                const pathToLocMap = new Map<string, Location[]>()
-                pathToLocMap.set(loc.file, [loc])
+            let pathToLocMap = repoMap.get(loc.repo)
+            if (!pathToLocMap) {
+                pathToLocMap = new Map<string, Location[]>()
                 repoMap.set(loc.repo, pathToLocMap)
+            }
+            const fileLocs = pathToLocMap.get(loc.file)
+            if (fileLocs) {
+                fileLocs.push(loc)
+            } else {
+                pathToLocMap.set(loc.file, [loc])
             }
         }
         for (const [repoName, pathToLocMap] of repoMap) {
@@ -132,30 +136,22 @@ export class LocationsGroup {
                     )
                 }
                 const g = new LocationsGroupedByFile(locations)
-                if (g.getLocations().length > locations.length) {
+                if (g.locations.length > locations.length) {
                     throw new Error('materialized new locations out of thin air')
                 }
-                this.locationsCount += g.getLocations().length
+                locationsCount += g.locations.length
                 perFileLocations.push(g)
             }
-            this.groups.push({ repoName, perFileGroups: perFileLocations })
+            groups.push({ repoName, perFileGroups: perFileLocations })
         }
-    }
 
-    /**
-     * Returns the total number of locations combined across all groups.
-     *
-     * This may be less than the number of Locations passed to the constructor,
-     * in case there are mixed search-based and precise Locations,
-     * or if there are duplicates.
-     */
-    public getLocationsCount(): number {
-        return this.locationsCount
+        this.locationsCount = locationsCount
+        this.groups = groups
     }
 
     public get first(): Location | undefined {
         if (this.locationsCount > 0) {
-            return this.groups[0].perFileGroups[0].getLocations()[0]
+            return this.groups[0].perFileGroups[0].locations[0]
         }
         return undefined
     }
@@ -186,7 +182,7 @@ export class LocationsGroup {
         const out: Location[] = []
         for (const group of this.groups) {
             for (const locs of group.perFileGroups) {
-                out.push(...locs.getLocations())
+                out.push(...locs.locations)
             }
         }
         return out
