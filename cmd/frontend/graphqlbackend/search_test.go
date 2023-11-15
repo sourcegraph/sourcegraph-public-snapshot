@@ -122,7 +122,7 @@ func TestSearch(t *testing.T) {
 			sr := newSchemaResolver(db, gsClient)
 			gqlSchema, err := graphql.ParseSchema(mainSchema, sr,
 				graphql.Tracer(newRequestTracer(logtest.Scoped(t), db)),
-				graphql.MaxDepth(maxDepth))
+				graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth))
 			if err != nil {
 				t.Fatal(err)
 			}
