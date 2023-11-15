@@ -191,8 +191,6 @@ go_test(
         "//lib/errors",
         "//lib/pointers",
         "//schema",
-        "@com_github_dnaeon_go_vcr//cassette",
-        "@com_github_dnaeon_go_vcr//recorder",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_google_uuid//:uuid",
