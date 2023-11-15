@@ -461,29 +461,26 @@ func PasswordPolicyEnabled() bool {
 }
 
 func RateLimits() schema.RateLimits {
-	maxAliases := 500
-	maxFieldCount := 500_000
-	maxDepth := 30
-
-	rl := Get().RateLimits
-	if rl != nil {
-		if rl.GraphQLMaxAliases <= 0 {
-			rl.GraphQLMaxAliases = maxAliases
-		}
-		if rl.GraphQLMaxFieldCount <= 0 {
-			rl.GraphQLMaxFieldCount = maxFieldCount
-		}
-		if rl.GraphQLMaxDepth <= 0 {
-			rl.GraphQLMaxDepth = maxDepth
-		}
-		return *rl
+	rl := schema.RateLimits{
+		GraphQLMaxAliases:    500,
+		GraphQLMaxFieldCount: 500_000,
+		GraphQLMaxDepth:      30,
 	}
 
-	return schema.RateLimits{
-		GraphQLMaxAliases:    maxAliases,
-		GraphQLMaxFieldCount: maxFieldCount,
-		GraphQLMaxDepth:      maxDepth,
+	configured := Get().RateLimits
+
+	if configured != nil {
+		if configured.GraphQLMaxAliases <= 0 {
+			rl.GraphQLMaxAliases = configured.GraphQLMaxAliases
+		}
+		if configured.GraphQLMaxFieldCount <= 0 {
+			rl.GraphQLMaxFieldCount = configured.GraphQLMaxFieldCount
+		}
+		if configured.GraphQLMaxDepth <= 0 {
+			rl.GraphQLMaxDepth = configured.GraphQLMaxDepth
+		}
 	}
+	return rl
 }
 
 // By default, password reset links are valid for 4 hours.
