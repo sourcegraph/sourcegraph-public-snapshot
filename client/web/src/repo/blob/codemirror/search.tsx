@@ -3,11 +3,14 @@
  * UI.
  */
 
+import React from 'react'
+
 import {
     findNext,
     findPrevious,
     getSearchQuery,
     openSearchPanel,
+    closeSearchPanel,
     search as codemirrorSearch,
     searchKeymap,
     SearchQuery,
@@ -30,7 +33,14 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
-import { mdiChevronLeft, mdiChevronRight, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
+import {
+    mdiChevronLeft,
+    mdiChevronRight,
+    mdiClose,
+    mdiFormatLetterCase,
+    mdiInformationOutline,
+    mdiRegex,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
 import type { NavigateFunction } from 'react-router-dom'
@@ -275,6 +285,16 @@ class SearchPanel implements Panel {
                         {searchKeybinding}
                     </Label>
                     {searchKeybindingTooltip}
+                    <span className={classNames(styles.hovered, 'ml-2')}>
+                        <Icon
+                            className={classNames(styles.x)}
+                            onClick={() => closeSearchPanel(this.view)}
+                            size="sm"
+                            svgPath={mdiClose}
+                            aria-hidden={true}
+                            aria-label="close search"
+                        />
+                    </span>
                 </div>
             </CodeMirrorContainer>
         )
