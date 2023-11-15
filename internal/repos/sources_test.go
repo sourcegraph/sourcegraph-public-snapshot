@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -39,6 +41,9 @@ func TestSources_ListRepos(t *testing.T) {
 		},
 	})
 	defer conf.Mock(nil)
+
+	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	type testCase struct {
 		name   string
