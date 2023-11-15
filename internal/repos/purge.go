@@ -40,7 +40,7 @@ func NewRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 				}
 			}
 			if purgeConfig.IntervalMinutes <= 0 {
-				logger.Info("purge worker disabled via site config", log.Int("repoPurgeWorker.interval", purgeConfig.IntervalMinutes))
+				logger.Debug("purge worker disabled via site config", log.Int("repoPurgeWorker.interval", purgeConfig.IntervalMinutes))
 				return nil
 			}
 
