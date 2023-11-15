@@ -57,6 +57,7 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/signale",
         "//client/web:node_modules/@sourcegraph/build-config",
+        "//client/web:node_modules/@sourcegraph/shared",
         "//client/web:web_lib",
     ],
 )
