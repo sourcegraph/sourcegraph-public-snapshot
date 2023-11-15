@@ -1986,7 +1986,7 @@ type Ranking struct {
 type RateLimits struct {
 	// GraphQLMaxAliases description: Maximum number of aliases allowed in a GraphQL query
 	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
-	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries
+	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.
 	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
 	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
 	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
