@@ -217,11 +217,11 @@ export const AnalyticsSearchPage: React.FC = () => {
                         <Text as="li">
                             Promote the{' '}
                             <AnchorLink to="/help/integration/editor" target="_blank">
-                                IDE extension
+                                editor extension
                             </AnchorLink>{' '}
                             and{' '}
                             <AnchorLink to="/help/cli" target="_blank">
-                                SRC CLI
+                                src CLI
                             </AnchorLink>{' '}
                             to your users to allow them to search where they work.
                         </Text>

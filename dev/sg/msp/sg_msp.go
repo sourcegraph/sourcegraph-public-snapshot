@@ -205,6 +205,11 @@ sg msp generate -all <service>
 					Value: false,
 				},
 				&cli.BoolFlag{
+					Name:  "stable",
+					Usage: "Disable updating of any values that are evaluated at generation time",
+					Value: false,
+				},
+				&cli.BoolFlag{
 					Name:  "tfc",
 					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
 					Value: true,
@@ -212,9 +217,14 @@ sg msp generate -all <service>
 			},
 			Action: func(c *cli.Context) error {
 				var (
-					generateAll = c.Bool("all")
-					useTFC      = c.Bool("tfc")
+					generateAll    = c.Bool("all")
+					stableGenerate = c.Bool("stable")
+					useTFC         = c.Bool("tfc")
 				)
+
+				if stableGenerate {
+					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
+				}
 
 				// Generate specific service
 				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
@@ -226,8 +236,9 @@ sg msp generate -all <service>
 					}
 
 					return generateTerraform(serviceID, generateTerraformOptions{
-						targetEnv: targetEnv,
-						useTFC:    useTFC,
+						targetEnv:      targetEnv,
+						stableGenerate: stableGenerate,
+						useTFC:         useTFC,
 					})
 				}
 
@@ -241,7 +252,8 @@ sg msp generate -all <service>
 				}
 				for _, serviceID := range serviceIDs {
 					if err := generateTerraform(serviceID, generateTerraformOptions{
-						useTFC: useTFC,
+						stableGenerate: stableGenerate,
+						useTFC:         useTFC,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
 					}
@@ -321,12 +333,12 @@ sg msp generate -all <service>
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspace(c, tfcClient, service.Service, service.Build, *env); err != nil {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspace(c, tfcClient, service.Service, service.Build, env); err != nil {
+								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
@@ -367,10 +379,11 @@ sg msp generate -all <service>
 	}
 }
 
-func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec) error {
+func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec) error {
 	if os.TempDir() == "" {
 		return errors.New("no temp dir available")
 	}
+
 	renderer := &managedservicesplatform.Renderer{
 		// Even though we're not synthesizing we still
 		// need an output dir or CDKTF will not work
@@ -381,13 +394,18 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 	}
 	defer os.RemoveAll(renderer.OutputDir)
 
+	renderPending := std.Out.Pending(output.Styledf(output.StylePending,
+		"[%s] Rendering required Terraform Cloud workspaces for environment %q",
+		service.ID, env.ID))
 	cdktf, err := renderer.RenderEnvironment(service, build, env)
 	if err != nil {
 		return err
 	}
+	renderPending.Destroy() // We need to destroy this pending so we can prompt on deletion.
 
 	if c.Bool("delete") {
-		std.Out.Promptf("Deleting workspaces for environment %q - are you sure? (y/N) ", env.ID)
+		std.Out.Promptf("[%s] Deleting workspaces for environment %q - are you sure? (y/N) ",
+			service.ID, env.ID)
 		var input string
 		if _, err := fmt.Scan(&input); err != nil {
 			return err
@@ -396,22 +414,29 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 			return errors.New("aborting")
 		}
 
+		pending := std.Out.Pending(output.Styledf(output.StylePending,
+			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
 		if errs := tfc.DeleteWorkspaces(c.Context, service, env, cdktf.Stacks()); len(errs) > 0 {
 			for _, err := range errs {
 				std.Out.WriteWarningf(err.Error())
 			}
 			return errors.New("some errors occurred when deleting workspaces")
 		}
+		pending.Complete(output.Styledf(output.StyleSuccess,
+			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
 
-		std.Out.WriteSuccessf("Deleted Terraform Cloud workspaces for environment %q", env.ID)
-		return nil // exit early for deletion
+		return nil // exit early for deletion, we are done
 	}
 
+	pending := std.Out.Pending(output.Styledf(output.StylePending,
+		"[%s] Synchronizing Terraform Cloud workspaces for environment %q", service.ID, env.ID))
 	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
 	if err != nil {
 		return errors.Wrap(err, "sync Terraform Cloud workspace")
 	}
-	std.Out.WriteSuccessf("Prepared Terraform Cloud workspaces for environment %q", env.ID)
+	pending.Complete(output.Styledf(output.StyleSuccess,
+		"[%s] Synchronized Terraform Cloud workspaces for environment %q", service.ID, env.ID))
+
 	var summary strings.Builder
 	for _, ws := range workspaces {
 		summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name, ws.URL()))
@@ -429,6 +454,9 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 type generateTerraformOptions struct {
 	// targetEnv generates the specified env only, otherwise generates all
 	targetEnv string
+	// stableGenerate disables updating of any values that are evaluated at
+	// generation time
+	stableGenerate bool
 	// useTFC enables Terraform Cloud integration
 	useTFC bool
 }
@@ -457,6 +485,8 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 	}
 
 	for _, env := range envs {
+		env := env
+
 		pending := std.Out.Pending(output.Styledf(output.StylePending,
 			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
 		renderer := managedservicesplatform.Renderer{
@@ -465,6 +495,7 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 			TFC: managedservicesplatform.TerraformCloudOptions{
 				Enabled: opts.useTFC,
 			},
+			StableGenerate: opts.stableGenerate,
 		}
 
 		// CDKTF needs the output dir to exist ahead of time, even for
@@ -489,7 +520,6 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 		pending.Updatef("[%s] Generating Terraform assets in %q for environment %q...",
 			serviceID, renderer.OutputDir, env.ID)
 		if err := cdktf.Synthesize(); err != nil {
-			pending.Destroy()
 			return err
 		}
 		pending.Complete(output.Styledf(output.StyleSuccess,

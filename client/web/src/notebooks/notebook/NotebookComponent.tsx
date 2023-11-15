@@ -17,7 +17,7 @@ import type { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..
 import type { AuthenticatedUser } from '../../auth'
 import type { NotebookFields } from '../../graphql-operations'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import type { SearchStreamingProps } from '../../search'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
@@ -460,9 +460,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return (
-                <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
-            )
+            return <Navigate to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
         }
 
         return (

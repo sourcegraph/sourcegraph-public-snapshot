@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/googleprojectserviceidentity"
-	google_beta "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/provider"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -38,6 +36,7 @@ var gcpServices = []string{
 	"storage-component.googleapis.com",
 	"bigquery.googleapis.com",
 	"cloudprofiler.googleapis.com",
+	"cloudscheduler.googleapis.com",
 }
 
 const (
@@ -62,10 +61,6 @@ var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
 type CrossStackOutput struct {
 	// Project is created with a generated project ID.
 	Project project.Project
-
-	// CloudRunIdentity is the robot account provisioned by GCP to manage
-	// Cloud Run services and jobs.
-	CloudRunIdentity googleprojectserviceidentity.GoogleProjectServiceIdentity
 }
 
 type Variables struct {
@@ -105,10 +100,13 @@ const (
 
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, outputs := stacks.New(StackName,
+	stack, locals, err := stacks.New(StackName,
 		randomprovider.With(),
 		// ID is not known ahead of time, we can omit it
 		googleprovider.With(""))
+	if err != nil {
+		return nil, err
+	}
 
 	// Name all stack resources after the desired project ID
 	id := resourceid.New(vars.ProjectIDPrefix)
@@ -129,7 +127,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	})
 
 	project := project.NewProject(stack,
-		id.ResourceID("project"),
+		id.TerraformID("project"),
 		&project.ProjectConfig{
 			Name:              pointers.Ptr(vars.DisplayName),
 			ProjectId:         &projectID.HexValue,
@@ -153,7 +151,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	for _, service := range append(gcpServices, vars.Services...) {
 		projectservice.NewProjectService(stack,
-			id.ResourceID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
+			id.TerraformID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
 			&projectservice.ProjectServiceConfig{
 				Project:                  project.ProjectId(),
 				Service:                  pointers.Ptr(service),
@@ -164,22 +162,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	// Collect outputs
-	outputs.Add("project_id", project.ProjectId())
-	return &CrossStackOutput{
-		Project: project,
-		CloudRunIdentity: googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
-			id.ResourceID("cloudrun-identity"),
-			&googleprojectserviceidentity.GoogleProjectServiceIdentityConfig{
-				Project: project.ProjectId(),
-				Service: pointers.Ptr("run.googleapis.com"),
-
-				// Only available via beta provider:
-				// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service_identity
-				Provider: google_beta.NewGoogleBetaProvider(stack, pointers.Ptr("google_beta"), &google_beta.GoogleBetaProviderConfig{
-					Project: project.ProjectId(),
-				}),
-			}),
-	}, nil
+	locals.Add("project_id", project.ProjectId(), "Generated project ID")
+	return &CrossStackOutput{Project: project}, nil
 }
 
 var regexpMatchNonLowerAlphaNumericUnderscoreDash = regexp.MustCompile(`[^a-z0-9_-]`)

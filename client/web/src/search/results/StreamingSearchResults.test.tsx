@@ -196,7 +196,6 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 0,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
 
@@ -205,7 +204,6 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 2,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
     })

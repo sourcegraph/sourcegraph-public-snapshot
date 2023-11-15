@@ -1,5 +1,3 @@
-import { at } from 'lodash'
-
 import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
 import { CodeHostType } from './constants'
@@ -19,9 +17,7 @@ export const getCanonicalURL = (sourceType: RepositoryType | string, node: GitCo
 
 export const getInitialSearchTerm = (repo: string): string => {
     const r = repo.split('/')
-    // This is what the linter required instead of r[r.length - 1].
-    // *shrugs*
-    return at(r, r.length - 1)[0]
+    return r.at(-1)?.trim() ?? ''
 }
 
 export const stringToCodeHostType = (codeHostType: string): CodeHostType => {

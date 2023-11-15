@@ -31,8 +31,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Site configuration edit history no longer breaks when the user that made the edit is deleted. [#57656](https://github.com/sourcegraph/sourcegraph/pull/57656)
 - Drilling down into an insights query no longer mangles `content:` fields in your query. [#57679](https://github.com/sourcegraph/sourcegraph/pull/57679)
 - The blame column now shows correct blame information when a hunk starts in a folded code section. [#58042](https://github.com/sourcegraph/sourcegraph/pull/58042)
+- Fixed a bug where typing in the GraphQL editor in the Site Admin API console could cause the cursor to jump to the start of the editor. [#57862](https://github.com/sourcegraph/sourcegraph/pull/57862)
 - The blame column no longer ignores whitespace-only changes by default. [#58134](https://github.com/sourcegraph/sourcegraph/pull/58134)
 - Long lines now wrap correctly in the diff view. [#58138](https://github.com/sourcegraph/sourcegraph/pull/58138)
+- Defining file filters for embeddings jobs no longer causes all files to be skipped if `MaxFileSizeBytes` isn't defined. [#58262](https://github.com/sourcegraph/sourcegraph/pull/58262)
 
 ### Removed
 
@@ -43,6 +45,8 @@ All notable changes to Sourcegraph are documented in this file.
 - The VSCode search extension "Sourcegraph for VS Code" has been sunset and removed from Sourcegraph
   repository. [#58023](https://github.com/sourcegraph/sourcegraph/pull/58023)
 - The `rateLimit` configuration for Perforce code host connections has been removed to avoid confusion, it was unused. [#58188](https://github.com/sourcegraph/sourcegraph/pull/58188)
+- The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
+- The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
 ## Unreleased 5.2.3
 

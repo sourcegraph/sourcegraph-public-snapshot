@@ -1,47 +1,60 @@
+import { StateEffect, StateField } from '@codemirror/state'
 import type { EditorView, Tooltip, TooltipView } from '@codemirror/view'
 
-import type * as sourcegraph from '@sourcegraph/extension-api-types'
+import { showTooltip } from '../codeintel/tooltips'
 
-import { getCodeIntelTooltipState, setFocusedOccurrenceTooltip } from '../token-selection/code-intel-tooltips'
-
-class TemporaryTooltip implements Tooltip {
+export class TemporaryTooltip implements Tooltip {
     public readonly above = true
+    public readonly pos: number
+    public readonly end?: number
+
     constructor(
+        public range: { from: number; to?: number },
         public readonly message: string,
-        public readonly pos: number,
         public readonly arrow: boolean | undefined
-    ) {}
+    ) {
+        this.pos = range.from
+        this.end = range.to
+    }
+
     public create(): TooltipView {
         const div = document.createElement('div')
         div.classList.add('tmp-tooltip')
         div.textContent = this.message
-        return { dom: div }
+        return {
+            dom: div,
+        }
     }
 }
 
+const setTooltip = StateEffect.define<Tooltip>()
+const clearTooltip = StateEffect.define<Tooltip>()
+
+export const temporaryTooltip = StateField.define<Tooltip[]>({
+    create() {
+        return []
+    },
+    update(value, transaction) {
+        for (const effect of transaction.effects) {
+            if (effect.is(setTooltip) && !value.includes(effect.value)) {
+                value = [...value, effect.value]
+            } else if (effect.is(clearTooltip) && value.includes(effect.value)) {
+                value = value.slice()
+                value.splice(value.indexOf(effect.value), 1)
+            }
+        }
+        return value
+    },
+    provide: field => showTooltip.computeN([field], state => state.field(field)),
+})
+
 /**
  * Displays a simple tooltip that automatically hides after the provided timeout.
- * As temporary tooltips are only shown for selected (focused) occurrences currently,
- * we use {@link setFocusedOccurrenceTooltip} to update {@link codeIntelTooltipsState}.
  */
-export function showTemporaryTooltip(
-    view: EditorView,
-    message: string,
-    position: sourcegraph.Position,
-    clearTimeout: number,
-    options?: {
-        arrow?: boolean
-    }
-): void {
-    const line = view.state.doc.line(position.line + 1)
-    const pos = line.from + position.character + 1
-    const tooltip = new TemporaryTooltip(message, pos, options?.arrow)
-    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(tooltip) })
+export function showTemporaryTooltip(view: EditorView, message: string, offset: number, clearTimeout: number): void {
+    const tooltip = new TemporaryTooltip({ from: offset }, message, true)
+    view.dispatch({ effects: setTooltip.of(tooltip) })
     setTimeout(() => {
-        // close loading tooltip if any
-        const current = getCodeIntelTooltipState(view, 'focus')
-        if (current?.tooltip === tooltip) {
-            view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
-        }
+        view.dispatch({ effects: clearTooltip.of(tooltip) })
     }, clearTimeout)
 }

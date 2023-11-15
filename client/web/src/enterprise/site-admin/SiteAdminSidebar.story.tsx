@@ -3,9 +3,8 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { Code, Grid } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
+import { siteAdminSidebarGroups } from '../../site-admin/sidebaritems'
 import { SiteAdminSidebar } from '../../site-admin/SiteAdminSidebar'
-
-import { enterpriseSiteAdminSidebarGroups } from './sidebaritems'
 
 const decorator: Decorator = story => <div style={{ width: '192px' }}>{story()}</div>
 
@@ -34,7 +33,7 @@ export const AdminSidebarItems: StoryFn = () => (
                 <Code>codeInsightsEnabled=false</Code>
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
                     isCodyApp={true}
                     batchChangesEnabled={true}
@@ -45,7 +44,7 @@ export const AdminSidebarItems: StoryFn = () => (
                 />
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
                     isCodyApp={false}
                     batchChangesEnabled={true}
@@ -56,7 +55,7 @@ export const AdminSidebarItems: StoryFn = () => (
                 />
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={true}
                     isCodyApp={false}
                     batchChangesEnabled={true}
@@ -67,7 +66,7 @@ export const AdminSidebarItems: StoryFn = () => (
                 />
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
                     isCodyApp={false}
                     batchChangesEnabled={false}
@@ -78,7 +77,7 @@ export const AdminSidebarItems: StoryFn = () => (
                 />
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
                     isCodyApp={false}
                     batchChangesEnabled={true}

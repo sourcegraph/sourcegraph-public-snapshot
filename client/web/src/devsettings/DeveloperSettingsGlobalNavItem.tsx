@@ -14,7 +14,6 @@ import {
     parseUrlOverrideFeatureFlags,
 } from '../featureFlags/lib/parseUrlOverrideFeatureFlags'
 import { useFeatureFlagOverrides } from '../featureFlags/useFeatureFlagOverrides'
-import { NavAction } from '../nav'
 import { toggleDevSettingsDialog, useOverrideCounter } from '../stores'
 
 /**
@@ -31,45 +30,39 @@ function getReloadURL(): string {
     return url.toString()
 }
 
-export const DeveloperSettingsGlobalNavItem: FC<{}> = () => {
+export const DeveloperSettingsGlobalNavItem: FC<{ className?: string }> = ({ className }) => {
     const counter = useOverrideCounter()
     const hasOverrides = counter.featureFlags + counter.temporarySettings > 0
     const showReloadButton = useMighNeedReload()
 
     return (
-        <NavAction>
-            <span className="d-flex">
-                <Button
-                    className={classNames(showReloadButton && 'pr-1')}
-                    variant="link"
-                    onClick={() => toggleDevSettingsDialog(true)}
-                >
-                    Developer Settings
-                    {hasOverrides && (
-                        <Tooltip
-                            content={`You have ${counter.featureFlags} local feature flag and ${counter.temporarySettings} temporary settings overrides.`}
-                        >
-                            <Icon
-                                className="ml-1"
-                                style={{ color: 'var(--orange)' }}
-                                svgPath={mdiAlertOctagon}
-                                aria-hidden={true}
-                            />
-                        </Tooltip>
-                    )}
-                </Button>
-                {showReloadButton && (
-                    <>
-                        <ReloadButton variant="icon" />
-                        <Shortcut
-                            held={['Mod']}
-                            ordered={['r']}
-                            onMatch={() => (window.location.href = getReloadURL())}
+        <span className={classNames(className, 'd-flex')}>
+            <Button
+                variant="link"
+                className={classNames(showReloadButton && 'pr-1')}
+                onClick={() => toggleDevSettingsDialog(true)}
+            >
+                Developer Settings
+                {hasOverrides && (
+                    <Tooltip
+                        content={`You have ${counter.featureFlags} local feature flag and ${counter.temporarySettings} temporary settings overrides.`}
+                    >
+                        <Icon
+                            className="ml-1"
+                            style={{ color: 'var(--orange)' }}
+                            svgPath={mdiAlertOctagon}
+                            aria-hidden={true}
                         />
-                    </>
+                    </Tooltip>
                 )}
-            </span>
-        </NavAction>
+            </Button>
+            {showReloadButton && (
+                <>
+                    <ReloadButton variant="icon" />
+                    <Shortcut held={['Mod']} ordered={['r']} onMatch={() => (window.location.href = getReloadURL())} />
+                </>
+            )}
+        </span>
     )
 }
 

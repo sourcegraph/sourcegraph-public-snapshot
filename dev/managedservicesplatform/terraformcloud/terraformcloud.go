@@ -7,7 +7,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -222,6 +221,9 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			ExecutionMode:    pointers.Ptr("remote"),
 			TerraformVersion: pointers.Ptr(terraform.Version),
 			AutoApply:        pointers.Ptr(true),
+
+			// Allow all stacks to reference each other.
+			GlobalRemoteState: pointers.Ptr(true),
 		}
 		switch c.workspaceConfig.RunMode {
 		case WorkspaceRunModeVCS:
@@ -241,12 +243,6 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			wantWorkspaceOptions.WorkingDirectory = nil
 		default:
 			return nil, errors.Errorf("invalid WorkspaceRunModeVCS %q", c.workspaceConfig.RunMode)
-		}
-
-		// HACK: make project output available globally so that other stacks
-		// can reference the generated, randomized ID.
-		if s == project.StackName {
-			wantWorkspaceOptions.GlobalRemoteState = pointers.Ptr(true)
 		}
 
 		wantWorkspaceTags := []*tfe.Tag{
