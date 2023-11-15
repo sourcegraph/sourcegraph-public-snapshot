@@ -43,20 +43,6 @@ export const getCommonRepositoryGraphQlResults = (
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
     FileTreeEntries: () => createFileTreeEntriesResult(repositoryUrl, fileEntries),
-    TreeCommits: () => ({
-        node: {
-            __typename: 'Repository',
-            sourceType: RepositoryType.GIT_REPOSITORY,
-            externalURLs: [
-                {
-                    __typename: 'ExternalLink',
-                    serviceKind: ExternalServiceKind.GITHUB,
-                    url: 'https://' + repositoryName,
-                },
-            ],
-            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
-        },
-    }),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
 })
 
@@ -101,66 +87,49 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, fileEntries),
-                TreeCommits: () => ({
-                    node: {
-                        __typename: 'Repository',
-                        sourceType: RepositoryType.GIT_REPOSITORY,
-                        externalURLs: [
-                            {
-                                __typename: 'ExternalLink',
-                                serviceKind: ExternalServiceKind.GITHUB,
-                                url: 'https://' + repositoryName,
-                            },
-                        ],
-                        commit: {
-                            ancestors: {
-                                nodes: [
-                                    {
-                                        __typename: 'GitCommit',
-                                        id: 'CommitID1',
-                                        oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                        abbreviatedOID: '15c2290',
-                                        perforceChangelist: null,
-                                        message: 'update LSIF indexing CI workflow\n',
+                FileCommits: () => ({
+                    repository: {
+                            __typename: 'Repository',
+                            id: repositoryName,
+                            commit: {
+                                __typename: 'GitCommit',
+                                id: '1',
+                                tree: {
+                                    __typename: 'GitTree',
+                                    entries: fileEntries.map((fileName, index) => ({
+                                        __typename: 'GitBlob',
+                                        path: fileName,
+                                        history: {
+                                            __typename: 'TreeEntryConnection',
+                                            nodes: [
+                                                {
+                                                    __typename: 'GitBlob',
+                                                    commit: {
+                                                        __typename: 'GitCommit',
+                                                        id: '1',
+                                                        author: {
+                                                            __typename: 'Signature',
+                                                            person: {
+                                                                avatarURL: '',
+                                                                name: 'Sourcegraph Bot',
+                                                                email: 'batch-changes@sourcegraph.com',
+                                                                displayName: 'Sourcegraph Bot',
+                                                                user: null,
+                                                            },
+                                                            date: '2020-04-29T16:57:20Z',
+                                                        },
+                                                        committer: {
+                                                            __typename: 'Signature',
+                                                            person: {
+                                                                avatarURL: '',
+                                                                name: 'Sourcegraph Bot',
+                                                                email: 'batch-changes@sourcegraph.com',
+                                                                displayName: 'Sourcegraph Bot',
+                                                                user: null,
+                                                            },
+                                                            date: '2020-04-29T16:57:20Z',
+                                                        },
                                         subject: 'update LSIF indexing CI workflow',
-                                        body: null,
-                                        author: {
-                                            __typename: 'Signature',
-                                            person: {
-                                                avatarURL: '',
-                                                name: 'garo (they/them)',
-                                                email: 'gbrik@users.noreply.github.com',
-                                                displayName: 'garo (they/them)',
-                                                user: null,
-                                            },
-                                            date: '2020-04-29T18:40:54Z',
-                                        },
-                                        committer: {
-                                            __typename: 'Signature',
-                                            person: {
-                                                avatarURL: '',
-                                                name: 'GitHub',
-                                                email: 'noreply@github.com',
-                                                displayName: 'GitHub',
-                                                user: null,
-                                            },
-                                            date: '2020-04-29T18:40:54Z',
-                                        },
-                                        parents: [
-                                            {
-                                                oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                                abbreviatedOID: '96c4efa',
-                                                perforceChangelist: null,
-                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                            },
-                                            {
-                                                oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                                abbreviatedOID: '9e615b1',
-                                                perforceChangelist: null,
-                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                            },
-                                        ],
-                                        url: commitUrl,
                                         canonicalURL: commitUrl,
                                         externalURLs: [
                                             {
@@ -168,129 +137,16 @@ describe('Repository', () => {
                                                 serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
-                                        tree: {
-                                            canonicalURL:
-                                                '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                        },
-                                    },
-                                    {
-                                        __typename: 'GitCommit',
-                                        id: 'CommitID2',
-                                        oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                        abbreviatedOID: '9e615b1',
-                                        perforceChangelist: null,
-                                        message: 'LSIF Indexing Campaign',
-                                        subject: 'LSIF Indexing Campaign',
-                                        body: null,
-                                        author: {
-                                            __typename: 'Signature',
-                                            person: {
-                                                avatarURL: '',
-                                                name: 'Sourcegraph Bot',
-                                                email: 'batch-changes@sourcegraph.com',
-                                                displayName: 'Sourcegraph Bot',
-                                                user: null,
-                                            },
-                                            date: '2020-04-29T16:57:20Z',
-                                        },
-                                        committer: {
-                                            __typename: 'Signature',
-                                            person: {
-                                                avatarURL: '',
-                                                name: 'Sourcegraph Bot',
-                                                email: 'batch-changes@sourcegraph.com',
-                                                displayName: 'Sourcegraph Bot',
-                                                user: null,
-                                            },
-                                            date: '2020-04-29T16:57:20Z',
-                                        },
-                                        parents: [
-                                            {
-                                                oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                                abbreviatedOID: '96c4efa',
-                                                perforceChangelist: null,
-                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                            },
-                                        ],
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                        canonicalURL:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                        externalURLs: [
-                                            {
-                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                                serviceKind: ExternalServiceKind.GITHUB,
-                                            },
-                                        ],
-                                        tree: {
-                                            canonicalURL:
-                                                '/github.com/sourcegraph/jsonrpc2@9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                        },
-                                    },
-                                    {
-                                        __typename: 'GitCommit',
-                                        id: 'CommitID3',
-                                        oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        abbreviatedOID: '96c4efa',
-                                        perforceChangelist: null,
-                                        message:
-                                            'Produce LSIF data for each commit for fast/precise code nav (#35)\n\n* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml\r',
-                                        subject: 'Produce LSIF data for each commit for fast/precise code nav (#35)',
-                                        body: '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
-                                        author: {
-                                            __typename: 'Signature',
-                                            person: {
-                                                avatarURL: '',
-                                                name: 'Quinn Slack',
-                                                email: 'qslack@qslack.com',
-                                                displayName: 'Quinn Slack',
-                                                user: {
-                                                    id: 'VXNlcjo2',
-                                                    username: 'sqs',
-                                                    url: '/users/sqs',
-                                                    displayName: 'sqs',
-                                                },
-                                            },
-                                            date: '2019-12-22T04:34:38Z',
-                                        },
-                                        committer: {
-                                            __typename: 'Signature',
-                                            person: {
-                                                avatarURL: '',
-                                                name: 'GitHub',
-                                                email: 'noreply@github.com',
-                                                displayName: 'GitHub',
-                                                user: null,
-                                            },
-                                            date: '2019-12-22T04:34:38Z',
-                                        },
-                                        parents: [
-                                            {
-                                                oid: 'cee7209801bf50cee868f8e0696ba0b76ae21792',
-                                                abbreviatedOID: 'cee7209',
-                                                perforceChangelist: null,
-                                                url: '/github.com/sourcegraph/jsonrpc2/-/commit/cee7209801bf50cee868f8e0696ba0b76ae21792',
-                                            },
-                                        ],
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        canonicalURL:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        externalURLs: [
-                                            {
-                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                                serviceKind: ExternalServiceKind.GITHUB,
-                                            },
-                                        ],
-                                        tree: {
-                                            canonicalURL:
-                                                '/github.com/sourcegraph/jsonrpc2@96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        },
-                                    },
-                                ],
-                                pageInfo: { __typename: 'PageInfo', hasNextPage: false, endCursor: 'abc' },
-                            },
-                        },
-                    },
-                }),
+                                        }
+                                        }
+                                        ]
+                                        }
+                                        }))
+                                },
+                                }
+                            }
+                    }),
+
                 RepositoryCommit: () => ({
                     node: {
                         __typename: 'Repository',
@@ -462,7 +318,7 @@ describe('Repository', () => {
             await driver.assertWindowLocation(repositorySourcegraphUrl)
 
             await driver.findElementWithText(clickedCommit, {
-                selector: '[data-testid="git-commit-node-oid"]',
+                selector: '[data-testid="git-commit-message-with-links"] a',
                 action: 'click',
             })
             await driver.page.waitForSelector('[data-testid="repository-commit-page"]')

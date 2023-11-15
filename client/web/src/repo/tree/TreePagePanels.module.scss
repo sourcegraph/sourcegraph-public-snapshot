@@ -40,12 +40,22 @@
     height: 31.5rem;
 }
 
+.card-col-header-wrapper {
+    background-color: var(--color-bg-2);
+
+    a {
+        color: var(--link-color-2);
+    }
+}
+
 table.files {
     width: 100%;
     table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
     margin-bottom: 0;
+    // This is necessary to override the 'display:' property set by
+    // the Card component.
     display: table;
 
     th {

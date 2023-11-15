@@ -201,7 +201,7 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                         {fileHistoryByPath[entry.path] && (
                             <>
                                 <td className={styles.commitMessage}>
-                                    <span title={fileHistoryByPath[entry.path].subject}>
+                                    <span title={fileHistoryByPath[entry.path].subject} data-testid="git-commit-message-with-links">
                                         <CommitMessageWithLinks
                                             to={fileHistoryByPath[entry.path].canonicalURL}
                                             message={fileHistoryByPath[entry.path].subject}
