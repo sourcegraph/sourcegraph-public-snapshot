@@ -124,7 +124,14 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		}
 
 		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
-		ctx = actor.WithActor(ctx, actr)
+		ctx, err = session.SetActorFromUser(ctx, w, r, user, expiryDuration)
+		if err != nil { // TODO: test session expiration
+			span.SetError(err)
+			logger.Error("OAuth failed: could not initiate session.", log.Error(err))
+			http.Error(w, fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
 		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
 			Name:      s.AuthSucceededEventName(),
 			URL:       r.URL.Path, // don't log query params w/ OAuth data
@@ -132,20 +139,6 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			Source:    "BACKEND",
 			Timestamp: time.Now(),
 		})
-
-		if err := session.SetActor(w, r, actr, expiryDuration, user.CreatedAt); err != nil { // TODO: test session expiration
-			span.SetError(err)
-			logger.Error("OAuth failed: could not initiate session.", log.Error(err))
-			http.Error(w, fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-
-		if err := session.SetData(w, r, sessionKey, s.SessionData(token)); err != nil {
-			// It's not fatal if this fails. It just means we won't be able to sign the user out of
-			// the OP.
-			span.AddEvent(err.Error()) // do not set error
-			logger.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
-		}
 
 		redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OAuth::"+s.GetServiceID())
 		http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)

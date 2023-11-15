@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/inconshreveable/log15"
@@ -210,15 +212,6 @@ func waitForRedis(s *redistore.RediStore) {
 //
 // The value is JSON-encoded before being stored.
 func SetData(w http.ResponseWriter, r *http.Request, key string, value any) error {
-	info, err := licensing.GetConfiguredProductLicenseInfo()
-	if err != nil {
-		return err
-	}
-
-	if info.IsExpired() {
-		return errors.New("Sourcegraph license is expired. Only admins are allowed to sign in.")
-	}
-
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")
@@ -249,6 +242,24 @@ func GetData(r *http.Request, key string, value any) error {
 		}
 	}
 	return nil
+}
+
+func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Request, user *types.User, expiryPeriod time.Duration) (context.Context, error) {
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return ctx, err
+	}
+
+	if info.IsExpired() && !user.SiteAdmin {
+		return ctx, errors.New("Sourcegraph license is expired. Only admins are allowed to sign in.")
+	}
+
+	// Write the session cookie
+	actor := sgactor.Actor{
+		UID: user.ID,
+	}
+
+	return ctx, SetActor(w, r, &actor, expiryPeriod, user.CreatedAt)
 }
 
 // SetActor sets the actor in the session, or removes it if actor == nil. If no session exists, a
