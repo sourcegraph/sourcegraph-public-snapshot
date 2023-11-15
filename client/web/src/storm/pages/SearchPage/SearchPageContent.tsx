@@ -94,6 +94,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             onToggle={val => {
                                 const arg = { state: val }
                                 telemetryService.log('SimpleSearchToggle', arg, arg)
+                                telemetryRecorder.recordEvent('SimpleSearch', 'toggled', { privateMetadata: { arg } })
                                 setSimpleSearch(val)
                             }}
                         />
