@@ -7,6 +7,7 @@ import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/Que
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -25,14 +26,14 @@ import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
 
-interface SearchPageContentProps {
+interface SearchPageContentProps extends TelemetryV2Props {
     shouldShowAddCodeHostWidget?: boolean
 }
 
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
-    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
+    const { telemetryService, telemetryRecorder, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
@@ -43,7 +44,10 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         query: '',
     })
 
-    useEffect(() => telemetryService.logViewEvent('Home'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('Home')
+        telemetryRecorder.recordEvent('Home', 'viewed')
+    }, [telemetryService, telemetryRecorder])
     useEffect(() => {
         // TODO (#48103): Remove/simplify when new search input is released
         // Because the current and the new search input handle the context: selector differently
