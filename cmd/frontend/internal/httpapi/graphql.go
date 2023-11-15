@@ -131,11 +131,13 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 				// Track the cost distribution of requests in a histogram.
 				costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
 
-				if !isInternal && (cost.AliasCount > graphqlbackend.MaxAliasCount) {
+				rl := conf.RateLimits()
+
+				if !isInternal && (cost.AliasCount > rl.GraphQLMaxAliases) {
 					return writeViolationError(w, "query exceeds maximum query cost")
 				}
 
-				if !isInternal && (cost.FieldCount > graphqlbackend.MaxFieldCount) {
+				if !isInternal && (cost.FieldCount > rl.GraphQLMaxFieldCount) {
 					if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
 						logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
 					}
