@@ -32,7 +32,12 @@ func NewRepoEmbeddingJobsResolver(
 		store:           repoEmbeddingJobsStore,
 		args:            args,
 	}
-	return graphqlutil.NewConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver](store, &args.ConnectionResolverArgs, nil)
+	opts := &graphqlutil.ConnectionResolverOptions{
+		OrderBy: database.OrderBy{
+			{Field: "repo_embedding_jobs.id"},
+		},
+	}
+	return graphqlutil.NewConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver](store, &args.ConnectionResolverArgs, opts)
 }
 
 type repoEmbeddingJobsConnectionStore struct {
