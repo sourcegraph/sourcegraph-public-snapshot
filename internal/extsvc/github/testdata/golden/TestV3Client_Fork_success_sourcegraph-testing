@@ -10,12 +10,13 @@
   "IsLocked": false,
   "IsDisabled": false,
   "ViewerPermission": "ADMIN",
-  "visibility": "public",
   "RepositoryTopics": {
    "Nodes": []
   },
+  "visibility": "public",
   "Parent": {
    "NameWithOwner": "sourcegraph/automation-testing",
    "IsFork": false
-  }
+  },
+  "DiskUsage": 705
  }
