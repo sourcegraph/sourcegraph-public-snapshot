@@ -787,6 +787,10 @@ type ExcludedGitHubRepo struct {
 	Name string `json:"name,omitempty"`
 	// Pattern description: Regular expression which matches against the name of a GitHub repository ("owner/name").
 	Pattern string `json:"pattern,omitempty"`
+	// Size description: If set, repositories with a size above the specified one will be excluded. Specify in kb.
+	Size string `json:"size,omitempty"`
+	// Stars description: If set, repositories stars less than the specified number will be.
+	Stars string `json:"stars,omitempty"`
 }
 type ExcludedGitLabProject struct {
 	// EmptyRepos description: Whether to exclude empty repositories.
