@@ -141,7 +141,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 label: 'Try Cody in Sourcegraph',
                 action: {
                     type: 'new-tab-link',
-                    value: '/cody',
+                    value: '/cody/chat',
                 },
             },
         ],

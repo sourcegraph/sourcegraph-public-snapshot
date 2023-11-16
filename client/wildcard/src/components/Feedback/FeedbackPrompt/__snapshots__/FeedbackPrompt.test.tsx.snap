@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`FeedbackPrompt should render correctly 1`] = `
+exports[`FeedbackPrompt > should render correctly 1`] = `
 <body>
   <div>
     <button
@@ -103,7 +103,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
 </body>
 `;
 
-exports[`FeedbackPrompt should render submit error correctly 1`] = `
+exports[`FeedbackPrompt > should render submit error correctly 1`] = `
 <body>
   <div>
     <button
@@ -120,20 +120,22 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
   <div
     aria-modal="true"
     class="floatingPanel popover menu"
+    hidden=""
     role="dialog"
+    style="visibility: hidden;"
   >
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="-1"
+      tabindex="0"
     />
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="-1"
+      tabindex="1"
     />
     <div
-      data-focus-lock-disabled="disabled"
+      data-focus-lock-disabled="false"
     >
       <button
         class="btn close"
@@ -218,13 +220,13 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
     <div
       data-focus-guard="true"
       style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-      tabindex="-1"
+      tabindex="0"
     />
   </div>
 </body>
 `;
 
-exports[`FeedbackPrompt should render submit success correctly 1`] = `
+exports[`FeedbackPrompt > should render submit success correctly 1`] = `
 <body>
   <div>
     <button

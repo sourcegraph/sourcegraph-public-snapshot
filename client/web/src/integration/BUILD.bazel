@@ -28,7 +28,6 @@ ts_project(
         "temporarySettingsContext.ts",
         "utils.ts",
     ],
-    module = "commonjs",
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@codemirror/view",
@@ -84,7 +83,6 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
-    use_preset_env = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",

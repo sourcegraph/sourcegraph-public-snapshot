@@ -13,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace/otel"
+	"github.com/graph-gophers/graphql-go/trace/tracer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -31,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,19 +45,29 @@ var graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 
 // Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
-	DB     database.DB
-	tracer *otel.Tracer
 	logger log.Logger
+	db     database.DB
+
+	tracer *otel.Tracer
+}
+
+func newRequestTracer(logger log.Logger, db database.DB) tracer.Tracer {
+	return &requestTracer{
+		db: db,
+		tracer: &otel.Tracer{
+			Tracer: oteltracer.Tracer("GraphQL"),
+		},
+		logger: logger,
+	}
 }
 
 func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
 	start := time.Now()
-	var finish func([]*gqlerrors.QueryError)
-	if policy.ShouldTrace(ctx) {
-		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
-	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
+
+	var finish func([]*gqlerrors.QueryError)
+	ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -92,7 +102,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		// operator or not.
 		err = usagestats.LogEvent(
 			ctx,
-			t.DB,
+			t.db,
 			usagestats.Event{
 				EventName: eventName,
 				UserID:    a.UID,
@@ -118,9 +128,8 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	requestSource := sgtrace.RequestSource(ctx)
 
 	return ctx, func(err []*gqlerrors.QueryError) {
-		if finish != nil {
-			finish(err)
-		}
+		finish(err) // always non-nil
+
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
 			enc, _ := json.Marshal(variables)
@@ -182,15 +191,7 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 }
 
 func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
-	var finish func([]*gqlerrors.QueryError)
-	if policy.ShouldTrace(ctx) {
-		finish = t.tracer.TraceValidation(ctx)
-	}
-	return func(queryErrors []*gqlerrors.QueryError) {
-		if finish != nil {
-			finish(queryErrors)
-		}
-	}
+	return t.tracer.TraceValidation(ctx)
 }
 
 var allowedPrometheusFieldNames = map[[2]string]struct{}{
@@ -629,16 +630,10 @@ func NewSchema(
 		}
 	}
 
-	logger := log.Scoped("GraphQL")
 	opts := []graphql.SchemaOpt{
-		graphql.Tracer(&requestTracer{
-			DB: db,
-			tracer: &otel.Tracer{
-				Tracer: oteltracer.Tracer("GraphQL"),
-			},
-			logger: logger,
-		}),
+		graphql.Tracer(newRequestTracer(log.Scoped("GraphQL"), db)),
 		graphql.UseStringDescriptions(),
+		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
 	}
 	opts = append(opts, graphqlOpts...)
 	return graphql.ParseSchema(

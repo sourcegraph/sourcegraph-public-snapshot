@@ -22,7 +22,7 @@ expression: dumped
   end
   
   counter = 1
-//^^^^^^^ definition scip-ctags counter.
+//^^^^^^^ definition(Variable) scip-ctags counter.
   while counter <= 5 do
     no = true
     counter += 1
@@ -41,7 +41,7 @@ expression: dumped
   end
   
   grade = 42
-//^^^^^ definition scip-ctags grade.
+//^^^^^ definition(Variable) scip-ctags grade.
   case grade
   when 0.100
     shouldntgetcaptured = true

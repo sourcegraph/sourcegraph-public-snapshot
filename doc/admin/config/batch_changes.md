@@ -190,7 +190,7 @@ Gerrit | API call | ✗ | ✓ | Requires ["delete own changes" permission](https
 
 <span class="badge badge-note">Sourcegraph 5.1+</span>
 
-Sourcegraph can be configured to sign commits pushed to GitHub using a GitHub App. Commit signing prevents tampering by unauthorized parties and provides a way to ensure that commits pushed to branches created by Batch Changes actually do come from Sourcegraph. Enabling commit signing for Batch Changes can also help pass checks in build systems or CI/CD pipelines that require that all commits are signed and verified before they can be merged.
+Sourcegraph can be configured to [sign commits pushed to GitHub](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) using a GitHub App. Commit signing prevents tampering by unauthorized parties and provides a way to ensure that commits pushed to branches created by Batch Changes actually do come from Sourcegraph. Enabling commit signing for Batch Changes can also help pass checks in build systems or CI/CD pipelines that require that all commits are signed and verified before they can be merged.
 
 At present, only GitHub code hosts (both Cloud and Enterprise) are supported, and only GitHub App signing is supported. Support for other code hosts and signing methods may be added in the future.
 
@@ -198,9 +198,9 @@ GitHub Apps are also the recommended way to [sync repositories on GitHub](../ext
 
 <!-- NOTE: The instructions in the following sections closely mirror those in doc/admin/external_service/github.md. When making changes here, be sure to consider if those changes should also be made over there! -->
 
-To create a GitHub App for commit signing and connect it to Sourcegraph:  
+To create a GitHub App for commit signing and connect it to Sourcegraph:
 
-1. Go to **Site admin > Batch Changes > Settings** on Sourcegraph.  
+1. Go to **Site admin > Batch Changes > Settings** on Sourcegraph.
 
 <img alt="The Batch Changes settings page on Sourcegraph, scrolled to show commit signing integrations" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-apps-batches-list.png" class="screenshot theme-light-only" />
 <img alt="The Batch Changes settings page on Sourcegraph, scrolled to show commit signing integrations" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-apps-batches-list-dark.png" class="screenshot theme-dark-only" />
@@ -236,7 +236,7 @@ To create a GitHub App for commit signing and connect it to Sourcegraph:
 
 The initial GitHub App setup will only install the App on the organization or user account that you registered it with. If your code is spread across multiple organizations or user accounts, you will need to create additional installations for each namespace that you want Batch Changes to be able to sign commits in.
 
-By default, Sourcegraph creates a private GitHub App, which only allows the App to be installed on the same organization or user account that it was created in. If you did not set the App to public visibility during creation, you will need to [change the visibility](https://docs.github.com/en/apps/maintaining-github-apps/modifying-a-github-app#changing-the-visibility-of-a-github-app) to public before you can install it in other namespaces. For security considerations, see [GitHub's documentation on private vs public apps](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/making-a-github-app-public-or-private).  
+By default, Sourcegraph creates a private GitHub App, which only allows the App to be installed on the same organization or user account that it was created in. If you did not set the App to public visibility during creation, you will need to [change the visibility](https://docs.github.com/en/apps/maintaining-github-apps/modifying-a-github-app#changing-the-visibility-of-a-github-app) to public before you can install it in other namespaces. For security considerations, see [GitHub's documentation on private vs public apps](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/making-a-github-app-public-or-private).
 
 Once public, App can be installed in additional namespaces either from Sourcegraph or from GitHub.
 
@@ -286,7 +286,7 @@ Installation access tokens are short-lived, non-refreshable tokens that give Sou
 
 <span class="badge badge-note">Sourcegraph 5.1.5+</span>
 
-If you are using a self-signed certificate for your GitHub Enterprise instance, configure `tls.external` under `experimentalFeatures` 
+If you are using a self-signed certificate for your GitHub Enterprise instance, configure `tls.external` under `experimentalFeatures`
 in the **Site configuration** with your certificate(s).
 
 ```json
@@ -300,3 +300,10 @@ in the **Site configuration** with your certificate(s).
   }
 }
 ```
+
+### Ownership
+
+When a user is deleted, their Batch Changes become inaccessible in the UI but the data is not permanently deleted.
+This allows recovering the Batch Changes if the user is restored.
+
+However, if the user deletion is permanent, deleting both account and data, then the associated Batch Changes are also permanently deleted from the database. This frees storage space and removes dangling references.

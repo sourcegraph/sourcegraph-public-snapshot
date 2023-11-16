@@ -438,8 +438,18 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 	})
 	defer endObservation(1, observation.Args{})
 
+	// Ensure commits exist to provide a better error message
+	_, err = c.ResolveRevisions(ctx, repo, []protocol.RevisionSpecifier{{RevSpec: string(commitA)}, {RevSpec: string(commitB)}})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to lookup revisions for git diff on %s between %s and %s", repo, commitA, commitB)
+	}
+
 	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	return command.Output(ctx)
+	out, err := command.Output(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to run git diff on %s between %s and %s", repo, commitA, commitB)
+	}
+	return out, nil
 }
 
 // ReadDir reads the contents of the named directory at commit.
@@ -781,10 +791,10 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 
 // BlameOptions configures a blame.
 type BlameOptions struct {
-	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
-
-	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
-	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
+	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
+	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
 }
 
 func (o *BlameOptions) Attrs() []attribute.KeyValue {
@@ -792,6 +802,7 @@ func (o *BlameOptions) Attrs() []attribute.KeyValue {
 		attribute.String("newestCommit", string(o.NewestCommit)),
 		attribute.Int("startLine", o.StartLine),
 		attribute.Int("endLine", o.EndLine),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
 	}
 }
 
@@ -849,7 +860,10 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain", "--incremental"}
+	args := []string{"blame", "--porcelain", "--incremental"}
+	if opt.IgnoreWhitespace {
+		args = append(args, "-w")
+	}
 	if opt.StartLine != 0 || opt.EndLine != 0 {
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
@@ -889,7 +903,10 @@ func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, c
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain"}
+	args := []string{"blame", "--porcelain"}
+	if opt.IgnoreWhitespace {
+		args = append(args, "-w")
+	}
 	if opt.StartLine != 0 || opt.EndLine != 0 {
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}

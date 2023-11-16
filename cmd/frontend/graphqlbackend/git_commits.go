@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type gitCommitConnectionResolver struct {
@@ -60,13 +61,21 @@ func (r *gitCommitConnectionResolver) afterCursorAsInt() (int, error) {
 
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain.Commit, error) {
 	do := func() ([]*gitdomain.Commit, error) {
-		var n int32
-		// IMPORTANT: We cannot use toValue here because we toValue will return 0 if r.first is nil.
-		// And n will be incorrectly set to 1. A nil value for r.first implies no limits, so skip
-		// setting a value for n completely.
-		if r.first != nil {
-			n = *r.first
-			n++ // fetch +1 additional result so we can determine if a next page exists
+		n := pointers.Deref(r.first, 0)
+
+		// PERF: only request extra if we request more than one result. A
+		// common scenario is requesting the latest commit that modified a
+		// file, but many files have only been modified by the commit that
+		// created them. If we request more than one commit, we have to
+		// traverse the entire git history to find a second commit that doesn't
+		// exist, which is useless information in the case that we only want
+		// the latest commit anyways.
+		//
+		// NOTE: in a world where we can view which fields were requested (our
+		// GraphQL library doesn't currently support this), we could make this
+		// conditional on whether `hasNextPage` was part of the request.
+		if n > 1 {
+			n += 1
 		}
 
 		// If no value for afterCursor is set, then skip is 0. And this is fine as --skip=0 is the
@@ -142,9 +151,17 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 
 	limit := int(*r.first)
 
+	// In the special case that only one commit was requested, we want
+	// to always say there is a next page because we didn't request an
+	// extra to know whether there were more.
+	//
+	// NOTE: this means that `hasNextPage` can possibly incorrectly
+	// return true when only one result is requested.
+	gotSingleRequestedCommit := limit == 1 && totalCommits == limit
+
 	// If a limit is set, we attempt to fetch N+1 commits to know if there is a next page or not. If
 	// we have more than N commits then we have a next page.
-	if totalCommits > limit {
+	if totalCommits > limit || gotSingleRequestedCommit {
 		// Pagination logic below.
 		//
 		// Example:

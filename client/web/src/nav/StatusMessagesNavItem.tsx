@@ -216,10 +216,10 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 ({ __typename: type }) => type === 'ExternalServiceSyncError' || type === 'SyncError'
             )
         ) {
-            codeHostMessage = 'Syncing repositories failed!'
+            codeHostMessage = 'Syncing repositories failed'
             iconProps = { as: CloudAlertIconRefresh }
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'GitUpdatesDisabled')) {
-            codeHostMessage = 'Syncing repositories disabled!'
+            codeHostMessage = 'Syncing repositories disabled'
             iconProps = { as: CloudAlertIconRefresh }
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
             codeHostMessage = 'Cloning repositories...'

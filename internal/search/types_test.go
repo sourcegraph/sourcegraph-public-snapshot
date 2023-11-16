@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -154,7 +155,7 @@ func TestZoektParameters(t *testing.T) {
 			context: context.Background(),
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				KeywordScoring: true,
+				PatternType:    query.SearchTypeKeyword,
 			},
 			want: &zoekt.SearchOptions{
 				ShardMaxMatchCount:  100000,

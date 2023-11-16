@@ -1,7 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
-load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
@@ -31,14 +30,12 @@ ts_project(
         "src/types/highlightjs-graphql/index.d.ts",
         "src/types/index.ts",
         "src/types/utils.ts",
-        "src/util/LocalStorageSubject.ts",
         "src/util/browserDetection.ts",
         "src/util/compatNavigate.ts",
         "src/util/fetchCache.ts",
         "src/util/hashCode.ts",
         "src/util/highlightNode.ts",
         "src/util/index.ts",
-        "src/util/isEncodedImage.ts",
         "src/util/jsonc.ts",
         "src/util/logger.ts",
         "src/util/markdown/contributions.ts",
@@ -95,12 +92,12 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":common_lib",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@types/mockdate",
         "//:node_modules/@types/node",
-        "//:node_modules/jest-fetch-mock",
         "//:node_modules/mockdate",
         "//:node_modules/rxjs",
+        "//:node_modules/vitest",
+        "//:node_modules/vitest-fetch-mock",
     ],
 )
 
@@ -112,21 +109,8 @@ npm_package(
     ],
 )
 
-js_library(
-    name = "jest_config",
-    testonly = True,
-    srcs = [
-        "jest.config.js",
-    ],
-    data = [
-        "src/jestSetupAfterEnv.js",
-    ],
-    deps = ["//:jest_config"],
-)
-
-jest_test(
+vitest_test(
     name = "test",
-    config = ":jest_config",
     data = [
         ":common_tests",
     ],

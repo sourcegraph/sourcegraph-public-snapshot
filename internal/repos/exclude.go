@@ -1,9 +1,15 @@
 package repos
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // excludeFunc takes either a generic object and returns true if the repo should be excluded. In
@@ -76,4 +82,120 @@ func (e *excludeBuilder) Build() (excludeFunc, error) {
 
 		return false
 	}, e.err
+}
+
+func buildGitHubExcludeRule(rule *schema.ExcludedGitHubRepo) (excludeFunc, error) {
+	var fns []gitHubExcludeFunc
+	if rule.Stars != "" {
+		fn, err := buildStarsConstraintsExcludeFn(rule.Stars)
+		if err != nil {
+			return nil, err
+		}
+		fns = append(fns, fn)
+	}
+
+	if rule.Size != "" {
+		fn, err := buildSizeConstraintsExcludeFn(rule.Size)
+		if err != nil {
+			return nil, err
+		}
+		fns = append(fns, fn)
+	}
+
+	return func(repo any) bool {
+		githubRepo, ok := repo.(github.Repository)
+		if !ok {
+			return false
+		}
+
+		// We're AND'ing the functions together. If one of them does NOT exclude
+		// the repository, then we don't exclude it.
+		for _, fn := range fns {
+			excluded := fn(githubRepo)
+			if !excluded {
+				return false
+			}
+		}
+
+		return true
+	}, nil
+}
+
+type gitHubExcludeFunc func(github.Repository) bool
+
+var starsConstraintRegex = regexp.MustCompile(`([<>=]{1,2})\s*(\d+)`)
+var sizeConstraintRegex = regexp.MustCompile(`([<>=]{1,2})\s*(\d+\s*\w+)`)
+
+func buildStarsConstraintsExcludeFn(constraint string) (gitHubExcludeFunc, error) {
+	matches := starsConstraintRegex.FindStringSubmatch(constraint)
+	if matches == nil {
+		return nil, errors.Newf("invalid stars constraint format: %q", constraint)
+	}
+
+	operator, err := newOperator(matches[1])
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to evaluate stars constraint")
+	}
+
+	count, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return nil, err
+	}
+
+	return func(r github.Repository) bool {
+		return operator.Eval(r.StargazerCount, count)
+	}, nil
+}
+
+func buildSizeConstraintsExcludeFn(constraint string) (gitHubExcludeFunc, error) {
+	sizeMatch := sizeConstraintRegex.FindStringSubmatch(constraint)
+	if sizeMatch == nil {
+		return nil, errors.Newf("invalid size constraint format: %q", constraint)
+	}
+
+	operator, err := newOperator(sizeMatch[1])
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to evaluate size constraint")
+	}
+
+	size, err := bytesize.Parse(sizeMatch[2])
+	if err != nil {
+		return nil, err
+	}
+
+	return func(r github.Repository) bool {
+		return operator.Eval(int(r.SizeBytes()), int(size))
+	}, nil
+}
+
+type operator string
+
+const (
+	opLess           operator = "<"
+	opLessOrEqual    operator = "<="
+	opGreater        operator = ">"
+	opGreaterOrEqual operator = ">="
+)
+
+func newOperator(input string) (operator, error) {
+	if input != "<" && input != "<=" && input != ">" && input != ">=" {
+		return "", errors.Newf("invalid operator %q", input)
+	}
+	return operator(input), nil
+}
+
+func (o operator) Eval(left, right int) bool {
+	switch o {
+	case "<":
+		return left < right
+	case ">":
+		return left > right
+	case "<=":
+		return left <= right
+	case ">=":
+		return left >= right
+	default:
+		// I wish Go had enums
+		panic(errors.Newf("unknown operator: %q", o))
+	}
 }

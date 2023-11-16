@@ -171,6 +171,18 @@ func TestReplace_Valid(t *testing.T) {
 			query:       "/replaceme/",
 			replacement: "replace",
 			want:        autogold.Expect(BasicQuery("/replace/")),
+			searchType:  query.SearchTypeNewStandardRC1,
+		},
+		{
+			query:       "/replace(me)/",
+			replacement: "you",
+			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
+			searchType:  query.SearchTypeNewStandardRC1,
+		},
+		{
+			query:       "/replaceme/",
+			replacement: "replace",
+			want:        autogold.Expect(BasicQuery("/replace/")),
 			searchType:  query.SearchTypeLucky,
 		},
 		{
@@ -190,6 +202,18 @@ func TestReplace_Valid(t *testing.T) {
 			replacement: "dd",
 			want:        autogold.Expect(BasicQuery("/b(?:u)(?:dd)(er)/")),
 			searchType:  query.SearchTypeStandard,
+		},
+		{
+			query:       "/b(u)tt(er)/",
+			replacement: "e",
+			want:        autogold.Expect(BasicQuery("/b(?:e)tt(er)/")),
+			searchType:  query.SearchTypeNewStandardRC1,
+		},
+		{
+			query:       "/b(?:u)(tt)(er)/",
+			replacement: "dd",
+			want:        autogold.Expect(BasicQuery("/b(?:u)(?:dd)(er)/")),
+			searchType:  query.SearchTypeNewStandardRC1,
 		},
 		{
 			query:       "replaceme",
@@ -233,6 +257,12 @@ func TestReplace_Valid(t *testing.T) {
 			want:        autogold.Expect(BasicQuery("/<title>(?:findme)<\\/title>/")),
 			searchType:  query.SearchTypeStandard,
 		},
+		{
+			query:       `/<title>(.*)<\/title>/`,
+			replacement: "findme",
+			want:        autogold.Expect(BasicQuery("/<title>(?:findme)<\\/title>/")),
+			searchType:  query.SearchTypeNewStandardRC1,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.query, func(t *testing.T) {
@@ -261,6 +291,18 @@ func TestReplace_Invalid(t *testing.T) {
 	})
 	t.Run("filters with no pattern", func(t *testing.T) {
 		_, err := NewPatternReplacer("repo:repoA rev:3.40.0", query.SearchTypeStandard)
+		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	})
+	t.Run("multiple patterns", func(t *testing.T) {
+		_, err := NewPatternReplacer("/replace(me)/ or asdf", query.SearchTypeNewStandardRC1)
+		require.ErrorIs(t, err, MultiplePatternErr)
+	})
+	t.Run("literal pattern", func(t *testing.T) {
+		_, err := NewPatternReplacer("asdf", query.SearchTypeNewStandardRC1)
+		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	})
+	t.Run("filters with no pattern", func(t *testing.T) {
+		_, err := NewPatternReplacer("repo:repoA rev:3.40.0", query.SearchTypeNewStandardRC1)
 		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
 	})
 }

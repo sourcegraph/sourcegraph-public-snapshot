@@ -22,9 +22,9 @@ expression: dumped
   
   var (
    diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
-// ^^^^^^^^ definition scip-ctags main/diffPath.
+// ^^^^^^^^ definition(Variable) scip-ctags main/diffPath.
    fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
-// ^^^^^^^ definition scip-ctags main/fileIdx.
+// ^^^^^^^ definition(Variable) scip-ctags main/fileIdx.
   )
   
   func main() {

@@ -428,6 +428,7 @@ var githubStore = &Store{
 	GitserverClient: gitserver.NewClient("test"),
 	FetchTar:        fetchTarFromGithub,
 	Path:            "/tmp/search_test/store",
+	Log:             observation.TestContext.Logger,
 	ObservationCtx:  &observation.TestContext,
 }
 

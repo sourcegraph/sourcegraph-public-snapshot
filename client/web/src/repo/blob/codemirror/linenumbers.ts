@@ -20,28 +20,35 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
-import classNames from 'classnames'
 
-import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { isFirefox } from '@sourcegraph/common'
 
-import { blobPropsFacet } from './index'
 import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
 const selectedLinesTheme = EditorView.theme({
     /**
      * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-     * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
+     * returns absolutely positioned markers. Markers top position has extra 1px (5px in case blame decorations
      * are visible) more in its `top` value breaking alignment wih the line.
      * We compensate this spacing by setting negative margin-top.
+     *
+     * Line highlighting breaks (highlights two lines instead of 1) in firefox if minHeight is set, so we
+     * add a conditional to check for the current browser, and set the css accordingly.
+     *
+     * todo(fkling): Revisit this, styling is not correct for empty lines
      */
-    '.selected-lines-layer .selected-line': {
-        marginTop: '-1px',
+    '.selected-lines-layer .selected-line': isFirefox()
+        ? {
+              marginTop: '-1px',
+          }
+        : {
+              marginTop: '-1px',
+              // Ensure selection marker height matches line height.
+              minHeight: '1.0rem',
+          },
 
-        // Ensure selection marker height matches line height.
-        minHeight: '1rem',
-    },
     '.selected-lines-layer .selected-line.blame-visible': {
-        marginTop: '-6px',
+        marginTop: '-5px',
 
         // Ensure selection marker height matches the increased line height.
         minHeight: 'calc(1.5rem + 1px)',
@@ -156,7 +163,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
                 return RectangleMarker.forRange(
                     view,
-                    classNames('selected-line', { ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible }),
+                    'selected-line',
                     EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
                 )
             },
@@ -274,7 +281,13 @@ const selectedLineNumberTheme = EditorView.theme({
 interface SelectableLineNumbersConfig {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
-    navigateToLineOnAnyClick: boolean
+    /**
+     * If provided, this function will be called if the user
+     * clicks anywhere in a line, not just on the line number.
+     * In this case `onSelection` will be ignored.
+     */
+    onLineClick?: (line: number) => void
+    // todo(fkling): Refactor this logic, maybe move into separate extensions
 }
 
 /**
@@ -297,7 +310,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         lineNumbers({
             domEventHandlers: {
                 mouseup(view, block, event) {
-                    if (!config.navigateToLineOnAnyClick) {
+                    if (!config.onLineClick) {
                         return false
                     }
 
@@ -306,19 +319,13 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                         return false
                     }
 
-                    const { blobInfo, navigate } = view.state.facet(blobPropsFacet)
                     const line = view.state.doc.lineAt(block.from).number
-                    const href = toPrettyBlobURL({
-                        ...blobInfo,
-                        position: { line, character: 0 },
-                    })
-                    navigate(href)
-
+                    config.onLineClick(line)
                     return true
                 },
 
                 mousedown(view, block, event) {
-                    if (config.navigateToLineOnAnyClick) {
+                    if (config.onLineClick) {
                         return false
                     }
 

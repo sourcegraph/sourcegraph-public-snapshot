@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -152,7 +151,7 @@ func newInternalHTTPHandler(
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal")
 
-	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
+	internalRouter := mux.NewRouter().PathPrefix("/.internal/").Subrouter()
 	httpapi.RegisterInternalServices(
 		internalRouter,
 		grpcServer,

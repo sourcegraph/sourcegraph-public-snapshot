@@ -511,7 +511,7 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
     return scan(query, 0)
 }
 
-function detectPatternType(query: string): SearchPatternType | undefined {
+export function detectPatternType(query: string): SearchPatternType | undefined {
     const result = scanStandard(query)
     const tokens =
         result.type === 'success'
@@ -538,6 +538,7 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
+        case SearchPatternType.newStandardRC1:
         case SearchPatternType.keyword: {
             return scanStandard(query)
         }

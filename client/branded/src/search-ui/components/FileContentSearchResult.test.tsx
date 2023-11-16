@@ -1,8 +1,8 @@
-import { afterAll, describe, expect, it } from '@jest/globals'
 import { cleanup, getAllByTestId, getByTestId } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
+import { afterAll, describe, expect, it } from 'vitest'
 
 import type { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'

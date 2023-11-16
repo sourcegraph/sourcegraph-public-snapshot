@@ -4,7 +4,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("//dev:esbuild.bzl", "esbuild_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
@@ -12,7 +12,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
-# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
@@ -53,7 +52,6 @@ eslint_test_with_types(
     config = ":eslint_config",
     deps = [
         ":web_tests",
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )
@@ -990,12 +988,6 @@ ts_project(
         "src/enterprise/insights/stores/code-insights-license.ts",
         "src/enterprise/insights/stores/index.ts",
         "src/enterprise/main.tsx",
-        "src/enterprise/namespaces/navitems.ts",
-        "src/enterprise/namespaces/routes.ts",
-        "src/enterprise/organizations/navitems.ts",
-        "src/enterprise/organizations/routes.tsx",
-        "src/enterprise/organizations/settings/routes.tsx",
-        "src/enterprise/organizations/settings/sidebaritems.ts",
         "src/enterprise/own/DeleteFileButton.tsx",
         "src/enterprise/own/IngestedFileViewer.tsx",
         "src/enterprise/own/OwnPage.tsx",
@@ -1022,14 +1014,11 @@ ts_project(
         "src/enterprise/repo/EnterpriseRepositoryFileTreePage.tsx",
         "src/enterprise/repo/enterpriseRepoContainerRoutes.tsx",
         "src/enterprise/repo/enterpriseRepoRevisionContainerRoutes.tsx",
-        "src/enterprise/repo/repoHeaderActionButtons.tsx",
         "src/enterprise/repo/settings/RepoSettingsLogsPage.tsx",
         "src/enterprise/repo/settings/RepoSettingsPermissionsPage.tsx",
         "src/enterprise/repo/settings/backend.ts",
-        "src/enterprise/repo/settings/routes.tsx",
         "src/enterprise/repo/settings/sidebaritems.ts",
         "src/enterprise/repo/settings/utils.ts",
-        "src/enterprise/routes.tsx",
         "src/enterprise/search-jobs/SearchJobBadge/SearchJobBadge.tsx",
         "src/enterprise/search-jobs/SearchJobCard/SearchJobCard.tsx",
         "src/enterprise/search-jobs/SearchJobModal/SearchJobModal.tsx",
@@ -1078,20 +1067,14 @@ ts_project(
         "src/enterprise/site-admin/overview/overviewComponents.ts",
         "src/enterprise/site-admin/productSubscription/ProductSubscriptionStatus.tsx",
         "src/enterprise/site-admin/productSubscription/SiteAdminProductSubscriptionPage.tsx",
-        "src/enterprise/site-admin/routes.tsx",
-        "src/enterprise/site-admin/sidebaritems.ts",
-        "src/enterprise/user/navitems.ts",
         "src/enterprise/user/productSubscriptions/UserProductSubscriptionStatus.tsx",
         "src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.tsx",
         "src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage.tsx",
         "src/enterprise/user/productSubscriptions/backend.ts",
-        "src/enterprise/user/routes.tsx",
         "src/enterprise/user/settings/ExternalAccountNode.tsx",
         "src/enterprise/user/settings/UserEventLogsPage.tsx",
         "src/enterprise/user/settings/auth/UserSettingsPermissionsPage.tsx",
         "src/enterprise/user/settings/auth/backend.ts",
-        "src/enterprise/user/settings/routes.tsx",
-        "src/enterprise/user/settings/sidebaritems.ts",
         "src/featureFlags/FeatureFlagsProvider.tsx",
         "src/featureFlags/createFlagMock.ts",
         "src/featureFlags/featureFlags.ts",
@@ -1161,6 +1144,7 @@ ts_project(
         "src/nav/StatusMessagesNavItemQueries.ts",
         "src/nav/UserNavItem.tsx",
         "src/nav/index.ts",
+        "src/nav/new-global-navigation/NewGlobalNavigationBar.tsx",
         "src/notebooks/GlobalNotebooksArea.tsx",
         "src/notebooks/backend.ts",
         "src/notebooks/blocks/NotebookBlock.tsx",
@@ -1185,7 +1169,6 @@ ts_project(
         "src/notebooks/listPage/NotebooksList.tsx",
         "src/notebooks/listPage/NotebooksListPage.tsx",
         "src/notebooks/listPage/NotebooksListPageHeader.tsx",
-        "src/notebooks/listPage/NotepadCta.tsx",
         "src/notebooks/notebook/NotebookAddBlockButtons.tsx",
         "src/notebooks/notebook/NotebookCommandPaletteInput.tsx",
         "src/notebooks/notebook/NotebookComponent.tsx",
@@ -1289,9 +1272,7 @@ ts_project(
         "src/repo/backend.ts",
         "src/repo/blame/useBlameHunks.ts",
         "src/repo/blame/useBlameVisibility.tsx",
-        "src/repo/blob/BlameColumn.tsx",
         "src/repo/blob/BlameDecoration.tsx",
-        "src/repo/blob/BlameRecency.tsx",
         "src/repo/blob/BlobLoadingSpinner.tsx",
         "src/repo/blob/BlobPage.tsx",
         "src/repo/blob/CodeMirrorBlob.tsx",
@@ -1303,11 +1284,24 @@ ts_project(
         "src/repo/blob/actions/ToggleRenderedFileMode.tsx",
         "src/repo/blob/actions/utils.ts",
         "src/repo/blob/backend.ts",
+        "src/repo/blob/blameRecency.tsx",
         "src/repo/blob/codemirror/blame-decorations.tsx",
         "src/repo/blob/codemirror/code-folding.tsx",
+        "src/repo/blob/codemirror/codeintel/api.ts",
+        "src/repo/blob/codemirror/codeintel/decorations.ts",
+        "src/repo/blob/codemirror/codeintel/definition.ts",
+        "src/repo/blob/codemirror/codeintel/document-highlights.ts",
+        "src/repo/blob/codemirror/codeintel/extension.ts",
+        "src/repo/blob/codemirror/codeintel/hover.ts",
+        "src/repo/blob/codemirror/codeintel/keybindings.ts",
+        "src/repo/blob/codemirror/codeintel/modifier-key.ts",
+        "src/repo/blob/codemirror/codeintel/pin.ts",
+        "src/repo/blob/codemirror/codeintel/token-selection.ts",
+        "src/repo/blob/codemirror/codeintel/tooltips.ts",
+        "src/repo/blob/codemirror/codeintel/utils.ts",
         "src/repo/blob/codemirror/document-highlights.ts",
+        "src/repo/blob/codemirror/eof.ts",
         "src/repo/blob/codemirror/highlight.ts",
-        "src/repo/blob/codemirror/hovercard.tsx",
         "src/repo/blob/codemirror/index.ts",
         "src/repo/blob/codemirror/linenumbers.ts",
         "src/repo/blob/codemirror/links.ts",
@@ -1318,17 +1312,8 @@ ts_project(
         "src/repo/blob/codemirror/scip-snapshot.ts",
         "src/repo/blob/codemirror/search.tsx",
         "src/repo/blob/codemirror/sourcegraph-extensions.ts",
-        "src/repo/blob/codemirror/token-selection/code-intel-tooltips.ts",
-        "src/repo/blob/codemirror/token-selection/decorations.ts",
-        "src/repo/blob/codemirror/token-selection/definition.ts",
-        "src/repo/blob/codemirror/token-selection/document-highlights.ts",
-        "src/repo/blob/codemirror/token-selection/extension.ts",
-        "src/repo/blob/codemirror/token-selection/keybindings.ts",
-        "src/repo/blob/codemirror/token-selection/languageSupport.ts",
-        "src/repo/blob/codemirror/token-selection/modifier-click.ts",
-        "src/repo/blob/codemirror/token-selection/selections.ts",
-        "src/repo/blob/codemirror/tooltips/CodeIntelTooltip.tsx",
         "src/repo/blob/codemirror/tooltips/CodyTooltip.tsx",
+        "src/repo/blob/codemirror/tooltips/HovercardView.tsx",
         "src/repo/blob/codemirror/tooltips/LoadingTooltip.ts",
         "src/repo/blob/codemirror/tooltips/TemporaryTooltip.tsx",
         "src/repo/blob/codemirror/utils.ts",
@@ -1377,7 +1362,6 @@ ts_project(
         "src/repo/releases/RepositoryReleasesArea.tsx",
         "src/repo/releases/RepositoryReleasesTagsPage.tsx",
         "src/repo/repoContainerRoutes.tsx",
-        "src/repo/repoHeaderActionButtons.tsx",
         "src/repo/repoRevisionContainerRoutes.tsx",
         "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
@@ -1405,7 +1389,6 @@ ts_project(
         "src/savedSearches/SavedSearchModal.tsx",
         "src/savedSearches/SavedSearchUpdateForm.tsx",
         "src/search-jobs/utility.ts",
-        "src/search/Notepad.tsx",
         "src/search/QuickLinks.tsx",
         "src/search/SearchConsolePage.tsx",
         "src/search/SearchPageWrapper.tsx",
@@ -1622,7 +1605,6 @@ ts_project(
         "src/stores/devSettings.ts",
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
-        "src/stores/notepad.ts",
         "src/storm/app-shell-init.ts",
         "src/storm/backend/route-loader.ts",
         "src/storm/pages/LayoutPage/LayoutPage.loader.ts",
@@ -1668,6 +1650,8 @@ ts_project(
         "src/team/new/NewTeamPage.tsx",
         "src/team/new/team-select/ParentTeamSelect.tsx",
         "src/team/new/team-select/backend.ts",
+        "src/telemetry/apolloTelemetryExporter.ts",
+        "src/telemetry/index.ts",
         "src/tour/GettingStartedTour.tsx",
         "src/tour/GettingStartedTourSetup.tsx",
         "src/tour/components/ItemPicker.tsx",
@@ -1686,8 +1670,11 @@ ts_project(
         "src/tour/data/index.tsx",
         "src/tour/hooks.ts",
         "src/tracking/TelemetricLink.tsx",
+        "src/tracking/cookies.ts",
         "src/tracking/eventLogger.ts",
         "src/tracking/services/serverAdminWrapper.tsx",
+        "src/tracking/sessionTracker.ts",
+        "src/tracking/userTracker.ts",
         "src/tracking/util.ts",
         "src/types/fzy.js/index.d.ts",
         "src/user/area/UserArea.tsx",
@@ -1759,6 +1746,7 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
@@ -1876,7 +1864,7 @@ ts_project(
     name = "web_tests",
     testonly = True,
     srcs = [
-        "src/__mocks__/zustand.ts",
+        "__mocks__/zustand.ts",
         "src/auth/PostSignUpPage.test.tsx",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
@@ -1969,6 +1957,7 @@ ts_project(
         "src/repo/RevisionsPopover/RevisionsPopover.mocks.ts",
         "src/repo/RevisionsPopover/RevisionsPopover.test.tsx",
         "src/repo/blob/actions/ToggleRenderedFileMode.test.tsx",
+        "src/repo/blob/codemirror/codeintel/utils.test.ts",
         "src/repo/blob/codemirror/document-highlights.test.ts",
         "src/repo/blob/codemirror/utils.test.ts",
         "src/repo/commit/CommitMessageWithLinks.test.tsx",
@@ -1976,7 +1965,7 @@ ts_project(
         "src/repo/linkifiy/get-links.test.ts",
         "src/repo/releases/RepositoryReleasesTagsPage.test.tsx",
         "src/repo/tree/TreePage.test.tsx",
-        "src/search/Notepad.test.tsx",
+        "src/repo/utils.test.ts",
         "src/search/helpers.test.tsx",
         "src/search/index.test.ts",
         "src/search/input/useRecentSearches.test.tsx",
@@ -1991,11 +1980,11 @@ ts_project(
         "src/site-admin/outbound-webhooks/mocks.ts",
         "src/site/LicenseExpirationAlert.test.tsx",
         "src/stores/navbarSearchQueryState.test.ts",
-        "src/stores/notepad.test.ts",
         "src/team/area/testContext.mock.ts",
-        "src/testGlobals.d.ts",  #keep
+        "src/testSetup.test.ts",
         "src/tour/components/Tour/Tour.test.tsx",
         "src/tour/components/Tour/useTour.test.tsx",
+        "src/tracking/userTracker.test.ts",
         "src/tracking/util.test.ts",
         "src/user/index.test.ts",
         "src/user/settings/auth/ExternalAccount.test.tsx",
@@ -2025,7 +2014,6 @@ ts_project(
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/state",
         "//:node_modules/@codemirror/view",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@testing-library/dom",
         "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
@@ -2054,6 +2042,7 @@ ts_project(
         "//:node_modules/rxjs",
         "//:node_modules/semver",
         "//:node_modules/sinon",
+        "//:node_modules/vitest",
         "//:node_modules/wildcard-mock-link",
         "//:node_modules/zustand",
         "//client/shared:graphql_operations",
@@ -2071,18 +2060,19 @@ npm_package(
     ],
 )
 
-jest_test(
+filegroup(
+    name = "snapshots",
+    srcs = glob(["src/**/__snapshots__/*"]),
+)
+
+vitest_test(
     name = "test",
     size = "enormous",  # make sure bazel reserves enough RAM for this.
     timeout = "moderate",
     data = [
+        ":module_styles",
+        ":snapshots",
         ":web_tests",
-    ],
-    patch_node_fs = False,
-    shard_count = 8,  # empirical
-    tags = [
-        "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
-        "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )
 
@@ -2112,7 +2102,7 @@ BUNDLE_DATA_DEPS = [
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
-    "//client/web/dev:esbuild-config-production",
+    "//client/web/dev:esbuild-config-production_bundle",
 ]
 
 esbuild(
@@ -2121,7 +2111,7 @@ esbuild(
         ":web_lib",
         "//:package_json",
     ],
-    config = "//client/web/dev:esbuild-config-production",
+    config = "//client/web/dev:esbuild-config-production_bundle",
     entry_points = [
         "src/enterprise/main.js",
         "src/enterprise/embed/embedMain.js",
@@ -2140,7 +2130,7 @@ esbuild_web_app(
         ":web_lib",
         "//:package_json",
     ],
-    config = "//client/web/dev:esbuild-config-production",
+    config = "//client/web/dev:esbuild-config-production_bundle",
     define = {
         "process.env.INTEGRATION_TESTS": "true",
     },
@@ -2148,6 +2138,7 @@ esbuild_web_app(
         "src/enterprise/main.js",
         "src/enterprise/embed/embedMain.js",
     ],
+    sourcemap = "linked",
     visibility = ["//visibility:public"],
     deps = ESBUILD_CONFIG_DEPS,
 )

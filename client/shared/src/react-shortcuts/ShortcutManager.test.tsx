@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals'
 import { createEvent, fireEvent, render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as sinon from 'sinon'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { platform } from '../testing/dom-utils'
 
@@ -15,7 +15,7 @@ describe('ShortcutManager', () => {
     const originalGetModifierState = KeyboardEvent.prototype.getModifierState
 
     beforeAll(() => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         // jsdom doesn't implement getModifierState properly:
         // https://github.com/jsdom/jsdom/issues/3126
         KeyboardEvent.prototype.getModifierState = function (key: string): boolean {
@@ -38,7 +38,7 @@ describe('ShortcutManager', () => {
     })
 
     afterAll(() => {
-        jest.useRealTimers()
+        vi.useRealTimers()
         KeyboardEvent.prototype.getModifierState = originalGetModifierState
     })
 
@@ -94,7 +94,7 @@ describe('ShortcutManager', () => {
 
         sinon.assert.notCalled(foSpy)
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.notCalled(fSpy)
         sinon.assert.calledOnce(foSpy)
@@ -113,7 +113,7 @@ describe('ShortcutManager', () => {
 
         sinon.assert.notCalled(spy)
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.notCalled(spy)
     })
@@ -129,7 +129,7 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('fo')
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.notCalled(spy)
     })
@@ -146,7 +146,7 @@ describe('ShortcutManager', () => {
 
         userEvent.keyboard('foo')
 
-        jest.runAllTimers()
+        vi.runAllTimers()
 
         sinon.assert.calledOnce(spy)
     })

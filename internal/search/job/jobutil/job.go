@@ -622,20 +622,6 @@ func mapSlice(values []string, f func(string) string) []string {
 	return res
 }
 
-func count(b query.Basic, p search.Protocol) int {
-	if count := b.Count(); count != nil {
-		return *count
-	}
-
-	switch p {
-	case search.Batch:
-		return limits.DefaultMaxSearchResults
-	case search.Streaming:
-		return limits.DefaultMaxSearchResultsStreaming
-	}
-	panic("unreachable")
-}
-
 // toTextPatternInfo converts a an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
@@ -823,7 +809,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		PatternType:    b.patternType,
 	}
 
 	switch typ {
@@ -854,7 +840,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		PatternType:    b.patternType,
 	}
 
 	switch typ {

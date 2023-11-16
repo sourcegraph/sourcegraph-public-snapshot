@@ -197,7 +197,6 @@ func TestDefinitionWithFiltering(t *testing.T) {
 type mockSymbolsServer struct {
 	mockSearchGRPC         func(ctx context.Context, request *proto.SearchRequest) (*proto.SearchResponse, error)
 	mockLocalCodeIntelGRPC func(request *proto.LocalCodeIntelRequest, ss proto.SymbolsService_LocalCodeIntelServer) error
-	mockListLanguagesGRPC  func(ctx context.Context, request *proto.ListLanguagesRequest) (*proto.ListLanguagesResponse, error)
 	mockSymbolInfoGRPC     func(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error)
 	mockHealthzGRPC        func(ctx context.Context, request *proto.HealthzRequest) (*proto.HealthzResponse, error)
 
@@ -241,14 +240,6 @@ func (m *mockSymbolsServer) LocalCodeIntel(r *proto.LocalCodeIntelRequest, ss pr
 	}
 
 	return errors.Newf("grpc: method %q not implemented", "LocalCodeIntel")
-}
-
-func (m *mockSymbolsServer) ListLanguages(ctx context.Context, r *proto.ListLanguagesRequest) (*proto.ListLanguagesResponse, error) {
-	if m.mockListLanguagesGRPC != nil {
-		return m.mockListLanguagesGRPC(ctx, r)
-	}
-
-	return nil, errors.Newf("grpc: method %q not implemented", "ListLanguages")
 }
 
 func (m *mockSymbolsServer) SymbolInfo(ctx context.Context, r *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {

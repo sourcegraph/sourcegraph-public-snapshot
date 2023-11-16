@@ -1,9 +1,9 @@
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 // Inspired by React's packages/dom-event-testing-library/domEnvironment.js
 
 const originalPlatform = window.navigator.platform
-const platformGetter = jest.spyOn(window.navigator, 'platform', 'get')
+const platformGetter = vi.spyOn(window.navigator, 'platform', 'get')
 
 /**
  * Change environment host platform.

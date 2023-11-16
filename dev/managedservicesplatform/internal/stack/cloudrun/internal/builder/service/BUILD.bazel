@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = ["service.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder/service",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resource/cloudflare",
+        "//dev/managedservicesplatform/internal/resource/cloudflareorigincert",
+        "//dev/managedservicesplatform/internal/resource/loadbalancer",
+        "//dev/managedservicesplatform/internal/resource/managedcert",
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/internal/stack/cloudrun/internal/builder",
+        "//dev/managedservicesplatform/spec",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2service",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2serviceiammember",
+    ],
+)

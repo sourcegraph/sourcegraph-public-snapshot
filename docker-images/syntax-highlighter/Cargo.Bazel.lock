@@ -1,5 +1,5 @@
 {
-  "checksum": "288db33db039b863e97c43a6dc03bbb6fe334ab97e11d52e00b63dd3e6c17487",
+  "checksum": "b813eddd1263bbce3f460a00f5935f2831d593422814c1ba4f5f49fd5fb340d9",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -69,6 +69,81 @@
         "version": "1.0.2"
       },
       "license": "0BSD OR MIT OR Apache-2.0"
+    },
+    "ahash 0.7.7": {
+      "name": "ahash",
+      "version": "0.7.7",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/ahash/0.7.7/download",
+          "sha256": "5a824f2aa7e75a0c98c5a504fceb80649e9c35265d44525b5f94de4771a395cd"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "ahash",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "ahash",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "ahash 0.7.7",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {
+            "cfg(any(target_os = \"linux\", target_os = \"android\", target_os = \"windows\", target_os = \"macos\", target_os = \"ios\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\", target_os = \"dragonfly\", target_os = \"solaris\", target_os = \"illumos\", target_os = \"fuchsia\", target_os = \"redox\", target_os = \"cloudabi\", target_os = \"haiku\", target_os = \"vxworks\", target_os = \"emscripten\", target_os = \"wasi\"))": [
+              {
+                "id": "getrandom 0.2.10",
+                "target": "getrandom"
+              }
+            ],
+            "cfg(not(all(target_arch = \"arm\", target_os = \"none\")))": [
+              {
+                "id": "once_cell 1.18.0",
+                "target": "once_cell"
+              }
+            ]
+          }
+        },
+        "edition": "2018",
+        "version": "0.7.7"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "version_check 0.9.4",
+              "target": "version_check"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT OR Apache-2.0"
     },
     "aho-corasick 1.0.4": {
       "name": "aho-corasick",
@@ -1927,6 +2002,56 @@
         "version": "1.0.0"
       },
       "license": "MIT OR Apache-2.0"
+    },
+    "colored 2.0.4": {
+      "name": "colored",
+      "version": "2.0.4",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/colored/2.0.4/download",
+          "sha256": "2674ec482fbc38012cf31e6c42ba0177b431a0cb6f15fe40efa5aab1bda516f6"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "colored",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "colored",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "is-terminal 0.4.9",
+              "target": "is_terminal"
+            },
+            {
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            }
+          ],
+          "selects": {
+            "cfg(windows)": [
+              {
+                "id": "windows-sys 0.48.0",
+                "target": "windows_sys"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "2.0.4"
+      },
+      "license": "MPL-2.0"
     },
     "console 0.15.7": {
       "name": "console",
@@ -4401,6 +4526,52 @@
         "version": "1.8.2"
       },
       "license": "MIT OR Apache-2.0"
+    },
+    "hashbrown 0.11.2": {
+      "name": "hashbrown",
+      "version": "0.11.2",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/hashbrown/0.11.2/download",
+          "sha256": "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "hashbrown",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "hashbrown",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "ahash",
+            "inline-more"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "ahash 0.7.7",
+              "target": "ahash"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.11.2"
+      },
+      "license": "Apache-2.0/MIT"
     },
     "hashbrown 0.12.3": {
       "name": "hashbrown",
@@ -10125,13 +10296,13 @@
       },
       "license": "Unlicense/MIT"
     },
-    "scip 0.3.1": {
+    "scip 0.3.2": {
       "name": "scip",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/scip/0.3.1/download",
-          "sha256": "3e84d21062a3ba08d58870c8c36b0c005b2b2261c6ad1bf7042585427c781883"
+          "url": "https://crates.io/api/v1/crates/scip/0.3.2/download",
+          "sha256": "05ba59776110d1ff814521aaf9c688f82361292c830f208aa3476d5b1e248713"
         }
       },
       "targets": [
@@ -10160,7 +10331,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.3.1"
+        "version": "0.3.2"
       },
       "license": "Apache-2.0"
     },
@@ -10261,7 +10432,7 @@
               "target": "rustc_hash"
             },
             {
-              "id": "scip 0.3.1",
+              "id": "scip 0.3.2",
               "target": "scip"
             },
             {
@@ -10319,7 +10490,7 @@
               "target": "protobuf"
             },
             {
-              "id": "scip 0.3.1",
+              "id": "scip 0.3.2",
               "target": "scip"
             },
             {
@@ -10338,8 +10509,18 @@
       "name": "scip-treesitter-cli",
       "version": "0.1.0",
       "repository": null,
-      "targets": [],
-      "library_target_name": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "scip_treesitter_cli",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "scip_treesitter_cli",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -10357,6 +10538,10 @@
             {
               "id": "clap 4.3.23",
               "target": "clap"
+            },
+            {
+              "id": "colored 2.0.4",
+              "target": "colored"
             },
             {
               "id": "indicatif 0.17.7",
@@ -10379,8 +10564,24 @@
               "target": "protobuf"
             },
             {
-              "id": "scip 0.3.1",
+              "id": "scip 0.3.2",
               "target": "scip"
+            },
+            {
+              "id": "serde 1.0.164",
+              "target": "serde"
+            },
+            {
+              "id": "serde_json 1.0.99",
+              "target": "serde_json"
+            },
+            {
+              "id": "string-interner 0.14.0",
+              "target": "string_interner"
+            },
+            {
+              "id": "walkdir 2.3.3",
+              "target": "walkdir"
             }
           ],
           "selects": {}
@@ -10426,7 +10627,7 @@
               "target": "lazy_static"
             },
             {
-              "id": "scip 0.3.1",
+              "id": "scip 0.3.2",
               "target": "scip"
             },
             {
@@ -10904,7 +11105,7 @@
               "target": "rocket"
             },
             {
-              "id": "scip 0.3.1",
+              "id": "scip 0.3.2",
               "target": "scip"
             },
             {
@@ -11432,6 +11633,64 @@
       },
       "license": "BSL-1.0"
     },
+    "string-interner 0.14.0": {
+      "name": "string-interner",
+      "version": "0.14.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/string-interner/0.14.0/download",
+          "sha256": "91e2531d8525b29b514d25e275a43581320d587b86db302b9a7e464bac579648"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "string_interner",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "string_interner",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "backends",
+            "default",
+            "inline-more",
+            "serde",
+            "serde-1",
+            "std"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "cfg-if 1.0.0",
+              "target": "cfg_if"
+            },
+            {
+              "id": "hashbrown 0.11.2",
+              "target": "hashbrown"
+            },
+            {
+              "id": "serde 1.0.164",
+              "target": "serde"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.14.0"
+      },
+      "license": "MIT/Apache-2.0"
+    },
     "strsim 0.10.0": {
       "name": "strsim",
       "version": "0.10.0",
@@ -11771,7 +12030,7 @@
               "target": "rustyline"
             },
             {
-              "id": "scip 0.3.1",
+              "id": "scip 0.3.2",
               "target": "scip"
             },
             {
@@ -17057,6 +17316,33 @@
     "cfg(all(target_arch = \"x86_64\", target_env = \"msvc\", not(windows_raw_dylib)))": [
       "x86_64-pc-windows-msvc"
     ],
+    "cfg(any(target_os = \"linux\", target_os = \"android\", target_os = \"windows\", target_os = \"macos\", target_os = \"ios\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\", target_os = \"dragonfly\", target_os = \"solaris\", target_os = \"illumos\", target_os = \"fuchsia\", target_os = \"redox\", target_os = \"cloudabi\", target_os = \"haiku\", target_os = \"vxworks\", target_os = \"emscripten\", target_os = \"wasi\"))": [
+      "aarch64-apple-darwin",
+      "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
+      "aarch64-linux-android",
+      "aarch64-pc-windows-msvc",
+      "aarch64-unknown-linux-gnu",
+      "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
+      "armv7-unknown-linux-gnueabi",
+      "i686-apple-darwin",
+      "i686-linux-android",
+      "i686-pc-windows-msvc",
+      "i686-unknown-freebsd",
+      "i686-unknown-linux-gnu",
+      "powerpc-unknown-linux-gnu",
+      "s390x-unknown-linux-gnu",
+      "wasm32-wasi",
+      "x86_64-apple-darwin",
+      "x86_64-apple-ios",
+      "x86_64-fuchsia",
+      "x86_64-linux-android",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-freebsd",
+      "x86_64-unknown-linux-gnu"
+    ],
     "cfg(any(target_pointer_width = \"8\", target_pointer_width = \"16\", target_pointer_width = \"32\"))": [
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
@@ -17098,6 +17384,37 @@
       "x86_64-unknown-linux-gnu"
     ],
     "cfg(loom)": [],
+    "cfg(not(all(target_arch = \"arm\", target_os = \"none\")))": [
+      "aarch64-apple-darwin",
+      "aarch64-apple-ios",
+      "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
+      "aarch64-linux-android",
+      "aarch64-pc-windows-msvc",
+      "aarch64-unknown-linux-gnu",
+      "arm-unknown-linux-gnueabi",
+      "armv7-linux-androideabi",
+      "armv7-unknown-linux-gnueabi",
+      "i686-apple-darwin",
+      "i686-linux-android",
+      "i686-pc-windows-msvc",
+      "i686-unknown-freebsd",
+      "i686-unknown-linux-gnu",
+      "powerpc-unknown-linux-gnu",
+      "riscv32imc-unknown-none-elf",
+      "riscv64gc-unknown-none-elf",
+      "s390x-unknown-linux-gnu",
+      "wasm32-unknown-unknown",
+      "wasm32-wasi",
+      "x86_64-apple-darwin",
+      "x86_64-apple-ios",
+      "x86_64-fuchsia",
+      "x86_64-linux-android",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-freebsd",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-none"
+    ],
     "cfg(not(any(windows, target_os = \"hermit\", target_os = \"unknown\")))": [
       "aarch64-apple-darwin",
       "aarch64-apple-ios",

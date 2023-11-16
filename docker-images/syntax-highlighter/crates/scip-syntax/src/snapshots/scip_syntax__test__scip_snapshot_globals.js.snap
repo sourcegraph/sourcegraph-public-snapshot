@@ -4,15 +4,15 @@ expression: dumped
 ---
   // Traditional variable declaration
   var traditionalVar = "Hello, I'm an old-style variable";
-//    ^^^^^^^^^^^^^^ definition scip-ctags traditionalVar.
+//    ^^^^^^^^^^^^^^ definition(Variable) scip-ctags traditionalVar.
   
   // Let variable declaration
   let scopedLetVar = "Hello, I'm a block-scoped variable";
-//    ^^^^^^^^^^^^ definition scip-ctags scopedLetVar.
+//    ^^^^^^^^^^^^ definition(Variable) scip-ctags scopedLetVar.
   
   // Constant variable declaration
   const constantVar = "Hello, I'm a constant variable";
-//      ^^^^^^^^^^^ definition scip-ctags constantVar.
+//      ^^^^^^^^^^^ definition(Variable) scip-ctags constantVar.
   
   // Function declaration
   function functionDeclaration() {
@@ -22,13 +22,13 @@ expression: dumped
   
   // Anonymous function declaration
   var anonymousFunction = function() {
-//    ^^^^^^^^^^^^^^^^^ definition scip-ctags anonymousFunction.
+//    ^^^^^^^^^^^^^^^^^ definition(Variable) scip-ctags anonymousFunction.
     return "Hello, I'm an anonymous function";
   };
   
   // ES6 arrow function declaration
   const arrowFunction = () => {
-//      ^^^^^^^^^^^^^ definition scip-ctags arrowFunction.
+//      ^^^^^^^^^^^^^ definition(Variable) scip-ctags arrowFunction.
     return "Hello, I'm an arrow function";
   };
   
@@ -43,7 +43,7 @@ expression: dumped
   
   // Object declaration
   var objectDeclaration = {
-//    ^^^^^^^^^^^^^^^^^ definition scip-ctags objectDeclaration.
+//    ^^^^^^^^^^^^^^^^^ definition(Variable) scip-ctags objectDeclaration.
     message: "Hello, I'm an object declaration"
 //  ^^^^^^^ definition(Property) scip-ctags objectDeclaration.message.
   };
@@ -54,11 +54,11 @@ expression: dumped
     this.message = "Hello, I'm an object constructor";
   }
   var objectConstructed = new ObjectConstructor();
-//    ^^^^^^^^^^^^^^^^^ definition scip-ctags objectConstructed.
+//    ^^^^^^^^^^^^^^^^^ definition(Variable) scip-ctags objectConstructed.
   
   // ES6 method shorthand in object declaration
   var objectWithMethods = {
-//    ^^^^^^^^^^^^^^^^^ definition scip-ctags objectWithMethods.
+//    ^^^^^^^^^^^^^^^^^ definition(Variable) scip-ctags objectWithMethods.
     method() {
       return "Hello, I'm a method in an object";
     }

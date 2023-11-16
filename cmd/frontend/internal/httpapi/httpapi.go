@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
@@ -110,9 +109,9 @@ func NewHandler(
 		WriteErrBody: env.InsecureDev,
 	})
 
-	m.PathPrefix("/registry").Methods("GET").Name(apirouter.Registry).Handler(trace.Route(jsonHandler(frontendregistry.HandleRegistry)))
-	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Name(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))
-	m.Path("/graphql").Methods("POST").Name(apirouter.GraphQL).Handler(trace.Route(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false))))
+	m.PathPrefix("/registry").Methods("GET").Handler(trace.Route(jsonHandler(frontendregistry.HandleRegistry)))
+	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Handler(trace.Route(handlers.SCIMHandler))
+	m.Path("/graphql").Methods("POST").Handler(trace.Route(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false))))
 
 	// Webhooks
 	//
@@ -149,10 +148,10 @@ func NewHandler(
 	m.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
 	m.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
 	m.Path("/files/batch-changes/{spec}").Methods("POST").Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
-	m.Path("/lsif/upload").Methods("POST").Name(apirouter.LSIFUpload).Handler(trace.Route(lsifDeprecationHandler))
-	m.Path("/scip/upload").Methods("POST").Name(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
-	m.Path("/scip/upload").Methods("HEAD").Name(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
-	m.Path("/compute/stream").Methods("GET", "POST").Name(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
+	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(lsifDeprecationHandler))
+	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
+	m.Path("/scip/upload").Methods("HEAD").Handler(trace.Route(noopHandler))
+	m.Path("/compute/stream").Methods("GET", "POST").Handler(trace.Route(handlers.NewComputeStreamHandler()))
 	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Handler(trace.Route(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream"))))
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
@@ -198,6 +197,11 @@ func NewHandler(
 	return m, nil
 }
 
+const (
+	gitInfoRefs   = "internal.git.info-refs"
+	gitUploadPack = "internal.git.upload-pack"
+)
+
 // RegisterInternalServices registers REST and gRPC handlers for Sourcegraph's internal API on the
 // provided mux.Router and gRPC server.
 //
@@ -226,6 +230,7 @@ func RegisterInternalServices(
 
 	// zoekt-indexserver endpoints
 	gsClient := gitserver.NewClient("http.zoektindexerserver")
+
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer"),
@@ -239,28 +244,25 @@ func RegisterInternalServices(
 		Ranking:                rankingService,
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
-	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
-	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
-	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
-	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
+
+	gitService := &gitServiceHandler{Gitserver: gsClient}
+	m.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(gitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
+	m.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(gitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
+	m.Path("/repos/index").Methods("POST").Handler(trace.Route(handler(indexer.serveList)))
+	m.Path("/configuration").Methods("POST").Handler(trace.Route(handler(serveConfiguration)))
+	m.Path("/ranks/{RepoName:.*}/documents").Methods("GET").Handler(trace.Route(handler(indexer.serveDocumentRanks)))
+	m.Path("/search/configuration").Methods("GET", "POST").Handler(trace.Route(handler(indexer.serveConfiguration)))
+	m.Path("/search/index-status").Methods("POST").Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
+	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Path("/scip/upload").Methods("HEAD").Handler(trace.Route(noopHandler))
+	m.Path("/search/stream").Methods("GET").Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Path("/compute/stream").Methods("GET", "POST").Handler(trace.Route(newComputeStreamHandler()))
+	m.Path("/graphql").Methods("POST").Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
+	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 
 	zoektProto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
 	confProto.RegisterConfigServiceServer(s, &configServer{})
-
-	gitService := &gitServiceHandler{
-		Gitserver: gsClient,
-	}
-	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
-	m.Get(apirouter.GitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
-	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
-	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
-
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
-	m.Get(apirouter.SCIPUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
-	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
