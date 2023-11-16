@@ -89,63 +89,63 @@ describe('Repository', () => {
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, fileEntries),
                 FileCommits: () => ({
                     repository: {
-                            __typename: 'Repository',
-                            id: repositoryName,
-                            commit: {
-                                __typename: 'GitCommit',
-                                id: '1',
-                                tree: {
-                                    __typename: 'GitTree',
-                                    entries: fileEntries.map((fileName, index) => ({
-                                        __typename: 'GitBlob',
-                                        path: fileName,
-                                        history: {
-                                            __typename: 'TreeEntryConnection',
-                                            nodes: [
-                                                {
-                                                    __typename: 'GitBlob',
-                                                    commit: {
-                                                        __typename: 'GitCommit',
-                                                        id: '1',
-                                                        author: {
-                                                            __typename: 'Signature',
-                                                            person: {
-                                                                avatarURL: '',
-                                                                name: 'Sourcegraph Bot',
-                                                                email: 'batch-changes@sourcegraph.com',
-                                                                displayName: 'Sourcegraph Bot',
-                                                                user: null,
-                                                            },
-                                                            date: '2020-04-29T16:57:20Z',
-                                                        },
-                                                        committer: {
-                                                            __typename: 'Signature',
-                                                            person: {
-                                                                avatarURL: '',
-                                                                name: 'Sourcegraph Bot',
-                                                                email: 'batch-changes@sourcegraph.com',
-                                                                displayName: 'Sourcegraph Bot',
-                                                                user: null,
-                                                            },
-                                                            date: '2020-04-29T16:57:20Z',
-                                                        },
-                                        subject: 'update LSIF indexing CI workflow',
-                                        canonicalURL: commitUrl,
-                                        externalURLs: [
+                        __typename: 'Repository',
+                        id: repositoryName,
+                        commit: {
+                            __typename: 'GitCommit',
+                            id: '1',
+                            tree: {
+                                __typename: 'GitTree',
+                                entries: fileEntries.map((fileName, index) => ({
+                                    __typename: 'GitBlob',
+                                    path: fileName,
+                                    history: {
+                                        __typename: 'TreeEntryConnection',
+                                        nodes: [
                                             {
-                                                url: 'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                                serviceKind: ExternalServiceKind.GITHUB,
+                                                __typename: 'GitBlob',
+                                                commit: {
+                                                    __typename: 'GitCommit',
+                                                    id: '1',
+                                                    author: {
+                                                        __typename: 'Signature',
+                                                        person: {
+                                                            avatarURL: '',
+                                                            name: 'Sourcegraph Bot',
+                                                            email: 'batch-changes@sourcegraph.com',
+                                                            displayName: 'Sourcegraph Bot',
+                                                            user: null,
+                                                        },
+                                                        date: '2020-04-29T16:57:20Z',
+                                                    },
+                                                    committer: {
+                                                        __typename: 'Signature',
+                                                        person: {
+                                                            avatarURL: '',
+                                                            name: 'Sourcegraph Bot',
+                                                            email: 'batch-changes@sourcegraph.com',
+                                                            displayName: 'Sourcegraph Bot',
+                                                            user: null,
+                                                        },
+                                                        date: '2020-04-29T16:57:20Z',
+                                                    },
+                                                    subject: 'update LSIF indexing CI workflow',
+                                                    canonicalURL: commitUrl,
+                                                    externalURLs: [
+                                                        {
+                                                            url: 'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                                            serviceKind: ExternalServiceKind.GITHUB,
+                                                        },
+                                                    ],
+                                                },
                                             },
                                         ],
-                                        }
-                                        }
-                                        ]
-                                        }
-                                        }))
-                                },
-                                }
-                            }
-                    }),
+                                    },
+                                })),
+                            },
+                        },
+                    },
+                }),
 
                 RepositoryCommit: () => ({
                     node: {

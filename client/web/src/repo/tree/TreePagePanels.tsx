@@ -155,7 +155,7 @@ export interface FilePanelProps {
 export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className }) => {
     const hasHistoryEntries = historyEntries && historyEntries.length > 0
     const fileHistoryByPath = useMemo(() => {
-        const fileHistoryByPath: Record<string, GitCommitFields> = {}
+        const fileHistoryByPath: Record<string, TreeHistoryFields['history']['nodes'][number]['commit']> = {}
         for (const entry of historyEntries || []) {
             fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
         }
@@ -201,7 +201,10 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                         {fileHistoryByPath[entry.path] && (
                             <>
                                 <td className={styles.commitMessage}>
-                                    <span title={fileHistoryByPath[entry.path].subject} data-testid="git-commit-message-with-links">
+                                    <span
+                                        title={fileHistoryByPath[entry.path].subject}
+                                        data-testid="git-commit-message-with-links"
+                                    >
                                         <CommitMessageWithLinks
                                             to={fileHistoryByPath[entry.path].canonicalURL}
                                             message={fileHistoryByPath[entry.path].subject}
