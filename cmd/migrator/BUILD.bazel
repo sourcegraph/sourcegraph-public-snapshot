@@ -31,9 +31,6 @@ go_binary(
 
 # See tools/release/README.md for details.
 genrule(
-    "schema-descriptions/v5.2.3-internal_database_schema.codeinsights.json",
-    "schema-descriptions/v5.2.3-internal_database_schema.codeintel.json",
-    "schema-descriptions/v5.2.3-internal_database_schema.json",
     name = "tar_schema_descriptions",
     srcs = ["@schemas_archive//file"],
     outs = ["schema_descriptions.tar"],
