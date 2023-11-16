@@ -338,60 +338,6 @@ func TestSources_ListRepos(t *testing.T) {
 	{
 		svcs := types.ExternalServices{
 			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:                   "https://gitlab.com",
-					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
-					RepositoryPathPattern: "{host}/{pathWithNamespace}",
-					ProjectQuery:          []string{"none"},
-					Projects: []*schema.GitLabProject{
-						{Name: "sg-test.d/repo-git"},
-						{Name: "sg-test.d/repo-gitrepo"},
-					},
-					NameTransformations: []*schema.GitLabNameTransformation{
-						{
-							Regex:       "\\.d/",
-							Replacement: "/",
-						},
-						{
-							Regex:       "-git$",
-							Replacement: "",
-						},
-					},
-				})),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "nameTransformations updates the repo name",
-			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
-				return func(t testing.TB, rs types.Repos) {
-					t.Helper()
-
-					have := rs.Names()
-					sort.Strings(have)
-
-					var want []string
-					switch s.Kind {
-					case extsvc.KindGitLab:
-						want = []string{
-							"gitlab.com/sg-test/repo",
-							"gitlab.com/sg-test/repo-gitrepo",
-						}
-					}
-
-					if !reflect.DeepEqual(have, want) {
-						t.Error(cmp.Diff(have, want))
-					}
-				}
-			},
-		})
-	}
-
-	{
-		svcs := types.ExternalServices{
-			{
 				Kind: extsvc.KindPhabricator,
 				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PhabricatorConnection{
 					Url:   "https://secure.phabricator.com",
@@ -623,6 +569,63 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 		})
 	}
 
+}
+
+func TestSources_ListRepos_GitLab_NameTransformations(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
+	ctx := context.Background()
+
+	cf, save := NewClientFactory(t, "GITLAB/nameTransformations-updates-the-repo-name")
+	defer save(t)
+
+	logger := logtest.NoOp(t)
+	sourcer := NewSourcer(logger, dbmocks.NewMockDB(), cf)
+
+	svc := &types.ExternalService{
+		Kind: extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
+			Url:                   "https://gitlab.com",
+			Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+			RepositoryPathPattern: "{host}/{pathWithNamespace}",
+			ProjectQuery:          []string{"none"},
+			Projects: []*schema.GitLabProject{
+				{Name: "sg-test.d/repo-git"},
+				{Name: "sg-test.d/repo-gitrepo"},
+			},
+			NameTransformations: []*schema.GitLabNameTransformation{
+				{
+					Regex:       "\\.d/",
+					Replacement: "/",
+				},
+				{
+					Regex:       "-git$",
+					Replacement: "",
+				},
+			},
+		})),
+	}
+
+	src, err := sourcer(ctx, svc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := ListAll(ctx, src)
+	if err != nil {
+		t.Errorf("error listing repos: %s", err)
+	}
+
+	have := types.Repos(repos).Names()
+
+	wantNames := []string{
+		"gitlab.com/sg-test/repo-gitrepo",
+		"gitlab.com/sg-test/repo",
+	}
+
+	if !reflect.DeepEqual(have, wantNames) {
+		t.Error(cmp.Diff(have, wantNames))
+	}
 }
 
 func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
