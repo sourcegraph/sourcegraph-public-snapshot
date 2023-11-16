@@ -27,7 +27,6 @@ import {
 } from '../../components/FilteredConnection/ui'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
-    TreeCommitsResult,
     TreeHistoryFields,
     TreePageOwnershipNodeFields,
     TreePageOwnershipResult,
@@ -51,11 +50,6 @@ import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
 
 const COUNT = 20
-
-export interface TreeCommitsResponse {
-    ancestors: NonNullable<Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']>['ancestors']
-    externalURLs: Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['externalURLs']
-}
 
 const ExtraInfoSectionItem: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
     <div className={styles.extraInfoSectionItem}>{children}</div>
