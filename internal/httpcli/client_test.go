@@ -343,8 +343,8 @@ func TestErrorResilience(t *testing.T) {
 				ContextErrorMiddleware,
 			),
 			NewErrorResilientTransportOpt(
-				NewRetryPolicy(20, time.Second),
-				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+				newRetryPolicy(20, time.Second),
+				expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -366,8 +366,8 @@ func TestErrorResilience(t *testing.T) {
 				ContextErrorMiddleware,
 			),
 			NewErrorResilientTransportOpt(
-				NewRetryPolicy(0, time.Second), // zero retries
-				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+				newRetryPolicy(0, time.Second), // zero retries
+				expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -384,7 +384,7 @@ func TestErrorResilience(t *testing.T) {
 	t.Run("no such host", func(t *testing.T) {
 		// spy on policy so we see what decisions it makes
 		retries := 0
-		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
+		policy := newRetryPolicy(5, time.Second) // smaller retries for faster failures
 		wrapped := func(a Attempt) bool {
 			if policy(a) {
 				retries++
@@ -409,7 +409,7 @@ func TestErrorResilience(t *testing.T) {
 			},
 			NewErrorResilientTransportOpt(
 				wrapped,
-				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+				expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -490,8 +490,8 @@ func TestLoggingMiddleware(t *testing.T) {
 				NewLoggingMiddleware(logger),
 			),
 			NewErrorResilientTransportOpt(
-				NewRetryPolicy(20, time.Second),
-				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+				newRetryPolicy(20, time.Second),
+				expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -609,7 +609,7 @@ func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
 		}
 		attempt := int(a)
 
-		delay := ExpJitterDelayOrRetryAfterDelay(base, max)(Attempt{
+		delay := expJitterDelayOrRetryAfterDelay(base, max)(Attempt{
 			Index: attempt,
 		})
 
@@ -667,7 +667,7 @@ func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
-				assert.Equal(t, tc.wantDelay, ExpJitterDelayOrRetryAfterDelay(tc.base, tc.max)(Attempt{
+				assert.Equal(t, tc.wantDelay, expJitterDelayOrRetryAfterDelay(tc.base, tc.max)(Attempt{
 					Index: 2,
 					Response: &http.Response{
 						Header: tc.responseHeaders,
@@ -714,7 +714,7 @@ func TestRetryAfter(t *testing.T) {
 		}
 		// spy on policy so we see what decisions it makes
 		retries := 0
-		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
+		policy := newRetryPolicy(5, time.Second) // smaller retries for faster failures
 		wrapped := func(a Attempt) bool {
 			if policy(a) {
 				retries++
@@ -729,7 +729,7 @@ func TestRetryAfter(t *testing.T) {
 			),
 			NewErrorResilientTransportOpt(
 				wrapped,
-				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+				expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
@@ -766,7 +766,7 @@ func TestRetryAfter(t *testing.T) {
 					}
 					// spy on policy so we see what decisions it makes
 					retries := 0
-					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
+					policy := newRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
 					wrapped := func(a Attempt) bool {
 						if policy(a) {
 							retries++
@@ -781,7 +781,7 @@ func TestRetryAfter(t *testing.T) {
 						),
 						NewErrorResilientTransportOpt(
 							wrapped,
-							ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+							expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 						),
 					).Doer()
 
@@ -815,7 +815,7 @@ func TestRetryAfter(t *testing.T) {
 			}
 			// spy on policy so we see what decisions it makes
 			retries := 0
-			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
+			policy := newRetryPolicy(5, time.Second) // smaller retries for faster failures
 			wrapped := func(a Attempt) bool {
 				if policy(a) {
 					retries++
@@ -830,7 +830,7 @@ func TestRetryAfter(t *testing.T) {
 				),
 				NewErrorResilientTransportOpt(
 					wrapped,
-					ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+					expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 				),
 			).Doer()
 
@@ -869,7 +869,7 @@ func TestRetryAfter(t *testing.T) {
 					}
 					// spy on policy so we see what decisions it makes
 					retries := 0
-					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
+					policy := newRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
 					wrapped := func(a Attempt) bool {
 						if policy(a) {
 							retries++
@@ -884,7 +884,7 @@ func TestRetryAfter(t *testing.T) {
 						),
 						NewErrorResilientTransportOpt(
 							wrapped,
-							ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+							expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 						),
 					).Doer()
 
@@ -918,7 +918,7 @@ func TestRetryAfter(t *testing.T) {
 			}
 			// spy on policy so we see what decisions it makes
 			retries := 0
-			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
+			policy := newRetryPolicy(5, time.Second) // smaller retries for faster failures
 			wrapped := func(a Attempt) bool {
 				if policy(a) {
 					retries++
@@ -933,7 +933,7 @@ func TestRetryAfter(t *testing.T) {
 				),
 				NewErrorResilientTransportOpt(
 					wrapped,
-					ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+					expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 				),
 			).Doer()
 
@@ -965,7 +965,7 @@ func TestRetryAfter(t *testing.T) {
 		}
 		// spy on policy so we see what decisions it makes
 		retries := 0
-		policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
+		policy := newRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
 		wrapped := func(a Attempt) bool {
 			if policy(a) {
 				retries++
@@ -980,7 +980,7 @@ func TestRetryAfter(t *testing.T) {
 			),
 			NewErrorResilientTransportOpt(
 				wrapped,
-				ExpJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
+				expJitterDelayOrRetryAfterDelay(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 

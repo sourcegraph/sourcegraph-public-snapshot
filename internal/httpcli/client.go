@@ -109,8 +109,8 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
-			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
+			newRetryPolicy(maxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
+			expJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
 	)
@@ -142,8 +142,8 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts), internalRetryAfterMaxDuration),
-			ExpJitterDelayOrRetryAfterDelay(internalRetryDelayBase, internalRetryDelayMax),
+			newRetryPolicy(maxRetries(internalRetryMaxAttempts), internalRetryAfterMaxDuration),
+			expJitterDelayOrRetryAfterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,

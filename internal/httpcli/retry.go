@@ -23,28 +23,28 @@ import (
 
 // NewErrorResilientTransportOpt returns an Opt that wraps an existing
 // http.Transport of an http.Client with automatic retries.
-func NewErrorResilientTransportOpt(retry RetryFn, delay DelayFn) Opt {
+func NewErrorResilientTransportOpt(retry retryFn, delay delayFn) Opt {
 	return func(cli *http.Client) error {
 		if cli.Transport == nil {
 			cli.Transport = http.DefaultTransport
 		}
 
-		cli.Transport = WrapTransport(NewTransport(cli.Transport, retry, delay), cli.Transport)
+		cli.Transport = WrapTransport(NewRetryingTransport(cli.Transport, retry, delay), cli.Transport)
 		return nil
 	}
 }
 
-// MaxRetries returns the max retries to be attempted, which should be passed
+// maxRetries returns the max retries to be attempted, which should be passed
 // to NewRetryPolicy. If we're in tests, it returns 0, otherwise n.
-func MaxRetries(n int) int {
+func maxRetries(n int) int {
 	if testutil.IsTest {
 		return 0
 	}
 	return n
 }
 
-// NewRetryPolicy returns a retry policy based on some Sourcegraph defaults.
-func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) RetryFn {
+// newRetryPolicy returns a retry policy based on some Sourcegraph defaults.
+func newRetryPolicy(max int, maxRetryAfterDuration time.Duration) retryFn {
 	// Indicates in trace whether or not this request was retried at some point
 	const retriedTraceAttributeKey = "httpcli.retried"
 
@@ -199,14 +199,14 @@ func extractRetryAfter(response *http.Response) (retryAfterHeader string, retryA
 	return retryAfterHeader, nil
 }
 
-// ExpJitterDelayOrRetryAfterDelay returns a DelayFn that returns a delay
+// expJitterDelayOrRetryAfterDelay returns a DelayFn that returns a delay
 // between 0 and base * 2^attempt capped at max (an exponential backoff delay
 // with jitter), unless a 'retry-after' value is provided in the response - then
 // the 'retry-after' duration is used, up to max.
 //
 // See the full jitter algorithm in:
 // http://www.awsarchitectureblog.com/2015/03/backoff.html
-func ExpJitterDelayOrRetryAfterDelay(base, max time.Duration) DelayFn {
+func expJitterDelayOrRetryAfterDelay(base, max time.Duration) delayFn {
 	var mu sync.Mutex
 	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return func(attempt Attempt) time.Duration {
@@ -280,19 +280,19 @@ type Attempt struct {
 	Error error
 }
 
-// retryFn is the signature for functions that implement retry strategies.
-type retryFn func(attempt Attempt) (bool, time.Duration)
+// retryWithDelayFn is the signature for functions that implement retry strategies.
+type retryWithDelayFn func(attempt Attempt) (bool, time.Duration)
 
-// DelayFn is the signature for functions that return the delay to apply
+// delayFn is the signature for functions that return the delay to apply
 // before the next retry.
-type DelayFn func(attempt Attempt) time.Duration
+type delayFn func(attempt Attempt) time.Duration
 
-// RetryFn is the signature for functions that return whether a
+// retryFn is the signature for functions that return whether a
 // retry should be done for the request.
-type RetryFn func(attempt Attempt) bool
+type retryFn func(attempt Attempt) bool
 
 // toRetryFn combines retry and delay into a retryFn.
-func toRetryFn(retry RetryFn, delay DelayFn) retryFn {
+func toRetryFn(retry retryFn, delay delayFn) retryWithDelayFn {
 	return func(attempt Attempt) (bool, time.Duration) {
 		if ok := retry(attempt); !ok {
 			return false, 0
@@ -301,11 +301,11 @@ func toRetryFn(retry RetryFn, delay DelayFn) retryFn {
 	}
 }
 
-// NewTransport creates a Transport with a retry strategy based on
+// NewRetryingTransport creates a Transport with a retry strategy based on
 // retry and delay to control the retry logic. It uses the provided
 // RoundTripper to execute the requests. If rt is nil,
 // http.DefaultTransport is used.
-func NewTransport(rt http.RoundTripper, retry RetryFn, delay DelayFn) *retryTransport {
+func NewRetryingTransport(rt http.RoundTripper, retry retryFn, delay delayFn) *retryTransport {
 	if rt == nil {
 		rt = http.DefaultTransport
 	}
@@ -320,7 +320,7 @@ func NewTransport(rt http.RoundTripper, retry RetryFn, delay DelayFn) *retryTran
 type retryTransport struct {
 	http.RoundTripper
 
-	predicate retryFn
+	predicate retryWithDelayFn
 }
 
 // RoundTrip implements http.RoundTripper for the Transport type.
@@ -329,7 +329,8 @@ type retryTransport struct {
 func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var attempt int
 
-	// buffer the body if needed
+	// buffer the body if needed. If req.GetBody is set, we will use that to reset
+	// the reader instead.
 	var bufferedReqBody *bytes.Reader
 	if req.GetBody == nil && req.Body != nil && req.Body != http.NoBody {
 		var buf bytes.Buffer
