@@ -21,7 +21,7 @@ import {
 
 import { FileContentEditor } from '../../cody/components/FileContentEditor'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
-import type { BlobFileFields, GitCommitFields, TreeHistoryFields } from '../../graphql-operations'
+import type { BlobFileFields, TreeHistoryFields } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
@@ -214,7 +214,11 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     </span>
                                 </td>
                                 <td className={classNames(styles.commitDate, 'text-muted')}>
-                                    <Timestamp noAbout={true} date={getCommitDate(fileHistoryByPath[entry.path])} />
+                                    <Timestamp
+                                        noAbout={true}
+                                        noAgo={true}
+                                        date={getCommitDate(fileHistoryByPath[entry.path])}
+                                    />
                                 </td>
                             </>
                         )}
