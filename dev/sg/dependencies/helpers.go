@@ -489,7 +489,7 @@ func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) erro
 
 	// If the file exists, but doesn't reference PG_UTILS_PATH, that's an error as well.
 	if pgUtilsPath == "" {
-		return errors.Newf("%s doesn't define PG_UTILS_PATH", userBazelRcPath)
+		return errors.Newf("none on the content in %s matched %q", userBazelRcPath, pgUtilsPathRe.String())
 	}
 
 	// Check that this path contains createdb as expected.
