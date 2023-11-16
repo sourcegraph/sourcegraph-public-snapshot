@@ -2073,7 +2073,6 @@ vitest_test(
         ":module_styles",
         ":snapshots",
         ":web_tests",
-        "//:postcss_config_js",
     ],
 )
 
