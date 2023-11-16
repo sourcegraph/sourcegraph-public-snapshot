@@ -224,117 +224,6 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
-	{
-		svcs := types.ExternalServices{
-			{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-					Repos: []string{
-						"sourcegraph/Sourcegraph",
-						"tsenart/Vegeta",
-						"tsenart/vegeta-missing",
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:          "https://gitlab.com",
-					Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
-					ProjectQuery: []string{"none"},
-					Projects: []*schema.GitLabProject{
-						{Name: "gnachman/iterm2"},
-						{Name: "gnachman/iterm2-missing"},
-						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
-					Url:             "https://bitbucket.sgdev.org",
-					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					RepositoryQuery: []string{"none"},
-					Repos: []string{
-						"Sour/vegetA",
-						"sour/sourcegraph",
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindOther,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.OtherExternalServiceConnection{
-					Url: "https://github.com",
-					Repos: []string{
-						"google/go-cmp",
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindAWSCodeCommit,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
-					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
-					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
-					},
-				})),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "included repos that exist are yielded",
-			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
-				return func(t testing.TB, rs types.Repos) {
-					t.Helper()
-
-					have := rs.Names()
-					sort.Strings(have)
-
-					var want []string
-					switch s.Kind {
-					case extsvc.KindGitHub:
-						want = []string{
-							"github.com/sourcegraph/sourcegraph",
-							"github.com/tsenart/vegeta",
-						}
-					case extsvc.KindBitbucketServer:
-						want = []string{
-							"bitbucket.sgdev.org/SOUR/sourcegraph",
-							"bitbucket.sgdev.org/SOUR/vegeta",
-						}
-					case extsvc.KindGitLab:
-						want = []string{
-							"gitlab.com/gitlab-org/gitlab-ce",
-							"gitlab.com/gnachman/iterm2",
-						}
-					case extsvc.KindAWSCodeCommit:
-						want = []string{
-							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
-							"empty-repo",
-							"stripe-go",
-							"test",
-							"test2",
-						}
-					case extsvc.KindOther:
-						want = []string{
-							"github.com/google/go-cmp",
-						}
-					}
-
-					if !reflect.DeepEqual(have, want) {
-						t.Error(cmp.Diff(have, want))
-					}
-				}
-			},
-		})
-	}
-
 	for _, tc := range testCases {
 		for _, svc := range tc.svcs {
 			name := svc.Kind + "/" + tc.name
@@ -360,6 +249,128 @@ func TestSources_ListRepos(t *testing.T) {
 				tc.assert(svc)(t, repos)
 			})
 		}
+	}
+}
+
+func TestSources_ListRepos_YieldExistingRepos(t *testing.T) {
+	ratelimit.SetupForTest(t)
+	rcache.SetupForTest(t)
+
+	tests := []struct {
+		svc       *types.ExternalService
+		wantNames []string
+	}{
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+					Repos: []string{
+						"sourcegraph/Sourcegraph",
+						"tsenart/Vegeta",
+						"tsenart/vegeta-missing",
+					},
+				})),
+			},
+			wantNames: []string{
+				"github.com/sourcegraph/sourcegraph",
+				"github.com/tsenart/vegeta",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitLab,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
+					Url:          "https://gitlab.com",
+					Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
+					ProjectQuery: []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+						{Name: "gnachman/iterm2-missing"},
+						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
+					},
+				})),
+			},
+			wantNames: []string{
+				"gitlab.com/gitlab-org/gitlab-ce",
+				"gitlab.com/gnachman/iterm2",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindBitbucketServer,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+					Url:             "https://bitbucket.sgdev.org",
+					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryQuery: []string{"none"},
+					Repos: []string{
+						"Sour/vegetA",
+						"sour/sourcegraph",
+					},
+				})),
+			},
+			wantNames: []string{
+				"bitbucket.sgdev.org/SOUR/sourcegraph",
+				"bitbucket.sgdev.org/SOUR/vegeta",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindAWSCodeCommit,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+				})),
+			},
+			wantNames: []string{
+				"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+				"empty-repo",
+				"stripe-go",
+				"test",
+				"test2",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindOther,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.OtherExternalServiceConnection{
+					Url: "https://github.com",
+					Repos: []string{
+						"google/go-cmp",
+					},
+				})),
+			},
+			wantNames: []string{
+				"github.com/google/go-cmp",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.svc.Kind, func(t *testing.T) {
+			name := tc.svc.Kind + "/included-repos-that-exist-are-yielded"
+
+			cf, save := NewClientFactory(t, name)
+			defer save(t)
+
+			repos := listRepos(t, cf, tc.svc)
+
+			var haveNames []string
+			for _, r := range repos {
+				haveNames = append(haveNames, string(r.Name))
+			}
+			sort.Strings(haveNames)
+
+			if !reflect.DeepEqual(haveNames, tc.wantNames) {
+				t.Error(cmp.Diff(haveNames, tc.wantNames))
+			}
+		})
 	}
 }
 
@@ -554,6 +565,7 @@ func TestSources_Phabricator(t *testing.T) {
 
 func TestSources_ListRepos_GitLab_NameTransformations(t *testing.T) {
 	ratelimit.SetupForTest(t)
+	rcache.SetupForTest(t)
 
 	cf, save := NewClientFactory(t, "GITLAB/nameTransformations-updates-the-repo-name")
 	defer save(t)
@@ -584,10 +596,11 @@ func TestSources_ListRepos_GitLab_NameTransformations(t *testing.T) {
 
 	repos := listRepos(t, cf, svc)
 	haveNames := types.Repos(repos).Names()
+	sort.Strings(haveNames)
 
 	wantNames := []string{
-		"gitlab.com/sg-test/repo-gitrepo",
 		"gitlab.com/sg-test/repo",
+		"gitlab.com/sg-test/repo-gitrepo",
 	}
 
 	if !reflect.DeepEqual(haveNames, wantNames) {
@@ -597,6 +610,7 @@ func TestSources_ListRepos_GitLab_NameTransformations(t *testing.T) {
 
 func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
 	ratelimit.SetupForTest(t)
+	rcache.SetupForTest(t)
 
 	cf, save := NewClientFactory(t, "BITBUCKETSERVER/bitbucketserver-archived")
 	defer save(t)
