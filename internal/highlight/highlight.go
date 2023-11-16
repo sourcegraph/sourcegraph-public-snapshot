@@ -417,7 +417,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
 		LineLengthLimit:  maxLineLength,
-		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
