@@ -352,14 +352,13 @@ func (s *Server) NewClonePipeline(logger log.Logger, cloneQueue *common.Queue[*c
 }
 
 type clonePipelineRoutine struct {
-	logger log.Logger
-
-	tasks chan *cloneTask
-	// TODO: Get rid of this dependency.
-	s      *Server
-	queue  *common.Queue[*cloneJob]
-	cancel context.CancelFunc
+	logger     log.Logger
+    tasks      chan *cloneTask
+    db         database.GitserverRepoStore
+    rpsLimiter // RPS limiter shared with the server	
 }
+
+func (p* clonePipelineroutine) doClone() ...
 
 func (p *clonePipelineRoutine) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -412,7 +411,7 @@ func (p *clonePipelineRoutine) cloneJobProducer(ctx context.Context, tasks chan<
 }
 
 func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
-	logger := p.s.Logger.Scoped("cloneJobConsumer")
+	logger := p.logger.Scoped("cloneJobConsumer")
 
 	for task := range tasks {
 		logger := logger.With(log.String("job.repo", string(task.repo)))
