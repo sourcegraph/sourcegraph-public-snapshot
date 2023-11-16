@@ -27,10 +27,10 @@ describe('Site Admin', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     // Flaky https://github.com/sourcegraph/sourcegraph/issues/45531
-    // test.skip('Overview', async () => {
-    //     await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
-    //     await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
-    // })
+    test('Overview', async () => {
+        await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
+        await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
+    })
 
     test('Repositories list', async () => {
         await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
