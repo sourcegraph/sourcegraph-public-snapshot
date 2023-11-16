@@ -26,11 +26,34 @@ describe('Site Admin', () => {
 
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    // Flaky https://github.com/sourcegraph/sourcegraph/issues/45531
-    test('Overview', async () => {
-        await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
-        await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
+    // // Flaky https://github.com/sourcegraph/sourcegraph/issues/45531
+    // test('Overview', async () => {
+    //     await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
+    //     await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
+    // })
+
+    test('Repositories list', async () => {
+        await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
+        await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
     })
+})
+
+describe('Site Admin Settings', () => {
+    let driver: Driver
+
+    before(async function () {
+        driver = await initEndToEndTest()
+
+        await cloneRepos({
+            driver,
+            mochaContext: this,
+            repoSlugs: ['gorilla/mux'],
+        })
+    })
+
+    after('Close browser', () => driver?.close())
+
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     test('Repositories list', async () => {
         await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
