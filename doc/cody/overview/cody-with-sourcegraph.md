@@ -97,51 +97,61 @@
 
 </style>
 
-# Enabling Cody with Sourcegraph.com
+# Cody for Web
 
-<p class="subtitle">Learn how to connect and use Cody with the Sourcegraph instance.</p>
+<p class="subtitle">Learn how to use Cody in the web interface with Sourcegraph.com</p>
 
-Cody uses Sourcegraph to provide contextually relevant answers and code. To install and use Cody with your [code editor](./../overview/install-vscode.md) or [desktop app](./../overview/app/index.md), you must connect it to your Sourcegraph.com account. For more advanced and customized usage, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
+In addition to the Cody extensions for [VS Code](./install-vscode.md), [JetBrains](./install-jetbrains.md) IDEs, and [Neovim](./install-neovim.md), Cody is also available in the Sourcegraph web app. Community users can use Cody for free by logging into their accounts on Sourcegraph.com, and enterprise users can use Cody within their Sourcegraph instance.
 
 <ul class="limg">
   <li>
-    <a class="card text-left" target="_blank" href="https://sourcegraph.com/cody">
-      <h3><img alt="JetBrains" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody with Sourcegraph.com</h3>
-      <p>Connect Cody with your Sourcegraph account.</p>
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/sign-in?returnTo=/search">
+      <h3><img alt="Cody for Web" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody for Web</h3>
+      <p>Use Cody in the Sourcegraph web app.</p>
     </a>
   </li>
   </ul>
 
 ## Initial setup
 
-- [Create a Sourcegraph.com account](https://sourcegraph.com/sign-up)
-- Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-- Open the Cody extension
-- Click on **Other Sign In Options...** and select Sign in to Sourcegraph.com
-- Follow the prompts to authorize Cody to access your Sourcegraph.com account
+Create a [Sourcegraph.com account](https://sourcegraph.com/sign-up) by logging in through codehosts like GitHub and GitLab or via traditional Google sign-in. This takes you to Sourcegraph's Code Search interface, where you can chat with and get help from Cody in the web.
 
-You've now successfully connected Cody to your Sourcegraph.com instance.
+Enterprise users can also log in to their Sourcegraph.com Enterprise instance and use Cody in the web interface.
 
-## Configure code graph context for code-aware answers
+## Using Cody chat
 
-After connecting Cody to Sourcegraph.com, you can optionally use [code graph context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on sourcegraph.com, which have embeddings.
+To view how Cody works in the web, let's try running a global Sourcegraph search query on a repository of your choice.
 
-You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/run-search-query.mp4" type="video/mp4">
+</video>
 
-To use Cody with code graph on private code, it's recommended to download the [Cody App](./../overview/app/index.md) or [enable Cody for Enterprise](enable-cody-enterprise.md).
+You can view the default **Ask Cody** chat interface on the right sidebar. Once connected, Cody automatically gains context to your connected codebase to help you provide contextually-aware and accurate answers to your questions. There are also example questions that you can use to get started.
 
-### Enable code graph context
+When using Cody chat in the web, you can select up to 10 repositories to use as context for your question. If you're logged in to Sourcegraph.com, these can be any **ten** open source repositories that Sourcegraph indexes. If you're an enterprise customer logged in to your company's Sourcegraph instance, these can be any ten repositories indexed by your site admin.
 
-The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. Enter the repository's name with embeddings, and Cody can provide more accurate and relevant answers to your coding questions based on that repository's content. To configure this setting in VS Code:
+Let's **Ask Cody** to explain the tech stack of a repository.
 
-- Open the **Cody Extension Settings**
-- Search for the `Cody: Codebase`
-- Enter the repository name
-- For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/search-cody-chat.mp4" type="video/mp4">
+</video>
 
-## More benefits
+## Run Commands
 
-Read more about [Cody capabilities](./../capabilities.md) to learn about all the features it provides to boost your development productivity.
+You can also run predefined, reusable prompts [Cody Commands](./../capabilities.md#commands) on your Code Search results. These help you generate contextually aware answers for a selected code snippet or the entire codebase. You can run the following commands:
+
+- Explain code
+- Generate a docstring
+- Smell code for bugs
+- Generate a unit test
+- Improve variable names
+- Transpile code to a programming language of your choice
+
+Let's run a command to generate a unit test for a selected function.
+
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-commands-sg.mp4" type="video/mp4">
+</video>
 
 ## More resources
 
@@ -150,4 +160,4 @@ For more information on what to do next, we recommend the following resources:
 <div class="cards">
   <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends how to use Cody once you have installed the extension in your VS Code editor.</p></a>
   <a class="card text-left" href="./../use-cases"><b>Cody Use Cases</b><p>Explore some of the most common use cases of Cody that helps you with your development workflow.</p></a>
-</div>
+</div

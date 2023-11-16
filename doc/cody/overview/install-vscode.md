@@ -166,12 +166,11 @@ In addition, to support customization and advanced use cases, you can create Cus
 
 ## Enable code graph context for context-aware answers (Optional)
 
-After connecting Cody with VS Code, you can optionally use and configure [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code.
+After connecting Cody extension to Sourcegraph.com, you can optionally use [Code Graph Context](./../core-concepts/code-graph.md) to improve Cody's context of existing code. Note that Code Graph Context is only available for public repositories on Sourcegraph.com, which have embeddings.
 
-Learn more about how to:
+You can view the [list of repositories with embeddings here](../embedded-repos.md). To add any of these to your dev environment, contact a Sourcegraph team member via [Discord](https://discord.gg/8wJF5EdAyA) to get help with the access and setup.
 
-- [Configure code graph context for Sourcegraph.com][cody-with-sourcegraph-config-graph]
-- [Configure code graph context for Sourcegraph Enterprise][enable-cody-enterprise-config-graph]
+To use Cody with code graph on private code, it's recommended to [enable Cody for Enterprise](enable-cody-enterprise.md).
 
 ### Configure Code Graph Context
 
@@ -181,6 +180,11 @@ The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the C
 - Search for the `Cody: Codebase`
 - Enter the repository name
 - For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
+
+Learn more about how to:
+
+- [Configure code graph context for Sourcegraph.com][cody-with-sourcegraph-config-graph]
+- [Configure code graph context for Sourcegraph Enterprise][enable-cody-enterprise-config-graph]
 
 ## Updating the extension
 

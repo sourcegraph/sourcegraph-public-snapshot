@@ -162,6 +162,10 @@ You can start using Cody with one of the following clients:
     </a>
   </li>
   <li>
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/sign-in?returnTo=/search">
+      <h3><img alt="Cody for Web" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody for Web</h3>
+      <p>Use Cody in the Sourcegraph web app.</p>
+    </a>
      <a class="card text-left" target="_blank" href="https://sourcegraph.com/get-cody">
       <h3><img alt="Cody App" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/cody-logomark-default.svg"/>Cody for Desktop</h3>
       <p>Free desktop app to try Cody with your local codebase.</p>
