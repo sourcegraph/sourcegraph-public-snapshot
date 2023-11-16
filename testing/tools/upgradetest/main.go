@@ -64,7 +64,7 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 	defer cleanup()
 
 	// ensure env correctly initialized
-	if err := validateUpgrade(ctx, latestMinorVersion.String(), dbs); err != nil {
+	if err := validateUpgrade(ctx, latestMinorVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion.String()), networkName, dbs); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
 		return err
 	}
@@ -81,7 +81,7 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 
 	// Run standard upgrade via migrators "up" command
 	if err := run.Cmd(ctx,
-		dockerMigratorBaseString("migrator:candidate", networkName, "up", initHash, hash)...).
+		dockerMigratorBaseString("up", "migrator:candidate", networkName, initHash, dbs)...).
 		Run().Stream(os.Stdout); err != nil {
 		fmt.Println("🚨 failed to upgrade: ", err)
 		cleanup()
@@ -100,7 +100,7 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 
 	fmt.Println("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
-	if err := validateUpgrade(ctx, "0.0.0+dev", dbs); err != nil {
+	if err := validateUpgrade(ctx, "0.0.0+dev", "migrator:candidate", networkName, dbs); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
 		return err
 	}
@@ -215,7 +215,7 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	// Initialize the databases by running migrator with the `up` command.
 	fmt.Println("-- 🏗️  initializing database schemas with migrator")
 	if err := run.Cmd(ctx,
-		dockerMigratorBaseString(fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, "up", hash, hash)...).
+		dockerMigratorBaseString("up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, hash, dbs)...).
 		Run().Stream(os.Stdout); err != nil {
 		fmt.Println("🚨 failed to initialize database: ", err)
 	}
@@ -274,51 +274,69 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	return hash, networkName, dbs, cleanup, err
 }
 
-func validateUpgrade(ctx context.Context, version string, dbs []testDB) error {
-	fmt.Println("-- 🔎  validating dbs")
-	fmt.Println("🔎 checking dbs for drift")
+func validateUpgrade(ctx context.Context, version, migratorImage, networkName string, dbs []testDB) error {
+	fmt.Println("-- ⚙️  validating dbs")
 
-	// Get DB client for frontend db
-	dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", dbs[0].ContainerHostPort))
-	if err != nil {
-		fmt.Printf("🚨 failed to connect to %s: %s\n", dbs[0].Name, err)
-		return err
+	// Get DB clients
+	clients := make(map[string]*sql.DB)
+	for _, db := range dbs {
+		client, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
+		if err != nil {
+			fmt.Printf("🚨 failed to connect to %s: %s\n", db.Name, err)
+			return err
+		}
+		defer client.Close()
+
+		clients[db.Name] = client
 	}
-	defer dbClient.Close()
 
 	// Verify the versions.version value in the frontend db
 	fmt.Println("🔎 checking pgsql versions.version set")
 	var testVersion string
-	row := dbClient.QueryRowContext(ctx, `SELECT version FROM versions;`)
-	err = row.Scan(&testVersion)
-	if err != nil {
+	row := clients["pgsql"].QueryRowContext(ctx, `SELECT version FROM versions;`)
+	if err := row.Scan(&testVersion); err != nil {
 		fmt.Println("🚨 failed to get version from pgsql db: ", err)
 		return err
 	}
 	if version != testVersion {
 		fmt.Printf("🚨 versions.version not set: %s!= %s\n", version, testVersion)
 		return fmt.Errorf("versions.versions not set: %s!= %s", version, testVersion)
-	} else {
-		fmt.Println("✅ versions.version set: ", testVersion)
 	}
 
-	// Check for any failed migrations in the migration logs table
-	fmt.Println("🔎 checking pgsql migration logs")
-	var numFailedMigrations int
-	row = dbClient.QueryRowContext(ctx, `SELECT count(*) FROM migration_logs WHERE success=false;`)
-	err = row.Scan(&numFailedMigrations)
-	if err != nil {
-		fmt.Println("🚨 failed to get failed migrations from pgsql db: ", err)
-		return err
-	}
-	if numFailedMigrations > 0 {
-		fmt.Printf("🚨 failed migrations found: %d\n", numFailedMigrations)
-		return fmt.Errorf("failed migrations found: %d", numFailedMigrations)
-	} else {
+	fmt.Println("✅ versions.version set: ", testVersion)
+
+	// Check for any failed migrations in the migration logs tables
+	for _, db := range dbs {
+		fmt.Printf("🔎 checking %s migration_logs\n", db.HashName)
+		var numFailedMigrations int
+		row = clients[db.Name].QueryRowContext(ctx, `SELECT count(*) FROM migration_logs WHERE success=false;`)
+		if err := row.Scan(&numFailedMigrations); err != nil {
+			fmt.Printf("🚨 failed to get failed migrations from %s db: %s\n", db.HashName, err)
+			return err
+		}
+		if numFailedMigrations > 0 {
+			fmt.Printf("🚨 failed migrations found: %d\n", numFailedMigrations)
+			return fmt.Errorf("failed migrations found: %d", numFailedMigrations)
+		}
+
 		fmt.Println("✅ no failed migrations found")
 	}
 
-	// TODO run migrator drift check
+	// Check DBs for drift
+	fmt.Println("🔎 Checking DBs for drift")
+	for _, db := range dbs {
+		hash, err := newContainerHash()
+		if err != nil {
+			fmt.Printf("🚨 failed to get container hash: %s\n", err)
+			return err
+		}
+		fmt.Println(db.Name)
+		if err = run.Cmd(ctx, dockerMigratorBaseString(fmt.Sprintf("drift --db %s --version v%s --ignore-migrator-update", db.Name, version),
+			migratorImage, networkName, hash, dbs)...).Run().Stream(os.Stdout); err != nil {
+			fmt.Printf("🚨 failed to check drift on %s: %s\n", db.Name, err)
+			return err
+		}
+	}
 
 	return nil
 }
@@ -395,24 +413,24 @@ func startFrontend(ctx context.Context, image, version, networkName string, hash
 }
 
 // dockerMigratorBaseString a slice of strings constituting the necessary arguments to run the migrator via docker container the CI test env.
-func dockerMigratorBaseString(migratorImage, networkName, cmd string, initHash, migratorHash []byte) []string {
+func dockerMigratorBaseString(cmd, migratorImage, networkName string, migratorHash []byte, dbs []testDB) []string {
 	return []string{"docker", "run", "--rm",
 		"--platform", "linux/amd64",
 		"--name", fmt.Sprintf("wg_migrator_%x", migratorHash),
 		// "-e", "SRC_LOG_LEVEL=debug",
-		"-e", fmt.Sprintf("PGHOST=wg_pgsql_%x", initHash),
+		"-e", fmt.Sprintf("PGHOST=%s", dbs[0].HashName),
 		"-e", "PGPORT=5432",
 		"-e", "PGUSER=sg",
 		"-e", "PGPASSWORD=sg",
 		"-e", "PGDATABASE=sg",
 		"-e", "PGSSLMODE=disable",
-		"-e", fmt.Sprintf("CODEINTEL_PGHOST=wg_codeintel-db_%x", initHash),
+		"-e", fmt.Sprintf("CODEINTEL_PGHOST=%s", dbs[1].HashName),
 		"-e", "CODEINTEL_PGPORT=5432",
 		"-e", "CODEINTEL_PGUSER=sg",
 		"-e", "CODEINTEL_PGPASSWORD=sg",
 		"-e", "CODEINTEL_PGDATABASE=sg",
 		"-e", "CODEINTEL_PGSSLMODE=disable",
-		"-e", fmt.Sprintf("CODEINSIGHTS_PGHOST=wg_codeinsights-db_%x", initHash),
+		"-e", fmt.Sprintf("CODEINSIGHTS_PGHOST=%s", dbs[2].HashName),
 		"-e", "CODEINSIGHTS_PGPORT=5432",
 		"-e", "CODEINSIGHTS_PGUSER=sg", // starting codeinsights without frontend initializes with user sg rather than postgres
 		"-e", "CODEINSIGHTS_PGPASSWORD=password",
