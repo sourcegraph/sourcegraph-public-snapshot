@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -29,12 +30,30 @@ func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() 
 			// request where the event is being created, as they should all happen
 			// within the interaction, even when recording a set of events e.g. from
 			// buffering.
-			eventTrace := trace.FromContext(ctx).SpanContext()
-			if !eventTrace.IsValid() {
+			var traceID *string
+			if eventTrace := trace.FromContext(ctx).SpanContext(); eventTrace.IsValid() {
+				traceID = pointers.Ptr(eventTrace.TraceID().String())
+			}
+
+			// Get geolocation of request client, if there is one.
+			var geolocation *EventInteraction_Geolocation
+			if rc := requestclient.FromContext(ctx); rc != nil {
+				if cc, err := rc.OriginCountryCode(); err == nil {
+					geolocation = &EventInteraction_Geolocation{
+						CountryCode: cc,
+					}
+				}
+			}
+
+			// If we have nothing interesting to show, leave out Interaction
+			// entirely.
+			if traceID == nil && geolocation == nil {
 				return nil
 			}
+
 			return &EventInteraction{
-				TraceId: pointers.Ptr(eventTrace.TraceID().String()),
+				TraceId:     traceID,
+				Geolocation: geolocation,
 			}
 		}(),
 		User: func() *EventUser {

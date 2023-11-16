@@ -18,6 +18,7 @@ This page contains generated documentation for telemetry event data that gets ex
     - [EventFeatureFlags](#telemetrygateway-v1-EventFeatureFlags)
     - [EventFeatureFlags.FlagsEntry](#telemetrygateway-v1-EventFeatureFlags-FlagsEntry)
     - [EventInteraction](#telemetrygateway-v1-EventInteraction)
+    - [EventInteraction.Geolocation](#telemetrygateway-v1-EventInteraction-Geolocation)
     - [EventMarketingTracking](#telemetrygateway-v1-EventMarketingTracking)
     - [EventParameters](#telemetrygateway-v1-EventParameters)
     - [EventParameters.MetadataEntry](#telemetrygateway-v1-EventParameters-MetadataEntry)
@@ -126,6 +127,22 @@ This page contains generated documentation for telemetry event data that gets ex
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | trace_id | [string](#string) | optional | <p>OpenTelemetry trace ID representing the interaction associated with the event.</p> |
+| geolocation | [EventInteraction.Geolocation](#telemetrygateway-v1-EventInteraction-Geolocation) | optional | <p>Geolocation associated with the interaction, typically inferred from the</p><p>originating client's IP address (which we do not collect).</p> |
+
+
+
+
+
+
+<a name="telemetrygateway-v1-EventInteraction-Geolocation"></a>
+
+### EventInteraction.Geolocation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| country_code | [string](#string) |  | <p>Inferred ISO 3166-1 alpha-2 or alpha-3 country code</p> |
 
 
 
