@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "bytesize",
+    srcs = ["bytesize.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/bytesize",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "bytesize_test",
+    srcs = ["bytesize_test.go"],
+    embed = [":bytesize"],
+)

@@ -42,7 +42,6 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Slash (`/`) commands     |    ✓    |     x     |   x   |
 | Chat predictions     |    ✓    |     x     |   x   |
 | Show context files     |    ✓    |     ✓     |   ✓    |
-| Show context files     |    ✓    |     ✓     |   ✓    |
 | Custom commands     |    ✓    |     x     |   x   |
 | Clear chat history     |    ✓    |     ✓     |   x    |
 
