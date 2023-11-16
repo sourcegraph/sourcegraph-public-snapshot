@@ -34,6 +34,6 @@ describe('Site Admin', () => {
         await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
         await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
 
-        driver?.close())
+        driver?.close()
     })
 })
