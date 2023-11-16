@@ -139,13 +139,13 @@
             "description": "If set, repositories with a size above the specified one will be excluded. Specify in kb.",
             "type": "string",
             "minLength": 2,
-            "pattern": "^[<>=]{1,2}\\s*\\d+\\s*\\w+$"
+            "pattern": "^[<>]{1}[=]{0,1}\\s*\\d+\\s*\\w+$"
           },
           "stars": {
             "description": "If set, repositories stars less than the specified number will be.",
             "type": "string",
             "minLength": 2,
-            "pattern": "^[<>=]{1,2}\\s*\\d+$"
+            "pattern": "^[<>]{1}[=]{0,1}\\s*\\d+$"
           }
         }
       },
