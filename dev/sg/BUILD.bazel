@@ -127,6 +127,11 @@ go_library(
 go_binary(
     name = "sg",
     embed = [":sg_lib"],
+    # keep
+    gotags = select({
+        "//:sg_msp_flag": ["msp"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
