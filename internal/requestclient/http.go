@@ -80,10 +80,19 @@ func httpMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
 			}
 		}
 
+		var cfRequestCountryCode string
+		if hasCloudflareProxy {
+			// Use trusted Cloudflare-provided country code of the request.
+			// https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#cf-ipcountry
+			cfRequestCountryCode = req.Header.Get("CF-IPCountry")
+		}
+
 		ctxWithClient := WithClient(req.Context(), &Client{
 			IP:           strings.Split(req.RemoteAddr, ":")[0],
 			ForwardedFor: req.Header.Get(headerKeyForwardedFor),
 			UserAgent:    req.Header.Get(headerKeyUserAgent),
+
+			wafGeolocationCountryCode: cfRequestCountryCode,
 		})
 		next.ServeHTTP(rw, req.WithContext(ctxWithClient))
 	})
