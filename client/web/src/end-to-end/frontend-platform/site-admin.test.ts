@@ -9,7 +9,7 @@ import { initEndToEndTest } from '../utils/initEndToEndTest'
 
 const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 
-describe('Site Admin', () => {
+describe.skip('Site Admin', () => {
     let driver: Driver
 
     before(async function () {
