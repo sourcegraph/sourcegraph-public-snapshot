@@ -1,4 +1,4 @@
-import React, { type MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { FC, type MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -666,15 +666,6 @@ const CollapsibleLocationList: React.FunctionComponent<
     )
 }
 
-interface SideBlobProps extends ReferencesPanelProps {
-    activeURL: string
-    repository: string
-    commitID: string
-    file: string
-    position?: Position
-    blobNav: (url: string) => void
-}
-
 function parseSideBlobProps(
     activeURL: string | undefined
 ): Pick<SideBlobProps, 'activeURL' | 'repository' | 'commitID' | 'file' | 'position'> | undefined {
@@ -697,7 +688,34 @@ function parseSideBlobProps(
     }
 }
 
-const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
+interface SideBlobProps extends TelemetryProps, SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps {
+    repository: string
+    commitID: string
+    file: string
+    activeURL?: string
+    position?: Position
+    blobNav?: (url: string) => void
+    wrapLines?: boolean
+    navigateToLineOnAnyClick?: boolean
+    className?: string
+}
+
+export const SideBlob: FC<SideBlobProps> = props => {
+    const {
+        activeURL,
+        repository,
+        commitID,
+        file,
+        blobNav,
+        wrapLines = true,
+        navigateToLineOnAnyClick = true,
+        extensionsController,
+        settingsCascade,
+        telemetryService,
+        platformContext,
+        className,
+    } = props
+
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -751,20 +769,24 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
 
     return (
         <CodeMirrorBlob
-            {...props}
-            nav={props.blobNav}
-            wrapCode={true}
-            className={styles.sideBlobCode}
-            navigateToLineOnAnyClick={true}
+            activeURL={activeURL}
+            nav={blobNav}
+            wrapCode={wrapLines}
+            navigateToLineOnAnyClick={navigateToLineOnAnyClick}
             blobInfo={{
                 lsif: lsif ?? '',
                 content: data?.repository?.commit?.blob?.content ?? '',
-                filePath: props.file,
-                repoName: props.repository,
-                commitID: props.commitID,
-                revision: props.commitID,
+                filePath: file,
+                repoName: repository,
+                commitID: commitID,
+                revision: commitID,
                 mode: 'lspmode',
             }}
+            className={classNames(className, styles.sideBlobCode)}
+            platformContext={platformContext}
+            extensionsController={extensionsController}
+            settingsCascade={settingsCascade}
+            telemetryService={telemetryService}
         />
     )
 }

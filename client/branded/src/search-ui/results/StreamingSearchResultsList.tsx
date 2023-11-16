@@ -131,6 +131,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
+    console.log(results)
+
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
             function renderResultContent(): JSX.Element {
@@ -189,6 +191,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         repoDisplayName={displayRepoName(result.repository)}
                                         containerClassName={resultClassName}
                                         telemetryService={telemetryService}
+                                        settingsCascade={settingsCascade}
                                     />
                                 )}
                             </PrefetchableFile>

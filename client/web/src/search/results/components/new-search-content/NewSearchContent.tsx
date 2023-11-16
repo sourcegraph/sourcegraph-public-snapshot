@@ -1,22 +1,29 @@
-import { FC, HTMLAttributes, PropsWithChildren, useCallback, useRef } from 'react'
+import React, { FC, HTMLAttributes, PropsWithChildren, useCallback, useRef } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
-import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
+import { StreamingProgress, StreamingSearchResultsList, useSearchResultState } from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, QueryStateUpdate, QueryUpdate, SearchMode } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import {
+    AggregateStreamingSearchResults,
+    ContentMatch,
+    getFileMatchUrl,
+    PathMatch,
+    StreamSearchOptions,
+} from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, H2, H4, useScrollManager } from '@sourcegraph/wildcard'
+import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { SideBlob } from '../../../../codeintel/ReferencesPanel'
 import { fetchBlob } from '../../../../repo/blob/backend'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode } from '../../../../stores'
@@ -33,10 +40,17 @@ import { isSmartSearchAlert } from '../utils'
 
 import styles from './NewSearchContent.module.scss'
 
+/**
+ * At the moment search result preview panel supports only
+ * blob-like type of search results to preview.
+ */
+type SearchResultPreview = ContentMatch | PathMatch
+
 interface NewSearchContentProps
     extends TelemetryProps,
         SettingsCascadeProps,
-        PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'> {
+        PlatformContextProps,
+        ExtensionsControllerProps {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string
@@ -89,6 +103,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         codeMonitoringEnabled,
         options,
         platformContext,
+        extensionsController,
         onNavbarQueryChange,
         onSearchSubmit,
         onQuerySubmit,
@@ -98,9 +113,10 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onLogSearchResultClick,
     } = props
 
-    const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
-
     const containerRef = useRef<HTMLDivElement>(null)
+    const { previewBlob, clearPreview } = useSearchResultState()
+    const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
+
     useScrollManager('SearchResultsContainer', containerRef)
 
     const prefetchFile: FilePrefetcher = useCallback(
@@ -245,6 +261,16 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                     </>
                 )}
             </div>
+
+            {previewBlob && (
+                <FilePreviewPanel
+                    blobInfo={previewBlob}
+                    platformContext={platformContext}
+                    extensionsController={extensionsController}
+                    settingsCascade={settingsCascade}
+                    onClose={clearPreview}
+                />
+            )}
         </div>
     )
 }
@@ -268,5 +294,51 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
             </header>
             <div className={styles.filtersContent}>{children}</div>
         </aside>
+    )
+}
+
+interface FilePreviewPanelProps extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
+    blobInfo: SearchResultPreview
+    onClose: () => void
+}
+
+const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
+    const { blobInfo, onClose, platformContext, settingsCascade, extensionsController } = props
+
+    return (
+        <Panel
+            defaultSize={300}
+            minSize={256}
+            position="right"
+            storageKey="file preview"
+            ariaLabel="File sidebar"
+            className={classNames(styles.preview)}
+        >
+            <header className={styles.previewHeader}>
+                <H4 as={H2} className="mb-0">
+                    File preview
+                </H4>
+                <Button variant="icon" aria-label="Close" onClick={onClose}>
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
+                </Button>
+            </header>
+
+            <small className={styles.previewFileLink}>
+                <Link to={getFileMatchUrl(blobInfo)}>{blobInfo.path}</Link>
+            </small>
+
+            <SideBlob
+                repository={blobInfo.repository}
+                file={blobInfo.path}
+                commitID={blobInfo.commit ?? ''}
+                wrapLines={false}
+                navigateToLineOnAnyClick={false}
+                className={styles.previewContent}
+                platformContext={platformContext}
+                settingsCascade={settingsCascade}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                extensionsController={extensionsController}
+            />
+        </Panel>
     )
 }

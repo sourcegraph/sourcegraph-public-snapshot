@@ -17,3 +17,5 @@ export * from './results/sidebar/SearchReference'
 export * from './results/sidebar/SearchTypeLink'
 export * from './results/StreamingSearchResultsList'
 export * from './util'
+
+export { useSearchResultState } from './stores/results-store'

@@ -4,7 +4,7 @@ import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdi
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { SearchPatternType } from '@sourcegraph/shared/out/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'

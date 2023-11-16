@@ -5,6 +5,7 @@ import type { Observable } from 'rxjs'
 
 import { limitHit } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
@@ -35,12 +36,13 @@ export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
-        PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
+        PlatformContextProps,
         TelemetryProps,
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps,
-        OwnConfigProps {
+        OwnConfigProps,
+        ExtensionsControllerProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -55,6 +57,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         searchAggregationEnabled,
         codeMonitoringEnabled,
         platformContext,
+        extensionsController,
     } = props
 
     const location = useLocation()
@@ -270,6 +273,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             settingsCascade={props.settingsCascade}
             telemetryService={telemetryService}
             platformContext={platformContext}
+            extensionsController={extensionsController}
         />
     )
 }
