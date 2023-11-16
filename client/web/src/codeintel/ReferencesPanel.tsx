@@ -54,6 +54,7 @@ import type {
     ReferencesPanelHighlightedBlobResult,
     ReferencesPanelHighlightedBlobVariables,
 } from '../graphql-operations'
+import { SearchPanelConfig } from '../repo/blob/codemirror/search'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import type { HoverThresholdProps } from '../repo/RepoContainer'
@@ -697,6 +698,7 @@ interface SideBlobProps extends TelemetryProps, SettingsCascadeProps, PlatformCo
     blobNav?: (url: string) => void
     wrapLines?: boolean
     navigateToLineOnAnyClick?: boolean
+    searchPanelConfig?: SearchPanelConfig
     className?: string
 }
 
@@ -709,6 +711,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
         blobNav,
         wrapLines = true,
         navigateToLineOnAnyClick = true,
+        searchPanelConfig,
         extensionsController,
         settingsCascade,
         telemetryService,
@@ -782,6 +785,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
                 revision: commitID,
                 mode: 'lspmode',
             }}
+            searchPanelConfig={searchPanelConfig}
             className={classNames(className, styles.sideBlobCode)}
             platformContext={platformContext}
             extensionsController={extensionsController}

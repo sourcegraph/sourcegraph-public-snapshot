@@ -167,6 +167,10 @@
   &-file-link {
     padding: 0.25rem 0.5rem;
     background: var(--oc-gray-1);
+    overflow: hidden;
+    flex-shrink: 0;
+    width: 100%;
+    text-overflow: ellipsis;
 
     :global(.theme-dark) & {
       background: var(--oc-gray-9);
