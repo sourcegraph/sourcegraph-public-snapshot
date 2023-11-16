@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -130,7 +129,7 @@ var sizeConstraintRegex = regexp.MustCompile(`([<>=]{1,2})\s*(\d+\s*\w+)`)
 func buildStarsConstraintsExcludeFn(constraint string) (gitHubExcludeFunc, error) {
 	matches := starsConstraintRegex.FindStringSubmatch(constraint)
 	if matches == nil {
-		return nil, fmt.Errorf("invalid stars constraint format: %q", constraint)
+		return nil, errors.Newf("invalid stars constraint format: %q", constraint)
 	}
 
 	operator, err := newOperator(matches[1])
@@ -151,7 +150,7 @@ func buildStarsConstraintsExcludeFn(constraint string) (gitHubExcludeFunc, error
 func buildSizeConstraintsExcludeFn(constraint string) (gitHubExcludeFunc, error) {
 	sizeMatch := sizeConstraintRegex.FindStringSubmatch(constraint)
 	if sizeMatch == nil {
-		return nil, fmt.Errorf("invalid size constraint format: %q", constraint)
+		return nil, errors.Newf("invalid size constraint format: %q", constraint)
 	}
 
 	operator, err := newOperator(sizeMatch[1])
@@ -180,7 +179,7 @@ const (
 
 func newOperator(input string) (operator, error) {
 	if input != "<" && input != "<=" && input != ">" && input != ">=" {
-		return "", fmt.Errorf("invalid operator %q", input)
+		return "", errors.Newf("invalid operator %q", input)
 	}
 	return operator(input), nil
 }
@@ -197,6 +196,6 @@ func (o operator) Eval(left, right int) bool {
 		return left >= right
 	default:
 		// I wish Go had enums
-		panic(fmt.Sprintf("unknown operator: %q", o))
+		panic(errors.Newf("unknown operator: %q", o))
 	}
 }
