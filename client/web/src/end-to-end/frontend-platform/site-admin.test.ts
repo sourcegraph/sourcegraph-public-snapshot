@@ -1,8 +1,8 @@
-import { describe, test, before, after } from 'mocha'
+import { describe, test } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import type { Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+// import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { cloneRepos } from '../utils/cloneRepos'
 import { initEndToEndTest } from '../utils/initEndToEndTest'
@@ -11,8 +11,6 @@ const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUr
 
 describe('Site Admin', () => {
     let driver: Driver
-
-
 
     // Flaky https://github.com/sourcegraph/sourcegraph/issues/45531
     // test('Overview', async () => {
@@ -29,8 +27,7 @@ describe('Site Admin', () => {
             repoSlugs: ['gorilla/mux'],
         })
 
-        //afterEachSaveScreenshotIfFailed(() => driver.page)
-
+        // afterEachSaveScreenshotIfFailed(() => driver.page)
         await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
         await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
 
