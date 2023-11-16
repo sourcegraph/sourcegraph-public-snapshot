@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -117,7 +116,6 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 	select {
 	case l.bufferC <- bufferedEvent{spanCtx: spanCtx, Event: event}:
 		buffered = true
-		fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", len(l.bufferC))
 		return nil
 
 	case <-time.After(l.timeout):
