@@ -153,7 +153,7 @@
         [{ "forks": true }],
         [{ "name": "owner/name" }, { "id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==" }],
         [{ "name": "vuejs/vue" }, { "name": "php/php-src" }, { "pattern": "^topsecretorg/.*" }],
-        [{ "size": ">= 1GB", "stars": "< 100"}]
+        [{ "size": ">= 1GB", "stars": "< 100" }]
       ]
     },
     "repositoryQuery": {
