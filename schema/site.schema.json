@@ -1962,6 +1962,14 @@
         }
       ]
     },
+    "batchChanges.rejectUnverifiedCommit": {
+      "description": "Reject unverified commits when creating a Batch Change",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
+    },
     "gitserver.diskUsageWarningThreshold": {
       "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
       "type": "integer",
