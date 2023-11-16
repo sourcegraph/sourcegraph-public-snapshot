@@ -40,6 +40,8 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/errcode",
+        "//internal/license",
+        "//internal/licensing",
         "//internal/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//logtest",
