@@ -524,6 +524,5 @@ vitest_test(
         ":module_styles",
         ":shared_tests",
         ":snapshots",
-        "//:postcss_config_js",
     ],
 )

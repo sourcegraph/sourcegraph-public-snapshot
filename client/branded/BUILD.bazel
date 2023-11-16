@@ -282,6 +282,5 @@ vitest_test(
         ":branded_tests",
         ":module_styles",
         ":snapshots",
-        "//:postcss_config_js",
     ],
 )
