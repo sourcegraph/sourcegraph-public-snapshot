@@ -335,57 +335,6 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
-	{
-		svcs := types.ExternalServices{
-			{
-				Kind: extsvc.KindPhabricator,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PhabricatorConnection{
-					Url:   "https://secure.phabricator.com",
-					Token: os.Getenv("PHABRICATOR_TOKEN"),
-				})),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "phabricator",
-			svcs: svcs,
-			assert: func(*types.ExternalService) typestest.ReposAssertion {
-				return func(t testing.TB, rs types.Repos) {
-					t.Helper()
-
-					if len(rs) == 0 {
-						t.Fatalf("no repos yielded")
-					}
-
-					for _, r := range rs {
-						repo := r.Metadata.(*phabricator.Repo)
-						if repo.VCS != "git" {
-							t.Fatalf("non git repo yielded: %+v", repo)
-						}
-
-						if repo.Status == "inactive" {
-							t.Fatalf("inactive repo yielded: %+v", repo)
-						}
-
-						if repo.Name == "" {
-							t.Fatalf("empty repo name: %+v", repo)
-						}
-
-						ext := api.ExternalRepoSpec{
-							ID:          repo.PHID,
-							ServiceType: extsvc.TypePhabricator,
-							ServiceID:   "https://secure.phabricator.com",
-						}
-
-						if have, want := r.ExternalRepo, ext; have != want {
-							t.Fatal(cmp.Diff(have, want))
-						}
-					}
-				}
-			},
-		})
-	}
-
 	for _, tc := range testCases {
 		for _, svc := range tc.svcs {
 			name := svc.Kind + "/" + tc.name
@@ -429,8 +378,6 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 
 	ratelimit.SetupForTest(t)
 	rcache.SetupForTest(t)
-
-	ctx := context.Background()
 
 	tests := []struct {
 		svc       *types.ExternalService
@@ -543,16 +490,7 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 			cf, save := NewClientFactory(t, name)
 			defer save(t)
 
-			sourcer := NewSourcer(logtest.NoOp(t), dbmocks.NewMockDB(), cf)
-			src, err := sourcer(ctx, tc.svc)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			repos, err := ListAll(ctx, src)
-			if err != nil {
-				t.Errorf("error listing repos: %s", err)
-			}
+			repos := listRepos(t, cf, tc.svc)
 
 			var haveURIs, haveNames []string
 			for _, r := range repos {
@@ -568,19 +506,57 @@ func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestSources_Phabricator(t *testing.T) {
+	cf, save := NewClientFactory(t, "PHABRICATOR/phabricator")
+	defer save(t)
+
+	svc := &types.ExternalService{
+		Kind: extsvc.KindPhabricator,
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PhabricatorConnection{
+			Url:   "https://secure.phabricator.com",
+			Token: os.Getenv("PHABRICATOR_TOKEN"),
+		})),
+	}
+
+	repos := listRepos(t, cf, svc)
+
+	if len(repos) == 0 {
+		t.Fatalf("no repos yielded")
+	}
+
+	for _, r := range repos {
+		repo := r.Metadata.(*phabricator.Repo)
+		if repo.VCS != "git" {
+			t.Fatalf("non git repo yielded: %+v", repo)
+		}
+
+		if repo.Status == "inactive" {
+			t.Fatalf("inactive repo yielded: %+v", repo)
+		}
+
+		if repo.Name == "" {
+			t.Fatalf("empty repo name: %+v", repo)
+		}
+
+		ext := api.ExternalRepoSpec{
+			ID:          repo.PHID,
+			ServiceType: extsvc.TypePhabricator,
+			ServiceID:   "https://secure.phabricator.com",
+		}
+
+		if have, want := r.ExternalRepo, ext; have != want {
+			t.Fatal(cmp.Diff(have, want))
+		}
+	}
 }
 
 func TestSources_ListRepos_GitLab_NameTransformations(t *testing.T) {
 	ratelimit.SetupForTest(t)
 
-	ctx := context.Background()
-
 	cf, save := NewClientFactory(t, "GITLAB/nameTransformations-updates-the-repo-name")
 	defer save(t)
-
-	logger := logtest.NoOp(t)
-	sourcer := NewSourcer(logger, dbmocks.NewMockDB(), cf)
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitLab,
@@ -606,38 +582,24 @@ func TestSources_ListRepos_GitLab_NameTransformations(t *testing.T) {
 		})),
 	}
 
-	src, err := sourcer(ctx, svc)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repos, err := ListAll(ctx, src)
-	if err != nil {
-		t.Errorf("error listing repos: %s", err)
-	}
-
-	have := types.Repos(repos).Names()
+	repos := listRepos(t, cf, svc)
+	haveNames := types.Repos(repos).Names()
 
 	wantNames := []string{
 		"gitlab.com/sg-test/repo-gitrepo",
 		"gitlab.com/sg-test/repo",
 	}
 
-	if !reflect.DeepEqual(have, wantNames) {
-		t.Error(cmp.Diff(have, wantNames))
+	if !reflect.DeepEqual(haveNames, wantNames) {
+		t.Error(cmp.Diff(haveNames, wantNames))
 	}
 }
 
 func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
 	ratelimit.SetupForTest(t)
 
-	ctx := context.Background()
-
 	cf, save := NewClientFactory(t, "BITBUCKETSERVER/bitbucketserver-archived")
 	defer save(t)
-
-	logger := logtest.NoOp(t)
-	sourcer := NewSourcer(logger, dbmocks.NewMockDB(), cf)
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
@@ -650,15 +612,7 @@ func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
 		})),
 	}
 
-	src, err := sourcer(ctx, svc)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repos, err := ListAll(ctx, src)
-	if err != nil {
-		t.Errorf("error listing repos: %s", err)
-	}
+	repos := listRepos(t, cf, svc)
 
 	wantArchived := map[string]bool{
 		"vegeta":        false,
@@ -673,6 +627,27 @@ func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
 	if !reflect.DeepEqual(got, wantArchived) {
 		t.Error("mismatch archived state (-want +got):\n", cmp.Diff(wantArchived, got))
 	}
+}
+
+func listRepos(t *testing.T, cf *httpcli.Factory, svc *types.ExternalService) []*types.Repo {
+	t.Helper()
+
+	ctx := context.Background()
+
+	logger := logtest.NoOp(t)
+	sourcer := NewSourcer(logger, dbmocks.NewMockDB(), cf)
+
+	src, err := sourcer(ctx, svc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := ListAll(ctx, src)
+	if err != nil {
+		t.Errorf("error listing repos: %s", err)
+	}
+
+	return repos
 }
 
 func newClientFactoryWithOpt(t testing.TB, name string, opt httpcli.Opt) (*httpcli.Factory, func(testing.TB)) {
