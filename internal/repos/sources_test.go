@@ -338,136 +338,6 @@ func TestSources_ListRepos(t *testing.T) {
 	{
 		svcs := types.ExternalServices{
 			{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url:                   "https://github.com",
-					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
-					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
-					RepositoryQuery:       []string{"none"},
-					Repos:                 []string{"tsenart/vegeta"},
-				})),
-			},
-			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:                   "https://gitlab.com",
-					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
-					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
-					ProjectQuery:          []string{"none"},
-					Projects: []*schema.GitLabProject{
-						{Name: "gnachman/iterm2"},
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
-					Url:                   "https://bitbucket.sgdev.org",
-					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
-					RepositoryQuery:       []string{"none"},
-					Repos:                 []string{"sour/vegeta"},
-				})),
-			},
-			{
-				Kind: extsvc.KindAWSCodeCommit,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
-					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
-					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
-					},
-					RepositoryPathPattern: "a/b/c/{name}",
-				})),
-			},
-			{
-				Kind: extsvc.KindGitolite,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitoliteConnection{
-					// Prefix serves as a sort of repositoryPathPattern for Gitolite
-					Prefix: "gitolite.mycorp.com/",
-					Host:   "ssh://git@127.0.0.1:2222",
-				})),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "repositoryPathPattern determines the repo name",
-			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
-				return func(t testing.TB, rs types.Repos) {
-					t.Helper()
-
-					haveNames := rs.Names()
-					var haveURIs []string
-					for _, r := range rs {
-						haveURIs = append(haveURIs, r.URI)
-					}
-
-					var wantNames, wantURIs []string
-					switch s.Kind {
-					case extsvc.KindGitHub:
-						wantNames = []string{
-							"github.com/a/b/c/tsenart/vegeta",
-						}
-						wantURIs = []string{
-							"github.com/tsenart/vegeta",
-						}
-					case extsvc.KindGitLab:
-						wantNames = []string{
-							"gitlab.com/a/b/c/gnachman/iterm2",
-						}
-						wantURIs = []string{
-							"gitlab.com/gnachman/iterm2",
-						}
-					case extsvc.KindBitbucketServer:
-						wantNames = []string{
-							"bitbucket.sgdev.org/a/b/c/SOUR/vegeta",
-						}
-						wantURIs = []string{
-							"bitbucket.sgdev.org/SOUR/vegeta",
-						}
-					case extsvc.KindAWSCodeCommit:
-						wantNames = []string{
-							"a/b/c/empty-repo",
-							"a/b/c/stripe-go",
-							"a/b/c/test2",
-							"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
-							"a/b/c/test",
-						}
-						wantURIs = []string{
-							"empty-repo",
-							"stripe-go",
-							"test2",
-							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
-							"test",
-						}
-					case extsvc.KindGitolite:
-						wantNames = []string{
-							"gitolite.mycorp.com/bar",
-							"gitolite.mycorp.com/baz",
-							"gitolite.mycorp.com/foo",
-							"gitolite.mycorp.com/gitolite-admin",
-							"gitolite.mycorp.com/testing",
-						}
-						wantURIs = wantNames
-					}
-
-					if !reflect.DeepEqual(haveNames, wantNames) {
-						t.Error(cmp.Diff(haveNames, wantNames))
-					}
-					if !reflect.DeepEqual(haveURIs, wantURIs) {
-						t.Error(cmp.Diff(haveURIs, wantURIs))
-					}
-				}
-			},
-		})
-	}
-
-	{
-		svcs := types.ExternalServices{
-			{
 				Kind: extsvc.KindGitLab,
 				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
 					Url:                   "https://gitlab.com",
@@ -596,6 +466,163 @@ func TestSources_ListRepos(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestSources_ListRepos_RepositoryPathPattern(t *testing.T) {
+	// conf mock is required for gitolite
+	conf.Mock(&conf.Unified{
+		ServiceConnectionConfig: conftypes.ServiceConnections{
+			GitServers: []string{"127.0.0.1:3178"},
+		}, SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: boolPointer(false),
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	ratelimit.SetupForTest(t)
+	rcache.SetupForTest(t)
+
+	ctx := context.Background()
+
+	tests := []struct {
+		svc       *types.ExternalService
+		wantNames []string
+		wantURIs  []string
+	}{
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+					Url:                   "https://github.com",
+					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"tsenart/vegeta"},
+				})),
+			},
+			wantNames: []string{"github.com/a/b/c/tsenart/vegeta"},
+			wantURIs:  []string{"github.com/tsenart/vegeta"},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitLab,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+					},
+				})),
+			},
+			wantNames: []string{"gitlab.com/a/b/c/gnachman/iterm2"},
+			wantURIs:  []string{"gitlab.com/gnachman/iterm2"},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindBitbucketServer,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+					Url:                   "https://bitbucket.sgdev.org",
+					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"sour/vegeta"},
+				})),
+			},
+			wantNames: []string{"bitbucket.sgdev.org/a/b/c/SOUR/vegeta"},
+			wantURIs:  []string{"bitbucket.sgdev.org/SOUR/vegeta"},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindAWSCodeCommit,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+					RepositoryPathPattern: "a/b/c/{name}",
+				})),
+			},
+			wantNames: []string{
+				"a/b/c/empty-repo",
+				"a/b/c/stripe-go",
+				"a/b/c/test2",
+				"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+				"a/b/c/test",
+			},
+			wantURIs: []string{
+				"empty-repo",
+				"stripe-go",
+				"test2",
+				"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+				"test",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitolite,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitoliteConnection{
+					// Prefix serves as a sort of repositoryPathPattern for Gitolite
+					Prefix: "gitolite.mycorp.com/",
+					Host:   "ssh://git@127.0.0.1:2222",
+				})),
+			},
+			wantNames: []string{
+				"gitolite.mycorp.com/bar",
+				"gitolite.mycorp.com/baz",
+				"gitolite.mycorp.com/foo",
+				"gitolite.mycorp.com/gitolite-admin",
+				"gitolite.mycorp.com/testing",
+			},
+			wantURIs: []string{
+				"gitolite.mycorp.com/bar",
+				"gitolite.mycorp.com/baz",
+				"gitolite.mycorp.com/foo",
+				"gitolite.mycorp.com/gitolite-admin",
+				"gitolite.mycorp.com/testing",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.svc.Kind, func(t *testing.T) {
+			name := tc.svc.Kind + "/repositoryPathPattern-determines-the-repo-name"
+
+			cf, save := NewClientFactory(t, name)
+			defer save(t)
+
+			sourcer := NewSourcer(logtest.NoOp(t), dbmocks.NewMockDB(), cf)
+			src, err := sourcer(ctx, tc.svc)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := ListAll(ctx, src)
+			if err != nil {
+				t.Errorf("error listing repos: %s", err)
+			}
+
+			var haveURIs, haveNames []string
+			for _, r := range repos {
+				haveURIs = append(haveURIs, r.URI)
+				haveNames = append(haveNames, string(r.Name))
+			}
+
+			if !reflect.DeepEqual(haveNames, tc.wantNames) {
+				t.Error(cmp.Diff(haveNames, tc.wantNames))
+			}
+			if !reflect.DeepEqual(haveURIs, tc.wantURIs) {
+				t.Error(cmp.Diff(haveURIs, tc.wantURIs))
+			}
+		})
+	}
+
 }
 
 func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
