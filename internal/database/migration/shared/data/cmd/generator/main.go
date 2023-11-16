@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared/data/cmd/generator/version"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -17,6 +18,10 @@ import (
 func main() {
 	liblog := log.Init(log.Resource{Name: "migration-generator"})
 	defer liblog.Sync()
+
+	println(version.FinalVersionString)
+
+	os.Exit(0)
 
 	if err := mainErr(); err != nil {
 		panic(fmt.Sprintf("error: %s", err))
