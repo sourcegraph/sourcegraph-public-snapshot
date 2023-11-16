@@ -47,10 +47,8 @@ func TestSources_ListRepos(t *testing.T) {
 
 	type testCase struct {
 		name   string
-		ctx    context.Context
 		svcs   types.ExternalServices
 		assert func(*types.ExternalService) typestest.ReposAssertion
-		err    string
 	}
 
 	var testCases []testCase
@@ -223,7 +221,6 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 				}
 			},
-			err: "<nil>",
 		})
 	}
 
@@ -335,7 +332,6 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 				}
 			},
-			err: "<nil>",
 		})
 	}
 
@@ -466,7 +462,6 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 				}
 			},
-			err: "<nil>",
 		})
 	}
 
@@ -521,7 +516,6 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 				}
 			},
-			err: "<nil>",
 		})
 	}
 
@@ -573,7 +567,6 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 				}
 			},
-			err: "<nil>",
 		})
 	}
 
@@ -612,38 +605,32 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 				}
 			},
-			err: "<nil>",
 		})
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		for _, svc := range tc.svcs {
 			name := svc.Kind + "/" + tc.name
 			t.Run(name, func(t *testing.T) {
+
+				ctx := context.Background()
+
 				cf, save := NewClientFactory(t, name)
 				defer save(t)
 
 				logger := logtest.Scoped(t)
 				obs := ObservedSource(logger, NewSourceMetrics())
-				src, err := NewSourcer(logtest.Scoped(t), dbmocks.NewMockDB(), cf, obs)(tc.ctx, svc)
+				src, err := NewSourcer(logtest.Scoped(t), dbmocks.NewMockDB(), cf, obs)(ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				ctx := tc.ctx
-				if ctx == nil {
-					ctx = context.Background()
-				}
-
 				repos, err := ListAll(ctx, src)
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				if err != nil {
+					t.Errorf("error listing repos: %s", err)
 				}
 
-				if tc.assert != nil {
-					tc.assert(svc)(t, repos)
-				}
+				tc.assert(svc)(t, repos)
 			})
 		}
 	}
