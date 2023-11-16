@@ -21,8 +21,9 @@ import {
     type ViewUpdate,
 } from '@codemirror/view'
 
-import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 import { isFirefox } from '@sourcegraph/common'
+
+import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
 
 const selectedLinesTheme = EditorView.theme({
     /**
