@@ -460,6 +460,16 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 			return ctx // not authenticated
 		}
 
+		licenseInfo, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			return ctx
+		}
+
+		if licenseInfo.IsExpired() && !usr.SiteAdmin {
+			_ = deleteSession(w, r) // Delete session since only admins are allowed
+			return ctx
+		}
+
 		// Check that the session is still valid
 		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
 			span.SetAttributes(attribute.Bool("expired", true))
