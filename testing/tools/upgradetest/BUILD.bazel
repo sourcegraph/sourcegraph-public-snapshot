@@ -34,10 +34,12 @@ sh_binary(
     args = [
         "$(location :upgradetest-darwin-amd64)",
         "$(location //cmd/migrator:image_tarball)",
+        "$(location //cmd/frontend:image_tarball)",
         "$(locations //internal/database:generate_schemas)",
     ],
     data = [
         ":upgradetest-darwin-amd64",
+        "//cmd/frontend:image_tarball",
         "//cmd/migrator:image_tarball",
         "//internal/database:generate_schemas",
     ],

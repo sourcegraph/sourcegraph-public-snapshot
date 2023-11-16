@@ -32,10 +32,7 @@ func main() {
 
 	// Get the release candidate image tarball
 	args := os.Args
-	if len(args) < 2 {
-		fmt.Println("🚨 Error: release candidate image not provided")
-		os.Exit(1)
-	}
+	fmt.Println(args)
 
 	if err := standardUpgradeTest(ctx, latestMinorVersion, latestVersion); err != nil {
 		fmt.Println("--- 🚨 Standard Upgrade Test Failed: ", err)
@@ -67,9 +64,8 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 	defer cleanup()
 
 	// ensure env correctly initialized
-	if err := validateUpgrade(ctx, latestMinorVersion, dbs); err != nil {
+	if err := validateUpgrade(ctx, latestMinorVersion.String(), dbs); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
-		cleanup()
 		return err
 	}
 
@@ -91,10 +87,21 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 		cleanup()
 		return err
 	}
+
+	// Start frontend with candidate
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(ctx, "frontend", "candidate", networkName, hash, dbs)
+	if err != nil {
+		fmt.Println("🚨 failed to start candidate frontend: ", err)
+		cleanFrontend()
+		return err
+	}
+	defer cleanFrontend()
+
+	fmt.Println("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
-	if err := validateUpgrade(ctx, latestMinorVersion, dbs); err != nil {
+	if err := validateUpgrade(ctx, "0.0.0+dev", dbs); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
-		cleanup()
 		return err
 	}
 
@@ -118,7 +125,8 @@ type testDB struct {
 	ContainerHostPort string
 }
 
-// Create a docker network for testing as well as instances of our three databases. Return a cleanup function.
+// Create a docker network for testing as well as instances of our three databases. Returning a cleanup function.
+// An instance of Sourcegraph-Frontend is also started to initialize the versions table of the database.
 // TODO: setupTestEnv should seed some initial data at the target initVersion. This will be usefull for testing OOB migrations
 func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte, networkName string, dbs []testDB, cleanup func(), err error) {
 	fmt.Println("-- 🏗️  setting up test environment")
@@ -239,7 +247,7 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 
 	//start frontend and poll db until initial version is set
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, initVersion, networkName, hash, dbs)
+	cleanFrontend, err = startFrontend(ctx, "sourcegraph/frontend", initVersion.String(), networkName, hash, dbs)
 	if err != nil {
 		fmt.Println("🚨 failed to start frontend: ", err)
 	}
@@ -266,42 +274,57 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	return hash, networkName, dbs, cleanup, err
 }
 
-func validateUpgrade(ctx context.Context, initVersion *semver.Version, dbs []testDB) error {
+func validateUpgrade(ctx context.Context, version string, dbs []testDB) error {
 	fmt.Println("-- 🔎  validating dbs")
 	fmt.Println("🔎 checking dbs for drift")
 
-	// Check that pgsql versions version has been updated
-	fmt.Println("🔎 checking pgsql version")
+	// Get DB client for frontend db
 	dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", dbs[0].ContainerHostPort))
 	if err != nil {
 		fmt.Printf("🚨 failed to connect to %s: %s\n", dbs[0].Name, err)
 		return err
 	}
 	defer dbClient.Close()
-	rows, err := dbClient.Query(`SELECT version FROM versions;`)
+
+	// Verify the versions.version value in the frontend db
+	fmt.Println("🔎 checking pgsql versions.version set")
+	var testVersion string
+	row := dbClient.QueryRowContext(ctx, `SELECT version FROM versions;`)
+	err = row.Scan(&testVersion)
 	if err != nil {
 		fmt.Println("🚨 failed to get version from pgsql db: ", err)
 		return err
 	}
-	var version string
-	if rows.Next() {
-		err = rows.Scan(&version)
-		if err != nil {
-			fmt.Println("🚨 failed to get version from pgsql db: ", err)
-			return err
-		}
+	if version != testVersion {
+		fmt.Printf("🚨 versions.version not set: %s!= %s\n", version, testVersion)
+		return fmt.Errorf("versions.versions not set: %s!= %s", version, testVersion)
 	} else {
-		fmt.Println("🚨 failed to get version from pgsql db: no version found")
+		fmt.Println("✅ versions.version set: ", testVersion)
+	}
+
+	// Check for any failed migrations in the migration logs table
+	fmt.Println("🔎 checking pgsql migration logs")
+	var numFailedMigrations int
+	row = dbClient.QueryRowContext(ctx, `SELECT count(*) FROM migration_logs WHERE success=false;`)
+	err = row.Scan(&numFailedMigrations)
+	if err != nil {
+		fmt.Println("🚨 failed to get failed migrations from pgsql db: ", err)
 		return err
 	}
-	fmt.Println("version from pgsql: ", version)
-	defer rows.Close()
+	if numFailedMigrations > 0 {
+		fmt.Printf("🚨 failed migrations found: %d\n", numFailedMigrations)
+		return fmt.Errorf("failed migrations found: %d", numFailedMigrations)
+	} else {
+		fmt.Println("✅ no failed migrations found")
+	}
+
+	// TODO run migrator drift check
 
 	return nil
 }
 
 // startFrontend starts the frontend container in the CI test env.
-func startFrontend(ctx context.Context, version *semver.Version, networkName string, hash []byte, dbs []testDB) (cleanup func(), err error) {
+func startFrontend(ctx context.Context, image, version, networkName string, hash []byte, dbs []testDB) (cleanup func(), err error) {
 	fmt.Printf("🐋 creating wg_frontend_%x\n", hash)
 	cleanup = func() {
 		fmt.Println("🧹 removing frontend container")
@@ -322,16 +345,15 @@ func startFrontend(ctx context.Context, version *semver.Version, networkName str
 		"-e", fmt.Sprintf("CODEINTEL_PGHOST=%s", dbs[1].HashName),
 		"-e", fmt.Sprintf("CODEINSIGHTS_PGDATASOURCE=postgres://sg@%s:5432/sg?sslmode=disable", dbs[2].HashName),
 		"--network", networkName,
-		fmt.Sprintf("sourcegraph/frontend:%s", version),
+		fmt.Sprintf("%s:%s", image, version),
 	).Run().Wait()
 	if err != nil {
 		fmt.Println("🚨 failed to start frontend: ", err)
 		return cleanup, err
 	}
-	// time.Sleep(time.Second * 10)
 
 	// poll db until initial versions.version is set
-	setVersionTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
+	setVersionTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 	fmt.Println("🔎 checking pgsql versions.version set")
 
@@ -356,13 +378,15 @@ func startFrontend(ctx context.Context, version *semver.Version, networkName str
 			time.Sleep(1 * time.Second)
 			continue
 		}
-		if version.String() == dbVersion {
-			fmt.Printf("✅ versions.version is set: %s\n", version)
+		// wait for the frontend to set the database versions.version value before considering the frontend startup complete.
+		// "candidate" resolves to "0.0.0+dev" and should always be valid
+		if dbVersion == version || dbVersion == "0.0.0+dev" {
+			fmt.Printf("✅ versions.version is set: %s\n", dbVersion)
 			break
 		}
-		if version.String() == "" {
+		if version != dbVersion {
 			time.Sleep(1 * time.Second)
-			fmt.Println(" ... waiting for versions.version to be set")
+			fmt.Println(" ... waiting for versions.version to be set: ", version)
 			continue
 		}
 	}
@@ -375,6 +399,7 @@ func dockerMigratorBaseString(migratorImage, networkName, cmd string, initHash, 
 	return []string{"docker", "run", "--rm",
 		"--platform", "linux/amd64",
 		"--name", fmt.Sprintf("wg_migrator_%x", migratorHash),
+		// "-e", "SRC_LOG_LEVEL=debug",
 		"-e", fmt.Sprintf("PGHOST=wg_pgsql_%x", initHash),
 		"-e", "PGPORT=5432",
 		"-e", "PGUSER=sg",
@@ -427,12 +452,10 @@ func getLatestVersions(ctx context.Context) (latestMinor *semver.Version, latest
 		if err != nil {
 			continue // skip non-matching tags
 		}
-
 		// Track latest full version
 		if latestFullVer == nil || v.GreaterThan(latestFullVer) {
 			latestFullVer = v
 		}
-
 		latestMinorVer, err = semver.NewVersion(fmt.Sprintf("%d.%d.0", latestFullVer.Major(), latestFullVer.Minor()))
 		if err != nil {
 			return nil, nil, err
@@ -442,7 +465,6 @@ func getLatestVersions(ctx context.Context) (latestMinor *semver.Version, latest
 	if latestMinorVer == nil {
 		return nil, nil, errors.New("No valid minor semver tags found")
 	}
-
 	if latestFullVer == nil {
 		return nil, nil, errors.New("No valid full semver tags found")
 	}
