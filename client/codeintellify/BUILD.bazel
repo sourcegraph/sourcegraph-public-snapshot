@@ -76,7 +76,9 @@ ts_project(
         "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
+        "//:node_modules/@types/node-fetch",
         "//:node_modules/lodash",
+        "//:node_modules/node-fetch",
         "//:node_modules/rxjs",
         "//:node_modules/vitest",
     ],
