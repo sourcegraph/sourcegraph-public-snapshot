@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -1811,6 +1812,10 @@ type Repository struct {
 	// empirically it's in kibibytes (meaning: multiples of 1024 bytes, not
 	// 1000).
 	DiskUsageKibibytes int `json:"DiskUsage,omitempty"`
+}
+
+func (r *Repository) SizeBytes() bytesize.Bytes {
+	return bytesize.Bytes(r.DiskUsageKibibytes) * bytesize.KiB
 }
 
 // ParentRepository is the parent of a GitHub repository.
