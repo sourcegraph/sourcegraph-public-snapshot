@@ -7,6 +7,5 @@ export default defineProjectWithDefaults(__dirname, {
             'src/testSetup.test.ts',
             '../testing/src/fetch.js'
         ],
-        singleThread: true, // got `failed to terminate worker` occasionally in Bazel CI
     },
 })
