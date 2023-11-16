@@ -4,7 +4,7 @@
 
 ### `bazel configure` prints out a warning about TSConfig 
 
-Everytime you'll run `bazel configure`, you'll see a warning: 
+Everytime you run `bazel configure`, you'll see a warning: 
 
 ```
 $ bazel configure
