@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -278,10 +280,12 @@ func TestCookieMiddleware(t *testing.T) {
 		{
 			req:      httptest.NewRequest("GET", "/", nil),
 			expActor: &actor.Actor{},
-		}, {
+		},
+		{
 			req:      authedReqs[0],
 			expActor: actors[0],
-		}, {
+		},
+		{
 			req:      authedReqs[1],
 			expActor: &actor.Actor{},
 			deleted:  true,
@@ -305,7 +309,6 @@ func TestCookieMiddleware(t *testing.T) {
 				t.Errorf("got deleted %v, want %v", deleted, testcase.deleted)
 			}
 		})
-
 	}
 }
 
@@ -473,5 +476,82 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	}
 	if info.UserCreatedAt.IsZero() {
 		t.Fatal("user creation date was not set")
+	}
+}
+
+func TestExpiredLicenseOnlyAllowsAdmins(t *testing.T) {
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		return &license.Info{
+			ExpiresAt: time.Now().Add(-1 * time.Hour),
+		}, "", nil
+	}
+
+	logger := logtest.Scoped(t)
+
+	cleanup := ResetMockSessionStore(t)
+	defer cleanup()
+
+	userCreatedAt := time.Now()
+
+	var adminUID, regularUID int32 = 123, 456
+
+	users := dbmocks.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		user := &types.User{ID: id, CreatedAt: userCreatedAt}
+		if id == adminUID {
+			user.SiteAdmin = true
+		}
+		return user, nil
+	})
+
+	db := dbmocks.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	testcases := map[string]struct {
+		UID       int32
+		WantActor bool
+	}{
+		"admin user is allowed": {
+			UID:       adminUID,
+			WantActor: true,
+		},
+		"regular user is not allowed": {
+			UID:       regularUID,
+			WantActor: false,
+		},
+	}
+
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			// Start new session for the admin user
+			w := httptest.NewRecorder()
+			actr := &actor.Actor{UID: tc.UID, FromSessionCookie: true}
+			if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Second, userCreatedAt); err != nil {
+				t.Fatal(err)
+			}
+			var authCookies []*http.Cookie
+			for _, cookie := range w.Result().Cookies() {
+				if cookie.Expires.After(time.Now()) || cookie.MaxAge > 0 {
+					authCookies = append(authCookies, cookie)
+				}
+			}
+
+			// Create authed request with session cookie
+			authedReq := httptest.NewRequest("GET", "/", nil)
+			for _, cookie := range authCookies {
+				authedReq.AddCookie(cookie)
+			}
+			if len(authedReq.Cookies()) != 1 {
+				t.Fatal("expected exactly 1 authed cookie")
+			}
+
+			gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder()))
+
+			if tc.WantActor && !reflect.DeepEqual(gotActor, actr) {
+				t.Errorf("didn't find actor %v != %v", gotActor, actr)
+			} else if !tc.WantActor && reflect.DeepEqual(gotActor, actr) {
+				t.Errorf("found actor %v == %v", gotActor, actr)
+			}
+		})
 	}
 }
