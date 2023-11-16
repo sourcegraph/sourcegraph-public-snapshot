@@ -3,9 +3,11 @@ package azureopenai
 import (
 	"context"
 	"io"
+	"net/http"
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -102,7 +104,7 @@ func completeAutocomplete(
 	}
 	response, err := client.GetCompletions(ctx, options, nil)
 	if err != nil {
-		return nil, err
+		return nil, toStatusCodeError(err)
 	}
 
 	// Text and FinishReason are documented as REQUIRED but checking just to be safe
@@ -123,7 +125,7 @@ func completeChat(
 ) (*types.CompletionResponse, error) {
 	response, err := client.GetChatCompletions(ctx, getChatOptions(requestParams), nil)
 	if err != nil {
-		return nil, err
+		return nil, toStatusCodeError(err)
 	}
 	if !hasValidFirstChatChoice(response.Choices) {
 		return &types.CompletionResponse{}, nil
@@ -163,7 +165,7 @@ func streamAutocomplete(
 	}
 	resp, err := client.GetCompletionsStream(ctx, options, nil)
 	if err != nil {
-		return err
+		return toStatusCodeError(err)
 	}
 	defer resp.CompletionsStream.Close()
 
@@ -199,7 +201,7 @@ func streamChat(
 
 	resp, err := client.GetChatCompletionsStream(ctx, getChatOptions(requestParams), nil)
 	if err != nil {
-		return err
+		return toStatusCodeError(err)
 	}
 	defer resp.ChatCompletionsStream.Close()
 
@@ -297,4 +299,17 @@ func getPrompt(messages []types.Message) (string, error) {
 func intToInt32Ptr(i int) *int32 {
 	v := int32(i)
 	return &v
+}
+
+// toStatusCodeError converts Azure SDK ResponseError to a ErrStatusNotOK error
+// when the status code is not OK.  This allows the request handler to return the
+// appropriate status code to the calling client which is especially important for rate limits.
+func toStatusCodeError(err error) error {
+	var responseError *azcore.ResponseError
+	if errors.As(err, &responseError) {
+		if responseError.StatusCode != http.StatusOK {
+			return types.NewErrStatusNotOK("AzureOpenAI", responseError.RawResponse)
+		}
+	}
+	return err
 }
