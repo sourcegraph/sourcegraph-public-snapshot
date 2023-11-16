@@ -38,6 +38,7 @@ go_test(
         "resolvers_test.go",
     ],
     embed = [":resolvers"],
+    tags = ["requires-network"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
