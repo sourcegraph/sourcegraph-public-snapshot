@@ -570,44 +570,6 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
-	{
-		svcs := types.ExternalServices{
-			{
-				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
-					Url:                   "https://bitbucket.sgdev.org",
-					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					RepositoryPathPattern: "{repositorySlug}",
-					RepositoryQuery:       []string{"none"},
-					Repos:                 []string{"sour/vegeta", "PUBLIC/archived-repo"},
-				})),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "bitbucketserver archived",
-			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
-				return func(t testing.TB, rs types.Repos) {
-					t.Helper()
-
-					want := map[string]bool{
-						"vegeta":        false,
-						"archived-repo": true,
-					}
-					got := map[string]bool{}
-					for _, r := range rs {
-						got[string(r.Name)] = r.Archived
-					}
-
-					if !reflect.DeepEqual(got, want) {
-						t.Error("mismatch archived state (-want +got):\n", cmp.Diff(want, got))
-					}
-				}
-			},
-		})
-	}
-
 	for _, tc := range testCases {
 		for _, svc := range tc.svcs {
 			name := svc.Kind + "/" + tc.name
@@ -618,9 +580,9 @@ func TestSources_ListRepos(t *testing.T) {
 				cf, save := NewClientFactory(t, name)
 				defer save(t)
 
-				logger := logtest.Scoped(t)
+				logger := logtest.NoOp(t)
 				obs := ObservedSource(logger, NewSourceMetrics())
-				src, err := NewSourcer(logtest.Scoped(t), dbmocks.NewMockDB(), cf, obs)(ctx, svc)
+				src, err := NewSourcer(logger, dbmocks.NewMockDB(), cf, obs)(ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -633,6 +595,53 @@ func TestSources_ListRepos(t *testing.T) {
 				tc.assert(svc)(t, repos)
 			})
 		}
+	}
+}
+
+func TestSources_ListRepos_BitbucketServer_Archived(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
+	ctx := context.Background()
+
+	cf, save := NewClientFactory(t, "BITBUCKETSERVER/bitbucketserver-archived")
+	defer save(t)
+
+	logger := logtest.NoOp(t)
+	sourcer := NewSourcer(logger, dbmocks.NewMockDB(), cf)
+
+	svc := &types.ExternalService{
+		Kind: extsvc.KindBitbucketServer,
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+			Url:                   "https://bitbucket.sgdev.org",
+			Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+			RepositoryPathPattern: "{repositorySlug}",
+			RepositoryQuery:       []string{"none"},
+			Repos:                 []string{"sour/vegeta", "PUBLIC/archived-repo"},
+		})),
+	}
+
+	src, err := sourcer(ctx, svc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := ListAll(ctx, src)
+	if err != nil {
+		t.Errorf("error listing repos: %s", err)
+	}
+
+	wantArchived := map[string]bool{
+		"vegeta":        false,
+		"archived-repo": true,
+	}
+
+	got := map[string]bool{}
+	for _, r := range repos {
+		got[string(r.Name)] = r.Archived
+	}
+
+	if !reflect.DeepEqual(got, wantArchived) {
+		t.Error("mismatch archived state (-want +got):\n", cmp.Diff(wantArchived, got))
 	}
 }
 
