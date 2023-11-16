@@ -147,7 +147,6 @@ func (l *BufferedLogger) Start() {
 					sgtrace.Logger(event.spanCtx, l.log).
 						Error("failed to log buffered event", log.Error(err))
 				}
-				time.Sleep(10000 * time.Millisecond)
 			}
 		}()
 	}
