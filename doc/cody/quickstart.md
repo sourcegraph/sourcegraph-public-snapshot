@@ -127,7 +127,7 @@ Leveraging the failed test output, Cody is able to identify the potential bug an
 Cody can also create well-crafted code documentation and comments, significantly improving the readability experience. You can add it by selecting a code snippet and clicking **Document** from the **Commands** panel. Alternatively, select the code, and inside the Cody chat window, type `/doc`. Cody will add a comment to the top of the code snippet.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-code-comments.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-comments-cody.mp4" type="video/mp4">
 </video>
 
 ## Try other commands and Cody chat
