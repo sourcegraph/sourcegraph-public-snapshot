@@ -9,7 +9,7 @@ The Sourcegraph GraphQL API supports the following types of queries:
 - Repository and user metadata
 
 > NOTE: The API is under active development. Backwards compatibility will be maintained in most
-> cases, and backwards-incompatible changes will be documented in the 
+> cases, and backwards-incompatible changes will be documented in the
 > [changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md).
 
 ## Quickstart
@@ -93,3 +93,27 @@ i.e. you just need to send the `Authorization` header and a JSON object like `{"
 ## Examples
 
 See "[Sourcegraph GraphQL API examples](examples.md)".
+
+## Cost Limits
+
+To ensure system performance and stability, configurable GraphQL query cost limitations have been implemented. This feature is crucial for preventing resource exhaustion due to extensive or overly complex queries. The default configuration looks as follows, and can be modified in site configuration:
+
+```
+  "rateLimits": {
+    "graphQLMaxAliases": 500,
+    "graphQLMaxDepth": 30,
+    "graphQLMaxFieldCount": 500000
+  },
+```
+
+### GraphQLMaxDepth
+- **Default Value**: 30
+- Limits the maximum depth of nested objects in GraphQL queries, preventing deep queries that consume excessive resources.
+
+### GraphQLMaxFieldCount
+- **Default Value**: 500,000
+- Restricts the number of fields in a GraphQL response to avoid overly broad queries. Use pagination where available to manage large data sets effectively.
+
+### GraphQLMaxAliases
+- **Default Value**: 500
+- Sets a cap on the number of aliases in a single GraphQL query, mitigating the risk of resource-intensive queries due to excessive aliasing.

@@ -232,13 +232,14 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:             "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:     41288708,
-						NameWithOwner:  "sourcegraph/sourcegraph",
-						Description:    "Code search and navigation tool (self-hosted)",
-						URL:            "https://github.com/sourcegraph/sourcegraph",
-						StargazerCount: 2220,
-						ForkCount:      164,
+						ID:                 "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						DatabaseID:         41288708,
+						NameWithOwner:      "sourcegraph/sourcegraph",
+						Description:        "Code search and navigation tool (self-hosted)",
+						URL:                "https://github.com/sourcegraph/sourcegraph",
+						StargazerCount:     2220,
+						ForkCount:          164,
+						DiskUsageKibibytes: 302301,
 						// We're hitting github.com here, so visibility will be empty irrespective
 						// of repository type. This is a GitHub enterprise only feature.
 						Visibility:       "",
@@ -774,6 +775,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			// uses rcache, a caching layer that uses Redis.
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
+			ratelimit.SetupForTest(t)
 
 			var (
 				cf   *httpcli.Factory

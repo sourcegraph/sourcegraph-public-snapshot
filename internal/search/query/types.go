@@ -36,6 +36,7 @@ const (
 	SearchTypeLucky
 	SearchTypeStandard
 	SearchTypeKeyword
+	SearchTypeNewStandardRC1
 )
 
 func (s SearchType) String() string {
@@ -52,6 +53,8 @@ func (s SearchType) String() string {
 		return "lucky"
 	case SearchTypeKeyword:
 		return "keyword"
+	case SearchTypeNewStandardRC1:
+		return "newStandardRC1"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
