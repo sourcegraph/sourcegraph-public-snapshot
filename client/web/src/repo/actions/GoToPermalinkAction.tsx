@@ -14,7 +14,6 @@ import {
     Position,
     Icon,
     Link,
-    Tooltip,
     Button,
     Text,
     Menu,
@@ -26,11 +25,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
-import {
-    RepoHeaderActionButtonLink,
-    RepoHeaderActionMenuLink,
-    RepoHeaderActionDropdownToggle,
-} from '../components/RepoHeaderActions'
+import { RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../RepoHeader'
 
 import styles from './actions.module.scss'
@@ -93,62 +88,52 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
         )
     }
 
-    const copyPermalink = (event: React.MouseEvent<HTMLButtonElement>): void => {
-        event.preventDefault()
+    const copyPermalink = (): void => {
+        // event.preventDefault()
         telemetryService.log('CopyFilePath')
         copy(permalinkURL)
         setCopied(true)
         screenReaderAnnounce('Path copied to clipboard')
 
-        setTimeout(() => {
-            setCopied(false)
-        }, 1000)
+        setTimeout(() => setCopied(false), 1000)
     }
 
     const copyLinkLabel = copied ? 'Copied!' : 'Copy Link'
     const copyLinkIcon = copied ? mdiCheckBold : mdiContentCopy
     const isRevisionTheSameAsCommitID = revision === commitID
-    console.log({ revision, commitID })
 
     return (
-        <Tooltip content="Permalink (with full Git commit SHA)">
-            {/* <RepoHeaderActionDropdownToggle aria-label="Permalink"> */}
-            <Menu>
-                <ButtonGroup>
-                    <Button className={classNames('border', styles.permalinkBtn)} onClick={copyPermalink}>
+        <Menu>
+            <ButtonGroup>
+                <Button className={classNames('border', styles.permalinkBtn, 'pt-0 pb-0')} onClick={copyPermalink}>
+                    <Icon
+                        aria-hidden={true}
+                        svgPath={copyLinkIcon}
+                        className={classNames(styles.copyIcon, {
+                            [styles.checkIcon]: copied,
+                        })}
+                    />
+                    <Text className={styles.repoActionLabel}>{copyLinkLabel}</Text>
+                </Button>
+                {!isRevisionTheSameAsCommitID && (
+                    <MenuButton variant="secondary" className={styles.chevronBtn}>
                         <Icon
+                            className={styles.chevronBtnIcon}
+                            svgPath={mdiChevronDown}
+                            inline={false}
                             aria-hidden={true}
-                            svgPath={copyLinkIcon}
-                            class={classNames(styles.copyIcon, {
-                                [styles.checkIcon]: copied,
-                            })}
                         />
-                        <Text className={classNames(styles.repoActionLabel, 'text-muted ml-0')}>{copyLinkLabel}</Text>
-                    </Button>
-                    {!isRevisionTheSameAsCommitID && (
-                        <MenuButton variant="secondary" className={styles.chevronBtn}>
-                            <Icon
-                                className={styles.chevronBtnIcon}
-                                svgPath={mdiChevronDown}
-                                inline={false}
-                                aria-hidden={true}
-                            />
-                            <VisuallyHidden>Actions</VisuallyHidden>
-                        </MenuButton>
-                    )}
-                    {!isRevisionTheSameAsCommitID && (
-                        <MenuList position={Position.bottomEnd}>
-                            <MenuItem onSelect={copyPermalink} className={styles.dropdownItem}>
-                                <Text>Copy permalink</Text>
-                            </MenuItem>
-                        </MenuList>
-                    )}
-                </ButtonGroup>
-            </Menu>
-            {/* </RepoHeaderActionDropdownToggle> */}
-            {/* <RepoHeaderActionButtonLink aria-label="Permalink" file={false} to={permalinkURL} onSelect={onClick}>
-                <Icon aria-hidden={true} svgPath={mdiLink} />
-            </RepoHeaderActionButtonLink> */}
-        </Tooltip>
+                        <VisuallyHidden>Actions</VisuallyHidden>
+                    </MenuButton>
+                )}
+                {!isRevisionTheSameAsCommitID && (
+                    <MenuList position={Position.bottomEnd}>
+                        <MenuItem onSelect={copyPermalink} className={styles.dropdownItem}>
+                            <Text>Copy permalink</Text>
+                        </MenuItem>
+                    </MenuList>
+                )}
+            </ButtonGroup>
+        </Menu>
     )
 }

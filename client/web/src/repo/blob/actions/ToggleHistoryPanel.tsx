@@ -118,8 +118,8 @@ export class ToggleHistoryPanel extends React.PureComponent<
                     disabled={disabled}
                     className="d-flex justify-content-center align-items-center"
                 >
-                    <Icon aria-hidden={true} svgPath={mdiHistory} />
-                    <Text className={classNames(styles.repoActionLabel, 'text-muted')}>History</Text>
+                    <Icon aria-hidden={true} svgPath={mdiHistory} className={styles.repoActionIcon} />
+                    <Text className={styles.repoActionLabel}>History</Text>
                 </RepoHeaderActionButtonLink>
             </Tooltip>
         )

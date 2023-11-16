@@ -6,6 +6,10 @@
     font-size: 0.75rem;
 }
 
+.repo-action-icon {
+    fill: var(--link-color) !important;
+}
+
 @media (--md-breakpoint-down) {
     .repo-action-label {
         display: none;
@@ -21,10 +25,11 @@
 
 .copy-icon {
     height: 0.75rem;
+    fill: var(--link-color);
 }
 
 .check-icon {
-    fill: green;
+    fill: green !important;
 }
 
 .chevron-btn {

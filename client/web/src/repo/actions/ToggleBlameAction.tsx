@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 
 import { mdiGit } from '@mdi/js'
-import classNames from 'classnames'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import type { RenderMode } from '@sourcegraph/shared/src/util/url'
@@ -19,6 +18,7 @@ interface Props {
     renderMode?: RenderMode
     isPackage: boolean
 }
+
 export const ToggleBlameAction: React.FC<Props> = props => {
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility(props.isPackage)
 
@@ -40,7 +40,7 @@ export const ToggleBlameAction: React.FC<Props> = props => {
         }
     }, [isBlameVisible, setIsBlameVisible])
 
-    const icon = <Icon aria-hidden={true} svgPath={mdiGit} />
+    const icon = <Icon aria-hidden={true} svgPath={mdiGit} className={styles.repoActionIcon} />
 
     if (props.source === 'actionItemsBar') {
         return (
@@ -72,7 +72,7 @@ export const ToggleBlameAction: React.FC<Props> = props => {
                 className="d-flex justify-content-center align-items-center"
             >
                 {icon}
-                <Text className={classNames(styles.repoActionLabel, 'text-muted')}>Blame</Text>
+                <Text className={styles.repoActionLabel}>Blame</Text>
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

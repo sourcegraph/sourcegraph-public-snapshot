@@ -14,6 +14,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { useBreakpoint } from '../util/dom'
 
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
+import { RepoHeaderContextMenu } from './RepoHeaderContextMenu'
 
 import styles from './RepoHeader.module.scss'
 
@@ -81,8 +82,7 @@ export interface RepoHeaderContribution {
      */
     children: (context: RepoHeaderContext) => JSX.Element | null
 
-    optionalOnLargeScreen?: boolean
-    excludeInSmallScreen?: boolean
+    renderInContextMenu?: boolean
 }
 
 /**
@@ -179,7 +179,18 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     const rightActions = useMemo(
         () =>
             repoHeaderContributions
-                .filter(({ position }) => position === 'right')
+                .filter(({ position, renderInContextMenu }) => position === 'right' && !renderInContextMenu)
+                .map(({ children, ...rest }) => ({
+                    ...rest,
+                    element: children({ ...context, actionType: isLarge ? 'nav' : 'dropdown' }),
+                })),
+        [context, repoHeaderContributions, isLarge]
+    )
+
+    const rightActionsInContextMenu = useMemo(
+        () =>
+            repoHeaderContributions
+                .filter(({ position, renderInContextMenu }) => position === 'right' && renderInContextMenu)
                 .map(({ children, ...rest }) => ({
                     ...rest,
                     element: children({ ...context, actionType: isLarge ? 'nav' : 'dropdown' }),
@@ -220,13 +231,14 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             >
                 {isLarge ? (
                     <ul className={classNames('navbar-nav', styles.actionList)}>
-                        {rightActions.map((a, index) =>
-                            a.optionalOnLargeScreen ? null : (
-                                <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
-                                    {a.element}
-                                </li>
-                            )
-                        )}
+                        {rightActions.map((a, index) => (
+                            <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
+                                {a.element}
+                            </li>
+                        ))}
+                        <li className={classNames('nav-item', styles.actionListItem)}>
+                            <RepoHeaderContextMenu actions={rightActionsInContextMenu} />
+                        </li>
                     </ul>
                 ) : (
                     <ul className="navbar-nav">
@@ -236,7 +248,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                     <Icon aria-hidden={true} svgPath={mdiDotsVertical} />
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>
-                                    {rightActions.map(a => (
+                                    {[...rightActionsInContextMenu, ...rightActions].map(a => (
                                         <React.Fragment key={a.id}>{a.element}</React.Fragment>
                                     ))}
                                 </MenuList>
