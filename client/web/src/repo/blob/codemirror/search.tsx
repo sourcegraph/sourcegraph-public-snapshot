@@ -3,8 +3,6 @@
  * UI.
  */
 
-import React from 'react'
-
 import {
     findNext,
     findPrevious,
@@ -285,7 +283,7 @@ class SearchPanel implements Panel {
                         {searchKeybinding}
                     </Label>
                     {searchKeybindingTooltip}
-                    <span className={classNames(styles.closeButton, 'ml-2')}>
+                    <span className={classNames(styles.closeButton, 'ml-4')}>
                         <Icon
                             className={classNames(styles.x)}
                             onClick={() => closeSearchPanel(this.view)}
