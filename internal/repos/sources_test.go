@@ -6,12 +6,9 @@ import (
 	"os"
 	"reflect"
 	"sort"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -26,232 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestSources_ListRepos(t *testing.T) {
-	conf.Mock(&conf.Unified{
-		ServiceConnectionConfig: conftypes.ServiceConnections{
-			GitServers: []string{"127.0.0.1:3178"},
-		}, SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: boolPointer(false),
-			},
-		},
-	})
-	defer conf.Mock(nil)
-
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
-
-	type testCase struct {
-		name   string
-		svcs   types.ExternalServices
-		assert func(*types.ExternalService) typestest.ReposAssertion
-	}
-
-	var testCases []testCase
-
-	{
-		svcs := types.ExternalServices{
-			{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-					RepositoryQuery: []string{
-						"user:tsenart in:name patrol",
-					},
-					Repos: []string{
-						"sourcegraph/Sourcegraph",
-						"keegancsmith/sqlf",
-						"tsenart/VEGETA",
-						"tsenart/go-tsz", // fork
-					},
-					Exclude: []*schema.ExcludedGitHubRepo{
-						{Name: "tsenart/Vegeta"},
-						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
-						{Pattern: "^keegancsmith/.*"},
-						{Forks: true},
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:   "https://gitlab.com",
-					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
-					ProjectQuery: []string{
-						"?search=gokulkarthick",
-						"?search=dotfiles-vegetableman",
-					},
-					Exclude: []*schema.ExcludedGitLabProject{
-						{Name: "gokulkarthick/gokulkarthick"},
-						{Id: 7789240},
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
-					Url:   "https://bitbucket.sgdev.org",
-					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					Repos: []string{
-						"SOUR/vegeta",
-						"sour/sourcegraph",
-					},
-					RepositoryQuery: []string{
-						"?visibility=private",
-					},
-					Exclude: []*schema.ExcludedBitbucketServerRepo{
-						{Name: "SOUR/Vegeta"},      // test case insensitivity
-						{Id: 10067},                // sourcegraph repo id
-						{Pattern: ".*/automation"}, // only matches automation-testing repo
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindAWSCodeCommit,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
-					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
-					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
-					},
-					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
-						{Name: "stRIPE-gO"},
-						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
-						{Name: "test2", Id: "2686d63d-bff4-4a3e-a94f-3e6df904238d"}, // ID of `test2`
-					},
-				})),
-			},
-			{
-				Kind: extsvc.KindGitolite,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitoliteConnection{
-					Prefix: "gitolite.mycorp.com/",
-					Host:   "ssh://git@127.0.0.1:2222",
-					Exclude: []*schema.ExcludedGitoliteRepo{
-						{Name: "bar"},
-					},
-				})),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "excluded repos are never yielded",
-			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
-				return func(t testing.TB, rs types.Repos) {
-					t.Helper()
-
-					set := make(map[string]bool)
-					var patterns []*regexp.Regexp
-
-					ctx := context.Background()
-					c, err := s.Configuration(ctx)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					type excluded struct {
-						name, id, pattern string
-					}
-
-					var ex []excluded
-					switch cfg := c.(type) {
-					case *schema.GitHubConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: e.Id, pattern: e.Pattern})
-						}
-					case *schema.GitLabConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id)})
-						}
-					case *schema.BitbucketServerConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
-						}
-					case *schema.AWSCodeCommitConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: e.Id})
-						}
-					case *schema.GitoliteConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, pattern: e.Pattern})
-						}
-					}
-
-					if len(ex) == 0 {
-						t.Fatal("exclude list must not be empty")
-					}
-
-					for _, e := range ex {
-						name := e.name
-						switch s.Kind {
-						case extsvc.KindGitHub, extsvc.KindBitbucketServer:
-							name = strings.ToLower(name)
-						}
-						set[name], set[e.id] = true, true
-						if e.pattern != "" {
-							re, err := regexp.Compile(e.pattern)
-							if err != nil {
-								t.Fatal(err)
-							}
-							patterns = append(patterns, re)
-						}
-					}
-
-					for _, r := range rs {
-						if r.Fork {
-							t.Errorf("excluded fork was yielded: %s", r.Name)
-						}
-
-						if set[string(r.Name)] || set[r.ExternalRepo.ID] {
-							t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
-						}
-
-						for _, re := range patterns {
-							if re.MatchString(string(r.Name)) {
-								t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())
-							}
-						}
-					}
-				}
-			},
-		})
-	}
-
-	for _, tc := range testCases {
-		for _, svc := range tc.svcs {
-			name := svc.Kind + "/" + tc.name
-			t.Run(name, func(t *testing.T) {
-
-				ctx := context.Background()
-
-				cf, save := NewClientFactory(t, name)
-				defer save(t)
-
-				logger := logtest.NoOp(t)
-				obs := ObservedSource(logger, NewSourceMetrics())
-				src, err := NewSourcer(logger, dbmocks.NewMockDB(), cf, obs)(ctx, svc)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				repos, err := ListAll(ctx, src)
-				if err != nil {
-					t.Errorf("error listing repos: %s", err)
-				}
-
-				tc.assert(svc)(t, repos)
-			})
-		}
-	}
-}
-
+// TestSources_ListRepos_YieldExistingRepos is the main, happy-path test for
+// listing repositories.
 func TestSources_ListRepos_YieldExistingRepos(t *testing.T) {
 	ratelimit.SetupForTest(t)
 	rcache.SetupForTest(t)
@@ -355,6 +131,169 @@ func TestSources_ListRepos_YieldExistingRepos(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.svc.Kind, func(t *testing.T) {
 			name := tc.svc.Kind + "/included-repos-that-exist-are-yielded"
+
+			cf, save := NewClientFactory(t, name)
+			defer save(t)
+
+			repos := listRepos(t, cf, tc.svc)
+
+			var haveNames []string
+			for _, r := range repos {
+				haveNames = append(haveNames, string(r.Name))
+			}
+			sort.Strings(haveNames)
+
+			if !reflect.DeepEqual(haveNames, tc.wantNames) {
+				t.Error(cmp.Diff(haveNames, tc.wantNames))
+			}
+		})
+	}
+}
+
+func TestSources_ListRepos_Excluded(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		ServiceConnectionConfig: conftypes.ServiceConnections{
+			GitServers: []string{"127.0.0.1:3178"},
+		}, SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: boolPointer(false),
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
+
+	tests := []struct {
+		svc       *types.ExternalService
+		wantNames []string
+	}{
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+					RepositoryQuery: []string{
+						"user:tsenart in:name patrol", // yields only the tsenart/patrol repo
+					},
+					Repos: []string{
+						"sourcegraph/sourcegraph",
+						"keegancsmith/sqlf",
+						"tsenart/VEGETA",
+						"tsenart/go-tsz", // fork
+					},
+					Exclude: []*schema.ExcludedGitHubRepo{
+						{Name: "tsenart/Vegeta"},
+						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
+						{Pattern: "^keegancsmith/.*"},
+						{Forks: true},
+					},
+				})),
+			},
+			wantNames: []string{
+				"github.com/sourcegraph/sourcegraph",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitLab,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
+					Url:   "https://gitlab.com",
+					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
+					ProjectQuery: []string{
+						"?search=gokulkarthick",
+						"?search=dotfiles-vegetableman",
+					},
+					Exclude: []*schema.ExcludedGitLabProject{
+						{Name: "gokulkarthick/gokulkarthick"},
+						{Id: 7789240},
+					},
+				})),
+			},
+			wantNames: []string{
+				"gitlab.com/guld/dotfiles-vegetableman",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindBitbucketServer,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   "https://bitbucket.sgdev.org",
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					Repos: []string{
+						"SOUR/vegeta",
+						"sour/sourcegraph",
+					},
+					RepositoryQuery: []string{
+						"?visibility=private",
+					},
+					Exclude: []*schema.ExcludedBitbucketServerRepo{
+						{Name: "SOUR/Vegeta"},      // test case insensitivity
+						{Id: 10067},                // sourcegraph repo id
+						{Pattern: ".*/automation"}, // only matches automation-testing repo
+						{Pattern: ".*public-repo.*"},
+						{Pattern: ".*secret-repo.*"},
+						{Pattern: ".*private-repo.*"},
+						{Pattern: `.*SGDEMO.*`},
+					},
+				})),
+			},
+			wantNames: []string{
+				"bitbucket.sgdev.org/IJ/ijt-repo-testing-sg-3.6",
+				"bitbucket.sgdev.org/K8S/zoekt",
+				"bitbucket.sgdev.org/PUBLIC/archived-repo",
+				"bitbucket.sgdev.org/SOUR/sd",
+				"bitbucket.sgdev.org/SOURCEGRAPH/jsonrpc2",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindAWSCodeCommit,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
+						{Name: "stRIPE-gO"},
+						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
+						{Name: "test2", Id: "2686d63d-bff4-4a3e-a94f-3e6df904238d"}, // ID of `test2`
+					},
+				})),
+			},
+			wantNames: []string{
+				"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+				"empty-repo",
+			},
+		},
+		{
+			svc: &types.ExternalService{
+				Kind: extsvc.KindGitolite,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitoliteConnection{
+					Prefix: "gitolite.mycorp.com/",
+					Host:   "ssh://git@127.0.0.1:2222",
+					Exclude: []*schema.ExcludedGitoliteRepo{
+						{Name: "bar"},
+						{Pattern: "gitolite-ad.*"},
+					},
+				})),
+			},
+			wantNames: []string{
+				"gitolite.mycorp.com/baz",
+				"gitolite.mycorp.com/foo",
+				"gitolite.mycorp.com/testing",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.svc.Kind, func(t *testing.T) {
+			name := tc.svc.Kind + "/excluded-repos-are-never-yielded"
 
 			cf, save := NewClientFactory(t, name)
 			defer save(t)
