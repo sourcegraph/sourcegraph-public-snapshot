@@ -82,8 +82,8 @@ func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize, workerCoun
 		flushedC:     make(chan struct{}),
 	}
 	_, err := meter.Int64ObservableGauge("cody-gateway.buffered_logger_buffer_size",
-		otelmetric.WithDescription("number of events in buffered logger buffer"), otelmetric.WithInt64Callback(func(ctx context.Context, io otelmetric.Int64Observer) error {
-			io.Observe(int64(len(res.bufferC)))
+		otelmetric.WithDescription("number of events in buffered logger buffer"), otelmetric.WithInt64Callback(func(ctx context.Context, observer otelmetric.Int64Observer) error {
+			observer.Observe(int64(len(res.bufferC)))
 			return nil
 		}))
 	if err != nil {
