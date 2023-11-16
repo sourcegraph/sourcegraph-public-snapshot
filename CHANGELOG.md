@@ -48,6 +48,9 @@ All notable changes to Sourcegraph are documented in this file.
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
+
+## Unreleased 5.2.4
+
 ## 5.2.3
 
 ### Added
