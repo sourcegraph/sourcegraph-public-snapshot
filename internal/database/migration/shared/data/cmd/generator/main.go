@@ -19,9 +19,8 @@ func main() {
 	liblog := log.Init(log.Resource{Name: "migration-generator"})
 	defer liblog.Sync()
 
+	// TODO(JH): remove this when done POC'ing
 	println(version.FinalVersionString)
-
-	os.Exit(0)
 
 	if err := mainErr(); err != nil {
 		panic(fmt.Sprintf("error: %s", err))
