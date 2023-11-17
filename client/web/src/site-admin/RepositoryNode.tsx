@@ -11,7 +11,7 @@ import {
     mdiRefresh,
     mdiSecurity,
     mdiVectorPolyline,
-    mdiListStatus,
+    mdiListStatus, mdiSearchWeb,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -227,7 +227,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     onSelect={() => navigate(`/${node.name}/-/settings/index`)}
                                     className="p-2"
                                 >
-                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
+                                    <Icon aria-hidden={true} svgPath={mdiSearchWeb} className="mr-1" />
                                     Search indexing
                                 </MenuItem>
                                 <MenuItem
