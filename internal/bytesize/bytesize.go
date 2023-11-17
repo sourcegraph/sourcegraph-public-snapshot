@@ -5,7 +5,6 @@ package bytesize
 import (
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,7 +38,11 @@ const (
 func Parse(str string) (Bytes, error) {
 	str = strings.TrimSpace(str)
 
-	num, unitIndex := readNumber(str)
+	num, unitIndex, err := readNumber(str)
+	if err != nil {
+		return 0, errors.Newf("failed to parse %q into number: %s", str[:unitIndex], err)
+	}
+
 	if unitIndex == 0 {
 		return 0, errors.Newf("missing number at start of string: %s", str)
 	}
@@ -57,16 +60,21 @@ func Parse(str string) (Bytes, error) {
 	return result, nil
 }
 
-func readNumber(str string) (int, int) {
+func readNumber(str string) (int, int, error) {
 	for i, c := range str {
-		if unicode.IsDigit(c) {
+		if isDigit(c) {
 			continue
 		}
-		number, _ := strconv.Atoi(str[0:i])
-		return number, i
+		if i == 0 {
+			return 0, 0, nil
+		}
+		number, err := strconv.Atoi(str[0:i])
+		return number, i, err
 	}
-	return 0, 0
+	return 0, 0, nil
 }
+
+func isDigit(ch rune) bool { return '0' <= ch && ch <= '9' }
 
 func parseUnit(unit string) (Bytes, error) {
 	switch strings.TrimSpace(unit) {

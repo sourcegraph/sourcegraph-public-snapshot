@@ -164,7 +164,14 @@ func buildSizeConstraintsExcludeFn(constraint string) (gitHubExcludeFunc, error)
 	}
 
 	return func(r github.Repository) bool {
-		return operator.Eval(int(r.SizeBytes()), int(size))
+		repoSize := int(r.SizeBytes())
+
+		// If we don't have a repository size, we don't exclude
+		if repoSize == 0 {
+			return false
+		}
+
+		return operator.Eval(repoSize, int(size))
 	}, nil
 }
 
