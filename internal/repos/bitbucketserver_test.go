@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -178,13 +179,12 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	rcache.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
-	svc := &types.ExternalService{
-		Kind: extsvc.KindBitbucketServer,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+	svc := typestest.MakeExternalService(t,
+		extsvc.VariantBitbucketServer,
+		&schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sgdev.org",
 			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-		})),
-	}
+		})
 
 	ctx := context.Background()
 	bbsSrc, err := NewBitbucketServerSource(ctx, logtest.Scoped(t), svc, nil)
