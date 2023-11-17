@@ -13,11 +13,10 @@ interface Props extends PlatformContextProps, SettingsCascadeProps {}
 export const MixPreciseAndSearchBasedReferencesToggle = (props: Props): React.ReactElement | null => {
     const { settingsCascade, platformContext } = props
 
-    const disableSearchBased = getSettingsValue(settingsCascade, 'codeIntel.disableSearchBased')
-    const mixPreciseAndSearchBasedReferences = getSettingsValue(
-        settingsCascade,
-        'codeIntel.mixPreciseAndSearchBasedReferences'
-    )
+    const settings = isErrorLike(settingsCascade.final) ? null : settingsCascade.final
+    const disableSearchBased = settings?.['codeIntel.disableSearchBased'] ?? false
+    const mixPreciseAndSearchBasedReferences = settings?.['codeIntel.mixPreciseAndSearchBasedReferences'] ?? false
+
     console.log(`VARUN: mix outer: ${mixPreciseAndSearchBasedReferences}`)
 
     const onClick = useCallback(async () => {
@@ -51,6 +50,6 @@ export const MixPreciseAndSearchBasedReferencesToggle = (props: Props): React.Re
     )
 }
 
-function getSettingsValue(settings: SettingsCascadeOrError, key: string): boolean {
-    return !isErrorLike(settings.final) && settings.final?.[key]
-}
+// function getSettingsValue(settings: SettingsCascadeOrError, key: string): boolean {
+//     return !isErrorLike(settings.final) && settings.final?.[key]
+// }
