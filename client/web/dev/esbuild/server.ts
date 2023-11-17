@@ -68,7 +68,7 @@ export const esbuildDevelopmentServer = async (
     return await new Promise<void>((_resolve, reject) => {
         proxyServer.once('listening', () => {
             signale.success(`esbuild server is ready after ${Math.round(performance.now() - start)}ms`)
-            printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}`])
+            printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}/search`])
         })
         proxyServer.once('error', error => reject(error))
     })
