@@ -27,10 +27,10 @@ type Client struct {
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
 	UserAgent string
 
-	// wafGeolocationCountryCode is a ISO 3166-1 alpha-2 country code for the
+	// wafIPCountryCode is a ISO 3166-1 alpha-2 country code for the
 	// request client as provided by a WAF (typically Cloudlfare) behind which
 	// Sourcegraph is hosted.
-	wafGeolocationCountryCode string
+	wafIPCountryCode string
 
 	// countryCode and friends are lazily hydrated once by
 	// (*Client).OriginCountryCode().
@@ -84,8 +84,8 @@ func (c *Client) OriginCountryCode() (string, error) {
 
 func inferOriginCountryCode(c *Client) (string, error) {
 	// If we have a trusted value already, use that directly.
-	if c.wafGeolocationCountryCode != "" {
-		return c.wafGeolocationCountryCode, nil
+	if c.wafIPCountryCode != "" {
+		return c.wafIPCountryCode, nil
 	}
 
 	// If we're able to infer a country code from the forwarded-for header,

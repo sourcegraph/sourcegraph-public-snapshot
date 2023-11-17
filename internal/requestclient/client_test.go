@@ -16,7 +16,7 @@ func TestClientOriginCountryCode(t *testing.T) {
 		{
 			name: "have trusted geolocation",
 			client: &Client{
-				wafGeolocationCountryCode: "CA",
+				wafIPCountryCode: "CA",
 			},
 			wantCode: "CA",
 		},
