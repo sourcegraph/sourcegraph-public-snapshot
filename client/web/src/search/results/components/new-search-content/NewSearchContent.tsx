@@ -1,4 +1,14 @@
-import { FC, HTMLAttributes, PropsWithChildren, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import {
+    FC,
+    HTMLAttributes,
+    PropsWithChildren,
+    Suspense,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+} from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
@@ -22,13 +32,13 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
-import { SideBlob } from '../../../../codeintel/ReferencesPanel'
 import { fetchBlob } from '../../../../repo/blob/backend'
 import type { SearchPanelConfig } from '../../../../repo/blob/codemirror/search'
-import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/search'
+import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/types'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
@@ -43,6 +53,8 @@ import { UnownedResultsAlert } from '../UnownedResultsAlert'
 import { isSmartSearchAlert } from '../utils'
 
 import styles from './NewSearchContent.module.scss'
+
+const LazySideBlob = lazyComponent(() => import('../../../../codeintel/SideBlob'), 'SideBlob')
 
 /**
  * At the moment search result preview panel supports only
@@ -370,19 +382,21 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
                 <Link to={getFileMatchUrl(blobInfo)}>{blobInfo.path}</Link>
             </small>
 
-            <SideBlob
-                repository={blobInfo.repository}
-                file={blobInfo.path}
-                commitID={blobInfo.commit ?? ''}
-                wrapLines={false}
-                navigateToLineOnAnyClick={false}
-                searchPanelConfig={searchPanelConfig}
-                className={styles.previewContent}
-                platformContext={platformContext}
-                settingsCascade={settingsCascade}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                extensionsController={extensionsController}
-            />
+            <Suspense fallback={null}>
+                <LazySideBlob
+                    repository={blobInfo.repository}
+                    file={blobInfo.path}
+                    commitID={blobInfo.commit ?? ''}
+                    wrapLines={false}
+                    navigateToLineOnAnyClick={false}
+                    searchPanelConfig={searchPanelConfig}
+                    className={styles.previewContent}
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    extensionsController={extensionsController}
+                />
+            </Suspense>
         </Panel>
     )
 }

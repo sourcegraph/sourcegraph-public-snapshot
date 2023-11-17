@@ -56,6 +56,7 @@ import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardS
 import { createElement } from '../../../util/dom'
 
 import { CodeMirrorContainer } from './react-interop'
+import { SearchPanelViewMode } from './types'
 
 import styles from './search.module.scss'
 
@@ -79,11 +80,6 @@ type SearchMatches = Map<number, number>
 export const BLOB_SEARCH_CONTAINER_ID = 'blob-search-container'
 
 const focusSearchInput = StateEffect.define<boolean>()
-
-export enum SearchPanelViewMode {
-    FullSearch = 'full-search',
-    MatchesOnly = 'matches-only',
-}
 
 export interface SearchPanelConfig {
     searchValue: string
