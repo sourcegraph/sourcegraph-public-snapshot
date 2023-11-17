@@ -115,6 +115,11 @@ Cody supports a wide range of programming languages, including:
 
 JavaScript, TypeScript, PHP, Python, Java, C/C++, C#, Ruby, Go, SQL, Swift, Objective-C, Perl, Rust, Kotlin, Scala, Groovy, R, MATLAB, Dart, Lua, Julia, Cobol and Shell scripting languages (like Bash, PowerShell).
 
+### Can Cody answer non-programming questions?
+
+Cody is an expert in answering a wide range of coding-related questions on topics including questions about your codebase, general programming concepts, test cases, debugging, and more. Cody Chat is not designed to answer non-coding questions or provide general information on topics outside of coding or your codebase.
+
+
 ## Embeddings
 
 ### What are embeddings for?
