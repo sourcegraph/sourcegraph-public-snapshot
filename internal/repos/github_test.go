@@ -775,6 +775,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			// uses rcache, a caching layer that uses Redis.
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
+			ratelimit.SetupForTest(t)
 
 			var (
 				cf   *httpcli.Factory

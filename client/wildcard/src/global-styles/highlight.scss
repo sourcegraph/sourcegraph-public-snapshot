@@ -556,6 +556,21 @@
         color: var(--hl-pink);
     }
 
+    // The following hl-typed-* that have associated tooltips.
+    // This ensures that tokens highlight before tooltip is available.
+    .hl-typed-Identifier:hover,
+    .hl-typed-IdentifierParameter:hover,
+    .hl-typed-IdentifierAttribute:hover,
+    .hl-typed-IdentifierType:hover,
+    .hl-typed-IdentifierFunction:hover,
+    .hl-typed-IdentifierModule:hover,
+    .hl-typed-IdentifierFunctionDefinition:hover,
+    .hl-typed-IdentifierNamespace:hover,
+    .hl-typed-IdentifierConstant:hover,
+    .hl-typed-IdentifierBuiltin:hover {
+        background-color: var(--mark-bg);
+    }
+
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-RegexEscape {
     // }
@@ -976,6 +991,21 @@
     }
     .hl-typed-IdentifierAttribute {
         color: var(--hl-purple);
+    }
+
+    // The following hl-typed-* that have associated tooltips.
+    // This ensures that tokens highlight before tooltip is available.
+    .hl-typed-Identifier:hover,
+    .hl-typed-IdentifierAttribute:hover,
+    .hl-typed-IdentifierBuiltin:hover,
+    .hl-typed-IdentifierConstant:hover,
+    .hl-typed-IdentifierFunction:hover,
+    .hl-typed-IdentifierFunctionDefinition:hover,
+    .hl-typed-IdentifierModule:hover,
+    .hl-typed-IdentifierNamespace:hover,
+    .hl-typed-IdentifierParameter:hover,
+    .hl-typed-IdentifierType:hover {
+        background-color: var(--mark-bg);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
