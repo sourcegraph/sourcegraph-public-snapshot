@@ -93,6 +93,9 @@ func TestBuildGitHubExcludeRule(t *testing.T) {
 
 			{"< 1 GB", 1024*1024 - 1, false},
 			{"< 2 GB", 1024 * 1024, true},
+
+			// Ignore repositories with 0 size
+			{"< 1 MB", 0, false},
 		}
 
 		for _, tt := range tests {
