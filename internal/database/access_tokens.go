@@ -239,6 +239,31 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	return id, token, nil
 }
 
+var adminOnlyAccessTokenQuery string = `
+UPDATE access_tokens t SET last_used_at=now()
+WHERE t.id IN (
+	SELECT t2.id FROM access_tokens t2
+	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
+	$2 = ANY (t2.scopes)
+	AND subject_user.site_admin AND creator_user.site_admin
+)
+RETURNING t.subject_user_id
+`
+
+var regularAccessTokenQuery string = `
+UPDATE access_tokens t SET last_used_at=now()
+WHERE t.id IN (
+	SELECT t2.id FROM access_tokens t2
+	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
+	$2 = ANY (t2.scopes)
+)
+RETURNING t.subject_user_id
+`
+
 func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error) {
 	if requiredScope == "" {
 		return 0, errors.New("no scope provided in access token lookup")
@@ -249,19 +274,19 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope stri
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return 0, err
+	}
+
+	query := regularAccessTokenQuery
+	if info.IsExpired() {
+		query = adminOnlyAccessTokenQuery
+	}
+
 	if err := s.Handle().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
-		`
-UPDATE access_tokens t SET last_used_at=now()
-WHERE t.id IN (
-	SELECT t2.id FROM access_tokens t2
-	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
-	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
-	$2 = ANY (t2.scopes)
-)
-RETURNING t.subject_user_id
-`,
+		query,
 		tokenHash, requiredScope,
 	).Scan(&subjectUserID); err != nil {
 		if err == sql.ErrNoRows {
