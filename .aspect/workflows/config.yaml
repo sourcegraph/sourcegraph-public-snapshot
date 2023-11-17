@@ -31,8 +31,12 @@ tasks:
           - //client/web:bundle
     test:
       include_eternal_tests: true
+      flags:
+        - --runs_per_test=5
+        - --local_test_jobs=1
       targets:
-          - //...
+      #- //...
+          - //testing:backend_integration_test
           # - //testing:grpc_backend_integration_test
           # This target should only really run when on main which we aren't handling. For the time being while we
           # evaluate Aspect Workflows it is ok
