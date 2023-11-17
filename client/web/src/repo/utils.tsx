@@ -67,7 +67,7 @@ export const stringToCodeHostType = (codeHostType: string): CodeHostType => {
     }
 }
 
-const contains = (arr: string[], target: string): boolean => {
+export const contains = (arr: string[], target: string): boolean => {
     for (let i = 0; i < arr.length; i++) {
         if (arr[i] === target) {
             return true
@@ -76,10 +76,9 @@ const contains = (arr: string[], target: string): boolean => {
     return false
 }
 
-export const getIcon = (file: string): { icon: string; iconClass: string } => {
+export const getExtension = (file: string): string => {
     const s = file.split(".").slice(1)
     let extension: string
-
     if (s.length === 1) {
         extension = s[0]
     }
@@ -92,6 +91,12 @@ export const getIcon = (file: string): { icon: string; iconClass: string } => {
     } else {
         extension = s[s.length - 1]
     }
+
+    return extension
+}
+
+export const getIcon = (file: string): { icon: string; iconClass: string } => {
+    const extension = getExtension(file)
 
     switch (extension) {
         case "ts": {
@@ -140,7 +145,7 @@ export const getIcon = (file: string): { icon: string; iconClass: string } => {
             return { icon: mdiText, iconClass: styles.defaultIcon }
         }
         case "test": {
-            return { icon: mdiTestTube, iconClass: styles.blue }
+            return { icon: mdiTestTube, iconClass: styles.yellow }
         }
         case "json": {
             return { icon: mdiCodeJson, iconClass: styles.defaultIcon }
