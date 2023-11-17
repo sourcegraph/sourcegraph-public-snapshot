@@ -432,7 +432,3 @@ export function shouldScrollIntoView(view: EditorView, range: SelectedLineRange)
         to.top <= view.scrollDOM.scrollTop
     )
 }
-
-function isSingleLine(range: SelectedLineRange): boolean {
-    return !!range && (!range.endLine || range.line === range.endLine)
-}
