@@ -305,17 +305,17 @@ class SearchPanel implements Panel {
                             {searchKeybinding}
                         </Label>
                         {searchKeybindingTooltip}
-                    <span className={classNames(styles.closeButton, 'ml-4')}>
-                        <Icon
-                            className={classNames(styles.x)}
-                            onClick={() => closeSearchPanel(this.view)}
-                            size="sm"
-                            svgPath={mdiClose}
-                            aria-hidden={false}
-                            aria-label="close search"
-                        />
-                    </span>
-                </div>
+                        <span className={classNames(styles.closeButton, 'ml-4')}>
+                            <Icon
+                                className={classNames(styles.x)}
+                                onClick={() => closeSearchPanel(this.view)}
+                                size="sm"
+                                svgPath={mdiClose}
+                                aria-hidden={false}
+                                aria-label="close search"
+                            />
+                        </span>
+                    </div>
                 )}
             </CodeMirrorContainer>
         )

@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes, PropsWithChildren, useCallback, useMemo, useRef } from 'react'
+import { FC, HTMLAttributes, PropsWithChildren, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
@@ -117,11 +117,25 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onLogSearchResultClick,
     } = props
 
+    const submittedURLQueryRef = useRef(submittedURLQuery)
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
     const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
 
     useScrollManager('SearchResultsContainer', containerRef)
+
+    // Clean up hook, close the preview panel if search result page
+    // have been closed/unmount
+    useEffect(() => clearPreview, [])
+
+    // File preview clean up hook, close the preview panel every time when we
+    // re-search / re-submit the query.
+    useLayoutEffect(() => {
+        if (submittedURLQuery !== submittedURLQueryRef.current) {
+            submittedURLQueryRef.current = submittedURLQuery
+            clearPreview()
+        }
+    }, [submittedURLQuery])
 
     const prefetchFile: FilePrefetcher = useCallback(
         params =>
