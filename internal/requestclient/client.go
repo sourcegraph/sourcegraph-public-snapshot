@@ -60,7 +60,7 @@ func (c *Client) LogFields() []log.Field {
 
 	var ccField log.Field
 	if cc, err := c.OriginCountryCode(); err != nil {
-		ccField = log.String("requestClient.countryCode.error", err.Error())
+		ccField = log.NamedError("requestClient.countryCode.error", err)
 	} else {
 		ccField = log.String("requestClient.countryCode", cc)
 	}
