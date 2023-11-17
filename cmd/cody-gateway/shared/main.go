@@ -64,7 +64,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			eventLogger, err = events.NewBufferedLogger(obctx.Logger, eventLogger,
 				config.BigQuery.EventBufferSize, config.BigQuery.EventBufferWorkers)
 			if err != nil {
-				return errors.Wrap(err, "initOpenTelemetry")
+				return errors.Wrap(err, "create buffered logger")
 			}
 		}
 	} else {
@@ -78,6 +78,9 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 				events.NewDelayedLogger(eventLogger),
 				config.BigQuery.EventBufferSize,
 				config.BigQuery.EventBufferWorkers)
+			if err != nil {
+				return errors.Wrap(err, "create buffered logger")
+			}
 		}
 	}
 
