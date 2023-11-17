@@ -9,6 +9,7 @@ const (
 	headerKeyInteractionID = "X-Sourcegraph-Interaction-ID"
 )
 
+// TODO(@bobheadxi): Migrate to httpcli.Doer and httpcli.Middleware
 type HTTPTransport struct {
 	RoundTripper http.RoundTripper
 }
@@ -22,6 +23,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	interaction := FromContext(req.Context())
 	if interaction != nil {
+		req = req.Clone(req.Context()) // RoundTripper should not modify original request
 		req.Header.Set(headerKeyInteractionID, interaction.ID)
 	}
 
