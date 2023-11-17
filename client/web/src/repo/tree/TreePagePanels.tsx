@@ -1,6 +1,6 @@
 import React, { type FC, useRef, useState, useEffect, useMemo } from 'react'
 
-import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
+import { mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -27,6 +27,7 @@ import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 import styles from './TreePagePanels.module.scss'
+import { getIcon } from '../utils'
 
 export const treeHistoryFragment = gql`
     fragment TreeHistoryFields on TreeEntry {
@@ -176,54 +177,58 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                 </CardHeader>
             </thead>
             <tbody>
-                {entries.map(entry => (
-                    <tr key={entry.name}>
-                        <td className={styles.fileName}>
-                            <LinkOrSpan
-                                to={entry.url}
-                                className={classNames(
-                                    'test-page-file-decorable',
-                                    entry.isDirectory && 'font-weight-bold',
-                                    `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`
-                                )}
-                                title={entry.path}
-                                data-testid="tree-entry"
-                            >
-                                <Icon
-                                    className="mr-1"
-                                    svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
-                                    aria-hidden={true}
-                                />
-                                {entry.name}
-                                {entry.isDirectory && '/'}
-                            </LinkOrSpan>
-                        </td>
-                        {fileHistoryByPath[entry.path] && (
-                            <>
-                                <td className={styles.commitMessage}>
-                                    <span
-                                        title={fileHistoryByPath[entry.path].subject}
-                                        data-testid="git-commit-message-with-links"
-                                    >
-                                        <CommitMessageWithLinks
-                                            to={fileHistoryByPath[entry.path].canonicalURL}
-                                            message={fileHistoryByPath[entry.path].subject}
-                                            className="text-muted"
-                                            externalURLs={fileHistoryByPath[entry.path].externalURLs}
-                                        />
-                                    </span>
-                                </td>
-                                <td className={classNames(styles.commitDate, 'text-muted')}>
-                                    <Timestamp
-                                        noAbout={true}
-                                        noAgo={true}
-                                        date={getCommitDate(fileHistoryByPath[entry.path])}
+                {entries.map(entry => {
+                    const { icon, iconClass } = getIcon(entry.name)
+
+                    return (
+                        <tr key={entry.name}>
+                            <td className={styles.fileName}>
+                                <LinkOrSpan
+                                    to={entry.url}
+                                    className={classNames(
+                                        'test-page-file-decorable',
+                                        entry.isDirectory && 'font-weight-bold',
+                                        `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`
+                                    )}
+                                    title={entry.path}
+                                    data-testid="tree-entry"
+                                >
+                                    <Icon
+                                        className={classNames("mr-2", iconClass)}
+                                        svgPath={entry.isDirectory ? mdiFolderOutline : icon}
+                                        aria-hidden={true}
                                     />
-                                </td>
-                            </>
-                        )}
-                    </tr>
-                ))}
+                                    {entry.name}
+                                    {entry.isDirectory && '/'}
+                                </LinkOrSpan>
+                            </td>
+                            {fileHistoryByPath[entry.path] && (
+                                <>
+                                    <td className={styles.commitMessage}>
+                                        <span
+                                            title={fileHistoryByPath[entry.path].subject}
+                                            data-testid="git-commit-message-with-links"
+                                        >
+                                            <CommitMessageWithLinks
+                                                to={fileHistoryByPath[entry.path].canonicalURL}
+                                                message={fileHistoryByPath[entry.path].subject}
+                                                className="text-muted"
+                                                externalURLs={fileHistoryByPath[entry.path].externalURLs}
+                                            />
+                                        </span>
+                                    </td>
+                                    <td className={classNames(styles.commitDate, 'text-muted')}>
+                                        <Timestamp
+                                            noAbout={true}
+                                            noAgo={true}
+                                            date={getCommitDate(fileHistoryByPath[entry.path])}
+                                        />
+                                    </td>
+                                </>
+                            )}
+                        </tr>
+                    )
+                })}
             </tbody>
         </Card>
     )

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
-    mdiFileDocumentOutline,
     mdiSourceRepository,
     mdiFolderOutline,
     mdiFolderOpenOutline,
@@ -30,6 +29,7 @@ import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
+import { getIcon } from './utils'
 
 export const MAX_TREE_ENTRIES = 2500
 
@@ -389,6 +389,7 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
+    const { icon, iconClass } = getIcon(name)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -470,15 +471,19 @@ function renderNode({
                 }
             }}
         >
+            {/* Icon should be dynamically populated based on what kind of file type */}
             <Icon
-                svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
-                className={classNames('mr-1', styles.icon)}
+                svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : icon}
+                className={classNames('mr-1', styles.icon, iconClass)}
                 aria-hidden={true}
             />
-            {name}
+            <span>
+                {name}
+            </span>
         </Link>
     )
 }
+
 
 type TreeNode = WildcardTreeNode & {
     path: string
