@@ -1,0 +1,36 @@
+import { isInlineFragment } from '@apollo/client/utilities'
+import { IMockStore } from '@graphql-tools/mock'
+import { GraphQLResolveInfo } from 'graphql'
+import { GraphQLVariables } from 'msw'
+
+interface GenericGraphQLContext {
+    nodeTypename?: string
+    operationName?: string
+}
+
+export function getDefaultResolvers(store: IMockStore): Record<string, any> {
+    return {
+        Query: {
+            node: (
+                _value: any,
+                { id }: GraphQLVariables,
+                context: GenericGraphQLContext | undefined,
+                info: GraphQLResolveInfo
+            ) => {
+                let typename = context?.nodeTypename
+                if (!typename && (!context?.operationName || info.operation.name?.value === context.operationName)) {
+                    // Try to determine type name from inline fragment
+                    typename =
+                        info.fieldNodes[0].selectionSet?.selections.find(isInlineFragment)?.typeCondition?.name.value
+                }
+
+                if (typename) {
+                    return store.get(typename, id)
+                }
+                throw new Error(
+                    'Mock error: Unable to determine typename for node query. Please use an inline fragment in the query or explicitly specify the type to use.'
+                )
+            },
+        },
+    }
+}

@@ -6,6 +6,7 @@ import { RouterProvider, createMemoryRouter, type MemoryRouterProps } from 'reac
 import { EMPTY_SETTINGS_CASCADE, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedStoryProvider, type MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, type TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedMSWProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
@@ -31,22 +32,38 @@ export type WebStoryChildrenProps = BreadcrumbSetters &
     }
 
 export interface WebStoryProps
-    extends Omit<MemoryRouterProps, 'children'>,
-        Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: FC<WebStoryChildrenProps>
-    path?: string
-    legacyLayoutContext?: Partial<LegacyLayoutRouteContext>
-}
+    extends BaseWebStoryProps,
+        Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {}
 
 /**
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const WebStory: FC<WebStoryProps> = ({
+export const WebStory: FC<WebStoryProps> = ({ mocks, useStrictMocking, ...props }) => (
+    <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
+        <BaseWebStory {...props} />
+    </MockedStoryProvider>
+)
+
+export const WebStoryWithoutMocks: FC<WebStoryProps> = props => (
+    <MockedMSWProvider>
+        <BaseWebStory {...props} />
+    </MockedMSWProvider>
+)
+
+/**
+ * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
+ * Takes a render function as children that gets called with the props.
+ */
+export interface BaseWebStoryProps extends Omit<MemoryRouterProps, 'children'> {
+    children: FC<WebStoryChildrenProps>
+    path?: string
+    legacyLayoutContext?: Partial<LegacyLayoutRouteContext>
+}
+
+export const BaseWebStory: FC<WebStoryProps> = ({
     children: Children,
-    mocks,
     path = '*',
-    useStrictMocking,
     initialEntries = ['/'],
     initialIndex = 1,
     legacyLayoutContext = {},
@@ -75,18 +92,16 @@ export const WebStory: FC<WebStoryProps> = ({
     })
 
     return (
-        <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
-            <WildcardThemeContext.Provider value={{ isBranded: true }}>
-                <LegacyRouteContext.Provider value={{ ...legacyLayoutRouteContextMock, ...legacyLayoutContext }}>
-                    <SettingsProvider settingsCascade={EMPTY_SETTINGS_CASCADE}>
-                        <ThemeContext.Provider
-                            value={{ themeSetting: isLightTheme ? ThemeSetting.Light : ThemeSetting.Dark }}
-                        >
-                            <RouterProvider router={router} />
-                        </ThemeContext.Provider>
-                    </SettingsProvider>
-                </LegacyRouteContext.Provider>
-            </WildcardThemeContext.Provider>
-        </MockedStoryProvider>
+        <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <LegacyRouteContext.Provider value={{ ...legacyLayoutRouteContextMock, ...legacyLayoutContext }}>
+                <SettingsProvider settingsCascade={EMPTY_SETTINGS_CASCADE}>
+                    <ThemeContext.Provider
+                        value={{ themeSetting: isLightTheme ? ThemeSetting.Light : ThemeSetting.Dark }}
+                    >
+                        <RouterProvider router={router} />
+                    </ThemeContext.Provider>
+                </SettingsProvider>
+            </LegacyRouteContext.Provider>
+        </WildcardThemeContext.Provider>
     )
 }

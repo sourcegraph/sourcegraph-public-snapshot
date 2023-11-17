@@ -5,6 +5,7 @@ import type { ReactElement } from 'react'
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
 import type { DecoratorFn, Parameters } from '@storybook/react'
+import { mswLoader, initialize } from 'msw-storybook-addon'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 import { isChromatic } from '@sourcegraph/wildcard/src/stories'
@@ -34,6 +35,12 @@ export const parameters: Parameters = {
     // disables snapshotting for all stories by default
     chromatic: { disableSnapshot: true },
 }
+
+export const loaders = [mswLoader]
+
+initialize({
+    onUnhandledRequest: 'bypass',
+})
 
 configureActions({ depth: 100, limit: 20 })
 

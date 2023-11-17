@@ -3,12 +3,15 @@ import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { setupHandlers } from '@sourcegraph/shared/src/testing/msw/storybook'
 
-import { WebStory } from '../../../components/WebStory'
+import { WebStory, WebStoryWithoutMocks } from '../../../components/WebStory'
 import type { FetchOwnershipResult } from '../../../graphql-operations'
 
 import { FileOwnershipPanel } from './FileOwnershipPanel'
 import { FETCH_OWNERS } from './grapqlQueries'
+
+const handlers = setupHandlers()
 
 const response: FetchOwnershipResult = {
     currentUser: {
@@ -180,7 +183,7 @@ const config: Meta = {
 export default config
 
 export const Default: StoryFn = () => (
-    <WebStory mocks={[mockResponse]}>
+    <WebStoryWithoutMocks>
         {() => (
             <FileOwnershipPanel
                 repoID="github.com/sourcegraph/sourcegraph"
@@ -188,5 +191,10 @@ export const Default: StoryFn = () => (
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )}
-    </WebStory>
+    </WebStoryWithoutMocks>
 )
+Default.parameters = {
+    msw: {
+        handlers: [handlers.mockGraphql({})],
+    },
+}
