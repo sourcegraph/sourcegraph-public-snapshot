@@ -10,6 +10,8 @@ For more details, refer to [`IP2LOCATION-LITE-DB1.IPV6.BIN/README_LITE.TXT`](./I
 
 ## Updating the database
 
+This database was last updated 11/16/2023 - the [IP2Location FAQ](https://www.ip2location.com/faqs) indicates the database should be updated yearly.
+
 The database must be downloaded manually from the IP2Location website, and requires an account in order to agree to IP2Location terms (such as the attribution required above).
 An existing account and detailed instructions are available in [this shared 1Password entry](https://my.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/fonquuhrzrdr4irultcuj6gqby).
 
