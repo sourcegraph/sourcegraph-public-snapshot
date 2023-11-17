@@ -5,13 +5,17 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,6 +41,8 @@ func TestAccessTokens(t *testing.T) {
 		t.Run("testAccessTokens_tokenSHA256Hash", testAccessTokens_tokenSHA256Hash)
 	})
 
+	// Don't run parallel as it's mocking an expired license
+	t.Run("testAccessToken_Lookup_expiredLicense", testAccessTokens_Lookup_expiredLicense)
 }
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
@@ -233,7 +239,6 @@ func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
-
 }
 
 // This test is run in TestAccessTokens
@@ -469,6 +474,62 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal("Create: want error creating token for deleted creator user")
 		}
 	})
+}
+
+// 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
+// the token, and that no new access tokens may be created for deleted users.
+// This test is run in TestAccessTokens
+func testAccessTokens_Lookup_expiredLicense(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	adminUser, err := db.Users().Create(ctx, NewUser{
+		Email:                 "u1@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, adminUser.ID, true))
+
+	regularUser, err := db.Users().Create(ctx, NewUser{
+		Email:                 "u2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, adminToken, err := db.AccessTokens().Create(ctx, adminUser.ID, []string{"a"}, "n0", adminUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, regularToken, err := db.AccessTokens().Create(ctx, regularUser.ID, []string{"a"}, "n0", regularUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set license as expired
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		return &license.Info{
+			ExpiresAt: time.Now().Add(-1 * time.Hour),
+		}, "", nil
+	}
+
+	if _, err := db.AccessTokens().Lookup(ctx, adminToken, "a"); err != nil {
+		t.Fatal("Lookup: lookup should not fail for admin user")
+	}
+	if _, err := db.AccessTokens().Lookup(ctx, regularToken, "a"); err == nil {
+		t.Fatal("Lookup: lookup should fail for regular user")
+	}
 }
 
 // This test is run in TestAccessTokens
