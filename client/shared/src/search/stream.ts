@@ -579,7 +579,7 @@ export function getRepositoryUrl(repository: string, branches?: string[]): strin
 }
 
 export function getRevision(branches?: string[], version?: string): string {
-    if (branches) {
+    if (branches && branches.length > 0) {
         return branches[0]
     }
     if (version) {
@@ -589,7 +589,8 @@ export function getRevision(branches?: string[], version?: string): string {
 }
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
-    const revision = fileMatch.commit ?? (fileMatch.branches ? fileMatch.branches[0] : '')
+    const revision =
+        fileMatch.commit ?? (fileMatch.branches && fileMatch.branches.length > 0 ? fileMatch.branches[0] : '')
     const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
