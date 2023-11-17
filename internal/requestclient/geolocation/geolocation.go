@@ -24,7 +24,7 @@ var ip2locationDBBin []byte
 // It is only evaluated once - subsequent calls will return the first initialized
 // *ip2location.DB instance.
 var getLocationsDB = syncx.OnceValue(func() *ip2location.DB {
-	db, err := ip2location.OpenDBWithReader(noOpCloser{bytes.NewReader(ip2locationDBBin)})
+	db, err := ip2location.OpenDBWithReader(noOpReaderAtCloser{bytes.NewReader(ip2locationDBBin)})
 	if err != nil {
 		panic(err)
 	}
@@ -54,6 +54,10 @@ func InferCountryCode(ipAddress string) (string, error) {
 	return code, nil
 }
 
-type noOpCloser struct{ *bytes.Reader }
+// We can't use io.NoOpCloser because we need to implement Reader and ReaderAt,
+// provided by *bytes.Reader, as well for the ip2location library.
+type noOpReaderAtCloser struct{ *bytes.Reader }
 
-func (noOpCloser) Close() error { return nil }
+var _ ip2location.DBReader = noOpReaderAtCloser{}
+
+func (noOpReaderAtCloser) Close() error { return nil }
