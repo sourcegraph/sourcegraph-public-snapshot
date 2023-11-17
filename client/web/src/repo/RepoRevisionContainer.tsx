@@ -1,4 +1,4 @@
-import { type FC, useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useMemo, useState } from 'react'
 
 import { Route, Routes } from 'react-router-dom'
 
