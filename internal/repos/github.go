@@ -121,10 +121,7 @@ func newGitHubSource(
 		return nil, err
 	}
 
-	var (
-		eb           excludeBuilder
-		excludeForks bool
-	)
+	var eb excludeBuilder
 	excludeArchived := func(repo any) bool {
 		if githubRepo, ok := repo.(github.Repository); ok {
 			return githubRepo.IsArchived
@@ -137,12 +134,24 @@ func newGitHubSource(
 		}
 		return false
 	}
+
 	for _, r := range c.Exclude {
+		// TODO: Size/Stars are special-case'd here and are AND'ed if both set.
+		// This condition here should be replace with something that builds an
+		// exclude-function for all possible values a schema.ExcludedGitHubRepo
+		// could have.
+		if r.Size != "" || r.Stars != "" {
+			fn, err := buildGitHubExcludeRule(r)
+			if err != nil {
+				return nil, err
+			}
+			eb.Generic(fn)
+		}
+
 		if r.Archived {
 			eb.Generic(excludeArchived)
 		}
 		if r.Forks {
-			excludeForks = true
 			eb.Generic(excludeFork)
 		}
 		eb.Exact(r.Name)
@@ -202,7 +211,6 @@ func newGitHubSource(
 		markInternalReposAsPublic: (c.Authorization != nil) && c.Authorization.MarkInternalReposAsPublic,
 		logger: logger.With(
 			log.Object("GitHubSource",
-				log.Bool("excludeForks", excludeForks),
 				log.Bool("githubDotCom", githubDotCom),
 				log.String("originalHostname", originalHostname),
 			),

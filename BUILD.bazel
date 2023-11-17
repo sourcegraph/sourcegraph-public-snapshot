@@ -301,3 +301,18 @@ exports_files([
     "CONTRIBUTING.md",
     ".swcrc",
 ])
+
+# sg msp settings
+
+bool_flag(
+    name = "sg_msp",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "sg_msp_flag",
+    flag_values = {
+        "//:sg_msp": "True",
+    },
+)

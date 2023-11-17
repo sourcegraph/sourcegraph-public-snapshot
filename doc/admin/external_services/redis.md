@@ -13,7 +13,7 @@ or follow the [IANA specification for Redis URLs](https://www.iana.org/assignmen
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap"><code>docker run [...]<span class="virtual-br"></span>   -e REDIS_ENDPOINT=redis.mycompany.org:6379<span class="virtual-br"></span>   sourcegraph/server:5.2.2</code></pre>
+<pre class="pre-wrap"><code>docker run [...]<span class="virtual-br"></span>   -e REDIS_ENDPOINT=redis.mycompany.org:6379<span class="virtual-br"></span>   sourcegraph/server:5.2.3</code></pre>
 
 > NOTE: On Mac/Windows, if trying to connect to a Redis server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
 

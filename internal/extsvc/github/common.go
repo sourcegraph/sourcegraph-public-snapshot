@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -1582,15 +1583,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	}()
 	req = req.WithContext(ctx)
 
-	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther, func(r *http.Request) (*http.Response, error) {
-		// For GitHub.com, to avoid running into rate limits we're limiting concurrency
-		// per auth token to 1 globally.
-		if URLIsGitHubDotCom(r.URL) {
-			return restrictGitHubDotComConcurrency(logger, httpClient, r)
-		}
-
-		return httpClient.Do(r)
-	})
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
 	if err != nil {
 		return nil, errors.Wrap(err, "request failed")
 	}
@@ -1814,6 +1807,15 @@ type Repository struct {
 
 	// Parent is non-nil for forks and contains details of the parent repository.
 	Parent *ParentRepository `json:",omitempty"`
+
+	// DiskUsageKibibytes is, according to GitHub's docs, in kilobytes, but
+	// empirically it's in kibibytes (meaning: multiples of 1024 bytes, not
+	// 1000).
+	DiskUsageKibibytes int `json:"DiskUsage,omitempty"`
+}
+
+func (r *Repository) SizeBytes() bytesize.Bytes {
+	return bytesize.Bytes(r.DiskUsageKibibytes) * bytesize.KiB
 }
 
 // ParentRepository is the parent of a GitHub repository.
@@ -1862,6 +1864,10 @@ type restRepository struct {
 	Visibility  string                    `json:"visibility"`
 	Topics      []string                  `json:"topics"`
 	Parent      *restParentRepository     `json:"parent,omitempty"`
+	// DiskUsageKibibytes uses the "size" field which is, according to GitHub's
+	// docs, in kilobytes, but empirically it's in kibibytes (meaning:
+	// multiples of 1024 bytes, not 1000).
+	DiskUsageKibibytes int `json:"size"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1889,21 +1895,22 @@ func convertRestRepo(restRepo restRepository) *Repository {
 	}
 
 	repo := Repository{
-		ID:               restRepo.ID,
-		DatabaseID:       restRepo.DatabaseID,
-		NameWithOwner:    restRepo.FullName,
-		Description:      restRepo.Description,
-		URL:              restRepo.HTMLURL,
-		IsPrivate:        restRepo.Private,
-		IsFork:           restRepo.Fork,
-		IsArchived:       restRepo.Archived,
-		IsLocked:         restRepo.Locked,
-		IsDisabled:       restRepo.Disabled,
-		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
-		StargazerCount:   restRepo.Stars,
-		ForkCount:        restRepo.Forks,
-		RepositoryTopics: RepositoryTopics{topics},
-		Visibility:       Visibility(restRepo.Visibility),
+		ID:                 restRepo.ID,
+		DatabaseID:         restRepo.DatabaseID,
+		NameWithOwner:      restRepo.FullName,
+		Description:        restRepo.Description,
+		URL:                restRepo.HTMLURL,
+		IsPrivate:          restRepo.Private,
+		IsFork:             restRepo.Fork,
+		IsArchived:         restRepo.Archived,
+		IsLocked:           restRepo.Locked,
+		IsDisabled:         restRepo.Disabled,
+		ViewerPermission:   convertRestRepoPermissions(restRepo.Permissions),
+		StargazerCount:     restRepo.Stars,
+		ForkCount:          restRepo.Forks,
+		RepositoryTopics:   RepositoryTopics{topics},
+		Visibility:         Visibility(restRepo.Visibility),
+		DiskUsageKibibytes: restRepo.DiskUsageKibibytes,
 	}
 
 	if restRepo.Parent != nil {

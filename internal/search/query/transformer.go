@@ -376,6 +376,15 @@ func space(patterns []Pattern) []Node {
 	}
 }
 
+// and concatenates patterns with AND.
+func and(patterns []Pattern) []Node {
+	p := make([]Node, 0, len(patterns))
+	for _, pattern := range patterns {
+		p = append(p, pattern)
+	}
+	return NewOperator(p, And)
+}
+
 // substituteConcat returns a function that concatenates all contiguous patterns
 // in the tree, rooted by a concat operator. Concat operators containing negated
 // patterns are lifted out: (concat "a" (not "b")) -> ("a" (not "b"))
