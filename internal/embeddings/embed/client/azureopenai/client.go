@@ -62,7 +62,7 @@ func GetAPIClient(endpoint, accessToken string) (EmbeddingsClient, error) {
 }
 
 func NewClient(getClient GetEmbeddingsAPIClientFunc, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
-	client, err := getClient(config.Endpoint, config.AccessToken)
+	client, err := getClient(config.AccessToken, config.Endpoint)
 	if err != nil {
 		return nil, err
 	}
