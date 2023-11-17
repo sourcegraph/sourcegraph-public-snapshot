@@ -13,20 +13,23 @@ import (
 
 	ip2location "github.com/ip2location/ip2location-go/v9"
 
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //go:embed data/IP2LOCATION-LITE-DB1.IPV6.BIN/IP2LOCATION-LITE-DB1.IPV6.BIN
 var ip2locationDBBin []byte
 
-// locationsDB holds the ip2location database embedded at ip2locationDBBin.
-var locationsDB = func() *ip2location.DB {
+// getLocationsDB holds the ip2location database embedded at ip2locationDBBin.
+// It is only evaluated once - subsequent calls will return the first initialized
+// *ip2location.DB instance.
+var getLocationsDB = syncx.OnceValue(func() *ip2location.DB {
 	db, err := ip2location.OpenDBWithReader(noOpCloser{bytes.NewReader(ip2locationDBBin)})
 	if err != nil {
 		panic(err)
 	}
 	return db
-}()
+})
 
 // InferCountryCode returns an ISO 3166-1 alpha-2 country code for the given IP
 // address: https://en.wikipedia.org/wiki/ISO_3166-1#Codes
@@ -34,7 +37,7 @@ func InferCountryCode(ipAddress string) (string, error) {
 	if ipAddress == "" {
 		return "", errors.New("no IP address provided")
 	}
-	result, err := locationsDB.Get_country_short(ipAddress)
+	result, err := getLocationsDB().Get_country_short(ipAddress)
 	if err != nil {
 		return "", errors.Wrap(err, "IP database query failed")
 	}
