@@ -62,8 +62,10 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 
 }
 
-func NewClient(getClient func(accessToken, endpoint string) (CompletionsClient, error), accessToken, endpoint string) (types.CompletionsClient, error) {
-	client, err := getClient(endpoint, accessToken)
+type GetCompletionsAPIClientFunc func(accessToken, endpoint string) (CompletionsClient, error)
+
+func NewClient(getClient GetCompletionsAPIClientFunc, accessToken, endpoint string) (types.CompletionsClient, error) {
+	client, err := getClient(accessToken, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -169,6 +171,9 @@ func streamAutocomplete(
 	}
 	defer resp.CompletionsStream.Close()
 
+	// Azure sends incremental deltas for each message in a chat stream
+	// build up the full message content over multiple responses
+	var content string
 	for {
 		entry, err := resp.CompletionsStream.Read()
 		// stream is done
@@ -182,9 +187,11 @@ func streamAutocomplete(
 
 		// Text and Finish reason are marked as REQUIRED in documentation but check just in case
 		if hasValidFirstCompletionsChoice(entry.Choices) {
+			content += *entry.Choices[0].Text
+			finish := string(*entry.Choices[0].FinishReason)
 			ev := types.CompletionResponse{
-				Completion: *entry.Choices[0].Text,
-				StopReason: string(*entry.Choices[0].FinishReason),
+				Completion: content,
+				StopReason: finish,
 			}
 			return sendEvent(ev)
 		}
@@ -205,24 +212,33 @@ func streamChat(
 	}
 	defer resp.ChatCompletionsStream.Close()
 
+	// Azure sends incremental deltas for each message in a chat stream
+	// build up the full message content over multiple responses
+	var content string
 	for {
 		entry, err := resp.ChatCompletionsStream.Read()
 		// stream is done
 		if errors.Is(err, io.EOF) {
 			return nil
 		}
-		// some other error has occured
+		// some other error has occurred
 		if err != nil {
 			return err
 		}
 
-		// Delta and Finish reason are marked as REQUIRED in documentation but check just in case
 		if hasValidFirstChatChoice(entry.Choices) {
+			// hasValidFirstChatChoice checks that FinishReason and Delta.Content aren't null
+			// they are both marked as REQUIRED in docs despite being a pointer
+			content += *entry.Choices[0].Delta.Content
+			finish := string(*entry.Choices[0].FinishReason)
 			ev := types.CompletionResponse{
-				Completion: *entry.Choices[0].Delta.Content,
-				StopReason: string(*entry.Choices[0].FinishReason),
+				Completion: content,
+				StopReason: finish,
 			}
-			return sendEvent(ev)
+			err := sendEvent(ev)
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -231,8 +247,8 @@ func streamChat(
 func hasValidFirstChatChoice(choices []azopenai.ChatChoice) bool {
 	return len(choices) > 0 &&
 		choices[0].Delta != nil &&
-		choices[0].FinishReason != nil &&
-		choices[0].Delta.Content != nil
+		choices[0].Delta.Content != nil &&
+		choices[0].FinishReason != nil
 }
 
 // hasValidChatChoice checks to ensure there is a choice and the first one contains non-nil values
@@ -246,6 +262,7 @@ func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
 	azureMessages := make([]azopenai.ChatMessage, len(messages))
 	for i, m := range messages {
 		var role azopenai.ChatRole
+		message := m.Text
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
 			role = azopenai.ChatRoleUser
@@ -253,7 +270,7 @@ func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
 			role = azopenai.ChatRoleAssistant
 		}
 		azureMessages[i] = azopenai.ChatMessage{
-			Content: &m.Text,
+			Content: &message,
 			Role:    &role,
 		}
 	}
@@ -261,6 +278,12 @@ func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
 }
 
 func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.ChatCompletionsOptions {
+	if requestParams.TopK < 0 {
+		requestParams.TopK = 0
+	}
+	if requestParams.TopP < 0 {
+		requestParams.TopP = 0
+	}
 	return azopenai.ChatCompletionsOptions{
 		Messages:    getChatMessages(requestParams.Messages),
 		Temperature: &requestParams.Temperature,
@@ -273,6 +296,12 @@ func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.Ch
 }
 
 func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azopenai.CompletionsOptions, error) {
+	if requestParams.TopK < 0 {
+		requestParams.TopK = 0
+	}
+	if requestParams.TopP < 0 {
+		requestParams.TopP = 0
+	}
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
 		return azopenai.CompletionsOptions{}, err
