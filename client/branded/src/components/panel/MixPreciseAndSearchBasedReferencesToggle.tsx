@@ -18,8 +18,10 @@ export const MixPreciseAndSearchBasedReferencesToggle = (props: Props): React.Re
         settingsCascade,
         'codeIntel.mixPreciseAndSearchBasedReferences'
     )
+    console.log(`VARUN: mix outer: ${mixPreciseAndSearchBasedReferences}`)
 
     const onClick = useCallback(async () => {
+        console.log(`VARUN: mix inner: ${mixPreciseAndSearchBasedReferences}`)
         await updateSettings(platformContext, {
             path: ['codeIntel.mixPreciseAndSearchBasedReferences'],
             value: !mixPreciseAndSearchBasedReferences,
