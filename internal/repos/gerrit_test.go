@@ -18,9 +18,8 @@ import (
 func TestGerritSource_ListRepos(t *testing.T) {
 	ratelimit.SetupForTest(t)
 
-	cfName := t.Name()
 	t.Run("no filtering", func(t *testing.T) {
-		cf, save := NewClientFactory(t, cfName)
+		cf, save := NewClientFactory(t, t.Name())
 		defer save(t)
 
 		svc := typestest.MakeExternalService(t, extsvc.VariantGerrit, &schema.GerritConnection{
@@ -42,7 +41,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 	})
 
 	t.Run("with filtering", func(t *testing.T) {
-		cf, save := NewClientFactory(t, cfName)
+		cf, save := NewClientFactory(t, t.Name())
 		defer save(t)
 
 		svc := typestest.MakeExternalService(t, extsvc.VariantGerrit, &schema.GerritConnection{
