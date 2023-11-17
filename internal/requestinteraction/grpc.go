@@ -22,15 +22,14 @@ func (Propagator) FromContext(ctx context.Context) metadata.MD {
 }
 
 func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
-	var id string
-
 	if vals := md.Get(headerKeyInteractionID); len(vals) > 0 {
-		id = vals[0]
+		id := vals[0]
+		return WithClient(ctx, &Interaction{
+			ID: id,
+		})
 	}
 
-	return WithClient(ctx, &Interaction{
-		ID: id,
-	})
+	return ctx
 }
 
 var _ internalgrpc.Propagator = Propagator{}

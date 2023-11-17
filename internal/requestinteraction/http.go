@@ -30,8 +30,16 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		interactionID := req.Header.Get(headerKeyInteractionID)
+
+		// If empty, nothing to do, just pass through
+		if interactionID == "" {
+			next.ServeHTTP(rw, req)
+			return
+		}
+
 		ctxWithClient := WithClient(req.Context(), &Interaction{
-			ID: req.Header.Get(headerKeyInteractionID),
+			ID: interactionID,
 		})
 		next.ServeHTTP(rw, req.WithContext(ctxWithClient))
 	})
