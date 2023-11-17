@@ -8,6 +8,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/requestclient/geolocation",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/syncx",
         "//lib/errors",
         "@com_github_ip2location_ip2location_go_v9//:ip2location-go",
     ],
