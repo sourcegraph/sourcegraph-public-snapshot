@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -24,7 +25,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",
-		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+		func(_ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			if isAllowedCustomChatModel(requestParams.Model) {
 				return requestParams.Model, nil
 			}
