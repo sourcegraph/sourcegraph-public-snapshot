@@ -16,7 +16,11 @@ interface useStreamingSearchPingsProps extends TelemetryProps {
     results: AggregateStreamingSearchResults | undefined
 }
 
-export function useStreamingSearchPings(props: useStreamingSearchPingsProps) {
+interface StreamingSearchPingsAPI {
+    logSearchResultClicked: (index: number, type: string, resultsLength: number) => void
+}
+
+export function useStreamingSearchPings(props: useStreamingSearchPingsProps): StreamingSearchPingsAPI {
     const { isAuauthenticated, isSourcegraphDotCom, results, telemetryService } = props
 
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)

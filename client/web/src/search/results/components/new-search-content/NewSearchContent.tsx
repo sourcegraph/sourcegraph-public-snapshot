@@ -138,7 +138,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
 
     // Clean up hook, close the preview panel if search result page
     // have been closed/unmount
-    useEffect(() => clearPreview, [])
+    useEffect(() => clearPreview, [clearPreview])
 
     // File preview clean up hook, close the preview panel every time when we
     // re-search / re-submit the query.
@@ -147,7 +147,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
             submittedURLQueryRef.current = submittedURLQuery
             clearPreview()
         }
-    }, [submittedURLQuery])
+    }, [submittedURLQuery, clearPreview])
 
     const prefetchFile: FilePrefetcher = useCallback(
         params =>

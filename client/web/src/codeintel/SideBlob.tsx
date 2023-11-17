@@ -115,11 +115,11 @@ export const SideBlob: FC<SideBlobProps> = props => {
             navigateToLineOnAnyClick={navigateToLineOnAnyClick}
             blobInfo={{
                 lsif: lsif ?? '',
-                content: data?.repository?.commit?.blob?.content ?? '',
+                commitID,
                 filePath: file,
                 repoName: repository,
-                commitID: commitID,
                 revision: commitID,
+                content: data?.repository?.commit?.blob?.content ?? '',
                 mode: 'lspmode',
             }}
             searchPanelConfig={searchPanelConfig}
