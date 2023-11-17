@@ -47,7 +47,7 @@ func allowedCustomModel(ctx context.Context, model string) string {
 		"fireworks/starcoder-7b":
 
 		flags := featureflag.FromContext(ctx)
-		singleTenant := flags.GetBoolOr("cody-autocomplete-starcoder-single-tenant", false)
+		singleTenant := flags.GetBoolOr("cody-autocomplete-default-starcoder-hybrid-sourcegraph", false)
 
 		if model == "fireworks/starcoder-16b" {
 			if singleTenant {
