@@ -235,6 +235,12 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
+      # Ensure scip-ctags-dev is installed to avoid prompting the user to
+      # install it manually.
+      if [ ! -f $(./dev/scip-ctags-install.sh which) ]; then
+        ./dev/scip-ctags-install.sh
+      fi
+
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
