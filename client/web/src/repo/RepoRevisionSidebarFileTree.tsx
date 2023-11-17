@@ -29,7 +29,11 @@ import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
-import { contains, getExtension, getIcon } from './utils'
+import {
+    getExtension,
+    getIcon,
+    isTestFile,
+} from './utils'
 
 export const MAX_TREE_ENTRIES = 2500
 
@@ -389,8 +393,9 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const { icon, iconClass } = getIcon(name)
+    const { icon, iconClass } = getIcon(name, isBranch)
     const extension = getExtension(name)
+    console.log(extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -478,25 +483,13 @@ function renderNode({
                 className={classNames('mr-1', styles.icon, iconClass)}
                 aria-hidden={true}
             />
-            <span className={
-                shouldGreenOut(extension)
-                    ? styles.green
-                    : styles.defaultIcon
-            }>
+
+            <span className={extension === "test" ? styles.green : styles.defaultIcon}>
                 {name}
             </span>
         </Link >
     )
 }
-
-const shouldGreenOut = (extension: string): boolean => {
-    const shouldGray = ["test"]
-    if (contains(shouldGray, extension)) {
-        return true
-    }
-    return false
-}
-
 
 type TreeNode = WildcardTreeNode & {
     path: string

@@ -19,6 +19,10 @@ import {
     mdiText,
     mdiLanguagePython,
     mdiDatabaseOutline,
+    mdiDocker,
+    mdiHeart,
+    mdiNpm,
+    mdiConsole,
 } from "@mdi/js"
 
 import styles from "./RepoRevisionSidebarFileTree.module.scss"
@@ -77,25 +81,28 @@ export const contains = (arr: string[], target: string): boolean => {
 }
 
 export const getExtension = (file: string): string => {
-    const s = file.split(".").slice(1)
-    let extension: string
-    if (s.length === 1) {
-        extension = s[0]
+    const testRegex = /test/;
+    if (testRegex.test(file)) {
+        return "test"
     }
+
+    const s = file.split(".").slice(1)
+    // if (s.length === 1) {
+    //     return s[0]
+    // }
 
     // handle test files separately
-    if (contains(s, "test")) {
-        extension = "test"
-    } else if (contains(s, "mod") || contains(s, "sum")) {
-        extension = "go"
+    if (contains(s, "mod") || contains(s, "sum")) {
+        return "go"
     } else {
-        extension = s[s.length - 1]
+        return s[s.length - 1]
     }
-
-    return extension
 }
 
-export const getIcon = (file: string): { icon: string; iconClass: string } => {
+export const getIcon = (file: string, isBranch: boolean): { icon: string; iconClass: string } => {
+    if (isBranch) {
+        return { icon: mdiFileDocumentOutline, iconClass: styles.defaultIcon }
+    }
     const extension = getExtension(file)
 
     switch (extension) {
@@ -145,7 +152,7 @@ export const getIcon = (file: string): { icon: string; iconClass: string } => {
             return { icon: mdiText, iconClass: styles.defaultIcon }
         }
         case "test": {
-            return { icon: mdiTestTube, iconClass: styles.yellow }
+            return { icon: mdiTestTube, iconClass: styles.cyan }
         }
         case "json": {
             return { icon: mdiCodeJson, iconClass: styles.defaultIcon }
@@ -156,8 +163,40 @@ export const getIcon = (file: string): { icon: string; iconClass: string } => {
         case "gitignore": {
             return { icon: mdiGit, iconClass: styles.red }
         }
+        case "gitattributes": {
+            return { icon: mdiGit, iconClass: styles.red }
+        }
+        case "dockerignore": {
+            return { icon: mdiDocker, iconClass: styles.blue }
+        }
+        case "bazel": {
+            return { icon: mdiHeart, iconClass: styles.green }
+        }
+        case "bzl": {
+            return { icon: mdiHeart, iconClass: styles.green }
+        }
+        case "bazelignore": {
+            return { icon: mdiHeart, iconClass: styles.green }
+        }
+        case "bazeliskrc": {
+            return { icon: mdiHeart, iconClass: styles.green }
+        }
+        case "bazelrc": {
+            return { icon: mdiHeart, iconClass: styles.green }
+        }
+        case "bazelversion": {
+            return { icon: mdiHeart, iconClass: styles.green }
+        }
+        case "npmrc": {
+            return { icon: mdiNpm, iconClass: styles.red }
+        }
+        case "sh": {
+            return { icon: mdiConsole, iconClass: styles.defaultIcon }
+        }
+
         default: {
             return { icon: mdiFileDocumentOutline, iconClass: styles.defaultIcon }
         }
     }
 }
+
