@@ -5,10 +5,10 @@ package main
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -25,11 +25,12 @@ func main() {
 
 	ctx := context.Background()
 
-	latestMinorVersion, latestVersion, err := getLatestVersions(ctx)
+	latestMinorVersion, latestVersion, randomVersion, err := getVersions(ctx)
 	if err != nil {
 		fmt.Println("🚨 Error: could not get latest major or minor releases: ", err)
 		os.Exit(1)
 	}
+	fmt.Println(randomVersion)
 
 	// Get the release candidate image tarball
 	args := os.Args
@@ -40,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := multiversionUpgradeTest(ctx); err != nil {
+	if err := multiversionUpgradeTest(ctx, randomVersion, latestVersion); err != nil {
 		fmt.Println("--- 🚨 Multiversion Upgrade Test Failed: ", err)
 		os.Exit(1)
 	}
@@ -72,19 +73,19 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 
 	fmt.Println("-- ⚙️  performing standard upgrade")
 
-	// create hash for new migrator job, migrator runs in env setup, we want a new hash for each run
-	hash, err := newContainerHash()
-	if err != nil {
-		fmt.Println("🚨 failed to generate hash during standard upgrade test: ", err)
-		cleanup()
-		return err
-	}
-
 	// Run standard upgrade via migrators "up" command
 	if err := run.Cmd(ctx,
 		dockerMigratorBaseString("up", "migrator:candidate", networkName, initHash, dbs)...).
 		Run().Stream(os.Stdout); err != nil {
 		fmt.Println("🚨 failed to upgrade: ", err)
+		cleanup()
+		return err
+	}
+
+	// create hash for new migrator job, migrator runs in env setup, we want a new hash for each run
+	hash, err := newContainerHash()
+	if err != nil {
+		fmt.Println("🚨 failed to generate hash during standard upgrade test: ", err)
 		cleanup()
 		return err
 	}
@@ -109,8 +110,29 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 	return nil
 }
 
-func multiversionUpgradeTest(ctx context.Context) error {
+// multiversionUpgradeTest initializes Sourcegraph's dbs at a random version greater than v3.20,
+// it then runs a multiversion upgrade to the latest release candidate schema and checks for drift
+func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *semver.Version) error {
 	fmt.Println("--- 🕵️  multiversion upgrade test")
+
+	// initialize a random version of Sourcegraph greater than v3.2.0
+	initHash, networkName, dbs, cleanup, err := setupTestEnv(ctx, randomVersion)
+	if err != nil {
+		fmt.Println("failed to setup env: ", err)
+		cleanup()
+		return err
+	}
+	defer cleanup()
+
+	fmt.Println(initHash)
+
+	// ensure env correctly initialized, always use latest migrator for drift check,
+	// this allows us to avoid issues from changes in migrators invocation
+	if err := validateDBs(ctx, randomVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
+		fmt.Println("🚨 Initializing env in multiversion test failed: ", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -139,8 +161,16 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 		return nil, "", nil, nil, err
 	}
 
+	// Handle for old postgres image which may be an init version in multiversion test
+	var postgresImage string
+	if initVersion.GreaterThan(semver.MustParse("v3.37")) {
+		postgresImage = "postgres-12-alpine"
+	} else {
+		postgresImage = "sourcegraph/postgres-12.6"
+	}
+
 	dbs = []testDB{
-		{"pgsql", fmt.Sprintf("wg_pgsql_%x", hash), "postgres-12-alpine", "5433"},
+		{"pgsql", fmt.Sprintf("wg_pgsql_%x", hash), postgresImage, "5433"},
 		{"codeintel-db", fmt.Sprintf("wg_codeintel-db_%x", hash), "codeintel-db", "5434"},
 		{"codeinsights-db", fmt.Sprintf("wg_codeinsights-db_%x", hash), "codeinsights-db", "5435"},
 	}
@@ -469,13 +499,13 @@ func newContainerHash() ([]byte, error) {
 }
 
 // getLatestVersions returns the latest minor semver version, as well as the latest full semver version.
-func getLatestVersions(ctx context.Context) (latestMinor *semver.Version, latestFull *semver.Version, err error) {
+func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *semver.Version, err error) {
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",
 		"--format", "'%(refname:short)'",
 		"refs/tags").Run().Lines()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var latestMinorVer *semver.Version
@@ -492,17 +522,49 @@ func getLatestVersions(ctx context.Context) (latestMinor *semver.Version, latest
 		}
 		latestMinorVer, err = semver.NewVersion(fmt.Sprintf("%d.%d.0", latestFullVer.Major(), latestFullVer.Minor()))
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
-	if latestMinorVer == nil {
-		return nil, nil, errors.New("No valid minor semver tags found")
-	}
-	if latestFullVer == nil {
-		return nil, nil, errors.New("No valid full semver tags found")
+	// Get random tag version greater than v3.20
+	var randomVersions []*semver.Version
+	for _, tag := range tags {
+		v, err := semver.NewVersion(tag)
+		if err != nil {
+			continue
+		}
+		// no prereleases
+		if v.Prerelease() != "" {
+			continue
+		}
+		// versions at least two behind the current latest version
+		if v.Major() == latestFullVer.Major() && v.Minor() >= latestFullVer.Minor()-2 {
+			continue
+		}
+
+		if v.GreaterThan(semver.MustParse("v3.20")) {
+			randomVersions = append(randomVersions, v)
+		}
 	}
 
-	return latestMinorVer, latestFullVer, nil
+	if len(randomVersions) == 0 {
+		return nil, nil, nil, errors.New("No valid random semver tags found")
+	}
+
+	// Select random index
+	randIndex := rand.Intn(len(randomVersions))
+	randomVersion = randomVersions[randIndex]
+
+	if latestMinorVer == nil {
+		return nil, nil, nil, errors.New("No valid minor semver tags found")
+	}
+	if latestFullVer == nil {
+		return nil, nil, nil, errors.New("No valid full semver tags found")
+	}
+	if randomVersion == nil {
+		return nil, nil, nil, errors.New("No valid random semver tag found")
+	}
+
+	return latestMinorVer, latestFullVer, randomVersion, nil
 
 }
