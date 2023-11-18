@@ -86,9 +86,9 @@ func (c *azureCompletionClient) Complete(
 
 	switch feature {
 	case types.CompletionsFeatureCode:
-		return completeAutocomplete(ctx, c.client, feature, requestParams)
+		return completeAutocomplete(ctx, c.client, requestParams)
 	case types.CompletionsFeatureChat:
-		return completeChat(ctx, c.client, feature, requestParams)
+		return completeChat(ctx, c.client, requestParams)
 	default:
 		return nil, errors.New("invalid completions feature")
 	}
@@ -97,7 +97,6 @@ func (c *azureCompletionClient) Complete(
 func completeAutocomplete(
 	ctx context.Context,
 	client CompletionsClient,
-	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	options, err := getCompletionsOptions(requestParams)
@@ -122,7 +121,6 @@ func completeAutocomplete(
 func completeChat(
 	ctx context.Context,
 	client CompletionsClient,
-	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	response, err := client.GetChatCompletions(ctx, getChatOptions(requestParams), nil)
@@ -146,9 +144,9 @@ func (c *azureCompletionClient) Stream(
 ) error {
 	switch feature {
 	case types.CompletionsFeatureCode:
-		return streamAutocomplete(ctx, c.client, feature, requestParams, sendEvent)
+		return streamAutocomplete(ctx, c.client, requestParams, sendEvent)
 	case types.CompletionsFeatureChat:
-		return streamChat(ctx, c.client, feature, requestParams, sendEvent)
+		return streamChat(ctx, c.client, requestParams, sendEvent)
 	default:
 		return errors.New("invalid completions feature")
 	}
@@ -157,7 +155,6 @@ func (c *azureCompletionClient) Stream(
 func streamAutocomplete(
 	ctx context.Context,
 	client CompletionsClient,
-	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -207,7 +204,6 @@ func streamAutocomplete(
 func streamChat(
 	ctx context.Context,
 	client CompletionsClient,
-	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {

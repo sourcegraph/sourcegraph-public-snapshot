@@ -11,7 +11,7 @@ go_library(
         "//internal/embeddings/embed/client",
         "//internal/embeddings/embed/client/modeltransformations",
         "//lib/errors",
-        "@com_github_azure_azure_sdk_for_go//sdk/ai/azopenai",
+        "@com_github_azure_azure_sdk_for_go_sdk_ai_azopenai//:azopenai",
         "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
     ],
 )
@@ -23,7 +23,7 @@ go_test(
     deps = [
         "//internal/conf/conftypes",
         "//lib/errors",
-        "@com_github_azure_azure_sdk_for_go//sdk/ai/azopenai",
+        "@com_github_azure_azure_sdk_for_go_sdk_ai_azopenai//:azopenai",
         "@com_github_stretchr_testify//require",
     ],
 )
